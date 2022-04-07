@@ -268,7 +268,7 @@ public class LinkFactory {
         //Copy permissions
         permissionAPI.copyPermissions( currentLink, newLink );
 
-		systemEventsAPI.pushAsync(SystemEventType.COPY_LINK, new Payload(currentLink, Visibility.EXCLUDE_OWNER,
+		systemEventsAPI.pushAsync(SystemEventType.COPY_LINK, new Payload(currentLink.getMap(), Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(currentLink.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
         return newLink;

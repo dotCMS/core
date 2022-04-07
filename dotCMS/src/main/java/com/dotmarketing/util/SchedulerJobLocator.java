@@ -9,7 +9,6 @@ public class SchedulerJobLocator {
 		
 		List<String> jobsList = new ArrayList<String>();
 		jobsList.add("com.dotmarketing.quartz.job.BinaryCleanupJob");
-		jobsList.add("com.dotmarketing.quartz.job.CalendarReminderThread");
 		jobsList.add("com.dotmarketing.quartz.job.CascadePermissionsJob");
 		jobsList.add("com.dotmarketing.quartz.job.ContentFromEmailJob");
 		jobsList.add("com.dotmarketing.quartz.job.ContentImportThread");

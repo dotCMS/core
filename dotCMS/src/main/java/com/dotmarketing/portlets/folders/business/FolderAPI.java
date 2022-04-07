@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.folders.business;
 
 import com.dotcms.api.tree.Parentable;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.DotIdentifierStateException;
@@ -15,11 +16,16 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Config;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
 
 /**
@@ -29,11 +35,10 @@ import java.util.function.Predicate;
  */
  public interface FolderAPI   {
 
-	public static final String SYSTEM_FOLDER = "SYSTEM_FOLDER";
-	public static final String SYSTEM_FOLDER_ID = "bc9a1d37-dd2d-4d49-a29d-0c9be740bfaf";
-	public static final String SYSTEM_FOLDER_ASSET_NAME = "system folder";
-	public static final String SYSTEM_FOLDER_PARENT_PATH = "/System folder";
-
+	String SYSTEM_FOLDER = "SYSTEM_FOLDER";
+	String SYSTEM_FOLDER_ID = "bc9a1d37-dd2d-4d49-a29d-0c9be740bfaf";
+	String SYSTEM_FOLDER_ASSET_NAME = "system folder";
+	String SYSTEM_FOLDER_PARENT_PATH = "/System folder";
 
 	/**
 	 * Find a folder by a Host and a path
@@ -188,7 +193,7 @@ import java.util.function.Predicate;
 	/**
 	 * Does a folder already exist?
 	 *
-	 * @param folderInode
+	 * @param folderInode or folderID
 	 * @return boolean
 	 * @throws DotDataException
 	 */
@@ -289,6 +294,13 @@ import java.util.function.Predicate;
 	 */
 	Folder find(String id, User user, boolean respectFrontEndPermissions) throws
 			DotSecurityException, DotDataException;
+
+	/**
+	 * Validates that the folder name is not a reserved word
+	 * @param folder folder whose name will be validated
+	 * @throws DotDataException
+	 */
+	void validateFolderName(final Folder folder) throws DotDataException;
 
 	/**
 	 * Saves a folder. The folder needs to have been created from the

@@ -16,7 +16,7 @@
  
 	<div id="osgiMain"></div>
 </div>
-</dot-asset-drop-zone">
+</dot-asset-drop-zone>
 
 <script type="application/javascript">
     const headerError = '<%=LanguageUtil.get(pageContext, "OSGI-Header-Error")%>';

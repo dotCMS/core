@@ -60,9 +60,9 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
           .add(HttpStatus.SC_MOVED_TEMPORARILY).build();
 
   private static final String SELECT_LIVE_VANITY_URL_INODES =
-      "SELECT cvi.live_inode FROM contentlet c, identifier i, contentlet_version_info cvi, structure s "
+      "SELECT cvi.live_inode FROM contentlet c, contentlet_version_info cvi, structure s "
           + " where s.structuretype = ? and c.structure_inode = s.inode "
-          + " and cvi.live_inode=c.inode and cvi.identifier = i.id  and i.host_inode = ? and cvi.lang =? ";
+          + " and cvi.live_inode=c.inode and cvi.lang =?";
 
   public static final String   LEGACY_CMS_HOME_PAGE = "/cmsHomePage";
   private final ContentletAPI  contentletAPI;
@@ -127,32 +127,49 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
   public List<CachedVanityUrl> findInDb(final Host site, final Language language) {
 
     try {
-      final List<Map<String, Object>> vanityUrls = new DotConnect().setSQL(SELECT_LIVE_VANITY_URL_INODES)
+
+      if (!UtilMethods.isSet(site) || !UtilMethods.isSet(site.getIdentifier())) {
+        return null;
+      }
+
+      final List<Map<String, Object>> vanityUrls = new DotConnect().setSQL(
+                      SELECT_LIVE_VANITY_URL_INODES)
               .addParam(BaseContentType.VANITY_URL.getType())
-              .addParam(site.getIdentifier())
               .addParam(language.getId()).loadObjectResults();
+
       final List<String> vanityUrlInodes =
-          vanityUrls.stream().map(vanity -> vanity.get("live_inode").toString()).collect(Collectors.toList());
-      final List<Contentlet> contentlets = this.contentletAPI.findContentlets(vanityUrlInodes);
+              vanityUrls.stream()
+                      .map(vanity -> vanity.get("live_inode").toString())
+                      .collect(Collectors.toList());
+
+      final List<Contentlet> contentlets = this.contentletAPI.findContentlets(vanityUrlInodes)
+              .stream()
+              .filter(contentlet ->
+                      site.getIdentifier().equals(contentlet.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR)))
+              .collect(Collectors.toList());
 
       return contentlets.stream().map(contentlet -> {
         try {
           return new CachedVanityUrl(this.fromContentlet(contentlet));
         } catch (DotStateException e) {
-          Logger.error(VanityUrlAPIImpl.class, String.format("Validation error loading vanityURL[%S] from db.",contentlet.getIdentifier()), e);
+          Logger.error(VanityUrlAPIImpl.class,
+                  String.format("Validation error loading vanityURL[%S] from db.",
+                          contentlet.getIdentifier()), e);
         }
         return null;
       }).filter(Objects::nonNull).sorted().collect(Collectors.toList());
 
     } catch (final Exception e) {
       Logger.error(this,
-          String.format("An error occurred when retrieving Vanity URLs: siteId=[%s], languageId=[%s]",
-              site.getIdentifier(), language.getId()),
-          e);
+              String.format(
+                      "An error occurred when retrieving Vanity URLs: siteId=[%s], languageId=[%s]",
+                      site.getIdentifier(), language.getId()),
+              e);
       throw new DotStateException(e);
     }
 
   }
+
 
   private List<CachedVanityUrl> load(final Host site, final Language language) {
 

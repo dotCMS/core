@@ -190,7 +190,7 @@
                         else if (bundleData.state == <%=Bundle.ACTIVE%>) {
                             htmlContent += "<a href=\"javascript:bundles.stop('" + bundleData.jarFile + "','" + bundleData.bundleId + "')\"><%=LanguageUtil.get(pageContext, "OSGI-Stop")%></a>";
                         }
-                        else if (bundleData.location.indexOf(bundleData.separator) != -1 && bundleData.location.indexOf(deployPath + bundleData.separator) != -1) {
+                        if (bundleData.location.indexOf(bundleData.separator) != -1 && bundleData.location.indexOf(deployPath + bundleData.separator) != -1) {
                             htmlContent += "&nbsp;|&nbsp;<a href=\"javascript:bundles.undeploy('" + bundleData.jarFile + "','" + bundleData.bundleId + "')\"><%=LanguageUtil.get(pageContext, "OSGI-Undeploy")%></a>";
                         }
                         htmlContent += "</td></tr>";

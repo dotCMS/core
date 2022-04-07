@@ -133,7 +133,6 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.util.NumberUtils;
 
 /**
  * Implementation class for the {@link ContentletFactory} interface. This class
@@ -1983,12 +1982,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         final Contentlet toReturn = findInDb(inode).orElseThrow(()->
                 new DotStateException(String.format("Contentlet with inode '%s' not found in DB", inode)));
 
-
-
-        if (contentlet.isVanityUrl()) {
-            setOldHostIDProperty(toReturn);
-        }
-
         if(UtilMethods.isNotSet(contentlet.getIdentifier())) {
             toReturn.setFolder(contentlet.getFolder());
             toReturn.setHost(contentlet.getHost());
@@ -2001,22 +1994,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         CacheLocator.getCSSCache().remove(identifier.getHostId(), identifier.getPath(), true);
         CacheLocator.getCSSCache().remove(identifier.getHostId(), identifier.getPath(), false);
         return toReturn;
-    }
-
-    private void setOldHostIDProperty(final Contentlet contentlet)
-            throws DotDataException, DotSecurityException {
-        final Optional<ContentletVersionInfo> contentletVersionInfoOptional = APILocator.getVersionableAPI()
-                .getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
-
-        if (contentletVersionInfoOptional.isPresent()) {
-            final Contentlet oldContentlet = APILocator.getContentletAPI()
-                    .findContentletByIdentifier(contentlet.getIdentifier(), contentlet.isLive(),
-                            contentlet.getLanguageId(), APILocator.systemUser(), false);
-
-            if (UtilMethods.isSet(oldContentlet)) {
-                contentlet.setProperty(Contentlet.OLD_HOST_ID, oldContentlet.getHost());
-            }
-        }
     }
 
     private void setUpContentletAsJson(final Contentlet contentlet, final String inode) {
@@ -2485,60 +2462,16 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	            result.setSortBy(translateQuerySortBy(sortBy, originalQuery));
 	        }
 
-	        //Pad Numbers
-	        List<RegExMatch> numberMatches = RegEX.find(query, "(\\w+)\\.(\\w+):([0-9]+\\.?[0-9]+ |\\.?[0-9]+ |[0-9]+\\.?[0-9]+$|\\.?[0-9]+$)");
-	        if(numberMatches != null && numberMatches.size() > 0){
-	            for (RegExMatch numberMatch : numberMatches) {
-	                List<Field> fields = FieldsCache.getFieldsByStructureVariableName(numberMatch.getGroups().get(0).getMatch());
-	                for (Field field : fields) {
-	                    if(field.getVelocityVarName().equalsIgnoreCase(numberMatch.getGroups().get(1).getMatch())){
-	                        if (field.getFieldContentlet().startsWith("float")) {
-	                            query = query.replace(numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":" + numberMatch.getGroups().get(2).getMatch(),
-	                                    numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":" + NumberUtil.pad(NumberUtils.parseNumber((numberMatch.getGroups().get(2).getMatch()),Float.class)) + " ");
-	                        }else if(field.getFieldContentlet().startsWith("integer")) {
-	                            query = query.replace(numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":" + numberMatch.getGroups().get(2).getMatch(),
-	                                    numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":" + NumberUtil.pad(NumberUtils.parseNumber((numberMatch.getGroups().get(2).getMatch()),Long.class)) + " ");
-	                        }else if(field.getFieldContentlet().startsWith("bool")) {
-	                            String oldSubQuery = numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":" + numberMatch.getGroups().get(2).getMatch();
-	                            String oldFieldBooleanValue = oldSubQuery.substring(oldSubQuery.indexOf(":")+1,oldSubQuery.indexOf(":") + 2);
-	                            String newFieldBooleanValue="";
-	                            if(oldFieldBooleanValue.equals("1") || oldFieldBooleanValue.equals("true"))
-	                                newFieldBooleanValue = "true";
-	                            else if(oldFieldBooleanValue.equals("0") || oldFieldBooleanValue.equals("false"))
-	                                newFieldBooleanValue = "false";
-	                            query = query.replace(numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":" + numberMatch.getGroups().get(2).getMatch(),
-	                                    numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":" + newFieldBooleanValue + " ");
-	                        }
-	                    }
-	                }
-	            }
-	        }
 
-	        if (UtilMethods.isSet(sortBy))
+
+	        if (UtilMethods.isSet(sortBy)) {
 	            result.setSortBy(translateQuerySortBy(sortBy, query));
-
-
+	        }
+	        
 	        // DOTCMS-6247
 	        query = lowercaseStringExceptMatchingTokens(query, LUCENE_RESERVED_KEYWORDS_REGEX);
 
-	        //Pad NumericalRange Numbers
-	        List<RegExMatch> numberRangeMatches = RegEX.find(query, "(\\w+)\\.(\\w+):\\[(([0-9]+\\.?[0-9]+ |\\.?[0-9]+ |[0-9]+\\.?[0-9]+|\\.?[0-9]+) to ([0-9]+\\.?[0-9]+ |\\.?[0-9]+ |[0-9]+\\.?[0-9]+|\\.?[0-9]+))\\]");
-	        if(numberRangeMatches != null && numberRangeMatches.size() > 0){
-	            for (RegExMatch numberMatch : numberRangeMatches) {
-	                List<Field> fields = FieldsCache.getFieldsByStructureVariableName(numberMatch.getGroups().get(0).getMatch());
-	                for (Field field : fields) {
-	                    if(field.getVelocityVarName().equalsIgnoreCase(numberMatch.getGroups().get(1).getMatch())){
-	                        if (field.getFieldContentlet().startsWith("float")) {
-	                            query = query.replace(numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":[" + numberMatch.getGroups().get(3).getMatch() + " to " + numberMatch.getGroups().get(4).getMatch() +"]",
-	                                    numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":[" + NumberUtil.pad(NumberUtils.parseNumber((numberMatch.getGroups().get(3).getMatch()),Float.class)) + " TO " + NumberUtil.pad(NumberUtils.parseNumber((numberMatch.getGroups().get(4).getMatch()),Float.class)) + "]");
-	                        }else if(field.getFieldContentlet().startsWith("integer")) {
-	                            query = query.replace(numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":[" + numberMatch.getGroups().get(3).getMatch() + " to " + numberMatch.getGroups().get(4).getMatch() +"]",
-	                                    numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":[" + NumberUtil.pad(NumberUtils.parseNumber((numberMatch.getGroups().get(3).getMatch()),Long.class)) + " TO " + NumberUtil.pad(NumberUtils.parseNumber((numberMatch.getGroups().get(4).getMatch()),Long.class)) + "]");
-	                        }
-	                    }
-	                }
-	            }
-	        }
+
 	        result.setQuery(query.trim());
 
 	        CacheLocator.getContentletCache().addTranslatedQuery(
