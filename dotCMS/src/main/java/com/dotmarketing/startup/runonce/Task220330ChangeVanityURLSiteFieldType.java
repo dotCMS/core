@@ -11,6 +11,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.ArrayList;
 import java.util.List;
@@ -87,7 +88,10 @@ public class Task220330ChangeVanityURLSiteFieldType implements StartupTask {
             final String fieldContentlet = fieldContentletsMap.get(
                     contentlet.get("structure_inode"));
 
-            result.add(new ContentletHost(contentlet.get("identifier").toString(), contentlet.get(fieldContentlet).toString()));
+            if (UtilMethods.isSet(fieldContentlet)) {
+                result.add(new ContentletHost(contentlet.get("identifier").toString(),
+                        contentlet.get(fieldContentlet).toString()));
+            }
         }
     }
 
