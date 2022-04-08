@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
  * </code>
  *
  * Also it makes sure to keep the right site value updating the host_inode field in the Identifier table
- * taking account the contentlet can be working in ths JSON mode.
+ * taking account the contentlet could be working in ths JSON mode.
  *
  *
  */
