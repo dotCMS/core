@@ -28,8 +28,8 @@ import java.util.stream.Collectors;
  * WHERE velocity_var_name = 'site' AND structure_inode IN (select inode from structure where structuretype = 7
  * </code>
  *
- * Also it makes sure to keep the right site value updating the host_inode field in the Identifier table
- * taking account the contentlet could be working in ths JSON mode.
+ * Also updates the host_inode field in the Identifier table
+ * taking the value from the proper field/column in the contentlet table or from the JSON  in the case of JSON contentlets.
  *
  *
  */
