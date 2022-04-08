@@ -89,7 +89,12 @@ public class FolderFactoryImpl extends FolderFactory {
 
            folderCache.removeFolder(folder, id);
 
-		   APILocator.getIdentifierAPI().delete(id);
+		   /*Folder reference is not explicitly deleted from the identifier table because there is
+		   a db trigger that executes the delete operation once the folder table is cleaned up.
+		   Only cache is flushed.
+		   Trigger name: folder_identifier_check_trigger
+		   */
+		   CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(id.getId());
 	}
 
 
@@ -613,6 +618,7 @@ public class FolderFactoryImpl extends FolderFactory {
 					+ "' where inode_id = '" + oldFolderInode + "'");
 			dotConnect.executeStatement("update permission_reference set asset_id = '"
 					+ newFolderInode + "' where asset_id = '" + oldFolderInode + "'");
+
 
 		}catch (SQLException e){
 			Logger.error(FolderFactoryImpl.class, e.getMessage(), e);
