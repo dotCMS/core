@@ -18,6 +18,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Change the {@link com.dotcms.contenttype.model.type.VanityUrlContentType}'s site field from a
+ * {@link com.dotcms.contenttype.model.field.CustomField} to a {@link com.dotcms.contenttype.model.field.HostFolderField},
+ * executing the folloe:
+ *
+ * <code>
+ * UPDATE field SET field_type = 'com.dotcms.contenttype.model.field.HostFolderField', field_contentlet = 'system_field'
+ * WHERE velocity_var_name = 'site' AND structure_inode IN (select inode from structure where structuretype = 7
+ * </code>
+ *
+ * Also it makes sure to keep the right site value updating the host_inode field in the Identifier table
+ * taking account the contentlet can be working in ths JSON mode.
+ *
+ *
+ */
 public class Task220330ChangeVanityURLSiteFieldType implements StartupTask {
 
     final String UPDATE_FIELD_TYPE = "UPDATE field SET field_type = 'com.dotcms.contenttype.model.field.HostFolderField', field_contentlet = 'system_field' "
