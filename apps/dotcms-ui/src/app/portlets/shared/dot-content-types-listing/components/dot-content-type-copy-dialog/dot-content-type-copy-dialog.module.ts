@@ -12,6 +12,7 @@ import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 
 import { InputTextModule } from 'primeng/inputtext';
 import { DotContentTypeCopyDialogComponent } from './dot-content-type-copy-dialog.component';
+import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 
 @NgModule({
     imports: [
@@ -24,7 +25,8 @@ import { DotContentTypeCopyDialogComponent } from './dot-content-type-copy-dialo
         DotFieldValidationMessageModule,
         DotDialogModule,
         DotMdIconSelectorModule,
-        SiteSelectorFieldModule
+        SiteSelectorFieldModule,
+        DotAutofocusModule
     ],
     declarations: [DotContentTypeCopyDialogComponent],
     exports: [DotContentTypeCopyDialogComponent]
