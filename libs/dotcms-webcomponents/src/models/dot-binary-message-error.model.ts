@@ -4,5 +4,6 @@
 export enum DotBinaryMessageError {
     REQUIRED,
     INVALID,
-    URLINVALID
+    URLINVALID,
+    SIZEINVALID
 }
