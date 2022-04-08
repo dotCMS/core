@@ -26,12 +26,12 @@ public class DefaultVanityUrl extends Contentlet implements VanityUrl {
 
     @Override
     public String getSite() {
-        return getStringProperty(VanityUrlContentType.SITE_FIELD_VAR);
+        return getHost();
     }
 
     @Override
     public void setSite(final String site) {
-        setStringProperty(VanityUrlContentType.SITE_FIELD_VAR, site);
+        setHost(site);
     }
 
     @Override

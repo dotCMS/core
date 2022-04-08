@@ -87,7 +87,7 @@ public class VanityUrlFilterTest {
         int action = 301;
         int order = 1;
 
-        Contentlet contentlet1 = filtersUtil.createVanityUrl(title, site, uri,
+        Contentlet contentlet1 = filtersUtil.createVanityUrl(title, defaultHost, uri,
                 forwardTo, action, order, defaultLanguage.getId());
         filtersUtil.publishVanityUrl(contentlet1);
 
@@ -122,7 +122,7 @@ public class VanityUrlFilterTest {
         int action = 301;
         int order = 1;
 
-        Contentlet contentlet1 = filtersUtil.createVanityUrl(title, site, uri,
+        Contentlet contentlet1 = filtersUtil.createVanityUrl(title, defaultHost, uri,
                 forwardTo, action, order, defaultLanguage.getId());
         filtersUtil.publishVanityUrl(contentlet1);
 
@@ -155,7 +155,7 @@ public class VanityUrlFilterTest {
         int action = 200;
         int order = 1;
 
-        Contentlet contentlet1 = filtersUtil.createVanityUrl(title, site, uri,
+        Contentlet contentlet1 = filtersUtil.createVanityUrl(title, defaultHost, uri,
                 forwardTo, action, order, defaultLanguage.getId());
         filtersUtil.publishVanityUrl(contentlet1);
 
@@ -195,7 +195,7 @@ public class VanityUrlFilterTest {
         int action = 200;
         int order = 1;
 
-        Contentlet contentlet1 = filtersUtil.createVanityUrl(title, site, uri,
+        Contentlet contentlet1 = filtersUtil.createVanityUrl(title, defaultHost, uri,
                 forwardTo, action, order, defaultLanguage.getId());
         filtersUtil.publishVanityUrl(contentlet1);
 
@@ -233,7 +233,7 @@ public class VanityUrlFilterTest {
         int action = 301;
         int order = 1;
 
-        Contentlet contentlet1 = filtersUtil.createVanityUrl(title, site, uri,
+        Contentlet contentlet1 = filtersUtil.createVanityUrl(title, defaultHost, uri,
                 forwardTo, action, order, defaultLanguage.getId());
         filtersUtil.publishVanityUrl(contentlet1);
 
@@ -268,7 +268,7 @@ public class VanityUrlFilterTest {
         int action = 302;
         int order = 1;
 
-        Contentlet contentlet1 = filtersUtil.createVanityUrl(title, site, uri,
+        Contentlet contentlet1 = filtersUtil.createVanityUrl(title, defaultHost, uri,
                 forwardTo, action, order, defaultLanguage.getId());
         filtersUtil.publishVanityUrl(contentlet1);
 

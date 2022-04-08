@@ -182,7 +182,7 @@ public class VelocityServletIntegrationTest {
     private void createAndPublishVanityURL(final String forwardURL, final String VANITY_URI)
             throws DotDataException, DotSecurityException {
         final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
-        final Contentlet vanityUrl = FiltersUtil.getInstance().createVanityUrl("test", host.getIdentifier(), VANITY_URI,
+        final Contentlet vanityUrl = FiltersUtil.getInstance().createVanityUrl("test", host, VANITY_URI,
                 forwardURL, 200, 0, defaultLanguage.getId());
 
         FiltersUtil.getInstance().publishVanityUrl(vanityUrl);
