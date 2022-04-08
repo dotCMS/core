@@ -173,7 +173,8 @@ function suggestTagsForSearch(e, searchField, hostInSession) {
 		} else if (e.keyCode === keys.ESCAPE) {
 			clearSuggestTagsForSearch();
 		} else if (tagName.length >= 3) {
-			TagAjax.getSuggestedTag(tagName, selectedHostOrFolderId, showTagsForSearch);
+			debugger;
+			getSuggestedTag(tagName, selectedHostOrFolderId);
 		} else {
 			clearSuggestTagsForSearch();
 		}
@@ -182,9 +183,97 @@ function suggestTagsForSearch(e, searchField, hostInSession) {
 	lastLength = e.target.value.length;
 }
 
+function suggestTagsForContent(e, searchField,  hostOrFolderField, selectedHostOrFolderId) {
+	if (searchField) {
+		contentSearchField = searchField;
+	}
+
+	if(hostOrFolderField){
+		selectedHostOrFolderId = hostOrFolderField.value;
+	}
+
+	tagVelocityVarName = e.target.id;
+
+	if (!tagsContainer || tagsContainer == "") {
+		tagsContainer = document.getElementById("widget_" + tagVelocityVarName);
+	}
+	suggestedDiv = tagVelocityVarName.replace(".", "") + "SuggestedTagsDiv";
+	var inputTags = document.getElementById(tagVelocityVarName).value;
+	inputTags = RTrim(inputTags);
+	inputTags = LTrim(inputTags);
+	var tagName = "";
+	if (inputTags != "") {
+		var arrayTags = inputTags.split(",");
+		if (arrayTags.length >= 1) {
+			tagName = arrayTags[arrayTags.length - 1];
+			tagName = RTrim(tagName);
+			tagName = LTrim(tagName);
+		}
+	}
+
+	if (e.keyCode !== keys.UP_ARROW && e.keyCode !== keys.DOWN_ARROW) {
+		// semicolon
+		if (e.keyCode === 188) {
+			useThisTagForSearch(e);
+		} else if (e.keyCode === keys.ENTER) {
+			var suggestedTagFocus = query(".suggestedTagFocus");
+			if (suggestedTagFocus.length) {
+				suggestedTagFocus[0].click();
+			} else {
+				useThisTagForSearch(e);
+			}
+		} else if (e.keyCode === keys.BACKSPACE && e.target.value.length === 0 && lastLength === 0) {
+			removeLastTag();
+			lastLength = 0;
+		} else if (e.keyCode === keys.ESCAPE) {
+			clearSuggestTagsForSearch();
+		} else if (tagName.length >= 3) {
+			getSuggestedTag(tagName, selectedHostOrFolderId);
+		} else {
+			clearSuggestTagsForSearch();
+		}
+	}
+
+	lastLength = e.target.value.length;
+}
+
+
+ function getSuggestedTag(tagName, selectedHostOrFolderId) {
+	let url =  "/api/v1/tags?name={{tagName}}&siteId={{siteId}}".replaceAll("{{tagName}}",tagName).replaceAll("{{siteId}}",selectedHostOrFolderId);
+	xhrArgs = {
+		url: url,
+		handleAs: "json",
+		sync: false,
+		load: function (data) {
+			if (data !== undefined ) {
+				const tagsArray = [];
+				Object.keys(data).forEach(key => {
+					let raw = data[key];
+					let formatted = {
+						'tagName':raw.label,
+						'label':raw.label,
+						'persona':raw.persona,
+						'siteId':raw.siteId,
+						'siteName':raw.siteName
+					}
+					tagsArray.push(formatted);
+				});
+                showTagsForSearch(tagsArray);
+			} else {
+               console.warn('No data was returned from the endpoint.');
+			}
+		},
+		error: function (error) {
+			console.error(error);
+		}
+	};
+	dojo.xhrGet(xhrArgs);
+}
+
+
 function closeSuggetionBox(e) {
 	setTimeout(function() {
-		if (document.activeElement.parentElement.id != "tagsSuggestedTagsDiv") {
+		if (document.activeElement.parentElement.id !== "tagsSuggestedTagsDiv") {
 			clearSuggestTagsForSearch();
 			e.target.value = "";
 			e.target.blur();
@@ -261,7 +350,7 @@ function showTagsForSearch(result) {
         let tag = null;
         for (let i = 0; i < result.length; ++i) {
             tag = result[i];
-            var tagName = tag.tagName;
+            let tagName = tag.tagName;
             tagName = RTrim(tagName);
             tagName = LTrim(tagName);
             if (tag.persona) {
@@ -273,7 +362,7 @@ function showTagsForSearch(result) {
         }
 
 		if (tagVelocityVarName) {
-			var tagDiv = document.getElementById(suggestedDiv);
+			let tagDiv = document.getElementById(suggestedDiv);
 			tagDiv.innerHTML = personasTags + tags;
 
 			if (dojo.byId(suggestedDiv)) {
