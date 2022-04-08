@@ -135,7 +135,7 @@ public abstract class DotStatefulJob extends DotJob implements StatefulJob {
      * @param jobClass Stateful job class
      */
     protected static void enqueueTrigger(final Map<String, Serializable> nextExecutionData,
-            final Class<? extends StatefulJob> jobClass)
+                                      final Class<? extends StatefulJob> jobClass)
             throws ParseException, SchedulerException, ClassNotFoundException {
             //Reading and writing to the jobDetail while other triggers are using it makes this a critical section.
             //For which we need to synchronize

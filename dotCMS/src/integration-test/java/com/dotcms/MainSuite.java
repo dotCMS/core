@@ -150,6 +150,8 @@ import com.dotmarketing.startup.runonce.Task211103RenameHostNameLabelTest;
 import com.dotmarketing.startup.runonce.Task220203RemoveFolderInodeConstraintTest;
 import com.dotmarketing.startup.runonce.Task220214AddOwnerAndIDateToFolderTableTest;
 import com.dotmarketing.startup.runonce.Task220215MigrateDataFromInodeToFolderTest;
+import com.dotmarketing.startup.runonce.Task220329UpdateDateTimezonesTest;
+import com.dotmarketing.startup.runonce.Task220404RemoveCalendarReminderTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -532,7 +534,9 @@ import org.junit.runners.Suite.SuiteClasses;
         PermissionBitFactoryImplTest.class,
         Task220203RemoveFolderInodeConstraintTest.class,
         Task220214AddOwnerAndIDateToFolderTableTest.class,
-        Task220215MigrateDataFromInodeToFolderTest.class
+        Task220215MigrateDataFromInodeToFolderTest.class,
+        Task220329UpdateDateTimezonesTest.class,
+        Task220404RemoveCalendarReminderTest.class
 })
 public class MainSuite {
 

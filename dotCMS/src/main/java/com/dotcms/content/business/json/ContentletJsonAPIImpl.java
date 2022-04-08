@@ -1,8 +1,6 @@
 package com.dotcms.content.business.json;
 
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.DISABLED_WYSIWYG_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.FOLDER_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.HOST_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.IDENTIFIER_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.INODE_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.LANGUAGEID_KEY;
@@ -27,7 +25,6 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.ColumnField;
-import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.HiddenField;
@@ -37,7 +34,6 @@ import com.dotcms.contenttype.model.field.LineDividerField;
 import com.dotcms.contenttype.model.field.PermissionTabField;
 import com.dotcms.contenttype.model.field.RelationshipsTabField;
 import com.dotcms.contenttype.model.field.TabDividerField;
-import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
@@ -58,7 +54,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
@@ -66,15 +61,12 @@ import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.File;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -141,22 +133,6 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
             throws JsonProcessingException, DotDataException {
 
         final com.dotmarketing.portlets.contentlet.model.Contentlet copy = new com.dotmarketing.portlets.contentlet.model.Contentlet(contentlet);
-
-        final ContentType contentType = copy.getContentType();
-        final ImmutableSet.Builder<com.dotcms.contenttype.model.field.Field> builder = ImmutableSet.builder();
-        Set<Field> categoriesAndTagFields = builder.addAll(contentType.fields(TagField.class))
-                .addAll(contentType.fields(CategoryField.class)).build();
-
-        final Map<String, Object> map = copy.getMap();
-        //A small precaution that guarantees categories and tags will be stored as Lists.
-        categoriesAndTagFields.forEach(field -> {
-            final Object object = map.get(field.variable());
-            if(object instanceof String){
-                final String asString = (String)object;
-                map.put(field.variable(), Arrays.asList(asString.split("\\s*,\\s*")));
-            }
-        });
-
         return ContentletJsonHelper.INSTANCE.get().writeAsString(toImmutable(copy));
     }
 
@@ -183,8 +159,6 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
         builder.disabledWysiwyg(contentlet.getDisabledWysiwyg());
         builder.modUser(contentlet.getModUser());
         builder.modDate(Try.of(() -> contentlet.getModDate().toInstant()).getOrNull());
-        builder.host(contentlet.getHost());
-        builder.folder(contentlet.getFolder());
 
         //These two are definitively mandatory but..
         //internalCheckIn calls "save" twice and the first time it is called these two aren't already set
@@ -279,9 +253,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
         map.put(TITTLE_KEY, immutableContentlet.title());
         map.put(SORT_ORDER_KEY, immutableContentlet.sortOrder());
         map.put(LANGUAGEID_KEY, immutableContentlet.languageId());
-        map.put(HOST_KEY,immutableContentlet.host());
-        map.put(FOLDER_KEY,immutableContentlet.folder());
-        map.put(DISABLED_WYSIWYG_KEY,immutableContentlet.disabledWysiwyg());
+        map.put(DISABLED_WYSIWYG_KEY, immutableContentlet.disabledWysiwyg());
 
         final ContentType contentType = contentTypeAPI.find(contentTypeId);
         final Map<String, Field> fieldsByVarName = contentType.fields().stream()
@@ -297,25 +269,17 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
             }
 
             Object value;
-            if (field instanceof ConstantField) {
-                value = field.values();
+
+            if (isSet(identifier) && isFileAsset(contentType, field)) {
+                value = identifierAPI.find(identifier).getAssetName();
             } else {
-                if (isSet(identifier) && isFileAsset(contentType, field)) {
-                    value = identifierAPI.find(identifier).getAssetName();
+                if (field instanceof BinaryField) {
+                    value = getBinary(field, inode).orElse(null);
                 } else {
-                    if (field instanceof BinaryField) {
-                        value = getBinary(field, inode).orElse(null);
-                    } else {
-                        value = getValue(contentletFields, field);
-                    }
+                    value = getValue(contentletFields, field);
                 }
             }
-            //We're returning Tags as a comma separated string for backwards compatibility
-            //This is expected to be removed in the near future
-            if(field instanceof TagField && value instanceof Collection){
-                final Collection<String>tags = (Collection)value;
-                value = String.join(StringPool.COMMA,tags);
-            }
+
             map.put(field.variable(), value);
         }
 
@@ -328,7 +292,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      * @return
      */
     private boolean isAllowedSystemField(final Field field){
-        return (field instanceof BinaryField || field instanceof HiddenField || field instanceof CategoryField || field instanceof TagField || field instanceof ConstantField);
+        return (field instanceof BinaryField || field instanceof HiddenField);
     }
 
     /**

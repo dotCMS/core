@@ -2,10 +2,8 @@ package com.dotmarketing.business;
 
 import com.dotcms.config.DotInitializer;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.org.directwebremoting.proxy.ScriptProxy;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -20,10 +18,9 @@ import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-
 import io.vavr.control.Try;
+
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;

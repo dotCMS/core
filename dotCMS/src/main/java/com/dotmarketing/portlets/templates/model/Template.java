@@ -31,6 +31,8 @@ import com.liferay.portal.model.User;
 /** @author Hibernate CodeGenerator */
 public class Template extends WebAsset implements Serializable, Comparable, ManifestItem {
 
+	public static final String SYSTEM_TEMPLATE = "SYSTEM_TEMPLATE";
+
 	private static final long serialVersionUID = 1L;
 
 	public static String ANONYMOUS_PREFIX = "anonymous_layout_";
