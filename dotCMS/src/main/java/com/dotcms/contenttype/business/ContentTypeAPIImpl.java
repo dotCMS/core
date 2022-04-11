@@ -247,7 +247,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
     final ContentType contentType    = builder.build();
     final ContentType newContentType = this.save(contentType);
-    final List<Field> currentFields  = sourceContentType.fields();
+    final List<Field> currentFields  = APILocator.getContentTypeFieldAPI().byContentTypeId(sourceContentType.id());
     final Map<String, Field> baseFieldMap = newContentType.fieldMap();
 
     Logger.debug(this, ()->"Saving the fields for the the content type: " + copyContentTypeBean.getName()
@@ -255,21 +255,31 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
     for (final Field currentField : currentFields) {
 
-      final Field newField = !baseFieldMap.containsKey(currentField.variable())?
-                FieldBuilder.builder(currentField).contentTypeId(newContentType.id()).id(null).build():
-                baseFieldMap.get(currentField.variable());
+        if (!baseFieldMap.containsKey(currentField.variable())) {
 
-      final Field savedField = APILocator.getContentTypeFieldAPI().save(newField, user);
+            final Field newField = APILocator.getContentTypeFieldAPI()
+                    .save(FieldBuilder.builder(currentField).sortOrder(currentField.sortOrder()).contentTypeId(newContentType.id()).id(null).build(), user);
 
-        final List<FieldVariable> currentFieldVariables = currentField.fieldVariables();
-        if (UtilMethods.isSet(currentFields)) {
-          for (final FieldVariable fieldVariable : currentFieldVariables) {
+            final List<FieldVariable> currentFieldVariables = currentField.fieldVariables();
+            if (UtilMethods.isSet(currentFieldVariables)) {
+              for (final FieldVariable fieldVariable : currentFieldVariables) {
 
-            final FieldVariable newFieldVariable = ImmutableFieldVariable.builder().from(fieldVariable).
-                    fieldId(savedField.id()).id(null).userId(user.getUserId()).build();
+                APILocator.getContentTypeFieldAPI().save(ImmutableFieldVariable.builder().from(fieldVariable).
+                        fieldId(newField.id()).id(null).userId(user.getUserId()).build(), user);
+              }
+            }
+        } else {
 
-            APILocator.getContentTypeFieldAPI().save(newFieldVariable, user);
-          }
+            final Field newField = baseFieldMap.get(currentField.variable());
+
+            final List<FieldVariable> currentFieldVariables = currentField.fieldVariables();
+            if (UtilMethods.isSet(currentFieldVariables)) {
+              for (final FieldVariable fieldVariable : currentFieldVariables) {
+
+                APILocator.getContentTypeFieldAPI().save(ImmutableFieldVariable.builder().from(fieldVariable).
+                        fieldId(newField.id()).id(null).userId(user.getUserId()).build(), user);
+              }
+            }
         }
     }
 
