@@ -1151,7 +1151,8 @@
                 padding: 0;
             }
             dot-key-value .key-value-table-wc__key,
-            dot-key-value .key-value-table-wc__value {
+            dot-key-value .key-value-table-wc__value,
+            dot-key-value .key-value-table-wc__action {
                 padding-left: 0.5rem;
             }
             dot-key-value key-value-form label {
@@ -1173,7 +1174,7 @@
                 border: solid 1px var(--color-main);
                 color: var(--color-main);
             }
-            dot-key-value key-value-form button[disabled] {
+            dot-key-value button[disabled] {
                 background: #f3f3f3;
                 border: 1px solid #b3b1b8;
                 color: #b3b1b8;
