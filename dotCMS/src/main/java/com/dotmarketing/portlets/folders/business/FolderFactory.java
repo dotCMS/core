@@ -23,7 +23,15 @@ import java.util.TimeZone;
 public abstract class FolderFactory {
 
 
-	abstract void delete(Folder f) throws DotDataException;
+	/**
+	 * Deletes a folder.
+	 * The folder reference is not explicitly deleted from the identifier table because there is
+	 * a db trigger that executes the delete operation once the folder table is cleaned up.
+	 * Only the Identifier Cache is flushed.
+	 * @param folder
+	 * @throws DotDataException
+	 */
+	abstract void delete(final Folder folder) throws DotDataException;
 
 	abstract Folder find(String folderInode) throws  DotDataException;
 
