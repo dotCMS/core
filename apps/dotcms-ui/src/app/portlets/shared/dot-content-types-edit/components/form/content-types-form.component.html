@@ -66,11 +66,11 @@
             [workflows]="workflowsSelected$ | async"
         ></dot-workflows-actions-selector-field>
     </div>
-    <span id="field-workflow-hint" class="p-field-hint" *ngIf="form.get('workflows').disabled">{{
+    <span id="field-workflow-hint" class="p-field-hint form-workflow-community-message" *ngIf="form.get('workflows').disabled">{{
         'contenttypes.form.hint.error.only.default.scheme.available.in.Community' | dm
     }}</span>
     <div class="p-formgrid grid">
-        <div class="field p-col">
+        <div class="field col">
             <label for="content-type-form-publish-date-field" class="form__label">{{
                 'contenttypes.form.label.publish.date.field' | dm
             }}</label>
@@ -85,7 +85,7 @@
                 [tabindex]="5"
             ></p-dropdown>
         </div>
-        <div class="field p-col">
+        <div class="field col">
             <label for="content-type-form-expire-date-field" class="form__label">{{
                 'contenttypes.form.field.expire.date.field' | dm
             }}</label>

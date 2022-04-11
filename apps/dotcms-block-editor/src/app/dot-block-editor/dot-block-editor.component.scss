@@ -30,7 +30,7 @@
             display: block;
             min-height: 100%;
             outline: none;
-            padding: $spacing-5 $spacing-8;
+            padding: $spacing-8;
             font: 14px/1.3;
 
             ul,
@@ -114,9 +114,4 @@
             }
         }
     }
-}
-
-.highlighted {
-    background: #accef7;
-    border-radius: $border-radius;
 }

@@ -1,5 +1,5 @@
 <div (mousedown)="onMouseDownHandler($event)" *ngIf="items.length; else emptyBlock">
-<h3>{{title}}</h3>
+    <h3>{{ title }}</h3>
 
     <dotcms-suggestion-list class="suggestion-list-container" #list>
         <dotcms-suggestions-list-item

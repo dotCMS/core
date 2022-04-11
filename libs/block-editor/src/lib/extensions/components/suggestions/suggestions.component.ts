@@ -43,9 +43,9 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
 
     @Input() items: DotMenuItem[] = [];
     @Input() title = 'Select a block';
+    @Input() isOpen = false;
 
-    mouseMove = true;
-
+    private mouseMove = true;
     private dotLang: Languages;
 
     @HostListener('mousemove', ['$event'])
@@ -101,7 +101,11 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
      * @memberof SuggestionsComponent
      */
     execCommand() {
-        this.list.execCommand();
+        if (this.items.length) {
+            this.list.execCommand();
+        } else {
+            this.handleBackButton(new MouseEvent('click'));
+        }
     }
 
     /**
