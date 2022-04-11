@@ -3,6 +3,7 @@
  */
 package com.dotmarketing.business;
 
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.util.Logger;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -145,7 +146,8 @@ public class LayoutAPIImpl implements LayoutAPI {
 	@Override
 	public void setPortletIdsToLayout(Layout layout, List<String> portletIds) throws DotDataException {
 		layoutFactory.setPortletsToLayout(layout, portletIds);
-	    APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
+	    APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload(
+				CollectionsUtils.list(layout, portletIds)));
 	}
 
 	@Override
