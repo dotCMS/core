@@ -66,6 +66,7 @@ export class DotTemplateThumbnailFieldMockComponent implements ControlValueAcces
         }
     ]
 })
+
 export class DotThemeSelectorDropdownMockComponent implements ControlValueAccessor {
     propagateChange = (_: any) => {
         //
@@ -231,13 +232,12 @@ describe('DotTemplatePropsComponent', () => {
 
         it('should be valid when required fields are set', () => {
             component.form.get('title').setValue('Hello World');
-            component.form.get('theme').setValue('223');
 
             expect(component.form.valid).toBe(true);
             expect(component.form.value).toEqual({
                 title: 'Hello World',
                 friendlyName: '',
-                theme: '223',
+                theme: '',
                 image: ''
             });
         });
@@ -249,7 +249,6 @@ describe('DotTemplatePropsComponent', () => {
             expect(dialog.componentInstance.saveButtonDisabled).toBe(true);
 
             component.form.get('title').setValue('Hello World');
-            component.form.get('theme').setValue('123');
             fixture.detectChanges();
             expect(dialog.componentInstance.saveButtonDisabled).toBe(false);
 
