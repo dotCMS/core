@@ -147,7 +147,7 @@ public class LayoutAPIImpl implements LayoutAPI {
 	public void setPortletIdsToLayout(Layout layout, List<String> portletIds) throws DotDataException {
 		layoutFactory.setPortletsToLayout(layout, portletIds);
 	    APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload(
-				CollectionsUtils.list(layout, portletIds)));
+				CollectionsUtils.map("toolgroup", layout, "menuItems", portletIds.toArray())));
 	}
 
 	@Override
