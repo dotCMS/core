@@ -55,24 +55,26 @@ export class KeyValueTableComponent {
     // D&D - BEGIN
 
     private bindDraggableEvents() {
-        const rows = document.querySelectorAll('key-value-table tr');
-        rows.forEach((row) => {
-            row.setAttribute('draggable', 'true');
+        if (!this.disabled) {
+            const rows = document.querySelectorAll('key-value-table tr');
+            rows.forEach((row) => {
+                row.setAttribute('draggable', 'true');
 
-            row.removeEventListener('dragstart', this.handleDragStart.bind(this), false);
-            row.removeEventListener('dragenter', this.handleDragEnter, false);
-            row.removeEventListener('dragover', this.handleDragOver.bind(this), false);
-            row.removeEventListener('dragleave', this.handleDragLeave, false);
-            row.removeEventListener('drop', this.handleDrop.bind(this), false);
-            row.removeEventListener('dragend', this.handleDragEnd.bind(this), false);
+                row.removeEventListener('dragstart', this.handleDragStart.bind(this), false);
+                row.removeEventListener('dragenter', this.handleDragEnter, false);
+                row.removeEventListener('dragover', this.handleDragOver.bind(this), false);
+                row.removeEventListener('dragleave', this.handleDragLeave, false);
+                row.removeEventListener('drop', this.handleDrop.bind(this), false);
+                row.removeEventListener('dragend', this.handleDragEnd.bind(this), false);
 
-            row.addEventListener('dragstart', this.handleDragStart.bind(this), false);
-            row.addEventListener('dragenter', this.handleDragEnter, false);
-            row.addEventListener('dragover', this.handleDragOver.bind(this), false);
-            row.addEventListener('dragleave', this.handleDragLeave, false);
-            row.addEventListener('drop', this.handleDrop.bind(this), false);
-            row.addEventListener('dragend', this.handleDragEnd.bind(this), false);
-        });
+                row.addEventListener('dragstart', this.handleDragStart.bind(this), false);
+                row.addEventListener('dragenter', this.handleDragEnter, false);
+                row.addEventListener('dragover', this.handleDragOver.bind(this), false);
+                row.addEventListener('dragleave', this.handleDragLeave, false);
+                row.addEventListener('drop', this.handleDrop.bind(this), false);
+                row.addEventListener('dragend', this.handleDragEnd.bind(this), false);
+            });
+        }
     }
 
     private removeElementById(elemId) {

@@ -320,6 +320,33 @@ describe('dot-key-value', () => {
             });
         });
 
+        describe('duplicatedKeyMessage', () => {
+            it('should show default', async () => {
+                element.setProperty('value', 'hello|world,hola|mundo');
+                await page.waitForChanges();
+
+                const form = await getForm();
+                form.triggerEvent('add', {
+                    detail: {
+                        key: 'hello',
+                        value: 'hello dupped'
+                    }
+                });
+                await page.waitForChanges();
+
+                const error = await dotTestUtil.getErrorMessage(page);
+                expect(error.textContent).toBe('The key already exist');
+            });
+
+            it('should not show', async () => {
+                element.setProperty('value', 'key|value');
+                await page.waitForChanges();
+
+                const error = await dotTestUtil.getErrorMessage(page);
+                expect(error).toBeNull();
+            });
+        });
+
         describe('value', () => {
             it('should set items', async () => {
                 element.setProperty('value', 'hello|world,hola|mundo');

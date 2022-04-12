@@ -577,6 +577,14 @@ export namespace Components {
          */
         "disabled": boolean;
         /**
+          * (optional) Text that will be shown when required is set and condition is not met
+         */
+        "duplicatedKeyMessage": string;
+        /**
+          * (optional) The string containing the value to be parsed for whitelist key/value
+         */
+        "errorExistingKey": boolean;
+        /**
           * (optional) Label for the add button in the key-value-form
          */
         "formAddButtonLabel": string;
@@ -632,10 +640,6 @@ export namespace Components {
           * Value of the field
          */
         "value": string;
-        /**
-          * (optional) The string containing the value to be parsed for whitelist key/value
-         */
-        "whiteList": string;
         /**
           * (optional) The string to use in the empty option of whitelist dropdown key/value item
          */
@@ -1936,6 +1940,14 @@ declare namespace LocalJSX {
          */
         "disabled"?: boolean;
         /**
+          * (optional) Text that will be shown when required is set and condition is not met
+         */
+        "duplicatedKeyMessage"?: string;
+        /**
+          * (optional) The string containing the value to be parsed for whitelist key/value
+         */
+        "errorExistingKey"?: boolean;
+        /**
           * (optional) Label for the add button in the key-value-form
          */
         "formAddButtonLabel"?: string;
@@ -1989,10 +2001,6 @@ declare namespace LocalJSX {
           * Value of the field
          */
         "value"?: string;
-        /**
-          * (optional) The string containing the value to be parsed for whitelist key/value
-         */
-        "whiteList"?: string;
         /**
           * (optional) The string to use in the empty option of whitelist dropdown key/value item
          */

@@ -10,6 +10,8 @@
 | Property                    | Attribute                       | Description                                                                           | Type      | Default                    |
 | --------------------------- | ------------------------------- | ------------------------------------------------------------------------------------- | --------- | -------------------------- |
 | `disabled`                  | `disabled`                      | (optional) Disables field's interaction                                               | `boolean` | `false`                    |
+| `duplicatedKeyMessage`      | `duplicated-key-message`        | (optional) Text that will be shown when required is set and condition is not met      | `string`  | `'The key already exist'`  |
+| `errorExistingKey`          | `error-existing-key`            | (optional) The string containing the value to be parsed for whitelist key/value       | `boolean` | `undefined`                |
 | `formAddButtonLabel`        | `form-add-button-label`         | (optional) Label for the add button in the key-value-form                             | `string`  | `undefined`                |
 | `formKeyLabel`              | `form-key-label`                | (optional) The string to use in the key label in the key-value-form                   | `string`  | `undefined`                |
 | `formKeyPlaceholder`        | `form-key-placeholder`          | (optional) Placeholder for the key input text in the key-value-form                   | `string`  | `undefined`                |
@@ -23,7 +25,6 @@
 | `requiredMessage`           | `required-message`              | (optional) Text that will be shown when required is set and condition is not met      | `string`  | `'This field is required'` |
 | `uniqueKeys`                | `unique-keys`                   | (optional) Allows unique keys only                                                    | `boolean` | `false`                    |
 | `value`                     | `value`                         | Value of the field                                                                    | `string`  | `''`                       |
-| `whiteList`                 | `white-list`                    | (optional) The string containing the value to be parsed for whitelist key/value       | `string`  | `undefined`                |
 | `whiteListEmptyOptionLabel` | `white-list-empty-option-label` | (optional) The string to use in the empty option of whitelist dropdown key/value item | `string`  | `undefined`                |
 
 

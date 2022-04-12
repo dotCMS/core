@@ -79,6 +79,12 @@ export class DotKeyValueComponent {
     })
     requiredMessage = 'This field is required';
 
+    /** (optional) Text that will be shown when required is set and condition is not met */
+    @Prop({
+        reflect: true
+    })
+    duplicatedKeyMessage = 'The key already exist';
+
     /** (optional) Disables field's interaction */
     @Prop({
         reflect: true
@@ -137,6 +143,7 @@ export class DotKeyValueComponent {
     @Prop({
         reflect: true
     })
+    errorExistingKey: boolean;
     whiteList: string;
 
     @State()
@@ -173,6 +180,7 @@ export class DotKeyValueComponent {
         this.items = this.items.filter(
             (_item: DotKeyValueField, index: number) => index !== event.detail
         );
+        this.errorExistingKey = false;
         this.refreshStatus();
         this.emitChanges();
     }
@@ -206,11 +214,14 @@ export class DotKeyValueComponent {
 
     @Listen('add')
     addItemHandler({ detail }: CustomEvent<DotKeyValueField>): void {
-        const itemExists = this.items.some((item: DotKeyValueField) => item.key === detail.key);
+        this.refreshStatus();
 
-        if ((this.uniqueKeys && !itemExists) || !this.uniqueKeys) {
+        this.errorExistingKey = this.items.some(
+            (item: DotKeyValueField) => item.key === detail.key
+        );
+
+        if ((this.uniqueKeys && !this.errorExistingKey) || !this.uniqueKeys) {
             this.items = [...this.items, detail];
-            this.refreshStatus();
             this.emitChanges();
         }
     }
@@ -222,7 +233,11 @@ export class DotKeyValueComponent {
     }
 
     render() {
-        const classes = getClassNames(this.status, this.isValid(), this.required);
+        const classes = getClassNames(
+            this.status,
+            this.isValid() && !this.errorExistingKey,
+            this.required
+        );
 
         return (
             <Host class={{ ...classes }}>
@@ -289,7 +304,15 @@ export class DotKeyValueComponent {
     }
 
     private getErrorMessage(): string {
-        return this.isValid() ? '' : this.requiredMessage;
+        let errorMsg = '';
+
+        if (this.errorExistingKey) {
+            errorMsg = this.duplicatedKeyMessage;
+        } else if (!this.isValid()) {
+            this.requiredMessage;
+        }
+
+        return errorMsg;
     }
 
     private refreshStatus(): void {
