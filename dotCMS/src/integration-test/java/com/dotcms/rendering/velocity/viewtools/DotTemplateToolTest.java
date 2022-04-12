@@ -189,7 +189,7 @@ public class DotTemplateToolTest {
 
     /**
      * Method to test: {@link DotTemplateTool#theme(String, String)}
-     * When: Call the method null
+     * When: Call the method with null argument
      * Should: Return the system theme data
      *
      * @throws DotDataException
