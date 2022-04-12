@@ -55,6 +55,10 @@ public class MockSessionRequest extends HttpServletRequestWrapper implements Moc
 		                    : null;
 
 	}
-	
+
+	public HttpSession setSession(final HttpSession session) {
+		this.session = session;
+		return this.session;
+	}
  
 }

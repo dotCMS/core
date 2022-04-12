@@ -132,3 +132,4 @@ This maintenance release includes the following code fixes:
 69. https://github.com/dotCMS/core/issues/21617 : BinaryMap still hits fs #21617
 70. https://github.com/dotCMS/core/issues/21658 : [SASS] : Modification to .SCSS file is not refreshing compiled CSS file. #21658
 71. https://github.com/dotCMS/core/issues/21811 : Limit of 250 Widgets and Forms in Content Selector Popup #21811
+72. https://github.com/dotCMS/core/issues/21249 : [Content] : Problems editing pages for Users with both FE and BE access #21249
