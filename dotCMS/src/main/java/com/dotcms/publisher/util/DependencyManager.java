@@ -847,6 +847,7 @@ public class DependencyManager {
 			final FolderAPI folderAPI = APILocator.getFolderAPI();
 
 			for (final String id : templatesSet) {
+				Logger.info(this.getClass(),"Getting Template Dependencies for Template: " + id);
 				final Template workingTemplate = APILocator.getTemplateAPI().findWorkingTemplate(id, user, false);
 				final Template liveTemplate = APILocator.getTemplateAPI().findLiveTemplate(id, user, false);
 
