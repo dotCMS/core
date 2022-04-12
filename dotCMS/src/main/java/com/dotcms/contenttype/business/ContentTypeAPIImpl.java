@@ -258,11 +258,16 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
     for (final Field sourceField : sourceFields) {
 
-      Field newField = lowerNewFieldMap.get(sourceField.variable().toLowerCase());
-      if (null == newField) {
+        Field newField = lowerNewFieldMap.get(sourceField.variable().toLowerCase());
+        if (null == newField) {
 
             newField = APILocator.getContentTypeFieldAPI()
                     .save(FieldBuilder.builder(sourceField).sortOrder(sourceField.sortOrder()).contentTypeId(newContentType.id()).id(null).build(), user);
+        } else {
+
+            // if contains we just need to sort based on the source order
+          APILocator.getContentTypeFieldAPI()
+                  .save(FieldBuilder.builder(newField).sortOrder(sourceField.sortOrder()).build(), user);
         }
 
         final List<FieldVariable> currentFieldVariables = sourceField.fieldVariables();
