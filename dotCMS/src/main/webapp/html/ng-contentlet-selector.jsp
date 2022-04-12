@@ -52,9 +52,9 @@
     String baseTypeToAdd = request.getParameter("add");
 
     if (BaseContentType.WIDGET.name().equalsIgnoreCase(baseTypeToAdd)) {
-        contentTypes = APILocator.getContentTypeAPI(user).findByBaseType(BaseContentType.WIDGET, "name", 250,0);
+        contentTypes = APILocator.getContentTypeAPI(user).findByBaseType(BaseContentType.WIDGET, "name", -1,0);
     } else if (BaseContentType.FORM.name().equalsIgnoreCase(baseTypeToAdd)) {
-        contentTypes = APILocator.getContentTypeAPI(user).findByBaseType(BaseContentType.FORM, "name", 250,0);
+        contentTypes = APILocator.getContentTypeAPI(user).findByBaseType(BaseContentType.FORM, "name", -1,0);
     } else {
         contentTypes = APILocator.getContainerAPI().getContentTypesInContainer(user, container);
     }
