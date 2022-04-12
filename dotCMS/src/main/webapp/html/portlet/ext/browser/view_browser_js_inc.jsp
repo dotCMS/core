@@ -1329,14 +1329,15 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
     function moveFolder (objId, parentId, referer) {
         BrowserAjax.moveFolder(objId, parentId, moveFolderCallback);
+        setTimeout('reloadContent()',500);
     }
 
     function moveFolderCallback (response) {
-        reloadContent();
         if(response == '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Folder-moved")) %>'){
             BrowserAjax.getTree(null, initializeTree);
             showDotCMSSystemMessage(response);
         } else {
+            reloadContent ();
             showDotCMSErrorMessage(response);
         }
     }
