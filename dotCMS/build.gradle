@@ -202,6 +202,7 @@ else {
 
 
 
+def eeType = dotcmsReleaseVersion == "master" ? '-SNAPSHOT' : ''
 
 dependencies {
 
@@ -219,10 +220,10 @@ dependencies {
 
     /*****  Felix libs need to be placed in the WEB-INF/felix/bundle directory. This was previously handled using a pre-build copy task.  *****/
     felix group: 'org.apache.felix', name: 'org.apache.felix.fileinstall', version: '3.6.4'
-    felix (group: 'org.apache.felix', name: 'org.apache.felix.configadmin', version: '1.9.2') {
+    felix(group: 'org.apache.felix', name: 'org.apache.felix.configadmin', version: '1.9.2') {
         transitive = false
     }
-    felix (group: 'org.osgi', name: 'org.osgi.compendium', version: '4.3.1') {
+    felix(group: 'org.osgi', name: 'org.osgi.compendium', version: '4.3.1') {
         transitive = false
     }
     felix(group: 'org.apache.tika', name: 'tika-core', version: '1.19') {
@@ -252,8 +253,10 @@ dependencies {
     //individualTestCompile sourceSets.test.output
     //integrationTestCompile sourceSets.test.output
 
-    if (project.gradle.startParameter.taskNames.contains('deployWarTomcatDev') || project.gradle.startParameter.taskNames.contains('testDev')) {
-        configurations.compile.exclude group: 'com.dotcms.enterprise', module: 'ee'
+
+    if (!(project.gradle.startParameter.taskNames.contains('deployWarTomcatDev') || project.gradle.startParameter.taskNames.contains('testDev'))) {
+
+        implementation group: 'com.dotcms.enterprise', name: 'ee', version: dotcmsReleaseVersion + eeType, changing: true
     }
 }
 
@@ -269,7 +272,7 @@ import java.text.SimpleDateFormat
 apply from: "$rootDir/dependencies.gradle"
 
 
-
+def enterpriseSrcFolder = file("$enterpriseProjectHome/src/main/java")
 idea {
 
     module {
@@ -793,14 +796,6 @@ task deployWarTomcatBackup(type: DeployWarTomcatTask){
 }
 
 
-//Executes deployWarTomcat task compiling tests as well
-task deployWarTomcatTests(type: DeployWarTomcatTask){
-    dependsOn 'war', 'clonePullTomcat', 'undeployWarTomcat'
-    tomcatPath = tomcatInstallLocation
-}
-deployWarTomcatTests.group='dotCMS Development'
-deployWarTomcatTests.description='Same as deployWarTomcat but also includes the junit tests.'
-
 //Executes deployWarTomcat task from dist version
 task deployWarTomcatDist(type: DeployWarTomcatTask) {
     group='dotCMS Util'
@@ -809,8 +804,6 @@ task deployWarTomcatDist(type: DeployWarTomcatTask) {
     dependsOn 'war'
     tomcatPath = tomcatDistBase
 }
-deployWarTomcatDist.group='dotCMS Util'
-deployWarTomcatDist.description='Same as deployWarTomcat but ran inside the Distribution. (Useful for development)'
 
 //Same as deployWarTomcat but will use the no obfuscated version of the enterprise jars.
 //(Useful for development)

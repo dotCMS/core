@@ -3,7 +3,6 @@ println( "loading dependencies")
 println( "loading dependencies")
 dependencies {
 
-    def eeType = dotcmsReleaseVersion == "master" ? '-SNAPSHOT' : ''
     def immutablesVersion = "2.9.0"
     def byteBuddyVersion = "1.12.6"
     annotationProcessor "org.immutables:value:$immutablesVersion" // <--- this is important
@@ -12,12 +11,6 @@ dependencies {
         because 'undated for security'
     }
 
-    if (!file("$enterpriseProjectHome/build.gradle").exists()) {
-        println("Using enterprise jar version:"+dotcmsReleaseVersion + eeType)
-        implementation group: 'com.dotcms.enterprise', name: 'ee', version: dotcmsReleaseVersion + eeType, changing: true
-    } else {
-        println("Using enterprise module source")
-    }
 
     implementation group: 'com.sun.mail', name: 'jakarta.mail', version: '1.6.7'
 
