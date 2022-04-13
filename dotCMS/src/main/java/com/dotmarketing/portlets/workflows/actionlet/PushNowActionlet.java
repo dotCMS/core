@@ -151,7 +151,7 @@ public class PushNowActionlet extends WorkFlowActionlet {
             identifiers.add(contentlet.getIdentifier());
             
             if(pushRemove) {
-                final Bundle bundle = new Bundle("unpubish", null, nowDate, user.getUserId());
+                final Bundle bundle = new Bundle(null, null, nowDate, user.getUserId());
                 this.bundleAPI.saveBundle(bundle, finalEnvs);
                 this.publisherAPI.addContentsToUnpublish(identifiers, bundle.getId(), nowDate, user);
                 return;
