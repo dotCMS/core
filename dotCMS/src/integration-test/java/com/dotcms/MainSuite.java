@@ -152,6 +152,7 @@ import com.dotmarketing.startup.runonce.Task220215MigrateDataFromInodeToFolderTe
 import com.dotmarketing.startup.runonce.Task220330ChangeVanityURLSiteFieldTypeTest;
 import com.dotmarketing.startup.runonce.Task220331UpdateDateTimezonesTest;
 import com.dotmarketing.startup.runonce.Task220404RemoveCalendarReminderTest;
+import com.dotmarketing.startup.runonce.Task220413IncreasePublishedPushedAssetIdColTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -533,7 +534,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task220215MigrateDataFromInodeToFolderTest.class,
         Task220330ChangeVanityURLSiteFieldTypeTest.class,
         Task220331UpdateDateTimezonesTest.class,
-        Task220404RemoveCalendarReminderTest.class
+        Task220404RemoveCalendarReminderTest.class,
+        Task220413IncreasePublishedPushedAssetIdColTest.class
 })
 public class MainSuite {
 
