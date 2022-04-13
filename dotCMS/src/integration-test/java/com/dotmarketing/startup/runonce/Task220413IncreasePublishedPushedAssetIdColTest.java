@@ -12,7 +12,6 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.UUID;
 
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class Task220413IncreasePublishedPushedAssetIdColTest {
@@ -31,18 +30,10 @@ public class Task220413IncreasePublishedPushedAssetIdColTest {
      *
      * @throws DotDataException
      */
-    @Test
+    @Test(expected = DotDataException.class)
     public void test_upgradeTask_noCapacity() throws DotDataException {
         rollbackToOriginal();
-
-        try {
-           insertPublishedAsset(ASSET_ID);
-        } catch (DotDataException e) {
-            assertNotNull(e);
-            return;
-        }
-
-        Assert.fail();
+        insertPublishedAsset(ASSET_ID);
     }
 
     /**
