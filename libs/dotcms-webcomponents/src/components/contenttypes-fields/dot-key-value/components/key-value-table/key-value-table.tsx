@@ -177,16 +177,21 @@ export class KeyValueTableComponent {
                 <td class="key-value-table-wc__key">{item.key}</td>
                 <td class="key-value-table-wc__value">{item.value}</td>
                 <td class="key-value-table-wc__action">
-                    <button
-                        aria-label={label}
-                        disabled={this.disabled || null}
-                        onClick={() => this.onDelete(index)}
-                        class="dot-key-value__delete-button"
-                    >
-                        {this.buttonLabel}
-                    </button>
+                    {!this.disabled ? this.getDeleteButton(label, index) : ''}
                 </td>
             </tr>
+        );
+    }
+
+    private getDeleteButton(label: string, index: number): JSX.Element {
+        return (
+            <button
+                aria-label={label}
+                onClick={() => this.onDelete(index)}
+                class="dot-key-value__delete-button"
+            >
+                {this.buttonLabel}
+            </button>
         );
     }
 

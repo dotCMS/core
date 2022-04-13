@@ -100,20 +100,20 @@ describe('key-value-table', () => {
                 await page.waitForChanges();
             });
 
-            it('set disable button', async () => {
+            it('hide delete button', async () => {
                 element.setProperty('disabled', true);
                 await page.waitForChanges();
 
                 const button = await getButton();
-                expect(button.getAttribute('disabled')).not.toBeNull();
+                expect(button).toBeNull();
             });
 
-            it('should not set disabled button', async () => {
+            it('should not hide delete button', async () => {
                 element.setProperty('disabled', false);
                 await page.waitForChanges();
 
                 const button = await getButton();
-                expect(button.getAttribute('disabled')).toBeNull();
+                expect(button).toBeDefined();
             });
         });
 

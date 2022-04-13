@@ -83,7 +83,7 @@ export class DotKeyValueComponent {
     @Prop({
         reflect: true
     })
-    duplicatedKeyMessage = 'The key already exist';
+    duplicatedKeyMessage = 'The key already exists';
 
     /** (optional) Disables field's interaction */
     @Prop({
@@ -143,8 +143,9 @@ export class DotKeyValueComponent {
     @Prop({
         reflect: true
     })
-    errorExistingKey: boolean;
     whiteList: string;
+
+    errorExistingKey: boolean;
 
     @State()
     status: DotFieldStatus;
@@ -248,17 +249,7 @@ export class DotKeyValueComponent {
                     required={this.required}
                     name={this.name}
                 >
-                    <key-value-form
-                        onLostFocus={this.blurHandler.bind(this)}
-                        add-button-label={this.formAddButtonLabel}
-                        disabled={this.isDisabled()}
-                        empty-dropdown-option-label={this.whiteListEmptyOptionLabel}
-                        key-label={this.formKeyLabel}
-                        key-placeholder={this.formKeyPlaceholder}
-                        value-label={this.formValueLabel}
-                        value-placeholder={this.formValuePlaceholder}
-                        white-list={this.whiteList}
-                    />
+                    {!this.disabled ? this.getKeyValueForm() : ''}
                     <key-value-table
                         onClick={(e: MouseEvent) => {
                             e.preventDefault();
@@ -271,6 +262,22 @@ export class DotKeyValueComponent {
                 {getTagHint(this.hint)}
                 {getTagError(this.showErrorMessage(), this.getErrorMessage())}
             </Host>
+        );
+    }
+
+    private getKeyValueForm(): JSX.Element {
+        return (
+            <key-value-form
+                onLostFocus={this.blurHandler.bind(this)}
+                add-button-label={this.formAddButtonLabel}
+                disabled={this.isDisabled()}
+                empty-dropdown-option-label={this.whiteListEmptyOptionLabel}
+                key-label={this.formKeyLabel}
+                key-placeholder={this.formKeyPlaceholder}
+                value-label={this.formValueLabel}
+                value-placeholder={this.formValuePlaceholder}
+                white-list={this.whiteList}
+            />
         );
     }
 

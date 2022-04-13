@@ -158,14 +158,14 @@ describe('dot-key-value', () => {
         });
 
         describe('disabled', () => {
-            it('should set disabled to child', async () => {
+            it('should set disabled to table and hide form', async () => {
                 element.setProperty('disabled', true);
                 await page.waitForChanges();
 
                 const form = await getForm();
                 const list = await getList();
 
-                expect(form.getAttribute('disabled')).toBeDefined();
+                expect(form).toBeNull();
                 expect(list.getAttribute('disabled')).toBeDefined();
             });
 
@@ -173,7 +173,7 @@ describe('dot-key-value', () => {
                 const form = await getForm();
                 const list = await getList();
 
-                expect(form.getAttribute('disabled')).toBeNull();
+                expect(form).toBeDefined();
                 expect(list.getAttribute('disabled')).toBeNull();
             });
         });
