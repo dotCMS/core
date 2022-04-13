@@ -219,7 +219,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
     if (LicenseManager.getInstance().isCommunity()) {
 
-      throw new InvalidLicenseException("An enterprise license is required to copy content type");
+        throw new InvalidLicenseException("An enterprise license is required to copy content type");
     }
 
     final ContentType sourceContentType = copyContentTypeBean.getSourceContentType();
