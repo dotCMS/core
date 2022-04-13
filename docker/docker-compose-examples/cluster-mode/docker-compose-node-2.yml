@@ -1,9 +1,9 @@
 version: '3.5'
 
 networks:
-  dotcms-cluster-mode_db_net:
+  cluster-mode_db_net:
     external: true
-  dotcms-cluster-mode_es_net:
+  cluster-mode_es_net:
     external: true
 
 volumes:
