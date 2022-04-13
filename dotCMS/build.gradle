@@ -760,19 +760,6 @@ task zip(type: Zip) {
 
 // Delete ROOT under tomcat9/webapps
 task undeployWarTomcat(type: Delete) {
-    delete tomcatInstallLocation + webAppRootFolder
-    followSymlinks = true
-}
-
-
-// Makes all the magic to place the webapp under tomcat8 for devs.
-task deployWarTomcat(type: DeployWarTomcatTask) {
-    dependsOn 'war', 'clonePullTomcat', 'undeployWarTomcat'
-    tomcatPath = tomcatInstallLocation
-}
-
-// Delete ROOT under tomcat9/webapps
-task undeployWarTomcat(type: Delete) {
     group='dotCMS Util'
     description='Removes /tomcat9/webapps folder. (reset tomcat)'
 
