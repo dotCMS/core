@@ -9,6 +9,7 @@ buildscript {
         classpath 'com.dotcms.lib:dot.commons-io:2.0.1_2'
         classpath group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.11.1'
         classpath 'org.immutables:value:2.9.0'
+        classpath 'org.codehaus.groovy:groovy-json:3.0.9'
     }
 }
 
@@ -49,6 +50,7 @@ project.ext {
             git = Grgit.open(file('..'))
             dotcmsReleaseBuild = git.head().abbreviatedId // abbreviatedId of head() method.
         } catch (Exception ignored) {
+            println "ERROR:>> " + ignored.getMessage()
             //Do nothing, this will fail only if git is not installed on this machine
         }
     }
@@ -399,7 +401,7 @@ task integrationTest(type: Test, dependsOn:['prepareIntegrationTests']) {
 tasks.withType(Test) {
     useJUnit()
     maxHeapSize = '1G'
-       // jvmArgs = ["--add-opens=java.base/jdk.internal.loader=ALL-UNNAMED", "-javaagent:${configurations.byteBuddyAgent.singleFile}"]
+    // jvmArgs = ["--add-opens=java.base/jdk.internal.loader=ALL-UNNAMED", "-javaagent:${configurations.byteBuddyAgent.singleFile}"]
 
     testLogging {
         // set options for log level LIFECYCLE
@@ -512,6 +514,7 @@ class ClonePullTomcatTask extends DefaultTask{
                 println "Cloning the $project.tomcatInstallRepo, branch $project.tomcatInstallBranch on $tomcatLocation"
                 Grgit.clone(dir: folder.absolutePath, uri: "$project.tomcatInstallRepo", refToCheckout: "$project.tomcatInstallBranch")
             } catch (Exception exception) {
+                println "ERROR:>> " + exception.getMessage()
                 //Do nothing, this will fail only if git is not installed on this machine
             }
         } else {
@@ -766,6 +769,18 @@ task zip(type: Zip) {
     baseName 'dotcms_'+dotcmsReleaseVersion
 }
 
+// Delete ROOT under tomcat9/webapps
+task undeployWarTomcat(type: Delete) {
+    delete tomcatInstallLocation + webAppRootFolder
+    followSymlinks = true
+}
+
+
+// Makes all the magic to place the webapp under tomcat8 for devs.
+task deployWarTomcat(type: DeployWarTomcatTask) {
+    dependsOn 'war', 'clonePullTomcat', 'undeployWarTomcat'
+    tomcatPath = tomcatInstallLocation
+}
 
 //Executes deployWarTomcat task from dist version
 task deployWarTomcatDist(type: DeployWarTomcatTask) {
@@ -881,28 +896,29 @@ task customDistWar(type: War) {
 }
 
 
-
-
 // TODO I think there are variables for this paths.
 // This task will copy what is used to be src-conf (now under resources)
 // to webapp/WEB-INF/classes in order to be merged with the plugins.
-task deployConfig(type: Copy) {
+task deployConfig() {
     group='dotCMS Util'
     description='This task will copy what is used to be src-conf to webapp/WEB-INF/classes in order to be merged with the plugins.'
 
-    def webAppFolder = 'src/main/webapp'
+    def resourcesFolder = project.file('src/main/resources')
+    def sourceFolderPath = resourcesFolder.getAbsolutePath()
+    def webAppFolderPath = project.file('src/main/webapp').getAbsolutePath()
 
-    if (project.file('src/main/resources').exists()){
-        from 'src/main/resources'
-    }else{
-        webAppFolder = "$dotcmsDistBase$webAppRootFolder"
-        from "../$confDistLocation"
-
+    if (!resourcesFolder.exists()) {
+        sourceFolderPath = "../$confDistLocation"
+        webAppFolderPath = project.file("$dotcmsDistBase$webAppRootFolder").getAbsolutePath()
     }
-    into "$webAppFolder/WEB-INF/classes"
+    webAppFolderPath = "$webAppFolderPath/WEB-INF/classes"
 
-    filesMatching("release.properties") {
-        expand( project.properties )
+    copy {
+        from (sourceFolderPath)
+        into webAppFolderPath
+        filesMatching("release.properties") {
+            expand( project.properties )
+        }
     }
 }
 
