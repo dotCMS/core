@@ -524,14 +524,11 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 	public void setThemeName (final Template template, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
-        final Theme theme = APILocator.getThemeAPI().findThemeById(template.getTheme(),user,respectFrontendRoles);
+        final Theme theme = Try.of(() -> APILocator.getThemeAPI().findThemeById(template.getTheme(),user,respectFrontendRoles)).getOrNull();
+
         if(null != theme && InodeUtils.isSet(theme.getInode())) {
 
             template.setThemeName(theme.getName());
-        } else {
-
-            Logger.error(this.getClass(),"Invalid Theme: " + template.getTheme());
-            throw new DotDataException("Invalid theme: " + template.getTheme());
         }
     }
 
@@ -566,10 +563,6 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	    if(template.isDrawed() && !UtilMethods.isSet(template.getDrawedBody())) {
 	        throw new DotStateException("Drawed template MUST have a drawed body:" + template);
 	    }
-
-		if (template.isDrawed() && !UtilMethods.isSet(template.getTheme())){
-			throw new DotDataException("Theme is required on drawed templates");
-		}
 
 		if(UtilMethods.isSet(template.getTheme())) {
             this.setThemeName(template, user, respectFrontendRoles);

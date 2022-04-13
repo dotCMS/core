@@ -5,7 +5,10 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.VanityUrlDataGen;
 import com.dotcms.vanityurl.model.DefaultVanityUrl;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -51,7 +54,7 @@ public class FiltersUtil {
     /**
      * Creates a new Vanity URL contentlet
      */
-    public DefaultVanityUrl createVanityUrl(String title, String site, String uri,
+    public DefaultVanityUrl createVanityUrl(String title, Host host, String uri,
             String forwardTo, int action, int order, long languageId)
             throws DotDataException, DotSecurityException {
 
@@ -59,17 +62,16 @@ public class FiltersUtil {
         ContentType contentType = getVanityURLContentType();
 
         //Create the new Contentlet
-        Contentlet contentlet = new Contentlet();
-        contentlet.setStructureInode(contentType.inode());
-        contentlet.setHost(site);
-        contentlet.setLanguageId(languageId);
+        Contentlet contentlet = new VanityUrlDataGen()
+                .title(title)
+                .uri(uri)
+                .forwardTo(forwardTo)
+                .action(action)
+                .order(order)
+                .language(languageId)
+                .host(host)
+                .nextPersisted();
 
-        contentlet.setStringProperty(VanityUrlContentType.TITLE_FIELD_VAR, title);
-        contentlet.setStringProperty(VanityUrlContentType.SITE_FIELD_VAR, site);
-        contentlet.setStringProperty(VanityUrlContentType.URI_FIELD_VAR, uri);
-        contentlet.setStringProperty(VanityUrlContentType.FORWARD_TO_FIELD_VAR, forwardTo);
-        contentlet.setLongProperty(VanityUrlContentType.ACTION_FIELD_VAR, action);
-        contentlet.setLongProperty(VanityUrlContentType.ORDER_FIELD_VAR, order);
 
         //Get The permissions of the Content Type
         List<Permission> contentTypePermissions = permissionAPI.getPermissions(contentType);
@@ -126,17 +128,9 @@ public class FiltersUtil {
      */
     private ContentType getVanityURLContentType() throws DotDataException, DotSecurityException {
 
-        String query = " velocity_var_name = '" + VANITY_URL_CONTENT_TYPE_VARNAME + "'";
-        List<ContentType> contentTypes = contentTypeAPI.search(query);
-
-        ContentType contentType;
-        if (contentTypes.size() == 0) {
-            contentType = createVanityUrl();
-        } else {
-            contentType = contentTypes.get(0);
-        }
-
-        return contentType;
+        return new ContentTypeDataGen()
+                .baseContentType(BaseContentType.VANITY_URL)
+                .nextPersisted();
     }
 
     /**
