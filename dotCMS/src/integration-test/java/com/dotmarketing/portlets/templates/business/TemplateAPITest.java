@@ -10,6 +10,7 @@ import com.dotcms.datagen.TemplateAsFileDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.ThemeDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
@@ -1138,5 +1139,62 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .nextPersisted();
 
         assertEquals(1,APILocator.getTemplateAPI().getContainersInTemplate(template,user,false).size());
+    }
+
+    /**
+     * Method to test: {@link TemplateAPIImpl#setThemeName(Template, User, boolean)}
+     * When: The theme exists
+     * Should: Call the {@link Template#setThemeName(String)}
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void setThemeName() throws DotDataException, DotSecurityException {
+        final Template template = new TemplateDataGen().nextPersisted();
+        final Contentlet contentlet = new ThemeDataGen().nextPersisted();
+
+        template.setTheme(contentlet.getFolder());
+
+        ((TemplateAPIImpl) APILocator.getTemplateAPI()).setThemeName(template, APILocator.systemUser(), false);
+
+        final Folder themeFolder = APILocator.getFolderAPI()
+                .find(contentlet.getFolder(), APILocator.systemUser(), false);
+
+        assertEquals(template.getThemeName(), themeFolder.getName());
+    }
+
+    /**
+     * Method to test: {@link TemplateAPIImpl#setThemeName(Template, User, boolean)}
+     * When: The theme does not exist
+     * Should: not call the {@link Template#setThemeName(String)}
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void setThemeNameDoesNotExists() throws DotDataException, DotSecurityException {
+        final Template template = new TemplateDataGen().nextPersisted();
+        template.setTheme("not_exists");
+
+        ((TemplateAPIImpl) APILocator.getTemplateAPI()).setThemeName(template, APILocator.systemUser(), false);
+        assertNull(template.getThemeName());
+    }
+
+    /**
+     * Method to test: {@link TemplateAPIImpl#setThemeName(Template, User, boolean)}
+     * When: The theme is null
+     * Should: not call the {@link Template#setThemeName(String)}
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void setThemeNameNull() throws DotDataException, DotSecurityException {
+        final Template template = new TemplateDataGen().nextPersisted();
+        template.setTheme(null);
+
+        ((TemplateAPIImpl) APILocator.getTemplateAPI()).setThemeName(template, APILocator.systemUser(), false);
+        assertNull(template.getThemeName());
     }
 }
