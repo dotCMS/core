@@ -151,6 +151,7 @@ import com.dotmarketing.startup.runonce.Task220203RemoveFolderInodeConstraintTes
 import com.dotmarketing.startup.runonce.Task220214AddOwnerAndIDateToFolderTableTest;
 import com.dotmarketing.startup.runonce.Task220215MigrateDataFromInodeToFolderTest;
 import com.dotmarketing.startup.runonce.Task220330ChangeVanityURLSiteFieldTypeTest;
+import com.dotmarketing.startup.runonce.Task220413IncreasePublishedPushedAssetIdColTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -534,7 +535,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task220203RemoveFolderInodeConstraintTest.class,
         Task220214AddOwnerAndIDateToFolderTableTest.class,
         Task220215MigrateDataFromInodeToFolderTest.class,
-        Task220330ChangeVanityURLSiteFieldTypeTest.class
+        Task220330ChangeVanityURLSiteFieldTypeTest.class,
+        Task220413IncreasePublishedPushedAssetIdColTest.class
 })
 public class MainSuite {
 
