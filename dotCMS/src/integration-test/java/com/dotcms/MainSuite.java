@@ -154,6 +154,7 @@ import com.dotmarketing.startup.runonce.Task220203RemoveFolderInodeConstraintTes
 import com.dotmarketing.startup.runonce.Task220214AddOwnerAndIDateToFolderTableTest;
 import com.dotmarketing.startup.runonce.Task220215MigrateDataFromInodeToFolderTest;
 import com.dotmarketing.startup.runonce.Task220329UpdateDateTimezonesTest;
+import com.dotmarketing.startup.runonce.Task220404RemoveCalendarReminderTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -540,7 +541,9 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentDispositionFileNameParserTest.class,
         SecureFileValidatorTest.class,
         BoundedBufferedReaderTest.class,
-        Task220329UpdateDateTimezonesTest.class
+        Task220329UpdateDateTimezonesTest.class,
+        Task220329UpdateDateTimezonesTest.class,
+        Task220404RemoveCalendarReminderTest.class
 })
 public class MainSuite {
 

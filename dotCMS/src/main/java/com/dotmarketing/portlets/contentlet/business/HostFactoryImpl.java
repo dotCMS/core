@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.content.business.json.ContentletJsonAPI;
@@ -622,21 +621,27 @@ public class HostFactoryImpl implements HostFactory {
     }
 
     @Override
-    public Optional<List<Host>> findLiveSites(final String siteNameFilter, int limit, int offset, final User user, boolean
-            respectFrontendRoles) {
-        return search(siteNameFilter, SITE_IS_LIVE.toString(), false, limit, offset, user, respectFrontendRoles);
+    public Optional<List<Host>> findLiveSites(final String siteNameFilter, final int limit, final int offset,
+                                              final boolean showSystemHost, final User user, final boolean respectFrontendRoles) {
+        return search(siteNameFilter, SITE_IS_LIVE.toString(), showSystemHost, limit, offset, user,
+                respectFrontendRoles);
     }
 
     @Override
-    public Optional<List<Host>> findStoppedSites(final String siteNameFilter, boolean includeArchivedSites, int limit, int offset, final User user, boolean respectFrontendRoles) {
-        final String condition = includeArchivedSites ? SITE_IS_STOPPED_OR_ARCHIVED.toString() : SITE_IS_STOPPED.toString();
-        return search(siteNameFilter, condition, false, limit, offset, user, respectFrontendRoles);
+    public Optional<List<Host>> findStoppedSites(final String siteNameFilter, final boolean includeArchivedSites,
+                                                 final int limit, final int offset, final boolean showSystemHost,
+                                                 final User user, final boolean respectFrontendRoles) {
+        final String condition =
+                includeArchivedSites ? SITE_IS_STOPPED_OR_ARCHIVED.toString() : SITE_IS_STOPPED.toString();
+        return search(siteNameFilter, condition, showSystemHost, limit, offset, user, respectFrontendRoles);
     }
 
     @Override
-    public Optional<List<Host>> findArchivedSites(final String siteNameFilter, int limit, int offset, final User user, boolean
-            respectFrontendRoles) {
-        return search(siteNameFilter, SITE_IS_ARCHIVED.toString(), false, limit, offset, user, respectFrontendRoles);
+    public Optional<List<Host>> findArchivedSites(final String siteNameFilter, final int limit, final int offset,
+                                                  final boolean showSystemHost, final User user,
+                                                  final boolean respectFrontendRoles) {
+        return search(siteNameFilter, SITE_IS_ARCHIVED.toString(), showSystemHost, limit, offset, user,
+                respectFrontendRoles);
     }
 
     @Override
