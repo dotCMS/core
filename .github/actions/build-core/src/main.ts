@@ -5,7 +5,7 @@ import * as builder from './core-builder'
  * Main entry point for this action.
  */
 const run = () => {
-  const buildEnv = core.getInput('build-env')
+  const buildEnv = core.getInput('build_env')
   core.info(`Attempting to build core with ${buildEnv}`)
   builder
     .build(buildEnv)
