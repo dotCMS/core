@@ -8,7 +8,7 @@ const run = () => {
   cache.cacheCore().then(cacheMetadata => {
     const cacheMetadataOutput = JSON.stringify(cacheMetadata, null, 2)
     core.info(`Cache results:\n${cacheMetadataOutput}`)
-    core.setOutput('cache-metadata', cacheMetadataOutput)
+    core.setOutput('cache_metadata', cacheMetadataOutput)
   })
 }
 

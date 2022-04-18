@@ -45,7 +45,15 @@ const exec = __importStar(__nccwpck_require__(514));
 const COMMANDS = {
     gradle: {
         cmd: './gradlew',
-        args: ['createDistPrep', 'compileTestAspect', 'compileTestJava', 'processTestResources', 'testClasses', 'compileIntegrationTestJava', 'prepareIntegrationTests'],
+        args: [
+            'createDistPrep',
+            'compileTestAspect',
+            'compileTestJava',
+            'processTestResources',
+            'testClasses',
+            'compileIntegrationTestJava',
+            'prepareIntegrationTests'
+        ],
         workingDir: 'dotCMS'
     },
     maven: {
@@ -109,7 +117,7 @@ const builder = __importStar(__nccwpck_require__(497));
  * Main entry point for this action.
  */
 const run = () => {
-    const buildEnv = core.getInput('build-env');
+    const buildEnv = core.getInput('build_env');
     core.info(`Attempting to build core with ${buildEnv}`);
     builder
         .build(buildEnv)

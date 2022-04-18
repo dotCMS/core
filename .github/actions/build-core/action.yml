@@ -3,7 +3,7 @@ name: 'Build Core'
 description: 'Builds DotCMS Core project'
 author: 'victoralfaro-dotcms'
 inputs:
-  build-env:
+  build_env:
     description: 'Build environment to use'
     type: choice
     options:
