@@ -37,6 +37,7 @@ public class TagTransform implements RestTransform<Tag, RestTag>{
             .siteId(app.getHostId())
                 .siteName(host.getHostname())
                 .persona(app.isPersona())
+                .id(app.getTagId())
                 .build();
     };
 }

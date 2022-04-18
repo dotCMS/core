@@ -110,6 +110,34 @@ var tagsMap = {};
 var lastLength = 0;
 var contentSearchField;
 
+function processKeyEvent(e, tagName, selectedHostOrFolderId) {
+	if (e.keyCode !== keys.UP_ARROW && e.keyCode !== keys.DOWN_ARROW) {
+		// semicolon
+		if (e.keyCode === 188) {
+			useThisTagForSearch(e);
+		} else if (e.keyCode === keys.ENTER) {
+			var suggestedTagFocus = query(".suggestedTagFocus");
+			if (suggestedTagFocus.length) {
+				suggestedTagFocus[0].click();
+			} else {
+				useThisTagForSearch(e);
+			}
+		} else if (e.keyCode === keys.BACKSPACE && e.target.value.length === 0
+			&& lastLength === 0) {
+			removeLastTag();
+			lastLength = 0;
+		} else if (e.keyCode === keys.ESCAPE) {
+			clearSuggestTagsForSearch();
+		} else if (tagName.length >= 3) {
+			getSuggestedTag(tagName, selectedHostOrFolderId);
+		} else {
+			clearSuggestTagsForSearch();
+		}
+	}
+
+	lastLength = e.target.value.length;
+}
+
 function suggestTagsForSearch(e, searchField, hostInSession) {
 	if (searchField) {
 		contentSearchField = searchField;
@@ -156,31 +184,7 @@ function suggestTagsForSearch(e, searchField, hostInSession) {
 		selectedHostOrFolderId = hostInSession;
 	}
 
-	if (e.keyCode !== keys.UP_ARROW && e.keyCode !== keys.DOWN_ARROW) {
-		// semicolon
-		if (e.keyCode === 188) {
-			useThisTagForSearch(e);
-		} else if (e.keyCode === keys.ENTER) {
-			var suggestedTagFocus = query(".suggestedTagFocus");
-			if (suggestedTagFocus.length) {
-				suggestedTagFocus[0].click();
-			} else {
-				useThisTagForSearch(e);
-			}
-		} else if (e.keyCode === keys.BACKSPACE && e.target.value.length === 0 && lastLength === 0) {
-			removeLastTag();
-			lastLength = 0;
-		} else if (e.keyCode === keys.ESCAPE) {
-			clearSuggestTagsForSearch();
-		} else if (tagName.length >= 3) {
-			debugger;
-			getSuggestedTag(tagName, selectedHostOrFolderId);
-		} else {
-			clearSuggestTagsForSearch();
-		}
-	}
-
-	lastLength = e.target.value.length;
+	processKeyEvent(e, tagName, selectedHostOrFolderId);
 }
 
 function suggestTagsForContent(e, searchField,  hostOrFolderField, selectedHostOrFolderId) {
@@ -211,30 +215,7 @@ function suggestTagsForContent(e, searchField,  hostOrFolderField, selectedHostO
 		}
 	}
 
-	if (e.keyCode !== keys.UP_ARROW && e.keyCode !== keys.DOWN_ARROW) {
-		// semicolon
-		if (e.keyCode === 188) {
-			useThisTagForSearch(e);
-		} else if (e.keyCode === keys.ENTER) {
-			var suggestedTagFocus = query(".suggestedTagFocus");
-			if (suggestedTagFocus.length) {
-				suggestedTagFocus[0].click();
-			} else {
-				useThisTagForSearch(e);
-			}
-		} else if (e.keyCode === keys.BACKSPACE && e.target.value.length === 0 && lastLength === 0) {
-			removeLastTag();
-			lastLength = 0;
-		} else if (e.keyCode === keys.ESCAPE) {
-			clearSuggestTagsForSearch();
-		} else if (tagName.length >= 3) {
-			getSuggestedTag(tagName, selectedHostOrFolderId);
-		} else {
-			clearSuggestTagsForSearch();
-		}
-	}
-
-	lastLength = e.target.value.length;
+	processKeyEvent(e, tagName, selectedHostOrFolderId);
 }
 
 

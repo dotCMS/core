@@ -14,7 +14,7 @@ public final class RestTag extends Validated  {
     public final String siteId;
     public final String siteName;
     public final boolean persona;
-
+    public final String id;
 
     private RestTag(Builder builder) {
         key = builder.key;
@@ -22,6 +22,7 @@ public final class RestTag extends Validated  {
         siteId = builder.siteId;
         siteName = builder.siteName;
         persona = builder.persona;
+        id = builder.id;
         checkValid();
     }
 
@@ -31,6 +32,7 @@ public final class RestTag extends Validated  {
         @JsonProperty private String siteId;
         @JsonProperty private String siteName;
         @JsonProperty private boolean persona;
+        @JsonProperty private String id;
 
         public Builder() {
         }
@@ -72,6 +74,12 @@ public final class RestTag extends Validated  {
             this.persona = persona;
             return this;
         }
+
+        public Builder id(String id) {
+            this.id = id;
+            return this;
+        }
+
     }
 }
 

@@ -797,7 +797,7 @@
                 let selectedHost = "<%= contentType != null ? contentType.host() : Host.SYSTEM_HOST%>";
                 let hostOrFolderField = dojo.byId("<%=hostFolderField
                         .map(com.dotcms.contenttype.model.field.Field::variable).orElse(null)%>");
-                suggestTagsForContent(e, tagField, hostOrFolderField, selectedHost);
+                suggestTagsForContent(e, null, hostOrFolderField, selectedHost);
             });
             dojo.connect(tagField, "onblur", closeSuggetionBox);
             var textValue = "<%=textValue%>";
