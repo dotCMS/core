@@ -17,8 +17,8 @@ public class BoundedBufferedReaderTest {
             "line 5 \n";
     /**
      * This method test readLine
-     * Given scenario: Happy path testing when there a content-disposition
-     * Expected Result: recovers the filename
+     * Given scenario: Happy path testing a string with 5 lines
+     * Expected Result: 5 lines are being read
      *
      * @throws DotDataException
      * @throws DotSecurityException
