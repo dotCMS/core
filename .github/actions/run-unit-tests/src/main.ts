@@ -1,4 +1,5 @@
 import * as core from '@actions/core'
+import * as fs from 'fs'
 import * as unit from './unit'
 
 /**
@@ -6,15 +7,35 @@ import * as unit from './unit'
  */
 const run = () => {
   core.info('Running Core unit tests')
+
+  const buildEnv = core.getInput('build_env')
+  const cmd = unit.COMMANDS[buildEnv as keyof unit.Commands]
+  if (!cmd) {
+    core.error('Cannot resolve build tool, aborting')
+    return
+  }
+
   unit
-    .runTests(core.getInput('build-env'))
-    .then(returnCode => {
-      if (returnCode != 0) {
-        core.setFailed(`Process executed returned code ${returnCode}`)
-        return
+    .runTests(cmd)
+    .then(exitCode => {
+      const results = {
+        testsRunExitCode: exitCode,
+        testResultsLocation: cmd.outputDir,
+        skipResultsReport: false
       }
+      core.info(`Unit test results:\n${JSON.stringify(results)}`)
+      core.setOutput('tests-run-exit-code', exitCode)
+      core.setOutput('test-results-location', cmd.outputDir)
+      core.setOutput('skip-results-report', false)
     })
-    .catch(reason => core.setFailed(`Running unit tests failed due to ${reason}`))
+    .catch(reason => {
+      const messg = `Running unit tests failed due to ${reason}`
+      const skipResults = !fs.existsSync(cmd.outputDir)
+      core.setOutput('tests-run-exit-code', 1)
+      core.setOutput('test-results-location', cmd.outputDir)
+      core.setOutput('skip-results-report', skipResults)
+      core.setFailed(messg)
+    })
 }
 
 // Run main function

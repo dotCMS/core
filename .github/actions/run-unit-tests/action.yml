@@ -3,12 +3,20 @@ name: 'Run Unit Tests'
 description: 'Run core unit tests'
 author: 'victoralfaro-dotcms'
 inputs:
-  build-env:
+  project_root:
+    description: 'Project root'
+    required: true
+    default: ${{ github.WORKSPACE }}
+  build_env:
     description: Build environment
     required: true
-  cache-data:
-    description: 'Cached information to be restored'
-    required: true
+outputs:
+  tests-run-exit-code:
+    description: Test run exit code
+  test-results-location:
+    description: Unit tests results location
+  skip-results-report:
+    description: Flag indicating if results report is skipped
 runs:
   using: 'node16'
   main: 'dist/index.js'

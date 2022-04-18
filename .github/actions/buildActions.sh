@@ -5,7 +5,7 @@ set -e
 mode=${1}
 
 for d in $(ls) ; do
-  [[ ! -d ${d} ]] && continue
+  [[ ! -d ${d} || ! -f ${d}/package.json ]] && continue
   echo "Building Github Action ${d}"
   pushd ${d}
   [[ "${mode}" == 'clean' ]] \
