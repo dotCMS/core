@@ -25,6 +25,7 @@ import com.dotcms.exception.BaseRuntimeInternationalizationException;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.ContentTypeUtil;
 import com.dotcms.util.DotPreconditions;
+import com.dotcms.util.LowerKeyMap;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -218,7 +219,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
     if (LicenseManager.getInstance().isCommunity()) {
 
-      throw new InvalidLicenseException("An enterprise license is required to copy content type");
+        throw new InvalidLicenseException("An enterprise license is required to copy content type");
     }
 
     final ContentType sourceContentType = copyContentTypeBean.getSourceContentType();
@@ -247,28 +248,34 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
     final ContentType contentType    = builder.build();
     final ContentType newContentType = this.save(contentType);
-    final List<Field> currentFields  = sourceContentType.fields();
-    final Map<String, Field> baseFieldMap = newContentType.fieldMap();
+    final List<Field> sourceFields  = APILocator.getContentTypeFieldAPI().byContentTypeId(sourceContentType.id());
+    final Map<String, Field> newFieldMap = newContentType.fieldMap();
+    final Map<String, Field> lowerNewFieldMap = new LowerKeyMap<>();
+    newFieldMap.entrySet().forEach(entry -> lowerNewFieldMap.put(entry.getKey(), entry.getValue()));
 
     Logger.debug(this, ()->"Saving the fields for the the content type: " + copyContentTypeBean.getName()
             + ", from: " + copyContentTypeBean.getSourceContentType().variable());
 
-    for (final Field currentField : currentFields) {
+    for (final Field sourceField : sourceFields) {
 
-      final Field newField = !baseFieldMap.containsKey(currentField.variable())?
-                FieldBuilder.builder(currentField).contentTypeId(newContentType.id()).id(null).build():
-                baseFieldMap.get(currentField.variable());
+        Field newField = lowerNewFieldMap.get(sourceField.variable().toLowerCase());
+        if (null == newField) {
 
-      final Field savedField = APILocator.getContentTypeFieldAPI().save(newField, user);
+            newField = APILocator.getContentTypeFieldAPI()
+                    .save(FieldBuilder.builder(sourceField).sortOrder(sourceField.sortOrder()).contentTypeId(newContentType.id()).id(null).build(), user);
+        } else {
 
-        final List<FieldVariable> currentFieldVariables = currentField.fieldVariables();
-        if (UtilMethods.isSet(currentFields)) {
+            // if contains we just need to sort based on the source order
+          APILocator.getContentTypeFieldAPI()
+                  .save(FieldBuilder.builder(newField).sortOrder(sourceField.sortOrder()).build(), user);
+        }
+
+        final List<FieldVariable> currentFieldVariables = sourceField.fieldVariables();
+        if (UtilMethods.isSet(currentFieldVariables)) {
           for (final FieldVariable fieldVariable : currentFieldVariables) {
 
-            final FieldVariable newFieldVariable = ImmutableFieldVariable.builder().from(fieldVariable).
-                    fieldId(savedField.id()).id(null).userId(user.getUserId()).build();
-
-            APILocator.getContentTypeFieldAPI().save(newFieldVariable, user);
+            APILocator.getContentTypeFieldAPI().save(ImmutableFieldVariable.builder().from(fieldVariable).
+                    fieldId(newField.id()).id(null).userId(user.getUserId()).build(), user);
           }
         }
     }
