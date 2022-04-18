@@ -27,7 +27,7 @@ services:
       - es_net
 
   dotcms:
-    image: dotcms/dotcms:22.04_SNAPSHOT
+    image: dotcms/dotcms:latest
     environment:
         "CATALINA_OPTS": '-Xmx1g '
         "DB_BASE_URL": "jdbc:postgresql://db/dotcms"
@@ -41,7 +41,7 @@ services:
       - db
     volumes:
       - cms-shared
-      - /Users/freddyrodriguez/DOTCMS/license/Platform.zip:/data/shared/assets/license.zip
+      #- {license_local_path}/license.zip:/data/shared/assets/license.zip
     networks:
       - db_net
       - es_net
