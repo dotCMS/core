@@ -29,7 +29,7 @@ const EMPTY_CACHE_LOCATIONS: CacheLocations = {
 }
 
 const BUILD_OUTPUT = 'buildOutput'
-const CACHE_FOLDER = path.join(path.dirname(core.getInput('core-root')), 'cache')
+const CACHE_FOLDER = path.join(path.dirname(core.getInput('project_root')), 'cache')
 
 /**
  * Resolves locations to be cached after building core.
@@ -38,7 +38,7 @@ const CACHE_FOLDER = path.join(path.dirname(core.getInput('core-root')), 'cache'
  */
 export const getCacheLocations = (): CacheLocations => {
   // Resolves build environment
-  const buildEnv = core.getInput('build-env')
+  const buildEnv = core.getInput('build_env')
   core.info(`Resolving cache locations with buid env ${buildEnv}`)
 
   const cacheLocations = CACHE_CONFIGURATION[buildEnv as keyof CacheConfiguration]
@@ -70,10 +70,10 @@ const resolveLocations = (
   key: string,
   decorateFn?: (location: string) => string
 ) => {
-  const cacheEnableKey = key.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)
-  const cacheEnable = core.getBooleanInput(`cache-${cacheEnableKey}`)
+  const cacheEnableKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`)
+  const cacheEnable = core.getBooleanInput(`cache_${cacheEnableKey}`)
   if (!cacheEnable) {
-    core.warning(`Core cache is disabled for ${key}`)
+    core.notice(`Core cache is disabled for ${key}`)
     return
   }
 
