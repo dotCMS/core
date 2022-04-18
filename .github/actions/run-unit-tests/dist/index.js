@@ -31,21 +31,40 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(186));
+const fs = __importStar(__nccwpck_require__(147));
 const unit = __importStar(__nccwpck_require__(733));
 /**
  * Main entry point for this action.
  */
 const run = () => {
     core.info('Running Core unit tests');
+    const buildEnv = core.getInput('build_env');
+    const cmd = unit.COMMANDS[buildEnv];
+    if (!cmd) {
+        core.error('Cannot resolve build tool, aborting');
+        return;
+    }
     unit
-        .runTests(core.getInput('build-env'))
-        .then(returnCode => {
-        if (returnCode != 0) {
-            core.setFailed(`Process executed returned code ${returnCode}`);
-            return;
-        }
+        .runTests(cmd)
+        .then(exitCode => {
+        const results = {
+            testsRunExitCode: exitCode,
+            testResultsLocation: cmd.outputDir,
+            skipResultsReport: false
+        };
+        core.info(`Unit test results:\n${JSON.stringify(results)}`);
+        core.setOutput('tests-run-exit-code', exitCode);
+        core.setOutput('test-results-location', cmd.outputDir);
+        core.setOutput('skip-results-report', false);
     })
-        .catch(reason => core.setFailed(`Running unit tests failed due to ${reason}`));
+        .catch(reason => {
+        const messg = `Running unit tests failed due to ${reason}`;
+        const skipResults = !fs.existsSync(cmd.outputDir);
+        core.setOutput('tests-run-exit-code', 1);
+        core.setOutput('test-results-location', cmd.outputDir);
+        core.setOutput('skip-results-report', skipResults);
+        core.setFailed(messg);
+    });
 };
 // Run main function
 run();
@@ -91,37 +110,50 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.runTests = void 0;
+exports.runTests = exports.COMMANDS = void 0;
 const core = __importStar(__nccwpck_require__(186));
 const exec = __importStar(__nccwpck_require__(514));
-const COMMANDS = {
+const fs = __importStar(__nccwpck_require__(147));
+const path = __importStar(__nccwpck_require__(17));
+exports.COMMANDS = {
     gradle: {
         cmd: './gradlew',
         args: ['test'],
-        workingDir: 'dotCMS'
+        workingDir: 'dotCMS',
+        outputDir: 'dotCMS/build/test-results/unit-tests/xml'
     },
     maven: {
         cmd: './mvnw',
         args: ['test'],
-        workingDir: 'dotCMS'
+        workingDir: 'dotCMS',
+        outputDir: 'dotCMS/target/surefire-reports'
     }
 };
+const TEST_RESOURCES = ['log4j2.xml'];
+const SOURCE_TEST_RESOURCES_FOLDER = 'cicd/resources';
+const TARGET_TEST_RESOURCES_FOLDER = 'dotCMS/src/test/resources';
 /**
- * Based on a detected build environment, that is gradle or maven, this resolves the command to run in order to run unit tests.
+ * Based on a revolved {@link Command}, resolve the command to execute in order to run unit tests.
  *
- * @param buildEnv build environment
- * @returns a number represeting the command exit code
+ * @param cmd resolved command
+ * @returns a number representing the command exit code
  */
-const runTests = (buildEnv) => __awaiter(void 0, void 0, void 0, function* () {
-    const cmd = COMMANDS[buildEnv];
-    if (!cmd) {
-        core.error('Cannot resolve build tool, aborting');
-        return Promise.resolve(127);
-    }
+const runTests = (cmd) => __awaiter(void 0, void 0, void 0, function* () {
+    prepareTests();
     core.info(`Executing command: ${cmd.cmd} ${cmd.args.join(' ')}`);
     return yield exec.exec(cmd.cmd, cmd.args, { cwd: cmd.workingDir });
 });
 exports.runTests = runTests;
+const prepareTests = () => {
+    const projectRoot = core.getInput('project_root');
+    core.info('Preparing unit tests');
+    TEST_RESOURCES.forEach(res => {
+        const source = path.join(projectRoot, SOURCE_TEST_RESOURCES_FOLDER, res);
+        const dest = path.join(projectRoot, TARGET_TEST_RESOURCES_FOLDER, res);
+        core.info(`Copying resource ${source} to ${dest}`);
+        fs.copyFileSync(source, dest);
+    });
+};
 
 
 /***/ }),

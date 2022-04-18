@@ -3,15 +3,15 @@ name: 'Restore Core Cache'
 description: 'Restores Core cache'
 author: 'victoralfaro-dotcms'
 inputs:
-  cache-metadata:
+  cache_metadata:
     description: 'Cached data'
     required: true
-  core-root:
+  project_root:
     description: 'Core root folder'
     required: true
     default: ${{ github.WORKSPACE }}
 outputs:
-  cache-locations:
+  cache_locations:
     description: 'Resolved cache locations'
 runs:
   using: 'node16'
