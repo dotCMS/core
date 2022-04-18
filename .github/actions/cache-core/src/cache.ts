@@ -41,10 +41,10 @@ const EMPTY_CACHE_RESULT: CacheLocationMetadata = {
  * @returns a {@link Promise<CacheMetadata>} with data about the cache operation: key, locations and cache id
  */
 export const cacheCore = async (): Promise<CacheMetadata> => {
-  const buildEnv: string = core.getInput('build-env')
+  const buildEnv: string = core.getInput('build_env')
   core.info(`Resolving cache locations with buid env ${buildEnv}`)
 
-  const cacheLocations: CacheLocations = JSON.parse(core.getInput('cache-locations'))
+  const cacheLocations: CacheLocations = JSON.parse(core.getInput('cache_locations'))
   core.info(`Attempting to cache core using these locations:\n ${JSON.stringify(cacheLocations, null, 2)}`)
 
   const availableCacheKeysStr = core.getInput('available-cache-keys')
@@ -112,5 +112,5 @@ const cacheLocation = async (
     }
   }
 
-  return new Promise<CacheLocationMetadata>(resolve => resolve(cacheResult))
+  return Promise.resolve(cacheResult)
 }

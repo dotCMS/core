@@ -5,44 +5,38 @@ on:
     branches:
       - master
       - release-*
-      - issue-21755
-      - issue-21754
 jobs:
   build-core-job:
     name: Build Core
     runs-on: ubuntu-latest
     outputs:
-      build-env: ${{ steps.read-cicd-local-env.outputs.build-env }}
-      cache-metadata: ${{ steps.cache-core.outputs.cache-metadata }}
+      cache_metadata: ${{ steps.cache-core.outputs.cache_metadata }}
     steps:
       - id: fetch-core
         name: Fetch Core repo
         uses: actions/checkout@v3
       - id: read-cicd-local-env
         name: Read CICD local library
-        run: |
-          source ${GITHUB_WORKSPACE}/cicd/local-env.sh
+        run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
         if: success()
       - id: build-core
         name: Build Core
         uses: ./.github/actions/build-core
         with:
-          build-env: ${{ steps.read-cicd-local-env.outputs.build-env }}
+          build_env: ${{ env.BUILD_ENV }}
         if: success()
       - id: core-cache-locator
         name: Core Cache Locator
         uses: ./.github/actions/core-cache-locator
         with:
-          build-env: ${{ steps.read-cicd-local-env.outputs.build-env }}
-          core-root: ${{ github.WORKSPACE }}
-          cache-build-output: true
+          build_env: ${{ env.BUILD_ENV }}
         if: success()
       - id: cache-core
         name: Cache Core
         uses: ./.github/actions/cache-core
         with:
-          build-env: ${{ steps.read-cicd-local-env.outputs.build-env }}
-          cache-locations: ${{ steps.core-cache-locator.outputs.cache-locations }}
+          build_env: ${{ env.BUILD_ENV }}
+          cache_locations: ${{ steps.core-cache-locator.outputs.cache_locations }}
         if: success()
   run-unit-tests-job:
     name: Run Unit Tests
@@ -50,22 +44,55 @@ jobs:
     needs: build-core-job
     if: success()
     steps:
-      - name: GITHUB CONTEXT
-        run: echo "${{ toJson(github) }}"
-        if: env.DEBUG == 'true'
       - id: fetch-core
-        name: Fetch Core repo
+        name: Fetch Core Repo
         uses: actions/checkout@v3
+      - id: read-cicd-local-env
+        name: Read CICD local library
+        run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
+        if: success()
       - id: restore-core
-        name: Restore Core cache
+        name: Restore Core Cache
         uses: ./.github/actions/restore-core
         with:
-          cache-metadata: ${{ needs.build-core-job.outputs.cache-metadata }}
+          cache_metadata: ${{ needs.build-core-job.outputs.cache_metadata }}
+        if: success()
       - id: run-unit-tests
-        name: Run Unit tests
+        name: Run Unit Tests
         uses: ./.github/actions/run-unit-tests
         with:
-          build-env: ${{ needs.build-core-job.outputs.build-env }}
+          build_env: ${{ env.BUILD_ENV }}
+      - id: unit-tests-report
+        name: Unit Tests Report
+        uses: dorny/test-reporter@v1
+        with:
+          name: Unit Test Results
+          path: ${{ steps.run-unit-tests.outputs.test-results-location }}/*.xml
+          reporter: java-junit
+          list-suites: failed
+          list-tests: failed
+          max-annotations: 50
+          fail-on-error: false
+        if: always() && steps.run-unit-tests.outputs.skip-results-report == 'false'
+      - id: unit-tests-comment
+        name: Unit Test Comment
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        with:
+          files: ${{ steps.run-unit-tests.outputs.test-results-location }}/*.xml
+          check_name: 'Unit Tests Report'
+        if: always() && steps.run-unit-tests.outputs.skip-results-report == 'false'
+      - id: publish-unit-tests
+        name: Publish Unit Tests
+        uses: ./.github/actions/publish-test-results
+        with:
+          build_id: ${{ env.BUILD_ID }}
+          build_hash: ${{ env.BUILD_HASH }}
+          test_type: unit
+          pull_request: ${{ github.event.number }}
+          tests_run_exit_code: ${{ steps.run-unit-tests.outputs.tests-run-exit-code }}
+          test_results_location: ${{ steps.run-unit-tests.outputs.test-results-location }}/html
+          cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+        if: always() && steps.run-unit-tests.outputs.skip-results-report == 'false'
 #  run-unit-tests-job:
 #    name: Unit Tests
 #    runs-on: ubuntu-latest

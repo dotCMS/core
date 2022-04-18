@@ -7,13 +7,13 @@ import {CacheMetadata} from './restore'
  */
 const run = () => {
   // Call module logic to restore cache locations
-  const cacheMetadataInput = core.getInput('cache-metadata')
+  const cacheMetadataInput = core.getInput('cache_metadata')
   core.info(`Using cache metadata ${cacheMetadataInput}`)
   const cacheMetadata: CacheMetadata = JSON.parse(cacheMetadataInput)
   restore.restoreLocations(cacheMetadata).then(cacheLocations => {
     const cacheLocationsOutput = JSON.stringify(cacheLocations, null, 2)
     core.info(`Found these cache locations: ${cacheLocationsOutput}`)
-    core.setOutput('cache-locations', cacheLocationsOutput)
+    core.setOutput('cache_locations', cacheLocationsOutput)
   })
 }
 

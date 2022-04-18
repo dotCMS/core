@@ -3,14 +3,14 @@ name: 'Cache Core'
 description: 'Caches DotCMS Core dependencies and its build output'
 author: 'victoralfaro-dotcms'
 inputs:
-  build-env:
+  build_env:
     description: 'Build environment to use'
     type: choice
     options:
     - gradle
     - maven
     required: true
-  cache-locations:
+  cache_locations:
     description: 'Locations to cache'
     required: true
   available-cache-keys:
@@ -28,7 +28,7 @@ inputs:
               }
             }
   outputs:
-    cache-metadata:
+    cache_metadata:
       description: 'Cache meta data'
 runs:
   using: 'node16'

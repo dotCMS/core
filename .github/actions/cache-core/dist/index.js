@@ -54,9 +54,9 @@ const EMPTY_CACHE_RESULT = {
  * @returns a {@link Promise<CacheMetadata>} with data about the cache operation: key, locations and cache id
  */
 const cacheCore = () => __awaiter(void 0, void 0, void 0, function* () {
-    const buildEnv = core.getInput('build-env');
+    const buildEnv = core.getInput('build_env');
     core.info(`Resolving cache locations with buid env ${buildEnv}`);
-    const cacheLocations = JSON.parse(core.getInput('cache-locations'));
+    const cacheLocations = JSON.parse(core.getInput('cache_locations'));
     core.info(`Attempting to cache core using these locations:\n ${JSON.stringify(cacheLocations, null, 2)}`);
     const availableCacheKeysStr = core.getInput('available-cache-keys');
     core.info(`Available cache keys: ${availableCacheKeysStr}`);
@@ -115,7 +115,7 @@ const cacheLocation = (cacheLocations, resolvedKeys, locationType) => __awaiter(
             core.warning(`Could not cache using ${cacheKey} due to ${err}`);
         }
     }
-    return new Promise(resolve => resolve(cacheResult));
+    return Promise.resolve(cacheResult);
 });
 
 
@@ -159,7 +159,7 @@ const run = () => {
     cache.cacheCore().then(cacheMetadata => {
         const cacheMetadataOutput = JSON.stringify(cacheMetadata, null, 2);
         core.info(`Cache results:\n${cacheMetadataOutput}`);
-        core.setOutput('cache-metadata', cacheMetadataOutput);
+        core.setOutput('cache_metadata', cacheMetadataOutput);
     });
 };
 // Run main function
