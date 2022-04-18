@@ -366,14 +366,6 @@
 		</id>
 		<property name="userId" column="user_id" type="string" />
 	</class>
-	<class name="com.dotmarketing.portlets.calendar.model.CalendarReminder" table="calendar_reminder">
-    	<composite-id>
-        	<key-property name="userId" column="user_id" type="string"/>
-        	<key-property name="eventId" column="event_id" type="string" length="36" />
-        	<key-property name="sendDate" column="send_date" type="java.util.Date"/>
-    	</composite-id>
-	</class>
-
 	<!-- Mapping for Plugin Tables -->
 
 	<class name="com.dotmarketing.plugin.model.Plugin" table="plugin">

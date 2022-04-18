@@ -34,6 +34,7 @@ services:
         "DB_PASSWORD": 'oracle'
         "DOT_ES_AUTH_BASIC_PASSWORD": 'admin'
         "DOT_ES_ENDPOINTS": 'http://elasticsearch:9200'
+        "DOT_INITIAL_ADMIN_PASSWORD": 'admin'
         "DB_DRIVER": 'oracle.jdbc.OracleDriver'
         "ES_ADMIN_PASSWORD": 'admin'
         "TZ": UTC

@@ -9,6 +9,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
@@ -374,6 +375,7 @@ public class DotPortletAction extends PortletAction {
 	 * @param formWebKey
 	 * @throws Exception
 	 */
+	@WrapInTransaction
 	public void _publishWebAsset(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user, String formWebKey)
 	throws WebAssetException, Exception {
 		try

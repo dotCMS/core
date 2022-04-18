@@ -1,9 +1,9 @@
 version: '3.5'
 
 networks:
-  dotcms-cluster-mode_db_net:
+  cluster-mode_db_net:
     external: true
-  dotcms-cluster-mode_es_net:
+  cluster-mode_es_net:
     external: true
 
 volumes:
@@ -18,13 +18,14 @@ services:
         "DB_PASSWORD": 'password'
         "DOT_ES_AUTH_BASIC_PASSWORD": 'admin'
         "DOT_ES_ENDPOINTS": 'http://elasticsearch:9200'
+        "DOT_INITIAL_ADMIN_PASSWORD": 'admin'
         #"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20211201/starter-20211201.zip'
     volumes:
       #- {local_data_path}:/data/shared
       - {license_local_path}/license.zip:/data/shared/assets/license.zip
     networks:
-      - dotcms-cluster-mode_db_net
-      - dotcms-cluster-mode_es_net
+      - cluster-mode_db_net
+      - cluster-mode_es_net
     ports:
       - "8081:8080"
       - "8444:8443"
