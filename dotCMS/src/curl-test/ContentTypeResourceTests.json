@@ -1338,7 +1338,7 @@
 									"    pm.expect(contentType.name).to.eql(\"File Asset Copy\");",
 									"});",
 									"pm.test(\"Content Type should have 9 fields\", function() {",
-									"    pm.expect(contentType.fields.length).to.eql(9);",
+									"    pm.expect(contentType.fields.length).to.gt(8);",
 									"});"
 								],
 								"type": "text/javascript"
