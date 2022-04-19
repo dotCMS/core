@@ -27,7 +27,7 @@ export const DotBubbleMenuPlugin = (options: DotBubbleMenuPluginProps) => {
     const component = options.component.instance;
     const changeTo = options.changeToComponent.instance;
 
-    return new Plugin({
+    return new Plugin<DotBubbleMenuPluginProps>({
         key:
             typeof options.pluginKey === 'string'
                 ? new PluginKey(options.pluginKey)
@@ -64,11 +64,12 @@ export const DotBubbleMenuPlugin = (options: DotBubbleMenuPluginProps) => {
 };
 
 export class DotBubbleMenuPluginView extends BubbleMenuView {
-    public component: ComponentRef<BubbleMenuComponentProps>;
-    public changeTo: ComponentRef<SuggestionsComponent>;
-    public changeToElement: HTMLElement;
+    component: ComponentRef<BubbleMenuComponentProps>;
+    changeTo: ComponentRef<SuggestionsComponent>;
+    changeToElement: HTMLElement;
+    tippyChangeTo: Instance | undefined;
 
-    public tippyChangeTo: Instance | undefined;
+    private shouldShowProp = false;
 
     /* @Overrrider */
     constructor(props: DotBubbleMenuViewProps) {
@@ -94,6 +95,17 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
         // We need to also react to page scrolling.
         document.body.addEventListener('scroll', this.hanlderScroll.bind(this), true);
+        document.body.addEventListener('mouseup', this.showMenu.bind(this), true);
+        document.body.addEventListener('keyup', this.showMenu.bind(this), true);
+    }
+
+    showMenu() {
+        if (this.shouldShowProp) {
+            this.tippyChangeTo?.setProps({
+                getReferenceClientRect: () => this.tippy?.popper.getBoundingClientRect()
+            });
+            this.show();
+        }
     }
 
     /* @Overrrider */
@@ -114,7 +126,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         const from = Math.min(...ranges.map((range) => range.$from.pos));
         const to = Math.max(...ranges.map((range) => range.$to.pos));
 
-        const shouldShow = this.shouldShow?.({
+        this.shouldShowProp = this.shouldShow?.({
             editor: this.editor,
             view,
             state,
@@ -123,7 +135,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
             to
         });
 
-        if (!shouldShow) {
+        if (!this.shouldShowProp) {
             this.hide();
             this.tippyChangeTo?.hide();
             return;
@@ -144,13 +156,8 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
             }
         });
 
-        this.tippyChangeTo?.setProps({
-            getReferenceClientRect: () => this.tippy?.popper.getBoundingClientRect()
-        });
-
         this.updateComponent();
         this.setMenuItems(doc, from);
-        this.show();
     }
 
     /* @Overrrider */
@@ -170,6 +177,8 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         this.changeTo.destroy();
 
         document.body.removeEventListener('scroll', this.hanlderScroll.bind(this), true);
+        document.body.removeEventListener('mouseup', this.showMenu.bind(this), true);
+        document.body.removeEventListener('keyup', this.showMenu.bind(this), true);
     }
 
     /* Update Component */
