@@ -374,7 +374,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                 throw new DotRuntimeException(e);
             }
         } else {
-            throw new IllegalArgumentException("The bucket: " + groupName + " could not read");
+            throw new IllegalArgumentException(String.format("The folder: `%s` mapped by the bucket: `%s` could not be read.",groupDir.getAbsolutePath(), groupName));
         }
 
         return object;
