@@ -14,17 +14,13 @@ export const shouldShowBubbleMenu = ({ editor, state, from, to }: ShouldShowProp
     // Current selected node
     const node = editor.state.doc.nodeAt(editor.state.selection.from);
 
-    if (!node) {
-        return false;
-    }
-
     // Sometime check for `empty` is not enough.
     // Doubleclick an empty paragraph returns a node size of 2.
     // So we check also for an empty text size.
     const isEmptyTextBlock = !doc.textBetween(from, to).length && isTextSelection(state.selection);
 
     // If it's empty or the current node is type dotContent, it will not open.
-    if (!editor.isFocused || empty || isEmptyTextBlock || node.type.name == 'dotContent') {
+    if (!editor.isFocused || empty || isEmptyTextBlock || node?.type.name == 'dotContent') {
         return false;
     }
 
