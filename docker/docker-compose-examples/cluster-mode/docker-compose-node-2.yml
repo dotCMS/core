@@ -1,9 +1,9 @@
 version: '3.5'
 
 networks:
-  dotcms-cluster-mode_db_net:
+  cluster-mode_db_net:
     external: true
-  dotcms-cluster-mode_es_net:
+  cluster-mode_es_net:
     external: true
 
 volumes:
@@ -24,8 +24,8 @@ services:
       #- {local_data_path}:/data/shared
       - {license_local_path}/license.zip:/data/shared/assets/license.zip
     networks:
-      - dotcms-cluster-mode_db_net
-      - dotcms-cluster-mode_es_net
+      - cluster-mode_db_net
+      - cluster-mode_es_net
     ports:
       - "8081:8080"
       - "8444:8443"
