@@ -6,15 +6,37 @@
 	},
 	"item": [
 		{
-			"name": "CreateNewContainerNoUSer",
+			"name": "CreateApplicationContainerFolders",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 401\", function () {",
-							"  pm.response.to.have.status(401);",
-							"});"
+							"pm.test(\"Status code is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"No errors\", function () {",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.errors.length).to.eql(0);",
+							"});",
+							"",
+							"pm.test(\"Information Saved Correctly\", function () {",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.entity[0].path).to.eql(\"/application/containers/test/\");",
+							"    pm.expect(jsonData.entity[0].type).to.eql(\"folder\");",
+							"    pm.expect(jsonData.entity[0].title).to.eql(\"test\");",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"pm.collectionVariables.set(\"folderidentifier\", jsonData.entity[0].identifier);",
+							"pm.collectionVariables.set(\"folderinode\", jsonData.entity[0].inode);",
+							"",
+							"",
+							"",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -22,7 +44,19 @@
 			],
 			"request": {
 				"auth": {
-					"type": "noauth"
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
 				},
 				"method": "POST",
 				"header": [
@@ -35,7 +69,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"title\":\"TestContainer\",\n    \"friendlyName\":\"TestContainer description\",\n    \"maxContentlets\":1,\n    \"notes\":\"Notes\",\n    \"preLoop\":\"preLoop xxxx\",\n    \"postLoop\":\"postLoop xxxx\",\n    \"containerStructures\":[\n        {\n            \"structureId\":\"webPageContent\",\n            \"code\":\" code xxxx\"\n        },\n        {\n            \"structureId\":\"DotAsset\",\n            \"code\":\" tags: $!{tags}\"\n        }\n    ]\n\n}",
+					"raw": "[\n    \"/application/containers/test\"\n]",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -43,17 +77,135 @@
 					}
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/containers",
+					"raw": "{{serverURL}}/api/v1/folder/createfolders/default",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
 						"v1",
-						"containers"
+						"folder",
+						"createfolders",
+						"default"
 					]
 				},
 				"description": "Make a request without log in user"
+			},
+			"response": []
+		},
+		{
+			"name": "CreateFileTestContainer",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Status code is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"No errors\", function () {",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.errors.length).to.eql(0);",
+							"});",
+							"",
+							"pm.test(\"Information Saved Correctly\", function () {",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.entity.contentType).to.eql(\"FileAsset\");",
+							"    pm.expect(jsonData.entity.fileName).to.eql(\"container.vtl\");",
+							"});",
+							"",
+							"",
+							"",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "json",
+							"value": "{\n    \"contentlet\": {\n        \"contentType\": \"FileAsset\",\n        \"title\": \"container.vtl\",\n        \"fileName\": \"container.vtl\",\n        \"hostFolder\":\"{{folderidentifier}}\"\n    }\n}\n",
+							"type": "text"
+						},
+						{
+							"key": "file",
+							"type": "file",
+							"src": "resources/containertest/container.vtl"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"actions",
+						"default",
+						"fire",
+						"PUBLISH"
+					]
+				},
+				"description": "Make a request without log in user"
+			},
+			"response": []
+		},
+		{
+			"name": "invalidateSession",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/logout",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"logout"
+					]
+				}
 			},
 			"response": []
 		},
@@ -1262,8 +1414,8 @@
 							"pm.test(\"Information Saved Correctly\", function () {",
 							"    ",
 							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.entity.name).to.eql(\"System Container\");",
-							"    pm.expect(jsonData.entity.notes).to.eql(\"System Container\");",
+							"    pm.expect(jsonData.entity.name).to.eql(\"Test Container\");",
+							"    pm.expect(jsonData.entity.notes).to.eql(\"Test Container\");",
 							"    ",
 							"    ",
 							"});",
@@ -1301,7 +1453,7 @@
 					}
 				],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/containers/live?containerId=/application/containers/system",
+					"raw": "{{serverURL}}/api/v1/containers/live?containerId=/application/containers/test",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -1314,7 +1466,7 @@
 					"query": [
 						{
 							"key": "containerId",
-							"value": "/application/containers/system"
+							"value": "/application/containers/test"
 						}
 					]
 				},
@@ -1490,7 +1642,7 @@
 							"pm.test(\"Information Saved Correctly\", function () { ",
 							"    ",
 							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.entity.title).to.eql(\"System Container\");",
+							"    pm.expect(jsonData.entity.title).to.eql(\"Test Container\");",
 							"    pm.expect(jsonData.entity.live).to.eql(false); ",
 							"    ",
 							"    ",
@@ -1538,7 +1690,7 @@
 					}
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/containers/_unpublish?containerId=/application/containers/system",
+					"raw": "{{serverURL}}/api/v1/containers/_unpublish?containerId=/application/containers/test",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -1551,7 +1703,7 @@
 					"query": [
 						{
 							"key": "containerId",
-							"value": "/application/containers/system"
+							"value": "/application/containers/test"
 						}
 					]
 				},
@@ -1726,7 +1878,7 @@
 							"pm.test(\"Information Saved Correctly\", function () { ",
 							"    ",
 							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.entity.title).to.eql(\"System Container\");",
+							"    pm.expect(jsonData.entity.title).to.eql(\"Test Container\");",
 							"    pm.expect(jsonData.entity.live).to.eql(false); ",
 							"    pm.expect(jsonData.entity.archived).to.eql(true); ",
 							"    ",
@@ -1766,7 +1918,7 @@
 					}
 				],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/containers/_archive?containerId=/application/containers/system",
+					"raw": "{{serverURL}}/api/v1/containers/_archive?containerId=/application/containers/test",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -1779,7 +1931,7 @@
 					"query": [
 						{
 							"key": "containerId",
-							"value": "/application/containers/system"
+							"value": "/application/containers/test"
 						}
 					]
 				},
@@ -1889,7 +2041,7 @@
 							"pm.test(\"Information Saved Correctly\", function () { ",
 							"    ",
 							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.entity.title).to.eql(\"System Container\");",
+							"    pm.expect(jsonData.entity.title).to.eql(\"Test Container\");",
 							"    pm.expect(jsonData.entity.live).to.eql(false); ",
 							"    pm.expect(jsonData.entity.archived).to.eql(false); ",
 							"    ",
@@ -1929,7 +2081,7 @@
 					}
 				],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/containers/_unarchive?containerId=/application/containers/system",
+					"raw": "{{serverURL}}/api/v1/containers/_unarchive?containerId=/application/containers/test",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -1942,7 +2094,7 @@
 					"query": [
 						{
 							"key": "containerId",
-							"value": "/application/containers/system"
+							"value": "/application/containers/test"
 						}
 					]
 				},
@@ -2052,7 +2204,7 @@
 							"pm.test(\"Information Saved Correctly\", function () { ",
 							"    ",
 							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.entity.title).to.eql(\"System Container\");",
+							"    pm.expect(jsonData.entity.title).to.eql(\"Test Container\");",
 							"    ",
 							"});",
 							"",
@@ -2098,7 +2250,7 @@
 					}
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/containers/_publish?containerId=/application/containers/system",
+					"raw": "{{serverURL}}/api/v1/containers/_publish?containerId=/application/containers/test",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -2111,7 +2263,7 @@
 					"query": [
 						{
 							"key": "containerId",
-							"value": "/application/containers/system"
+							"value": "/application/containers/test"
 						}
 					]
 				},
@@ -2195,6 +2347,14 @@
 		},
 		{
 			"key": "inode",
+			"value": ""
+		},
+		{
+			"key": "folderidentifier",
+			"value": ""
+		},
+		{
+			"key": "folderinode",
 			"value": ""
 		}
 	]
