@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "4dae205a-bf37-45ba-b788-f170ea77324a",
+		"_postman_id": "b8bd7bc5-f633-4ec7-8712-0976e902fe98",
 		"name": "PortletResource",
 		"description": "Contains test for portlet resources",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -610,7 +610,7 @@
 					}
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/portlet/custom/c_myCustom/_addtolayout/",
+					"raw": "{{serverURL}}/api/v1/portlet/custom/c_myCustom/_addtolayout/{{firstReturnedLayout}}",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -621,7 +621,7 @@
 						"custom",
 						"c_myCustom",
 						"_addtolayout",
-						""
+						"{{firstReturnedLayout}}"
 					]
 				},
 				"description": "This test creates a custom content portlet for CONTENT base type"
