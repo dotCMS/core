@@ -5324,8 +5324,8 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code should be 204\", function () {",
-							"    pm.response.to.have.status(204);",
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
 							"});",
 							""
 						],
