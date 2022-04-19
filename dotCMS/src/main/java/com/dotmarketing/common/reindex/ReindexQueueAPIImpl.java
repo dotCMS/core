@@ -3,6 +3,7 @@
  */
 package com.dotmarketing.common.reindex;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import java.sql.Connection;
 import java.util.Collection;
 import java.util.List;
@@ -48,8 +49,8 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
 
     @Override
     @WrapInTransaction
-    public void addStructureReindexEntries(String structureInode) throws DotDataException {
-        reindexQueueFactory.addStructureReindexEntries(structureInode);
+    public void addStructureReindexEntries(final ContentType contentType) throws DotDataException {
+        reindexQueueFactory.addStructureReindexEntries(contentType);
     }
 
     @Override

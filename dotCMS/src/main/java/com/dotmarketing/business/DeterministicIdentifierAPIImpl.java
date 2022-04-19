@@ -134,13 +134,8 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
                         "Failed resolving asset name for contentlet with title `%s` and id `%s` ",
                         contentlet.getTitle(), contentlet.getIdentifier()), e);
             }
-        } else {
-            if (asset instanceof WebAsset) {
+        } else if (asset instanceof WebAsset) {
                 return ((WebAsset) asset).getTitle();
-            }
-            if (asset instanceof Folder) {
-                return ((Folder) asset).getName();
-            }
         }
         return uuidSupplier.get();
 
@@ -184,6 +179,39 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
         final String assetType = resolveAssetType(asset);
         final String assetName = resolveAssetName(asset);
         final String deterministicId = (assetType + StringPool.COLON + parentHost.getHostname() + StringPool.FORWARD_SLASH + parentFolder.getPath() + assetName).toLowerCase();
+
+        Logger.debug(DeterministicIdentifierAPIImpl.class,
+                String.format(" assetType: %s, assetName: %s,  deterministicId: %s", assetType, assetName,
+                        deterministicId));
+
+        return deterministicId;
+
+    }
+
+
+    /**
+     * Generates the seed to the deterministic id for the given set of params
+     * @param folder
+     * @param parent
+     * @return
+     */
+    private String deterministicIdSeed(final Folder folder, final Treeable parent) {
+
+        final Host parentHost = (parent instanceof Host) ? (Host) parent : Try.of(
+                        () -> hostAPI
+                                .find(((Folder) parent).getHostId(), APILocator.systemUser(), false))
+                .getOrElseThrow(DotRuntimeException::new);
+
+
+        final Folder parentFolder = (parent instanceof Folder) ? (Folder) parent
+                : Try.of(folderAPI::findSystemFolder)
+                        .getOrElseThrow(DotRuntimeException::new);
+
+        final String assetType = folder.getClass().getSimpleName();
+        final String assetName = folder.getName();
+
+        final String deterministicId = (assetType + StringPool.COLON + parentHost.getHostname()
+                + StringPool.FORWARD_SLASH + parentFolder.getPath() + assetName).toLowerCase();
 
         Logger.debug(DeterministicIdentifierAPIImpl.class,
                 String.format(" assetType: %s, assetName: %s,  deterministicId: %s", assetType, assetName,
@@ -314,7 +342,7 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
 
 
     /**
-     * Entry point for (Contentlets, Host, Persona, Templates, Folders, FileAsset)
+     * Entry point for (Contentlets, Host, Persona, Templates, FileAsset)
      * @param asset
      * @param parent
      * @return
@@ -327,6 +355,23 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
         final IdentifierFactory identifierFactory = FactoryLocator.getIdentifierFactory();
         final Function<String, Boolean> testIdentifierFunction = identifierFactory::isIdentifier;
         return isEnabled() ? bestEffortDeterministicId(hash(deterministicIdSeed(asset, parent)),
+                testIdentifierFunction, uuidSupplier) : uuidSupplier.get();
+    }
+
+    /**
+     * Entry point for Folders
+     * @param folder
+     * @param parent
+     * @return
+     */
+    @CloseDBIfOpened
+    @Override
+    public String generateDeterministicIdBestEffort(final Folder folder,
+            final Treeable parent) {
+
+        final IdentifierFactory identifierFactory = FactoryLocator.getIdentifierFactory();
+        final Function<String, Boolean> testIdentifierFunction = identifierFactory::isIdentifier;
+        return isEnabled() ? bestEffortDeterministicId(hash(deterministicIdSeed(folder, parent)),
                 testIdentifierFunction, uuidSupplier) : uuidSupplier.get();
     }
 

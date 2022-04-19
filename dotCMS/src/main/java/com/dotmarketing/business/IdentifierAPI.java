@@ -135,6 +135,26 @@ public interface IdentifierAPI {
 	 * @throws DotDataException
 	 */
 	public Identifier createNew(Versionable asset, Treeable parent) throws DotDataException;
+
+	/**
+	 * Persists in DB a new folder identifier using a given parent
+	 * @param folder
+	 * @param parent
+	 * @return
+	 * @throws DotDataException
+	 */
+	Identifier createNew(final Folder folder, final Treeable parent) throws DotDataException;
+
+	/**
+	 * Persist in DB a new folder identifier using a given parent and Id (existingId)
+	 * @param folder
+	 * @param parent
+	 * @param existingId
+	 * @return
+	 * @throws DotDataException
+	 */
+	Identifier createNew(final Folder folder, final Treeable parent, final String existingId) throws DotDataException;
+
 	public Identifier createNew(Versionable asset, Treeable parent, String existingId) throws DotDataException;
 
 	/**

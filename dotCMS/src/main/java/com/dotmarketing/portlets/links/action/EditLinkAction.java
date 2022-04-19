@@ -496,8 +496,8 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 			Identifier id = identifierAPI.find(currentLink);
 			String URI = id.getURI();
 			String uriPath = URI.substring(0,URI.lastIndexOf("/")+1);
-			if(!uriPath.equals(identifierAPI.find(parent).getPath())){
-				id.setURI(identifierAPI.find(parent).getPath()+currentLink.getProtocal() + currentLink.getUrl());
+			if(!uriPath.equals(identifierAPI.find(parent.getIdentifier()).getPath())){
+				id.setURI(identifierAPI.find(parent.getIdentifier()).getPath()+currentLink.getProtocal() + currentLink.getUrl());
 				identifierAPI.save(id);
 			}
 		}
@@ -557,7 +557,7 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 		if (InodeUtils.isSet(currentLink.getInode())) {
 			Identifier identifier = identifierAPI.find(currentLink);
 			WebAssetFactory
-			.createAsset(link, userId, parent, identifier, false);
+			.createAsset(link, userId, identifier, false);
 
 			workingLink = (Link) WebAssetFactory.saveAsset(link, identifier);
 			currentLink = link;
@@ -658,7 +658,7 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 		if (parentInode != null && parentInode.length() != 0
 				&& !parentInode.equals("0")) {
 			//the parent is being passed through the request
-			parent = (Folder) InodeFactory.getInode(parentInode, Folder.class);
+			parent = folderAPI.find(parentInode, user, false);
 			Logger.debug(this, "Parent Folder=" + parent.getInode());
 		} else {
 			parent = folderAPI.findParentFolder(currentLink, user,false);
@@ -797,7 +797,7 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 			Folder parent = folderAPI.find(parentInode, user, false); 
 			Folder oldParent = folderAPI.findParentFolder(webAsset, user, false);
 			super._moveWebAsset(req, res, config, form, user, Link.class,WebKeys.LINK_EDIT);			
-			RefreshMenus.deleteMenu(oldParent, parent);
+
 			if (oldParent.isShowOnMenu()) {
 			    CacheLocator.getNavToolCache().removeNav(oldParent.getHostId(), oldParent.getInode());
 			}

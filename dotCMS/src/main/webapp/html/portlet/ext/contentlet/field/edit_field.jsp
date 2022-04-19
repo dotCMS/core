@@ -326,7 +326,7 @@
 
                 List<FieldVariable> fieldVariables=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, true);
                     for(FieldVariable fv : fieldVariables){
-                        if (fv.getKey().equals("drag-and-drop")) {
+                        if (fv.getKey().equals("dragAndDrop")) {
                             dragAndDrop = !"false".equalsIgnoreCase(fv.getValue());
                         }
                     }
@@ -370,6 +370,11 @@
             <div id="acheck<%=field.getVelocityVarName()%>"></div>
 
         </div>
+        <style>
+            .editWYSIWYGField.aceText.aceTall {
+                height: 400px;
+            }
+        </style>
         <script type="text/javascript">
             dojo.addOnLoad(function () {
                 <% if (!wysiwygDisabled) { %>
@@ -1106,16 +1111,25 @@
             keyValueMap.put("content", "...");
         }
 
-        String keyValueDataRaw = "{";
-        String dotKeyValueDataRaw = "";
+        final StringBuilder keyValueDataRaw = new StringBuilder("{");
+        final StringBuilder dotKeyValueDataRaw = new StringBuilder();
 
-        for(String key : keyValueMap.keySet()) {
-            keyValueDataRaw += key + ":" + UtilMethods.htmlifyString(UtilMethods.escapeDoubleQuotes(keyValueMap.get(key).toString())) + ",";
-            dotKeyValueDataRaw += key + "|" + UtilMethods.htmlifyString(UtilMethods.escapeDoubleQuotes(keyValueMap.get(key).toString())) + ",";
+        final Iterator<String> iterator = keyValueMap.keySet().iterator();
+
+        while (iterator.hasNext()) {
+            final String key = iterator.next();
+            final Object object = keyValueMap.get(key);
+            if(null != object) {
+                final String sanitized = UtilMethods.htmlifyString(UtilMethods.escapeDoubleQuotes(object.toString()));
+                keyValueDataRaw.append(key).append(":").append(sanitized);
+                dotKeyValueDataRaw.append(key).append("|").append(sanitized);
+                if (iterator.hasNext()) {
+                    keyValueDataRaw.append(',');
+                    dotKeyValueDataRaw.append(',');
+                }
+            }
         }
-
-        keyValueDataRaw = keyValueDataRaw.substring(0, keyValueDataRaw.length() - 1) + "}";
-        dotKeyValueDataRaw = dotKeyValueDataRaw.substring(0, dotKeyValueDataRaw.length() - 1);
+        keyValueDataRaw.append('}');
 
         List<FieldVariable> fieldVariables=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, true);
         String whiteListKeyValues = "";
@@ -1125,7 +1139,7 @@
             }
         }
     %>
-        <input type="hidden" class ="<%=field.getVelocityVarName()%>" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>" value="<%=keyValueDataRaw%>" />
+        <input type="hidden" class ="<%=field.getVelocityVarName()%>" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>" value="<%=keyValueDataRaw.toString()%>" />
         <style>
             dot-key-value key-value-table tr {
                 cursor: move;
@@ -1137,7 +1151,8 @@
                 padding: 0;
             }
             dot-key-value .key-value-table-wc__key,
-            dot-key-value .key-value-table-wc__value {
+            dot-key-value .key-value-table-wc__value,
+            dot-key-value .key-value-table-wc__action {
                 padding-left: 0.5rem;
             }
             dot-key-value key-value-form label {
@@ -1159,7 +1174,7 @@
                 border: solid 1px var(--color-main);
                 color: var(--color-main);
             }
-            dot-key-value key-value-form button[disabled] {
+            dot-key-value button[disabled] {
                 background: #f3f3f3;
                 border: 1px solid #b3b1b8;
                 color: #b3b1b8;
@@ -1183,12 +1198,12 @@
             }
         </style>
 
-        <dot-key-value></dot-key-value>
+        <dot-key-value id="<%=field.getVelocityVarName()%>KeyValue"></dot-key-value>
 
         <script>
-            var dotKeyValue = document.querySelector('dot-key-value');
+            var dotKeyValue = document.querySelector('#<%=field.getVelocityVarName()%>KeyValue');
             dotKeyValue.uniqueKeys = "true";
-            dotKeyValue.value = '<%=dotKeyValueDataRaw%>';
+            dotKeyValue.value = '<%=dotKeyValueDataRaw.toString()%>';
             dotKeyValue.disabled = '<%=field.isReadOnly()%>';
             dotKeyValue.whiteList = '<%=whiteListKeyValues%>';
             dotKeyValue.formKeyLabel = '<%= LanguageUtil.get(pageContext, "Key") %>'

@@ -67,6 +67,8 @@ import java.util.Map;
 
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
+import io.vavr.control.Try;
+
 import java.util.Optional;
 
 /**
@@ -120,19 +122,15 @@ public class WebAssetFactory {
 		permissionAPI = permissionAPIRef;
 	}
 
-	public static void createAsset(WebAsset webasset, String userId, Inode parent) throws DotDataException, DotStateException, DotSecurityException {
+	public static void createAsset(WebAsset webasset, String userId, Folder parent) throws DotDataException, DotStateException, DotSecurityException {
 
 		webasset.setModDate(new java.util.Date());
 		webasset.setModUser(userId);
 		// persists the webasset
 		HibernateUtil.saveOrUpdate(webasset);
 
-		// adds the webasset as child of the folder or parent inode
-		if(!parent.getType().equalsIgnoreCase("folder"))
-		   parent.addChild(webasset);
-
 		// create new identifier, with the URI
-		Identifier id = APILocator.getIdentifierAPI().createNew(webasset, (Folder) parent);
+		Identifier id = APILocator.getIdentifierAPI().createNew(webasset, parent);
 		id.setOwner(userId);
 		// set the identifier on the inode for future reference.
 		// and for when we get rid of identifiers all together
@@ -141,8 +139,12 @@ public class WebAssetFactory {
 		HibernateUtil.saveOrUpdate(webasset);
         APILocator.getVersionableAPI().setWorking(webasset);
 
-		systemEventsAPI.pushAsync(SystemEventType.SAVE_LINK, new Payload(webasset, Visibility.EXCLUDE_OWNER,
-				new ExcludeOwnerVerifierBean(userId, PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+		final Map webAssetMap = webasset.getMap();
+		HibernateUtil.addCommitListener(id.getId(), ()-> {
+
+			Try.run(()->systemEventsAPI.pushAsync(SystemEventType.SAVE_LINK, new Payload(webAssetMap, Visibility.EXCLUDE_OWNER,
+					new ExcludeOwnerVerifierBean(userId, PermissionAPI.PERMISSION_READ, Visibility.PERMISSION))));
+		});
 	}
 
 	public static void createAsset(WebAsset webasset, String userId, Host host) throws DotDataException, DotStateException, DotSecurityException {
@@ -162,8 +164,11 @@ public class WebAssetFactory {
 
 		APILocator.getVersionableAPI().setWorking(webasset);
 
-		systemEventsAPI.pushAsync(SystemEventType.SAVE_LINK, new Payload(webasset, Visibility.EXCLUDE_OWNER,
-				new ExcludeOwnerVerifierBean(userId, PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+		final Map webAssetMap = webasset.getMap();
+		HibernateUtil.addCommitListener(id.getId(), ()-> {
+			Try.run(()->systemEventsAPI.pushAsync(SystemEventType.SAVE_LINK, new Payload(webAssetMap, Visibility.EXCLUDE_OWNER,
+					new ExcludeOwnerVerifierBean(userId, PermissionAPI.PERMISSION_READ, Visibility.PERMISSION))));
+		});
 	}
 
 	public static void createAsset(WebAsset webasset, String userId, Inode parent, Identifier identifier) throws DotDataException, DotStateException, DotSecurityException {
@@ -210,29 +215,6 @@ public class WebAssetFactory {
 	}
 
 	public static void createAsset(WebAsset webasset, String userId, Inode parent, Identifier identifier,
-			boolean working) throws DotDataException, DotStateException, DotSecurityException {
-
-		webasset.setModDate(new java.util.Date());
-		webasset.setModUser(userId);
-		// persists the webasset
-		HibernateUtil.saveOrUpdate(webasset);
-
-		// adds the webasset as child of the folder or parent inode
-		if(!parent.getType().equalsIgnoreCase("folder"))
-		   parent.addChild(webasset);
-
-		// adds asset to the existing identifier
-		//identifier.addChild(webasset);
-		//webasset.addParent(identifier);
-		webasset.setIdentifier(identifier.getInode());
-
-		HibernateUtil.saveOrUpdate(webasset);
-
-		if(working)
-		    APILocator.getVersionableAPI().setWorking(webasset);
-	}
-
-	public static void createAsset(WebAsset webasset, String userId, Inode parent, Identifier identifier,
 			boolean working, boolean isLive) throws DotDataException, DotStateException, DotSecurityException {
 
 		webasset.setModDate(new java.util.Date());
@@ -262,11 +244,6 @@ public class WebAssetFactory {
 		webasset.setModDate(new java.util.Date());
 		webasset.setModUser(userId);
 		// persists the webasset
-		//HibernateUtil.saveOrUpdate(webasset);
-
-		// adds asset to the existing identifier
-		//identifier.addChild(webasset);
-		//webasset.addParent(identifier);
 		webasset.setIdentifier(identifier.getInode());
 
 		HibernateUtil.saveOrUpdate(webasset);
@@ -276,18 +253,14 @@ public class WebAssetFactory {
 
 	}
 
-	public static void createAsset(WebAsset webasset, String userId, Inode parent, boolean isLive) throws DotDataException, DotStateException, DotSecurityException {
+	public static void createAsset(WebAsset webasset, String userId, Folder parent, boolean isLive) throws DotDataException, DotStateException, DotSecurityException {
 		webasset.setModDate(new java.util.Date());
 		webasset.setModUser(userId);
 		// persists the webasset
 		HibernateUtil.saveOrUpdate(webasset);
 
-		// adds the webasset as child of the folder or parent inode
-		if(!parent.getType().equalsIgnoreCase("folder"))
-		  parent.addChild(webasset);
-
 		// create new identifier, with the URI
-		Identifier id = APILocator.getIdentifierAPI().createNew(webasset, (Folder) parent);
+		Identifier id = APILocator.getIdentifierAPI().createNew(webasset, parent);
 		id.setOwner(userId);
 		// set the identifier on the inode for future reference.
 		// and for when we get rid of identifiers all together
@@ -540,9 +513,11 @@ public class WebAssetFactory {
 			Logger.debug(WebAssetFactory.class, "HibernateUtil.saveOrUpdate(workingwebasset)");
 		}
 
-
-		systemEventsAPI.pushAsync(SystemEventType.PUBLISH_LINK, new Payload(currWebAsset, Visibility.EXCLUDE_OWNER,
-				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+		final Map webAssetMap = currWebAsset.getMap();
+		HibernateUtil.addCommitListener(identifier.getId(), ()-> {
+			Try.run(()->systemEventsAPI.pushAsync(SystemEventType.PUBLISH_LINK, new Payload(webAssetMap, Visibility.EXCLUDE_OWNER,
+					new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION))));
+		});
 
 		return livewebasset;
 	}
@@ -614,8 +589,11 @@ public class WebAssetFactory {
 				HibernateUtil.saveOrUpdate(workingwebasset);
 			}
 
-			systemEventsAPI.pushAsync(SystemEventType.ARCHIVE_LINK, new Payload(currWebAsset, Visibility.EXCLUDE_OWNER,
-					new ExcludeOwnerVerifierBean(userId, PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+			final Map webAssetMap = currWebAsset.getMap();
+			HibernateUtil.addCommitListener(identifier.getId(), ()-> {
+				Try.run(()->systemEventsAPI.pushAsync(SystemEventType.ARCHIVE_LINK, new Payload(webAssetMap, Visibility.EXCLUDE_OWNER,
+						new ExcludeOwnerVerifierBean(userId, PermissionAPI.PERMISSION_READ, Visibility.PERMISSION))));
+			});
 
 			return true;
 		}
@@ -638,19 +616,21 @@ public class WebAssetFactory {
 		APILocator.getVersionableAPI().setLocked(currWebAsset, false, null);
 	}
 
-	public static void unArchiveAsset(WebAsset currWebAsset) throws DotDataException, DotStateException, DotSecurityException {
+	public static void unArchiveAsset(final WebAsset currWebAsset) throws DotDataException, DotStateException, DotSecurityException {
 
 		RefreshMenus.deleteMenu(currWebAsset);
-		Identifier ident=APILocator.getIdentifierAPI().find(currWebAsset);
+		final Identifier ident=APILocator.getIdentifierAPI().find(currWebAsset);
 		CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
 		// gets the identifier for this asset
 		APILocator.getVersionableAPI().setDeleted(currWebAsset, false);
 
-		systemEventsAPI.pushAsync(SystemEventType.UN_ARCHIVE_SITE, new Payload(currWebAsset, Visibility.EXCLUDE_OWNER,
-				new ExcludeOwnerVerifierBean(currWebAsset.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+		HibernateUtil.addCommitListener(ident.getId(), ()-> {
+			Try.run(()->systemEventsAPI.pushAsync(SystemEventType.UN_ARCHIVE_SITE, new Payload(currWebAsset.getMap(), Visibility.EXCLUDE_OWNER,
+					new ExcludeOwnerVerifierBean(currWebAsset.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION))));
+		});
 	}
 
-	public static boolean unPublishAsset(WebAsset currWebAsset, String userId, Inode parent) throws DotStateException, DotDataException, DotSecurityException {
+	public static boolean unPublishAsset(WebAsset currWebAsset, String userId, Treeable parent) throws DotStateException, DotDataException, DotSecurityException {
 		ContentletAPI conAPI = APILocator.getContentletAPI();
 		HostAPI hostAPI = APILocator.getHostAPI();
 
@@ -696,9 +676,6 @@ public class WebAssetFactory {
 
 				if ((livewebasset.getInode() != workingwebasset.getInode())) {
 			        APILocator.getVersionableAPI().setLocked(workingwebasset, false, null);
-					// removes from folder or parent inode
-					if(parent != null)
-						parent.deleteChild(workingwebasset);
 				}
 
 				if (currWebAsset instanceof Container) {
@@ -712,16 +689,14 @@ public class WebAssetFactory {
 					if( parent instanceof Folder ) {
 						Folder parentFolder = (Folder)parent;
 						Host host = hostAPI.findParentHost(parentFolder, APILocator.getUserAPI().getSystemUser(), false);
-						RefreshMenus.deleteMenu(host);
 						CacheLocator.getNavToolCache().removeNav(host.getIdentifier(), parentFolder.getInode());
 					}
 				}
 
-
-
-
-				systemEventsAPI.pushAsync(SystemEventType.UN_PUBLISH_LINK, new Payload(currWebAsset, Visibility.EXCLUDE_OWNER,
-						new ExcludeOwnerVerifierBean(currWebAsset.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+				HibernateUtil.addCommitListener(identifier.getId(), ()-> {
+					Try.run(()->systemEventsAPI.pushAsync(SystemEventType.UN_PUBLISH_LINK, new Payload(currWebAsset, Visibility.EXCLUDE_OWNER,
+							new ExcludeOwnerVerifierBean(currWebAsset.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION))));
+				});
 				return true;
 			} catch (Exception e) {
 				return false;
@@ -780,7 +755,7 @@ public class WebAssetFactory {
 	 *             The method throw an exception when the new asset identifier
 	 *             or the working folder cannot be found.
 	 */
-	public static WebAsset saveAsset(WebAsset newWebAsset, Identifier id) throws Exception {
+	public static WebAsset saveAsset(final WebAsset newWebAsset, final Identifier id) throws Exception {
 		if (!InodeUtils.isSet(id.getInode())) {
 			throw new Exception("Web asset Identifier not found!");
 		}
@@ -801,9 +776,12 @@ public class WebAssetFactory {
 
 		 APILocator.getVersionableAPI().setWorking(newWebAsset);
 
-		SystemEventType systemEventType = newWebAsset.getInode() == null ? SystemEventType.SAVE_LINK : SystemEventType.UPDATE_LINK;
-		systemEventsAPI.pushAsync(systemEventType, new Payload(newWebAsset, Visibility.EXCLUDE_OWNER,
-				new ExcludeOwnerVerifierBean(newWebAsset.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+		HibernateUtil.addCommitListener(id.getId(), ()-> {
+
+			final SystemEventType systemEventType = newWebAsset.getInode() == null ? SystemEventType.SAVE_LINK : SystemEventType.UPDATE_LINK;
+			Try.run(()->systemEventsAPI.pushAsync(systemEventType, new Payload(newWebAsset, Visibility.EXCLUDE_OWNER,
+					new ExcludeOwnerVerifierBean(newWebAsset.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION))));
+		});
 
 		return newWebAsset;
 	}
@@ -901,21 +879,37 @@ public class WebAssetFactory {
 		return false;
 	}
 
+	public static void changeAssetMenuOrder(Folder folder, int newValue, User user) throws ActionException, DotDataException {
+
+		// Checking permissions
+		if (!permissionAPI.doesUserHavePermission(folder, PERMISSION_WRITE, user)) {
+			throw new ActionException(WebKeys.USER_PERMISSIONS_EXCEPTION);
+		}
+
+		if (newValue == -1) {
+			folder.setShowOnMenu(false);
+		} else {
+			folder.setShowOnMenu(true);
+		}
+		folder.setSortOrder(newValue);
+
+		final Identifier ident=APILocator.getIdentifierAPI().find(folder.getIdentifier());
+		CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
+
+		try {
+			APILocator.getFolderAPI().save(folder, user, false);
+		} catch (DotSecurityException e) {
+			Logger.warnAndDebug(WebAssetFactory.class, "changeAssetMenuOrder failed for folder :" + folder.getName(), e);
+		}
+	}
+
 	public static void changeAssetMenuOrder(Inode asset, int newValue, User user) throws ActionException, DotDataException {
 
 		// Checking permissions
 		if (!permissionAPI.doesUserHavePermission(asset, PERMISSION_WRITE, user))
 			throw new ActionException(WebKeys.USER_PERMISSIONS_EXCEPTION);
 
-		if (asset instanceof Folder) {
-			if (newValue == -1) {
-				((Folder)asset).setShowOnMenu(false);
-			} else {
-				((Folder)asset).setShowOnMenu(true);
-			}
-			((Folder)asset).setSortOrder(newValue);
-			RefreshMenus.deleteMenu(((Folder)asset));
-		} else if (asset instanceof WebAsset) {
+        if (asset instanceof WebAsset) {
 			if (newValue == -1) {
 				((WebAsset)asset).setShowOnMenu(false);
 			} else {
@@ -1024,11 +1018,13 @@ public class WebAssetFactory {
 			//### Delete the Identifier ###
 			returnValue = true;
 
-			systemEventsAPI.pushAsync(SystemEventType.DELETE_LINK, new Payload(currWebAsset, Visibility.EXCLUDE_OWNER,
-					new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
-		}
-		else
-		{
+			final Map webAssetMap = currWebAsset.getMap();
+			HibernateUtil.addCommitListener(identifier.getId(), ()-> {
+				Try.run(()->systemEventsAPI.pushAsync(SystemEventType.DELETE_LINK, new Payload(webAssetMap, Visibility.EXCLUDE_OWNER,
+						new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION))));
+			});
+		} else {
+
 			throw new Exception(WebKeys.USER_PERMISSIONS_EXCEPTION);
 		}
 		return returnValue;
@@ -1100,7 +1096,7 @@ public class WebAssetFactory {
 				}
 				if (!WebAssetFactory.isAbstractAsset(webAsset)) {
 					permAsset.setPathToMe(APILocator.getIdentifierAPI()
-							.find(folderParent).getPath());
+							.find(folderParent.getIdentifier()).getPath());
 				} else {
 					permAsset.setPathToMe("");
 				}
@@ -1133,7 +1129,7 @@ public class WebAssetFactory {
 				}
 				if(folderParent!=null)
 					permAsset.setPathToMe(APILocator.getIdentifierAPI()
-							.find(folderParent).getPath());
+							.find(folderParent.getIdentifier()).getPath());
 				else
 					permAsset.setPathToMe(pathToFolderParent);
 				permAsset.setPermissionableAsset(page);

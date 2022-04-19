@@ -160,7 +160,6 @@ public class ContentletBaseTest extends IntegrationTestBase {
         testFolder.setShowOnMenu( false );
         testFolder.setSortOrder( 0 );
         testFolder.setTitle( "dotcms_junit_test_folder_" + String.valueOf( new Date().getTime() ) );
-        testFolder.setType( "folder" );
         testFolder.setHostId( defaultHost.getIdentifier() );
         //Creates and set an identifier
         Identifier identifier = APILocator.getIdentifierAPI().createNew( testFolder, defaultHost );

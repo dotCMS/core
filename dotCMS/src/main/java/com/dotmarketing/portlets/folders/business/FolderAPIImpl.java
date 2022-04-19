@@ -22,6 +22,7 @@ import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.model.EventSubscriber;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -43,7 +44,6 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
@@ -53,10 +53,12 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
@@ -65,8 +67,10 @@ import io.vavr.control.Try;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -83,6 +87,18 @@ public class FolderAPIImpl implements FolderAPI  {
 	private final SystemEventsAPI systemEventsAPI = APILocator.getSystemEventsAPI();
 	private final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
 	private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+
+	@VisibleForTesting
+	protected static final Set<String> reservedFolderNames =
+			Collections.unmodifiableSet(
+					new HashSet<>(CollectionsUtils
+							.set(Config.getStringArrayProperty("RESERVEDFOLDERNAMES",
+									new String[]{"WEB-INF", "META-INF", "assets", "dotcms", "html",
+											"portal",
+											"email_backups",
+											"DOTLESS", "DOTSASS", "dotAdmin", "custom_elements"})
+							))
+			);
 
 	/**
 	 * Will get a folder on a given path for a particular host.
@@ -139,9 +155,10 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 
 		try {
+			validateFolderName(folder, newName);
 			renamed = folderFactory.renameFolder(folder, newName, user, respectFrontEndPermissions);
 			CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
-			Identifier folderId = APILocator.getIdentifierAPI().find(folder);
+			Identifier folderId = APILocator.getIdentifierAPI().find(folder.getIdentifier());
 			CacheLocator.getNavToolCache().removeNavByPath(folderId.getHostId(), folderId.getParentPath());
 			return renamed;
 		} catch (InvalidFolderNameException e) {
@@ -333,6 +350,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to add to Host " + newParentHost.getHostname());
 		}
 
+		validateFolderName(folderToCopy);
 		folderFactory.copy(folderToCopy, newParentHost);
 
 		this.systemEventsAPI.pushAsync(SystemEventType.COPY_FOLDER, new Payload(folderToCopy, Visibility.EXCLUDE_OWNER,
@@ -459,8 +477,6 @@ public class FolderAPIImpl implements FolderAPI  {
 
 			// delete the menus using the fake proxy inode
 			if (folder.isShowOnMenu()) {
-				// RefreshMenus.deleteMenus();
-				RefreshMenus.deleteMenu(faker);
 				CacheLocator.getNavToolCache().removeNav(faker.getHostId(), faker.getInode());
 				
 				CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
@@ -518,7 +534,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			}
 
 			/******** delete possible orphaned identifiers under the folder *********/
-			Identifier ident=APILocator.getIdentifierAPI().find(folder);
+			Identifier ident=APILocator.getIdentifierAPI().find(folder.getIdentifier());
 			List<Identifier> orphanList=APILocator.getIdentifierAPI().findByParentPath(folder.getHostId(), ident.getURI());
 			for(Identifier orphan : orphanList) {
 			    APILocator.getIdentifierAPI().delete(orphan);
@@ -555,6 +571,20 @@ public class FolderAPIImpl implements FolderAPI  {
 		return folder;
 	} // find.
 
+	@Override
+	public void validateFolderName(final Folder folder) throws DotDataException {
+		validateFolderName(folder, folder.getName());
+	}
+
+	private void validateFolderName(final Folder folder, final String folderName) throws DotDataException {
+		if (UtilMethods.isSet(folder.getParentPermissionable())
+				&& folder.getParentPermissionable() instanceof Host
+				&& UtilMethods.isSet(folderName)
+				&& reservedFolderNames.stream()
+				.anyMatch((name)->name.equalsIgnoreCase(folderName))) {
+			throw new InvalidFolderNameException("Folder can't be saved. You entered a reserved folder name: " + folder.getName());
+		}
+	}
 
 	/**
 	 * Saves a folder
@@ -567,17 +597,24 @@ public class FolderAPIImpl implements FolderAPI  {
 	public void save(final Folder folder, final String existingId,
 					 final User user, final boolean respectFrontEndPermissions) throws DotDataException, DotStateException, DotSecurityException {
 
-		Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
-		if(id ==null || !UtilMethods.isSet(id.getId())){
+		Identifier existingID = APILocator.getIdentifierAPI().find(folder.getIdentifier());
+		if(existingID ==null || !UtilMethods.isSet(existingID.getId())){
 			throw new DotStateException("Folder must already have an identifier before saving");
 		}
 
+		if (SYSTEM_FOLDER.equals(folder.getInode()) && !Host.SYSTEM_HOST.equals(folder.getHostId())) {
+			throw new DotRuntimeException(String.format("Host ID for SYSTEM_FOLDER must always be SYSTEM_HOST. Value " +
+					"'%s' was set.", folder.getHostId()));
+		}
+
+		validateFolderName(folder);
+
 		Host host = APILocator.getHostAPI().find(folder.getHostId(), user, respectFrontEndPermissions);
-		Folder parentFolder = findFolderByPath(id.getParentPath(), id.getHostId(), user, respectFrontEndPermissions);
-		Permissionable parent = id.getParentPath().equals("/")?host:parentFolder;
+		Folder parentFolder = findFolderByPath(existingID.getParentPath(), existingID.getHostId(), user, respectFrontEndPermissions);
+		Permissionable parent = existingID.getParentPath().equals("/")?host:parentFolder;
 
 		if(parent ==null){
-			throw new DotStateException("No Folder Found for id: " + id.getParentPath());
+			throw new DotStateException("No Folder Found for id: " + existingID.getParentPath());
 		}
 		if (!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user,respectFrontEndPermissions)
 				|| !permissionAPI.doesUserHavePermissions(PermissionableType.FOLDERS, PermissionAPI.PERMISSION_EDIT, user)) {
@@ -586,13 +623,19 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 
 		boolean isNew = folder.getInode() == null;
-		folder.setModDate(new Date());
-		folder.setName(folder.getName());
-		folderFactory.save(folder);
+
+
+		//if the folder was renamed, we will need to create a new identifier
+		if (!folder.getName().equals(existingID.getAssetName())){
+			folderFactory.renameFolder(folder, folder.getName(), user, respectFrontEndPermissions);
+		} else{
+			folder.setModDate(new Date());
+			folderFactory.save(folder);
+		}
 
         // remove folder and parent from navigation cache
         CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
-        CacheLocator.getNavToolCache().removeNavByPath(id.getHostId(), id.getParentPath());
+        CacheLocator.getNavToolCache().removeNavByPath(existingID.getHostId(), existingID.getParentPath());
 
         SystemEventType systemEventType = isNew ? SystemEventType.SAVE_FOLDER : SystemEventType.UPDATE_FOLDER;
 		systemEventsAPI.pushAsync(systemEventType, new Payload(folder, Visibility.EXCLUDE_OWNER,
@@ -1199,4 +1242,11 @@ public class FolderAPIImpl implements FolderAPI  {
 				: findSubFolders((Host)parent, user, respectFrontEndPermissions);
 	} // findSubFolders.
 
+	@Override
+	@CloseDBIfOpened
+	public void updateUserReferences(final String userId, final String replacementUserId)
+			throws DotDataException {
+		Logger.debug(this, () -> "Updating references for user " + userId);
+		folderFactory.updateUserReferences(userId, replacementUserId);
+	}
 }

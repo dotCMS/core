@@ -35,6 +35,9 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
+import com.dotcms.contenttype.model.type.VanityUrlContentType;
+import com.dotcms.contenttype.transform.contenttype.ContentTypeTransformer;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -71,6 +74,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -169,6 +173,7 @@ import com.liferay.util.StringUtil;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
+import io.vavr.Lazy;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.BufferedOutputStream;
@@ -201,6 +206,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.activation.MimeType;
 import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
@@ -209,7 +215,7 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.springframework.beans.BeanUtils;
+
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -243,6 +249,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private static final boolean INCLUDE_DEPENDENCIES = true;
 
     private static final String backupPath = ConfigUtils.getBackupPath() + File.separator + "contentlets";
+
+    private static final Lazy<Boolean> UNIQUE_PER_SITE_CONFIG = Lazy.of(()->Config
+            .getBooleanProperty("uniquePerSite", true));
+
+    private static Boolean uniquePerSite;
 
     /**
      * Property to fetch related content from database (only applies for relationship fields)
@@ -308,18 +319,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     public Object loadField(final String inode, final com.dotcms.contenttype.model.field.Field field) throws DotDataException{
-        final ContentletJsonAPI contentletJsonAPI = APILocator.getContentletJsonAPI();
         if(APILocator.getContentletJsonAPI().isPersistContentAsJson()){
           final Object value = contentFactory.loadJsonField(inode, field);
           if(null != value){
               return value;
           }
-          //If nothing was fetched from the json-column
-          //We check if we explicitly indicated that no values should be written into the columns
-          if(!contentletJsonAPI.isPersistContentletInColumns()){
-             return null;
-          }
-          //But if passed this check then we should also give a try fetching the field from the columns.
         }
         return contentFactory.loadField(inode, field.dbColumn());
     }
@@ -830,6 +834,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         canLock(contentlet, user, respectFrontendRoles);
 
+        if(contentlet.isVanityUrl()) {
+            removeOldHostVanityURLCache(contentlet);
+        }
+
         //Set contentlet to live and unlocked
         APILocator.getVersionableAPI().setLive(contentlet);
 
@@ -853,7 +861,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         if(contentlet.isVanityUrl()) {
-
             APILocator.getVanityUrlAPI().invalidateVanityUrl(contentlet);
         }
 
@@ -868,6 +875,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // by now, the publish event is making a duplicate reload events on the site browser
         // so we decided to comment it out by now, and
         //contentletSystemEventUtil.pushPublishEvent(contentlet);
+    }
+
+    private void removeOldHostVanityURLCache(Contentlet contentlet) throws DotDataException, DotSecurityException {
+        final Optional<ContentletVersionInfo> contentletVersionInfo = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(contentlet.getIdentifier(),
+                        contentlet.getLanguageId());
+
+        if (contentletVersionInfo.isPresent() && UtilMethods.isSet(contentletVersionInfo.get().getLiveInode())) {
+            final Contentlet oldLiveVersion = APILocator.getContentletAPI()
+                    .find(contentletVersionInfo.get().getLiveInode(), APILocator.systemUser(),
+                            false);
+
+            final String oldHostId = oldLiveVersion.getStringProperty(
+                    VanityUrlContentType.SITE_FIELD_VAR);
+
+            if (!oldHostId.equals(contentlet.getHost())) {
+                CacheLocator.getVanityURLCache().remove(oldHostId, oldLiveVersion.getLanguageId());
+            }
+        }
     }
 
     @Override
@@ -3208,7 +3234,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void reindex(Structure structure)throws DotReindexStateException {
         try {
-            reindexQueueAPI.addStructureReindexEntries(structure.getInode());
+            final ContentTypeTransformer contentTypeTransformer = new StructureTransformer(structure);
+            reindexQueueAPI.addStructureReindexEntries(contentTypeTransformer.from());
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
             throw new DotReindexStateException("Unable to complete reindex: " + e.getMessage(),e);
@@ -3224,7 +3251,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void refresh(Structure structure) throws DotReindexStateException {
         try {
-            reindexQueueAPI.addStructureReindexEntries(structure.getInode());
+            final ContentTypeTransformer contentTypeTransformer = new StructureTransformer(structure);
+            reindexQueueAPI.addStructureReindexEntries(contentTypeTransformer.from());
             //CacheLocator.getContentletCache().clearCache();
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
@@ -3237,7 +3265,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void refresh(ContentType type) throws DotReindexStateException {
         try {
-            reindexQueueAPI.addStructureReindexEntries(type.id());
+            reindexQueueAPI.addStructureReindexEntries(type);
             //CacheLocator.getContentletCache().clearCache();
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
@@ -4582,7 +4610,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final String title = contentletIn.getTitle();
             final String actionId = workflowActionOpt.get().getId();
 
-            // if the default action is in the avalable actions for the content.
+            // if the default action is in the available actions for the content.
             if (!isDefaultActionOnAvailableActions(contentletIn, user, workflowAPI, actionId)) {
                 return Optional.empty();
             }
@@ -4672,7 +4700,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final ContentType contentType = contentlet.getContentType();
 
         String existingInode = null, existingIdentifier = null;
-        boolean changedURI = false;
 
         Contentlet workingContentlet = contentlet;
         try {
@@ -4709,7 +4736,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     existingInode=contentlet.getInode();
                     contentlet.setInode(null);
 
-                    Identifier ident=APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
+                        Identifier ident=APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
                     if(ident==null || !UtilMethods.isSet(ident.getId())) {
                         existingIdentifier=contentlet.getIdentifier();
                         contentlet.setIdentifier(null);
@@ -4826,11 +4853,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final IndexPolicy indexPolicy             = contentlet.getIndexPolicy();
             final IndexPolicy indexPolicyDependencies = contentlet.getIndexPolicyDependencies();
 
-             contentlet = assignIdentifierIfAbsent(contentlet, contentletRaw, existingIdentifier, existingInode, htmlPageURL);
+            boolean changedURI = addOrUpdateContentletIdentifier(contentlet, contentletRaw, existingIdentifier, existingInode, htmlPageURL);
 
-            //Include system fields to generate a json representation - these fields are later removed before contentlet gets saved
-            contentlet = includeSystemFields(contentlet, contentletRaw, tagsValues, categories, user);
             contentlet = applyNullProperties(contentlet);
+
             //This is executed first hand to create the inode-contentlet relationship.
             if(InodeUtils.isSet(existingInode)) {
                 contentlet = contentFactory.save(contentlet, existingInode);
@@ -4840,60 +4866,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             contentlet.setIndexPolicy(indexPolicy);
             contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
-
-            if (!isNewContent) {
-                //Existing contentlet getting updated.
-                Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
-
-                final String oldURI = identifier.getURI();
-
-                // make sure the identifier is removed from cache
-                // because changes here may affect URI then IdentifierCache
-                // can't remove it
-                CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
-
-                // Once the contentlet is saved, it gets refresh from the db. for which the incoming data gets lost.
-                // Therefore here we need to make sure we use the original contentlet that comes with the info passed from the ui.
-                final String hostId = UtilMethods.isSet(contentletRaw.getHost()) ? contentletRaw.getHost() : contentlet.getHost();
-                identifier.setHostId(hostId);
-                if(contentlet.isFileAsset()){
-                    try {
-                        if(contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD) == null){
-                            final String binaryIdentifier = contentletRaw.getIdentifier() != null ? contentletRaw.getIdentifier() : StringPool.BLANK;
-                            final String binaryNode = contentletRaw.getInode() != null ? contentletRaw.getInode() : StringPool.BLANK;
-                            throw new FileAssetValidationException("Unable to validate field: " + FileAssetAPI.BINARY_FIELD
-                                    + " identifier: " + binaryIdentifier
-                                    + " inode: " + binaryNode);
-                        } else {
-                            //We no longer use the old BinaryField to recover the file name.
-                            //From now on we'll recover such value from the field "fileName" presented on the screen.
-                            //The physical file asset is just an internal piece that is mapped to the system asset-name.
-                            //The file per-se no longer can be renamed. We can only modify the asset-name that refers to it.
-                            final String assetName = (String) contentletRaw.getMap()
-                                    .get(FileAssetAPI.FILE_NAME_FIELD);
-                            identifier.setAssetName(UtilMethods.isSet(assetName) ?
-                                    assetName :
-                                    contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD).getName()
-                            );
-                        }
-                    } catch (IOException e) {
-                        Logger.error( this.getClass(), "Error handling Binary Field.", e );
-                    }
-                } else if ( contentlet.isHTMLPage() ) {
-                    //For HTML Pages - The asset name maps to the page URL
-                    identifier.setAssetName( htmlPageURL );
-                }
-                if(UtilMethods.isSet(contentletRaw.getFolder()) && !contentletRaw.getFolder().equals(FolderAPI.SYSTEM_FOLDER)){
-                    final Folder folder = APILocator.getFolderAPI().find(contentletRaw.getFolder(), systemUser, false);
-                    Identifier folderIdent = APILocator.getIdentifierAPI().find(folder);
-                    identifier.setParentPath(folderIdent.getPath());
-                } else {
-                    identifier.setParentPath("/");
-                }
-                identifier = APILocator.getIdentifierAPI().save(identifier);
-
-                changedURI = ! oldURI.equals(identifier.getURI());
-            }
 
             contentlet = relateTags(contentlet, tagsValues, tagsHost);
 
@@ -5011,7 +4983,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 
     /**
-     * if we're not provided with an identifier this will attempt generating one
+     * if we're not provided with an identifier this will attempt generating one.
+     * In case an identifier already exists, it will be updated if needed. For example: when a folder path or host is changed
      * The inode is also generated here. For it is used internally to avoid collisions on the identifier table generating a unique asset name.
      * We're taking advantage of the exising logic on {@link ESContentFactoryImpl}'s save method.
      * That always explore the given contentlet trying to find a provided inode.
@@ -5021,31 +4994,38 @@ public class ESContentletAPIImpl implements ContentletAPI {
      *     final String inode = getInode(existingInode, contentlet);
      * }
      * </pre>
-     * @param contentlet the modified copy contentlet we want to save
+     * @param contentlet the modified copy contentlet we want to save. After this method execution, this contentlet will contain the new identifier and inode (if applies)
      * @param contentletRaw the incoming copy that holds every value passed from the front-end
      * @param existingIdentifier if internalCheckin decides we need to use an existing identifier we will use it
      * @param existingInode if internalCheckin decides we need to use an existing inode we will use it
      * @param htmlPageURL for pages we use the url to generate a unique asset name wen saving into the the contentlet table
-     * @return the modified copy contentlet we want to save with the new identifier and inode
+     * @return A boolean indicating if the contentlet's URI changed
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    private Contentlet assignIdentifierIfAbsent(final Contentlet contentlet, final Contentlet contentletRaw,  final String existingIdentifier, final String existingInode, final String htmlPageURL)
+    private boolean addOrUpdateContentletIdentifier(final Contentlet contentlet, final Contentlet contentletRaw,
+            final String existingIdentifier, final String existingInode, final String htmlPageURL)
             throws DotSecurityException, DotDataException {
 
+        final FolderAPI folderAPI = APILocator.getFolderAPI();
+        final HostAPI hostAPI     = APILocator.getHostAPI();
+        final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
+        final User systemUser     = APILocator.systemUser();
+
+        Identifier identifier;
         if (!InodeUtils.isSet(contentlet.getIdentifier())) {
 
             //Adding back temporarily the page URL to the contentlet, is needed in order to create a proper Identifier
             addURLToContentlet(contentlet, htmlPageURL);
             try {
-                final User systemUser = APILocator.systemUser();
+
                 final Treeable parent;
                 if (UtilMethods.isSet(contentletRaw.getFolder()) && !contentletRaw.getFolder()
                         .equals(FolderAPI.SYSTEM_FOLDER)) {
-                    parent = APILocator.getFolderAPI()
+                    parent = folderAPI
                             .find(contentletRaw.getFolder(), systemUser, false);
                 } else {
-                    parent = APILocator.getHostAPI().find(contentlet.getHost(), systemUser, false);
+                    parent = hostAPI.find(contentlet.getHost(), systemUser, false);
                 }
 
                 //We're gonna need a to assign the inode if we want to generate a valid identifier.
@@ -5057,10 +5037,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet.setInode(existingInode);
                 }
 
-                final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
-
                 final Contentlet asset = contentlet.isFileAsset() ? contentletRaw : contentlet;
-                final Identifier identifier = existingIdentifier != null ?
+                identifier = existingIdentifier != null ?
                         identifierAPI.createNew(asset, parent, existingIdentifier) :
                         identifierAPI.createNew(asset, parent);
 
@@ -5069,8 +5047,65 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 //Clean-up the contentlet object again..., we don' want to persist this URL in the db
                 removeURLFromContentlet(contentlet);
             }
+            return false;
+        } else {
+            //Existing contentlet getting updated.
+            identifier = identifierAPI.find(contentlet);
+
+            if (!UtilMethods.isSet(identifier) || !UtilMethods.isSet(identifier.getId())){
+                throw new DotDataException("The identifier %s does not exists", contentlet.getIdentifier());
+            }
+
+            final String oldURI = identifier.getURI();
+
+            // make sure the identifier is removed from cache
+            // because changes here may affect URI then IdentifierCache
+            // can't remove it
+            CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
+            // Once the contentlet is saved, it gets refresh from the db. for which the incoming data gets lost.
+            // Therefore here we need to make sure we use the original contentlet that comes with the info passed from the ui.
+            final String hostId = UtilMethods.isSet(contentletRaw.getHost()) ? contentletRaw.getHost() : contentlet.getHost();
+            identifier.setHostId(hostId);
+            if(contentlet.isFileAsset()){
+                try {
+                    if(contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD) == null){
+                        final String binaryIdentifier = contentletRaw.getIdentifier() != null ? contentletRaw.getIdentifier() : StringPool.BLANK;
+                        final String binaryNode = contentletRaw.getInode() != null ? contentletRaw.getInode() : StringPool.BLANK;
+                        throw new FileAssetValidationException("Unable to validate field: " + FileAssetAPI.BINARY_FIELD
+                                + " identifier: " + binaryIdentifier
+                                + " inode: " + binaryNode);
+                    } else {
+                        //We no longer use the old BinaryField to recover the file name.
+                        //From now on we'll recover such value from the field "fileName" presented on the screen.
+                        //The physical file asset is just an internal piece that is mapped to the system asset-name.
+                        //The file per-se no longer can be renamed. We can only modify the asset-name that refers to it.
+                        final String assetName = (String) contentletRaw.getMap()
+                                .get(FileAssetAPI.FILE_NAME_FIELD);
+                        identifier.setAssetName(UtilMethods.isSet(assetName) ?
+                                assetName :
+                                contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD).getName()
+                        );
+                    }
+                } catch (IOException e) {
+                    Logger.error( this.getClass(), "Error handling Binary Field.", e );
+                }
+            } else if ( contentlet.isHTMLPage() ) {
+                //For HTML Pages - The asset name maps to the page URL
+                identifier.setAssetName( htmlPageURL );
+            }
+            if(UtilMethods.isSet(contentletRaw.getFolder()) && !contentletRaw.getFolder().equals(FolderAPI.SYSTEM_FOLDER)){
+                final Folder folder = folderAPI.find(contentletRaw.getFolder(), systemUser, false);
+                if (null != folder) {
+                    Identifier folderIdent = identifierAPI.find(folder.getIdentifier());
+                    identifier.setParentPath(folderIdent.getPath());
+                }
+            } else {
+                identifier.setParentPath(StringPool.FORWARD_SLASH);
+            }
+            identifier = identifierAPI.save(identifier);
+
+            return UtilMethods.isSet(oldURI) && !oldURI.equals(identifier.getURI());
         }
-        return contentlet;
     }
 
 
@@ -6717,6 +6752,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                     buffy.append(" +languageId:" + contentlet.getLanguageId());
 
+                    if (getUniquePerSiteConfig()) {
+                        if (!UtilMethods.isSet(contentlet.getHost())) {
+                            populateHost(contentlet);
+                        }
+
+                        buffy.append(" +conHost:" + contentlet.getHost());
+                    }
+
                     buffy.append(" +").append(contentlet.getContentType().variable()).append(StringPool.PERIOD)
                             .append(field.getVelocityVarName()).append(ESUtils.SHA_256)
                             .append(StringPool.COLON)
@@ -6764,16 +6807,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                     {
                                         cve.addUniqueField(field);
                                         hasError = true;
-                                        Logger.warn(this, "Field [" + field.getVelocityVarName() + "] with value '" +
-                                                fieldValue + "'must be unique");
+                                        Logger.warn(this, getUniqueFieldErrorMessage(field, fieldValue, cont));
                                         break;
                                     }
                                 }
                             }else{
                                 cve.addUniqueField(field);
                                 hasError = true;
-                                Logger.warn(this, "Field [" + field.getVelocityVarName() + "] with value '" +
-                                        fieldValue + "'must be unique");
+                                Logger.warn(this, getUniqueFieldErrorMessage(field, fieldValue, contentlets.get(0)));
                                 break;
                             }
                         }
@@ -6841,6 +6882,27 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(hasError){
             throw cve;
         }
+    }
+
+    @NotNull
+    private String getUniqueFieldErrorMessage(final Field field, final Object fieldValue, final ContentletSearch contentletSearch) {
+
+        return String.format("Value of Field [%s] must be unique. Contents having the same value (%s): %s",
+                field.getVelocityVarName(), fieldValue, contentletSearch.getIdentifier());
+    }
+
+    @VisibleForTesting
+    public static void setUniquePerSite(final Boolean uniquePerSite){
+        ESContentletAPIImpl.uniquePerSite = uniquePerSite;
+    }
+
+    @VisibleForTesting
+    public static Boolean getUniquePerSite(){
+        return uniquePerSite;
+    }
+
+    private boolean getUniquePerSiteConfig() {
+        return UtilMethods.isSet(uniquePerSite) ? uniquePerSite : UNIQUE_PER_SITE_CONFIG.get();
     }
 
     private void validateBinary(final File binary, final String fieldName, final Field legacyField, final ContentType contentType) {
@@ -6942,7 +7004,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             if(UtilMethods.isSet(url)){
                 contentlet.setProperty(HTMLPageAssetAPI.URL_FIELD, url);
-                Identifier folderId = APILocator.getIdentifierAPI().find(folder);
+                Identifier folderId = APILocator.getIdentifierAPI().find(folder.getIdentifier());
                 String path = folder.getInode().equals(FolderAPI.SYSTEM_FOLDER)?"/"+url:folderId.getPath()+url;
                 Identifier htmlpage = APILocator.getIdentifierAPI().find(site, path);
                 if(htmlpage!=null && InodeUtils.isSet(htmlpage.getId()) && !htmlpage.getId().equals(contentlet.getIdentifier()) ){
@@ -7927,7 +7989,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(null != task) {
 
             final WorkflowTask newTask = new WorkflowTask();
-            BeanUtils.copyProperties(task, newTask);
+            Try.run(()->  BeanUtils.copyProperties(newTask, task));
             newTask.setId(null);
             newTask.setWebasset(copyContentlet.getIdentifier());
             newTask.setLanguageId(copyContentlet.getLanguageId());
@@ -8104,7 +8166,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         Identifier identifierWithSameUrl = null;
         if(UtilMethods.isSet(destinationFolder) && InodeUtils.isSet(destinationFolder.getInode())) { // Folders
             // Create new path
-            Identifier folderId = APILocator.getIdentifierAPI().find(destinationFolder);
+            Identifier folderId = APILocator.getIdentifierAPI().find(destinationFolder.getIdentifier());
             final String path = (destinationFolder.getInode().equals(FolderAPI.SYSTEM_FOLDER) ? "/" : folderId.getPath()) + futureAssetNameWithSuffix;
 
             final Host host =

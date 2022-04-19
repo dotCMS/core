@@ -7,12 +7,15 @@ import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
+import com.dotcms.publisher.business.PublishQueueElement;
+import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.output.TarGzipBundleOutput;
 import com.dotcms.util.DotPreconditions;
 
 import com.dotmarketing.util.*;
 
+import io.vavr.control.Try;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -390,10 +393,24 @@ public class BundleAPIImpl implements BundleAPI {
 
 	@WrapInTransaction
 	@Override
+	public void deleteAssetFromBundleAndAuditStatus(String assetId, String bundleId)
+			throws DotDataException {
+		deleteAssetFromBundle(assetId, bundleId);
+
+		List<PublishQueueElement> queueElements = Try.of(()->PublisherAPI.getInstance()
+				.getQueueElementsByBundleId(bundleId)).getOrElse(Collections::emptyList);
+
+		if(queueElements.isEmpty()) {
+			Try.run(()->APILocator.getPublishAuditAPI().deletePublishAuditStatus(bundleId))
+					.getOrElseThrow(DotDataException::new);
+		}
+	}
+
+	@WrapInTransaction
+	@Override
 	public void deleteAssetFromBundle(String assetId, String bundleId)
 			throws DotDataException {
 		bundleFactory.deleteAssetFromBundle(assetId, bundleId);
-
 	}
 
 	/**

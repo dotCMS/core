@@ -1,5 +1,7 @@
 package com.dotmarketing.util;
 
+import static java.io.File.separator;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
 import com.dotcms.publishing.BundlerUtil;
@@ -16,11 +18,11 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.portlets.calendar.model.CalendarReminder;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.cmsmaintenance.util.AssetFileNameFilter;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -36,10 +38,6 @@ import com.liferay.portal.ejb.ImageLocalManagerUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.output.TeeOutputStream;
-
-import javax.servlet.ServletException;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -51,8 +49,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.zip.ZipOutputStream;
-
-import static java.io.File.separator;
+import javax.servlet.ServletException;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.output.TeeOutputStream;
 
 public class ExportStarterUtil {
 
@@ -138,6 +137,7 @@ public class ExportStarterUtil {
 
             /* get a list of all our tables */
             //Including classes that are no longer mapped with Hibernate anymore
+            _tablesToDump.add(Folder.class);
             _tablesToDump.add(Identifier.class);
             _tablesToDump.add(Language.class);
             _tablesToDump.add(Relationship.class);
@@ -204,9 +204,6 @@ public class ExportStarterUtil {
                     else if(Tag.class.equals(clazz)){
                         _dh.setQuery("from " + clazz.getName() + " order by tag_id, tagname");
                     }
-                    else if(CalendarReminder.class.equals(clazz)){
-                        _dh.setQuery("from " + clazz.getName() + " order by user_id, event_id, send_date");
-                    }
                     else if(Identifier.class.equals(clazz)){
                         dc = new DotConnect();
                         dc.setSQL("select * from identifier order by parent_path, id")
@@ -238,6 +235,10 @@ public class ExportStarterUtil {
                         dc = new DotConnect();
                         dc.setSQL("SELECT * FROM category ORDER BY inode")
                                 .setStartRow(i).setMaxRows(step);
+                    } else if (Folder.class.equals(clazz)) {
+                        dc = new DotConnect();
+                        dc.setSQL("SELECT * FROM folder ORDER BY inode")
+                                .setStartRow(i).setMaxRows(step);
                     } else {
                         _dh.setQuery("from " + clazz.getName() + " order by 1");
                     }
@@ -266,6 +267,10 @@ public class ExportStarterUtil {
                     } else if(Category.class.equals(clazz)) {
                         _list = TransformerLocator
                                 .createCategoryTransformer(dc.loadObjectResults())
+                                .asList();
+                    } else if(Folder.class.equals(clazz)) {
+                        _list = TransformerLocator
+                                .createFolderTransformer(dc.loadObjectResults())
                                 .asList();
                     } else {
                         _list = _dh.list();

@@ -5,8 +5,8 @@ create table Address (
     companyId NVARCHAR(100) not null,
     userId NVARCHAR(100) not null,
     userName NVARCHAR(100) null,
-    createDate datetime null,
-    modifiedDate datetime null,
+    createDate datetimeoffset(3) null,
+    modifiedDate datetimeoffset(3) null,
     className NVARCHAR(100) null,
     classPK NVARCHAR(100) null,
     description NVARCHAR(100) null,
@@ -66,7 +66,7 @@ create table Image (
 create table PasswordTracker (
     passwordTrackerId NVARCHAR(100) not null primary key,
     userId NVARCHAR(100) not null,
-    createDate datetime not null,
+    createDate datetimeoffset(3) not null,
     password_ NVARCHAR(100) not null
 );
 
@@ -92,19 +92,19 @@ create table PollsQuestion (
     companyId NVARCHAR(100) not null,
     userId NVARCHAR(100) not null,
     userName NVARCHAR(100) null,
-    createDate datetime null,
-    modifiedDate datetime null,
+    createDate datetimeoffset(3) null,
+    modifiedDate datetimeoffset(3) null,
     title NVARCHAR(100) null,
     description NVARCHAR(1000) null,
-    expirationDate datetime null,
-    lastVoteDate datetime null
+    expirationDate datetimeoffset(3) null,
+    lastVoteDate datetimeoffset(3) null
 );
 
 create table PollsVote (
     questionId NVARCHAR(100) not null,
     userId NVARCHAR(100) not null,
     choiceId NVARCHAR(100) not null,
-    voteDate datetime null,
+    voteDate datetimeoffset(3) null,
     primary key (questionId, userId)
 );
 
@@ -129,27 +129,27 @@ create table PortletPreferences (
 
 create table Release_ (
     releaseId NVARCHAR(100) not null primary key,
-    createDate datetime null,
-    modifiedDate datetime null,
+    createDate datetimeoffset(3) null,
+    modifiedDate datetimeoffset(3) null,
     buildNumber int null,
-    buildDate datetime null
+    buildDate datetimeoffset(3) null
 );
 
 create table User_ (
     userId NVARCHAR(100) not null primary key,
     companyId NVARCHAR(100) not null,
-    createDate datetime null,
-    mod_date   datetime null,
+    createDate datetimeoffset(3) null,
+    mod_date   datetimeoffset(3) null,
     password_ NVARCHAR(MAX) null,
     passwordEncrypted bit,
-    passwordExpirationDate datetime null,
+    passwordExpirationDate datetimeoffset(3) null,
     passwordReset bit,
     firstName NVARCHAR(100) null,
     middleName NVARCHAR(100) null,
     lastName NVARCHAR(100) null,
     nickName NVARCHAR(100) null,
     male bit,
-    birthday datetime null,
+    birthday datetimeoffset(3) null,
     emailAddress NVARCHAR(100) null,
     smsId NVARCHAR(100) null,
     aimId NVARCHAR(100) null,
@@ -171,15 +171,15 @@ create table User_ (
     refreshRate NVARCHAR(100) null,
     layoutIds NVARCHAR(100) null,
     comments NVARCHAR(1000) null,
-    loginDate datetime null,
+    loginDate datetimeoffset(3) null,
     loginIP NVARCHAR(100) null,
-    lastLoginDate datetime null,
+    lastLoginDate datetimeoffset(3) null,
     lastLoginIP NVARCHAR(100) null,
     failedLoginAttempts int,
     agreedToTermsOfUse bit,
     active_ bit,
     delete_in_progress TINYINT DEFAULT 0,
-    delete_date DATETIME NULL,
+    delete_date datetimeoffset(3) NULL,
     additional_info NVARCHAR(MAX) NULL
 );
 
@@ -187,7 +187,7 @@ create table UserTracker (
     userTrackerId NVARCHAR(100) not null primary key,
     companyId NVARCHAR(100) not null,
     userId NVARCHAR(100) not null,
-    modifiedDate datetime null,
+    modifiedDate datetimeoffset(3) null,
     remoteAddr NVARCHAR(100) null,
     remoteHost NVARCHAR(100) null,
     userAgent NVARCHAR(100) null
@@ -197,7 +197,7 @@ create table UserTrackerPath (
     userTrackerPathId NVARCHAR(100) not null primary key,
     userTrackerId NVARCHAR(100) not null,
     path NVARCHAR(1000) not null,
-    pathDate datetime not null
+    pathDate datetimeoffset(3) not null
 );
 
 --
@@ -348,7 +348,7 @@ ALTER TABLE [dbo].[QRTZ_CALENDARS] WITH NOCHECK ADD
   CONSTRAINT [PK_QRTZ_CALENDARS] PRIMARY KEY  CLUSTERED
   (
     [CALENDAR_NAME]
-  ) 
+  )
 GO
 
 ALTER TABLE [dbo].[QRTZ_CRON_TRIGGERS] WITH NOCHECK ADD
@@ -356,35 +356,35 @@ ALTER TABLE [dbo].[QRTZ_CRON_TRIGGERS] WITH NOCHECK ADD
   (
     [TRIGGER_NAME],
     [TRIGGER_GROUP]
-  ) 
+  )
 GO
 
 ALTER TABLE [dbo].[QRTZ_FIRED_TRIGGERS] WITH NOCHECK ADD
   CONSTRAINT [PK_QRTZ_FIRED_TRIGGERS] PRIMARY KEY  CLUSTERED
   (
     [ENTRY_ID]
-  ) 
+  )
 GO
 
 ALTER TABLE [dbo].[QRTZ_PAUSED_TRIGGER_GRPS] WITH NOCHECK ADD
   CONSTRAINT [PK_QRTZ_PAUSED_TRIGGER_GRPS] PRIMARY KEY  CLUSTERED
   (
     [TRIGGER_GROUP]
-  ) 
+  )
 GO
 
 ALTER TABLE [dbo].[QRTZ_SCHEDULER_STATE] WITH NOCHECK ADD
   CONSTRAINT [PK_QRTZ_SCHEDULER_STATE] PRIMARY KEY  CLUSTERED
   (
     [INSTANCE_NAME]
-  ) 
+  )
 GO
 
 ALTER TABLE [dbo].[QRTZ_LOCKS] WITH NOCHECK ADD
   CONSTRAINT [PK_QRTZ_LOCKS] PRIMARY KEY  CLUSTERED
   (
     [LOCK_NAME]
-  ) 
+  )
 GO
 
 ALTER TABLE [dbo].[QRTZ_JOB_DETAILS] WITH NOCHECK ADD
@@ -392,7 +392,7 @@ ALTER TABLE [dbo].[QRTZ_JOB_DETAILS] WITH NOCHECK ADD
   (
     [JOB_NAME],
     [JOB_GROUP]
-  ) 
+  )
 GO
 
 ALTER TABLE [dbo].[QRTZ_JOB_LISTENERS] WITH NOCHECK ADD
@@ -401,7 +401,7 @@ ALTER TABLE [dbo].[QRTZ_JOB_LISTENERS] WITH NOCHECK ADD
     [JOB_NAME],
     [JOB_GROUP],
     [JOB_LISTENER]
-  ) 
+  )
 GO
 
 ALTER TABLE [dbo].[QRTZ_SIMPLE_TRIGGERS] WITH NOCHECK ADD
@@ -409,7 +409,7 @@ ALTER TABLE [dbo].[QRTZ_SIMPLE_TRIGGERS] WITH NOCHECK ADD
   (
     [TRIGGER_NAME],
     [TRIGGER_GROUP]
-  ) 
+  )
 GO
 
 ALTER TABLE [dbo].[QRTZ_TRIGGER_LISTENERS] WITH NOCHECK ADD
@@ -418,7 +418,7 @@ ALTER TABLE [dbo].[QRTZ_TRIGGER_LISTENERS] WITH NOCHECK ADD
     [TRIGGER_NAME],
     [TRIGGER_GROUP],
     [TRIGGER_LISTENER]
-  ) 
+  )
 GO
 
 ALTER TABLE [dbo].[QRTZ_TRIGGERS] WITH NOCHECK ADD
@@ -426,7 +426,7 @@ ALTER TABLE [dbo].[QRTZ_TRIGGERS] WITH NOCHECK ADD
   (
     [TRIGGER_NAME],
     [TRIGGER_GROUP]
-  ) 
+  )
 GO
 
 ALTER TABLE [dbo].[QRTZ_CRON_TRIGGERS] ADD
@@ -604,7 +604,7 @@ ALTER TABLE [dbo].[QRTZ_EXCL_CALENDARS] WITH NOCHECK ADD
   CONSTRAINT [PK_QRTZ_EXCL_CALENDARS] PRIMARY KEY  CLUSTERED
   (
     [CALENDAR_NAME]
-  ) 
+  )
 GO
 
 ALTER TABLE [dbo].[QRTZ_EXCL_CRON_TRIGGERS] WITH NOCHECK ADD
@@ -612,35 +612,35 @@ ALTER TABLE [dbo].[QRTZ_EXCL_CRON_TRIGGERS] WITH NOCHECK ADD
   (
     [TRIGGER_NAME],
     [TRIGGER_GROUP]
-  ) 
+  )
 GO
 
 ALTER TABLE [dbo].[QRTZ_EXCL_FIRED_TRIGGERS] WITH NOCHECK ADD
   CONSTRAINT [PK_QRTZ_EXCL_FIRED_TRIGGERS] PRIMARY KEY  CLUSTERED
   (
     [ENTRY_ID]
-  ) 
+  )
 GO
 
 ALTER TABLE [dbo].[QRTZ_EXCL_PAUSED_TRIGGER_GRPS] WITH NOCHECK ADD
   CONSTRAINT [PK_QRTZ_EXCL_PAUSED_TRIGGER_GRPS] PRIMARY KEY  CLUSTERED
   (
     [TRIGGER_GROUP]
-  ) 
+  )
 GO
 
 ALTER TABLE [dbo].[QRTZ_EXCL_SCHEDULER_STATE] WITH NOCHECK ADD
   CONSTRAINT [PK_QRTZ_EXCL_SCHEDULER_STATE] PRIMARY KEY  CLUSTERED
   (
     [INSTANCE_NAME]
-  ) 
+  )
 GO
 
 ALTER TABLE [dbo].[QRTZ_EXCL_LOCKS] WITH NOCHECK ADD
   CONSTRAINT [PK_QRTZ_EXCL_LOCKS] PRIMARY KEY  CLUSTERED
   (
     [LOCK_NAME]
-  ) 
+  )
 GO
 
 ALTER TABLE [dbo].[QRTZ_EXCL_JOB_DETAILS] WITH NOCHECK ADD
@@ -648,7 +648,7 @@ ALTER TABLE [dbo].[QRTZ_EXCL_JOB_DETAILS] WITH NOCHECK ADD
   (
     [JOB_NAME],
     [JOB_GROUP]
-  ) 
+  )
 GO
 
 ALTER TABLE [dbo].[QRTZ_EXCL_JOB_LISTENERS] WITH NOCHECK ADD
@@ -657,7 +657,7 @@ ALTER TABLE [dbo].[QRTZ_EXCL_JOB_LISTENERS] WITH NOCHECK ADD
     [JOB_NAME],
     [JOB_GROUP],
     [JOB_LISTENER]
-  ) 
+  )
 GO
 
 ALTER TABLE [dbo].[QRTZ_EXCL_SIMPLE_TRIGGERS] WITH NOCHECK ADD
@@ -665,7 +665,7 @@ ALTER TABLE [dbo].[QRTZ_EXCL_SIMPLE_TRIGGERS] WITH NOCHECK ADD
   (
     [TRIGGER_NAME],
     [TRIGGER_GROUP]
-  ) 
+  )
 GO
 
 ALTER TABLE [dbo].[QRTZ_EXCL_TRIGGER_LISTENERS] WITH NOCHECK ADD
@@ -674,7 +674,7 @@ ALTER TABLE [dbo].[QRTZ_EXCL_TRIGGER_LISTENERS] WITH NOCHECK ADD
     [TRIGGER_NAME],
     [TRIGGER_GROUP],
     [TRIGGER_LISTENER]
-  ) 
+  )
 GO
 
 ALTER TABLE [dbo].[QRTZ_EXCL_TRIGGERS] WITH NOCHECK ADD
@@ -682,7 +682,7 @@ ALTER TABLE [dbo].[QRTZ_EXCL_TRIGGERS] WITH NOCHECK ADD
   (
     [TRIGGER_NAME],
     [TRIGGER_GROUP]
-  ) 
+  )
 GO
 
 ALTER TABLE [dbo].[QRTZ_EXCL_CRON_TRIGGERS] ADD
@@ -747,12 +747,7 @@ INSERT INTO [dbo].[QRTZ_EXCL_LOCKS] VALUES('JOB_ACCESS');
 INSERT INTO [dbo].[QRTZ_EXCL_LOCKS] VALUES('CALENDAR_ACCESS');
 INSERT INTO [dbo].[QRTZ_EXCL_LOCKS] VALUES('STATE_ACCESS');
 INSERT INTO [dbo].[QRTZ_EXCL_LOCKS] VALUES('MISFIRE_ACCESS');
-create table calendar_reminder (
-   user_id NVARCHAR(255) not null,
-   event_id NVARCHAR(36) not null,
-   send_date datetime not null,
-   primary key (user_id, event_id, send_date)
-);
+
 create table analytic_summary_pages (
    id numeric(19,0) identity not null,
    summary_id numeric(19,0) not null,
@@ -767,13 +762,13 @@ create table tag (
    host_id NVARCHAR(255) null,
    user_id NVARCHAR(255) null,
    persona tinyint default 0,
-   mod_date datetime null,
+   mod_date datetimeoffset(3) null,
    primary key (tag_id)
 );
 create table user_comments (
    inode NVARCHAR(36) not null,
    user_id NVARCHAR(255) null,
-   cdate datetime null,
+   cdate datetimeoffset(3) null,
    comment_user_id NVARCHAR(100) null,
    type NVARCHAR(255) null,
    method NVARCHAR(255) null,
@@ -797,8 +792,8 @@ create table contentlet_version_info (
    live_inode NVARCHAR(36) null,
    deleted tinyint not null,
    locked_by NVARCHAR(100) null,
-   locked_on datetime null,
-   version_ts datetime not null,
+   locked_on datetimeoffset(3) null,
+   version_ts datetimeoffset(3) not null,
    primary key (identifier, lang)
 );
 create table fixes_audit (
@@ -806,7 +801,7 @@ create table fixes_audit (
    table_name NVARCHAR(255) null,
    action NVARCHAR(255) null,
    records_altered int null,
-   datetime datetime null,
+   datetime datetimeoffset(3) null,
    primary key (id)
 );
 create table container_version_info (
@@ -815,8 +810,8 @@ create table container_version_info (
    live_inode NVARCHAR(36) null,
    deleted tinyint not null,
    locked_by NVARCHAR(100) null,
-   locked_on datetime null,
-   version_ts datetime not null,
+   locked_on datetimeoffset(3) null,
+   version_ts datetimeoffset(3) not null,
    primary key (identifier)
 );
 create table trackback (
@@ -826,7 +821,7 @@ create table trackback (
    excerpt NVARCHAR(255) null,
    url NVARCHAR(255) null,
    blog_name NVARCHAR(255) null,
-   track_date datetime not null,
+   track_date datetimeoffset(3) not null,
    primary key (id)
 );
 create table plugin (
@@ -834,8 +829,8 @@ create table plugin (
    plugin_name NVARCHAR(255) not null,
    plugin_version NVARCHAR(255) not null,
    author NVARCHAR(255) not null,
-   first_deployed_date datetime not null,
-   last_deployed_date datetime not null,
+   first_deployed_date datetimeoffset(3) not null,
+   last_deployed_date datetimeoffset(3) not null,
    primary key (id)
 );
 create table mailing_list (
@@ -850,8 +845,8 @@ create table recipient (
    name NVARCHAR(255) null,
    lastname NVARCHAR(255) null,
    email NVARCHAR(255) null,
-   sent datetime null,
-   opened datetime null,
+   sent datetimeoffset(3) null,
+   opened datetimeoffset(3) null,
    last_result int null,
    last_message NVARCHAR(255) null,
    user_id NVARCHAR(100) null,
@@ -860,7 +855,7 @@ create table recipient (
 create table web_form (
    web_form_id NVARCHAR(36) not null,
    form_type NVARCHAR(255) null,
-   submit_date datetime null,
+   submit_date datetimeoffset(3) null,
    prefix NVARCHAR(255) null,
    first_name NVARCHAR(255) null,
    middle_initial NVARCHAR(255) null,
@@ -885,7 +880,7 @@ create table web_form (
 );
 create table analytic_summary_period (
    id numeric(19,0) identity not null,
-   full_date datetime null,
+   full_date datetimeoffset(3) null,
    day int null,
    week int null,
    month int null,
@@ -914,7 +909,7 @@ create table analytic_summary (
    referring_sites numeric(19,0) null,
    search_engines numeric(19,0) null,
    bounce_rate int null,
-   avg_time_on_site datetime null,
+   avg_time_on_site datetimeoffset(3) null,
    primary key (id),
    unique (summary_period_id, host_id)
 );
@@ -928,7 +923,7 @@ create table template (
    inode NVARCHAR(36) not null,
    show_on_menu tinyint null,
    title NVARCHAR(255) null,
-   mod_date datetime null,
+   mod_date datetimeoffset(3) null,
    mod_user NVARCHAR(100) null,
    sort_order int null,
    friendly_name NVARCHAR(255) null,
@@ -971,7 +966,7 @@ create table structure (
    folder NVARCHAR(36) not null,
    expire_date_var NVARCHAR(255) null,
    publish_date_var NVARCHAR(255) null,
-   mod_date datetime null,
+   mod_date datetimeoffset(3) null,
    sort_order int null,
    icon NVARCHAR(255) null,
    primary key (inode)
@@ -1010,7 +1005,7 @@ create table permission (
     create table contentlet (inode NVARCHAR(36) not null,
     show_on_menu tinyint null,
     title NVARCHAR(255) null,
-    mod_date datetime null,
+    mod_date datetimeoffset(3) null,
     mod_user NVARCHAR(100) null,
     sort_order int null,
     friendly_name NVARCHAR(255) null,
@@ -1019,31 +1014,31 @@ create table permission (
     identifier NVARCHAR(36) null,
     language_id numeric(19,0) null,
     contentlet_as_json NVARCHAR(MAX),
-    date1 datetime null,
-    date2 datetime null,
-    date3 datetime null,
-    date4 datetime null,
-    date5 datetime null,
-    date6 datetime null,
-    date7 datetime null,
-    date8 datetime null,
-    date9 datetime null,
-    date10 datetime null,
-    date11 datetime null,
-    date12 datetime null,
-    date13 datetime null,
-    date14 datetime null,
-    date15 datetime null,
-    date16 datetime null,
-    date17 datetime null,
-    date18 datetime null,
-    date19 datetime null,
-    date20 datetime null,
-    date21 datetime null,
-    date22 datetime null,
-    date23 datetime null,
-    date24 datetime null,
-    date25 datetime null,
+    date1 datetimeoffset(3) null,
+    date2 datetimeoffset(3) null,
+    date3 datetimeoffset(3) null,
+    date4 datetimeoffset(3) null,
+    date5 datetimeoffset(3) null,
+    date6 datetimeoffset(3) null,
+    date7 datetimeoffset(3) null,
+    date8 datetimeoffset(3) null,
+    date9 datetimeoffset(3) null,
+    date10 datetimeoffset(3) null,
+    date11 datetimeoffset(3) null,
+    date12 datetimeoffset(3) null,
+    date13 datetimeoffset(3) null,
+    date14 datetimeoffset(3) null,
+    date15 datetimeoffset(3) null,
+    date16 datetimeoffset(3) null,
+    date17 datetimeoffset(3) null,
+    date18 datetimeoffset(3) null,
+    date19 datetimeoffset(3) null,
+    date20 datetimeoffset(3) null,
+    date21 datetimeoffset(3) null,
+    date22 datetimeoffset(3) null,
+    date23 datetimeoffset(3) null,
+    date24 datetimeoffset(3) null,
+    date25 datetimeoffset(3) null,
     text1 NVARCHAR(255) null,
     text2 NVARCHAR(255) null,
     text3 NVARCHAR(255) null,
@@ -1196,7 +1191,7 @@ create table report_asset (
 );
 create table workflow_comment (
    id NVARCHAR(36) not null,
-   creation_date datetime null,
+   creation_date datetimeoffset(3) null,
    posted_by NVARCHAR(255) null,
    wf_comment NVARCHAR(MAX) null,
    workflowtask_id NVARCHAR(36) null,
@@ -1210,14 +1205,14 @@ create table category (
    active tinyint null,
    keywords NVARCHAR(MAX) null,
    category_velocity_var_name NVARCHAR(255) null,
-   mod_date datetime null,
+   mod_date datetimeoffset(3) null,
    primary key (inode)
 );
 create table chain_link_code (
    id numeric(19,0) identity not null,
    class_name NVARCHAR(255) null unique,
    code NVARCHAR(MAX) not null,
-   last_mod_date datetime not null,
+   last_mod_date datetimeoffset(3) not null,
    language NVARCHAR(255) not null,
    primary key (id)
 );
@@ -1225,7 +1220,7 @@ create table analytic_summary_visits (
    id numeric(19,0) identity not null,
    summary_period_id numeric(19,0) not null,
    host_id NVARCHAR(36) null,
-   visit_time datetime null,
+   visit_time datetimeoffset(3) null,
    visits numeric(19,0) null,
    primary key (id)
 );
@@ -1235,8 +1230,8 @@ create table template_version_info (
    live_inode NVARCHAR(36) null,
    deleted tinyint not null,
    locked_by NVARCHAR(100) null,
-   locked_on datetime null,
-   version_ts datetime not null,
+   locked_on datetimeoffset(3) null,
+   version_ts datetimeoffset(3) not null,
    primary key (identifier)
 );
 create table user_preferences (
@@ -1265,11 +1260,11 @@ create table identifier (
    asset_name NVARCHAR(255) null,
    host_inode NVARCHAR(36) null,
    asset_type NVARCHAR(64) null,
-   syspublish_date datetime null,
-   sysexpire_date datetime null,
+   syspublish_date datetimeoffset(3) null,
+   sysexpire_date datetimeoffset(3) null,
    full_path_lc  as CASE WHEN parent_path = 'System folder' THEN '/' ELSE LOWER(CONCAT(parent_path, asset_name)) END,
    owner NVARCHAR(255),
-   create_date datetime,
+   create_date datetimeoffset(3),
    asset_subtype NVARCHAR(255),
    primary key (id),
    unique (parent_path, asset_name, host_inode)
@@ -1278,8 +1273,8 @@ create table clickstream (
    clickstream_id numeric(19,0) identity not null,
    cookie_id NVARCHAR(255) null,
    user_id NVARCHAR(255) null,
-   start_date datetime null,
-   end_date datetime null,
+   start_date datetimeoffset(3) null,
+   end_date datetimeoffset(3) null,
    referer NVARCHAR(255) null,
    remote_address NVARCHAR(255) null,
    remote_hostname NVARCHAR(255) null,
@@ -1306,9 +1301,9 @@ create table multi_tree (
 );
 create table workflow_task (
    id NVARCHAR(36) not null,
-   creation_date datetime null,
-   mod_date datetime null,
-   due_date datetime null,
+   creation_date datetimeoffset(3) null,
+   mod_date datetimeoffset(3) null,
+   due_date datetimeoffset(3) null,
    created_by NVARCHAR(255) null,
    assigned_to NVARCHAR(36) null,
    belongs_to NVARCHAR(255) null,
@@ -1350,7 +1345,7 @@ create table tag_inode (
    tag_id NVARCHAR(100) not null,
    inode NVARCHAR(100) not null,
    field_var_name NVARCHAR(255),
-   mod_date datetime null,
+   mod_date datetimeoffset(3) null,
    primary key (tag_id, inode)
 );
 create table click (
@@ -1380,7 +1375,7 @@ create table clickstream_request (
    request_order int null,
    query_string NVARCHAR(MAX) null,
    language_id numeric(19,0) null,
-   timestampper datetime null,
+   timestampper datetimeoffset(3) null,
    host_id NVARCHAR(36) null,
    associated_identifier NVARCHAR(36) null,
    primary key (clickstream_request_id)
@@ -1391,7 +1386,7 @@ create table content_rating (
    user_id NVARCHAR(255) null,
    session_id NVARCHAR(255) null,
    identifier NVARCHAR(36) null,
-   rating_date datetime null,
+   rating_date datetimeoffset(3) null,
    user_ip NVARCHAR(255) null,
    long_live_cookie_id NVARCHAR(255) null,
    primary key (id)
@@ -1409,7 +1404,7 @@ create table analytic_summary_workstream (
    asset_type NVARCHAR(255) null,
    mod_user_id NVARCHAR(255) null,
    host_id NVARCHAR(36) null,
-   mod_date datetime null,
+   mod_date datetimeoffset(3) null,
    action NVARCHAR(255) null,
    name NVARCHAR(255) null,
    primary key (id)
@@ -1419,7 +1414,7 @@ create table dashboard_user_preferences (
    summary_404_id numeric(19,0) null,
    user_id NVARCHAR(255) null,
    ignored tinyint null,
-   mod_date datetime null,
+   mod_date datetimeoffset(3) null,
    primary key (id)
 );
 create table campaign (
@@ -1430,8 +1425,8 @@ create table campaign (
    subject NVARCHAR(255) null,
    message NVARCHAR(MAX) null,
    user_id NVARCHAR(255) null,
-   start_date datetime null,
-   completed_date datetime null,
+   start_date datetimeoffset(3) null,
+   completed_date datetimeoffset(3) null,
    active tinyint null,
    locked tinyint null,
    sends_per_hour NVARCHAR(15) null,
@@ -1441,7 +1436,7 @@ create table campaign (
    sendto NVARCHAR(15) null,
    isrecurrent tinyint null,
    wassent tinyint null,
-   expiration_date datetime null,
+   expiration_date datetimeoffset(3) null,
    parent_campaign NVARCHAR(36) null,
    primary key (inode)
 );
@@ -1465,7 +1460,7 @@ create table dot_containers (
    post_loop NVARCHAR(MAX) null,
    show_on_menu tinyint null,
    title NVARCHAR(255) null,
-   mod_date datetime null,
+   mod_date datetimeoffset(3) null,
    mod_user NVARCHAR(100) null,
    sort_order int null,
    friendly_name NVARCHAR(255) null,
@@ -1488,14 +1483,14 @@ create table communication (
    email_subject NVARCHAR(255) null,
    html_page_inode NVARCHAR(36) null,
    text_message NVARCHAR(MAX) null,
-   mod_date datetime null,
+   mod_date datetimeoffset(3) null,
    modified_by NVARCHAR(255) null,
    ext_comm_id NVARCHAR(255) null,
    primary key (inode)
 );
 create table workflow_history (
    id NVARCHAR(36) not null,
-   creation_date datetime null,
+   creation_date datetimeoffset(3) null,
    made_by NVARCHAR(255) null,
    change_desc NVARCHAR(MAX) null,
    workflowtask_id NVARCHAR(36) null,
@@ -1510,14 +1505,14 @@ create table host_variable (
    variable_key NVARCHAR(255) null,
    variable_value NVARCHAR(255) null,
    user_id NVARCHAR(255) null,
-   last_mod_date datetime null,
+   last_mod_date datetimeoffset(3) null,
    primary key (id)
 );
 create table links (
    inode NVARCHAR(36) not null,
    show_on_menu tinyint null,
    title NVARCHAR(255) null,
-   mod_date datetime null,
+   mod_date datetimeoffset(3) null,
    mod_user NVARCHAR(100) null,
    sort_order int null,
    friendly_name NVARCHAR(255) null,
@@ -1557,7 +1552,7 @@ create table field (
    read_only tinyint null,
    searchable tinyint null,
    unique_ tinyint null,
-   mod_date datetime null,
+   mod_date datetimeoffset(3) null,
    primary key (inode)
 );
 create table relationship (
@@ -1571,7 +1566,7 @@ create table relationship (
    parent_required tinyint null,
    child_required tinyint null,
    fixed tinyint null,
-   mod_date datetime null,
+   mod_date datetimeoffset(3) null,
    primary key (inode),
    unique (relation_type_value)
 );
@@ -1584,7 +1579,9 @@ create table folder (
    files_masks NVARCHAR(255) null,
    identifier NVARCHAR(36) null,
    default_file_type NVARCHAR(36) null,
-   mod_date datetime null,
+   mod_date datetimeoffset(3) null,
+   owner NVARCHAR(255) null,
+   idate datetimeoffset(3) null,
    primary key (inode)
 );
 create table clickstream_404 (
@@ -1594,7 +1591,7 @@ create table clickstream_404 (
    request_uri NVARCHAR(255) null,
    user_id NVARCHAR(255) null,
    host_id NVARCHAR(36) null,
-   timestampper datetime null,
+   timestampper datetimeoffset(3) null,
    primary key (clickstream_404_id)
 );
 create table cms_layout (
@@ -1611,7 +1608,7 @@ create table field_variable (
    variable_key NVARCHAR(255) null,
    variable_value NVARCHAR(MAX) null,
    user_id NVARCHAR(255) null,
-   last_mod_date datetime null,
+   last_mod_date datetimeoffset(3) null,
    primary key (id)
 );
 create table report_parameter (
@@ -1638,8 +1635,8 @@ create table link_version_info (
    live_inode NVARCHAR(36) null,
    deleted tinyint not null,
    locked_by NVARCHAR(100) null,
-   locked_on datetime null,
-   version_ts datetime not null,
+   locked_on datetimeoffset(3) null,
+   version_ts datetimeoffset(3) not null,
    primary key (identifier)
 );
 create table template_containers (
@@ -1656,21 +1653,21 @@ create table user_filter (
    lastname NVARCHAR(100) null,
    emailaddress NVARCHAR(100) null,
    birthdaytypesearch NVARCHAR(100) null,
-   birthday datetime null,
-   birthdayfrom datetime null,
-   birthdayto datetime null,
+   birthday datetimeoffset(3) null,
+   birthdayfrom datetimeoffset(3) null,
+   birthdayto datetimeoffset(3) null,
    lastlogintypesearch NVARCHAR(100) null,
    lastloginsince NVARCHAR(100) null,
-   loginfrom datetime null,
-   loginto datetime null,
+   loginfrom datetimeoffset(3) null,
+   loginto datetimeoffset(3) null,
    createdtypesearch NVARCHAR(100) null,
    createdsince NVARCHAR(100) null,
-   createdfrom datetime null,
-   createdto datetime null,
+   createdfrom datetimeoffset(3) null,
+   createdto datetimeoffset(3) null,
    lastvisittypesearch NVARCHAR(100) null,
    lastvisitsince NVARCHAR(100) null,
-   lastvisitfrom datetime null,
-   lastvisitto datetime null,
+   lastvisitfrom datetimeoffset(3) null,
+   lastvisitto datetimeoffset(3) null,
    city NVARCHAR(100) null,
    state NVARCHAR(100) null,
    country NVARCHAR(100) null,
@@ -1711,7 +1708,7 @@ create table user_filter (
 create table inode (
    inode NVARCHAR(36) not null,
    owner NVARCHAR(255) null,
-   idate datetime null,
+   idate datetimeoffset(3) null,
    type NVARCHAR(64) null,
    primary key (inode)
 );
@@ -1797,7 +1794,6 @@ alter table field add constraint fk5cea0fa5fb51eb foreign key (inode) references
 create index idx_relationship_1 on relationship (parent_structure_inode);
 create index idx_relationship_2 on relationship (child_structure_inode);
 create index idx_folder_1 on folder (name);
-alter table folder add constraint fkb45d1c6e5fb51eb foreign key (inode) references inode;
 create index idx_user_clickstream_404_2 on clickstream_404 (user_id);
 create index idx_user_clickstream_404_3 on clickstream_404 (host_id);
 create index idx_user_clickstream_404_1 on clickstream_404 (request_uri);
@@ -1858,7 +1854,7 @@ CREATE TABLE dist_journal
        object_to_index NVARCHAR(1024) NOT NULL,
        serverid NVARCHAR(64) NOT NULL,
        journal_type int NOT NULL,
-       time_entered datetime NOT NULL
+       time_entered datetimeoffset(3) NOT NULL
        ) ;
 
 ALTER TABLE dist_journal ADD CONSTRAINT
@@ -1875,7 +1871,7 @@ ALTER TABLE dist_journal ADD CONSTRAINT
        serverid,
        journal_type
        );
-CREATE TABLE dist_process ( id bigint NOT NULL IDENTITY (1, 1), object_to_index NVARCHAR(1024) NOT NULL, serverid NVARCHAR(64) NOT NULL, journal_type int NOT NULL, time_entered datetime NOT NULL ) ;
+CREATE TABLE dist_process ( id bigint NOT NULL IDENTITY (1, 1), object_to_index NVARCHAR(1024) NOT NULL, serverid NVARCHAR(64) NOT NULL, journal_type int NOT NULL, time_entered datetimeoffset(3) NOT NULL ) ;
 ALTER TABLE dist_process ADD CONSTRAINT PK_dist_process PRIMARY KEY CLUSTERED ( id);
 
 create table plugin_property (
@@ -1888,7 +1884,7 @@ create table plugin_property (
 
 alter table plugin_property add constraint fk_plugin_plugin_property foreign key (plugin_id) references plugin(id);
 
-CREATE TABLE dist_reindex_journal ( id bigint NOT NULL IDENTITY (1, 1), inode_to_index NVARCHAR(100) NOT NULL,ident_to_index NVARCHAR(100) NOT NULL, serverid NVARCHAR(64), priority int NOT NULL, time_entered datetime DEFAULT getDate(), index_val NVARCHAR(325),dist_action integer NOT NULL DEFAULT 1);
+CREATE TABLE dist_reindex_journal ( id bigint NOT NULL IDENTITY (1, 1), inode_to_index NVARCHAR(100) NOT NULL,ident_to_index NVARCHAR(100) NOT NULL, serverid NVARCHAR(64), priority int NOT NULL, time_entered datetimeoffset(3) DEFAULT getDate(), index_val NVARCHAR(325),dist_action integer NOT NULL DEFAULT 1);
 
 CREATE INDEX dist_reindex_index1 on dist_reindex_journal (inode_to_index);
 CREATE INDEX dist_reindex_index2 on dist_reindex_journal (dist_action);
@@ -1900,7 +1896,7 @@ CREATE INDEX dist_reindex_index6 ON dist_reindex_journal (priority);
 
 ALTER TABLE dist_reindex_journal ADD CONSTRAINT PK_dist_reindex_journal PRIMARY KEY CLUSTERED ( id);
 
-CREATE TABLE quartz_log ( id bigint NOT NULL IDENTITY (1, 1), JOB_NAME NVARCHAR(255) NOT NULL, serverid NVARCHAR(64) , time_started datetime NOT NULL, primary key (id));
+CREATE TABLE quartz_log ( id bigint NOT NULL IDENTITY (1, 1), JOB_NAME NVARCHAR(255) NOT NULL, serverid NVARCHAR(64) , time_started datetimeoffset(3) NOT NULL, primary key (id));
 
 CREATE TRIGGER check_role_key_uniqueness
 ON cms_role
@@ -1970,7 +1966,7 @@ insert into dist_lock (dummy) values (1);
 
 create table import_audit (
     id bigint not null,
-    start_date datetime,
+    start_date datetimeoffset(3),
     userid NVARCHAR(255),
     filename NVARCHAR(512),
     status int,
@@ -2230,7 +2226,7 @@ BEGIN
             RAISERROR (@errorMsg, 16, 1)
             ROLLBACK WORK
             RETURN
-        END 
+        END
      SET @oldFolderPath = @oldPath + @assetName + '/'
      EXEC renameFolderChildren @oldFolderPath,@newFolderPath,@hostInode
 fetch next from folder_data_cursor into @assetName
@@ -2264,7 +2260,7 @@ BEGIN
         RAISERROR (@errorMsg, 16, 1)
         ROLLBACK WORK
         RETURN
-    END 
+    END
   UPDATE identifier SET asset_name = @newName where id = @ident
   EXEC renameFolderChildren @oldPath,@newPath,@hostInode
 fetch next from folder_cur_Updated into @ident,@newName
@@ -2319,7 +2315,7 @@ create table workflow_scheme(
     mandatory tinyint default 0,
     default_scheme tinyint default 0,
     entry_action_id NVARCHAR(36),
-    mod_date datetime
+    mod_date datetimeoffset(3)
 );
 
 
@@ -2464,8 +2460,8 @@ CREATE TABLE publishing_queue (
     operation NUMERIC(19,0),
     asset NVARCHAR(2000) NOT NULL,
     language_id NUMERIC(19,0) NOT NULL,
-    entered_date DATETIME,
-    publish_date DATETIME,
+    entered_date datetimeoffset(3),
+    publish_date datetimeoffset(3),
     type NVARCHAR(256),
     bundle_id NVARCHAR(256)
 );
@@ -2474,8 +2470,8 @@ CREATE TABLE publishing_queue_audit
 (bundle_id NVARCHAR(256) PRIMARY KEY NOT NULL,
 status INTEGER,
 status_pojo NVARCHAR(MAX),
-status_updated DATETIME,
-create_date DATETIME);
+status_updated datetimeoffset(3),
+create_date datetimeoffset(3));
 
 -- ****** Content Publishing Framework - End Point Management *******
 CREATE TABLE publishing_end_point (
@@ -2499,10 +2495,10 @@ create table publishing_environment(
 create table sitesearch_audit (
     job_id NVARCHAR(36),
     job_name NVARCHAR(255) not null,
-    fire_date DATETIME not null,
+    fire_date datetimeoffset(3) not null,
     incremental tinyint not null,
-    start_date DATETIME,
-    end_date DATETIME,
+    start_date datetimeoffset(3),
+    end_date datetimeoffset(3),
     host_list NVARCHAR(500) not null,
     all_hosts tinyint not null,
     lang_list NVARCHAR(500) not null,
@@ -2518,8 +2514,8 @@ create table sitesearch_audit (
 create table publishing_bundle(
     id NVARCHAR(36) NOT NULL  primary key,
     name NVARCHAR(255) NOT NULL,
-    publish_date DATETIME,
-    expire_date DATETIME,
+    publish_date datetimeoffset(3),
+    expire_date datetimeoffset(3),
     owner NVARCHAR(100),
     force_push tinyint,
     filter_key NVARCHAR(100)
@@ -2540,7 +2536,7 @@ create table publishing_pushed_assets(
     bundle_id NVARCHAR(36) NOT NULL,
     asset_id NVARCHAR(36) NOT NULL,
     asset_type NVARCHAR(255) NOT NULL,
-    push_date DATETIME,
+    push_date datetimeoffset(3),
     environment_id NVARCHAR(36) NOT NULL,
     endpoint_ids NVARCHAR(MAX),
 	publisher NVARCHAR(MAX)
@@ -2557,7 +2553,7 @@ CREATE INDEX idx_pub_qa_1 ON publishing_queue_audit (status);
 CREATE TABLE dot_cluster(cluster_id NVARCHAR(36), cluster_salt VARCHAR(256) ,PRIMARY KEY (cluster_id) );
 CREATE TABLE cluster_server(server_id NVARCHAR(36) NOT NULL, cluster_id NVARCHAR(36) NOT NULL, name NVARCHAR(100), ip_address NVARCHAR(39) NOT NULL, host NVARCHAR(255), cache_port SMALLINT, es_transport_tcp_port SMALLINT, es_network_port SMALLINT, es_http_port SMALLINT, key_ NVARCHAR(100), PRIMARY KEY (server_id) );
 ALTER TABLE cluster_server add constraint fk_cluster_id foreign key (cluster_id) REFERENCES dot_cluster(cluster_id);
-CREATE TABLE cluster_server_uptime(id NVARCHAR(36) NOT NULL, server_id NVARCHAR(36) NOT NULL, startup datetime null, heartbeat datetime null, PRIMARY KEY (id) );
+CREATE TABLE cluster_server_uptime(id NVARCHAR(36) NOT NULL, server_id NVARCHAR(36) NOT NULL, startup datetimeoffset(3) null, heartbeat datetimeoffset(3) null, PRIMARY KEY (id) );
 ALTER TABLE cluster_server_uptime add constraint fk_cluster_server_id foreign key (server_id) REFERENCES cluster_server(server_id);
 
 -- Notifications Table
@@ -2567,7 +2563,7 @@ CREATE TABLE notification (
     message NVARCHAR(MAX) NOT NULL,
     notification_type NVARCHAR(100),
     notification_level NVARCHAR(100),
-    time_sent DATETIME NOT NULL,
+    time_sent datetimeoffset(3) NOT NULL,
     was_read TINYINT
 );
 ALTER TABLE notification ADD CONSTRAINT pk_notification PRIMARY KEY (group_id, user_id);
@@ -2587,7 +2583,7 @@ alter table container_structures add constraint FK_cs_inode foreign key (contain
 
 
 -- license repo
-create table sitelic(id NVARCHAR(36) primary key, serverid NVARCHAR(100), license NVARCHAR(MAX) not null, lastping datetime not null, startup_time bigint);
+create table sitelic(id NVARCHAR(36) primary key, serverid NVARCHAR(100), license NVARCHAR(MAX) not null, lastping datetimeoffset(3) not null, startup_time bigint);
 
 -- Integrity Checker
 create table folders_ir(folder NVARCHAR(255), local_inode NVARCHAR(36), remote_inode NVARCHAR(36), local_identifier NVARCHAR(36), remote_identifier NVARCHAR(36), endpoint_id NVARCHAR(40), PRIMARY KEY (local_inode, endpoint_id));
@@ -2608,17 +2604,17 @@ create table cluster_server_action(
     response NVARCHAR(2048),
     action_id NVARCHAR(1024) not null,
     completed bit not null,
-    entered_date datetime not null,
+    entered_date datetimeoffset(3) not null,
     time_out_seconds bigint not null,
     PRIMARY KEY (server_action_id)
 );
 
 -- Rules Engine
-create table dot_rule(id NVARCHAR(36) primary key,name NVARCHAR(255) not null,fire_on NVARCHAR(20),short_circuit tinyint default 0,parent_id NVARCHAR(36) not null,folder NVARCHAR(36) not null,priority int default 0,enabled tinyint default 0,mod_date datetime);
-create table rule_condition_group(id NVARCHAR(36) primary key,rule_id NVARCHAR(36) references dot_rule(id),operator NVARCHAR(10) not null,priority int default 0,mod_date datetime);
-create table rule_condition(id NVARCHAR(36) primary key,conditionlet NVARCHAR(MAX) not null,condition_group NVARCHAR(36) references rule_condition_group(id),comparison NVARCHAR(36) not null,operator NVARCHAR(10) not null,priority int default 0,mod_date datetime);
+create table dot_rule(id NVARCHAR(36) primary key,name NVARCHAR(255) not null,fire_on NVARCHAR(20),short_circuit tinyint default 0,parent_id NVARCHAR(36) not null,folder NVARCHAR(36) not null,priority int default 0,enabled tinyint default 0,mod_date datetimeoffset(3));
+create table rule_condition_group(id NVARCHAR(36) primary key,rule_id NVARCHAR(36) references dot_rule(id),operator NVARCHAR(10) not null,priority int default 0,mod_date datetimeoffset(3));
+create table rule_condition(id NVARCHAR(36) primary key,conditionlet NVARCHAR(MAX) not null,condition_group NVARCHAR(36) references rule_condition_group(id),comparison NVARCHAR(36) not null,operator NVARCHAR(10) not null,priority int default 0,mod_date datetimeoffset(3));
 create table rule_condition_value (id NVARCHAR(36) primary key,condition_id NVARCHAR(36) references rule_condition(id), paramkey NVARCHAR(255) not null, value NVARCHAR(MAX),priority int default 0);
-create table rule_action (id NVARCHAR(36) primary key,rule_id NVARCHAR(36) references dot_rule(id),priority int default 0,actionlet NVARCHAR(MAX) not null,mod_date datetime);
+create table rule_action (id NVARCHAR(36) primary key,rule_id NVARCHAR(36) references dot_rule(id),priority int default 0,actionlet NVARCHAR(MAX) not null,mod_date datetimeoffset(3));
 create table rule_action_pars(id NVARCHAR(36) primary key,rule_action_id NVARCHAR(36) references rule_action(id), paramkey NVARCHAR(255) not null,value NVARCHAR(MAX));
 create index idx_rules_fire_on on dot_rule (fire_on);
 
@@ -2634,17 +2630,17 @@ CREATE INDEX idx_system_event ON system_event (created);
 
 
 CREATE TABLE api_token_issued(
-    token_id NVARCHAR(255) NOT NULL, 
-    token_userid NVARCHAR(255) NOT NULL, 
-    issue_date datetime NOT NULL, 
-    expire_date datetime NOT NULL, 
-    requested_by_userid  NVARCHAR(255) NOT NULL, 
-    requested_by_ip  NVARCHAR(255) NOT NULL, 
-    revoke_date datetime DEFAULT NULL, 
-    allowed_from  NVARCHAR(255) , 
-    issuer  NVARCHAR(255) , 
-    claims  NVARCHAR(MAX) , 
-    mod_date  datetime NOT NULL, 
+    token_id NVARCHAR(255) NOT NULL,
+    token_userid NVARCHAR(255) NOT NULL,
+    issue_date datetimeoffset(3) NOT NULL,
+    expire_date datetimeoffset(3) NOT NULL,
+    requested_by_userid  NVARCHAR(255) NOT NULL,
+    requested_by_ip  NVARCHAR(255) NOT NULL,
+    revoke_date datetimeoffset(3) DEFAULT NULL,
+    allowed_from  NVARCHAR(255) ,
+    issuer  NVARCHAR(255) ,
+    claims  NVARCHAR(MAX) ,
+    mod_date  datetimeoffset(3) NOT NULL,
     PRIMARY KEY (token_id)
  );
 
@@ -2654,7 +2650,7 @@ CREATE UNIQUE INDEX idx_ident_uniq_asset_name on identifier (full_path_lc,host_i
 
 create table storage_group (
     group_name varchar(255)  not null,
-    mod_date   datetime NOT NULL DEFAULT GETDATE(),
+    mod_date   datetimeoffset(3) NOT NULL DEFAULT GETDATE(),
     PRIMARY KEY (group_name)
 );
 
@@ -2662,7 +2658,7 @@ create table storage (
     path       varchar(255) not null,
     group_name varchar(255) not null,
     hash       varchar(64) not null,
-    mod_date   datetime  NOT NULL DEFAULT GETDATE(),
+    mod_date   datetimeoffset(3)  NOT NULL DEFAULT GETDATE(),
     hash_ref   varchar(64),
     PRIMARY KEY (path, group_name),
     FOREIGN KEY (group_name) REFERENCES storage_group (group_name)
@@ -2673,7 +2669,7 @@ CREATE INDEX idx_storage_hash ON storage (hash);
 create table storage_data (
     hash_id  varchar(64) not null,
     data     varbinary(max) not null,
-    mod_date datetime NOT NULL DEFAULT GETDATE(),
+    mod_date datetimeoffset(3) NOT NULL DEFAULT GETDATE(),
     PRIMARY KEY (hash_id)
 );
 
@@ -2681,7 +2677,7 @@ create table storage_x_data (
     storage_hash varchar(64)                 not null,
     data_hash    varchar(64)                 not null,
     data_order   integer                     not null,
-    mod_date     datetime NOT NULL DEFAULT GETDATE(),
+    mod_date     datetimeoffset(3) NOT NULL DEFAULT GETDATE(),
     PRIMARY KEY (storage_hash, data_hash),
     FOREIGN KEY (data_hash) REFERENCES storage_data (hash_id)
 );

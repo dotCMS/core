@@ -1,5 +1,10 @@
 package com.dotcms.vanityurl.cache;
 
+import com.dotcms.contenttype.model.type.VanityUrlContentType;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import java.util.List;
 import java.util.Optional;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
@@ -58,14 +63,12 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
         if (vanityURL == null || !vanityURL.isVanityUrl()) {
             return;
         }
-        Host host = Try.of(() -> APILocator.getHostAPI().find(vanityURL.getHost(), APILocator.systemUser(), false)).getOrNull();
+        Host host = Try.of(() -> APILocator.getHostAPI().find(vanityURL.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR), APILocator.systemUser(), false)).getOrNull();
         Language lang = Try.of(() -> APILocator.getLanguageAPI().getLanguage(vanityURL.getLanguageId())).getOrNull();
         if (host == null || lang == null) {
             return;
         }
         remove(host, lang);
-
-
     }
 
 
@@ -90,7 +93,17 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
             return;
         }
 
-        cache.remove(key(vanityHost, lang), VANITY_URL_SITE_GROUP);
+        remove(vanityHost.getIdentifier(), lang.getId());
+    }
+
+
+    @Override
+    public void remove(final String hostId, final long langId) {
+        if (hostId == null) {
+            return;
+        }
+
+        cache.remove(key(hostId, langId), VANITY_URL_SITE_GROUP);
         cache.flushGroup(VANITY_URL_DIRECT_GROUP);
 
     }
@@ -145,18 +158,22 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
         return key(host, lang, null);
     }
 
-
-
     String key(final Host host, final Language lang, final String url) {
         if(host==null || lang==null) {
             throw new DotRuntimeException("Host or language are null - host:" + host  + " lang:" + lang);
         }
-        String key = host.getIdentifier() + StringPool.UNDERLINE
-                        +  String.valueOf(lang.getId()) + StringPool.UNDERLINE
-                        + (url != null ? url : "");
-        return key;
+
+        return key(host.getIdentifier(), lang.getId(), url);
     }
 
+    private String key(final String hostId, final long langId) {
+        return key(hostId, langId, null);
+    }
 
-
+    private String key(final String hostId, final long langId, final String url) {
+        if(hostId == null) {
+            throw new DotRuntimeException("Host or language are null - host:" + hostId  + " lang:" + langId);
+        }
+        return hostId + StringPool.UNDERLINE + langId + StringPool.UNDERLINE + (url != null ? url : "");
+    }
 }
