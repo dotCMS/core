@@ -16,9 +16,12 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -115,6 +118,9 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
             throws DotSecurityException, DotDataException {
         // let's create some tags under SYSTEM_HOST
         final TagAPI tagAPI = APILocator.getTagAPI();
+        final HostAPI hostAPI = APILocator.getHostAPI();
+        final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+        final FolderAPI folderAPI = APILocator.getFolderAPI();
         final User systemUser = APILocator.systemUser();
 
         final List<String> tagsKnownNamesSystemHostIds = new ArrayList<>();
@@ -146,7 +152,7 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
             when(webResource.init(any(InitBuilder.class)))
                     .thenReturn(dataObject);
 
-            final TagResource tagResource = new TagResource(tagAPI, webResource);
+            final TagResource tagResource = new TagResource(tagAPI, hostAPI, layoutAPI, folderAPI, webResource);
             final Map<String, RestTag> returnedTags =
                     tagResource.list(request, new MockHttpResponse(), testCase.getTagName(),
                             testCase.getSiteOrFolderId());

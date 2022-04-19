@@ -110,7 +110,7 @@ var tagsMap = {};
 var lastLength = 0;
 var contentSearchField;
 
-function processKeyEvent(e, tagName, selectedHostOrFolderId) {
+function processTagKeyEvent(e, tagName, selectedHostOrFolderId) {
 	if (e.keyCode !== keys.UP_ARROW && e.keyCode !== keys.DOWN_ARROW) {
 		// semicolon
 		if (e.keyCode === 188) {
@@ -184,7 +184,7 @@ function suggestTagsForSearch(e, searchField, hostInSession) {
 		selectedHostOrFolderId = hostInSession;
 	}
 
-	processKeyEvent(e, tagName, selectedHostOrFolderId);
+	processTagKeyEvent(e, tagName, selectedHostOrFolderId);
 }
 
 function suggestTagsForContent(e, searchField,  hostOrFolderField, selectedHostOrFolderId) {
@@ -215,7 +215,7 @@ function suggestTagsForContent(e, searchField,  hostOrFolderField, selectedHostO
 		}
 	}
 
-	processKeyEvent(e, tagName, selectedHostOrFolderId);
+	processTagKeyEvent(e, tagName, selectedHostOrFolderId);
 }
 
 

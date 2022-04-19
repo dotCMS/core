@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.rest.api.Validated;
+import org.apache.commons.lang.builder.ToStringBuilder;
 
 @JsonDeserialize(builder = RestTag.Builder.class)
 public final class RestTag extends Validated  {
@@ -24,6 +25,10 @@ public final class RestTag extends Validated  {
         persona = builder.persona;
         id = builder.id;
         checkValid();
+    }
+
+    public String toString() {
+        return ToStringBuilder.reflectionToString( this );
     }
 
     public static final class Builder {
