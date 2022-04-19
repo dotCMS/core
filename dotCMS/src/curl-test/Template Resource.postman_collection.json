@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "6322fd51-e39d-421e-ad69-ceab585ed91a",
+		"_postman_id": "1cc5479c-1771-4542-806d-c41d7106dd64",
 		"name": "Template Resource",
 		"description": "Make the test for the template resource crud",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -5259,8 +5259,8 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code should be 400\", function () {",
-							"    pm.response.to.have.status(400);",
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
 							"});"
 						],
 						"type": "text/javascript"
@@ -5324,8 +5324,8 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code should be 404\", function () {",
-							"    pm.response.to.have.status(404);",
+							"pm.test(\"Status code should be 204\", function () {",
+							"    pm.response.to.have.status(204);",
 							"});",
 							""
 						],
