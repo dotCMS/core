@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "a6423826-3e9e-4131-aff3-1d0776366831",
+		"_postman_id": "1cc5479c-1771-4542-806d-c41d7106dd64",
 		"name": "Template Resource",
 		"description": "Make the test for the template resource crud",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -177,17 +177,9 @@
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
-									"var templateIdToArchive = pm.collectionVariables.get(\"templateIdToArchive\");",
-									"console.log(templateIdToArchive)",
-									"var host = null;",
-									"for(var i=0; i< jsonData.entity.length;++i) {",
-									"    if (jsonData.entity[i].identifier == templateIdToArchive) {",
-									"        host = jsonData.entity[i];",
-									"    }",
-									"}",
 									"",
 									"pm.test(\"Deleted Check\", function () {",
-									"    pm.expect(host.deleted).to.eql(true);",
+									"    pm.expect(jsonData.entity[0].deleted).to.eql(true);",
 									"});",
 									""
 								],
@@ -336,18 +328,9 @@
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
-									"var templateIdToArchive = pm.collectionVariables.get(\"templateIdToArchive\");",
-									"console.log(templateIdToArchive)",
-									"var host = null;",
-									"for(var i=0; i< jsonData.entity.length;++i) {",
-									"    if (jsonData.entity[i].identifier == templateIdToArchive) {",
-									"        host = jsonData.entity[i];",
-									"    }",
-									"}",
-									"",
 									"",
 									"pm.test(\"Deleted Check\", function () {",
-									"    pm.expect(host.deleted).to.eql(true);",
+									"    pm.expect(jsonData.entity[0].deleted).to.eql(true);",
 									"});",
 									""
 								],
@@ -832,17 +815,9 @@
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
-									"var templateIdToArchive = pm.collectionVariables.get(\"templateIdToUnArchive\");",
-									"console.log(templateIdToArchive)",
-									"var host = null;",
-									"for(var i=0; i< jsonData.entity.length;++i) {",
-									"    if (jsonData.entity[i].identifier == templateIdToArchive) {",
-									"        host = jsonData.entity[i];",
-									"    }",
-									"}",
 									"",
 									"pm.test(\"Deleted Check\", function () {",
-									"    pm.expect(host.deleted).to.eql(true);",
+									"    pm.expect(jsonData.entity[0].deleted).to.eql(true);",
 									"});",
 									""
 								],
@@ -991,17 +966,9 @@
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
-									"var templateIdToArchive = pm.collectionVariables.get(\"templateIdToUnArchive\");",
-									"console.log(templateIdToArchive)",
-									"var host = null;",
-									"for(var i=0; i< jsonData.entity.length;++i) {",
-									"    if (jsonData.entity[i].identifier == templateIdToArchive) {",
-									"        host = jsonData.entity[i];",
-									"    }",
-									"}",
 									"",
 									"pm.test(\"Deleted Check\", function () {",
-									"    pm.expect(host.deleted).to.eql(false);",
+									"    pm.expect(jsonData.entity[0].deleted).to.eql(false);",
 									"});",
 									""
 								],
@@ -1310,17 +1277,9 @@
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
-									"var templateIdToArchive = pm.collectionVariables.get(\"templateIdToDelete\");",
-									"console.log(templateIdToArchive)",
-									"var host = null;",
-									"for(var i=0; i< jsonData.entity.length;++i) {",
-									"    if (jsonData.entity[i].identifier == templateIdToArchive) {",
-									"        host = jsonData.entity[i];",
-									"    }",
-									"}",
 									"",
 									"pm.test(\"Deleted Check\", function () {",
-									"    pm.expect(host.deleted).to.eql(true);",
+									"    pm.expect(jsonData.entity[0].deleted).to.eql(true);",
 									"});",
 									""
 								],
@@ -1705,17 +1664,9 @@
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
-									"var templateIdToArchive = pm.collectionVariables.get(\"templateIdToPublish\");",
-									"console.log(templateIdToArchive)",
-									"var host = null;",
-									"for(var i=0; i< jsonData.entity.length;++i) {",
-									"    if (jsonData.entity[i].identifier == templateIdToArchive) {",
-									"        host = jsonData.entity[i];",
-									"    }",
-									"}",
 									"",
 									"pm.test(\"Deleted Check\", function () {",
-									"    pm.expect(host.deleted).to.eql(true);",
+									"    pm.expect(jsonData.entity[0].deleted).to.eql(true);",
 									"});",
 									""
 								],
@@ -1941,17 +1892,9 @@
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
-									"var templateIdToArchive = pm.collectionVariables.get(\"templateIdToPublish\");",
-									"console.log(templateIdToArchive)",
-									"var host = null;",
-									"for(var i=0; i< jsonData.entity.length;++i) {",
-									"    if (jsonData.entity[i].identifier == templateIdToArchive) {",
-									"        host = jsonData.entity[i];",
-									"    }",
-									"}",
 									"",
 									"pm.test(\"Deleted Check\", function () {",
-									"    pm.expect(host.deleted).to.eql(false);",
+									"    pm.expect(jsonData.entity[0].deleted).to.eql(false);",
 									"});",
 									""
 								],
@@ -2170,17 +2113,9 @@
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
-									"var templateIdToArchive = pm.collectionVariables.get(\"templateIdToPublish\");",
-									"console.log(templateIdToArchive)",
-									"var host = null;",
-									"for(var i=0; i< jsonData.entity.length;++i) {",
-									"    if (jsonData.entity[i].identifier == templateIdToArchive) {",
-									"        host = jsonData.entity[i];",
-									"    }",
-									"}",
 									"",
 									"pm.test(\"Has Live Version Check\", function () {",
-									"    pm.expect(host.hasLiveVersion).to.eql(true);",
+									"    pm.expect(jsonData.entity[0].hasLiveVersion).to.eql(true);",
 									"});",
 									""
 								],
@@ -2563,18 +2498,9 @@
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
-									"var templateIdToArchive = pm.collectionVariables.get(\"templateIdToUnpublish\");",
-									"console.log(templateIdToArchive)",
-									"var host = null;",
-									"for(var i=0; i< jsonData.entity.length;++i) {",
-									"    if (jsonData.entity[i].identifier == templateIdToArchive) {",
-									"        host = jsonData.entity[i];",
-									"    }",
-									"}",
-									"",
 									"",
 									"pm.test(\"Deleted Check\", function () {",
-									"    pm.expect(host.deleted).to.eql(true);",
+									"    pm.expect(jsonData.entity[0].deleted).to.eql(true);",
 									"});",
 									""
 								],
@@ -2800,17 +2726,9 @@
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
-									"var templateIdToArchive = pm.collectionVariables.get(\"templateIdToUnpublish\");",
-									"console.log(templateIdToArchive)",
-									"var host = null;",
-									"for(var i=0; i< jsonData.entity.length;++i) {",
-									"    if (jsonData.entity[i].identifier == templateIdToArchive) {",
-									"        host = jsonData.entity[i];",
-									"    }",
-									"}",
 									"",
 									"pm.test(\"Deleted Check\", function () {",
-									"    pm.expect(host.deleted).to.eql(false);",
+									"    pm.expect(jsonData.entity[0].deleted).to.eql(false);",
 									"});",
 									""
 								],
@@ -2959,18 +2877,9 @@
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
-									"var templateIdToArchive = pm.collectionVariables.get(\"templateIdToUnpublish\");",
-									"console.log(templateIdToArchive)",
-									"var host = null;",
-									"for(var i=0; i< jsonData.entity.length;++i) {",
-									"    if (jsonData.entity[i].identifier == templateIdToArchive) {",
-									"        host = jsonData.entity[i];",
-									"    }",
-									"}",
-									"",
 									"",
 									"pm.test(\"Has Live Version Check\", function () {",
-									"    pm.expect(host.hasLiveVersion).to.eql(true);",
+									"    pm.expect(jsonData.entity[0].hasLiveVersion).to.eql(true);",
 									"});",
 									""
 								],
@@ -3115,17 +3024,9 @@
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
-									"var templateIdToArchive = pm.collectionVariables.get(\"templateIdToUnpublish\");",
-									"console.log(templateIdToArchive)",
-									"var host = null;",
-									"for(var i=0; i< jsonData.entity.length;++i) {",
-									"    if (jsonData.entity[i].identifier == templateIdToArchive) {",
-									"        host = jsonData.entity[i];",
-									"    }",
-									"}",
 									"",
 									"pm.test(\"Has Live Version Check\", function () {",
-									"    pm.expect(host.hasLiveVersion).to.eql(false);",
+									"    pm.expect(jsonData.entity[0].hasLiveVersion).to.eql(false);",
 									"});",
 									""
 								],
@@ -3431,7 +3332,7 @@
 									"});",
 									"",
 									"pm.test(\"Title check\", function () {",
-									"    pm.expect(pm.response.json().entity.title).contains('PostMan Test');",
+									"    pm.expect(pm.response.json().entity.title).to.be.eql('PostMan Test - 1');",
 									"});"
 								],
 								"type": "text/javascript"
@@ -4081,7 +3982,7 @@
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"Identifier must contains path\", function () {",
-									"    pm.expect(jsonData.entity[0].identifier).to.eq(\"SYSTEM_TEMPLATE\");",
+									"    pm.expect(jsonData.entity[0].identifier).contains(\"/application/templates/\");",
 									"});"
 								],
 								"type": "text/javascript"
@@ -4528,29 +4429,21 @@
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
-									"var templateIdToArchive = pm.collectionVariables.get(\"templateIdToGetTemplateA\");",
-									"console.log(templateIdToArchive)",
-									"var host = null;",
-									"for(var i=0; i< jsonData.entity.length;++i) {",
-									"    if (jsonData.entity[i].identifier == templateIdToArchive) {",
-									"        host = jsonData.entity[i];",
-									"    }",
-									"}",
 									"",
 									"pm.test(\"body check\", function () {",
-									"    pm.expect(host.body).to.eql('This is the body');",
+									"    pm.expect(jsonData.entity[0].body).to.eql('This is the body');",
 									"});",
 									"",
 									"pm.test(\"friendlyName check\", function () {",
-									"    pm.expect(host.friendlyName).to.eql('This is a postman test description');",
+									"    pm.expect(jsonData.entity[0].friendlyName).to.eql('This is a postman test description');",
 									"});",
 									"",
 									"pm.test(\"Title check\", function () {",
-									"    pm.expect(host.title).to.include('GETTEMPLATE PostMan Test A');",
+									"    pm.expect(jsonData.entity[0].title).to.include('GETTEMPLATE PostMan Test A');",
 									"});",
 									"",
-									"pm.test(\"Size must be 2\", function () {",
-									"    pm.expect(jsonData.entity.length).to.be.eql(2);",
+									"pm.test(\"Size must be 1\", function () {",
+									"    pm.expect(jsonData.entity.length).to.be.eql(1);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -4616,30 +4509,21 @@
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
-									"var templateIdToArchive = pm.collectionVariables.get(\"templateIdToGetTemplateA\");",
-									"console.log(templateIdToArchive)",
-									"var host = null;",
-									"for(var i=0; i< jsonData.entity.length;++i) {",
-									"    if (jsonData.entity[i].identifier == templateIdToArchive) {",
-									"        host = jsonData.entity[i];",
-									"    }",
-									"}",
-									"",
 									"",
 									"pm.test(\"body check\", function () {",
-									"    pm.expect(host.body).to.eql('This is the body');",
+									"    pm.expect(jsonData.entity[0].body).to.eql('This is the body');",
 									"});",
 									"",
 									"pm.test(\"friendlyName check\", function () {",
-									"    pm.expect(host.friendlyName).to.eql('This is a postman test description');",
+									"    pm.expect(jsonData.entity[0].friendlyName).to.eql('This is a postman test description');",
 									"});",
 									"",
 									"pm.test(\"Title check\", function () {",
-									"    pm.expect(host.title).to.include('GETTEMPLATE PostMan Test A');",
+									"    pm.expect(jsonData.entity[0].title).to.include('GETTEMPLATE PostMan Test A');",
 									"});",
 									"",
-									"pm.test(\"Size must be 2\", function () {",
-									"    pm.expect(jsonData.entity.length).to.be.eql(2);",
+									"pm.test(\"Size must be 1\", function () {",
+									"    pm.expect(jsonData.entity.length).to.be.eql(1);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -4706,9 +4590,8 @@
 									"",
 									"var jsonData = pm.response.json();",
 									"",
-									"// is one b/c always bring the system template",
-									"pm.test(\"Size must be 1\", function () {",
-									"    pm.expect(jsonData.entity.length).to.be.eql(1);",
+									"pm.test(\"Size must be 0\", function () {",
+									"    pm.expect(jsonData.entity.length).to.be.eql(0);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -4775,9 +4658,8 @@
 									"",
 									"var jsonData = pm.response.json();",
 									"",
-									"// it is 2, bc the syste template is always coming",
-									"pm.test(\"Size must be 2\", function () {",
-									"    pm.expect(jsonData.entity.length).to.be.eql(2);",
+									"pm.test(\"Size must be 1\", function () {",
+									"    pm.expect(jsonData.entity.length).to.be.eql(1);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -4922,9 +4804,8 @@
 									"",
 									"var jsonData = pm.response.json();",
 									"",
-									"// is 3 b/c the system template is always coming",
 									"pm.test(\"Size must be 2, since 3 templates were created with GETTEMPLATE title but one was archived\", function () {",
-									"    pm.expect(jsonData.entity.length).to.be.eql(3);",
+									"    pm.expect(jsonData.entity.length).to.be.eql(2);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -4991,8 +4872,8 @@
 									"",
 									"var jsonData = pm.response.json();",
 									"",
-									"pm.test(\"Size must be at least 3\", function () {",
-									"    pm.expect(jsonData.entity.length).to.greaterThan(2);",
+									"pm.test(\"Size must be 3\", function () {",
+									"    pm.expect(jsonData.entity.length).to.be.eql(3);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -5027,7 +4908,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/templates?filter=gettemplat&archive=true",
+							"raw": "{{serverURL}}/api/v1/templates?filter=gettemplate&archive=true",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -5039,7 +4920,7 @@
 							"query": [
 								{
 									"key": "filter",
-									"value": "gettemplat"
+									"value": "gettemplate"
 								},
 								{
 									"key": "archive",
@@ -5368,780 +5249,6 @@
 						}
 					},
 					"response": []
-				}
-			]
-		},
-		{
-			"name": "SystemTemplate",
-			"item": [
-				{
-					"name": "GetAllIncludingSystemTemplate",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"var textData = pm.response.text();",
-									"",
-									"pm.test(\"body check\", function () {",
-									"    pm.expect(textData).to.contains('SYSTEM_TEMPLATE');",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/templates",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"templates"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "GetSystemTemplateLive",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"var jsonData = pm.response.json();",
-									"",
-									"pm.test(\"body check\", function () {",
-									"    pm.expect(jsonData.entity.identifier).to.eql('SYSTEM_TEMPLATE');",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/templates/SYSTEM_TEMPLATE/live",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"templates",
-								"SYSTEM_TEMPLATE",
-								"live"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "GetSystemTemplateWorking",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"var jsonData = pm.response.json();",
-									"",
-									"pm.test(\"body check\", function () {",
-									"    pm.expect(jsonData.entity.identifier).to.eql('SYSTEM_TEMPLATE');",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/templates/SYSTEM_TEMPLATE/working",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"templates",
-								"SYSTEM_TEMPLATE",
-								"working"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "SaveSystemTemplate",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code should be ok 400\", function () {",
-									"    pm.response.to.have.status(400);",
-									"});",
-									"",
-									"",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PUT",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"identifier\":\"SYSTEM_TEMPLATE\",\n    \"title\":\"PostMan Test Save Publish 2\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/templates/",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"templates",
-								""
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "SaveSystemTemplateDraft",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code should be ok 400\", function () {",
-									"    pm.response.to.have.status(400);",
-									"});",
-									"",
-									"",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PUT",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"identifier\":\"SYSTEM_TEMPLATE\",\n    \"title\":\"PostMan Test Save Publish 2\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/templates/draft",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"templates",
-								"draft"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "SavePublishSystemTemplate",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code should be ok 400\", function () {",
-									"    pm.response.to.have.status(400);",
-									"});",
-									"",
-									"",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PUT",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"identifier\":\"SYSTEM_TEMPLATE\",\n    \"title\":\"PostMan Test Save Publish 2\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/templates/draft",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"templates",
-								"draft"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "PublishSystemTemplate",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"var jsonData = pm.response.json();",
-									"",
-									"pm.test(\"body check\", function () {",
-									"    pm.expect(jsonData.entity.fails[0].element).to.eql('SYSTEM_TEMPLATE');",
-									"});",
-									"",
-									"",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PUT",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "[\"SYSTEM_TEMPLATE\"]",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/templates/_publish",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"templates",
-								"_publish"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "UnpublishSystemTemplate",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"var jsonData = pm.response.json();",
-									"",
-									"pm.test(\"body check\", function () {",
-									"    pm.expect(jsonData.entity.fails[0].element).to.eql('SYSTEM_TEMPLATE');",
-									"});",
-									"",
-									"",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PUT",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "[\"SYSTEM_TEMPLATE\"]",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/templates/_unpublish",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"templates",
-								"_unpublish"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "CopySystemTemplate",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code should be ok 400\", function () {",
-									"    pm.response.to.have.status(400);",
-									"});",
-									"",
-									"",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PUT",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "s",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/templates/SYSTEM_TEMPLATE/_copy",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"templates",
-								"SYSTEM_TEMPLATE",
-								"_copy"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "ArchiveSystemTemplate",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"var jsonData = pm.response.json();",
-									"",
-									"pm.test(\"body check\", function () {",
-									"    pm.expect(jsonData.entity.fails[0].element).to.eql('SYSTEM_TEMPLATE');",
-									"});",
-									"",
-									"",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PUT",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "[\"SYSTEM_TEMPLATE\"]",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/templates/_archive",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"templates",
-								"_archive"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "UnArchiveSystemTemplate",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"var jsonData = pm.response.json();",
-									"",
-									"pm.test(\"body check\", function () {",
-									"    pm.expect(jsonData.entity.fails[0].element).to.eql('SYSTEM_TEMPLATE');",
-									"});",
-									"",
-									"",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PUT",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "[\"SYSTEM_TEMPLATE\"]",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/templates/_unarchive",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"templates",
-								"_unarchive"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "DeleteSystemTemplate",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"var jsonData = pm.response.json();",
-									"",
-									"pm.test(\"body check\", function () {",
-									"    pm.expect(jsonData.entity.fails[0].element).to.eql('SYSTEM_TEMPLATE');",
-									"});",
-									"",
-									"",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "DELETE",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "[\"SYSTEM_TEMPLATE\"]",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/templates/",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"templates",
-								""
-							]
-						}
-					},
-					"response": []
-				}
-			],
-			"auth": {
-				"type": "basic",
-				"basic": [
-					{
-						"key": "password",
-						"value": "admin",
-						"type": "string"
-					},
-					{
-						"key": "username",
-						"value": "admin@dotcms.com",
-						"type": "string"
-					}
-				]
-			},
-			"event": [
-				{
-					"listen": "prerequest",
-					"script": {
-						"type": "text/javascript",
-						"exec": [
-							""
-						]
-					}
-				},
-				{
-					"listen": "test",
-					"script": {
-						"type": "text/javascript",
-						"exec": [
-							""
-						]
-					}
 				}
 			]
 		},
