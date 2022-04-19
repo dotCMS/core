@@ -1174,10 +1174,12 @@ dojo.declare(
                 var row = table.insertRow(table.rows.length);
                 row.id = 'rowId' + i;
                 row.className = 'selectMeRowInIframe';
-                row.setAttribute(
-                    'onClick',
-                    'javascript: contentSelector.toggleCheckbox(this)'
-                );
+                if (this.multiple == 'true') {
+                    row.setAttribute(
+                        'onClick',
+                        'javascript: contentSelector.toggleCheckbox(this)'
+                    );
+                }
 
                 // Select button functionality
                 var selected = function (scope, content) {
