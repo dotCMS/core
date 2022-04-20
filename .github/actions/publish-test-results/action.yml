@@ -40,6 +40,11 @@ inputs:
   cicd_github_token:
     description: 'Token to use when it comes to push to results repo'
     required: true
+outputs:
+  test_results_commit_url:
+    description: 'Test results commit url'
+  test_results_branch_url:
+    description: 'Test results branch url'
 runs:
   using: 'docker'
   image: 'Dockerfile'

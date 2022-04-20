@@ -360,65 +360,19 @@ function printStatus {
   echo ""
 }
 
-# Send status to Github API about test result
-function sendGithubStatus {
-  [[ -z "${INPUT_PULL_REQUEST}" || "${INPUT_PULL_REQUEST}" == 'false' ]] && return
-
-  if [[ ${INPUT_TESTS_RUN_EXIT_CODE} == 0 ]]; then
-    local github_status='success'
-    local github_description='Tests executed SUCCESSFULLY'
-  else
-    local github_status='failure'
-    local github_description='Tests FAILED'
-  fi
-
-  local statuses_label='Github Actions'
-  if [[ "${INPUT_TEST_TYPE}" == 'unit' ]]; then
-    local statuses_context="${statuses_label} - [Unit tests results]"
-  elif [[ "${INPUT_TEST_TYPE}" == 'integration' ]]; then
-    local statuses_context="${statuses_label} - [Integration tests results] - [${INPUT_DB_TYPE}]"
-  elif [[ "${INPUT_TEST_TYPE}" == 'postman' ]]; then
-    local statuses_context="${statuses_label} - [Curl tests results] - [${INPUT_DB_TYPE}]"
-  else
-    local statuses_label='Unknown'
-  fi
-
-  local json_base_value="https://api.github.com/repos/dotCMS/core/statuses/"
-  local json_attribute="\"href\": \"${json_base_value}"
-
-  # https://developer.github.com/v3/auth/#via-oauth-tokens
-  # Reading the pull request information in order to get the statuses URL (has a github PR identifier)
-
-  # https://developer.github.com/v3/pulls/#get-a-single-pull-request
-  local creds="${GITHUB_USER}:${INPUT_CICD_GITHUB_TOKEN}"
-  local github_api_url="https://api.github.com/repos/dotCMS/${INPUT_TARGET_PROJECT}/pulls/${INPUT_PULL_REQUEST}"
-  local json_response=$(curl -u ${creds} --request GET ${github_api_url} -s)
-
-  # Parse the response json to get the statuses URL
-  local json_statuses_attribute=$(echo "${json_response}" | grep "${json_attribute}\w*\"")
-  local statuses_url=$(echo "${json_statuses_attribute}" | grep -o "${json_base_value}\w*")
-  local reports_index_url="${BASE_STORAGE_URL}/${STORAGE_JOB_BRANCH_FOLDER}/${REPORTS_FOLDER}/index.html"
-
-  # https://developer.github.com/v3/repos/statuses/#create-a-status
-  # The state of the status. Can be one of error, failure, pending, or success.
-  curl -u ${GITHUB_USER}:${INPUT_CICD_GITHUB_TOKEN} \
-  --request POST \
-  --data "{
-    \"state\": \"${github_status}\",
-    \"description\": \"${github_description}\",
-    \"target_url\": \"${reports_index_url}\",
-    \"context\": \"${statuses_context}\"
-  }" \
-  ${statuses_url} -s
+# Set Github Action outputs to be used by other actions
+function setOutputs {
+  echo "::set-output name=test_results_branch_url::${GITHUB_PERSIST_COMMIT_URL}/${REPORTS_LOCATION}/index.html"
+  echo "::set-output name=test_results_commit_url::${GITHUB_PERSIST_BRANCH_URL}/${REPORTS_LOCATION}/index.html"
 }
 
 # More Env-Vars definition, specifically to results storage
 githack_url=$(resolveRepoPath ${TEST_RESULTS_GITHUB_REPO} | sed -e 's/github.com/raw.githack.com/')
 export BASE_STORAGE_URL="${githack_url}/$(urlEncode ${BUILD_ID})/projects/${INPUT_TARGET_PROJECT}"
-export GITHUB_PERSIST_COMMIT_URL="${BASE_STORAGE_URL}/$(resolveResultsPath ${BUILD_HASH})"
-export GITHUB_PERSIST_BRANCH_URL="${BASE_STORAGE_URL}/$(resolveResultsPath current)"
 export STORAGE_JOB_COMMIT_FOLDER="$(resolveResultsPath ${BUILD_HASH})"
 export STORAGE_JOB_BRANCH_FOLDER="$(resolveResultsPath current)"
+export GITHUB_PERSIST_COMMIT_URL="${BASE_STORAGE_URL}/${STORAGE_JOB_COMMIT_FOLDER}"
+export GITHUB_PERSIST_BRANCH_URL="${BASE_STORAGE_URL}/${STORAGE_JOB_BRANCH_FOLDER}"
 
 echo "############
 Storage vars
