@@ -1,5 +1,5 @@
 {
-  "name": "core-cache-locator-action",
+  "name": "github-status-action",
   "version": "1.0.0",
   "description": "",
   "main": "lib/main.js",
@@ -20,11 +20,14 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@actions/core": "^1.6.0"
+    "@actions/cache": "^1.0.9",
+    "@actions/core": "^1.6.0",
+    "node-fetch": "^3.2.3"
   },
   "devDependencies": {
     "@tsconfig/node16": "^1.0.2",
     "@types/node": "^16.0.0",
+    "@types/node-fetch": "^2.6.1",
     "@vercel/ncc": "^0.33.3",
     "eslint": "^8.11.0",
     "eslint-plugin-github": "^4.3.5",
