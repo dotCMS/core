@@ -156,9 +156,9 @@ function persistResults {
 # Creates a summary status file for test the specific INPUT_TEST_TYPE, INPUT_DB_TYPE in both commit and branch paths.
 #
 # $1: results status
-# $2: folder to store file
 function trackCoreTests {
-  if [[ ${1} == 0 ]]; then
+  local status=${1}
+  if [[ ${status} == 0 ]]; then
     local result_label=SUCCESS
   else
     local result_label=FAIL
@@ -177,6 +177,7 @@ function trackCoreTests {
   cat ${result_file}
 }
 
+# Prepares and copies test results in HTML format and the corresponding log file.
 function copyResults {
   mkdir -p ${REPORTS_FOLDER}
   mkdir -p ${LOGS_FOLDER}
@@ -186,11 +187,13 @@ function copyResults {
   executeCmd "cp -R ${INPUT_PROJECT_ROOT}/dotCMS/dotcms.log ${LOGS_FOLDER}/"
 }
 
+# Prints reports locations
 function printReportLocations {
   echo "::notice::Pushing reports and logs to [${GITHUB_PERSIST_COMMIT_URL}]"
   echo "::notice::Pushing reports and logs to [${GITHUB_PERSIST_BRANCH_URL}]"
 }
 
+# Appends to html file a section for the log file locations
 function appendLogLocation {
   if [[ "${INPUT_TEST_TYPE}" != 'postman' ]]; then
     # Now we want to add the logs link at the end of index.html results report file
