@@ -3,6 +3,7 @@ package com.dotmarketing.startup.runonce;
 import static java.util.stream.Collectors.toMap;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.Params;
 import com.dotmarketing.exception.DotDataException;
@@ -63,6 +64,8 @@ public class Task220330ChangeVanityURLSiteFieldType implements StartupTask {
 
             updateHost(contentlets);
             updateFieldType();
+
+            CacheLocator.getContentTypeCache2().clearCache();
         } catch (JsonProcessingException | DotSecurityException e) {
             Logger.error(Task220330ChangeVanityURLSiteFieldType.class, e.getMessage());
         }
