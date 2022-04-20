@@ -21,10 +21,11 @@
 
 ## Events
 
-| Event       | Description                          | Type                            |
-| ----------- | ------------------------------------ | ------------------------------- |
-| `add`       | Emit the added value, key/value pair | `CustomEvent<DotKeyValueField>` |
-| `lostFocus` | Emit when any of the input is blur   | `CustomEvent<FocusEvent>`       |
+| Event        | Description                          | Type                            |
+| ------------ | ------------------------------------ | ------------------------------- |
+| `add`        | Emit the added value, key/value pair | `CustomEvent<DotKeyValueField>` |
+| `keyChanged` | Emit when key is changed             | `CustomEvent<string>`           |
+| `lostFocus`  | Emit when any of the input is blur   | `CustomEvent<FocusEvent>`       |
 
 
 ## Dependencies

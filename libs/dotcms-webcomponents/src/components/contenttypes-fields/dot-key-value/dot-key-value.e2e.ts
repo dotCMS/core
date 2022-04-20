@@ -444,6 +444,18 @@ describe('dot-key-value', () => {
                 });
             });
         });
+
+        describe('errorExistingKey', () => {
+            it('shoult reset value on keyChanged', async () => {
+                const form = await getForm();
+                form.triggerEvent('keyChanged', {
+                    detail: 'a'
+                });
+                await page.waitForChanges();
+                const error = await dotTestUtil.getErrorMessage(page);
+                expect(error).toBeNull();
+            });
+        });
     });
 
     describe('@Methods', () => {

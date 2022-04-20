@@ -145,8 +145,8 @@ export class DotKeyValueComponent {
     })
     whiteList: string;
 
+    @State()
     errorExistingKey: boolean;
-
     @State()
     status: DotFieldStatus;
     @State()
@@ -224,6 +224,14 @@ export class DotKeyValueComponent {
         if ((this.uniqueKeys && !this.errorExistingKey) || !this.uniqueKeys) {
             this.items = [...this.items, detail];
             this.emitChanges();
+        }
+    }
+
+    @Listen('keyChanged')
+    keyChangedHandler(): void {
+        // Reset errorExistingKey value when KEY is changed
+        if (this.errorExistingKey) {
+            this.errorExistingKey = false;
         }
     }
 

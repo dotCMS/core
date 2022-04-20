@@ -200,6 +200,18 @@ describe('key-value-form', () => {
             });
         });
 
+        describe('keyChanged', () => {
+            beforeEach(async () => {
+                spyAddEvent = await page.spyOnEvent('keyChanged');
+            });
+
+            it('should emit on form valid and submit', async () => {
+                await typeKey();
+
+                expect(spyAddEvent).toHaveReceivedEventDetail('key');
+            });
+        });
+
         xdescribe('lostFocus', () => {
             it('should emit when input gets blur', async () => {});
         });

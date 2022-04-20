@@ -61,6 +61,10 @@ export class DotKeyValueComponent {
     @Event()
     add: EventEmitter<DotKeyValueField>;
 
+    /** Emit when key is changed */
+    @Event()
+    keyChanged: EventEmitter<string>;
+
     /** Emit when any of the input is blur */
     @Event()
     lostFocus: EventEmitter<FocusEvent>;
@@ -235,6 +239,11 @@ export class DotKeyValueComponent {
         event.stopImmediatePropagation();
 
         const target = event.target as HTMLInputElement;
+
+        if (target.name === 'key') {
+            this.keyChanged.emit(target.value.toString());
+        }
+
         this.inputs = {
             ...this.inputs,
             [target.name]: target.value.toString()

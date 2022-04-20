@@ -2403,6 +2403,10 @@ declare namespace LocalJSX {
          */
         "onAdd"?: (event: CustomEvent<DotKeyValueField>) => void;
         /**
+          * Emit when key is changed
+         */
+        "onKeyChanged"?: (event: CustomEvent<string>) => void;
+        /**
           * Emit when any of the input is blur
          */
         "onLostFocus"?: (event: CustomEvent<FocusEvent>) => void;
