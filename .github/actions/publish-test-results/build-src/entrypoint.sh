@@ -13,6 +13,5 @@ printReportLocations
 appendLogLocation
 checkForToken
 persistResults
-
-sendGithubStatus
+setOutputs
 printStatus
