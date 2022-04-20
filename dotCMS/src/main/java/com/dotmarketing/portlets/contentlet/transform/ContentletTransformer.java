@@ -19,6 +19,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
@@ -146,6 +147,10 @@ public class ContentletTransformer implements DBTransformer {
             contentlet.setHost(identifier.getHostId());
             contentlet.setFolder(folder.getInode());
 
+            if (Config.getBooleanProperty("uniquePublishExpireDate", false)) {
+                setPublishExpireDateFromIdentifier(contentlet, contentTypeId, identifier);
+            }
+
         } else {
             if (contentlet.isSystemHost()) {
                 // When we are saving a systemHost we cannot call
@@ -157,6 +162,24 @@ public class ContentletTransformer implements DBTransformer {
                 contentlet.setHost(APILocator.getHostAPI().findSystemHost().getIdentifier());
             }
             contentlet.setFolder(APILocator.getFolderAPI().findSystemFolder().getInode());
+        }
+    }
+
+    private static void setPublishExpireDateFromIdentifier(Contentlet contentlet, String contentTypeId,
+            Identifier identifier) throws DotSecurityException, DotDataException {
+        final ContentType contentType = APILocator.getContentTypeAPI(
+                        APILocator.systemUser())
+                .find(contentTypeId);
+
+        if (UtilMethods.isSet(contentType.publishDateVar())) {
+            contentlet.setDateProperty(contentType.publishDateVar(),
+                    identifier.getSysPublishDate());
+        }
+
+        if (UtilMethods.isSet(contentType.expireDateVar())) {
+            contentlet
+                    .setDateProperty(contentType.expireDateVar(),
+                            identifier.getSysExpireDate());
         }
     }
 
