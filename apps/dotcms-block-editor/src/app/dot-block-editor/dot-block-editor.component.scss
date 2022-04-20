@@ -94,12 +94,12 @@
 
             blockquote {
                 margin: $spacing-3;
-                border-left: 3px solid rgba(#0d0d0d, 0.1);
+                border-left: 3px solid rgba($black, 0.1);
                 padding-left: 1rem;
             }
 
             pre {
-                background: #0d0d0d;
+                background: $black;
                 border-radius: 0.5rem;
                 color: #fff;
                 padding: 0.75rem 1rem;
@@ -111,6 +111,15 @@
                     color: inherit;
                     padding: 0;
                 }
+            }
+
+            // Placeholder styling
+            .is-empty::before {
+                color: $gray-light;
+                content: attr(data-placeholder);
+                float: left;
+                height: 0;
+                pointer-events: none;
             }
         }
     }
