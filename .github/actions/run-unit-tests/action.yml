@@ -12,11 +12,13 @@ inputs:
     required: true
 outputs:
   tests-run-exit-code:
-    description: Test run exit code
-  test-results-location:
-    description: Unit tests results location
+    description: 'Test run exit code'
+  tests-results-status:
+    description: 'Tests results status'
+  tests-results-location:
+    description: 'Unit tests results location'
   skip-results-report:
-    description: Flag indicating if results report is skipped
+    description: 'Flag indicating if results report is skipped'
 runs:
   using: 'node16'
   main: 'dist/index.js'
