@@ -82,15 +82,13 @@ jobs:
         uses: ./.github/actions/run-unit-tests
         with:
           build_env: ${{ env.BUILD_ENV }}
-      - id: unit-tests-report
-        name: Unit Tests Report
+      - id: unit-tests-results
+        name: Unit Tests Results
         uses: dorny/test-reporter@v1
         with:
           name: Unit Test Results
-          path: ${{ steps.run-unit-tests.outputs.test-results-location }}/*.xml
+          path: ${{ steps.run-unit-tests.outputs.tests-results-location }}/*.xml
           reporter: java-junit
-          list-suites: failed
-          list-tests: failed
           max-annotations: 50
           fail-on-error: false
         if: always() && steps.run-unit-tests.outputs.skip-results-report == 'false'
@@ -98,7 +96,7 @@ jobs:
         name: Unit Test Comment
         uses: EnricoMi/publish-unit-test-result-action@v1
         with:
-          files: ${{ steps.run-unit-tests.outputs.test-results-location }}/*.xml
+          files: ${{ steps.run-unit-tests.outputs.tests-results-location }}/*.xml
           check_name: 'Unit Tests Report'
         if: always() && steps.run-unit-tests.outputs.skip-results-report == 'false'
       - id: publish-unit-tests
@@ -110,8 +108,19 @@ jobs:
           test_type: unit
           pull_request: ${{ github.event.number }}
           tests_run_exit_code: ${{ steps.run-unit-tests.outputs.tests-run-exit-code }}
-          test_results_location: ${{ steps.run-unit-tests.outputs.test-results-location }}/html
+          test_results_location: ${{ steps.run-unit-tests.outputs.tests-results-location }}/html
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+        if: always() && steps.run-unit-tests.outputs.skip-results-report == 'false'
+      - id: github-status
+        name: Send Github Status
+        uses: ./.github/actions/github-status
+        with:
+          test_type: unit
+          test_results_status: ${{ steps.run-unit-tests.outputs.tests-results-status }}
+          pull_request: ${{ github.event.number }}
+          github_user: ${{ env.GITHUB_USER }}
+          cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+          report_url: ${{ steps.publish-unit-tests.outputs.test_results_commit_url }}
         if: always() && steps.run-unit-tests.outputs.skip-results-report == 'false'
 #  run-unit-tests-job:
 #    name: Unit Tests
