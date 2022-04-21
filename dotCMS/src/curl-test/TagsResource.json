@@ -84,11 +84,10 @@
 						"exec": [
 							"pm.test(\"Status code is 200\", function () {",
 							"    pm.response.to.have.status(200);",
-							"    var jsonData = pm.response.json();",
+							"    const jsonData = pm.response.json();",
 							"    ",
-							"    for (const key in jsonData) {",
-							"        console.log(`${key}: ${jsonData[key]}`);",
-							"    }",
+							"    const tag = jsonData.entity.tags['non-global-tag'];",
+							"    pm.collectionVariables.set(\"tagForUpdateId\", tag.id);",
 							"",
 							"});"
 						],
@@ -630,11 +629,8 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);    ",
-							"    let jsonData = pm.response.json();",
-							"    let size = Object.keys(jsonData).length;",
-							"    pm.expect(size).to.be.eq(1); //Returns the global occurrence since the site does not have any match",
+							"pm.test(\"Status code is 400\", function () {",
+							"    pm.response.to.have.status(400);    ",
 							"});"
 						],
 						"type": "text/javascript"
@@ -683,7 +679,7 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/tags?name=global&siteId={{tagSiteId}}",
+					"raw": "{{serverURL}}/api/v1/tags?name=global&siteId=any-invalid-id",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -699,7 +695,7 @@
 						},
 						{
 							"key": "siteId",
-							"value": "{{tagSiteId}}"
+							"value": "any-invalid-id"
 						}
 					]
 				},
@@ -728,6 +724,7 @@
 							"    var jsonData = pm.response.json();",
 							"    let size = Object.keys(jsonData.entity).length;",
 							"    pm.expect(size).to.be.greaterThan(0);",
+							"    ",
 							"});"
 						],
 						"type": "text/javascript"
@@ -813,6 +810,10 @@
 							"    var jsonData = pm.response.json();",
 							"    let size = Object.keys(jsonData.entity).length;",
 							"    pm.expect(size).to.be.greaterThan(0);",
+							"    const keys = Object.keys(jsonData.entity);",
+							"    const key = keys[0];",
+							"    const id = jsonData.entity[key].id;",
+							"    pm.collectionVariables.set(\"retrievedTagId\", id);",
 							"});"
 						],
 						"type": "text/javascript"
@@ -861,7 +862,7 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/tags/user/dotcms.org.1",
+					"raw": "{{serverURL}}/api/v1/tags/third-site-tag",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -869,8 +870,7 @@
 						"api",
 						"v1",
 						"tags",
-						"user",
-						"dotcms.org.1"
+						"third-site-tag"
 					]
 				},
 				"description": "This tests the endpoint that brings back one specific App given the App-key."
@@ -1029,7 +1029,7 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/tags/{{deleteTagCandidateId}}",
+					"raw": "{{serverURL}}/api/v1/tags/{{tagForUpdateId}}",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -1037,7 +1037,7 @@
 						"api",
 						"v1",
 						"tags",
-						"{{deleteTagCandidateId}}"
+						"{{tagForUpdateId}}"
 					]
 				},
 				"description": "This tests the endpoint that brings back one specific App given the App-key."
@@ -1177,25 +1177,26 @@
 						{
 							"key": "file",
 							"type": "file",
-							"src": "/Users/fabrizzio/Desktop/appSecrets.export"
+							"src": "resources/csv_sample_file.csv"
 						},
 						{
-							"key": "json",
-							"value": "{ \"password\":\"12345678123456781234567812345678\"\n}",
+							"key": "",
+							"value": "",
 							"contentType": "application/json",
-							"type": "text"
+							"type": "text",
+							"disabled": true
 						}
 					]
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/apps/import",
+					"raw": "{{serverURL}}/api/v1/tags/import",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
 						"v1",
-						"apps",
+						"tags",
 						"import"
 					]
 				},
@@ -1221,11 +1222,6 @@
 						"exec": [
 							"pm.test(\"Status code is 200\", function () {",
 							"    pm.response.to.have.status(200);",
-							"    var jsonData = pm.response.json();",
-							"    ",
-							"    const tag = jsonData.entity.tags['non-global-tag-changed'];",
-							"    ",
-							"    pm.expect(tag).not.eql(undefined);",
 							"",
 							"});"
 						],
@@ -1269,10 +1265,10 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n   \"siteId\":\"{{tagsSiteId}}\",\n   \"tagName\":\"non-global-tag-changed\",\n   \"tagId\":\"{{tagForUpdateId}}\"\n}"
+					"raw": ""
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/tags/",
+					"raw": "{{serverURL}}/api/v1/tags/tag/{{retrievedTagId}}/inode/1000",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -1280,7 +1276,10 @@
 						"api",
 						"v1",
 						"tags",
-						""
+						"tag",
+						"{{retrievedTagId}}",
+						"inode",
+						"1000"
 					]
 				},
 				"description": "This tests the endpoint that brings back one specific App given the App-key."
