@@ -236,6 +236,12 @@ public class TagsResourceHelper {
         return inputFile;
     }
 
+    /**
+     * tell me if we're looking at the title line on thr cvs file
+     * @param tagName
+     * @param siteId
+     * @return
+     */
     private boolean isHeaderLine(String tagName, String siteId) {
         return tagName.toLowerCase().contains("tag name") && siteId.toLowerCase()
                 .contains("host id");
