@@ -2,14 +2,12 @@ package com.dotmarketing.portlets.fileassets.business;
 
 import com.dotcms.api.tree.Parentable;
 import com.dotcms.browser.BrowserQuery;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.portlets.structure.model.Field.DataType;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.ConnectException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +15,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
-import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.MimeTypeUtils;
 import com.dotmarketing.business.*;
@@ -30,7 +27,6 @@ import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.rendering.velocity.viewtools.content.FileAssetMap;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.tika.TikaUtils;
@@ -40,7 +36,6 @@ import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -58,7 +53,6 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import org.apache.velocity.exception.ResourceNotFoundException;
 
 /**
  * This class is a bridge impl that will support the older
@@ -483,15 +477,11 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
     private boolean moveFile (Contentlet fileAssetCont, Folder parent, Host host, User user, boolean respectFrontendRoles ) throws DotStateException, DotDataException, DotSecurityException {
 
-        boolean isfileAssetContLive = false;
-
         //Getting the contentlet identifier
         Identifier id = APILocator.getIdentifierAPI().find( fileAssetCont );
         if ( id != null && InodeUtils.isSet( id.getId() ) ) {
 
-            FileAsset fa = fromContentlet( fileAssetCont );
-            if ( fa.isLive() )
-                isfileAssetContLive = true;
+            final FileAsset fa = fromContentlet( fileAssetCont );
 
             if ( host == null ) {
                 host = APILocator.getHostAPI().find( id.getHostId(), user, respectFrontendRoles );
@@ -507,24 +497,17 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
             if ( !fileNameExists ) {
 
-                Folder oldParent = APILocator.getFolderAPI().findFolderByPath( id.getParentPath(), host, user, respectFrontendRoles );
+				APILocator.getContentletAPI().move(fileAssetCont, user, host, parent, respectFrontendRoles);
 
-                fileAssetCont.setInode( null );
-                fileAssetCont.setHost( host != null ? host.getIdentifier() : (parent != null ? parent.getHostId() : fileAssetCont.getHost()) );
-                fileAssetCont.setFolder( parent != null ? parent.getInode() : null );
-                final Contentlet fileAsset = APILocator.getContentletAPI().checkin( fileAssetCont, user, respectFrontendRoles );
-                if ( isfileAssetContLive )
-                    APILocator.getVersionableAPI().setLive( fileAssetCont );
+				final Folder oldParent = APILocator.getFolderAPI().findFolderByPath( id.getParentPath(), host, user, respectFrontendRoles );
 
-                if ( parent != null ) {
+				if ( parent != null ) {
                     CacheLocator.getNavToolCache().removeNav(parent.getHostId(), parent.getInode());
                 }
 
                 CacheLocator.getNavToolCache().removeNav(oldParent.getHostId(), oldParent.getInode());
 
-                CacheLocator.getIdentifierCache().removeFromCacheByVersionable( fileAssetCont );
-
-				this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FILE_ASSET, new Payload(fileAsset.getMap(), Visibility.EXCLUDE_OWNER,
+				this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FILE_ASSET, new Payload(fileAssetCont.getMap(), Visibility.EXCLUDE_OWNER,
 					new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
                 return true;

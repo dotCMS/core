@@ -516,6 +516,28 @@
 					}
 				%>
 
+				<%
+					it = fields.iterator();
+					while (it.hasNext()) {
+						Field field = (Field)it.next();
+						if (field.getFieldType().equals(Field.FieldType.STORY_BLOCK_FIELD.toString())) {
+            	%>
+							<tr>
+								<td align="center">
+									<button dojoType="dijit.form.Button" onClick="addBlockEditor('<%= field.getVelocityVarName() %>')">
+									<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add")) %>
+									</button>
+								</td>
+								<td>
+									<%=field.getFieldName()%> <%= LanguageUtil.get(pageContext, "html-render") %>
+								</td>
+							</tr>
+
+            <%
+                    	}
+                	}
+            %>
+
 				
 					<tr>
 						<td align="center" nowrap colspan="2">

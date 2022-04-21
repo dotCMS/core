@@ -515,12 +515,7 @@ create index idx_qrtz_excl_ft_jobname on qrtz_excl_fired_triggers(JOB_NAME);
 create index idx_qrtz_excl_ft_jobgroup on qrtz_excl_fired_triggers(JOB_GROUP);
 create index idx_qrtz_excl_ft_jobstateful on qrtz_excl_fired_triggers(IS_STATEFUL);
 create index idx_qrtzexclftjobreqrec on qrtz_excl_fired_triggers(REQUESTS_RECOVERY);
-create table calendar_reminder (
-   user_id varchar2(255) not null,
-   event_id varchar2(36) not null,
-   send_date date not null,
-   primary key (user_id, event_id, send_date)
-);
+
 create table analytic_summary_pages (
    id number(19,0) not null,
    summary_id number(19,0) not null,

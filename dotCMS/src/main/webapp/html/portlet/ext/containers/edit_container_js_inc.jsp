@@ -154,6 +154,12 @@
 		dijit.byId('variablesDialog').hide();
 	}
 
+	function addBlockEditor(velocityVarName){
+		var insert = `$dotContentMap.get('${velocityVarName}').toHtml()`;
+		insertAtCursor(insert, "codeMaskMulti");
+		dijit.byId('variablesDialog').hide();
+	}
+
 	function addImage(velocityVarName){
 		var insert = "#if ($UtilMethods.isSet($" + "{" + velocityVarName+"ImageURI})) \n   <img src=\"$!{"+velocityVarName+"ImageURI}\" alt=\"$!{"+velocityVarName+"ImageTitle}\"  /> \n#end \n";
 		insertAtCursor(insert, "codeMaskMulti");
