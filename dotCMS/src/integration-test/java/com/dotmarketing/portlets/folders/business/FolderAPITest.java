@@ -1,6 +1,10 @@
 package com.dotmarketing.portlets.folders.business;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -53,6 +57,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -126,6 +131,8 @@ public class FolderAPITest {//24 contentlets
 	@Test
 	public void renameFolder() throws Exception {
 
+		final String[] folderNames = new String[]{"ff1", "ff2", "ff3"};
+
 		final Folder ftest = folderAPI
 				.createFolders("/folderTest"+System.currentTimeMillis(), host, user, false);
 		final Folder ftest1 = folderAPI
@@ -135,20 +142,37 @@ public class FolderAPITest {//24 contentlets
 		final Folder ftest3 = folderAPI
 				.createFolders(ftest.getPath()+"/ff1/ff2/ff3", host, user, false);
 
+		final String newFolderName = "folderTestXX" + System.currentTimeMillis();
 		Assert.assertTrue(folderAPI
-				.renameFolder(ftest, "folderTestXX"+System.currentTimeMillis(), user, false));
+				.renameFolder(ftest, newFolderName, user, false));
 
-		// make sure the rename is properly propagated on children (that's done in a db trigger)
-
+		//we verify the old identifiers don't exist anymore
 		final Identifier ident = identifierAPI.loadFromDb(ftest.getIdentifier());
 		final Identifier ident1 = identifierAPI.loadFromDb(ftest1.getIdentifier());
 		final Identifier ident2 = identifierAPI.loadFromDb(ftest2.getIdentifier());
 		final Identifier ident3 = identifierAPI.loadFromDb(ftest3.getIdentifier());
 
-		Assert.assertTrue(ident.getAssetName().startsWith("folderTestXX"));
-		Assert.assertEquals(ident.getPath(),ident1.getParentPath());
-		Assert.assertEquals(ident1.getPath(),ident2.getParentPath());
-		Assert.assertEquals(ident2.getPath(),ident3.getParentPath());
+		assertNull(ident);
+		assertNull(ident1);
+		assertNull(ident2);
+		assertNull(ident3);
+
+		//Now, we verify that the folder contains a new identifier because the path changed
+		final Folder newFolder = folderAPI.findFolderByPath(StringPool.SLASH + newFolderName, host, user, false);
+		assertNotNull(newFolder);
+		assertNotEquals(ftest.getIdentifier(), newFolder.getIdentifier());
+
+		//Finally, we make sure the children folders were created
+		List<Folder> subFolders = folderAPI.findSubFolders(newFolder, false);;
+		Folder currentChild;
+		int i = 0;
+		do {
+			assertEquals(1, subFolders.size());
+			currentChild = subFolders.get(0);
+			assertEquals(folderNames[i], currentChild.getName());
+			subFolders = folderAPI.findSubFolders(currentChild, false);
+			i++;
+		} while (i < 3);
 	}
 
 	/**
@@ -1059,7 +1083,7 @@ public class FolderAPITest {//24 contentlets
 
 	@DataProvider
 	public static Object[] reservedFolderNames() {
-		return FolderFactoryImpl.reservedFolderNames.toArray();
+		return FolderAPIImpl.reservedFolderNames.toArray();
 	}
 
 	@Test(expected = InvalidFolderNameException.class)
@@ -1224,7 +1248,7 @@ public class FolderAPITest {//24 contentlets
 
 		final Folder folderByPath = folderAPI.findFolderByPath("/", (String) null, user,false);
 
-		Assert.assertNull(folderByPath);
+		assertNull(folderByPath);
 	}
 
 	/**
@@ -1238,7 +1262,7 @@ public class FolderAPITest {//24 contentlets
 
 		final Folder folderByPath = folderAPI.findFolderByPath(null, host, user,false);
 
-		Assert.assertNull(folderByPath);
+		assertNull(folderByPath);
 	}
 
 	/**
@@ -1390,8 +1414,24 @@ public class FolderAPITest {//24 contentlets
         assert(folder3!=null);
         assertEquals(folder3.getDefaultFileType(), newFileAssetType.id());        
     }
-	
-	
+
+	/**
+	 * Method to test: {@link FolderAPI#exists(String)}
+	 * Given Scenario: Given an existing folder, invoking {@link FolderAPI#exists(String)} using
+	 * folder's inode or folder's identifier should return true
+	 * ExpectedResult: {@link FolderAPI#exists(String)} must return true
+	 *
+	 */
+	@Test
+	public void testExists() throws DotDataException, DotSecurityException {
+		final Host newHost = new SiteDataGen().nextPersisted();
+		final long currentTime = System.currentTimeMillis();
+		final String folderPath = "/folder" + currentTime;
+
+		final Folder folder = folderAPI.createFolders(folderPath, newHost, user, false);
+		assertTrue(folderAPI.exists(folder.getInode()));
+		assertTrue(folderAPI.exists(folder.getIdentifier()));
+	}
 	
 	
 }

@@ -124,7 +124,7 @@ public class DotFolderTransformerImpl implements DotMapViewTransformer {
 
         final Map<String, Object> map = new HashMap<>(folder.getMap());
         map.put("permissions", permissions);
-        map.put("parent", folder.getInode());
+        map.put("parent", folder.getIdentifier());
         map.put("mimeType", StringPool.BLANK);
         map.put("name", folder.getName());
         map.put("title", folder.getName());

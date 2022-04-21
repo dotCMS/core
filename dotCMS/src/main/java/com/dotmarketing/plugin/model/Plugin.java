@@ -1,5 +1,8 @@
 package com.dotmarketing.plugin.model;
 
+import com.dotcms.publisher.util.PusheableAsset;
+import com.dotcms.publishing.manifest.ManifestItem;
+
 import java.io.Serializable;
 import java.util.Date;
 
@@ -9,7 +12,7 @@ import java.util.Date;
  * A simple POJO for dotCMS plugins
  */
 
-public class Plugin implements Serializable{
+public class Plugin implements Serializable, ManifestItem {
 
 	/**
 	 * 
@@ -98,5 +101,13 @@ public class Plugin implements Serializable{
 	public void setLastDeployedDate(Date lastDeployedDate) {
 		this.lastDeployedDate = lastDeployedDate;
 	}
-	
+
+	@Override
+	public ManifestInfo getManifestInfo() {
+		return new ManifestInfoBuilder()
+				.id(id)
+				.title(pluginName)
+				.objectType(PusheableAsset.OSGI.getType())
+				.build();
+	}
 }

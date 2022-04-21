@@ -747,12 +747,7 @@ INSERT INTO [dbo].[QRTZ_EXCL_LOCKS] VALUES('JOB_ACCESS');
 INSERT INTO [dbo].[QRTZ_EXCL_LOCKS] VALUES('CALENDAR_ACCESS');
 INSERT INTO [dbo].[QRTZ_EXCL_LOCKS] VALUES('STATE_ACCESS');
 INSERT INTO [dbo].[QRTZ_EXCL_LOCKS] VALUES('MISFIRE_ACCESS');
-create table calendar_reminder (
-   user_id NVARCHAR(255) not null,
-   event_id NVARCHAR(36) not null,
-   send_date datetimeoffset(3) not null,
-   primary key (user_id, event_id, send_date)
-);
+
 create table analytic_summary_pages (
    id numeric(19,0) identity not null,
    summary_id numeric(19,0) not null,
