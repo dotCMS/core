@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Tags Resource  helper class
@@ -275,7 +274,6 @@ public class TagsResourceHelper {
     /**
      * Takes a regular Tag and transform it into a RestTag representation
      */
-    @NotNull
     public static Map<String, RestTag> toRestTagMap(final Tag... tags) {
         return toRestTagMap(Arrays.asList(tags));
     }
@@ -283,7 +281,6 @@ public class TagsResourceHelper {
     /**
      * Takes a regular Tag and transform it into a RestTag representation
      */
-    @NotNull
     public static Map<String, RestTag> toRestTagMap(final List<Tag> tags) {
         final TagTransform transform = new TagTransform();
         return tags.stream()
