@@ -5052,6 +5052,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             //Existing contentlet getting updated.
             identifier = identifierAPI.find(contentlet);
 
+            if (null == identifier || !UtilMethods.isSet(identifier.getId())){
+                throw new DotDataException(String.format("Contentlet with ID '%s' has not been found.", contentlet.getIdentifier()));
+            }
+
             final String oldURI = identifier.getURI();
 
             // make sure the identifier is removed from cache
