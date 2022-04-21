@@ -314,9 +314,9 @@ public class FileStorageAPIImpl implements FileStorageAPI {
     private Map<String, Serializable> retrieveMetadata(final StorageKey storageKey,
             final StoragePersistenceAPI storage) throws DotDataException {
 
+        Logger.debug(this, "Metadata read from path: " + storageKey.getPath());
         final Map<String, Serializable> objectMap = (Map<String, Serializable>) storage
                 .pullObject(storageKey.getGroup(), storageKey.getPath(), this.objectReaderDelegate);
-        Logger.debug(this, "Metadata read from path: " + storageKey.getPath());
 
         return objectMap;
     }
@@ -330,12 +330,12 @@ public class FileStorageAPIImpl implements FileStorageAPI {
     private void storeMetadata(final StorageKey storageKey, final StoragePersistenceAPI storage,
             final Map<String, Serializable> metadataMap) throws DotDataException {
 
+        Logger.debug(this, "Metadata written to: " + storageKey.getPath());
         final Map<String, Serializable> paramsMap = new HashMap<>(metadataMap);
         paramsMap.put(HASH_OBJECT, true);
 
         storage.pushObject(storageKey.getGroup(), storageKey.getPath(),
                 this.objectWriterDelegate, (Serializable) metadataMap, paramsMap);
-        Logger.debug(this, "Metadata written to: " + storageKey.getPath());
 
     }
 
