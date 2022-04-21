@@ -398,9 +398,14 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			throw new DotStateException(
 					String.format("Parent site of folder '%s' could not be found.", folder.getName()));
 		}
+
+		if (null == site) {
+			throw new DotStateException(
+					String.format("Parent site of folder '%s' could not be found.", folder.getName()));
+		}
+
 		if (Identifier.ASSET_TYPE_FOLDER.equals(identifier.getAssetType())
-				&& APILocator.getHostAPI().findSystemHost().getIdentifier()
-				.equals(site.getIdentifier())) {
+				&& Host.SYSTEM_HOST.equals(site.getIdentifier())) {
 			Logger.error(this, "A folder cannot be saved on the system host.");
 			throw new DotStateException("A folder cannot be saved on the system host.");
 
