@@ -1,20 +1,5 @@
 package com.dotmarketing.init;
 
-import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_ELASTIC_READONLY_MONITOR;
-import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_WEBSOCKET_PROTOCOL;
-
-import com.dotmarketing.quartz.job.DeleteInactiveLiveWorkingIndicesJob;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
-import com.dotmarketing.quartz.job.EsReadOnlyMonitorJob;
-import org.quartz.CronTrigger;
-import org.quartz.Job;
-import org.quartz.JobDetail;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.enterprise.linkchecker.LinkCheckerJob;
 import com.dotcms.job.system.event.DeleteOldSystemEventsJob;
@@ -25,7 +10,9 @@ import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.job.BinaryCleanupJob;
 import com.dotmarketing.quartz.job.CleanUnDeletedUsersJob;
 import com.dotmarketing.quartz.job.ContentReindexerThread;
+import com.dotmarketing.quartz.job.DeleteInactiveLiveWorkingIndicesJob;
 import com.dotmarketing.quartz.job.DeleteOldClickstreams;
+import com.dotmarketing.quartz.job.EsReadOnlyMonitorJob;
 import com.dotmarketing.quartz.job.FreeServerFromClusterJob;
 import com.dotmarketing.quartz.job.ServerHeartbeatJob;
 import com.dotmarketing.quartz.job.TrashCleanupJob;
@@ -34,8 +21,20 @@ import com.dotmarketing.quartz.job.WebDavCleanupJob;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.vavr.control.Try;
+import org.quartz.CronTrigger;
+import org.quartz.Job;
+import org.quartz.JobDetail;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_ELASTIC_READONLY_MONITOR;
+import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_WEBSOCKET_PROTOCOL;
 
 /**
  * Initializes all dotCMS startup jobs.
