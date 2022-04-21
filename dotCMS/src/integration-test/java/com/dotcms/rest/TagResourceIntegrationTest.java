@@ -2,9 +2,6 @@ package com.dotcms.rest;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -12,12 +9,10 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.WebResource.InitBuilder;
+import com.dotcms.rest.tag.RestTag;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.LayoutAPI;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -119,7 +114,6 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
         // let's create some tags under SYSTEM_HOST
         final TagAPI tagAPI = APILocator.getTagAPI();
         final HostAPI hostAPI = APILocator.getHostAPI();
-        final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
         final FolderAPI folderAPI = APILocator.getFolderAPI();
         final User systemUser = APILocator.systemUser();
 
@@ -152,7 +146,7 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
             when(webResource.init(any(InitBuilder.class)))
                     .thenReturn(dataObject);
 
-            final TagResource tagResource = new TagResource(tagAPI, hostAPI, layoutAPI, folderAPI, webResource);
+            final TagResource tagResource = new TagResource(tagAPI, hostAPI, folderAPI, webResource);
             final Map<String, RestTag> returnedTags =
                     tagResource.list(request, new MockHttpResponse(), testCase.getTagName(),
                             testCase.getSiteOrFolderId());

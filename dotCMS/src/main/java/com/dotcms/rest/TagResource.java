@@ -1,14 +1,18 @@
 package com.dotcms.rest;
 
 import static com.dotcms.rest.ResponseEntityView.OK;
+import static com.dotcms.rest.tag.TagsResourceHelper.toRestTagMap;
+import static com.dotmarketing.util.UUIDUtil.isUUID;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.tag.RestTag;
+import com.dotcms.rest.tag.TagForm;
+import com.dotcms.rest.tag.TagsResourceHelper;
+import com.dotcms.rest.tag.UpdateTagForm;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -17,19 +21,22 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
+import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -41,36 +48,43 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.glassfish.jersey.server.JSONP;
+import javax.ws.rs.core.Response.Status;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 
+/**
+ * Tag Related logic is exposed to the web here
+ */
 @Path("/v1/tags")
 public class TagResource {
 
     private static final String TAGS = "tags";
     private final WebResource webResource;
     private final TagAPI tagAPI;
-	private final HostAPI hostAPI;
-	private final LayoutAPI layoutAPI;
-	private final FolderAPI folderAPI;
+	private final TagsResourceHelper helper;
 
     @SuppressWarnings("unused")
     public TagResource() {
-        this(APILocator.getTagAPI(), APILocator.getHostAPI(), APILocator.getLayoutAPI(), APILocator.getFolderAPI(), new WebResource());
+        this(APILocator.getTagAPI(), APILocator.getHostAPI(), APILocator.getFolderAPI(), new WebResource());
     }
 
+    /**
+     * Test constructor
+     * @param tagAPI
+     * @param hostAPI
+     * @param folderAPI
+     * @param webResource
+     */
     @VisibleForTesting
-    protected TagResource(final TagAPI tagAPI,final HostAPI hostAPI, final LayoutAPI layoutAPI, final FolderAPI folderAPI, final WebResource webResource) {
+    protected TagResource(final TagAPI tagAPI,final HostAPI hostAPI, final FolderAPI folderAPI, final WebResource webResource) {
         this.tagAPI = tagAPI;
         this.webResource = webResource;
-        this.hostAPI = hostAPI;
-        this.layoutAPI = layoutAPI;
-        this.folderAPI = folderAPI;
+        this.helper = new TagsResourceHelper(tagAPI, hostAPI, folderAPI);
     }
 
     /**
      * This performs a list operation. But if a name is provided a search-by-name (like) operation will be performed instead.
      * The search-by-name operation can be delimited by a siteId
-     * if No site id is provided the search-by-name operation will be performed against the sites listed under SYSTEM_HOST
+     * if No matches are found against the siteId the search-by-name operation will be performed against the global tags.
      * @param request
      * @param response
      * @param tagName
@@ -93,61 +107,22 @@ public class TagResource {
 
         final User user = initDataObject.getUser();
 
-        List<Tag> tags = UtilMethods.isSet(tagName)
-                ? searchTagsInternal(tagName, this.getSiteId(siteId, request), user)
-                : getTagsInternal();
+        final List<Tag> tags = UtilMethods.isSet(tagName)
+                ? helper.searchTagsInternal(tagName, helper.getSiteId(siteId, request), user)
+                : helper.getTagsInternal();
 
-        final Map<String, RestTag> hash = Maps.newHashMapWithExpectedSize(tags.size());
-        final TagTransform transform = new TagTransform();
-        for (final Tag tag : tags) {
-            hash.put(tag.getTagName(), transform.appToRest(tag));
-        }
-        return hash;
+        return toRestTagMap(tags);
     }
 
-    private String getSiteId (final String siteId, final HttpServletRequest request) {
-
-        if (!UtilMethods.isSet(siteId)) {
-            final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-            if (null != currentHost) {
-                return currentHost.getIdentifier();
-            }
-        }
-
-        return siteId;
-    }
-
-    private List<Tag> searchTagsInternal(final String tagName, final String siteOrFolderId,
-            final User user) {
-        List<Tag> tags;
-
-        try {
-            final boolean frontEndRequest = user.isFrontendUser();
-            final Host host = hostAPI.find(siteOrFolderId, user, frontEndRequest);
-            String internalSiteOrFolderId = siteOrFolderId;
 
 
-            if ((!UtilMethods.isSet(host) || !UtilMethods.isSet(host.getInode()))
-                    && UtilMethods.isSet(siteOrFolderId)) {
-                internalSiteOrFolderId = folderAPI
-                        .find(siteOrFolderId, user, frontEndRequest).getHostId();
-            }
-
-            tags = tagAPI.getSuggestedTag(tagName, internalSiteOrFolderId);
-        } catch (DotDataException | DotSecurityException e) {
-            throw new BadRequestException(e, e.getMessage());
-        }
-        return tags;
-    }
-
-    private List<Tag> getTagsInternal() {
-        try {
-            return tagAPI.getAllTags();
-        } catch (DotDataException e) {
-            throw new BadRequestException(e, e.getMessage());
-        }
-    }
-
+    /**
+     * Creates new tags and link them to a owner-user if provided
+     * @param request
+     * @param response
+     * @param tagForm
+     * @return
+     */
     @POST
     @JSONP
     @NoCache
@@ -162,51 +137,45 @@ public class TagResource {
                         .requiredFrontendUser(false)
                         .requestAndResponse(request, response)
                         .rejectWhenNoUser(true)
+                        .requiredPortlet(TAGS)
                         .init();
 
         final User user = initDataObject.getUser();
-        final boolean hasAccessToPortlet = Try.of(()->layoutAPI.doesUserHaveAccessToPortlet(TAGS, user)).getOrElse(false);
-        if(hasAccessToPortlet || user.isAdmin()) {
-            //We can assign tags to any user as long as we are admin.
-            final String userId = tagForm.getUserId();
-            final ImmutableList.Builder<Tag> savedTags = ImmutableList.builder();
-            final ImmutableList.Builder<ErrorEntity> saveFails = ImmutableList.builder();
-            final String fallbackSiteId = fallbackSiteId(request);
-            final Map<String, RestTag> tags = tagForm.getTags();
 
-            for (Entry<String, RestTag> entry : tags.entrySet()) {
-                final String tagKey = entry.getKey();
-                final RestTag tag = entry.getValue();
-                final Host host = Try.of(() -> hostAPI.find(tag.siteId, user, true)).getOrNull();
-                final String siteId;
-                if (host == null) {
-                    siteId = fallbackSiteId;
-                    Logger.warn(TagResource.class, () -> String
-                            .format("siteId `%s` isn't valid, DEFAULTING to siteId `%s`.",
-                                    tag.siteId,
-                                    siteId));
-                } else {
-                    siteId = host.getIdentifier();
+        //We can assign tags to any user as long as we are admin.
+        final String userId = tagForm.getOwnerId();
+        final ImmutableList.Builder<Tag> savedTags = ImmutableList.builder();
+        final ImmutableList.Builder<ErrorEntity> saveFails = ImmutableList.builder();
+        final Map<String, RestTag> tags = tagForm.getTags();
+
+        for (Entry<String, RestTag> entry : tags.entrySet()) {
+            final String tagKey = entry.getKey();
+            final RestTag tag = entry.getValue();
+            final String siteId = helper.getValidateSite(tag.siteId,user, request);
+            try {
+                final Tag createdTag = tagAPI.getTagAndCreate(tagKey, userId, siteId);
+                savedTags.add(createdTag);
+                if (UtilMethods.isSet(userId)) {
+                    tagAPI.addUserTagInode(createdTag, userId);
                 }
-                try {
-                    final Tag createdTag = tagAPI.getTagAndCreate(tagKey, userId, siteId);
-                    savedTags.add(createdTag);
-                    if(UtilMethods.isSet(userId)) {
-                        tagAPI.addUserTagInode(createdTag, userId);
-                    }
-                } catch (DotDataException | DotSecurityException e) {
-                    Logger.error(TagResource.class,
-                            String.format("Exception creating tag %s", tag.label), e);
-                    saveFails.add(new ErrorEntity("save-tag-error", e.getMessage(),
-                            tag.label != null ? tag.label : "unknown"));
-                }
+            } catch (DotDataException | DotSecurityException e) {
+                Logger.error(TagResource.class,
+                        String.format("Exception creating tag %s", tag.label), e);
+                saveFails.add(new ErrorEntity("tag.save.error.default", e.getMessage(),
+                        tag.label != null ? tag.label : "unknown"));
             }
-            return Response.ok(new ResponseEntityView(saveFails.build(),
-                    ImmutableMap.of(TAGS, savedTags.build()))).build();
         }
-        return Response.status(Response.Status.UNAUTHORIZED).build();
+        return Response.ok(new ResponseEntityView(saveFails.build(),
+                ImmutableMap.of(TAGS, toRestTagMap(savedTags.build())))).build();
     }
 
+    /**
+     * Tag Update
+     * @param request
+     * @param response
+     * @param tagForm
+     * @return
+     */
     @PUT
     @JSONP
     @NoCache
@@ -221,102 +190,345 @@ public class TagResource {
                         .requiredFrontendUser(false)
                         .requestAndResponse(request, response)
                         .rejectWhenNoUser(true)
+                        .requiredPortlet(TAGS)
                         .init();
 
         final User user = initDataObject.getUser();
-        final boolean hasAccessToPortlet = Try.of(()->layoutAPI.doesUserHaveAccessToPortlet(TAGS, user)).getOrElse(false);
-        if(hasAccessToPortlet || user.isAdmin()) {
-            //We can assign tags to any user as long as we are admin.
-            final Tag tagByTagId = Try.of(()->tagAPI.getTagByTagId(tagForm.tagId)).getOrNull();
-            if(null == tagByTagId){
-                final String errorMessage = Try.of(()-> LanguageUtil
-                        .get( user.getLocale(), "tag.id.not.found", tagForm.tagId ))
-                        .getOrElse(String.format("Tag with id %s wasn't found.", tagForm.tagId)); //fallback message
-                throw new DoesNotExistException(errorMessage);
-            }
-            try {
-                tagAPI.updateTag(tagForm.tagId, tagForm.tagName, false, tagForm.siteId);
-                 tagAPI.getTagByTagId(tagForm.tagId);
-                //return Response.ok(new ResponseEntityView(saveFails.build(), ImmutableMap.of(TAGS, savedTags.build()))).build();
 
-            } catch (DotDataException e) {
-                Logger.error(TagResource.class, String.format("Exception removing tag  with id `%s`", tagForm.tagId), e);
-                final String errorMessage = Try.of(()->LanguageUtil.get( user.getLocale(), "tag.error.delete", tagForm.tagId ))
-                        .getOrElse(String.format("Error occurred removing tag %s .", tagForm.tagId)); //fallback message
-                throw new BadRequestException(e, errorMessage);
-            }
+        tagForm.checkValid();
+        if (UtilMethods.isNotSet(tagForm.tagId) || UtilMethods.isNotSet(tagForm.siteId)
+                || UtilMethods.isNotSet(tagForm.tagName)) {
+            Logger.error(TagResource.class,
+                    String.format("update tag `%s` data is invalid or incomplete ", tagForm.tagId));
+            final String errorMessage = Try
+                    .of(() -> LanguageUtil.get(user.getLocale(), "tag.save.error.default", tagForm.tagId))
+                    .getOrElse(String.format("update tag `%s` data is invalid or incomplete .",
+                            tagForm.tagId)); //fallback message
+            throw new BadRequestException(errorMessage);
         }
-        return Response.status(Response.Status.UNAUTHORIZED).build();
+
+        //We can assign tags to any user as long as we are admin.
+        final Tag tagByTagId = Try.of(() -> tagAPI.getTagByTagId(tagForm.tagId)).getOrNull();
+        if (null == tagByTagId) {
+            final String errorMessage = Try.of(() -> LanguageUtil
+                    .get(user.getLocale(), "tag.id.not.found", tagForm.tagId))
+                    .getOrElse(String.format("Tag with id %s wasn't found.",
+                            tagForm.tagId)); //fallback message
+            throw new DoesNotExistException(errorMessage);
+        }
+        try {
+            tagAPI.updateTag(tagForm.tagId, tagForm.tagName, false, tagForm.siteId);
+            return Response
+                    .ok(new ResponseEntityView(toRestTagMap(tagAPI.getTagByTagId(tagForm.tagId))))
+                    .build();
+
+        } catch (DotDataException e) {
+            Logger.error(TagResource.class,
+                    String.format("Exception removing tag  with id `%s`", tagForm.tagId), e);
+            final String errorMessage = Try
+                    .of(() -> LanguageUtil.get(user.getLocale(), "tag.error.delete", tagForm.tagId))
+                    .getOrElse(String.format("Error occurred removing tag %s .",
+                            tagForm.tagId)); //fallback message
+            throw new BadRequestException(e, errorMessage);
+        }
+
     }
 
-
-    private String fallbackSiteId(final HttpServletRequest request)  {
-        final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-        return host != null ? host.getIdentifier() : Host.SYSTEM_HOST;
-    }
-
+    /**
+     * if an owner was provided when saving the tag this should return all the tags owned byt a given user
+     * @param request
+     * @param response
+     * @param userId
+     * @return
+     */
     @GET
     @JSONP
     @Path("/user/{userId}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response getTagsByUserId(@Context final HttpServletRequest request,@Context final HttpServletResponse response,
+    public Response getTagsByUserId(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
             @PathParam("userId") final String userId) {
 
-        final InitDataObject initDataObject = new WebResource.InitBuilder(webResource)
-                .requiredAnonAccess(AnonymousAccess.READ)
-                .requestAndResponse(request, response)
-                .init();
+        final InitDataObject initDataObject =
+                new WebResource.InitBuilder(webResource)
+                        .requiredBackendUser(true)
+                        .requiredFrontendUser(false)
+                        .requestAndResponse(request, response)
+                        .rejectWhenNoUser(true)
+                        .requiredPortlet(TAGS)
+                        .init();
+
         final User user = initDataObject.getUser();
-        final boolean hasAccessToPortlet = Try.of(()->layoutAPI.doesUserHaveAccessToPortlet(
-                TAGS, user)).getOrElse(false);
-        if(hasAccessToPortlet || user.isAdmin()){
-            final List<Tag> tags = Try.of(()->tagAPI.getTagsForUserByUserId(userId)).getOrElse(ImmutableList.of());
-            if(tags.isEmpty()){
-                final String errorMessage = Try.of(()-> LanguageUtil
-                        .get( user.getLocale(), "tag.user.not.found", userId ))
-                        .getOrElse(String.format("No tags are owned by user %s.", userId)); //fallback message
-                throw new DoesNotExistException(errorMessage);
-            }
-            return Response.ok(new ResponseEntityView(tags)).build();
+
+        final List<Tag> tags = Try.of(() -> tagAPI.getTagsForUserByUserId(userId))
+                .getOrElse(ImmutableList.of());
+        if (tags.isEmpty()) {
+            final String errorMessage = Try.of(() -> LanguageUtil
+                    .get(user.getLocale(), "tag.user.not.found", userId))
+                    .getOrElse(String.format("No tags are owned by user %s.",
+                            userId)); //fallback message
+            throw new DoesNotExistException(errorMessage);
         }
-        return Response.status(Response.Status.UNAUTHORIZED).build();
+        return Response.ok(new ResponseEntityView(toRestTagMap(tags))).build();
     }
 
+    /**
+     * Lookup operation. Tags can be retrieved by tag name or tag id
+     * @param request
+     * @param response
+     * @param nameOrId
+     * @return
+     */
+    @GET
+    @JSONP
+    @Path("/{nameOrId}")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response getTagsByNameOrId(@Context final HttpServletRequest request,@Context final HttpServletResponse response,
+            @PathParam("nameOrId") final String nameOrId) {
+
+        final InitDataObject initDataObject =
+                new WebResource.InitBuilder(webResource)
+                        .requiredBackendUser(true)
+                        .requiredFrontendUser(false)
+                        .requestAndResponse(request, response)
+                        .rejectWhenNoUser(true)
+                        .requiredPortlet(TAGS)
+                        .init();
+
+        final ImmutableList.Builder<Tag> builder = ImmutableList.builder();
+        if (isUUID(nameOrId)){
+            final Tag tagByTagId = Try.of(()->tagAPI.getTagByTagId(nameOrId)).getOrNull();
+            if(null != tagByTagId) {
+                builder.add(tagByTagId);
+            }
+        } else {
+            final List<Tag> tagsByName = Try.of(()->tagAPI.getTagsByName(nameOrId)).getOrNull();
+            builder.addAll(tagsByName);
+        }
+        final List<Tag> foundTags = builder.build();
+        if(foundTags.isEmpty()){
+           return Response.status(Status.NOT_FOUND).build();
+        }
+        return Response.ok(new ResponseEntityView(toRestTagMap(foundTags))).build();
+    }
+
+
+    /**
+     * Delete tag for a given tag Id
+     * @param request
+     * @param response
+     * @param tagId
+     * @return
+     */
     @DELETE
     @JSONP
     @Path("/{tagId}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response delete(@Context final HttpServletRequest request,@Context final HttpServletResponse response,
+    public Response delete(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
             @PathParam("tagId") final String tagId) {
 
-        final InitDataObject initDataObject = new WebResource.InitBuilder(webResource)
-                .requiredAnonAccess(AnonymousAccess.READ)
-                .requestAndResponse(request, response)
-                .init();
+        final InitDataObject initDataObject =
+                new WebResource.InitBuilder(webResource)
+                        .requiredBackendUser(true)
+                        .requiredFrontendUser(false)
+                        .requestAndResponse(request, response)
+                        .rejectWhenNoUser(true)
+                        .requiredPortlet(TAGS)
+                        .init();
         final User user = initDataObject.getUser();
-        final boolean hasAccessToPortlet = Try.of(()->layoutAPI.doesUserHaveAccessToPortlet(
-                TAGS, user)).getOrElse(false);
-        if(hasAccessToPortlet || user.isAdmin()){
-                final Tag tagByTagId = Try.of(()->tagAPI.getTagByTagId(tagId)).getOrNull();
-                if(null == tagByTagId){
-                    final String errorMessage = Try.of(()-> LanguageUtil
-                            .get( user.getLocale(), "tag.id.not.found", tagId ))
-                            .getOrElse(String.format("Tag with id %s wasn't found.", tagId)); //fallback message
-                   throw new DoesNotExistException(errorMessage);
-                }
-            try{
-                tagAPI.deleteTag(tagByTagId);
-                return Response.ok(new ResponseEntityView(OK)).build();
-            } catch (Exception e) {
-                Logger.error(TagResource.class, String.format("Exception removing tag  with id `%s`", tagId), e);
-                final String errorMessage = Try.of(()->LanguageUtil.get( user.getLocale(), "tag.error.delete", tagId ))
-                        .getOrElse(String.format("Error occurred removing tag %s .", tagId)); //fallback message
-                throw new BadRequestException(e, errorMessage);
+
+        final Tag tagByTagId = Try.of(() -> tagAPI.getTagByTagId(tagId)).getOrNull();
+        if (null == tagByTagId) {
+            final String errorMessage = Try.of(() -> LanguageUtil
+                    .get(user.getLocale(), "tag.id.not.found", tagId))
+                    .getOrElse(String.format("Tag with id %s wasn't found.",
+                            tagId)); //fallback message
+            throw new DoesNotExistException(errorMessage);
+        }
+        try {
+            tagAPI.deleteTag(tagByTagId);
+            return Response.ok(new ResponseEntityView(OK)).build();
+        } catch (Exception e) {
+            Logger.error(TagResource.class,
+                    String.format("Exception removing tag  with id `%s`", tagId), e);
+            final String errorMessage = Try
+                    .of(() -> LanguageUtil.get(user.getLocale(), "tag.error.delete", tagId))
+                    .getOrElse(String.format("Error occurred removing tag %s .",
+                            tagId)); //fallback message
+            throw new BadRequestException(e, errorMessage);
+        }
+    }
+
+    /**
+     * This allows for binding a tag with a given inode
+     * The lookup can be done via tag name or tag id
+     * if the tag name matches more than one tag all the matching tags will be bound.
+     * So if you want to be more specific provide an id instead of a tag-name
+     * @param request
+     * @param response
+     * @param nameOrId
+     * @param inode
+     * @return
+     */
+    @PUT
+    @JSONP
+    @Path("/tag/{nameOrId}/inode/{inode}")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response linkTagsAndInode(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("nameOrId") final String nameOrId,
+            @PathParam("inode") final String inode) {
+
+        final InitDataObject initDataObject =
+                new WebResource.InitBuilder(webResource)
+                        .requiredBackendUser(true)
+                        .requiredFrontendUser(false)
+                        .requestAndResponse(request, response)
+                        .rejectWhenNoUser(true)
+                        .requiredPortlet(TAGS)
+                        .init();
+
+        final List<Tag> tags = new ArrayList<>();
+        if (isUUID(nameOrId)){
+            final Tag tagByTagId = Try.of(()->tagAPI.getTagByTagId(nameOrId)).getOrNull();
+            if(null != tagByTagId) {
+               tags.add(tagByTagId);
+            }
+        } else {
+            final List<Tag> tagsByName = Try.of(()->tagAPI.getTagsByName(nameOrId)).getOrNull();
+            tags.addAll(tagsByName);
+        }
+        final List<ErrorEntity> saveFails = new ArrayList<>();
+        if (tags.isEmpty()) {
+            return Response.status(Status.NOT_FOUND).build();
+        }
+        final List<TagInode> tagInodes = new ArrayList<>();
+        for (final Tag tag:tags) {
+            try {
+                 tagInodes.add(tagAPI.addUserTagInode(tag, inode));
+            } catch (DotDataException e) {
+                Logger.error(TagResource.class,
+                        String.format("Exception linking tag `%s` with inode `%s`", tag.getTagName(), inode), e);
+                saveFails.add(new ErrorEntity("tag.save.error.default", e.getMessage(), tag.getTagName()));
             }
         }
-        return Response.status(Response.Status.UNAUTHORIZED).build();
+        return Response.ok(new ResponseEntityView(saveFails, tagInodes)).build();
+    }
+
+    /**
+     * Given an inode this will retrieve all the tags associated to it.
+     * @param request
+     * @param response
+     * @param inode
+     * @return
+     */
+    @GET
+    @JSONP
+    @Path("/inode/{inode}")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response findTagsByInode(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("inode") final String inode) {
+
+        final InitDataObject initDataObject =
+                new WebResource.InitBuilder(webResource)
+                        .requiredBackendUser(true)
+                        .requiredFrontendUser(false)
+                        .requestAndResponse(request, response)
+                        .rejectWhenNoUser(true)
+                        .requiredPortlet(TAGS)
+                        .init();
+
+        final List<TagInode> tagInodes = Try.of(() -> tagAPI.getTagInodesByInode(inode))
+                .getOrElse(ImmutableList.of());
+        if (tagInodes.isEmpty()) {
+            return Response.status(Status.NOT_FOUND).build();
+        }
+        return Response.ok(new ResponseEntityView(tagInodes)).build();
+    }
+
+    /**
+     * Breaks the link between an inode and all the associated tags
+     * @param request
+     * @param response
+     * @param inode
+     * @return
+     */
+    @DELETE
+    @JSONP
+    @Path("/inode/{inode}")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response deleteTagInodesByInode(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("inode") final String inode) {
+
+        final InitDataObject initDataObject =
+                new WebResource.InitBuilder(webResource)
+                        .requiredBackendUser(true)
+                        .requiredFrontendUser(false)
+                        .requestAndResponse(request, response)
+                        .rejectWhenNoUser(true)
+                        .requiredPortlet(TAGS)
+                        .init();
+
+        final User user = initDataObject.getUser();
+
+        final List<TagInode> tagInodes = Try.of(() -> tagAPI.getTagInodesByInode(inode))
+                .getOrElse(ImmutableList.of());
+        if (tagInodes.isEmpty()) {
+            return Response.status(Status.NOT_FOUND).build();
+        }
+        try {
+            tagAPI.deleteTagInodesByInode(inode);
+        } catch (DotDataException e) {
+            Logger.error(TagResource.class,
+                    String.format("Exception removing tagInode with inode `%s`", inode), e);
+            final String errorMessage = Try.of(() -> LanguageUtil
+                    .get(user.getLocale(), "tag.error.tag.inode.delete", inode))
+                    .getOrElse(String.format("Error occurred removing tag %s .",
+                            inode)); //fallback message
+            throw new BadRequestException(e, errorMessage);
+        }
+        return Response.ok(new ResponseEntityView(OK)).build();
+
+    }
+
+    @POST
+    @Path("/import")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    public final Response importTags(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            final FormDataMultiPart form
+    ) {
+
+        final InitDataObject initDataObject =
+                new WebResource.InitBuilder(webResource)
+                        .requiredBackendUser(true)
+                        .requiredFrontendUser(false)
+                        .requestAndResponse(request, response)
+                        .rejectWhenNoUser(true)
+                        .requiredPortlet(TAGS)
+                        .init();
+        final User user = initDataObject.getUser();
+        try {
+            helper.importTags(form, user, request);
+        } catch (Exception e) {
+            Logger.error(TagResource.class,"Failure Importing tags file", e);
+            throw new BadRequestException(e, "Failure Importing tags file");
+        }
+        return Response.ok(new ResponseEntityView(OK)).build();
+
     }
 
 }

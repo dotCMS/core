@@ -1,15 +1,20 @@
-package com.dotcms.rest;
+package com.dotcms.rest.tag;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.dotcms.rest.api.Validated;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.dotcms.repackage.javax.validation.constraints.NotNull;
 
 @JsonDeserialize(builder = UpdateTagForm.Builder.class)
-public class UpdateTagForm {
+public class UpdateTagForm extends Validated {
 
-    @JsonIgnore
+    @NotNull
     public final String siteId;
+
+    @NotNull
     public final String tagName;
+
+    @NotNull
     public final String tagId;
 
     public UpdateTagForm(final Builder builder) {
@@ -28,6 +33,10 @@ public class UpdateTagForm {
         private String tagId;
 
         public Builder() {
+        }
+
+        UpdateTagForm build(){
+            return new UpdateTagForm(this);
         }
 
         Builder siteId(final String siteId) {
