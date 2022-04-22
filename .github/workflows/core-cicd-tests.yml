@@ -30,6 +30,7 @@ jobs:
         uses: ./.github/actions/core-cache-locator
         with:
           build_env: ${{ env.BUILD_ENV }}
+#          cache_build_output: true
         if: success()
       - id: cache-core
         name: Cache Core
@@ -79,6 +80,27 @@ jobs:
           files: ${{ steps.run-unit-tests.outputs.tests-results-location }}/*.xml
           check_name: 'Unit Tests Report'
         if: always() && steps.run-unit-tests.outputs.skip-results-report == 'false'
+      - run: |
+          npm init -y
+          npm install
+          npm ci
+          npm install --no-save @testmo/testmo-cli
+      - run: |
+          npx testmo automation:resources:add-field --name git --type string --value ${GITHUB_SHA:0:8} --resources resources.json
+          RUN_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          npx testmo automation:resources:add-link --name build --url $RUN_URL --resources resources.json
+      - id: testmo-unit-test-results
+        run: |
+          npx testmo automation:run:submit \
+            --instance ${{ env.TESTMO_URL }} \
+            --project-id 1 \
+            --name "Unit test run" \
+            --source "unit-tests" \
+            --resources resources.json \
+            --results ${{ steps.run-unit-tests.outputs.tests-results-location }}/*.xml
+        env:
+          TESTMO_URL: ${{ secrets.TESTMO_URL }}
+          TESTMO_TOKEN: ${{ secrets.TESTMO_TOKEN }}
       - id: publish-unit-tests
         name: Publish Unit Tests
         uses: ./.github/actions/publish-test-results
@@ -102,6 +124,77 @@ jobs:
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
           report_url: ${{ steps.publish-unit-tests.outputs.test_results_commit_url }}
         if: always() && steps.run-unit-tests.outputs.skip-results-report == 'false'
+  run-integration-tests-job:
+    name: Run Integration Tests
+    runs-on: ubuntu-latest
+    needs: build-core-job
+    strategy:
+      fail-fast: false
+      matrix:
+        db_type: [ postgres ]
+    steps:
+      - id: fetch-core
+        name: Fetch Core Repo
+        uses: actions/checkout@v3
+      - id: read-cicd-local-env
+        name: Read CICD local library
+        run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
+        if: success()
+      - id: restore-core
+        name: Restore Core Cache
+        uses: ./.github/actions/restore-core
+        with:
+          cache_metadata: ${{ needs.build-core-job.outputs.cache_metadata }}
+        if: success()
+      - id: run-integration-tests
+        name: Run Integration Tests
+        uses: ./.github/actions/run-integration-tests
+        with:
+          build_env: ${{ env.BUILD_ENV }}
+          db_type: ${{ matrix.db_type }}
+          license_key: ${{ secrets.DOTCMS_LICENSE }}
+      - id: integration-tests-results
+        name: Integration Tests Results
+        uses: dorny/test-reporter@v1
+        with:
+          name: Integration Test Results
+          path: ${{ steps.run-integration-tests.outputs.tests-results-location }}/*.xml
+          reporter: java-junit
+          max-annotations: 50
+          fail-on-error: false
+        if: always() && steps.run-integration-tests.outputs.skip-results-report == 'false'
+      - id: integration-tests-comment
+        name: Integration Test Comment
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        with:
+          files: ${{ steps.run-integration-tests.outputs.tests-results-location }}/*.xml
+          check_name: 'Integration Tests Report'
+        if: always() && steps.run-integration-tests.outputs.skip-results-report == 'false'
+      - id: publish-integration-tests
+        name: Publish Integration Tests
+        uses: ./.github/actions/publish-test-results
+        with:
+          build_id: ${{ env.BUILD_ID }}
+          build_hash: ${{ env.BUILD_HASH }}
+          test_type: integration
+          db_type: ${{ matrix.db_type }}
+          pull_request: ${{ github.event.number }}
+          tests_run_exit_code: ${{ steps.run-integration-tests.outputs.tests-run-exit-code }}
+          test_results_location: ${{ steps.run-integration-tests.outputs.tests-results-location }}/html
+          cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+        if: always() && steps.run-integration-tests.outputs.skip-results-report == 'false'
+      - id: github-status
+        name: Send Github Status
+        uses: ./.github/actions/github-status
+        with:
+          test_type: integration
+          db_type: ${{ matrix.db_type }}
+          test_results_status: ${{ steps.run-integration-tests.outputs.tests-results-status }}
+          pull_request: ${{ github.event.number }}
+          github_user: ${{ env.GITHUB_USER }}
+          cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+          report_url: ${{ steps.publish-integration-tests.outputs.test_results_commit_url }}
+        if: always() && steps.run-integration-tests.outputs.skip-results-report == 'false'
 #  run-unit-tests-job:
 #    name: Unit Tests
 #    runs-on: ubuntu-latest

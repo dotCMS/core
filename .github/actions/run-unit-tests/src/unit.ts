@@ -3,6 +3,12 @@ import * as exec from '@actions/exec'
 import * as fs from 'fs'
 import * as path from 'path'
 
+const projectRoot = core.getInput('project_root')
+const dotCmsRoot = path.join(projectRoot, 'dotCMS')
+const testResources = ['log4j2.xml']
+const srcTestResourcesFolder = 'cicd/resources'
+const targetTestResourcesFolder = 'dotCMS/src/test/resources'
+
 interface Command {
   cmd: string
   args: string[]
@@ -19,20 +25,16 @@ export const COMMANDS: Commands = {
   gradle: {
     cmd: './gradlew',
     args: ['test'],
-    workingDir: 'dotCMS',
-    outputDir: 'dotCMS/build/test-results/unit-tests/xml'
+    workingDir: dotCmsRoot,
+    outputDir: `${dotCmsRoot}/build/test-results/unit-tests/xml`
   },
   maven: {
     cmd: './mvnw',
     args: ['test'],
-    workingDir: 'dotCMS',
-    outputDir: 'dotCMS/target/surefire-reports'
+    workingDir: dotCmsRoot,
+    outputDir: `${dotCmsRoot}/target/surefire-reports`
   }
 }
-
-const TEST_RESOURCES = ['log4j2.xml']
-const SOURCE_TEST_RESOURCES_FOLDER = 'cicd/resources'
-const TARGET_TEST_RESOURCES_FOLDER = 'dotCMS/src/test/resources'
 
 /**
  * Based on a revolved {@link Command}, resolve the command to execute in order to run unit tests.
@@ -43,17 +45,40 @@ const TARGET_TEST_RESOURCES_FOLDER = 'dotCMS/src/test/resources'
 export const runTests = async (cmd: Command): Promise<number> => {
   prepareTests()
 
+  addExtraArgs(cmd)
+
+  core.info(`
+    ==================
+    Running unit tests
+    ==================`)
   core.info(`Executing command: ${cmd.cmd} ${cmd.args.join(' ')}`)
   return await exec.exec(cmd.cmd, cmd.args, {cwd: cmd.workingDir})
 }
 
+/**
+ * Prepares tests by copyng necessary files into workspace
+ */
 const prepareTests = () => {
-  const projectRoot = core.getInput('project_root')
   core.info('Preparing unit tests')
-  TEST_RESOURCES.forEach(res => {
-    const source = path.join(projectRoot, SOURCE_TEST_RESOURCES_FOLDER, res)
-    const dest = path.join(projectRoot, TARGET_TEST_RESOURCES_FOLDER, res)
+  testResources.forEach(res => {
+    const source = path.join(projectRoot, srcTestResourcesFolder, res)
+    const dest = path.join(projectRoot, targetTestResourcesFolder, res)
     core.info(`Copying resource ${source} to ${dest}`)
     fs.copyFileSync(source, dest)
   })
+}
+
+/**
+ * Add extra parameters to command arguments
+ *
+ * @param cmd {@link Command} object holding command and arguments
+ */
+const addExtraArgs = (cmd: Command) => {
+  const extraParams = core.getInput('extra_params')?.trim()
+  if (!extraParams) {
+    return
+  }
+
+  core.info(`Found extra params: "${extraParams}"`)
+  extraParams.split(' ').forEach(param => cmd.args.push(param.trim()))
 }

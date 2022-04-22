@@ -65,6 +65,7 @@ sourceCompatibility = 1.8
 compileJava {
     options.incremental = true
     options.compilerArgs.addAll(['--release', '8'])
+//    options.encoding = 'UTF-8'
 }
 
 eclipse {

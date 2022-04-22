@@ -1,6 +1,6 @@
 # action.yml
-name: 'Run Unit Tests'
-description: 'Run core unit tests'
+name: 'Run Integration Tests'
+description: 'Run core integration tests'
 author: 'victoralfaro-dotcms'
 inputs:
   project_root:
@@ -10,9 +10,15 @@ inputs:
   build_env:
     description: 'Build environment to use'
     required: true
+  db_type:
+    description: 'Database type'
+    required: true
   extra_params:
     description: 'Extra parameters to pass to instruction'
     required: false
+  license_key:
+    description: 'License key to use'
+    required: true
 outputs:
   tests-run-exit-code:
     description: 'Test run exit code'
@@ -25,3 +31,5 @@ outputs:
 runs:
   using: 'node16'
   main: 'dist/index.js'
+  # using: 'docker'
+  # image: 'Dockerfile'

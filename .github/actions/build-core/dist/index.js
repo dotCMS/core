@@ -66,7 +66,7 @@ const COMMANDS = {
  * Based on a detected build environment, that is gradle or maven, this resolves the command to run in order to build core.
  *
  * @param buildEnv build environment
- * @returns a number represeting the command exit code
+ * @returns a number representing the command exit code
  */
 const build = (buildEnv) => __awaiter(void 0, void 0, void 0, function* () {
     const cmd = COMMANDS[buildEnv];
