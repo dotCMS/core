@@ -1,0 +1,44 @@
+# action.yml
+name: 'Run Integration Tests'
+description: 'Run core integration tests'
+author: 'victoralfaro-dotcms'
+inputs:
+  project_root:
+    description: 'Project root'
+    required: true
+    default: ${{ github.WORKSPACE }}
+  build_env:
+    description: 'Build environment to use'
+    required: true
+  db_type:
+    description: 'Database type'
+    required: true
+  license_key:
+    description: 'License key to use'
+    required: true
+  tests:
+    description: 'Comma delimited list with the specific prefix: runt-tests:'
+    required: false
+  debug:
+    description: 'Debug flag'
+    type: boolean
+    required: false
+    default: 'false'
+outputs:
+  tests_run_exit_code:
+    description: 'Test run exit code'
+  tests_results_status:
+    description: 'Tests results status'
+  tests_results_location:
+    description: 'Unit tests results location'
+  tests_report_location:
+    description: 'Unit tests report location'
+  skip_results_report:
+    description: 'Flag indicating if results report is skipped'
+  ci_index:
+    description: 'Testmo CI index'
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
+  # using: 'docker'
+  # image: 'Dockerfile'

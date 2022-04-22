@@ -6,7 +6,7 @@ import * as unit from './unit'
  * Main entry point for this action.
  */
 const run = () => {
-  core.info('Running Core unit tests')
+  core.info("Running Core's unit tests")
 
   const buildEnv = core.getInput('build_env')
   const cmd = unit.COMMANDS[buildEnv as keyof unit.Commands]
@@ -24,18 +24,20 @@ const run = () => {
         skipResultsReport: false
       }
       core.info(`Unit test results:\n${JSON.stringify(results)}`)
-      core.setOutput('tests-run-exit-code', exitCode === 0 ? 'PASSED' : 'FAILED')
-      core.setOutput('tests-results-status', cmd.outputDir)
-      core.setOutput('tests-results-location', cmd.outputDir)
-      core.setOutput('skip-results-report', false)
+      core.setOutput('tests_run_exit_code', exitCode)
+      core.setOutput('tests_results_status', exitCode === 0 ? 'PASSED' : 'FAILED')
+      core.setOutput('tests_results_location', cmd.outputDir)
+      core.setOutput('tests_report_location', cmd.reportDir)
+      core.setOutput('skip_results_report', false)
     })
     .catch(reason => {
       const messg = `Running unit tests failed due to ${reason}`
       const skipResults = !fs.existsSync(cmd.outputDir)
-      core.setOutput('tests-run-exit-code', 1)
-      core.setOutput('tests-run-exit-code', 'FAILED')
-      core.setOutput('tests-results-location', cmd.outputDir)
-      core.setOutput('skip-results-report', skipResults)
+      core.setOutput('tests_run_exit_code', 1)
+      core.setOutput('tests_run_exit_status', 'FAILED')
+      core.setOutput('tests_results_location', cmd.outputDir)
+      core.setOutput('tests_report_location', cmd.reportDir)
+      core.setOutput('skip_results_report', skipResults)
       core.setFailed(messg)
     })
 }
