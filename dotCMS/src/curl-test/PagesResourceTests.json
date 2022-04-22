@@ -94,6 +94,91 @@
 					"response": []
 				},
 				{
+					"name": "Import bundle ecotourism-in-costa-rica",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"assets.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/assets.tar.gz"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* HTMLPage /blog/index\n* HTMLPage /blog/destinations/costa-rica\n* Contentlet [Blog] Ecotourism in Costa Rica\n* Blog Detail Page /blog/blog-detail"
+					},
+					"response": []
+				},
+				{
 					"name": "swicth to demo.dotcms.com",
 					"event": [
 						{
