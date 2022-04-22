@@ -18,7 +18,7 @@
 							"",
 							"const jsonData = pm.response.json();",
 							"",
-							"pm.collectionVariables.set(\"tagSiteId\", jsonData.entity.identifier);",
+							"pm.collectionVariables.set(\"tagsSiteId\", jsonData.entity.identifier);",
 							""
 						],
 						"type": "text/javascript"
@@ -496,7 +496,7 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/tags?name=default&siteId={{tagSiteId}}",
+					"raw": "{{serverURL}}/api/v1/tags?name=default&siteId={{tagsSiteId}}",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -512,7 +512,7 @@
 						},
 						{
 							"key": "siteId",
-							"value": "{{tagSiteId}}"
+							"value": "{{tagsSiteId}}"
 						}
 					]
 				},
@@ -540,7 +540,7 @@
 							"    pm.response.to.have.status(200);    ",
 							"    let jsonData = pm.response.json();",
 							"    let size = Object.keys(jsonData).length;",
-							"    pm.expect(size).to.be.eq(1); //Returns the global occurrence since the site does not have any match",
+							"    pm.expect(size).to.be.eq(2); //Returns the global occurrence since the site does not have any match",
 							"});"
 						],
 						"type": "text/javascript"
@@ -589,7 +589,7 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/tags?name=global&siteId={{tagSiteId}}",
+					"raw": "{{serverURL}}/api/v1/tags?name=global&siteId={{tagsSiteId}}",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -605,7 +605,7 @@
 						},
 						{
 							"key": "siteId",
-							"value": "{{tagSiteId}}"
+							"value": "{{tagsSiteId}}"
 						}
 					]
 				},
@@ -1177,7 +1177,7 @@
 						{
 							"key": "file",
 							"type": "file",
-							"src": "/Users/fabrizzio/Downloads/csv_sample_file.csv"
+							"src": "resources/csv_sample_file.csv"
 						},
 						{
 							"key": "",
