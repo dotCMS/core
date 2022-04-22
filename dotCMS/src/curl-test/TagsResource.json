@@ -1362,10 +1362,6 @@
 		{
 			"key": "tagForUpdateId",
 			"value": ""
-		},
-		{
-			"key": "tagSiteId",
-			"value": ""
 		}
 	]
 }
