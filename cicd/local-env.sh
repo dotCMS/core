@@ -9,11 +9,21 @@ echo
 java -version
 echo
 echo "Node version"
+which node
 node --version
 echo
+echo "Npm version"
+which npm
+npm --version
+echo
+docker version
+echo
+docker-compose version
+echo
 
-dotcms_src="${GITHUB_WORKSPACE}/dotCMS"
-[[ -f ${dotcms_src}/gradlew && -f ${dotcms_src}/build.gradle ]] && gradle_env=true
+export DOTCMS_ROOT="${GITHUB_WORKSPACE}/dotCMS"
+echo "DOTCMS_ROOT: ${DOTCMS_ROOT}"
+[[ -f ${DOTCMS_ROOT}/gradlew && -f ${DOTCMS_ROOT}/build.gradle ]] && gradle_env=true
 [[ -f ${GITHUB_WORKSPACE}/mvnw && -f ${GITHUB_WORKSPACE}/pom.xml ]] && maven_env=true
 
 if [[ "${gradle_env}" == 'true' ]]; then
@@ -34,7 +44,11 @@ if [[ "${GITHUB_EVENT_NAME}" == 'pull_request' ]]; then
 else
   export BUILD_ID=$(basename "${GITHUB_REF}")
 fi
-export BUILD_HASH=$(git log -1 --pretty=%h)
+if [[ -z "${GITHUB_SHA}" ]]; then
+  export BUILD_HASH=$(git log -1 --pretty=%h)
+else
+  export BUILD_HASH=${GITHUB_SHA::8}
+fi
 echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
 echo "BUILD_HASH=${BUILD_HASH}" >> $GITHUB_ENV
 
