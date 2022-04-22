@@ -53,9 +53,6 @@ public class ContainerLoader implements DotLoader {
                     .replaceAll(RESOLVE_RELATIVE + FILE_CONTAINER_PATH_SEPARATOR_IN_VELOCITY_KEY, "")
                     .replaceAll(FILE_CONTAINER_PATH_SEPARATOR_IN_VELOCITY_KEY, StringPool.FORWARD_SLASH)
                     .replaceAll(HOST_NAME_SEPARATOR_IN_VELOCITY_KEY, PERIOD);
-
-            /*final Optional<Container> optionalContainer = Container.SYSTEM_CONTAINER.equals(containerIdOrPath) ? Optional.of(APILocator.getContainerAPI().systemContainer()) :
-                    APILocator.getContainerAPI().findContainer(containerIdOrPath, APILocator.systemUser(), key.mode.showLive, key.mode.respectAnonPerms);*/
             final Optional<Container> optionalContainer = APILocator.getContainerAPI().findContainer(containerIdOrPath, APILocator.systemUser(), key.mode.showLive, key.mode.respectAnonPerms);
 
             if (!optionalContainer.isPresent()) {

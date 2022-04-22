@@ -16,6 +16,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
@@ -253,7 +254,13 @@ public class ContainerStructureFinderStrategyResolver {
             final List<ContentType> contentTypes =
                     Try.of(() -> APILocator.getContentTypeAPI(APILocator.systemUser())
                             .findAll()).getOrElse(Collections.emptyList());
+            // Set of Content Types that cannot be dropped into the System Container
+            final List<String> excludedTypes = Arrays.asList(
+                    Config.getStringArrayProperty("CONTENT_PALETTE_HIDDEN_CONTENT_TYPES", new String[]{}));
             for (final ContentType contentType : contentTypes) {
+                if (excludedTypes.contains(contentType.variable())) {
+                    continue;
+                }
                 final ContainerStructure containerStructure =
                         new ContainerStructure(APILocator.getContainerAPI().systemContainer(), contentType);
                 builder.add(containerStructure);

@@ -68,7 +68,7 @@ public interface ContainerFactory {
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 * @deprecated Use method {@link #findContainers(User, ContainerAPI.SearchParams)} instead, which allows you to set
-	 * the same query parameters in the method's signature via the {@link com.dotmarketing.portlets.containers.business.ContainerAPI.SearchParams}
+	 * the same query parameters in the method's signature via the {@link SearchParams}
 	 * object more easily.
 	 */
 	@Deprecated
@@ -78,7 +78,7 @@ public interface ContainerFactory {
 	 * Returns a list of Containers in the system, based on the specified search criteria.
 	 *
 	 * @param user        The {@link User} executing this action.
-	 * @param queryParams The {@link ContainerAPI.SearchParams} object containing the different combinations of search terms.
+	 * @param queryParams The {@link SearchParams} object containing the different combinations of search terms.
 	 *
 	 * @return The list of {@link Container} objects that match the search criteria.
 	 *

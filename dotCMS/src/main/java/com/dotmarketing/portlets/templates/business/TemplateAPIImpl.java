@@ -56,18 +56,17 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 	private final  Lazy<VersionableAPI> versionableAPI     = Lazy.of(()->APILocator.getVersionableAPI());
 	private final  Lazy<HTMLPageAssetAPI> htmlPageAssetAPI = Lazy.of(()->APILocator.getHTMLPageAssetAPI());
 	private final  HostAPI          hostAPI                = APILocator.getHostAPI();
-	private final  Template         systemTemplate         = new SystemTemplate();
+	private final  Lazy<Template>   systemTemplate         = Lazy.of(() -> new SystemTemplate());
 
 	@Override
 	public Template systemTemplate() {
-
-		return this.systemTemplate;
+		return this.systemTemplate.get();
 	}
 
 	@Override
 	public void init() {
 		Logger.debug(this, ()-> "Initializing the System Template");
-		this.systemTemplate.setDrawedBody(this.readLayout());
+		this.systemTemplate.get().setDrawedBody(this.readLayout());
 	}
 
 	/**
@@ -818,10 +817,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 		Logger.debug(this, ()-> "Calling getContainersInTemplate: template: " + template.getIdentifier());
 		if (Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
-
-			return new ImmutableList.Builder<Container>().add( // todo: do replace this with the system container as soon as it gets migrate to the velocity
-					this.containerAPI.getWorkingContainerByFolderPath("/application/containers/system", this.hostAPI.findDefaultHost(user, respectFrontendRoles) , user, respectFrontendRoles))
-					.build();
+			return new ImmutableList.Builder<Container>().add(this.containerAPI.systemContainer()).build();
 		}
 
         final List<Container> containers = new ArrayList<>();
