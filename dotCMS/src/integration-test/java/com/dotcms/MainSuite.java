@@ -50,7 +50,6 @@ import com.dotcms.publisher.business.PublishQueueElementTransformerTest;
 import com.dotcms.publisher.receiver.BundlePublisherTest;
 import com.dotcms.publisher.util.DependencyManagerTest;
 import com.dotcms.publisher.util.DependencyModDateUtilTest;
-import com.dotcms.publishing.PublisherAPIImplTest;
 import com.dotcms.publishing.PublisherFilterImplTest;
 import com.dotcms.publishing.PushPublishFiltersInitializerTest;
 import com.dotcms.publishing.job.SiteSearchJobImplTest;
@@ -167,6 +166,9 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        FolderCacheImplIntegrationTest.class,
+        com.dotcms.publishing.PublisherAPIImplTest.class,
+        SiteSearchJobImplTest.class,
         PushPublishBundleGeneratorTest.class,
         RuleBundlerTest.class,
         com.dotcms.content.elasticsearch.business.ESMappingAPITest.class,
@@ -459,10 +461,8 @@ import org.junit.runners.Suite.SuiteClasses;
         LinkBundlerTest.class,
         TemplateBundlerTest.class,
         WorkflowBundlerTest.class,
-        PublisherAPIImplTest.class,
         LegacyShortyIdApiTest.class,
         AutoLoginFilterTest.class,
-        FolderCacheImplIntegrationTest.class,
         Task210218MigrateUserProxyTableTest.class,
         com.dotmarketing.startup.runonce.Task210316UpdateLayoutIconsTest.class,
         Task210319CreateStorageTableTest.class,
@@ -471,7 +471,6 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentHandlerTest.class,
         ESIndexAPITest.class,
         FileAssetTemplateUtilTest.class,
-        SiteSearchJobImplTest.class,
         Task210506UpdateStorageTableTest.class,
         Task210520UpdateAnonymousEmailTest.class,
         Task210510UpdateStorageTableDropMetadataColumnTest.class,
@@ -526,7 +525,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rendering.velocity.viewtools.content.BinaryMapTest.class,
         IntegrityUtilTest.class,
         Task220202RemoveFKStructureFolderConstraintTest.class,
-        PublisherAPIImplTest.class,
+        com.dotcms.publisher.business.PublisherAPIImplTest.class,
         ContentBundlerTest.class,
         ObjectMapperTest.class,
         URLMapBundlerTest.class,
