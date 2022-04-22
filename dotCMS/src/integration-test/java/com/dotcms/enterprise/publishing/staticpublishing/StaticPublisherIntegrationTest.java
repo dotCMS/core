@@ -12,6 +12,7 @@ import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherI
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLivePage;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLivePageWithDifferentLang;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLivePageWithDifferentLangIncludingJustOne;
+import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getPageWithCSS;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getPageWithImage;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getTwoPageDifferentHostSamePath;
 
@@ -40,14 +41,17 @@ import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.FileUtil;
@@ -59,6 +63,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -81,6 +86,51 @@ public class StaticPublisherIntegrationTest {
         IntegrationTestInitService.getInstance().init();
     }
 
+    /**
+     * Cases:
+     * - Add to the bundle a Live Page with no dependencies, Should create two files no matter the bundle operation:
+     *   a xml file with the page properties, and no ext files with the html code
+     * - Add to the bundle a Working page no dependencies should not create any files because just
+     *   the LIVE page are include in a static bundle.
+     * - Add to the bundle a Live Page with versions in two different lang, should create 4 files no matter the Bundle's Operation: a xml and a html for each page version.
+     * - Add a Host to the bundle, this Host has:
+     *      - Two Folders.
+     *      - Two page in each folders, The first one LIVE and the second WORKING
+     *      - Two File Asset for each folder, The first one LIVE and the second WORKING
+     *      Should include into the bundle two files for each LIVE pages: xml and html files for each one
+     *      Also should include one file for each File Asset with the content
+     *      No matter the Bundle's Operation
+     *  - Add into the bundle a Folder with:
+     *      - Two pages, The first one LIVE and the second WORKING
+     *      - Two Files Asset, The first one LIVE and the second WORKING
+     *      Should include into the bundle two files for LIVE page: xml and html files for each one
+     *      Also should include one file for the LIVE File Asset with the content
+     *      No matter the Bundle's Operation
+     * - Add into the bundle one LIVE FIle Asset, Should include one file into the bundle with the file's content no matter the Bundle's Operation
+     * - Add into the bundle a WORKING File Asset, should not include any files in the bundle.
+     * - Add a FileAsset with version in two different languages, Should include two files one for each languages
+     * - Add into the bundle a LIVE page meanwhile there is anther page in a different hist with the same path
+     * should include two files (just to the page that was add into the bundle directly): a xml file with the page property and another file with the page's content
+     * No matter the Bundle's Operation
+     * - Add a ContentType with an url Map into the bundle but there is not any contentlet from this ContentType, Should not generate any files into the bundle, No matter the Bundle's Operation
+     * - Add into the bundle a WORKING Contentlet that is from a ContenTType with a URL MAP, should not generate any files into the bundle
+     * - Add into the bundle a LIVE Contentlet that is from a ContenTType with a URL MAP, should generate two files into the bundle: a xml file with the COntentlet's properties and another file with the html content
+     * - Create a File Image Contentlet and Add into the bundle a LIVE PAge with a Widget with the follow code:
+     *  <code><img src="/dA/[File Image contentlet's ID]" style="width:33px;" class="img-circles border mr-2"></code>
+     *  Should generate into the bundle three files when the Operation is equals to PUBLISH: two for the page (xml and page's html content) and another one for the Image
+     *  Should generate into the bundle two files when the Operation is equals to UN_PUBLISH: just the page's files
+     * - Create a Page with a Image (like the previous case), and Create a ContentType with the page as detail page, finally create a LIVE Contentlet and add it into the Bundle
+     * Should create: thre file when the Operation is PUBLISH and two files when the operation is UN_PUBLISH (liek the previous case)
+     * - Create a CSS File Asset, and Add into the bundle a LIVE PAge with a Widget with the follow code:
+     *   <code><link rel="preload" as="style" href="[File asset's PATH]"></code>
+     *  Should generate into the bundle three files when the Operation is equals to PUBLISH: two for the page (xml and page's html content) and another one for the CSS file
+     *  Should generate into the bundle two files when the Operation is equals to UN_PUBLISH: just the page's files
+     * - Add into the bundle a LIVE Page with version in two different languages but Add into the bundle just one of the lang: should include just two files for the page's version in the lang included
+     * - Add into the bundle a LIVE FileAsset with version in two different languages but Add into the bundle just one of the lang: should include just one file for File's version in the lang included
+     *
+     * @return
+     * @throws Exception
+     */
     @DataProvider
     public static Object[] assets() throws Exception {
         prepare();
@@ -99,15 +149,16 @@ public class StaticPublisherIntegrationTest {
                 getWorkingContentWithURlMap(),
                 getLiveContentWithURlMap(),
                 getPageWithImage(),
-                getURLMapPageWithImage()
+                getURLMapPageWithImage(),
+                getPageWithCSS()
         };
 
        final TestCase[] testCasesWitLangFilter = {
-                getLivePageWithDifferentLangIncludingJustOne(),
+               getLivePageWithDifferentLangIncludingJustOne(),
                 getLiveFileAssetDifferentLangIncludingJustOneg()
         };
 
-        final List<TestCase> testCaseWithEmptyLang = Arrays.stream(testCasesWithoutLangFilter)
+       final List<TestCase> testCaseWithEmptyLang = Arrays.stream(testCasesWithoutLangFilter)
                 .map(testCase -> {
                     testCase.languages = Collections.emptyList();
                     return testCase;
@@ -189,30 +240,107 @@ public class StaticPublisherIntegrationTest {
         assertTrue(bundleXMLFile.exists());
 
         for (File file : files) {
+            assertFile(testCase, file);
+        }
+    }
 
-            final Optional<FileExpected> fileExpectedOptional = testCase.getFileExpected(
-                    file.getAbsolutePath());
+    private void assertFile(TestCase testCase, File file) throws IOException {
+        final Optional<FileExpected> fileExpectedOptional = testCase.getFileExpected(
+                file.getAbsolutePath());
 
-            if (!fileExpectedOptional.isPresent()) {
-                throw new AssertionError(String.format("File %s Expected", file.getAbsolutePath()));
-            }
+        if (!fileExpectedOptional.isPresent()) {
+            throw new AssertionError(String.format("File %s Expected", file.getAbsolutePath()));
+        }
 
-            final FileExpected fileExpected = fileExpectedOptional.get();
+        final FileExpected fileExpected = fileExpectedOptional.get();
 
-            if (UtilMethods.isSet(fileExpected.content)) {
-                if (String.class.isInstance(fileExpected.content)) {
-                    String fileContent = FileTestUtil.removeSpace(
-                            FileTestUtil.getFileContent(file));
+        if (UtilMethods.isSet(fileExpected.content)) {
+            if (String.class.isInstance(fileExpected.content)) {
+                String fileContent = FileTestUtil.removeSpace(
+                        FileTestUtil.getFileContent(file));
 
-                    if (file.getAbsolutePath().endsWith(HTMLPAGE_ASSET_EXTENSION)) {
-                        fileContent = FileTestUtil.removeContent(fileContent, getXMLFileToRemove());
-                    }
-
-                    Assert.assertEquals(fileExpected.content, fileContent);
-                } else {
-                    FileTestUtil.compare(file, (File) fileExpected.content);
+                if (file.getAbsolutePath().endsWith(HTMLPAGE_ASSET_EXTENSION)) {
+                    fileContent = FileTestUtil.removeContent(fileContent, getXMLFileToRemove());
                 }
+
+                Assert.assertEquals(fileExpected.content, fileContent);
+            } else {
+                FileTestUtil.compare(file, (File) fileExpected.content);
             }
+        }
+    }
+
+
+    /**
+     * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig)}
+     * When: A {@link PushPublisherConfig}  is created with:
+     * - A {@link StaticPublisher} setting in {@link PushPublisherConfig#setPublishers(List)}
+     * - A Bundle with the assets in {@link TestCase#addToBundle}
+     * - All the languages in {@link TestCase#languages} are set in {@link PublisherConfig#setLanguages(Set)}}
+     * - Setting {@link Operation#UNPUBLISH}
+     * should: Create a static bundle with all the files in {@link TestCase#filesExpected}
+     *
+     * @param testCase
+     * @throws DotPublishingException
+     * @throws DotPublisherException
+     * @throws DotDataException
+     * @throws IOException
+     * @throws WebAssetException
+     * @throws DotSecurityException
+     */
+    @Test
+    @UseDataProvider("assets")
+    public void createStaticBundleWithUnPublishOperation(final TestCase testCase)
+            throws DotPublishingException, DotPublisherException, IOException {
+
+        final Class<? extends Publisher> publisher = StaticPublisher.class;
+
+        final PublisherAPIImpl publisherAPI = new PublisherAPIImpl();
+
+        final PushPublisherConfig config = new PushPublisherConfig();
+        config.setPublishers(list(publisher));
+        config.setOperation(Operation.UNPUBLISH);
+        config.setLuceneQueries(list());
+        config.setId("StaticPublisher" + System.currentTimeMillis());
+        config.setStatic(true);
+
+        config.setLanguages(
+                testCase.languages.stream()
+                        .map(language -> String.valueOf(language.getId()))
+                        .collect(Collectors.toSet())
+        );
+
+        final Bundle bundle = new BundleDataGen()
+                .operation(Operation.UNPUBLISH)
+                .pushPublisherConfig(config)
+                .addAssets(list(testCase.addToBundle))
+                .nextPersisted();
+
+        final PublishAuditStatus status = new PublishAuditStatus(bundle.getId());
+
+        final PublishAuditHistory historyPojo = new PublishAuditHistory();
+        historyPojo.setAssets(testCase.assetsMap);
+        status.setStatusPojo(historyPojo);
+        PublishAuditAPI.getInstance().insertPublishAuditStatus(status);
+
+        final PublishStatus publish = publisherAPI.publish(config);
+
+        final File bundleRoot = BundlerUtil.getBundleRoot(config);
+        final List<File> files = FileUtil.listFilesRecursively(bundleRoot)
+                .stream()
+                .filter(file -> !file.getName().equals(BUNDLE_METADA_FILE_NAME))
+                .filter(file -> file.isFile())
+                .collect(Collectors.toList());
+
+        final Collection<FileExpected> bundleFiles = testCase.getAddToBundleFiles();
+
+        assertEquals(bundleFiles.size(), files.size());
+
+        final File bundleXMLFile = new File(bundleRoot, BUNDLE_METADA_FILE_NAME);
+        assertTrue(bundleXMLFile.exists());
+
+        for (File file : files) {
+            assertFile(testCase, file);
         }
     }
 

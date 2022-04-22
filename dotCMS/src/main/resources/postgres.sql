@@ -513,12 +513,7 @@ INSERT INTO QRTZ_EXCL_locks values('JOB_ACCESS');
 INSERT INTO QRTZ_EXCL_locks values('CALENDAR_ACCESS');
 INSERT INTO QRTZ_EXCL_locks values('STATE_ACCESS');
 INSERT INTO QRTZ_EXCL_locks values('MISFIRE_ACCESS');
-create table calendar_reminder (
-   user_id varchar(255) not null,
-   event_id varchar(36) not null,
-   send_date timestamptz not null,
-   primary key (user_id, event_id, send_date)
-);
+
 create table analytic_summary_pages (
    id int8 not null,
    summary_id int8 not null,

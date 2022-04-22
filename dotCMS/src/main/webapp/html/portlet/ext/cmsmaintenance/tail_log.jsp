@@ -46,7 +46,25 @@
 
 
 %>
-
+<script src='/html/js/hrJS/hrJS.custom.min.js'></script>
+<style>
+    #Logging #tailContainer {
+        height: 100%;
+    }
+    span[data-hr]{
+        background-color: yellow;
+        color: #000;
+    }
+    .logViewerPrinted {
+        background-color: #000;
+        color: #d6d6d6;
+        font-family: Andale Mono, monospace;
+        font-size: 12px;
+        overflow: scroll;
+        padding: 1rem;
+        white-space: pre;
+    }
+</style>
 <script type="text/javascript">
 
 	function reloadTail(){
@@ -58,6 +76,11 @@
         } else {
             dijit.byId("downloadLog").attr("disabled", true);
         }
+
+        document.querySelector('.logViewerPrinted').innerHTML = '';
+        setTimeout(() => {
+            attachLogIframeEvents()
+        }, 100);
 	}
 
     function disableFollowOnScrollUp() {
@@ -81,16 +104,11 @@
 	function doPopup(){
 			var x = dijit.byId("fileName").getValue();
 			dijit.byId("fileName").setValue("");
-			var newwin = window.open("/html/portlet/ext/cmsmaintenance/tail_log_popup.jsp?fileName=" + x, "tailwin", "status=1,toolbars=1,resizable=1,scrollbars=1,height=600,width=800");
+			var newwin = window.open("/html/portlet/ext/cmsmaintenance/tail_log_popup.jsp?fileName=" + x, "tailwin", "status=1,toolbars=1,resizable=1,scrollbars=1,height=800,width=1000");
 			newwin.focus();
 	}
 
 	dojo.ready(function(){
-
-		if(self != top){
-			dojo.style(dojo.byId("popMeUp"), "display", "block");
-		}
-
 
 		<%if(request.getParameter("fileName")!= null){
 			String selectedFileNameStr = com.dotmarketing.util.UtilMethods.xmlEscape(request.getParameter("fileName")).replace(logPath + File.separator, "");
@@ -100,74 +118,6 @@
 		<%}%>
 
 	});
-
-	function doManageLogs() {
-
-		dijit.byId('logman_dia').show();
-
-	}
-
-    function checkUncheck () {
-        var x = dijit.byId( "checkAllCkBx" ).checked;
-        dojo.query( ".taskCheckBox" ).forEach( function ( node ) {
-            dijit.getEnclosingWidget(node).set("checked", x);
-        } );
-    }
-
-
-    /**
-     * Will search for all the current logs and it will populate the table with those logs details
-     */
-    function getCurrentLogs () {
-        var xhrArgs = {
-
-            url:"/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.LogConsoleAjaxAction/cmd/getLogs/",
-
-            handleAs:"json",
-            handle:function ( data, ioArgs ) {
-
-                if ( data.response == "error" ) {
-                    showDotCMSSystemMessage( data.message, true );
-                } else {
-                    //If everything its ok lets populate the table with the returned logs details
-                    populateTable( data.logs );
-                }
-            }
-        };
-        dojo.xhrPost( xhrArgs );
-        dijit.byId( "checkAllCkBx" ).set('checked',false);
-    }
-
-    /**
-     * Will enable/disable the selected logs
-     */
-    function enableDisableLogs () {
-        //Find the list of checked logs details
-        var selectedLogs = "";
-        dojo.query( ".taskCheckBox input" ).forEach( function ( node ) {
-            if ( node.checked ) {
-                selectedLogs += node.value + ",";
-            }
-        } );
-
-        var xhrArgs = {
-
-            url:"/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.LogConsoleAjaxAction/cmd/enabledDisabledLogs/selection/" + selectedLogs,
-
-            handleAs:"json",
-            handle:function ( data, ioArgs ) {
-
-                if ( data.response == "error" ) {
-                    showDotCMSSystemMessage( data.message, true );
-                } else {
-                    //If everything its ok lets populate the table with the returned logs details
-                    populateTable( data.logs );
-                }
-            }
-        };
-        dojo.xhrPost( xhrArgs );
-        dijit.byId( "checkAllCkBx" ).set('checked',false);
-    }
 
     /**
      * Populate the logs table with a given logs details array
@@ -217,23 +167,90 @@
 
     };
 
-    function destroyCheckboxNodes() {
-        dojo.query(".taskCheckBox").forEach(function (node) {
-            console.log(dijit.getEnclosingWidget(node));
-            dijit.getEnclosingWidget(node).destroy();
-        });
+    /**********************/
+    /* Log Viewer - BEGIN */
+
+    function attachLogIframeEvents() {
+        var dataLogSourceElem = document.getElementById('tailingFrame');
+        var iDoc = dataLogSourceElem.contentWindow || dataLogSourceElem.contentDocument;
+        iDoc.document.addEventListener("logUpdated", (e) => {
+            updateLogViewerData();
+        })
+    }
+    
+    var excludeLogRowsActive = false;
+
+    function updateLogViewerData(){
+
+        var dataLogSourceElem = document.getElementById('tailingFrame').contentDocument.body;
+        var dataLogPrintedElem = document.querySelector('.logViewerPrinted');
+        var keywordLogInput = document.querySelector('#keywordLogFilterInput');
+        var contentLogSize = 0;
+
+        var debounce = (callback, time = 300, interval) => (...args) => {
+            clearTimeout(interval, interval = setTimeout(() => callback(...args), time));
+        }
+
+        function performMark(callback) {
+            var keyword = keywordLogInput.value;
+
+            if (keyword && keyword.length > 1) {
+                new HR(".logViewerPrinted", {
+                    highlight: [keyword]
+                }).hr();
+                
+                if (callback) {
+                    callback();
+                }
+            }
+        }
+
+        function excludeNoMatchingRows() {
+            var filteredData = dataLogPrintedElem.innerHTML.split('<br>');
+            var excludedRows = filteredData.filter((row) => row.includes('data-hr'))
+            dataLogPrintedElem.innerHTML = excludedRows.join('<br>');
+        }
+
+        function filterLog(event) {
+            if (event.key === 'Enter') {
+                performMark(excludeNoMatchingRows);
+                excludeLogRowsActive = true;
+            } else {
+                dataLogPrintedElem.innerHTML = dataLogSourceElem.innerHTML;
+                excludeLogRowsActive = false;
+                performMark();
+            }
+        }
+
+        function scrollLogToBottom() {
+            var dataLogPrintedElem = document.querySelector('.logViewerPrinted');
+            dataLogPrintedElem.scrollTop = dataLogPrintedElem.scrollHeight;
+        }
+
+        function initLogViewer() {
+            var domContent = dataLogSourceElem.innerHTML;
+            var result = dataLogPrintedElem
+
+            if (contentLogSize !== domContent.length) {
+                result.innerHTML = domContent;
+                contentLogSize = domContent.length
+                excludeLogRowsActive ? performMark(excludeNoMatchingRows) : performMark();
+            }
+
+            if (document.querySelector('#scrollMe').checked) {
+                scrollLogToBottom();
+            }
+        }
+
+        keywordLogInput.removeEventListener("keyup", debounce(filterLog, 300));
+        keywordLogInput.addEventListener("keyup", debounce(filterLog, 300));
+
+        initLogViewer()
     }
 
 
-    dojo.ready(function() {
-        var dialog = dijit.byId("logman_dia");
-    	dojo.connect(dialog, "onShow", null, getCurrentLogs);
-    	dojo.connect(dialog, "onCancel", null, destroyCheckboxNodes);
-
-
-
-
-    });
+    /* Log Viewer - END */
+    /********************/
 
 </script>
 
@@ -253,42 +270,20 @@
                     <%=com.liferay.portal.language.LanguageUtil.get(pageContext, "Follow") %>
                 </label>
             </div>
-            <button dojoType="dijit.form.Button" onClick="doPopup()" value="popup" name="popup">
-                <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"popup") %>
-            </button>
-            <button dojoType="dijit.form.Button" onclick="location.href='/api/v1/maintenance/_downloadLog/' + document.getElementById('fileName').value"  id="downloadLog" value="download" name="download" disabled>
-                <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"Download") %>
-            </button>
+            <input dojoType="dijit.form.TextBox" id="keywordLogFilterInput" placeholder="<%=com.liferay.portal.language.LanguageUtil.get(pageContext, "Filter")%>" type="text" style="width: 200px">
         </div>
     </div>
     <div class="portlet-toolbar__actions-secondary">
-        <div id="popMeUp">
-            <button dojoType="dijit.form.Button" onClick="doManageLogs()"  value="popup" name="popup" >
-                <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"LOG_Manager") %>
-            </button>
-        </div>
+        <button dojoType="dijit.form.Button" onClick="doPopup()" value="popup" name="popup">
+            <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"popup") %>
+        </button>
+        <button dojoType="dijit.form.Button" onclick="location.href='/api/v1/maintenance/_downloadLog/' + document.getElementById('fileName').value"  id="downloadLog" value="download" name="download" disabled>
+            <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"Download") %>
+        </button>
     </div>
 </div>
 
-<div id="tailContainer" class="log-files__container">
-    <iframe id="tailingFrame" src="/html/blank.jsp" class="log-files__iframe"></iframe>
+<div id="tailContainer" class="log-files__container" style="display: flex; flex-direction: column;">
+    <iframe id="tailingFrame" src="/html/blank.jsp" style="display:none" class="log-files__iframe"></iframe>
+    <div class="logViewerPrinted" style="flex-grow: 1;"></div>
 </div>
-
-<div id="logman_dia" dojoType="dijit.Dialog">
-    <div id="search" title="<%= com.liferay.portal.language.LanguageUtil.get(pageContext, "LOG_activity") %>" ></div>
-    <div style="width:620px">
-        <table class="listingTable" id="logsTable" align="center">
-            <tr id="logsTableHeader">
-                <th width="5%"><input type="checkbox" dojotype="dijit.form.CheckBox" id="checkAllCkBx" onclick="checkUncheck()" /></th>
-                <th nowrap="nowrap" width="5%" style="text-align:center;">Status</th>
-                <th nowrap="nowrap" width="32%" style="text-align:center;">Log Name</th>
-                <th nowrap="nowrap" width="58%" style="text-align:center;">Log Description</th>
-            </tr>
-        </table>
-    </div>
-    <div class="buttonRow">
-        <button dojoType="dijit.form.Button" name="filterButton" onClick="enableDisableLogs()"><%= com.liferay.portal.language.LanguageUtil.get(pageContext, "LOG_button") %></button>
-        <button dojoType="dijit.form.Button" name="refreshButton" onClick="getCurrentLogs ()">Refresh</button>
-    </div>
-</div>
-

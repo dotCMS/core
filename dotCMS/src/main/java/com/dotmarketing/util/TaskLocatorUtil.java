@@ -315,6 +315,8 @@ public class TaskLocatorUtil {
 		.add(Task220214AddOwnerAndIDateToFolderTable.class)
 		.add(Task220215MigrateDataFromInodeToFolder.class)
 		.add(Task220330ChangeVanityURLSiteFieldType.class)
+		.add(Task220331UpdateDateTimezones.class)
+		.add(Task220404RemoveCalendarReminder.class)
 		.build();
         
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());

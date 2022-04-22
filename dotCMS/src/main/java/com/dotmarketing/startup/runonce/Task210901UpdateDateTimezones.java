@@ -46,10 +46,10 @@ public class Task210901UpdateDateTimezones extends AbstractJDBCStartupTask {
     }
 
 
-    boolean updateTable(final String tableName) throws SQLException {
-
+    boolean updateTable(final String tableName) throws SQLException, DotDataException {
+        boolean tableUpdated = false;
         try (Connection conn = DbConnectionFactory.getConnection()) {
-            final ResultSet results = new DotDatabaseMetaData().getColumnsMetaData(conn, tableName);
+            final ResultSet results = DotDatabaseMetaData.getColumnsMetaData(conn, tableName);
             while (results.next()) {
                 if ("timestamp".equalsIgnoreCase(results.getString("TYPE_NAME"))) {
                     final String columnName = results.getString("COLUMN_NAME");
@@ -60,20 +60,28 @@ public class Task210901UpdateDateTimezones extends AbstractJDBCStartupTask {
                     statmentString = statmentString.replace("{0}", tableName).replace("{1}", columnName).replace("{2}",
                                     columnName);
                     conn.prepareStatement(statmentString).execute();
+                    tableUpdated = true;
+
                 }
             }
         }
-        return true;
+        return tableUpdated;
     }
 
+    private int tablesCount;
 
+    public int getTablesCount() {
+        return tablesCount;
+    }
 
     @Override
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
-
+        tablesCount = 0;
         try {
             for (final String table : findAllTables()) {
-                this.updateTable(table);
+                if(this.updateTable(table)){
+                  tablesCount++;
+                }
             }
         } catch (Exception e) {
             throw new DotRuntimeException(e);
