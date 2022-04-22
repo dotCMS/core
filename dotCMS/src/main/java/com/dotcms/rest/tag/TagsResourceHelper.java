@@ -204,8 +204,8 @@ public class TagsResourceHelper {
      */
     private File importTags(final File inputFile, final User user, final HttpServletRequest request)
             throws IOException, DotDataException, DotSecurityException {
+        int count = 0;
         final byte[] bytes = Files.readAllBytes(inputFile.toPath());
-
         try (final BufferedReader reader = new BufferedReader(
                 new StringReader(new String(bytes)))) {
             String str;
@@ -225,7 +225,11 @@ public class TagsResourceHelper {
                 siteId = siteId.replaceAll("['\"]", "");
                 try {
                     final String validateSite = getValidateSite(siteId, user, request);
-                    tagAPI.getTagAndCreate(tagName, StringPool.BLANK, validateSite);
+                    final Tag tag = tagAPI
+                            .getTagAndCreate(tagName, StringPool.BLANK, validateSite);
+                    if(null != tag){
+                       count++;
+                    }
                 } catch (GenericTagException e) {
                     Logger.error(TagsResourceHelper.class, String.format(
                             "Tag (name: %s  - host ID: %s ) can not be imported because %s , trying with the next Tag",
@@ -233,6 +237,8 @@ public class TagsResourceHelper {
                 }
             }
         }
+        final int finalCount = count;
+        Logger.debug(TagsResourceHelper.class,()->String.format("import done with %d tags successfully created.",finalCount));
         return inputFile;
     }
 

@@ -4,6 +4,7 @@ import com.dotcms.rest.api.Validated;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import org.apache.commons.lang.builder.ToStringBuilder;
 
 @JsonDeserialize(builder = UpdateTagForm.Builder.class)
 public class UpdateTagForm extends Validated {
@@ -55,4 +56,14 @@ public class UpdateTagForm extends Validated {
         }
 
     }
+
+    /**
+     * good old toString
+     * @return
+     */
+    @Override
+    public String toString() {
+        return ToStringBuilder.reflectionToString( this );
+    }
+
 }
