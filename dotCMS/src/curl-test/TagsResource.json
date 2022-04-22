@@ -168,8 +168,8 @@
 							"pm.test(\"Status code is 200\", function () {",
 							"    pm.response.to.have.status(200);",
 							"    var jsonData = pm.response.json();",
-							"    ",
-							"    const tag = jsonData.entity.tags['non-global-tag-changed'];",
+							"    console.log(jsonData.entity);",
+							"    const tag = jsonData.entity['non-global-tag-changed'];",
 							"    ",
 							"    pm.expect(tag).not.eql(undefined);",
 							"",
@@ -1177,7 +1177,7 @@
 						{
 							"key": "file",
 							"type": "file",
-							"src": "resources/csv_sample_file.csv"
+							"src": "/Users/fabrizzio/Downloads/csv_sample_file.csv"
 						},
 						{
 							"key": "",
