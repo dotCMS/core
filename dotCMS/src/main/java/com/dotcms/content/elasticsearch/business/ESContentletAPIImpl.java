@@ -3927,7 +3927,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 : live);
             }
 
-            if (sortBy != null){
+            if (UtilMethods.isSet(sortBy)){
                 Collections.sort(relatedContentlet, new ContentMapComparator(sortBy));
             }
 

@@ -3,6 +3,7 @@ package com.dotcms.util;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
@@ -2273,6 +2274,81 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     .findByStructure(contentType.inode(), user, false, 0, 0);
             assertNotNull(savedData);
             assertTrue(savedData.isEmpty());
+
+        } finally {
+            try {
+                if (null != contentType) {
+                    contentTypeApi.delete(contentType);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /***
+     * Creates a ContentType with a Title, Body and Binary Field
+     * Creates a CSV with an empty Binary Field
+     * Import the CSV and the Content should be created successfully
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void importFile_importContentWithOptionalBinaryField_success()
+            throws DotSecurityException, DotDataException, IOException {
+
+        ContentType contentType = null;
+        CsvReader csvreader;
+        long time;
+        HashMap<String, List<String>> results;
+        Reader reader;
+        String[] csvHeaders;
+        com.dotcms.contenttype.model.field.Field titleField;
+
+        try {
+            time = System.currentTimeMillis();
+            final String contentTypeName = "ContentTypeBinaryField" + time;
+            final String contentTypeVarName = "contentTypeBinaryField" + time;
+
+            //create content type
+            contentType = createTestContentType(contentTypeName, contentTypeVarName);
+            titleField = fieldAPI.byContentTypeAndVar(contentType, TITLE_FIELD_NAME);
+
+            final com.dotcms.contenttype.model.field.Field binaryField = FieldBuilder.builder(BinaryField.class).name(BINARY_FIELD_NAME)
+                    .contentTypeId(contentType.id()).variable(BINARY_FIELD_NAME).sortOrder(1).required(false)
+                    .build();
+            fieldAPI.save(binaryField,user);
+
+            //Creating csv
+            reader = createTempFile(TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", " + BINARY_FIELD_NAME + "\r\n" +
+                    "test1" + time + ", " +
+                    "test1" + time + ", " +
+                    "");
+            csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+            csvHeaders = csvreader.getHeaders();
+
+            results =
+                    ImportUtil
+                            .importFile(0L, defaultSite.getInode(), contentType.inode(),
+                                    new String[]{titleField.id()}, false, false,
+                                    user, defaultLanguage.getId(), csvHeaders, csvreader, -1,
+                                    -1, reader,
+                                    saveAsDraftAction.getId(), getHttpRequest());
+
+            //Validations
+            validate(results, false, false, false);
+
+            assertEquals(results.get("warnings").size(), 0);
+            assertEquals(results.get("errors").size(), 0);
+
+            final List<Contentlet> savedData = contentletAPI
+                    .findByStructure(contentType.inode(), user, false, 0, 0);
+            assertNotNull(savedData);
+            assertTrue(savedData.size() == 1);
+            assertNull(savedData.get(0).getBinary(BINARY_FIELD_NAME));
 
         } finally {
             try {
