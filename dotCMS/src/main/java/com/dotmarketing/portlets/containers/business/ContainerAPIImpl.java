@@ -32,6 +32,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
@@ -56,7 +57,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 	protected ContainerFactory containerFactory;
 	protected HostAPI          hostAPI;
 	protected FolderAPI        folderAPI;
-	protected Container SYSTEM_CONTAINER = new SystemContainer();
+	protected Lazy<Container> systemContainer = Lazy.of(() -> new SystemContainer());
 
 	private static final String DEFAULT_CONTAINER_FILE_NAME = "com/dotmarketing/portlets/containers/business/default_container.vtl";
 
@@ -74,8 +75,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 	@Override
 	public void init() {
 		Logger.debug(this, ()-> "Initializing the System Container");
-		this.SYSTEM_CONTAINER = new SystemContainer();
-		this.SYSTEM_CONTAINER.setCode(codeFromFile());
+		this.systemContainer.get().setCode(codeFromFile());
 	}
 
 	/**
@@ -93,13 +93,17 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 		} catch (final Exception e) {
 			Logger.error(this,
 					String.format("An error occurred when reading System Container code: %s", e.getMessage()), e);
-			return "<h2>$title</h2>";
+			return "<h1>$!{title}</h1>\n" +
+					"#set($contentlet = $dotcontent.find($!{ContentIdentifier}))\n" +
+					"#if (\"TITLE_IMAGE_NOT_FOUND\" != $!{contentlet.titleImage})\n" +
+					"<img src=\"/contentAsset/raw-data/$!{ContentIdentifier}/$!{contentlet.titleImage}\">\n" +
+					"#end";
 		}
 	}
 
 	@Override
 	public Container systemContainer() {
-		return this.SYSTEM_CONTAINER;
+		return this.systemContainer.get();
 	}
 
 	@WrapInTransaction
@@ -661,7 +665,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 	public Container save(Container container, List<ContainerStructure> containerStructureList, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		if (Container.SYSTEM_CONTAINER.equals(container.getIdentifier())) {
 			Logger.debug(this, "System Container cannot be saved/updated.");
-			return systemContainer();
+			throw new IllegalArgumentException("System Container and its associated data cannot be saved.");
 		}
 		Container currentContainer = null;
 		List<Template> currentTemplates = null;
@@ -771,6 +775,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 	@Override
 	public boolean delete(final Container container, final User user, final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 		if (Container.SYSTEM_CONTAINER.equals(container.getIdentifier())) {
+			Logger.debug(this, "System Container cannot be deleted.");
 			throw new IllegalArgumentException("System Container cannot be deleted.");
 		}
 		if(permissionAPI.doesUserHavePermission(container, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
@@ -803,6 +808,9 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 	@CloseDBIfOpened
 	@Override
 	public Host getParentHost(final Container cont, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		if (Container.SYSTEM_CONTAINER.equals(cont.getIdentifier())) {
+			return APILocator.systemHost();
+		}
 		return hostAPI.findParentHost(cont, user, respectFrontendRoles);
 	}
 
@@ -812,7 +820,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 			final Map<String, Object> params, final String siteId, final String inode, final String identifier, final String parent,
 			final int offset, final int limit, final String orderBy) throws DotSecurityException,
 			DotDataException {
-		final ContainerAPI.SearchParams searchParams = ContainerAPI.SearchParams.newBuilder()
+		final SearchParams searchParams = SearchParams.newBuilder()
 				.setIncludeArchived(includeArchived)
 				.setFilteringCriteria(params)
 				.setSiteId(siteId)
@@ -827,12 +835,13 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 
 	@CloseDBIfOpened
 	@Override
-	public List<Container> findContainers(User user, SearchParams searchParams) throws DotSecurityException,
+	public List<Container> findContainers(final User user, final SearchParams searchParams) throws DotSecurityException,
 			DotDataException {
-		final List<Container> containers = this.containerFactory.findContainers(user, searchParams);
+		final List<Container> containers = new ArrayList<>();
 		if (searchParams.includeSystemContainer()) {
 			containers.add(this.systemContainer());
 		}
+		containers.addAll(this.containerFactory.findContainers(user, searchParams));
 		return containers;
 	}
 

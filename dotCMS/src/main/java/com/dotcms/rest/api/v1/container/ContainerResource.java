@@ -395,15 +395,18 @@ public class ContainerResource implements Serializable {
     }
 
     /**
+     * Returns the Container that matches the specified ID.
      *
-     * @param containerId
-     * @param user
-     * @param host
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * @param containerId The Identifier of the Container being returned.
+     * @param user        The {@link User} performing this action.
+     * @param site        The {@link Host} object representing the Site that the Container lives in.
+     *
+     * @return The {@link Container} matching the ID.
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The specified user does not have the required permissions to perform this action.
      */
-    private Container getContainer(final String containerId, final User user, final Host host) throws DotDataException, DotSecurityException {
+    private Container getContainer(final String containerId, final User user, final Host site) throws DotDataException, DotSecurityException {
         if (Container.SYSTEM_CONTAINER.equals(containerId)) {
             return this.containerAPI.systemContainer();
         }
@@ -411,22 +414,22 @@ public class ContainerResource implements Serializable {
 
         if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerId)) {
 
-            final Optional<Host> hostOpt = HostUtil.getHostFromPathOrCurrentHost(containerId, Constants.CONTAINER_FOLDER_PATH);
-            final Host   containerHost   = hostOpt.isPresent()? hostOpt.get():host;
-            final String relativePath    = FileAssetContainerUtil.getInstance().getPathFromFullPath(containerHost.getHostname(), containerId);
+            final Optional<Host> siteOpt = HostUtil.getHostFromPathOrCurrentHost(containerId, Constants.CONTAINER_FOLDER_PATH);
+            final Host   containerSite   = siteOpt.isPresent()? siteOpt.get():site;
+            final String relativePath    = FileAssetContainerUtil.getInstance().getPathFromFullPath(containerSite.getHostname(), containerId);
             try {
 
                 return mode.showLive ?
-                        this.containerAPI.getLiveContainerByFolderPath(relativePath, containerHost, user, mode.respectAnonPerms) :
-                        this.containerAPI.getWorkingContainerByFolderPath(relativePath, containerHost, user, mode.respectAnonPerms);
-            } catch (NotFoundInDbException e) {
+                        this.containerAPI.getLiveContainerByFolderPath(relativePath, containerSite, user, mode.respectAnonPerms) :
+                        this.containerAPI.getWorkingContainerByFolderPath(relativePath, containerSite, user, mode.respectAnonPerms);
+            } catch (final NotFoundInDbException e) {
 
-                // if does not found in the host path or current host, tries the default one if it is not the same
-                final Host defaultHost = WebAPILocator.getHostWebAPI().findDefaultHost(user, false);
-                if (!defaultHost.getIdentifier().equals(containerHost.getIdentifier())) {
+                // If the Container is not found in the Site path or current Site, tries the default one if it is not the same
+                final Host defaultSite = WebAPILocator.getHostWebAPI().findDefaultHost(user, false);
+                if (!defaultSite.getIdentifier().equals(containerSite.getIdentifier())) {
 
                     return  this.containerAPI.getWorkingContainerByFolderPath(relativePath,
-                            defaultHost, APILocator.getUserAPI().getSystemUser(), false);
+                            defaultSite, APILocator.getUserAPI().getSystemUser(), false);
                 }
             }
         }

@@ -76,7 +76,7 @@ public class ContainerPaginator implements PaginatorOrdered<ContainerView> {
                     .setLimit(limit)
                     .setOrderBy(orderByDirection).build();
             final PaginatedArrayList<Container> allContainers =
-                    (PaginatedArrayList<Container>) containerAPI.findContainers(user, searchParams);
+                    new PaginatedArrayList<>(this.containerAPI.findContainers(user, searchParams));
 
             final PaginatedArrayList<Container> containers = !UtilMethods.isSet(siteId)
                     ? sortByTypeAndHost(direction, allContainers) : allContainers;

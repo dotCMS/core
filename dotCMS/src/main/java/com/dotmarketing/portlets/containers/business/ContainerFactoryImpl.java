@@ -336,8 +336,8 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		final List<Object> paramValues 			   = this.getConditionParametersAndBuildConditionQuery(searchParams.filteringCriteria(), conditionBuffer);
 		final PaginatedArrayList<Container> assets = new PaginatedArrayList<>();
 		final List<Permissionable> toReturn        = new ArrayList<>();
-		int     internalLimit                      = searchParams.limit();
-		int     internalOffset                     = searchParams.offset();
+		int     internalLimit                      = 500;
+		int     internalOffset                     = 0;
 		boolean done                               = false;
 		String  orderBy                            = SQLUtil.sanitizeSortBy(searchParams.orderBy()) ;
 		final StringBuilder query 				   = new StringBuilder().append("select asset.*, inode.* from ")
@@ -365,7 +365,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				}
 			}
 
-			// adding the container from the site browser
+			// Adding Containers as Files located in the /application/containers/ folder
 			toReturn.addAll(this.findFolderAssetContainers(user, searchParams));
 
 			while(!done) {
@@ -373,7 +373,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				dotConnect.setStartRow(internalOffset).setMaxRows(internalLimit);
 				resultList = TransformerLocator.createContainerTransformer(dotConnect.loadObjectResults()).asList();
 				toReturn.addAll(this.permissionAPI.filterCollection(resultList, PermissionAPI.PERMISSION_READ, false, user));
-				if(countLimit > 0 && toReturn.size() >= countLimit + searchParams.offset()) {
+				if (countLimit > 0 && toReturn.size() >= countLimit + searchParams.offset()) {
 					done = true;
 				} else if(resultList.size() < internalLimit) {
 					done = true;
@@ -383,9 +383,10 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			}
 
 			getPaginatedAssets(searchParams.offset(), searchParams.limit(), assets, toReturn);
-		} catch (Exception e) {
-			Logger.error(ContainerFactoryImpl.class, "findContainers failed:" + e, e);
-			throw new DotRuntimeException(e.toString());
+		} catch (final Exception e) {
+			Logger.error(ContainerFactoryImpl.class,
+					String.format("An error occurred when finding Containers [ %s ]: '%s'", searchParams, e), e);
+			throw new DotRuntimeException(String.format("An error occurred when finding Containers: '%s'", e));
 		}
 
 		return assets;
