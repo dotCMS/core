@@ -167,6 +167,7 @@ import org.junit.runners.Suite.SuiteClasses;
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
         FolderCacheImplIntegrationTest.class,
+        StaticPublisherIntegrationTest.class,
         com.dotcms.publishing.PublisherAPIImplTest.class,
         SiteSearchJobImplTest.class,
         PushPublishBundleGeneratorTest.class,
@@ -505,7 +506,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task211007RemoveNotNullConstraintFromCompanyMXColumnTest.class,
         ManifestReaderFactoryTest.class,
         Task211012AddCompanyDefaultLanguageTest.class,
-        StaticPublisherIntegrationTest.class,
+
         HostIntegrityCheckerTest.class,
         MetaWebInterceptorTest.class,
         BrowserUtilTest.class,
