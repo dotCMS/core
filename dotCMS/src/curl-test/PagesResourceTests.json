@@ -149,7 +149,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "resources/GraphQL/assets.tar.gz"
+									"src": "resources/pageAPI/ecotourism-in-costa-rica.tar.gz"
 								}
 							]
 						},
