@@ -3,17 +3,20 @@ package com.dotcms.content.business.json;
 import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 import static junit.framework.TestCase.assertNull;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.content.business.json.ContentletJsonHelper.INSTANCE;
 import com.dotcms.content.model.FieldValue;
 import com.dotcms.content.model.ImmutableContentlet;
 import com.dotcms.content.model.type.ImageFieldType;
 import com.dotcms.content.model.type.system.AbstractCategoryFieldType;
 import com.dotcms.content.model.type.system.AbstractTagFieldType;
 import com.dotcms.content.model.type.system.BinaryFieldType;
+import com.dotcms.content.model.version.ToCurrentVersionConverter;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TagField;
@@ -26,6 +29,7 @@ import com.dotcms.datagen.TagDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.storage.model.Metadata;
+import com.dotcms.util.ConfigTestHelper;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -42,6 +46,7 @@ import com.google.common.collect.ImmutableMap;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Date;
@@ -115,8 +120,12 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
 
     private void mapsAreEqual(final Map<String, Object> in, final Map<String, Object> out) {
         assertEquals(in.get("title"),out.get("title"));
-        assertEquals(in.get("hostFolder"),out.get("hostFolder"));
-        assertEquals(in.get("folder"),out.get("folder"));
+
+        //Host and Folder are no longer saved in the json they're injected in an upper layer.
+        //That injection takes place in ContentletTransformer
+        //Therefore they shouldn't be expected here.
+        //Also System fields are now outside of the json so we should never expect a tag nor category here either.
+
         assertEquals(in.get("textFieldNumeric"),out.get("textFieldNumeric"));
         assertEquals(in.get("textFieldFloat"),out.get("textFieldFloat"));
         assertEquals(in.get("textField"),out.get("textField"));
@@ -126,10 +135,9 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
         assertEquals(in.get("inode"),out.get("inode"));
         assertEquals(in.get("identifier"),out.get("identifier"));
         assertEquals(in.get("stInode"),out.get("stInode"));
-        assertEquals(in.get("host"),out.get("host"));
         assertEquals(in.get("languageId"),out.get("languageId"));
         assertEquals(in.get("owner"),out.get("owner"));
-        assertEquals(in.get("tagField"),out.get("tagField"));
+
         assertEquals(in.get("keyValueField"),out.get("keyValueField"));
 
         if (null != in.get("dateField") && null != out.get("dateField")) {
@@ -330,7 +338,6 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
             final ContentType contentType = TestDataUtils
                     .newContentTypeFieldTypesGalore();
 
-            new TagDataGen().name("tag1").nextPersisted();
             final Contentlet imageFileAsset = TestDataUtils.getFileAssetContent(true, 1, TestFile.JPG);
 
             final Contentlet in = new ContentletDataGen(contentType).host(site)
@@ -368,7 +375,6 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
             final ContentType contentType = TestDataUtils
                     .newContentTypeFieldTypesGalore();
 
-            new TagDataGen().name("tag1").nextPersisted();
             final Contentlet imageFileAsset = TestDataUtils.getFileAssetContent(true, 1, TestFile.JPG);
 
             final Metadata metadataNoCache = APILocator.getFileMetadataAPI()
@@ -406,13 +412,13 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
 
     /**
      * Method to test {@link ContentletJsonAPI#toJson(Contentlet)} && {@link ContentletJsonAPI#mapContentletFieldsFromJson(String)}
-     * This test is intended to create a content with tags and categories then serialize it to json and do the inverse process read and compare
+     * This test is intended to create a content with tags and categories then serialize it Then test we're not saving categories nor tags
      * @throws DotDataException
      * @throws JsonProcessingException
      * @throws DotSecurityException
      */
     @Test
-    public void Test_Category_And_Tags_Serialization_And_Recovery()
+    public void Test_Category_And_Tags_Are_Not_Serialized()
             throws DotDataException, JsonProcessingException, DotSecurityException {
         final boolean defaultValue = Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
         Config.setProperty(SAVE_CONTENTLET_AS_JSON, false);
@@ -476,22 +482,41 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
             final ImmutableMap<String, FieldValue<?>> fields = immutableContentlet.fields();
             final AbstractTagFieldType tagsFieldValue =  (AbstractTagFieldType)fields.get("tagField");
             final AbstractCategoryFieldType categoryFieldValue =  (AbstractCategoryFieldType)fields.get("categoryField");
-            assertNotNull(tagsFieldValue);
-            assertEquals(Arrays.asList("mtb","road"),tagsFieldValue.value());
-            assertNotNull(categoryFieldValue);
-            final List<String> categories = categoryFieldValue.value();
-            assertNotNull(categories);
-            assertTrue(categories.contains(childCategory.getCategoryVelocityVarName()));
-            final String json = impl.toJson(persisted);
-            assertNotNull(json);
-            final Contentlet out = impl.mapContentletFieldsFromJson(json);
-            final List<?> recoveredCategories =  (List<?>)out.get("categoryField");
-            assertTrue(recoveredCategories.contains(childCategory.getCategoryVelocityVarName()));
+            assertNull(tagsFieldValue);
+            assertNull(categoryFieldValue);
 
         } finally {
             Config.setProperty(SAVE_CONTENTLET_AS_JSON, defaultValue);
         }
     }
 
+    private final static String RESOURCE = "json/system-fields-v1.json";
+
+    /**
+     * Test the conversion class that takes contentlet-json v1 that has all the system fields
+     * and have it migrated to v2 which simply lacks those fields.
+     * @throws IOException
+     */
+    @Test
+    public void Test_Remove_System_Fields_From_v1_Version_Conversion()
+            throws IOException {
+        final String resource = ConfigTestHelper.getPathToTestResource(RESOURCE);
+        final String resourceAsString = new String(Files.readAllBytes(new File(resource).toPath()));
+        final com.dotcms.content.model.Contentlet immutableFromJson = INSTANCE.get()
+                .immutableFromJson(resourceAsString);
+        //Even though we could have this patched and return the new version..
+        //it will still get override by the VersionModelDeserializer
+        assertEquals("1", immutableFromJson.modelVersion());
+        final Map<String, FieldValue<?>> fields = immutableFromJson.fields();
+        final List<String> systemFieldTypes = ToCurrentVersionConverter.systemFieldTypes;
+        for(final String type:systemFieldTypes) {
+            assertFalse(String.format("unexpected field of type %s found.",type), fields.entrySet().stream()
+                    .anyMatch(fieldValueEntry -> type.equals(fieldValueEntry.getValue().type())));
+        }
+
+        assertTrue(" I was expecting to find 1 field of type 'Text'.", fields.entrySet().stream()
+                .anyMatch(fieldValueEntry -> "Text".equals(fieldValueEntry.getValue().type())));
+
+    }
 
 }

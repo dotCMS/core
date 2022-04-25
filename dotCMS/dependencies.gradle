@@ -355,43 +355,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.jmespath-java', version:'1.11.66_2'
 
 
-    compile group: 'org.springframework', name: 'spring-asm', version:'3.1.0.RELEASE'
-    compile(group: 'org.springframework', name: 'spring-beans', version:'3.1.0.RELEASE') {
-        exclude(module: 'commons-logging')
-    }
-    compile(group: 'org.springframework', name: 'spring-context', version:'3.1.0.RELEASE') {
-        exclude(module: 'commons-logging')
-        exclude(module: 'aopalliance')
-        exclude(module: 'spring-aop')
-        exclude(module: 'spring-context-support')
-    }
-    compile(group: 'org.springframework', name: 'spring-core', version:'3.1.0.RELEASE') {
-        exclude(module: 'commons-logging')
-    }
-    compile(group: 'org.springframework', name: 'spring-expression', version:'3.1.0.RELEASE') {
-        exclude(module: 'commons-logging')
-    }
-    compile(group: 'org.springframework', name: 'spring-jdbc', version:'3.1.0.RELEASE') {
-        exclude(module: 'commons-logging')
-        exclude(module: 'aopalliance')
-        exclude(module: 'spring-aop')
-    }
-    compile(group: 'org.springframework', name: 'spring-tx', version:'3.1.0.RELEASE') {
-        exclude(module: 'commons-logging')
-        exclude(module: 'aopalliance')
-        exclude(module: 'spring-aop')
-    }
-    compile(group: 'org.springframework', name: 'spring-web', version:'3.1.0.RELEASE') {
-        exclude(module: 'commons-logging')
-        exclude(module: 'aopalliance')
-        exclude(module: 'spring-aop')
-    }
-    compile(group: 'org.springframework', name: 'spring-webmvc', version:'3.1.0.RELEASE') {
-        exclude(module: 'spring-aop')
-        exclude(module: 'aopalliance')
-        exclude(module: 'commons-logging')
-        exclude(module: 'spring-context-support')
-    }
     compile group: 'com.h2database', name: 'h2', version:'1.3.176'
     compile group: 'eu.bitwalker', name: 'UserAgentUtils', version:'1.19'
 

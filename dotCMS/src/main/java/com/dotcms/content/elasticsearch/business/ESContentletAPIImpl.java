@@ -206,6 +206,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.activation.MimeType;
 import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
@@ -214,7 +215,7 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.springframework.beans.BeanUtils;
+
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -833,6 +834,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         canLock(contentlet, user, respectFrontendRoles);
 
+        if(contentlet.isVanityUrl()) {
+            removeOldHostVanityURLCache(contentlet);
+        }
+
         //Set contentlet to live and unlocked
         APILocator.getVersionableAPI().setLive(contentlet);
 
@@ -870,6 +875,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // by now, the publish event is making a duplicate reload events on the site browser
         // so we decided to comment it out by now, and
         //contentletSystemEventUtil.pushPublishEvent(contentlet);
+    }
+
+    private void removeOldHostVanityURLCache(Contentlet contentlet) throws DotDataException, DotSecurityException {
+        final Optional<ContentletVersionInfo> contentletVersionInfo = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(contentlet.getIdentifier(),
+                        contentlet.getLanguageId());
+
+        if (contentletVersionInfo.isPresent() && UtilMethods.isSet(contentletVersionInfo.get().getLiveInode())) {
+            final Contentlet oldLiveVersion = APILocator.getContentletAPI()
+                    .find(contentletVersionInfo.get().getLiveInode(), APILocator.systemUser(),
+                            false);
+
+            final String oldHostId = oldLiveVersion.getStringProperty(
+                    VanityUrlContentType.SITE_FIELD_VAR);
+
+            if (!oldHostId.equals(contentlet.getHost())) {
+                CacheLocator.getVanityURLCache().remove(oldHostId, oldLiveVersion.getLanguageId());
+            }
+        }
     }
 
     @Override
@@ -3903,7 +3927,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 : live);
             }
 
-            if (sortBy != null){
+            if (UtilMethods.isSet(sortBy)){
                 Collections.sort(relatedContentlet, new ContentMapComparator(sortBy));
             }
 
@@ -4586,7 +4610,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final String title = contentletIn.getTitle();
             final String actionId = workflowActionOpt.get().getId();
 
-            // if the default action is in the avalable actions for the content.
+            // if the default action is in the available actions for the content.
             if (!isDefaultActionOnAvailableActions(contentletIn, user, workflowAPI, actionId)) {
                 return Optional.empty();
             }
@@ -4694,8 +4718,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
 
-            String oldHostId = null;
-
             if (createNewVersion && contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
                 // maybe the user want to save new content with existing inode & identifier comming from somewhere
                 // we need to check that the inode doesn't exists
@@ -4714,24 +4736,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     existingInode=contentlet.getInode();
                     contentlet.setInode(null);
 
-                    Identifier ident=APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
-
+                        Identifier ident=APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
                     if(ident==null || !UtilMethods.isSet(ident.getId())) {
                         existingIdentifier=contentlet.getIdentifier();
                         contentlet.setIdentifier(null);
                     }
                 }
-
             }
-
-            if (UtilMethods.isSet(contentlet.getIdentifier())) {
-                Identifier ident = APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
-
-                if (UtilMethods.isSet(ident)) {
-                    oldHostId = ident.getHostId();
-                }
-            }
-
             if (!createNewVersion && contentlet != null && !InodeUtils.isSet(contentlet.getInode()))
                 throw new DotContentletStateException("Contentlet must exist already");
             if (contentlet != null && contentlet.isArchived() && contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) == null)
@@ -4844,12 +4855,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             boolean changedURI = addOrUpdateContentletIdentifier(contentlet, contentletRaw, existingIdentifier, existingInode, htmlPageURL);
 
-            if(shouldRemoveOldHostCache(contentlet, oldHostId)) {
-                CacheLocator.getVanityURLCache().remove(oldHostId, contentlet.getLanguageId());
-            }
-
-            //Include system fields to generate a json representation - these fields are later removed before contentlet gets saved
-            contentlet = includeSystemFields(contentlet, contentletRaw, tagsValues, categories, user);
             contentlet = applyNullProperties(contentlet);
 
             //This is executed first hand to create the inode-contentlet relationship.
@@ -4976,13 +4981,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentlet;
     }
 
-    private boolean shouldRemoveOldHostCache(Contentlet contentlet, String oldHostId) {
-        return contentlet.getBoolProperty(Contentlet.TO_BE_PUBLISH) &&
-                contentlet.isVanityUrl() &&
-                UtilMethods.isSet(oldHostId) &&
-                !contentlet.getHost().equals(oldHostId);
-    }
-
 
     /**
      * if we're not provided with an identifier this will attempt generating one.
@@ -5054,8 +5052,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             //Existing contentlet getting updated.
             identifier = identifierAPI.find(contentlet);
 
-            if (null == identifier || !UtilMethods.isSet(identifier.getId())){
-                throw new DotDataException(String.format("Contentlet with ID '%s' has not been found.", contentlet.getIdentifier()));
+            if (!UtilMethods.isSet(identifier) || !UtilMethods.isSet(identifier.getId())){
+                throw new DotDataException("The identifier %s does not exists", contentlet.getIdentifier());
             }
 
             final String oldURI = identifier.getURI();
@@ -5106,7 +5104,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             identifier = identifierAPI.save(identifier);
 
-            return ! oldURI.equals(identifier.getURI());
+            return UtilMethods.isSet(oldURI) && !oldURI.equals(identifier.getURI());
         }
     }
 
@@ -7991,7 +7989,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(null != task) {
 
             final WorkflowTask newTask = new WorkflowTask();
-            BeanUtils.copyProperties(task, newTask);
+            Try.run(()->  BeanUtils.copyProperties(newTask, task));
             newTask.setId(null);
             newTask.setWebasset(copyContentlet.getIdentifier());
             newTask.setLanguageId(copyContentlet.getLanguageId());
