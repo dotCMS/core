@@ -61,7 +61,7 @@
 						{
 							"key": "file",
 							"type": "file",
-							"src": "displayVisitorsIP.tar.gz"
+							"src": "resources/displayVisitorsIP.tar.gz"
 						}
 					]
 				},
