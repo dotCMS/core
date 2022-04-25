@@ -2,6 +2,7 @@ package com.dotcms.rest;
 
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -41,15 +42,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.FileUtil;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.UUIDUtil;
-import com.dotmarketing.util.UtilHTML;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.Converter;
@@ -58,7 +51,6 @@ import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.DomDriver;
-import io.vavr.control.Try;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
@@ -66,13 +58,7 @@ import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -84,21 +70,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.file.Files;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -1347,12 +1321,47 @@ public class ContentResource {
         return jsonFields;
     }
 
-    public static JSONObject contentletToJSON(Contentlet con, HttpServletRequest request,
-            HttpServletResponse response, String render, User user, final boolean allCategoriesInfo)
+    /**
+     * Transforms the specified Contentlet object into its JSON representation.
+     *
+     * @param con               The {@link Contentlet} object that will be transformed.
+     * @param request           The current {@link HttpServletRequest} instance.
+     * @param response          The current {@link HttpServletResponse} instance.
+     * @param render            If the rendered HTML version must be included in the response, set to {@code true}.
+     * @param user              The {@link User} performing this action.
+     * @param allCategoriesInfo If information about Categories must be included, set to {@code true}.
+     *
+     * @return The representation of the Contentlet as a {@link JSONObject}.
+     *
+     * @throws JSONException        An error occurred when generating the JSON object.
+     * @throws IOException          An error occurred when generating the printable Contentlet map.
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The specified User does not have the required permissions to perform this action.
+     */
+    public static JSONObject contentletToJSON(final Contentlet con, final HttpServletRequest request,
+            final HttpServletResponse response, final String render, final User user, final boolean allCategoriesInfo)
             throws JSONException, IOException, DotDataException, DotSecurityException {
         return contentletToJSON(con, request, response, render, user, allCategoriesInfo, false);
     }
 
+    /**
+     * Transforms the specified Contentlet object into its JSON representation.
+     *
+     * @param contentlet        The {@link Contentlet} object that will be transformed.
+     * @param request           The current {@link HttpServletRequest} instance.
+     * @param response          The current {@link HttpServletResponse} instance.
+     * @param render            If the rendered HTML version must be included in the response, set to {@code true}.
+     * @param user              The {@link User} performing this action.
+     * @param allCategoriesInfo If information about Categories must be included, set to {@code true}.
+     * @param hydrateRelated
+     *
+     * @return The representation of the Contentlet as a {@link JSONObject}.
+     *
+     * @throws JSONException        An error occurred when generating the JSON object.
+     * @throws IOException          An error occurred when generating the printable Contentlet map.
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The specified User does not have the required permissions to perform this action.
+     */
     public static JSONObject contentletToJSON(Contentlet contentlet, final HttpServletRequest request,
             final HttpServletResponse response, final String render, final User user,
             final boolean allCategoriesInfo, final boolean hydrateRelated)
@@ -1385,6 +1394,8 @@ public class ContentResource {
                         final Collection<?> tags = (Collection<?>) map.get(key);
                         jsonObject.put(key, new JSONArray(tags));
                         // this might be coming from transformers views, so let's try to make them JSONObjects
+                } else if (isStoryBlockField(type, key)) {
+                    jsonObject.put(key, new JSONObject(String.class.cast(map.get(key))));
                 } else if(hydrateRelated) {
                     if(map.get(key) instanceof Map) {
                         jsonObject.put(key, new JSONObject((Map) map.get(key)));
@@ -1435,6 +1446,25 @@ public class ContentResource {
             Logger.error(ContentResource.class, "Error getting field " + key, e);
         }
         return false;
+    }
+
+    /**
+     * Verifies if the specified field in a Content Type is of type {@link StoryBlockField}.
+     *
+     * @param type         The {@link ContentType} containing such a field.
+     * @param fieldVarName The Velocity Variable Name of the field that must be checked.
+     *
+     * @return If the field is of type {@link StoryBlockField}, returns {@code true}.
+     */
+    private static boolean isStoryBlockField(final ContentType type, final String fieldVarName) {
+        try {
+            final com.dotcms.contenttype.model.field.Field field = type.fieldMap().get(fieldVarName);
+            return field != null && field instanceof StoryBlockField;
+        } catch (final Exception e) {
+            Logger.error(ContentResource.class,
+                    String.format("Error checking StoryBlock type on field '%s': %s", fieldVarName, e.getMessage()), e);
+        }
+        return Boolean.FALSE;
     }
 
     public class MapEntryConverter implements Converter {
