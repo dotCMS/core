@@ -727,7 +727,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 	}
 
 
-	private void setThemeName (final Template template, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+	public void setThemeName (final Template template, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
 		final Theme theme = Try.of(() -> APILocator.getThemeAPI().findThemeById(template.getTheme(),user,respectFrontendRoles)).getOrNull();
 
