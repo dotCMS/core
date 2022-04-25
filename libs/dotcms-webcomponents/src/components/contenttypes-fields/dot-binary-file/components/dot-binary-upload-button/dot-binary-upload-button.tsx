@@ -32,6 +32,10 @@ export class DotBinaryUploadButtonComponent {
     @Prop({ reflect: true })
     disabled = false;
 
+    /** (optional) Set the max file size limit  */
+    @Prop({ reflect: true })
+    maxFileLength = '';
+
     /** (optional) Text that be shown in the browse file button */
     @Prop({ reflect: true })
     buttonLabel = '';
@@ -71,11 +75,14 @@ export class DotBinaryUploadButtonComponent {
 
     private fileChangeHandler(event: Event): void {
         const file = this.fileInput.files[0];
-        if (isFileAllowed(file.name, file.type, this.accept)) {
-            this.emitFile(file);
-        } else {
+        if (!isFileAllowed(file.name, file.type, this.accept)) {
             event.preventDefault();
             this.emitFile(null, DotBinaryMessageError.INVALID);
+        } else if (this.maxFileLength ? parseInt(this.maxFileLength, 10) <= file.size : false) {
+            event.preventDefault();
+            this.emitFile(null, DotBinaryMessageError.SIZEINVALID);
+        } else {
+            this.emitFile(file);
         }
     }
 

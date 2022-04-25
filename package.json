@@ -1,9 +1,9 @@
 {
     "name": "dotcms-ui",
-    "version": "22.4.0-rc.22",
+    "version": "22.5.0-next.11",
     "license": "MIT",
     "engines": {
-        "node": ">=14.18.2"
+        "node": ">=16.13.2"
     },
     "scripts": {
         "ng": "nx",
@@ -16,7 +16,7 @@
         "e2e": "ng e2e dotcms-ui-e2e --headless true --base-url http://localhost:8080",
         "e2e:open": "ng e2e dotcms-ui-e2e --watch --base-url http://localhost:8080",
         "publish:dev": "rm -rf dist;npm run build:prod;cp package.json ./dist/apps/dotcms-ui/package.json;cd dist/apps/dotcms-ui",
-        "build:docs:dotcms": "typedoc --options libs/dotcms/typedoc.json;",
+    "build:docs:dotcms": "typedoc --options libs/dotcms/typedoc.json;",
         "build:docs:dotcms-models": "typedoc --options libs/dotcms-models/typedoc.json",
         "publish:docs": "gh-pages --dist ./docs --dest ./",
         "build:dev": "nx build dotcms-webcomponents --with-deps;nx build dotcms-ui",
@@ -41,7 +41,8 @@
         "workspace-generator": "nx workspace-generator",
         "dep-graph": "nx dep-graph",
         "help": "nx help",
-        "pretty-quick": "pretty-quick"
+        "pretty-quick": "pretty-quick",
+        "prepare": "is-ci || husky install"
     },
     "private": false,
     "dependencies": {
@@ -64,17 +65,16 @@
         "@material/mwc-menu": "^0.20.0",
         "@ngrx/component-store": "13.0.2",
         "@nrwl/angular": "13.8.3",
-        "@tarekraafat/autocomplete.js": "^8.3.2",
-        "@tiptap/core": "^2.0.0-beta.125",
-        "@tiptap/extension-bubble-menu": "^2.0.0-beta.46",
-        "@tiptap/extension-floating-menu": "^2.0.0-beta.36",
-        "@tiptap/extension-highlight": "^2.0.0-beta.30",
-        "@tiptap/extension-link": "^2.0.0-beta.28",
-        "@tiptap/extension-placeholder": "^2.0.0-beta.48",
-        "@tiptap/extension-text-align": "^2.0.0-beta.25",
-        "@tiptap/extension-underline": "^2.0.0-beta.18",
-        "@tiptap/starter-kit": "^2.0.0-beta.127",
-        "@tiptap/suggestion": "^2.0.0-beta.74",
+        "@tarekraafat/autocomplete.js": "^10.2.6",
+        "@tiptap/core": "^2.0.0-beta.174",
+        "@tiptap/extension-bubble-menu": "^2.0.0-beta.55",
+        "@tiptap/extension-floating-menu": "^2.0.0-beta.50",
+        "@tiptap/extension-highlight": "^2.0.0-beta.33",
+        "@tiptap/extension-link": "^2.0.0-beta.36",
+        "@tiptap/extension-text-align": "^2.0.0-beta.29",
+        "@tiptap/extension-underline": "^2.0.0-beta.23",
+        "@tiptap/starter-kit": "^2.0.0-beta.183",
+        "@tiptap/suggestion": "^2.0.0-beta.90",
         "@webcomponents/webcomponentsjs": "^2.6.0",
         "chart.js": "^2.9.4",
         "core-js": "^3.9.1",
@@ -94,8 +94,8 @@
         "primeflex": "^3.1.2",
         "primeicons": "^5.0.0",
         "primeng": "^13.1.0",
-        "prosemirror-model": "^1.14.2",
-        "prosemirror-view": "^1.18.7",
+        "prosemirror-model": "^1.16.1",
+        "prosemirror-view": "^1.23.12",
         "regenerator-runtime": "^0.13.9",
         "rxjs": "~6.6.3",
         "test": "^0.6.0",
@@ -155,7 +155,9 @@
         "eslint-plugin-cypress": "^2.12.1",
         "flatpickr": "^4.5.7",
         "gh-pages": "^3.1.0",
+        "husky": "^7.0.0",
         "install": "^0.13.0",
+        "is-ci": "^3.0.1",
         "jasmine-core": "^3.6.0",
         "jasmine-spec-reporter": "~6.0.0",
         "jest": "27.2.3",
@@ -185,10 +187,6 @@
         "tslint-angular": "^3.0.3",
         "typedoc": "^0.22.11",
         "typescript": "4.5.5",
-        "webpack-bundle-analyzer": "^4.5.0",
-        "husky": "^7.0.0"
-    },
-    "resolutions": {
-        "weboack": "^5.65.0"
+        "webpack-bundle-analyzer": "^4.5.0"
     }
 }

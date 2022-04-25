@@ -2,11 +2,11 @@ import { DotOption, DotFieldStatus, DotFieldStatusClasses, DotKeyValueField } fr
 import { h } from '@stencil/core';
 
 export function nextTick(fn) {
-    const id = window.requestAnimationFrame(function() {
-      fn && fn();
-      window.cancelAnimationFrame(id);
+    const id = window.requestAnimationFrame(function () {
+        fn && fn();
+        window.cancelAnimationFrame(id);
     });
-  };
+}
 
 /**
  * Returns CSS classes object based on field Status values
@@ -57,12 +57,12 @@ export function getDotOptionsFromFieldValue(rawString: string): DotOption[] {
 
     const items = isKeyPipeValueFormatValid(rawString)
         ? rawString
-            .split(',')
-            .filter((item) => !!item.length)
-            .map((item) => {
-                const [label, value] = item.split('|');
-                return { label, value };
-            })
+              .split(',')
+              .filter((item) => !!item.length)
+              .map((item) => {
+                  const [label, value] = item.split('|');
+                  return { label, value };
+              })
         : [];
     return items;
 }
@@ -203,7 +203,7 @@ export function isValidURL(url: string): boolean {
  */
 export function isFileAllowed(name: string, type: string, allowedExtensions: string): boolean {
     if (allowedExtensions === '') {
-        return true
+        return true;
     }
 
     const fileExt = getFileExtension(name);
@@ -216,31 +216,29 @@ export function isFileAllowed(name: string, type: string, allowedExtensions: str
         // if we get something like image/*, audio/*
         if (allowedExt.includes('/*')) {
             const extType = allowedExt.split('/*').filter(Boolean).join(''); // get the first part
-            return type.includes(extType) // "image/png".includes("image")
+            return type.includes(extType); // "image/png".includes("image")
         }
 
         // check agains extensions like `.jpg,.png`
         return allowedExt.includes(fileExt);
-    })
-
+    });
 }
 
 function getFileExtension(filename: string): string {
-    return /(?:\.([^.]+))?$/.exec(filename)[1]
+    return /(?:\.([^.]+))?$/.exec(filename)[1];
 }
 
 function slugify(text: string): string {
     return text
         ? text
-            .toString()
-            .toLowerCase()
-            .replace(/\s+/g, '-') // Replace spaces with -
-            .replace(/[^\w\-]+/g, '') // Remove all non-word chars
-            .replace(/\-\-+/g, '-') // Replace multiple - with single -
-            .replace(/^-+/, '') // Trim - from start of text
-            .replace(/-+$/, '') // Trim - from end of text
+              .toString()
+              .toLowerCase()
+              .replace(/\s+/g, '-') // Replace spaces with -
+              .replace(/[^\w\-]+/g, '') // Remove all non-word chars
+              .replace(/\-\-+/g, '-') // Replace multiple - with single -
+              .replace(/^-+/, '') // Trim - from start of text
+              .replace(/-+$/, '') // Trim - from end of text
         : null;
-
 }
 
 function isKeyPipeValueFormatValid(rawString: string): boolean {
