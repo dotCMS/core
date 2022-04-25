@@ -16,7 +16,7 @@
         "e2e": "ng e2e dotcms-ui-e2e --headless true --base-url http://localhost:8080",
         "e2e:open": "ng e2e dotcms-ui-e2e --watch --base-url http://localhost:8080",
         "publish:dev": "rm -rf dist;npm run build:prod;cp package.json ./dist/apps/dotcms-ui/package.json;cd dist/apps/dotcms-ui",
-    "build:docs:dotcms": "typedoc --options libs/dotcms/typedoc.json;",
+        "build:docs:dotcms": "typedoc --options libs/dotcms/typedoc.json;",
         "build:docs:dotcms-models": "typedoc --options libs/dotcms-models/typedoc.json",
         "publish:docs": "gh-pages --dist ./docs --dest ./",
         "build:dev": "nx build dotcms-webcomponents --with-deps;nx build dotcms-ui",
