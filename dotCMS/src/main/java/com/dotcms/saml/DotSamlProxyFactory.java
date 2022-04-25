@@ -18,6 +18,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import io.vavr.control.Try;
 import org.apache.felix.framework.OSGIUtil;
+import org.apache.felix.framework.RestartOSgiAware;
 import org.tuckey.web.filters.urlrewrite.NormalRule;
 
 import java.io.File;
@@ -32,7 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @author jsanca
  */
-public class DotSamlProxyFactory implements EventSubscriber<AppSecretSavedEvent>, KeyFilterable {
+public class DotSamlProxyFactory implements EventSubscriber<AppSecretSavedEvent>, KeyFilterable, RestartOSgiAware {
 
     public static final String SAML_APP_CONFIG_KEY = "dotsaml-config";
     public static final String PROPERTIES_PATH     = File.separator + "saml" + File.separator + "dotcms-saml-default.properties";
@@ -52,6 +53,14 @@ public class DotSamlProxyFactory implements EventSubscriber<AppSecretSavedEvent>
 
     private static final AtomicBoolean redirectsDone = new AtomicBoolean(false);
 
+    @Override
+    public void onRestartOsgi() {
+
+        this.samlServiceBuilder        = null;
+        this.samlConfigurationService  = null;
+        this.samlAuthenticationService = null;
+    }
+
     private static class SingletonHolder {
 
         private static final DotSamlProxyFactory INSTANCE = new DotSamlProxyFactory();
@@ -63,7 +72,9 @@ public class DotSamlProxyFactory implements EventSubscriber<AppSecretSavedEvent>
     public static DotSamlProxyFactory getInstance() {
 
         addRedirects();
-        return DotSamlProxyFactory.SingletonHolder.INSTANCE;
+        final DotSamlProxyFactory instance = DotSamlProxyFactory.SingletonHolder.INSTANCE;
+        OSGIUtil.getInstance().registerRestartFelixAware(DotSamlProxyFactory.class.getName(), instance);
+        return instance;
     } // getInstance.
 
     /**

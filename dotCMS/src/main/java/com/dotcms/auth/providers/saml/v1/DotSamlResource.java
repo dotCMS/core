@@ -12,16 +12,12 @@ import com.dotcms.saml.DotSamlException;
 import com.dotcms.saml.SamlConfigurationService;
 import com.dotcms.saml.SamlName;
 import com.dotcms.util.RedirectUtil;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
-import io.vavr.Lazy;
-import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -38,10 +34,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.Serializable;
-import java.io.StringWriter;
-import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -57,22 +50,16 @@ public class DotSamlResource implements Serializable {
 
 	private static final long serialVersionUID = 8015545653539491684L;
 
-	private final SamlConfigurationService             samlConfigurationService;
-	private final SAMLHelper           				   samlHelper;
-	private final SamlAuthenticationService            samlAuthenticationService;
-	private final IdentityProviderConfigurationFactory identityProviderConfigurationFactory;
-	private final WebResource						   webResource;
+	private final SamlServicesHolder samlServicesHolder;
+	private final WebResource		  webResource;
 
 	public static final List<String> dotsamlPathSegments = Arrays.asList("login", "logout", "metadata");
 
 
 	public DotSamlResource() {
 
-		this.samlConfigurationService			  = DotSamlProxyFactory.getInstance().samlConfigurationService();
-		this.samlAuthenticationService            = DotSamlProxyFactory.getInstance().samlAuthenticationService();
-		this.identityProviderConfigurationFactory = DotSamlProxyFactory.getInstance().identityProviderConfigurationFactory();
-		this.samlHelper                           = new SAMLHelper(this.samlAuthenticationService, APILocator.getCompanyAPI());
-		this.webResource						  = new WebResource();
+		this.samlServicesHolder = SamlServicesHolder.getInstance();
+		this.webResource	    = new WebResource();
 	}
 
 	@VisibleForTesting
@@ -82,11 +69,10 @@ public class DotSamlResource implements Serializable {
 							final IdentityProviderConfigurationFactory identityProviderConfigurationFactory,
 							final WebResource						   webResource) {
 
-		this.samlConfigurationService			  = samlConfigurationService;
-		this.samlAuthenticationService            = samlAuthenticationService;
-		this.identityProviderConfigurationFactory = identityProviderConfigurationFactory;
-		this.samlHelper                           = samlHelper;
-		this.webResource						  = webResource;
+		SamlServicesHolder.getInstance().onRestartOsgi(samlConfigurationService, samlHelper,
+				samlAuthenticationService, identityProviderConfigurationFactory);
+		this.samlServicesHolder = SamlServicesHolder.getInstance();
+		this.webResource        = webResource;
 	}
 
 	/**
@@ -112,16 +98,16 @@ public class DotSamlResource implements Serializable {
 			if (DotSamlProxyFactory.getInstance().isAnyHostConfiguredAsSAML()) {
 
 				identityProviderConfiguration =
-						this.identityProviderConfigurationFactory.findIdentityProviderConfigurationById(idpConfigId);
+						this.samlServicesHolder.getIdentityProviderConfigurationFactory().findIdentityProviderConfigurationById(idpConfigId);
 
 				// If idpConfig is null, means this site does not need SAML processing
 				if (identityProviderConfiguration != null && identityProviderConfiguration.isEnabled()) {
 
 					Logger.debug(this, () -> "Processing saml login request for idpConfig id: " + idpConfigId);
-					this.samlHelper.doRequestLoginSecurityLog(httpServletRequest, identityProviderConfiguration);
+					this.samlServicesHolder.getSamlHelper().doRequestLoginSecurityLog(httpServletRequest, identityProviderConfiguration);
 
 					// This will redirect the user to the IdP Login Page.
-					this.samlAuthenticationService.authentication(httpServletRequest,
+					this.samlServicesHolder.getSamlAuthenticationService().authentication(httpServletRequest,
 							httpServletResponse, identityProviderConfiguration);
 
 					return Response.ok().build();
@@ -158,14 +144,14 @@ public class DotSamlResource implements Serializable {
 		if (DotSamlProxyFactory.getInstance().isAnyHostConfiguredAsSAML()) {
 
 			final IdentityProviderConfiguration identityProviderConfiguration =
-					this.identityProviderConfigurationFactory.findIdentityProviderConfigurationById(idpConfigId);
+					this.samlServicesHolder.getIdentityProviderConfigurationFactory().findIdentityProviderConfigurationById(idpConfigId);
 			try {
 
 				// If idpConfig is null, means this site does not need SAML processing
 				if (identityProviderConfiguration != null && identityProviderConfiguration.isEnabled()) {
 
 					Logger.debug(this, () -> "Processing saml login request for idpConfig id: " + idpConfigId);
-					this.samlHelper.doRequestLoginSecurityLog(httpServletRequest, identityProviderConfiguration);
+					this.samlServicesHolder.getSamlHelper().doRequestLoginSecurityLog(httpServletRequest, identityProviderConfiguration);
 
 					final HttpSession session = httpServletRequest.getSession();
 					if (null == session) {
@@ -174,7 +160,7 @@ public class DotSamlResource implements Serializable {
 					}
 
 					// Extracts data from the assertion - if it can't process a DotSamlException is thrown
-					final Attributes attributes = this.samlAuthenticationService.resolveAttributes(httpServletRequest,
+					final Attributes attributes = this.samlServicesHolder.getSamlAuthenticationService().resolveAttributes(httpServletRequest,
 							httpServletResponse, identityProviderConfiguration);
 
 					if (null == attributes) {
@@ -182,7 +168,7 @@ public class DotSamlResource implements Serializable {
 						throw new DotSamlException("User cannot be extracted from Assertion!");
 					}
 					// Creates the user object and adds a user if it doesn't already exist
-					final User user = this.samlHelper.resolveUser(attributes, identityProviderConfiguration);
+					final User user = this.samlServicesHolder.getSamlHelper().resolveUser(attributes, identityProviderConfiguration);
 					if (null == user) {
 
 						throw new DotSamlException("User cannot be extracted from Assertion!");
@@ -267,14 +253,14 @@ public class DotSamlResource implements Serializable {
 		if (DotSamlProxyFactory.getInstance().isAnyHostConfiguredAsSAML()) {
 
 			final IdentityProviderConfiguration identityProviderConfiguration =
-					this.identityProviderConfigurationFactory.findIdentityProviderConfigurationById(idpConfigId);
+					this.samlServicesHolder.getIdentityProviderConfigurationFactory().findIdentityProviderConfigurationById(idpConfigId);
 			try {
 				// If idpConfig is null, means this site does not need SAML processing
 				if (identityProviderConfiguration != null && identityProviderConfiguration.isEnabled()) {
 
 					Logger.debug(this, () -> "Processing saml login request for idpConfig id: " + idpConfigId);
 					httpServletResponse.setContentType("application/xml");
-					this.samlAuthenticationService.renderMetadataXML(httpServletResponse.getWriter(), identityProviderConfiguration);
+					this.samlServicesHolder.getSamlAuthenticationService().renderMetadataXML(httpServletResponse.getWriter(), identityProviderConfiguration);
 					return;
 				}
 			} finally {
@@ -301,13 +287,13 @@ public class DotSamlResource implements Serializable {
 		if (DotSamlProxyFactory.getInstance().isAnyHostConfiguredAsSAML()) {
 
 			final IdentityProviderConfiguration identityProviderConfiguration =
-					this.identityProviderConfigurationFactory.findIdentityProviderConfigurationById(idpConfigId);
+					this.samlServicesHolder.getIdentityProviderConfigurationFactory().findIdentityProviderConfigurationById(idpConfigId);
 			try {
 				// If idpConfig is null, means this site does not need SAML processing
 				if (identityProviderConfiguration != null && identityProviderConfiguration.isEnabled()) {
 
 					Logger.debug(this, () -> "Processing saml logout post request for idpConfig id: " + idpConfigId);
-					final String logoutPath = this.samlConfigurationService.getConfigAsString(identityProviderConfiguration,
+					final String logoutPath = this.samlServicesHolder.getSamlConfigurationService().getConfigAsString(identityProviderConfiguration,
 							SamlName.DOT_SAML_LOGOUT_SERVICE_ENDPOINT_URL,
 							()-> "/dotAdmin/#/public/logout");
 					RedirectUtil.sendRedirectHTML(httpServletResponse, logoutPath);
@@ -338,13 +324,13 @@ public class DotSamlResource implements Serializable {
 		if (DotSamlProxyFactory.getInstance().isAnyHostConfiguredAsSAML()) {
 
 			final IdentityProviderConfiguration identityProviderConfiguration =
-					this.identityProviderConfigurationFactory.findIdentityProviderConfigurationById(idpConfigId);
+					this.samlServicesHolder.getIdentityProviderConfigurationFactory().findIdentityProviderConfigurationById(idpConfigId);
 			try {
 				// If idpConfig is null, means this site does not need SAML processing
 				if (identityProviderConfiguration != null && identityProviderConfiguration.isEnabled()) {
 
 					Logger.debug(this, () -> "Processing saml logout get request for idpConfig id: " + idpConfigId);
-					final String logoutPath = this.samlConfigurationService.getConfigAsString(identityProviderConfiguration,
+					final String logoutPath = this.samlServicesHolder.getSamlConfigurationService().getConfigAsString(identityProviderConfiguration,
 							SamlName.DOT_SAML_LOGOUT_SERVICE_ENDPOINT_URL,
 							()-> this.buildBaseUrlFromRequest(httpServletRequest));
 
@@ -375,4 +361,5 @@ public class DotSamlResource implements Serializable {
 
 		return uri;
 	}
+
 }

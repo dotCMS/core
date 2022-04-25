@@ -40,8 +40,9 @@ import java.util.function.Supplier;
 import java.util.zip.GZIPOutputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 import org.apache.felix.framework.OSGIUtil;
+import org.apache.felix.framework.RestartOSgiAware;
 
-public class TikaUtils {
+public class TikaUtils implements RestartOSgiAware {
 
     public static final int SIZE = 1024;
     public static final int DEFAULT_META_DATA_MAX_SIZE = 5;
@@ -50,7 +51,15 @@ public class TikaUtils {
     private TikaProxyService tikaService;
     private Boolean osgiInitialized;
 
-    public TikaUtils() throws DotDataException {
+    @Override
+    public synchronized void onRestartOsgi() {
+
+        Logger.info(this, "Restarting Tika Service");
+        this.tikaService = null;
+        this.initMe();
+    }
+
+    private void initMe () {
 
         osgiInitialized = OSGIUtil.getInstance().isInitialized();
         try {
@@ -102,6 +111,12 @@ public class TikaUtils {
         } else {
             Logger.error(this.getClass(), "OSGI Framework not initialized");
         }
+    }
+
+    public TikaUtils() throws DotDataException {
+
+        this.initMe();
+        OSGIUtil.getInstance().registerRestartFelixAware(this.getClass().getName(), this);
     }
 
     /**
@@ -746,5 +761,6 @@ public class TikaUtils {
                 String.format("Could not parse file metadata for file [%s] [%s]",
                         binFile.getAbsolutePath(), exception.getMessage()), exception);
     }
+
 
 }

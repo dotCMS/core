@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -32,6 +33,7 @@ import org.apache.felix.framework.util.FelixConstants;
 import org.apache.felix.main.AutoProcessor;
 import org.apache.felix.main.Main;
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
+import org.eclipse.jetty.util.ConcurrentHashSet;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
@@ -65,6 +67,7 @@ import io.vavr.control.Try;
 public class OSGIUtil {
 
     private static final String OSGI_EXTRA_CONFIG_FILE_PATH_KEY = "OSGI_EXTRA_CONFIG_FILE_PATH_KEY";
+    private static final int RESTART_FELIX_AWARE_DELAY = 10;// 10 secons
 
     //List of jar prefixes of the jars to be included in the osgi-extra.conf file
     private List<String> dotCMSJarPrefixes = ImmutableList.of("dotcms", "ee-");
@@ -101,6 +104,12 @@ public class OSGIUtil {
     }
 
     private Framework felixFramework;
+    private final Map<String, RestartOSgiAware> restartFelixAwares = new ConcurrentHashMap<>();
+
+    public void registerRestartFelixAware (final String objectKey, final RestartOSgiAware restartFelixAware) {
+
+        this.restartFelixAwares.put(objectKey, restartFelixAware);
+    }
 
     /**
      * Loads the default properties
@@ -325,13 +334,18 @@ public class OSGIUtil {
         if (UtilMethods.isSet(pathnames)) {
 
             this.moveNewBundlesToFelixLoadFolder(uploadPath, pathnames);
-            //Remove Portlets in the list
-            this.portletIDsStopped.stream().forEach(APILocator.getPortletAPI()::deletePortlet);
-            Logger.info(this, "Portlets Removed: " + this.portletIDsStopped.toString());
 
-            //Remove Actionlets in the list
-            this.actionletsStopped.stream().forEach(this.workflowOsgiService::removeActionlet);
-            Logger.info(this, "Actionlets Removed: " + this.actionletsStopped.toString());
+            if (null != this.portletIDsStopped && !this.portletIDsStopped.isEmpty()) {
+                //Remove Portlets in the list
+                this.portletIDsStopped.stream().forEach(APILocator.getPortletAPI()::deletePortlet);
+                Logger.info(this, "Portlets Removed: " + this.portletIDsStopped.toString());
+            }
+
+            if (null != this.actionletsStopped && !this.actionletsStopped.isEmpty()) {
+                //Remove Actionlets in the list
+                this.actionletsStopped.stream().forEach(this.workflowOsgiService::removeActionlet);
+                Logger.info(this, "Actionlets Removed: " + this.actionletsStopped.toString());
+            }
 
             //Cleanup lists
             this.portletIDsStopped.clear();
@@ -346,7 +360,15 @@ public class OSGIUtil {
             Try.run(()->APILocator.getSystemEventsAPI()					    // CLUSTER WIDE
                     .push(SystemEventType.OSGI_FRAMEWORK_RESTART, new Payload(pathnames)))
                     .onFailure(e -> Logger.error(OSGIUtil.this, e.getMessage()));
+
+            // notify all awares that the framework has been restarted
+            debouncer.debounce("notifyRestartFelixAware", this::notifyRestartFelixAware, RESTART_FELIX_AWARE_DELAY, TimeUnit.SECONDS);
         }
+    }
+
+    private void notifyRestartFelixAware () {
+
+        this.restartFelixAwares.values().forEach(RestartOSgiAware::onRestartOsgi);
     }
 
     /**
