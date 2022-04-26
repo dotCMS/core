@@ -170,7 +170,8 @@ public class ContentTypeResource implements Serializable {
 		return response;
 	}
 
-	private void setHostAndFolderAsIdentifer (final String folderPathOrIdentifier, final String hostOrId, final User user, final CopyContentTypeBean.Builder builder) {
+	@VisibleForTesting
+	public static void setHostAndFolderAsIdentifer (final String folderPathOrIdentifier, final String hostOrId, final User user, final CopyContentTypeBean.Builder builder) {
 
 		Host site = APILocator.systemHost();
 		if (null != hostOrId) {
@@ -206,7 +207,7 @@ public class ContentTypeResource implements Serializable {
 				.sourceContentType(type).icon(copyContentTypeForm.getIcon()).name(copyContentTypeForm.getName())
 				.newVariable(copyContentTypeForm.getVariable());
 
-		this.setHostAndFolderAsIdentifer(copyContentTypeForm.getFolder(), copyContentTypeForm.getHost(), user, builder);
+		setHostAndFolderAsIdentifer(copyContentTypeForm.getFolder(), copyContentTypeForm.getHost(), user, builder);
 		final ContentType contentTypeSaved = contentTypeAPI.copyFrom(builder.build());
 
 		// saving the workflow information
