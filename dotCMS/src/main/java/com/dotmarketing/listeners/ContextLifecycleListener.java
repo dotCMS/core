@@ -54,7 +54,7 @@ public class ContextLifecycleListener implements ServletContextListener {
 
 	public void contextInitialized(ServletContextEvent arg0) {
 
-        ByteBuddyFactory.getInstance();
+        ByteBuddyFactory.init();
 
 		Config.setMyApp(arg0.getServletContext());
 

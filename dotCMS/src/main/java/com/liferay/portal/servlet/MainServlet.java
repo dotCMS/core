@@ -92,10 +92,10 @@ import java.util.TreeMap;
  */
 public class MainServlet extends ActionServlet {
 
-  @CloseDBIfOpened
+  @CloseDBIfOpened // Note if ByteBuddyFactory not initialized before this class this may not be wrapped
   public void init(ServletConfig config) throws ServletException {
     synchronized (MainServlet.class) {
-      ByteBuddyFactory.getInstance();
+      ByteBuddyFactory.init();
       super.init(config);
       Config.initializeConfig();
       com.dotmarketing.util.Config.setMyApp(config.getServletContext());

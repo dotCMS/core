@@ -54,7 +54,7 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
 
     @BeforeClass
     public static void beforeInit() throws Exception {
-        ByteBuddyFactory inst = ByteBuddyFactory.getInstance();
+        ByteBuddyFactory.init();
         HibernateUtil.setAsyncCommitListenersFinalization(true);
     }
 

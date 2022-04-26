@@ -3,12 +3,7 @@ package com.dotcms.business.bytebuddy;
 import com.dotcms.business.CloseDB;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.test.TransactionalTester;
 import com.dotcms.util.LogTime;
-import com.dotcms.util.VoidDelegate;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import net.bytebuddy.agent.ByteBuddyAgent;
 import net.bytebuddy.agent.builder.AgentBuilder;
@@ -21,6 +16,7 @@ import net.bytebuddy.utility.JavaModule;
 import org.apache.logging.log4j.Level;
 
 import java.lang.instrument.Instrumentation;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static net.bytebuddy.matcher.ElementMatchers.*;
 
@@ -33,30 +29,28 @@ import static net.bytebuddy.matcher.ElementMatchers.*;
  */
 public class ByteBuddyFactory {
 
-    private static final ByteBuddyFactory INSTANCE = new ByteBuddyFactory();
+    private static final AtomicBoolean agentLoaded = new AtomicBoolean(false);
 
-    private ByteBuddyFactory() {
+    static {
         init();
     }
 
-    private void init() {
-        try {
-            premain(null, ByteBuddyAgent.install());
-            Logger.info(ByteBuddyFactory.class, "Loaded ByteBuddy Advice");
-
-        } catch (Exception e) {
-            Logger.error(ByteBuddyFactory.class, "Cannot install ByteBuddy Advice");
+    public static void init() {
+        if (!agentLoaded.get()) {
+            try {
+                premain(null, ByteBuddyAgent.install());
+                Logger.info(ByteBuddyFactory.class, "Loaded ByteBuddy Advice");
+            } catch (Exception e) {
+                Logger.error(ByteBuddyFactory.class, "Cannot install ByteBuddy Advice");
+            }
         }
     }
 
 
-    public static ByteBuddyFactory getInstance() {
-        return INSTANCE;
-    }
-
-
-    public void premain(final String arg, final Instrumentation inst)  throws Exception  {
-
+    public static void premain(final String arg, final Instrumentation inst)  throws Exception  {
+        System.out.println("In ByteBuddyAgent premain");
+        if (!agentLoaded.compareAndSet(false,true))
+            return;
         AgentBuilder.LocationStrategy bootFallbackLocationStrategy = new AgentBuilder.LocationStrategy() {
             @Override
             public ClassFileLocator classFileLocator(final ClassLoader classLoader, final JavaModule module) {
@@ -65,30 +59,31 @@ public class ByteBuddyFactory {
         };
 
     try {
-        AgentBuilder.RedefinitionListenable.WithoutBatchStrategy builder = new AgentBuilder.Default()
-
-                .ignore(nameEndsWith("LocalTransactionAndCloseDBIfOpenedFactoryTest"))
-                .or(nameStartsWith("net.bytebuddy.")
-                        .or(nameStartsWith("sun.reflect."))
-                        .or(isSynthetic()), any(), any())
-                .or(nameStartsWith("com.dotcms.repackage."))
+                AgentBuilder builder = new AgentBuilder.Default()
+                .ignore(nameStartsWith("net.bytebuddy."))
+                .ignore(nameStartsWith("com.dotcms.repackage."))
+                        .ignore(nameStartsWith("com.dotcms.business.bytebuddy"))
+                .disableClassFormatChanges()
                 .with(AgentBuilder.InitializationStrategy.Minimal.INSTANCE)
                 .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
-                .disableClassFormatChanges()
                 .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION);
+
                 /*
                 We do not use Config class for this as we do not want to load classes
                 that may need transformation or require annotation processing.
                 */
                 if (Boolean.parseBoolean(System.getenv("DOTCMS_BYTEBUDDY_DEBUG")))
                 {
-                    builder.with(AgentBuilder.RedefinitionStrategy.Listener.StreamWriting.toSystemError())
-                        .with(AgentBuilder.Listener.StreamWriting.toSystemError().withTransformationsOnly())
-                        .with(AgentBuilder.InstallationListener.StreamWriting.toSystemError());
+                   builder = ((AgentBuilder.RedefinitionListenable)builder).with(AgentBuilder.RedefinitionStrategy.Listener.StreamWriting.toSystemError())
+                            .with(AgentBuilder.Listener.StreamWriting.toSystemError().withTransformationsOnly())
+                            .with(AgentBuilder.InstallationListener.StreamWriting.toSystemError());
                 }
-                builder.with(bootFallbackLocationStrategy)
+
+                 builder.with(bootFallbackLocationStrategy)
                 .type(ElementMatchers.nameStartsWith("com.dotcms"))
-                .transform(
+                         .or(ElementMatchers.nameStartsWith("com.dotmarketing"))
+                         .or(ElementMatchers.nameStartsWith("com.liferay"))
+                         .transform(
                         new AgentBuilder.Transformer.ForAdvice()
                                 .withExceptionHandler(Advice.ExceptionHandler.Default.RETHROWING)
                                 .advice(isMethod().and(isAnnotatedWith(CloseDB.class))
@@ -113,7 +108,7 @@ public class ByteBuddyFactory {
 
                 .transform(
                         new AgentBuilder.Transformer.ForAdvice()
-                                .advice(isMethod().and(this::checkLogLevelRequired)
+                                .advice(isMethod().and(ByteBuddyFactory::checkLogLevelRequired)
                                         , LogTimeAdvice.class.getName())
                 )
 
@@ -126,7 +121,7 @@ public class ByteBuddyFactory {
 
     }
 
-    private boolean checkLogLevelRequired(final MethodDescription target) {
+    private static boolean checkLogLevelRequired(final MethodDescription target) {
         boolean result = false;
         AnnotationDescription.Loadable<LogTime> time = target.getDeclaredAnnotations().ofType(LogTime.class);
         if (time != null) {

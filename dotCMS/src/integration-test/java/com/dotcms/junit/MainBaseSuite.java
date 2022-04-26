@@ -33,7 +33,7 @@ public class MainBaseSuite extends Suite {
     private static List<Runner> getRunners(Class<?>[] classes) throws InitializationError {
 
         System.out.println("Register ByteBuddy");
-        ByteBuddyFactory.getInstance();
+        ByteBuddyFactory.init();
         List<Runner> runners = new LinkedList<>();
 
         for (Class<?> klazz : classes) {
