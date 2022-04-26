@@ -100,7 +100,7 @@
 							"var response = pm.response.text(); ",
 							"",
 							"pm.test(\"Verify Visitor's IP\", function () { ",
-							"    pm.expect(response).is.to.equal(\"/3.22.136.122\"); ",
+							"    pm.expect(response).contains(\"/3.22.136.122\"); ",
 							"});"
 						],
 						"type": "text/javascript"
@@ -122,13 +122,12 @@
 					}
 				],
 				"url": {
-					"raw": "{{serverURL}}/application/displayip",
+					"raw": "{{serverURL}}/visitorsip",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
-						"application",
-						"displayip"
+						"visitorsip"
 					]
 				}
 			},
@@ -144,7 +143,7 @@
 							"var response = pm.response.text(); ",
 							"",
 							"pm.test(\"Verify Visitor's IP\", function () { ",
-							"    pm.expect(response).is.to.equal(\"/127.0.0.1\"); ",
+							"    pm.expect(response).contains(\"/127.0.0.1\"); ",
 							"});"
 						],
 						"type": "text/javascript"
@@ -166,13 +165,12 @@
 					}
 				],
 				"url": {
-					"raw": "{{serverURL}}/application/displayip",
+					"raw": "{{serverURL}}/visitorsip",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
-						"application",
-						"displayip"
+						"visitorsip"
 					]
 				}
 			},
