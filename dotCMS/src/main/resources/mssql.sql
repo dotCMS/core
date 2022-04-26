@@ -2681,3 +2681,6 @@ create table storage_x_data (
     PRIMARY KEY (storage_hash, data_hash),
     FOREIGN KEY (data_hash) REFERENCES storage_data (hash_id)
 );
+
+CREATE TABLE shedlock(name VARCHAR(64) NOT NULL, lock_until datetime NOT NULL,
+                      locked_at datetime NOT NULL, locked_by VARCHAR(255) NOT NULL, PRIMARY KEY (name));

@@ -14,6 +14,7 @@ import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
+import io.vavr.control.Try;
 import java.util.*;
 
 /**
@@ -673,13 +674,12 @@ public class TagAPIImpl implements TagAPI {
         name = escapeSingleQuote(name);
 
         //if there's a host field on form, retrieve it
-        Host siteOnForm;
         if ( UtilMethods.isSet(selectedSiteId) ) {
             try {
-                siteOnForm = APILocator.getHostAPI().find(selectedSiteId, APILocator.getUserAPI().getSystemUser(), true);
-                selectedSiteId = siteOnForm.getMap().get("tagStorage").toString();
+                final Host siteOnForm = APILocator.getHostAPI().find(selectedSiteId, APILocator.getUserAPI().getSystemUser(), true);
+                selectedSiteId = Try.of(()->siteOnForm.getMap().get("tagStorage").toString()).getOrElse(selectedSiteId);
             } catch (Exception e) {
-                Logger.error(this, String.format("Unable to load current Site ID '%s'", selectedSiteId));
+                Logger.error(this, String.format("Unable to load current Site ID '%s'", selectedSiteId),e);
             }
         }
 
