@@ -50,20 +50,25 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
 
     @Override
     public DotPubSubProvider start() {
-        
-        int numberOfServers = Try.of(() -> APILocator.getServerAPI().getAliveServers().size()).getOrElse(1);
-        Logger.info(PostgresPubSubImpl.class, () -> "Starting PostgresPubSub. Have servers:" + numberOfServers);
 
-        try {
-            setUpPersistantConnection();
-            for (DotPubSubTopic topic : topicMap.values()) {
-                subscribeToTopicSQL(topic.getKey().toString());
+        if(DbConnectionFactory.isPostgres()) {
+            int numberOfServers = Try.of(() -> APILocator.getServerAPI().getAliveServers().size()).getOrElse(1);
+            Logger.info(PostgresPubSubImpl.class, () -> "Starting PostgresPubSub. Have servers:" + numberOfServers);
+
+            try {
+                setUpPersistantConnection();
+                for (DotPubSubTopic topic : topicMap.values()) {
+                    subscribeToTopicSQL(topic.getKey().toString());
+                }
+            } catch (Exception e) {
+                Logger.warnAndDebug(getClass(), e);
+                if (state.get() != RUNSTATE.STOPPED) {
+                    restart();
+                }
             }
-        } catch (Exception e) {
-            Logger.warnAndDebug(getClass(), e);
-            if (state.get() != RUNSTATE.STOPPED) {
-                restart();
-            }
+        } else {
+            Logger.debug(this, "PostgresPubSubImpl only runs on Postgres, for: " + DbConnectionFactory.getDBType() +
+                    ", use another implementation.");
         }
 
         return this;

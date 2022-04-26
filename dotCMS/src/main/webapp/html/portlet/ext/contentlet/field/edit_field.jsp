@@ -31,6 +31,9 @@
 <%@ page import="com.dotmarketing.portlets.folders.model.Folder" %>
 <%@ page import="com.dotcms.contenttype.transform.field.LegacyFieldTransformer" %>
 <%@ page import="static com.dotmarketing.portlets.contentlet.business.ContentletAPI.dnsRegEx" %>
+<%@ page import="io.vavr.control.Try" %>
+<%@ page import="com.dotcms.contenttype.model.field.HostFolderField" %>
+<%@ page import="com.dotmarketing.beans.Host" %>
 
 
 <%
@@ -779,8 +782,23 @@
 
     <script>
         dojo.addOnLoad(function() {
-            var tagField = dojo.byId("<%=field.getVelocityVarName()%>");
-            dojo.connect(tagField, "onkeyup", suggestTagsForSearch);
+
+            <%
+              Optional<com.dotcms.contenttype.model.field.Field> hostFolderField = Optional.empty();
+              final ContentType contentType = Try.of(()->APILocator.getContentTypeAPI(APILocator.systemUser()).find(structure.getVelocityVarName())).getOrNull();
+              if(null != contentType){
+                  hostFolderField = contentType.fields(HostFolderField.class).stream().findFirst();
+              }
+            %>
+
+            let tagField = dojo.byId("<%=field.getVelocityVarName()%>");
+            dojo.connect(tagField, "onkeyup", function(e){
+
+                let selectedHost = "<%= contentType != null ? contentType.host() : Host.SYSTEM_HOST%>";
+                let hostOrFolderField = dojo.byId("<%=hostFolderField
+                        .map(com.dotcms.contenttype.model.field.Field::variable).orElse(null)%>");
+                suggestTagsForContent(e, null, hostOrFolderField, selectedHost);
+            });
             dojo.connect(tagField, "onblur", closeSuggetionBox);
             var textValue = "<%=textValue%>";
             if (textValue != "") {

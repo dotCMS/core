@@ -549,6 +549,12 @@ dependencies {
 
     implementation group: 'org.aspectj', name: 'aspectjrt', version:'1.9.2'
     implementation group: 'io.bit3', name: 'jsass', version: '5.10.3'
+    //XML Tool dependency
+    implementation group: 'jaxen', name: 'jaxen', version: '1.1.6'
+
+    // https://github.com/lukas-krecan/ShedLock
+    implementation group: 'net.javacrumbs.shedlock', name: 'shedlock-core', version: '4.33.0'
+    implementation group: 'net.javacrumbs.shedlock', name: 'shedlock-provider-jdbc', version: '4.33.0'
 
     implementation ('com.graphql-java-kickstart:graphql-java-servlet:9.1.0'){
         exclude(group: 'com.fasterxml.jackson.core')

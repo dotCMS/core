@@ -179,26 +179,26 @@ public class FiltersTest {
         final String uniqueUrl = UUIDGenerator.shorty();
         // build them up
 
-        vanityUrl1 = filtersUtil.createVanityUrl("test link1", Host.SYSTEM_HOST, "/" + uniqueUrl + "1",
+        vanityUrl1 = filtersUtil.createVanityUrl("test link1", APILocator.getHostAPI().findSystemHost(), "/" + uniqueUrl + "1",
                 "/about-us/" + CMSFilter.CMS_INDEX_PAGE, 200, 1, defaultLanguageId);
         filtersUtil.publishVanityUrl(vanityUrl1);
 
-        vanityUrl2 = filtersUtil.createVanityUrl("test link2", site.getIdentifier(),
+        vanityUrl2 = filtersUtil.createVanityUrl("test link2", site,
                 "/" + uniqueUrl + "2", "/about-us/" + CMSFilter.CMS_INDEX_PAGE, 200, 1,
                 defaultLanguageId);
         filtersUtil.publishVanityUrl(vanityUrl2);
 
-        vanityUrl3 = filtersUtil.createVanityUrl("test link3", site.getIdentifier(),
+        vanityUrl3 = filtersUtil.createVanityUrl("test link3", site,
                 "/" + uniqueUrl + "3", "http://demo.dotcms.com/about-us/" + CMSFilter.CMS_INDEX_PAGE,
                 301, 1, defaultLanguageId);
         filtersUtil.publishVanityUrl(vanityUrl3);
 
-        vanityUrl4 = filtersUtil.createVanityUrl("test link4", site.getIdentifier(),
+        vanityUrl4 = filtersUtil.createVanityUrl("test link4", site,
                 "/" + uniqueUrl + "4", "http://demo.dotcms.com/about-us/" + CMSFilter.CMS_INDEX_PAGE,
                 301, 1, defaultLanguageId);
         filtersUtil.publishVanityUrl(vanityUrl4);
 
-        vanityUrl5 = filtersUtil.createVanityUrl("test link5", Host.SYSTEM_HOST,
+        vanityUrl5 = filtersUtil.createVanityUrl("test link5", APILocator.getHostAPI().findSystemHost(),
                 "/forbidden", "/products/" + CMSFilter.CMS_INDEX_PAGE, 302, 1, defaultLanguageId);
         filtersUtil.publishVanityUrl(vanityUrl5);
 
@@ -277,11 +277,11 @@ public class FiltersTest {
         Contentlet vanityUrl2 = null;
 
         // build them up
-        vanityUrl1 = filtersUtil.createVanityUrl("test link1", Host.SYSTEM_HOST, "/" + uniqueUrl + "1",
+        vanityUrl1 = filtersUtil.createVanityUrl("test link1", APILocator.getHostAPI().findSystemHost(), "/" + uniqueUrl + "1",
                 "/about-us/" + CMSFilter.CMS_INDEX_PAGE + "?param1="+ VANITY, 200, 1, defaultLanguageId);
         filtersUtil.publishVanityUrl(vanityUrl1);
 
-        vanityUrl2 = filtersUtil.createVanityUrl("test link2", site.getIdentifier(),
+        vanityUrl2 = filtersUtil.createVanityUrl("test link2", site,
                 "/" + uniqueUrl + "2", "/about-us/" + CMSFilter.CMS_INDEX_PAGE+ "?param1=" + VANITY, 200, 1,
                 defaultLanguageId);
         filtersUtil.publishVanityUrl(vanityUrl2);
@@ -349,7 +349,7 @@ public class FiltersTest {
 
             final String uniqueUrl = UUIDGenerator.shorty();
             final Contentlet vanityUrl1 = filtersUtil
-                    .createVanityUrl("Fwd", site.getIdentifier(), "/" + uniqueUrl + "fwd",
+                    .createVanityUrl("Fwd", site, "/" + uniqueUrl + "fwd",
                             "/about-us/" + CMSFilter.CMS_INDEX_PAGE + "?param1=" + VANITY + "&param2="+VANITY , action,
                             1, defaultLanguageId);
             filtersUtil.publishVanityUrl(vanityUrl1);
@@ -393,7 +393,7 @@ public class FiltersTest {
 
             //Create the VanityURL
             vanityURLContentlet = filtersUtil
-                    .createVanityUrl("cmsHomePage", site.getIdentifier(),
+                    .createVanityUrl("cmsHomePage", site,
                             LEGACY_CMS_HOME_PAGE,
                             forwardTo, 200, 1, defaultLanguageId);
             filtersUtil.publishVanityUrl(vanityURLContentlet);
@@ -419,7 +419,7 @@ public class FiltersTest {
             contentletAPI.delete(vanityURLContentlet, user, false);
 
             //And save it
-            vanityURLContentlet = filtersUtil.createVanityUrl("cmsHomePage Host", Host.SYSTEM_HOST,
+            vanityURLContentlet = filtersUtil.createVanityUrl("cmsHomePage Host", APILocator.getHostAPI().findSystemHost(),
                     LEGACY_CMS_HOME_PAGE,
                     "/about-us/" + CMSFilter.CMS_INDEX_PAGE, 200, 1, defaultLanguageId);
             filtersUtil.publishVanityUrl(vanityURLContentlet);
@@ -490,7 +490,7 @@ public class FiltersTest {
 
             //Create the VanityURL
             vanityURLContentlet = filtersUtil
-                    .createVanityUrl("urlmap", site.getIdentifier(),
+                    .createVanityUrl("urlmap", site,
                             "/urlnews",
                             forwardTo, 200, 1, defaultLanguageId);
             filtersUtil.publishVanityUrl(vanityURLContentlet);

@@ -5975,8 +5975,8 @@
 						}
 					},
 					"response": []
-				},
-				{
+		},
+		{
 					"name": "UnArchiveSystemTemplate",
 					"event": [
 						{
@@ -6044,13 +6044,13 @@
 				},
 				{
 					"name": "DeleteSystemTemplate",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
 									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(200);",
+							"    pm.response.to.have.status(200);",
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
@@ -6152,8 +6152,8 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code should be 400\", function () {",
-							"    pm.response.to.have.status(400);",
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
 							"});"
 						],
 						"type": "text/javascript"
@@ -6217,8 +6217,8 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code should be 404\", function () {",
-							"    pm.response.to.have.status(404);",
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
 							"});",
 							""
 						],

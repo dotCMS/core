@@ -60,7 +60,7 @@ public class PublisherAPIImplTest {
 
         insertPublishAuditStatus(Status.FAILED_TO_BUNDLE,bundle.getId());
 
-        PublisherAPIImpl.getInstance().deleteElementsFromPublishQueueTableAndAuditStatus(contentlet.getIdentifier());
+        PublisherAPIImpl.getInstance().deleteElementsFromPublishQueueTableAndAuditStatus(bundle.getId());
 
         Assert.assertNull(APILocator.getPublishAuditAPI().getPublishAuditStatus(bundle.getId()));
     }

@@ -52,9 +52,9 @@ public class StoryBlockMapTest extends IntegrationTestBase {
 
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON_OLIST);
         final String html = storyBlockMap.toHtml();
-        Assert.assertTrue(html.contains("<ol>\n" +
+        Assert.assertTrue(html.contains("<ol style=\"text-align: \">\n" +
                 "\n" +
-                "                            <li>\n" +
+                "                            <li style=\"text-align: left\">\n" +
                 "\n" +
                 "                                                                    \n" +
                 "    \n" +
@@ -63,7 +63,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
                 "    \n" +
                 "                                        </li>\n" +
                 "        \n" +
-                "                        <li>\n" +
+                "                        <li style=\"text-align: left\">\n" +
                 "\n" +
                 "                                                                    \n" +
                 "    \n" +
@@ -72,7 +72,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
                 "    \n" +
                 "                                        </li>\n" +
                 "        \n" +
-                "                        <li>\n" +
+                "                        <li style=\"text-align: left\">\n" +
                 "\n" +
                 "                                                                    \n" +
                 "    \n" +
@@ -97,7 +97,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
         final String html = storyBlockMap.toHtml();
         Assert.assertTrue(html.contains("<ul>\n" +
                 "\n" +
-                "                            <li>\n" +
+                "                            <li style=\"text-align: left\">\n" +
                 "\n" +
                 "                                                                            \n" +
                 "    \n" +
@@ -106,7 +106,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
                 "    \n" +
                 "                                                 </li>\n" +
                 "        \n" +
-                "                        <li>\n" +
+                "                        <li style=\"text-align: left\">\n" +
                 "\n" +
                 "                                                                            \n" +
                 "    \n" +
@@ -115,7 +115,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
                 "    \n" +
                 "                                                 </li>\n" +
                 "        \n" +
-                "                        <li>\n" +
+                "                        <li style=\"text-align: left\">\n" +
                 "\n" +
                 "                                                                            \n" +
                 "    \n" +
@@ -138,13 +138,13 @@ public class StoryBlockMapTest extends IntegrationTestBase {
 
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON_PARAGRAPH);
         final String html = storyBlockMap.toHtml();
-        Assert.assertTrue(html.contains("<p>\n" +
+        Assert.assertTrue(html.contains("<p style=\"text-align: left\">\n" +
                 "                \n" +
                 "    \n" +
                 "    this is paragraph\n" +
                 "\n" +
                 "    \n" +
-                "    </p>\n"));
+                "    </p>"));
     }
 
     /**
@@ -158,7 +158,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
 
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON_CONTENTLET);
         final String html = storyBlockMap.toHtml();
-        Assert.assertTrue(html.contains("<h2>test2</h2>"));
+        Assert.assertTrue(html.contains("test2</h2>"));
     }
 
     /**
@@ -172,15 +172,15 @@ public class StoryBlockMapTest extends IntegrationTestBase {
 
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON);
         final String html = storyBlockMap.toHtml();
-        Assert.assertTrue(html.contains("<h2>test2</h2>"));
-        Assert.assertTrue(html.contains("<h2>test2</h2>"));
-        Assert.assertTrue(html.contains("<h2>test1</h2>"));
+        Assert.assertTrue(html.contains("test2</h2>"));
+        Assert.assertTrue(html.contains("test2</h2>"));
+        Assert.assertTrue(html.contains("test1</h2>"));
         Assert.assertTrue(html.contains("<strong>\n" +
                 "                                                \n" +
                 "    heading 1\n" +
                 "\n" +
                 "                                    </strong>"));
-        Assert.assertTrue(html.contains("<h2>\n" +
+        Assert.assertTrue(html.contains("<h2 style=\"text-align: left\">\n" +
                 "\n" +
                 "                \n" +
                 "    \n" +
@@ -193,9 +193,9 @@ public class StoryBlockMapTest extends IntegrationTestBase {
                 "                                            </strong>\n" +
                 "                                                \n" +
                 "    </h2>"));
-        Assert.assertTrue(html.contains("<ol>\n" +
+        Assert.assertTrue(html.contains("<ol style=\"text-align: \">\n" +
                 "\n" +
-                "                            <li>\n" +
+                "                            <li style=\"text-align: $listItem.attrs.textAlign\">\n" +
                 "\n" +
                 "                                                                    \n" +
                 "    \n" +
@@ -204,7 +204,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
                 "    \n" +
                 "                                        </li>\n" +
                 "        \n" +
-                "                        <li>\n" +
+                "                        <li style=\"text-align: $listItem.attrs.textAlign\">\n" +
                 "\n" +
                 "                                                                    \n" +
                 "    \n" +
@@ -216,7 +216,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
                 "                                                \n" +
                 "                                        </li>\n" +
                 "        \n" +
-                "                        <li>\n" +
+                "                        <li style=\"text-align: $listItem.attrs.textAlign\">\n" +
                 "\n" +
                 "                                                                    \n" +
                 "    \n" +
@@ -228,7 +228,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
                 "    </ol>"));
         Assert.assertTrue(html.contains("<ul>\n" +
                 "\n" +
-                "                            <li>\n" +
+                "                            <li style=\"text-align: $listItem.attrs.textAlign\">\n" +
                 "\n" +
                 "                                                                            \n" +
                 "    \n" +
@@ -237,7 +237,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
                 "    \n" +
                 "                                                 </li>\n" +
                 "        \n" +
-                "                        <li>\n" +
+                "                        <li style=\"text-align: $listItem.attrs.textAlign\">\n" +
                 "\n" +
                 "                                                                            \n" +
                 "    \n" +
@@ -246,7 +246,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
                 "    \n" +
                 "                                                 </li>\n" +
                 "        \n" +
-                "                        <li>\n" +
+                "                        <li style=\"text-align: $listItem.attrs.textAlign\">\n" +
                 "\n" +
                 "                                                                            \n" +
                 "    \n" +
