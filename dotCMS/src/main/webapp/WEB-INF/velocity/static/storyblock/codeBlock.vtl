@@ -1,0 +1,10 @@
+<pre data-language="$!item.content.attrs.language">
+<code>#set($start = 0)
+#set($end = $item.content.length())
+#set($end = $end - 1)
+#set($range = [$start..$end])
+#foreach($i in $range)
+#set($content = $item.content.get($i))
+$!content.text
+#end</code>
+</pre>
