@@ -10,7 +10,7 @@ import java.sql.SQLException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class Task220329UpdateDateTimezonesTest {
+public class Task220331UpdateDateTimezonesTest {
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -19,7 +19,7 @@ public class Task220329UpdateDateTimezonesTest {
     }
 
     /**
-     * <b>Method to Test:</b> {@link Task220329UpdateDateTimezones#executeUpgrade()} <p>
+     * <b>Method to Test:</b> {@link Task220331UpdateDateTimezones#executeUpgrade()} <p>
      * <b>Given Scenario:</b> When ms-sql is used, the upgrade task should be executed <p>
      * <b>Expected Result:</b> When using postgres, dates should be declared as timestamps with
      * timezone
@@ -27,7 +27,7 @@ public class Task220329UpdateDateTimezonesTest {
     @Test
     public void Test_Upgrade_Task() throws Exception {
 
-        final Task220329UpdateDateTimezones task = new Task220329UpdateDateTimezones();
+        final Task220331UpdateDateTimezones task = new Task220331UpdateDateTimezones();
         if (task.forceRun()) {
 
             try {

@@ -95,8 +95,6 @@ public class WorkflowResourceLicenseIntegrationTest {
     private static User userAdmin;
     private static User billIntranet;
 
-    private static Role publisher;
-
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
@@ -128,7 +126,6 @@ public class WorkflowResourceLicenseIntegrationTest {
 
         userAdmin = TestUserUtils.getAdminUser();
         billIntranet = TestUserUtils.getBillIntranetUser();
-        publisher = TestUserUtils.getOrCreatePublisherRole();
 
         final WebResource webResourceThatReturnsAdminUser = mock(WebResource.class);
         final InitDataObject dataObject1 = mock(InitDataObject.class);
@@ -308,10 +305,11 @@ public class WorkflowResourceLicenseIntegrationTest {
 
         ContentType contentType = null;
         final String ctName = "KeepWfTaskStatus" + System.currentTimeMillis();
+        final Role role = TestUserUtils.getOrCreatePublisherRole();
         try {
             //Bill does NOT have Read permissions over this new content type
             contentType = createContentTypeAndAssignPermissions(ctName,
-                    BaseContentType.CONTENT, editPermission, publisher.getId());
+                    BaseContentType.CONTENT, editPermission, role.getId());
 
             final HttpServletRequest request = mock(HttpServletRequest.class);
             final Response findResponse = nonLicenseWorkflowResource
@@ -628,10 +626,11 @@ public class WorkflowResourceLicenseIntegrationTest {
 
         ContentType contentType = null;
         final String ctName = "KeepWfTaskStatus" + System.currentTimeMillis();
+        final Role role = TestUserUtils.getOrCreatePublisherRole();
         try {
             //Bill does NOT have Read permissions over this new content type
             contentType = createContentTypeAndAssignPermissions(ctName,
-                    BaseContentType.CONTENT, editPermission, publisher.getId());
+                    BaseContentType.CONTENT, editPermission, role.getId());
 
             final HttpServletRequest request = mock(HttpServletRequest.class);
             final Response findResponse = nonLicenseWorkflowResource
@@ -665,10 +664,11 @@ public class WorkflowResourceLicenseIntegrationTest {
 
         ContentType contentType = null;
         final String ctName = "KeepWfTaskStatus" + System.currentTimeMillis();
+        final Role role = TestUserUtils.getOrCreatePublisherRole();
         try {
             //Bill does NOT have Read permissions over this new content type
             contentType = createContentTypeAndAssignPermissions(ctName,
-                    BaseContentType.CONTENT, editPermission, publisher.getId());
+                    BaseContentType.CONTENT, editPermission, role.getId());
 
             final HttpServletRequest request = mock(HttpServletRequest.class);
             final Response findResponse = nonLicenseWorkflowResource

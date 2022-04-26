@@ -35,6 +35,23 @@ import com.dotmarketing.util.Logger;
  */
 public class MathUtil {
 
+	/**
+	 * Sum each char code and applies module to limit the range of the number generated
+	 * @param chars
+	 * @param module {@link Long}
+	 * @return Long
+	 */
+	public static long sumAndModule (final char[] chars, final long module) {
+
+		long sum = 0;
+		for (final char c : chars) {
+
+			sum += (int)c;
+		}
+
+		return sum % module;
+	}
+
 	public static int factorial(int x) {
 		if (x < 0) {
 			return 0;
