@@ -68,13 +68,13 @@ public class ContainerPaginator implements PaginatorOrdered<ContainerView> {
 
         try {
             final ContainerAPI.SearchParams searchParams = ContainerAPI.SearchParams.newBuilder()
-                    .setIncludeArchived(false)
-                    .setIncludeSystemContainer(showSystemContainer)
-                    .setFilteringCriteria(params)
-                    .setSiteId(siteId)
-                    .setOffset(offset)
-                    .setLimit(limit)
-                    .setOrderBy(orderByDirection).build();
+                    .includeArchived(false)
+                    .includeSystemContainer(showSystemContainer)
+                    .filteringCriterion(params)
+                    .siteId(siteId)
+                    .offset(offset)
+                    .limit(limit)
+                    .orderBy(orderByDirection).build();
             final PaginatedArrayList<Container> allContainers =
                     new PaginatedArrayList<>(this.containerAPI.findContainers(user, searchParams));
 

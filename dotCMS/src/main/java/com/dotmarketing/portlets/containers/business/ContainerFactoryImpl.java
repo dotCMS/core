@@ -18,7 +18,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.IdentifierCache;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.common.db.DotConnect;
@@ -31,7 +30,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.ContainerVersionInfo;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -293,15 +291,15 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			final int offset, final int limit, final String orderByParam) throws DotSecurityException,
 			DotDataException {
 		final ContainerAPI.SearchParams searchParams = ContainerAPI.SearchParams.newBuilder()
-				.setIncludeArchived(includeArchived)
-				.setFilteringCriteria(params)
-				.setSiteId(siteId)
-				.setContainerInode(inode)
-				.setContainerIdentifier(identifier)
-				.setContentTypeIdOrVar(parent)
-				.setOffset(offset)
-				.setLimit(limit)
-				.setOrderBy(orderByParam).build();
+				.includeArchived(includeArchived)
+				.filteringCriterion(params)
+				.siteId(siteId)
+				.containerInode(inode)
+				.containerIdentifier(identifier)
+				.contentTypeIdOrVar(parent)
+				.offset(offset)
+				.limit(limit)
+				.orderBy(orderByParam).build();
 		return this.findContainers(user, searchParams);
 	}
 

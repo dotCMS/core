@@ -306,8 +306,8 @@ public class ContainerAPITest extends ContentletBaseTest {
         // Initialization
         final boolean showSystemContainer = Boolean.FALSE;
         final ContainerAPI.SearchParams searchParams = ContainerAPI.SearchParams.newBuilder()
-                .setIncludeArchived(false)
-                .setIncludeSystemContainer(showSystemContainer).build();
+                .includeArchived(false)
+                .includeSystemContainer(showSystemContainer).build();
         final List<Container> allContainers = containerAPI.findContainers(user, searchParams);
 
         // Test data generation
@@ -331,8 +331,8 @@ public class ContainerAPITest extends ContentletBaseTest {
         // Initialization
         final boolean showSystemContainer = Boolean.TRUE;
         final ContainerAPI.SearchParams searchParams = ContainerAPI.SearchParams.newBuilder()
-                .setIncludeArchived(false)
-                .setIncludeSystemContainer(showSystemContainer).build();
+                .includeArchived(false)
+                .includeSystemContainer(showSystemContainer).build();
         final List<Container> allContainers = containerAPI.findContainers(user, searchParams);
 
         // Test data generation
@@ -361,8 +361,8 @@ public class ContainerAPITest extends ContentletBaseTest {
         final boolean showSystemContainer = Boolean.FALSE;
         try {
             final ContainerAPI.SearchParams searchParams = ContainerAPI.SearchParams.newBuilder()
-                    .setIncludeArchived(false)
-                    .setIncludeSystemContainer(showSystemContainer).build();
+                    .includeArchived(false)
+                    .includeSystemContainer(showSystemContainer).build();
             List<Container> allContainers = containerAPI.findContainers(user, searchParams);
             final int originalCount = allContainers.size();
 
@@ -401,9 +401,9 @@ public class ContainerAPITest extends ContentletBaseTest {
         try {
             // Test data generation
             final ContainerAPI.SearchParams searchParams = ContainerAPI.SearchParams.newBuilder()
-                    .setIncludeArchived(false)
-                    .setIncludeSystemContainer(showSystemContainer)
-                    .setContentTypeIdOrVar(testContentType.id()).build();
+                    .includeArchived(false)
+                    .includeSystemContainer(showSystemContainer)
+                    .contentTypeIdOrVar(testContentType.id()).build();
             final List<Container> allContainers = containerAPI.findContainers(user, searchParams);
             final int originalCount = allContainers.size();
 

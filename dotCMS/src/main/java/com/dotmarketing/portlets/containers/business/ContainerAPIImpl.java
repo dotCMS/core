@@ -814,15 +814,15 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 			final int offset, final int limit, final String orderBy) throws DotSecurityException,
 			DotDataException {
 		final SearchParams searchParams = SearchParams.newBuilder()
-				.setIncludeArchived(includeArchived)
-				.setFilteringCriteria(params)
-				.setSiteId(siteId)
-				.setContainerInode(inode)
-				.setContainerIdentifier(identifier)
-				.setContentTypeIdOrVar(parent)
-				.setOffset(offset)
-				.setLimit(limit)
-				.setOrderBy(orderBy).build();
+				.includeArchived(includeArchived)
+				.filteringCriterion(params)
+				.siteId(siteId)
+				.containerInode(inode)
+				.containerIdentifier(identifier)
+				.contentTypeIdOrVar(parent)
+				.offset(offset)
+				.limit(limit)
+				.orderBy(orderBy).build();
 		return this.findContainers(user, searchParams);
 	}
 
