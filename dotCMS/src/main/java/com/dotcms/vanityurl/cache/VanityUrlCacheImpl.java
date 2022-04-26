@@ -63,7 +63,7 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
         if (vanityURL == null || !vanityURL.isVanityUrl()) {
             return;
         }
-        Host host = Try.of(() -> APILocator.getHostAPI().find(vanityURL.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR), APILocator.systemUser(), false)).getOrNull();
+        Host host = Try.of(() -> APILocator.getHostAPI().find(vanityURL.getHost(), APILocator.systemUser(), false)).getOrNull();
         Language lang = Try.of(() -> APILocator.getLanguageAPI().getLanguage(vanityURL.getLanguageId())).getOrNull();
         if (host == null || lang == null) {
             return;
