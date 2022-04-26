@@ -27,6 +27,7 @@ describe('key-value-table', () => {
 
                 const rows = await element.findAll('tr');
                 expect(rows.length).toBe(2);
+                expect(rows[0].getAttribute('draggable')).toBeDefined();
                 expect(rows[0]).toEqualHtml(`
                     <tr>
                         <td>
@@ -53,6 +54,18 @@ describe('key-value-table', () => {
                         <td>2</td>
                     </tr>
                 `);
+            });
+
+            it('should disable dragabble on rows', async () => {
+                element.setProperty('items', [
+                    { key: 'keyA', value: '1' },
+                    { key: 'keyB', value: '2' }
+                ]);
+                element.setProperty('disabled', true);
+                await page.waitForChanges();
+
+                const rows = await element.findAll('tr');
+                expect(rows[0].getAttribute('draggable')).not.toBeDefined();
             });
 
             it('should handle invalid items', async () => {
@@ -87,20 +100,20 @@ describe('key-value-table', () => {
                 await page.waitForChanges();
             });
 
-            it('set disable button', async () => {
+            it('hide delete button', async () => {
                 element.setProperty('disabled', true);
                 await page.waitForChanges();
 
                 const button = await getButton();
-                expect(button.getAttribute('disabled')).not.toBeNull();
+                expect(button).toBeNull();
             });
 
-            it('should not set disabled button', async () => {
+            it('should not hide delete button', async () => {
                 element.setProperty('disabled', false);
                 await page.waitForChanges();
 
                 const button = await getButton();
-                expect(button.getAttribute('disabled')).toBeNull();
+                expect(button).toBeDefined();
             });
         });
 

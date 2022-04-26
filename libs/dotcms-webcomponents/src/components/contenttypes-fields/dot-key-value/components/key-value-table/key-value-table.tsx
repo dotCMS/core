@@ -55,24 +55,26 @@ export class KeyValueTableComponent {
     // D&D - BEGIN
 
     private bindDraggableEvents() {
-        const rows = document.querySelectorAll('key-value-table tr');
-        rows.forEach((row) => {
-            row.setAttribute('draggable', 'true');
+        if (!this.disabled) {
+            const rows = document.querySelectorAll('key-value-table tr');
+            rows.forEach((row) => {
+                row.setAttribute('draggable', 'true');
 
-            row.removeEventListener('dragstart', this.handleDragStart.bind(this), false);
-            row.removeEventListener('dragenter', this.handleDragEnter, false);
-            row.removeEventListener('dragover', this.handleDragOver.bind(this), false);
-            row.removeEventListener('dragleave', this.handleDragLeave, false);
-            row.removeEventListener('drop', this.handleDrop.bind(this), false);
-            row.removeEventListener('dragend', this.handleDragEnd.bind(this), false);
+                row.removeEventListener('dragstart', this.handleDragStart.bind(this), false);
+                row.removeEventListener('dragenter', this.handleDragEnter, false);
+                row.removeEventListener('dragover', this.handleDragOver.bind(this), false);
+                row.removeEventListener('dragleave', this.handleDragLeave, false);
+                row.removeEventListener('drop', this.handleDrop.bind(this), false);
+                row.removeEventListener('dragend', this.handleDragEnd.bind(this), false);
 
-            row.addEventListener('dragstart', this.handleDragStart.bind(this), false);
-            row.addEventListener('dragenter', this.handleDragEnter, false);
-            row.addEventListener('dragover', this.handleDragOver.bind(this), false);
-            row.addEventListener('dragleave', this.handleDragLeave, false);
-            row.addEventListener('drop', this.handleDrop.bind(this), false);
-            row.addEventListener('dragend', this.handleDragEnd.bind(this), false);
-        });
+                row.addEventListener('dragstart', this.handleDragStart.bind(this), false);
+                row.addEventListener('dragenter', this.handleDragEnter, false);
+                row.addEventListener('dragover', this.handleDragOver.bind(this), false);
+                row.addEventListener('dragleave', this.handleDragLeave, false);
+                row.addEventListener('drop', this.handleDrop.bind(this), false);
+                row.addEventListener('dragend', this.handleDragEnd.bind(this), false);
+            });
+        }
     }
 
     private removeElementById(elemId) {
@@ -175,16 +177,21 @@ export class KeyValueTableComponent {
                 <td class="key-value-table-wc__key">{item.key}</td>
                 <td class="key-value-table-wc__value">{item.value}</td>
                 <td class="key-value-table-wc__action">
-                    <button
-                        aria-label={label}
-                        disabled={this.disabled || null}
-                        onClick={() => this.onDelete(index)}
-                        class="dot-key-value__delete-button"
-                    >
-                        {this.buttonLabel}
-                    </button>
+                    {!this.disabled ? this.getDeleteButton(label, index) : ''}
                 </td>
             </tr>
+        );
+    }
+
+    private getDeleteButton(label: string, index: number): JSX.Element {
+        return (
+            <button
+                aria-label={label}
+                onClick={() => this.onDelete(index)}
+                class="dot-key-value__delete-button"
+            >
+                {this.buttonLabel}
+            </button>
         );
     }
 

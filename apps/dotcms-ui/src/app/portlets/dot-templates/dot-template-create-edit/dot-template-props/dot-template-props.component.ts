@@ -28,7 +28,7 @@ export class DotTemplatePropsComponent implements OnInit {
                 ? {
                       ...template,
                       title: [template.title, Validators.required],
-                      theme: [template.theme, Validators.required]
+                      theme: [template.theme]
                   }
                 : {
                       ...template,

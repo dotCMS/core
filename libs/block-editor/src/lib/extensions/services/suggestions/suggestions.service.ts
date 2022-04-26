@@ -9,7 +9,6 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 
 @Injectable()
 export class SuggestionsService {
-
     constructor(private http: HttpClient) {}
 
     get defaultHeaders() {
@@ -20,7 +19,7 @@ export class SuggestionsService {
 
     getContentTypes(filter = ''): Observable<DotCMSContentType[]> {
         return this.http
-            .get(`/api/v1/contenttype?filter=${filter}&orderby=name&direction=ASC&per_page=40`, {
+            .get(`/api/v1/contenttype?filter=${filter}&orderby=name&direction=ASC`, {
                 headers: this.defaultHeaders
             })
             .pipe(pluck('entity'));

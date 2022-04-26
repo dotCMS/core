@@ -1,6 +1,9 @@
 key-value-table {
     table {
         width: 100%;
+        td {
+            line-height: 3rem;
+        }
     }
 
     .key-value-table-wc__key {

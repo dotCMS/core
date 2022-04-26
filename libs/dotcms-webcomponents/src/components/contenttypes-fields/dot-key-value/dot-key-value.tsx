@@ -79,6 +79,12 @@ export class DotKeyValueComponent {
     })
     requiredMessage = 'This field is required';
 
+    /** (optional) Text that will be shown when required is set and condition is not met */
+    @Prop({
+        reflect: true
+    })
+    duplicatedKeyMessage = 'The key already exists';
+
     /** (optional) Disables field's interaction */
     @Prop({
         reflect: true
@@ -140,6 +146,8 @@ export class DotKeyValueComponent {
     whiteList: string;
 
     @State()
+    errorExistingKey: boolean;
+    @State()
     status: DotFieldStatus;
     @State()
     items: DotKeyValueField[] = [];
@@ -173,6 +181,7 @@ export class DotKeyValueComponent {
         this.items = this.items.filter(
             (_item: DotKeyValueField, index: number) => index !== event.detail
         );
+        this.errorExistingKey = false;
         this.refreshStatus();
         this.emitChanges();
     }
@@ -206,12 +215,23 @@ export class DotKeyValueComponent {
 
     @Listen('add')
     addItemHandler({ detail }: CustomEvent<DotKeyValueField>): void {
-        const itemExists = this.items.some((item: DotKeyValueField) => item.key === detail.key);
+        this.refreshStatus();
 
-        if ((this.uniqueKeys && !itemExists) || !this.uniqueKeys) {
+        this.errorExistingKey = this.items.some(
+            (item: DotKeyValueField) => item.key === detail.key
+        );
+
+        if ((this.uniqueKeys && !this.errorExistingKey) || !this.uniqueKeys) {
             this.items = [...this.items, detail];
-            this.refreshStatus();
             this.emitChanges();
+        }
+    }
+
+    @Listen('keyChanged')
+    keyChangedHandler(): void {
+        // Reset errorExistingKey value when KEY is changed
+        if (this.errorExistingKey) {
+            this.errorExistingKey = false;
         }
     }
 
@@ -222,7 +242,11 @@ export class DotKeyValueComponent {
     }
 
     render() {
-        const classes = getClassNames(this.status, this.isValid(), this.required);
+        const classes = getClassNames(
+            this.status,
+            this.isValid() && !this.errorExistingKey,
+            this.required
+        );
 
         return (
             <Host class={{ ...classes }}>
@@ -233,17 +257,7 @@ export class DotKeyValueComponent {
                     required={this.required}
                     name={this.name}
                 >
-                    <key-value-form
-                        onLostFocus={this.blurHandler.bind(this)}
-                        add-button-label={this.formAddButtonLabel}
-                        disabled={this.isDisabled()}
-                        empty-dropdown-option-label={this.whiteListEmptyOptionLabel}
-                        key-label={this.formKeyLabel}
-                        key-placeholder={this.formKeyPlaceholder}
-                        value-label={this.formValueLabel}
-                        value-placeholder={this.formValuePlaceholder}
-                        white-list={this.whiteList}
-                    />
+                    {!this.disabled ? this.getKeyValueForm() : ''}
                     <key-value-table
                         onClick={(e: MouseEvent) => {
                             e.preventDefault();
@@ -256,6 +270,22 @@ export class DotKeyValueComponent {
                 {getTagHint(this.hint)}
                 {getTagError(this.showErrorMessage(), this.getErrorMessage())}
             </Host>
+        );
+    }
+
+    private getKeyValueForm(): JSX.Element {
+        return (
+            <key-value-form
+                onLostFocus={this.blurHandler.bind(this)}
+                add-button-label={this.formAddButtonLabel}
+                disabled={this.isDisabled()}
+                empty-dropdown-option-label={this.whiteListEmptyOptionLabel}
+                key-label={this.formKeyLabel}
+                key-placeholder={this.formKeyPlaceholder}
+                value-label={this.formValueLabel}
+                value-placeholder={this.formValuePlaceholder}
+                white-list={this.whiteList}
+            />
         );
     }
 
@@ -289,7 +319,15 @@ export class DotKeyValueComponent {
     }
 
     private getErrorMessage(): string {
-        return this.isValid() ? '' : this.requiredMessage;
+        let errorMsg = '';
+
+        if (this.errorExistingKey) {
+            errorMsg = this.duplicatedKeyMessage;
+        } else if (!this.isValid()) {
+            this.requiredMessage;
+        }
+
+        return errorMsg;
     }
 
     private refreshStatus(): void {

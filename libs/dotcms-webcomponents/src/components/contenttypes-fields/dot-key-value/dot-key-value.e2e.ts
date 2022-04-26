@@ -158,14 +158,14 @@ describe('dot-key-value', () => {
         });
 
         describe('disabled', () => {
-            it('should set disabled to child', async () => {
+            it('should set disabled to table and hide form', async () => {
                 element.setProperty('disabled', true);
                 await page.waitForChanges();
 
                 const form = await getForm();
                 const list = await getList();
 
-                expect(form.getAttribute('disabled')).toBeDefined();
+                expect(form).toBeNull();
                 expect(list.getAttribute('disabled')).toBeDefined();
             });
 
@@ -173,7 +173,7 @@ describe('dot-key-value', () => {
                 const form = await getForm();
                 const list = await getList();
 
-                expect(form.getAttribute('disabled')).toBeNull();
+                expect(form).toBeDefined();
                 expect(list.getAttribute('disabled')).toBeNull();
             });
         });
@@ -320,6 +320,33 @@ describe('dot-key-value', () => {
             });
         });
 
+        describe('duplicatedKeyMessage', () => {
+            it('should show default', async () => {
+                element.setProperty('value', 'hello|world,hola|mundo');
+                await page.waitForChanges();
+
+                const form = await getForm();
+                form.triggerEvent('add', {
+                    detail: {
+                        key: 'hello',
+                        value: 'hello dupped'
+                    }
+                });
+                await page.waitForChanges();
+
+                const error = await dotTestUtil.getErrorMessage(page);
+                expect(error.textContent).toBe('The key already exist');
+            });
+
+            it('should not show', async () => {
+                element.setProperty('value', 'key|value');
+                await page.waitForChanges();
+
+                const error = await dotTestUtil.getErrorMessage(page);
+                expect(error).toBeNull();
+            });
+        });
+
         describe('value', () => {
             it('should set items', async () => {
                 element.setProperty('value', 'hello|world,hola|mundo');
@@ -415,6 +442,18 @@ describe('dot-key-value', () => {
                     name: 'fieldName',
                     status: { dotPristine: true, dotTouched: true, dotValid: true }
                 });
+            });
+        });
+
+        describe('errorExistingKey', () => {
+            it('shoult reset value on keyChanged', async () => {
+                const form = await getForm();
+                form.triggerEvent('keyChanged', {
+                    detail: 'a'
+                });
+                await page.waitForChanges();
+                const error = await dotTestUtil.getErrorMessage(page);
+                expect(error).toBeNull();
             });
         });
     });

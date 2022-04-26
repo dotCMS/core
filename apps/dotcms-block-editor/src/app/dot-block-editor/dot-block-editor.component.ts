@@ -1,6 +1,7 @@
 import { Component, OnInit, Injector } from '@angular/core';
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
+import Placeholder from '@tiptap/extension-placeholder';
 
 import {
     ActionsMenu,
@@ -18,6 +19,12 @@ import { Link } from '@tiptap/extension-link';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
 import { ViewContainerRef } from '@angular/core';
+
+function toTitleCase(str) {
+    return str.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {
+        return txt.charAt(0).toUpperCase() + txt.slice(1);
+    });
+}
 
 @Component({
     selector: 'dotcms-block-editor',
@@ -46,7 +53,16 @@ export class DotBlockEditorComponent implements OnInit {
                 Underline,
                 TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'dotImage'] }),
                 Highlight.configure({ HTMLAttributes: { style: 'background: #accef7;' } }),
-                Link.configure({ openOnClick: true })
+                Link.configure({ openOnClick: true }),
+                Placeholder.configure({
+                    placeholder: ({ node }) => {
+                        if (node.type.name === 'heading') {
+                            return `${toTitleCase(node.type.name)} ${node.attrs.level}`;
+                        }
+
+                        return 'Type "/" for commmands';
+                    }
+                })
             ]
         });
     }

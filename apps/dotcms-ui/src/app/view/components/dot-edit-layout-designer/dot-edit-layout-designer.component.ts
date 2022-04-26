@@ -249,17 +249,18 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
     }
 
     private updateModel(): void {
-        this.dotThemesService
-            .get(this.theme)
-            .pipe(take(1))
-            .subscribe(
-                (theme: DotTheme) => {
-                    this.currentTheme = theme;
-                    this.cd.detectChanges();
-                },
-                (error) => this.errorHandler(error)
-            );
-        this.initialFormValue = _.cloneDeep(this.form.value);
+        if (this.theme) {
+            this.dotThemesService
+                .get(this.theme)
+                .pipe(take(1))
+                .subscribe(
+                    (theme: DotTheme) => {
+                        this.currentTheme = theme;
+                        this.cd.detectChanges();
+                    }
+                );
+            this.initialFormValue = _.cloneDeep(this.form.value);
+        }
     }
 
     private createSidebarForm(layout: DotLayout): DotLayoutSideBar {

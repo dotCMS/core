@@ -10,6 +10,7 @@
 | Property                    | Attribute                       | Description                                                                           | Type      | Default                    |
 | --------------------------- | ------------------------------- | ------------------------------------------------------------------------------------- | --------- | -------------------------- |
 | `disabled`                  | `disabled`                      | (optional) Disables field's interaction                                               | `boolean` | `false`                    |
+| `duplicatedKeyMessage`      | `duplicated-key-message`        | (optional) Text that will be shown when required is set and condition is not met      | `string`  | `'The key already exists'` |
 | `formAddButtonLabel`        | `form-add-button-label`         | (optional) Label for the add button in the key-value-form                             | `string`  | `undefined`                |
 | `formKeyLabel`              | `form-key-label`                | (optional) The string to use in the key label in the key-value-form                   | `string`  | `undefined`                |
 | `formKeyPlaceholder`        | `form-key-placeholder`          | (optional) Placeholder for the key input text in the key-value-form                   | `string`  | `undefined`                |
@@ -53,15 +54,15 @@ Type: `Promise<void>`
 ### Depends on
 
 - [dot-label](../dot-label)
-- [key-value-form](./components/key-value-form)
 - [key-value-table](./components/key-value-table)
+- [key-value-form](./components/key-value-form)
 
 ### Graph
 ```mermaid
 graph TD;
   dot-key-value --> dot-label
-  dot-key-value --> key-value-form
   dot-key-value --> key-value-table
+  dot-key-value --> key-value-form
   style dot-key-value fill:#f9f,stroke:#333,stroke-width:4px
 ```
 

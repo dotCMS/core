@@ -22,6 +22,7 @@ export class ImageBlockComponent extends AngularNodeViewComponent implements OnI
     ngOnInit(): void {
         this.data = this.node.attrs.data;
         this.editor.on('update', this.updateImageAttributes.bind(this));
+        this.updateImageAttributes();
     }
 
     ngOnDestroy(): void {

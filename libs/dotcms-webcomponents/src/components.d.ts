@@ -600,6 +600,10 @@ export namespace Components {
          */
         disabled: boolean;
         /**
+         * (optional) Text that will be shown when required is set and condition is not met
+         */
+        duplicatedKeyMessage: string;
+        /**
          * (optional) Label for the add button in the key-value-form
          */
         formAddButtonLabel: string;
@@ -1949,6 +1953,10 @@ declare namespace LocalJSX {
          */
         disabled?: boolean;
         /**
+         * (optional) Text that will be shown when required is set and condition is not met
+         */
+        duplicatedKeyMessage?: string;
+        /**
          * (optional) Label for the add button in the key-value-form
          */
         formAddButtonLabel?: string;
@@ -2409,6 +2417,10 @@ declare namespace LocalJSX {
          * Emit the added value, key/value pair
          */
         onAdd?: (event: CustomEvent<DotKeyValueField>) => void;
+        /**
+         * Emit when key is changed
+         */
+        onKeyChanged?: (event: CustomEvent<string>) => void;
         /**
          * Emit when any of the input is blur
          */
