@@ -606,7 +606,7 @@ public interface ContainerAPI {
 			 *
 			 * @return The {@link SearchParams.Builder} object.
 			 */
-			public Builder setContainerIdentifier(final String containerIdentifier) {
+			public Builder containerIdentifier(final String containerIdentifier) {
 				this.containerIdentifier = containerIdentifier;
 				return this;
 			}
@@ -618,7 +618,7 @@ public interface ContainerAPI {
 			 *
 			 * @return The {@link SearchParams.Builder} object.
 			 */
-			public Builder setContainerInode(final String containerInode) {
+			public Builder containerInode(final String containerInode) {
 				this.containerInode = containerInode;
 				return this;
 			}
@@ -631,7 +631,7 @@ public interface ContainerAPI {
 			 *
 			 * @return The {@link SearchParams.Builder} object.
 			 */
-			public Builder setSiteId(final String siteId) {
+			public Builder siteId(final String siteId) {
 				this.siteId = siteId;
 				return this;
 			}
@@ -644,7 +644,7 @@ public interface ContainerAPI {
 			 *
 			 * @return The {@link SearchParams.Builder} object.
 			 */
-			public Builder setIncludeArchived(final boolean includeArchived) {
+			public Builder includeArchived(final boolean includeArchived) {
 				this.includeArchived = includeArchived;
 				return this;
 			}
@@ -657,7 +657,7 @@ public interface ContainerAPI {
 			 *
 			 * @return The {@link SearchParams.Builder} object.
 			 */
-			public Builder setIncludeSystemContainer(final boolean includeSystemContainer) {
+			public Builder includeSystemContainer(final boolean includeSystemContainer) {
 				this.includeSystemContainer = includeSystemContainer;
 				return this;
 			}
@@ -670,7 +670,7 @@ public interface ContainerAPI {
 			 *
 			 * @return The {@link SearchParams.Builder} object.
 			 */
-			public Builder setFilteringCriteria(final Map<String, Object> filteringCriteria) {
+			public Builder filteringCriterion(final Map<String, Object> filteringCriteria) {
 				this.filteringCriteria = filteringCriteria;
 				return this;
 			}
@@ -684,7 +684,7 @@ public interface ContainerAPI {
 			 *
 			 * @return The {@link SearchParams.Builder} object.
 			 */
-			public Builder addOptionalFilteringCriteria(final String key, final Object value) {
+			public Builder filteringCriteria(final String key, final Object value) {
 				if (null == this.filteringCriteria) {
 					this.filteringCriteria = new HashMap<>();
 				}
@@ -700,7 +700,7 @@ public interface ContainerAPI {
 			 *
 			 * @return The {@link SearchParams.Builder} object.
 			 */
-			public Builder setContentTypeIdOrVar(final String contentTypeIdOrVar) {
+			public Builder contentTypeIdOrVar(final String contentTypeIdOrVar) {
 				this.contentTypeIdOrVar = contentTypeIdOrVar;
 				return this;
 			}
@@ -712,7 +712,7 @@ public interface ContainerAPI {
 			 *
 			 * @return The {@link SearchParams.Builder} object.
 			 */
-			public Builder setOffset(final int offset) {
+			public Builder offset(final int offset) {
 				this.offset = offset;
 				return this;
 			}
@@ -725,7 +725,7 @@ public interface ContainerAPI {
 			 *
 			 * @return The {@link SearchParams.Builder} object.
 			 */
-			public Builder setLimit(final int limit) {
+			public Builder limit(final int limit) {
 				this.limit = limit;
 				return this;
 			}
@@ -737,7 +737,7 @@ public interface ContainerAPI {
 			 *
 			 * @return The {@link SearchParams.Builder} object.
 			 */
-			public Builder setOrderBy(final String orderBy) {
+			public Builder orderBy(final String orderBy) {
 				this.orderBy = orderBy;
 				return this;
 			}
