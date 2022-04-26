@@ -170,15 +170,22 @@ public class ContentTypeResource implements Serializable {
 		return response;
 	}
 
-	private void setHostAndFolderAsIdentifer (final String folderPathOrIdentifier, final String hostOrId, final User user, final CopyContentTypeBean.Builder builder) {
+	@VisibleForTesting
+	public static void setHostAndFolderAsIdentifer (final String folderPathOrIdentifier, final String hostOrId, final User user, final CopyContentTypeBean.Builder builder) {
 
 		Host site = APILocator.systemHost();
 		if (null != hostOrId) {
 
-			site = Try.of(() -> UUIDUtil.isUUID(hostOrId) ? APILocator.getHostAPI().find(hostOrId, user, false) :
-					APILocator.getHostAPI().findByName(hostOrId, user, false)).getOrElse(APILocator.systemHost());
+			if (Host.SYSTEM_HOST.equals(hostOrId)) {
 
-			builder.host(site.getIdentifier());
+				site = APILocator.systemHost();
+			} else {
+
+				site = Try.of(() -> UUIDUtil.isUUID(hostOrId) ? APILocator.getHostAPI().find(hostOrId, user, false) :
+						APILocator.getHostAPI().findByName(hostOrId, user, false)).getOrElse(APILocator.systemHost());
+			}
+
+			builder.host(null == site? APILocator.systemHost().getIdentifier():site.getIdentifier());
 		}
 
 		if (null != folderPathOrIdentifier) {
@@ -200,7 +207,7 @@ public class ContentTypeResource implements Serializable {
 				.sourceContentType(type).icon(copyContentTypeForm.getIcon()).name(copyContentTypeForm.getName())
 				.newVariable(copyContentTypeForm.getVariable());
 
-		this.setHostAndFolderAsIdentifer(copyContentTypeForm.getFolder(), copyContentTypeForm.getHost(), user, builder);
+		setHostAndFolderAsIdentifer(copyContentTypeForm.getFolder(), copyContentTypeForm.getHost(), user, builder);
 		final ContentType contentTypeSaved = contentTypeAPI.copyFrom(builder.build());
 
 		// saving the workflow information
