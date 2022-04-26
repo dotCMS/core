@@ -61,10 +61,10 @@ describe('DotHttpErrorManagerService', () => {
             ]
         });
         injector = getTestBed();
-        service = injector.get(DotHttpErrorManagerService);
-        dotRouterService = injector.get(DotRouterService);
-        dotDialogService = injector.get(DotAlertConfirmService);
-        loginService = injector.get(LoginService);
+        service = injector.inject(DotHttpErrorManagerService);
+        dotRouterService = injector.inject(DotRouterService);
+        dotDialogService = injector.inject(DotAlertConfirmService);
+        loginService = injector.inject(LoginService);
     });
 
     it('should handle 401 error when user is login we use 403', () => {
@@ -119,8 +119,14 @@ describe('DotHttpErrorManagerService', () => {
 
     it('should handle 500 error', () => {
         spyOn(dotDialogService, 'alert');
+        const headers = new HttpHeaders({
+            error: 'error'
+        });
+        const mockViewResponse = mockResponseView(500, '', headers, {
+            message: '500 Custom Message'
+        });
 
-        service.handle(mockResponseView(500)).subscribe((res) => {
+        service.handle(mockViewResponse).subscribe((res) => {
             result = res;
         });
 
@@ -129,7 +135,7 @@ describe('DotHttpErrorManagerService', () => {
             status: 500
         });
         expect(dotDialogService.alert).toHaveBeenCalledWith({
-            message: '500 Message',
+            message: '500 Custom Message',
             header: '500 Header'
         });
     });

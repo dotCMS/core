@@ -31,6 +31,7 @@ import { DotListingDataTableComponent } from '@components/dot-listing-data-table
 type DotRowActions = {
     pushPublish: boolean;
     addToBundle: boolean;
+    addToMenu: boolean;
     cloneContentType: boolean;
 };
 
@@ -56,6 +57,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
     actionHeaderOptions: ActionHeaderOptions;
     rowActions: DotActionMenuItem[];
     addToBundleIdentifier: string;
+    addToMenuContentType: DotCMSContentType;
 
     @ViewChild('dotDynamicDialog', { read: ViewContainerRef, static: true })
     public dotDynamicDialog: ViewContainerRef;
@@ -99,6 +101,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
             this.rowActions = this.createRowActions({
                 pushPublish: isEnterprise && environments,
                 addToBundle: isEnterprise,
+                addToMenu: isEnterprise,
                 cloneContentType: isEnterprise
             });
 
@@ -183,7 +186,12 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
             : listingActions;
     }
 
-    private getPublishActions({ pushPublish, addToBundle, cloneContentType }: DotRowActions) {
+    private getPublishActions({
+        pushPublish,
+        addToBundle,
+        addToMenu,
+        cloneContentType
+    }: DotRowActions) {
         const actions: DotActionMenuItem[] = [];
         /*
             Only show Push Publish action if DotCMS instance have the appropriate license and there are
@@ -206,6 +214,16 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
                 }
             });
         }
+
+        if (addToMenu) {
+            actions.push({
+                menuItem: {
+                    label: this.dotMessageService.get('contenttypes.content.add_to_menu'),
+                    command: (item: DotCMSContentType) => this.addToBundleMenu(item)
+                }
+            });
+        }
+
         if (cloneContentType) {
             actions.push({
                 menuItem: {
@@ -353,6 +371,10 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
 
     private addToBundleContentType(item: DotCMSContentType) {
         this.addToBundleIdentifier = item.id;
+    }
+
+    private addToBundleMenu(item: DotCMSContentType) {
+        this.addToMenuContentType = item;
     }
 
     private closeCopyContentTypeDialog() {

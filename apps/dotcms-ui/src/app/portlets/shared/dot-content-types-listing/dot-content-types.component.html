@@ -22,5 +22,10 @@
     [assetIdentifier]="addToBundleIdentifier"
 ></dot-add-to-bundle>
 
+<dot-add-to-menu
+    *ngIf="addToMenuContentType"
+    [contentType]="addToMenuContentType"
+    (cancel)="addToMenuContentType = null"
+></dot-add-to-menu>
 
 <ng-template #dotDynamicDialog></ng-template>

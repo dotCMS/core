@@ -39,7 +39,8 @@ import { DotContentTypeStore } from '@portlets/shared/dot-content-types-listing/
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
-const DELETE_MENU_ITEM_INDEX = 3;
+const DELETE_MENU_ITEM_INDEX = 4;
+const ADD_TO_MENU_INDEX = 2;
 const ADD_TO_BUNDLE_MENU_ITEM_INDEX = 1;
 
 @Injectable()
@@ -140,6 +141,7 @@ describe('DotContentTypesPortletComponent', () => {
             'contenttypes.action.delete': 'Delete',
             'contenttypes.content.push_publish': 'Push Publish',
             'contenttypes.content.add_to_bundle': 'Add to bundle',
+            'contenttypes.content.add_to_menu': 'Add to Menu',
             'contenttypes.content.copy': 'Copy',
             'contenttypes.content.form': 'Form',
             'contenttypes.content.widget': 'Widget',
@@ -272,6 +274,7 @@ describe('DotContentTypesPortletComponent', () => {
         expect(comp.rowActions.map((action) => action.menuItem.label)).toEqual([
             'Push Publish',
             'Add to bundle',
+            'Add to Menu',
             'Copy',
             'Delete'
         ]);
@@ -302,6 +305,7 @@ describe('DotContentTypesPortletComponent', () => {
 
         expect(comp.rowActions.map((action) => action.menuItem.label)).toEqual([
             'Add to bundle',
+            'Add to Menu',
             'Copy',
             'Delete'
         ]);
@@ -360,6 +364,30 @@ describe('DotContentTypesPortletComponent', () => {
         expect(comp.addToBundleIdentifier).toEqual(mockContentType.id);
     });
 
+    it('should open Add to Menu dialog', () => {
+        fixture.detectChanges();
+        const mockContentType: DotCMSContentType = {
+            ...dotcmsContentTypeBasicMock,
+            clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+            id: '1234567890',
+            name: 'Nuevo',
+            variable: 'Nuevo',
+            defaultType: false,
+            fixed: false,
+            folder: 'SYSTEM_FOLDER',
+            host: null,
+            owner: '123',
+            system: false
+        };
+        expect(comp.addToMenuContentType).not.toBeDefined();
+        expect(de.query(By.css('p-dialog'))).toBeNull();
+        comp.rowActions[ADD_TO_MENU_INDEX].menuItem.command(mockContentType);
+        fixture.detectChanges();
+
+        expect(de.query(By.css('p-dialog'))).toBeDefined();
+        expect(comp.addToMenuContentType).toEqual(mockContentType);
+    });
+
     it('should populate the actionHeaderOptions based on a call to dotContentletService', () => {
         fixture.detectChanges();
         expect(dotContentletService.getAllContentTypes).toHaveBeenCalled();
@@ -413,7 +441,6 @@ describe('DotContentTypesPortletComponent', () => {
 
         spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
         spyOn(crudService, 'delete').and.returnValue(observableThrowError(forbiddenError));
-
         comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command(mockContentType);
 
         fixture.detectChanges();
@@ -439,6 +466,11 @@ describe('DotContentTypesPortletComponent', () => {
             defaultType: true
         });
         expect(shouldShow).toBeFalsy();
+    });
+
+    it('should show Add to Menu option', () => {
+        fixture.detectChanges();
+        expect(comp.rowActions[ADD_TO_MENU_INDEX].menuItem.label).toBe('Add to Menu');
     });
 
     describe('filterBy', () => {

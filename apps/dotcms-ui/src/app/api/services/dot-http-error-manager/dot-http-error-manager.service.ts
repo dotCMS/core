@@ -111,9 +111,11 @@ export class DotHttpErrorManagerService {
         return false;
     }
 
-    private handleServerError(): boolean {
+    private handleServerError(response: HttpErrorResponse): boolean {
         this.dotDialogService.alert({
-            message: this.dotMessageService.get('dot.common.http.error.500.message'),
+            message:
+                response.error?.message ||
+                this.dotMessageService.get('dot.common.http.error.500.message'),
             header: this.dotMessageService.get('dot.common.http.error.500.header')
         });
         return false;

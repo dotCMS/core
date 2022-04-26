@@ -23,6 +23,17 @@ const replaceIdForNonMenuSection = (id) => {
     return replaceSectionsMap[id];
 };
 
+interface DotUpdatePortletLayoutPayload {
+    menuItems: string[];
+    toolgroup: {
+        description?: string;
+        id: string;
+        name: string;
+        portletIds?: string[];
+        tabOrder?: number;
+    };
+}
+
 interface DotActiveItemsProps {
     url: string;
     collapsed: boolean;
@@ -74,8 +85,10 @@ const setActiveItems =
         let urlId = getTheUrlId(url);
         return source.pipe(
             map((m: DotMenu[]) => {
+                if (!url) {
+                    return m; // nothing changes.
+                }
                 const menus: DotMenu[] = [...m];
-                let isActive = false;
 
                 if (
                     isEditPageFromSiteBrowser(menuId, previousUrl) ||
@@ -85,7 +98,7 @@ const setActiveItems =
                 }
 
                 // When user browse using the navigation (Angular Routing)
-                if (menuId && menuId !== 'edit-page') {
+                if (menuId && menuId !== 'edit-page' && previousUrl) {
                     return getActiveMenuFromMenuId({
                         menus,
                         menuId,
@@ -98,21 +111,30 @@ const setActiveItems =
                 // When user browse using the browser url bar, direct links or reload page
                 urlId = replaceIdForNonMenuSection(urlId) || urlId;
 
+                // Reset Active/IsOpen attributes
                 for (let i = 0; i < menus.length; i++) {
                     menus[i].active = false;
                     menus[i].isOpen = false;
 
                     for (let k = 0; k < menus[i].menuItems.length; k++) {
-                        // Once we activate the first one all the others are close
-                        if (isActive) {
-                            menus[i].menuItems[k].active = false;
-                        }
+                        menus[i].menuItems[k].active = false;
+                    }
+                }
 
-                        if (!isActive && menus[i].menuItems[k].id === urlId) {
-                            isActive = true;
+                menuLoop: for (let i = 0; i < menus.length; i++) {
+                    for (let k = 0; k < menus[i].menuItems.length; k++) {
+                        if (menuId) {
+                            if (menus[i].menuItems[k].id === urlId && menus[i].id === menuId) {
+                                menus[i].active = true;
+                                menus[i].isOpen = true;
+                                menus[i].menuItems[k].active = true;
+                                break menuLoop;
+                            }
+                        } else if (menus[i].menuItems[k].id === urlId) {
                             menus[i].active = true;
                             menus[i].isOpen = true;
                             menus[i].menuItems[k].active = true;
+                            break menuLoop;
                         }
                     }
                 }
@@ -179,13 +201,25 @@ export class DotNavigationService {
                 this.setMenu(menus);
             });
 
-        this.dotcmsEventsService.subscribeTo('UPDATE_PORTLET_LAYOUTS').subscribe(() => {
-            this.reloadNavigation()
-                .pipe(take(1))
-                .subscribe((menus: DotMenu[]) => {
-                    this.setMenu(menus);
-                });
-        });
+        this.dotcmsEventsService
+            .subscribeTo('UPDATE_PORTLET_LAYOUTS')
+            .subscribe((payload: DotUpdatePortletLayoutPayload) => {
+                this.reloadNavigation()
+                    .pipe(
+                        take(1),
+                        setActiveItems({
+                            url: payload.menuItems?.length
+                                ? payload.menuItems[payload.menuItems.length - 1]
+                                : '',
+                            collapsed: null,
+                            menuId: payload.toolgroup?.id || '',
+                            previousUrl: ''
+                        })
+                    )
+                    .subscribe((menus: DotMenu[]) => {
+                        this.setMenu(menus);
+                    });
+            });
 
         this.loginService.auth$
             .pipe(
@@ -210,6 +244,10 @@ export class DotNavigationService {
 
     get items$(): Observable<DotMenu[]> {
         return this._items$.asObservable();
+    }
+
+    onNavigationEnd(): Observable<Event> {
+        return this.router.events.pipe(filter((event: Event) => event instanceof NavigationEnd));
     }
 
     /**
@@ -327,10 +365,6 @@ export class DotNavigationService {
             return menu;
         });
         this.setMenu(updatedMenu);
-    }
-
-    onNavigationEnd(): Observable<Event> {
-        return this.router.events.pipe(filter((event: Event) => event instanceof NavigationEnd));
     }
 
     private addMenuLinks(menu: DotMenu[]): DotMenu[] {

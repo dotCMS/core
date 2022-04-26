@@ -7,13 +7,7 @@
     class="no-overflow"
     width="600px"
 >
-    <form
-        #formEl="ngForm"
-        [formGroup]="form"
-        class="p-fluid"
-        novalidate
-    >
-
+    <form #formEl="ngForm" [formGroup]="form" class="p-fluid" novalidate>
         <div class="field form__group--validation">
             <label for="content-type-form-name">{{ inputNameWithType }} *</label>
             <input
@@ -32,14 +26,16 @@
         </div>
 
         <div class="field form__group--validation">
-            <label for="content-type-form-variable-name">{{ 'contenttypes.form.label.variable_name' | dm }} </label>
+            <label for="content-type-form-variable-name"
+                >{{ 'contenttypes.form.label.variable_name' | dm }}
+            </label>
             <input
                 [tabindex]="2"
                 formControlName="variable"
                 id="content-type-form-variable-name"
                 name="variable"
                 pInputText
-                placeholder="{{'contentType.form.variable.placeholder' | dm}}"
+                placeholder="{{ 'contentType.form.variable.placeholder' | dm }}"
                 type="text"
             />
             <dot-field-validation-message
@@ -59,7 +55,7 @@
         <div class="field">
             <label for="content-type-form-host">{{
                 'contenttypes.form.field.host_folder.label' | dm
-                }}</label>
+            }}</label>
             <dot-site-selector-field
                 [system]="true"
                 [tabindex]="4"
@@ -67,8 +63,5 @@
                 id="content-type-form-host"
             ></dot-site-selector-field>
         </div>
-
     </form>
-
 </dot-dialog>
-

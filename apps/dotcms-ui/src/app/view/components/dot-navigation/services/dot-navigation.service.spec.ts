@@ -53,7 +53,7 @@ class RouterMock {
         /* */
     }
 }
-class DotMenuServiceMock {
+export class DotMenuServiceMock {
     loadMenu(): Observable<DotMenu[]> {
         return of([
             {

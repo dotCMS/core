@@ -8,6 +8,7 @@ import { DotListingDataTableModule } from '@components/dot-listing-data-table';
 import { DotBaseTypeSelectorModule } from '@components/dot-base-type-selector';
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotContentTypeCopyDialogModule } from '@portlets/shared/dot-content-types-listing/components/dot-content-type-copy-dialog/dot-content-type-copy-dialog.module';
+import { DotAddToMenuModule } from './components/dot-add-to-menu/dot-add-to-menu.module';
 
 @NgModule({
     imports: [
@@ -15,6 +16,7 @@ import { DotContentTypeCopyDialogModule } from '@portlets/shared/dot-content-typ
         DotListingDataTableModule,
         DotBaseTypeSelectorModule,
         DotAddToBundleModule,
+        DotAddToMenuModule,
         DotContentTypeCopyDialogModule
     ],
     declarations: [DotContentTypesPortletComponent],
