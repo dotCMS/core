@@ -1,15 +1,11 @@
 #parse( "static/storyblock/marks-macro.vtl" )
-#macro(renderParagraph $item)
-    <p style="text-align: $!item.attrs.textAlign">
-        #set($start = 0)
-        #set($end = $item.content.length())
-        #set($end = $end - 1)
-        #set($range = [$start..$end])
-        #foreach($i in $range)
-        #set($content = $item.content.get($i))
-            #renderText($content)
-        #end
-    </p>
-#end
-
-#renderParagraph($item)
+<p style="text-align: $!item.attrs.textAlign">
+    #set($start = 0)
+    #set($end = $item.content.length())
+    #set($end = $end - 1)
+    #set($range = [$start..$end])
+    #foreach($i in $range)
+    #set($content = $item.content.get($i))
+        #renderText($content)
+    #end
+</p>
