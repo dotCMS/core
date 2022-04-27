@@ -8,9 +8,12 @@ import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotmarketing.beans.ContainerStructure;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
@@ -20,6 +23,7 @@ import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.beanutils.BeanUtils;
@@ -59,12 +63,12 @@ public class ContainerAPITest extends ContentletBaseTest {
 
         List<ContainerStructure> csListCopy = containerAPI.getContainerStructures(cc);
         ContainerStructure csCopy = csListCopy.get(0);
-        assertTrue(csCopy.getCode().equals(cs.getCode()));
-        assertTrue(cc.getFriendlyName().equals(c.getFriendlyName()));
-        assertTrue(cc.getTitle().equals(c.getTitle()));
-        assertTrue(cc.getMaxContentlets()==c.getMaxContentlets());
-        assertTrue(cc.getPreLoop().equals(c.getPreLoop()));
-        assertTrue(cc.getPostLoop().equals(c.getPostLoop()));
+        assertEquals(csCopy.getCode(), cs.getCode());
+        assertEquals(cc.getFriendlyName(), c.getFriendlyName());
+        assertEquals(cc.getTitle(), c.getTitle());
+        assertEquals(cc.getMaxContentlets(), c.getMaxContentlets());
+        assertEquals(cc.getPreLoop(), c.getPreLoop());
+        assertEquals(cc.getPostLoop(), c.getPostLoop());
         HibernateUtil.closeAndCommitTransaction();
     }
 
@@ -161,8 +165,7 @@ public class ContainerAPITest extends ContentletBaseTest {
         assertNotNull(target.getInode());
         assertTrue(target.getTitle().contains(source.getTitle()));
         assertNotEquals(source.getInode(), target.getInode());
-        containerAPI.delete(source, user, false);
-        containerAPI.delete(target, user, false);
+
     }
 
     @Test
@@ -202,20 +205,20 @@ public class ContainerAPITest extends ContentletBaseTest {
         assertTrue(UtilMethods.isSet(results));
     }
 
-    private Container createContainer() throws DotSecurityException, DotDataException {
-        Container container = new Container();
-        container.setFriendlyName("test container");
-        container.setTitle("this is the title");
-        container.setMaxContentlets(5);
-        container.setPreLoop("preloop code");
-        container.setPostLoop("postloop code");
-        container.setOwner("container's owner");
+    private Container createContainer()
+            throws DotSecurityException, DotDataException {
 
-        final List<ContainerStructure> csList = new ArrayList<>();
-        ContainerStructure cs = new ContainerStructure();
-        cs.setStructureId(contentTypeAPI.find("host").inode());
-        cs.setCode("this is the code");
-        csList.add(cs);
-        return containerAPI.save(container, csList, defaultHost, user, false);
+        final User user = APILocator.systemUser();
+        final Host site = new SiteDataGen().nextPersisted();
+        final ContentType contentType = APILocator.getContentTypeAPI(user).find("webPageContent");
+        final String nameTitle = "anyTestContainer" + System.currentTimeMillis();
+
+        return new ContainerDataGen()
+                .site(site)
+                .modUser(user)
+                .friendlyName(nameTitle)
+                .title(nameTitle)
+                .withContentType(contentType, "$!{body}")
+                .nextPersisted();
     }
 }

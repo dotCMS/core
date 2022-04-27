@@ -2534,7 +2534,7 @@ alter table publishing_bundle_environment add constraint FK_environment_id forei
 
 create table publishing_pushed_assets(
     bundle_id NVARCHAR(36) NOT NULL,
-    asset_id NVARCHAR(36) NOT NULL,
+    asset_id NVARCHAR(255) NOT NULL,
     asset_type NVARCHAR(255) NOT NULL,
     push_date datetimeoffset(3),
     environment_id NVARCHAR(36) NOT NULL,
