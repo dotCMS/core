@@ -52,6 +52,12 @@ public class WrapInTransactionAdvice {
             try {
             if (info.isLocalTransaction)
             {
+                if (t!=null)
+                {
+                    HibernateUtil.rollbackTransaction();
+                    throwException(t);
+                }
+
                 try {
                     handleTransactionInteruption(info.connection);
                     HibernateUtil.commitTransaction();
@@ -59,8 +65,6 @@ public class WrapInTransactionAdvice {
                     HibernateUtil.rollbackTransaction();
                     throwException(e);
                 }
-                if (t!=null)
-                    throw t;
             }
             } finally {
                 if (info.isNewConnection) {
