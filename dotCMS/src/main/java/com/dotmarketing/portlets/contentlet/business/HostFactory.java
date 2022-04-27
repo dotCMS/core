@@ -113,7 +113,6 @@ public interface HostFactory {
      * Searches for a Site that matches the specified ID.
      *
      * @param id                   The Identifier of the Site
-     * @param user                 The {@link User} performing this action.
      * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
      *                             operation, set to {@code true}. Otherwise, set to {@code false}.
      *
@@ -123,7 +122,7 @@ public interface HostFactory {
      * @throws DotSecurityException The specified User does not have the required permissions to perform this
      *                              operation.
      */
-    Host DBSearch(final String id, final User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+    Host DBSearch(final String id, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
     /**
      * <b>NOTE: Use with caution.</b> This method deletes the specified Site plus all assets under it. It has the
