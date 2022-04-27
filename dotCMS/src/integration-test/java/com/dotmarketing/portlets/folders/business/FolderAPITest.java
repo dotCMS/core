@@ -74,8 +74,8 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
-@RunWith(CustomDataProviderRunner.class)
-public class FolderAPITest  {//24 contentlets
+@RunWith(DataProviderRunner.class)
+public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 
 	private final static String LOGO_GIF_1 = "logo.gif";
 	private final static String LOGO_GIF_2 = "logo2.gif";
