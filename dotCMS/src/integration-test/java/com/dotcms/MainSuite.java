@@ -535,7 +535,9 @@ import org.junit.runners.Suite.SuiteClasses;
         Task220330ChangeVanityURLSiteFieldTypeTest.class,
         Task220331UpdateDateTimezonesTest.class,
         Task220404RemoveCalendarReminderTest.class,
-        Task220413IncreasePublishedPushedAssetIdColTest.class
+        Task220413IncreasePublishedPushedAssetIdColTest.class,
+        Task220404RemoveCalendarReminderTest.class,
+        com.dotcms.util.pagination.ContainerPaginatorTest.class
 })
 public class MainSuite {
 

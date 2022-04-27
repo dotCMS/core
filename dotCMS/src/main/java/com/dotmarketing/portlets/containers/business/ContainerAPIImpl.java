@@ -837,12 +837,10 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 	@Override
 	public List<Container> findContainers(final User user, final SearchParams searchParams) throws DotSecurityException,
 			DotDataException {
-		final List<Container> containers = new ArrayList<>();
-		if (searchParams.includeSystemContainer()) {
-			containers.add(this.systemContainer());
-		}
-		containers.addAll(this.containerFactory.findContainers(user, searchParams));
-		return containers;
+		// Include System Container only if required AND if the first page is being requested
+		return searchParams.includeSystemContainer() && searchParams.offset() == 0 ?
+				includeSystemContainer(this.containerFactory.findContainers(user, searchParams)) :
+				this.containerFactory.findContainers(user, searchParams);
 	}
 
 	@CloseDBIfOpened
@@ -1001,4 +999,25 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 		APILocator.getFolderAPI().subscribeFolderListener(appContainerFolder, new ApplicationContainerFolderListener(),
 				childName -> null != childName && childName.endsWith(Constants.VELOCITY_FILE_EXTENSION));
 	}
+
+	/**
+	 * Utility method used to include the {@link SystemContainer} object as part of the set of Containers that are being
+	 * returned.
+	 *
+	 * @param originalContainers The original list of {@link Container} objects.
+	 *
+	 * @return The list of Containers including the System Container object.
+	 */
+	private List<Container> includeSystemContainer(final List<Container> originalContainers) {
+		final PaginatedArrayList<Container> containers = new PaginatedArrayList<>();
+		if (originalContainers instanceof PaginatedArrayList) {
+			containers.setQuery(PaginatedArrayList.class.cast(originalContainers).getQuery());
+			// System Container is being included, so increase the total result count by 1
+			containers.setTotalResults(PaginatedArrayList.class.cast(originalContainers).getTotalResults() + 1L);
+		}
+		containers.add(systemContainer());
+		containers.addAll(originalContainers);
+		return containers;
+	}
+
 }

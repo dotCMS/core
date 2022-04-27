@@ -72,11 +72,12 @@ public class ContainerPaginator implements PaginatorOrdered<ContainerView> {
                     .includeSystemContainer(showSystemContainer)
                     .filteringCriterion(params)
                     .siteId(siteId)
-                    .offset(offset)
+                    // Include the System Container in the first result page only
+                    .offset(showSystemContainer && offset > 0 ? offset - 1 : offset)
                     .limit(limit)
                     .orderBy(orderByDirection).build();
             final PaginatedArrayList<Container> allContainers =
-                    new PaginatedArrayList<>(this.containerAPI.findContainers(user, searchParams));
+                    (PaginatedArrayList<Container>) this.containerAPI.findContainers(user, searchParams);
 
             final PaginatedArrayList<Container> containers = !UtilMethods.isSet(siteId)
                     ? sortByTypeAndHost(direction, allContainers) : allContainers;
