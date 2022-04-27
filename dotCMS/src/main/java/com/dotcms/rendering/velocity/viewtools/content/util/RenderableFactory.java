@@ -15,7 +15,7 @@ public class RenderableFactory {
 
         final GenericRenderableImpl defaultRenderableItem =
                 new GenericRenderableImpl(DEFAULT_TEMPLATE_STOCK_BLOCK_PATH, "default.vtl",
-                        ImmutableSet.of("heading1","heading2","heading3","paragraph","dotContent","bulletList","orderedList","dotImage"),
+                        ImmutableSet.of("heading1","heading2","heading3","paragraph","dotContent","bulletList","codeBlock","blockquote","horizontalRule","orderedList","dotImage"),
                         item, type);
 
         return defaultRenderableItem;
