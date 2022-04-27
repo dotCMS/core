@@ -22,7 +22,9 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -45,6 +47,8 @@ public class ContentletTransformer implements DBTransformer {
 
     final List<Contentlet> list;
 
+    private static Lazy<Boolean> IS_UNIQUE_PUBLISH_EXPIRE_DATE =
+            Lazy.of(() -> Config.getBooleanProperty("uniquePublishExpireDate", false));
 
     public ContentletTransformer(final List<Map<String, Object>> initList){
         final List<Contentlet> newList = new ArrayList<>();
@@ -147,7 +151,7 @@ public class ContentletTransformer implements DBTransformer {
             contentlet.setHost(identifier.getHostId());
             contentlet.setFolder(folder.getInode());
 
-            if (Config.getBooleanProperty("uniquePublishExpireDate", false)) {
+            if (isUniquePublishExpireDate()) {
                 setPublishExpireDateFromIdentifier(contentlet, contentTypeId, identifier);
             }
 
@@ -163,6 +167,15 @@ public class ContentletTransformer implements DBTransformer {
             }
             contentlet.setFolder(APILocator.getFolderAPI().findSystemFolder().getInode());
         }
+    }
+
+    @VisibleForTesting
+    public static void setUniquePublishExpireDate(final boolean newUniquePublishExpireDate) {
+        IS_UNIQUE_PUBLISH_EXPIRE_DATE = Lazy.of(() -> newUniquePublishExpireDate);
+    }
+
+    public static boolean isUniquePublishExpireDate() {
+        return IS_UNIQUE_PUBLISH_EXPIRE_DATE.get();
     }
 
     private static void setPublishExpireDateFromIdentifier(Contentlet contentlet, String contentTypeId,

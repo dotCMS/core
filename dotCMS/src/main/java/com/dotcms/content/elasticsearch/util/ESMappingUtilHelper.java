@@ -367,25 +367,26 @@ public class ESMappingUtilHelper {
         String mappingForField = null;
 
         if (!matchesExclusions(fieldVariableName)) {
-        if (field instanceof DateField || field instanceof DateTimeField
-                || field instanceof TimeField) {
+            if (field instanceof DateField || field instanceof DateTimeField
+                    || field instanceof TimeField) {
 
-            mappingForField = "{\n\"type\":\"date\",\n";
+                mappingForField = "{\n\"type\":\"date\",\n";
 
-            try {
-                final Map<String, Object> jsonFileContent = JsonUtil.getJsonFileContent(
-                        "es-content-mapping.json");
+                try {
+                    final Map<String, Object> jsonFileContent = JsonUtil.getJsonFileContent(
+                            "es-content-mapping.json");
 
-                mappingForField += String.format("\"format\": \"%s\"\n}", jsonFileContent.get("dynamic_date_format"));
-            } catch (IOException e) {
-                throw new JSONException(e);
-            }
-        } else if (field instanceof TextField || field instanceof TextAreaField
-                || field instanceof WysiwygField || field instanceof RadioField
+                    mappingForField += String.format("\"format\": \"%s\"\n}",
+                            jsonFileContent.get("dynamic_date_formats"));
+                } catch (IOException e) {
+                    throw new JSONException(e);
+                }
+            } else if (field instanceof TextField || field instanceof TextAreaField
+                    || field instanceof WysiwygField || field instanceof RadioField
                     || field instanceof SelectField || field instanceof MultiSelectField
                     || field instanceof TagField || field instanceof StoryBlockField) {
 
-            if (dataTypesMap.containsKey(field.dataType())) {
+                if (dataTypesMap.containsKey(field.dataType())) {
                     mappingForField = String
                             .format("{\n\"type\":\"%s\"\n}",
                                     dataTypesMap.get(field.dataType()));
@@ -393,12 +394,12 @@ public class ESMappingUtilHelper {
                     if (field.unique() || field instanceof TagField) {
                         mappingForField = "{\n\"type\":\"keyword\"\n}";
                     } else {
-                mappingForField = "{\n"
+                        mappingForField = "{\n"
                                 + ("\"type\":\"text\",\n")
-                        + "\"analyzer\":\"my_analyzer\""
-                        + "\n}";
-            }
-        }
+                                + "\"analyzer\":\"my_analyzer\""
+                                + "\n}";
+                    }
+                }
             }
         }
 
