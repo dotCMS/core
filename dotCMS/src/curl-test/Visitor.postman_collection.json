@@ -18,7 +18,7 @@
 							"    var jsonData = pm.response.json();",
 							"    console.log(jsonData);",
 							"",
-							"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"displayVisitorsIP.tar.gz\");",
+							"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"visitorsip-01G1KYXEQJEKYHE2Y2W8P46V6W.tar.gz\");",
 							"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
 							"});"
 						],
@@ -61,7 +61,7 @@
 						{
 							"key": "file",
 							"type": "file",
-							"src": "resources/displayVisitorsIP.tar.gz"
+							"src": "resources/visitorsip-01G1KYXEQJEKYHE2Y2W8P46V6W.tar.gz"
 						}
 					]
 				},
