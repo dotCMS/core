@@ -1,13 +1,11 @@
 package com.dotcms.rendering.velocity.viewtools.content.util;
 
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.rendering.velocity.viewtools.content.Renderable;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -24,8 +22,6 @@ import org.apache.velocity.context.Context;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.Optional;
-import java.util.Set;
 
 /**
  * Generic render for items based on a type.
@@ -36,38 +32,57 @@ import java.util.Set;
 class GenericRenderableImpl implements Renderable { 
 
     private final String defaultPath;
-    private final String templateName;
-    private final Set<String> allowedTypeSet;
+    private final String defaultTemplateName;
     private final Object item;
     private final String type;
+    private final Context externalContext;
 
     public GenericRenderableImpl(final String defaultPath, final String templateName,
-                                 final Set<String> allowedTypeSet, final Object item, final String type) {
+                                 final Object item, final String type, final Context context) {
 
-        this.defaultPath    = defaultPath;
-        this.templateName   = templateName;
-        this.allowedTypeSet = allowedTypeSet;
-        this.item           = item;
-        this.type           = type;
+        this.defaultPath     = defaultPath;
+        this.defaultTemplateName = templateName;
+        this.item            = item;
+        this.type            = type;
+        this.externalContext = context;
     }
 
     @Override
     public String toHtml() {
 
         try {
-            final String host = Try.of(()->APILocator.getHostAPI().findDefaultHost(
-                    APILocator.systemUser(), false).getHostname()).getOrElse("dotcms.com");
-            final HttpServletRequest  requestProxy  = new FakeHttpRequest(host, null).request();
-            final HttpServletResponse responseProxy = new BaseResponse().response();
-            final Context context = VelocityUtil.getInstance().getContext(requestProxy, responseProxy);
+
+            final Host   host     = Try.of(()->APILocator.getHostAPI().findDefaultHost(
+                    APILocator.systemUser(), false)).getOrNull();
+            final String hostname = null == host? host.getHostname():"dotcms.com"; // fake host
+
+            Context context = externalContext;
+            if (externalContext == null) {
+
+                final HttpServletRequest requestProxy = new FakeHttpRequest(hostname, null).request();
+                final HttpServletResponse responseProxy = new BaseResponse().response();
+                context = VelocityUtil.getInstance().getContext(requestProxy, responseProxy);
+            }
+
             context.put("item", item);
 
-            return VelocityUtil.getInstance().mergeTemplate(allowedTypeSet.contains(type)?
-                    this.defaultPath + type + ".vtl": this.defaultPath + templateName, context);
+            return VelocityUtil.getInstance().mergeTemplate(this.existsFile(this.defaultPath, host, new User())?
+                    this.defaultPath + type + ".vtl": this.defaultPath + defaultTemplateName, context);
         } catch (Exception e) {
 
             Logger.error(this, e.getMessage(), e);
             throw new DotRuntimeException(e);
+        }
+    }
+
+    private boolean existsFile (final String path, final Host host, final User user)  {
+
+        try {
+
+            final Folder folder = APILocator.getFolderAPI().findFolderByPath(path, host, user, false);
+            return null != folder && null != folder.getIdentifier() && APILocator.getFileAssetAPI().fileNameExists(host, folder, type + ".vtl");
+        } catch (Exception  e) {
+            return false;
         }
     }
 
@@ -76,23 +91,25 @@ class GenericRenderableImpl implements Renderable {
 
         try {
 
-            if (this.allowedTypeSet.contains(type)) {
+            final User user = APILocator.systemUser();
+            final Tuple2<String, Host> hostPathTuple = resolveHost(baseTemplatePath, user);
+            final Host host = hostPathTuple._2();
+            final String relativePath = hostPathTuple._1();
 
-                final User user = APILocator.systemUser();
-                final Tuple2<String, Host> hostPathTuple = resolveHost(baseTemplatePath, user);
-                final Host host = hostPathTuple._2();
-                final String relativePath = hostPathTuple._1();
-                final Folder folder = APILocator.getFolderAPI().findFolderByPath(relativePath, host, user, false);
-                if (APILocator.getFileAssetAPI().fileNameExists(host, folder, type + ".vtl")) {
+            if (existsFile(relativePath, host, user)) {
+
+                Context context = externalContext;
+                if (externalContext == null) {
 
                     final HttpServletRequest requestProxy   = new FakeHttpRequest(host.getHostname(), null).request();
                     final HttpServletResponse responseProxy = new BaseResponse().response();
-                    final Context context = VelocityUtil.getInstance().getContext(requestProxy, responseProxy);
-                    context.put("item", item);
-
-                    final String customTemplate = String.format("#dotParse(\"%s\")", baseTemplatePath + type + ".vtl");
-                    return VelocityUtil.getInstance().parseVelocity(customTemplate, context);
+                    context = VelocityUtil.getInstance().getContext(requestProxy, responseProxy);
                 }
+
+                context.put("item", item);
+
+                final String customTemplate = String.format("#dotParse(\"%s\")", baseTemplatePath + type + ".vtl");
+                return VelocityUtil.getInstance().parseVelocity(customTemplate, context);
             }
 
             return this.toHtml();

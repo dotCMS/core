@@ -13,6 +13,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.StringPool;
 import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.velocity.context.Context;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -32,21 +33,24 @@ public class StoryBlockMap implements Renderable {
     private final String type;
     private final String content;
     private final JSONObject jsonContFieldValue;
+    private final Context context;
 
-    public StoryBlockMap(final Field field,final Contentlet contentlet) throws JSONException {
+    public StoryBlockMap(final Field field,final Contentlet contentlet, final Context context) throws JSONException {
 
         final com.dotcms.contenttype.model.field.Field fieldTransformed = new LegacyFieldTransformer(field).from();
         final Object contFieldValue = APILocator.getContentletAPI().getFieldValue(contentlet,fieldTransformed);
         this.jsonContFieldValue = new JSONObject(contFieldValue.toString());
-        type = jsonContFieldValue.get("type").toString();
-        content = jsonContFieldValue.get("content").toString();
+        this.type = jsonContFieldValue.get("type").toString();
+        this.content = jsonContFieldValue.get("content").toString();
+        this.context = context;
     }
 
     public StoryBlockMap(final Object contFieldValue) throws JSONException {
 
         this.jsonContFieldValue = new JSONObject(contFieldValue.toString());
-        type = jsonContFieldValue.get("type").toString();
-        content = jsonContFieldValue.get("content").toString();
+        this.type = jsonContFieldValue.get("type").toString();
+        this.content = jsonContFieldValue.get("content").toString();
+        this.context = null;
     }
 
     public String getType() {
@@ -72,7 +76,7 @@ public class StoryBlockMap implements Renderable {
             final JSONArray items = this.jsonContFieldValue.getJSONArray("content");
             for (int i = 0; i < items.length(); ++i) {
                 final JSONObject jsonObjectItem = items.getJSONObject(i);
-                final Renderable renderable = renderableFactory.create(jsonObjectItem, this.processType(jsonObjectItem));
+                final Renderable renderable = renderableFactory.create(jsonObjectItem, this.processType(jsonObjectItem), this.context);
                 builder.append(renderable.toHtml());
             }
         } catch (JSONException e) {
@@ -93,7 +97,7 @@ public class StoryBlockMap implements Renderable {
 
             for (int i = 0; i < items.length(); ++i) {
                 final JSONObject jsonObjectItem = items.getJSONObject(i);
-                final Renderable renderable = renderableFactory.create(jsonObjectItem, this.processType(jsonObjectItem));
+                final Renderable renderable = renderableFactory.create(jsonObjectItem, this.processType(jsonObjectItem), this.context);
                 builder.append(renderable.toHtml(baseTemplatePath));
             }
         } catch (JSONException e) {
