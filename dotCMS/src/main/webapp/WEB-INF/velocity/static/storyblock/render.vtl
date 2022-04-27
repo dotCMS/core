@@ -1,0 +1,31 @@
+#parse( "static/storyblock/marks-macro.vtl" )
+#macro(renderNode $content)
+    #set($start = 0)
+    #set($end = $content.length())
+    #set($end = $end - 1)
+    #set($range = [$start..$end])
+    #foreach($i in $range)
+        #set($node = $content.get($i))
+        #if( $node.type == "paragraph" )
+            <p>#renderNode($node.content)</p>
+        #elseif( $node.type == "heading1" )
+            <h1>#renderNode($node.content)</h1>
+        #elseif( $node.type == "heading2" )
+            <h2>#renderNode($node.content)</h2>
+        #elseif( $node.type == "heading3" )
+            <h3>#renderNode($node.content)</h3>
+        #elseif( $node.type == "listItem" )
+            <li>#renderNode($node.content)</li>
+        #elseif( $node.type == "bulletList" )
+            <ul>#renderNode($node.content)</ul>
+        #elseif( $node.type == "codeBlock" )
+            <pre><code>#renderNode($node.content)</code></pre>
+        #elseif( $node.type == "hardBreak" )
+            <br />
+        #elseif( $node.type == "horizontalRule" )
+            <hr />
+        #elseif( $node.type == "text" )
+            #renderText($!node)
+        #end
+    #end
+#end
