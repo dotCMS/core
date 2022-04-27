@@ -435,7 +435,6 @@ public class WebAssetFactory {
 	 * @throws DotSecurityException
 	 */
 	@SuppressWarnings("unchecked")
-	@WrapInTransaction
 	public static WebAsset publishAsset(WebAsset currWebAsset, User user, boolean isNewVersion) throws WebAssetException, DotStateException, DotDataException, DotSecurityException {
 
 		Logger.debug(WebAssetFactory.class, "Publishing asset!!!!");

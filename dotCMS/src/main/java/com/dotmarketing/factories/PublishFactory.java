@@ -273,7 +273,7 @@ public class PublishFactory {
 	 * @throws DotDataException 
 	 */
 	@SuppressWarnings("unchecked")
-	@WrapInTransaction
+	@WrapInTransaction  // TODO: we need to create a publishAsset method in API and move transactional annotation to there
 	public static boolean publishAsset(Inode webAsset, User user, boolean respectFrontendRoles, boolean isNewVersion) throws WebAssetException, DotSecurityException, DotDataException 
 	{
 		ContentletAPI conAPI = APILocator.getContentletAPI();
