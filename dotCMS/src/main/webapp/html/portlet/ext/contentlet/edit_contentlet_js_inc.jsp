@@ -653,7 +653,9 @@
 
         if (data["contentletIdentifier"]) {
             if (ngEditContentletEvents) {
-                ngEditContentletEvents.next({
+                // This is needed to wait for re-index on update, since we are saving with ContentletAjax.saveContent
+                setTimeout(()=>{
+                    ngEditContentletEvents.next({
                     name: 'save',
                     data: {
                         identifier: data.contentletIdentifier,
@@ -661,6 +663,7 @@
                         type: null
                     }
                 });
+                },3000);
             }
 
             if((data["referer"] != null && data["referer"] != '' && !data["contentletLocked"])) {
