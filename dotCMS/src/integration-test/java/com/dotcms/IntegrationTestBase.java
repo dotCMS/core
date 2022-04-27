@@ -3,6 +3,7 @@ package com.dotcms;
 import com.dotcms.business.bytebuddy.ByteBuddyFactory;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.util.VoidDelegate;
 import com.dotmarketing.beans.Host;
@@ -21,13 +22,12 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.BaseMessageResources;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
+import org.junit.*;
+import org.junit.rules.TestName;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -51,6 +51,9 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
     private static Boolean debugMode = Boolean.FALSE;
     private final static PrintStream stdout = System.out;
     private final static ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+    @Rule
+    public TestName name = new TestName();
 
     @BeforeClass
     public static void beforeInit() throws Exception {
@@ -117,6 +120,12 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
 
     @After
     public void after ()  {
+
+        if (DbConnectionFactory.inTransaction())
+            Logger.error(IntegrationTestBase.class,"Test "+name.getMethodName()+" has open transaction after");
+
+        if (DbConnectionFactory.connectionExists())
+            Logger.error(IntegrationTestBase.class,"Test "+name.getMethodName()+" has open connection after");
 
         //Closing the session
         try {

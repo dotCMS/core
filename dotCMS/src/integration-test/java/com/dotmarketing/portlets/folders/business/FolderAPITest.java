@@ -6,6 +6,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -74,7 +75,7 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 @RunWith(CustomDataProviderRunner.class)
-public class FolderAPITest {//24 contentlets
+public class FolderAPITest  {//24 contentlets
 
 	private final static String LOGO_GIF_1 = "logo.gif";
 	private final static String LOGO_GIF_2 = "logo2.gif";
@@ -1127,11 +1128,17 @@ public class FolderAPITest {//24 contentlets
 	@UseDataProvider("reservedFolderNames")
 	public void testCopyToHost_BlacklistedName_ShouldFail(final String reservedName)
 			throws DotDataException, DotSecurityException, IOException {
-		final Folder invalidFolder = new FolderDataGen().name(reservedName).next();
-		final Identifier newIdentifier = identifierAPI.createNew(invalidFolder, host);
-		invalidFolder.setIdentifier(newIdentifier.getId());
-		final Host newHost = new SiteDataGen().nextPersisted();
-		folderAPI.copy(invalidFolder, newHost, APILocator.systemUser(), false);
+		Identifier newIdentifier=null;
+		try {
+			final Folder invalidFolder = new FolderDataGen().name(reservedName).next();
+			newIdentifier = identifierAPI.createNew(invalidFolder, host);
+			invalidFolder.setIdentifier(newIdentifier.getId());
+			final Host newHost = new SiteDataGen().nextPersisted();
+			folderAPI.copy(invalidFolder, newHost, APILocator.systemUser(), false);
+		} finally {
+			if (newIdentifier!=null)
+				identifierAPI.delete(newIdentifier);
+		}
 	}
 
 	@Test(expected = InvalidFolderNameException.class)
