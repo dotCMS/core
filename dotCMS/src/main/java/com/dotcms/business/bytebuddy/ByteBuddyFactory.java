@@ -67,6 +67,7 @@ public class ByteBuddyFactory {
                 .ignore(nameStartsWith("com.dotcms.repackage."))
                         .ignore(nameStartsWith("com.dotcms.business.bytebuddy"))
                         .ignore(nameEndsWith("LocalTransactionAndCloseDBIfOpenedFactoryTest"))
+                        .ignore(nameEndsWith("FolderAPITest"))
                 .disableClassFormatChanges()
                 .with(AgentBuilder.InitializationStrategy.Minimal.INSTANCE)
                 .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
