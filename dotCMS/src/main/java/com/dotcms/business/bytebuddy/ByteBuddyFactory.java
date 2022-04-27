@@ -9,13 +9,16 @@ import net.bytebuddy.agent.ByteBuddyAgent;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.description.annotation.AnnotationDescription;
+import net.bytebuddy.description.annotation.AnnotationList;
 import net.bytebuddy.description.method.MethodDescription;
+import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.matcher.ElementMatchers;
 import net.bytebuddy.utility.JavaModule;
 import org.apache.logging.log4j.Level;
 
 import java.lang.instrument.Instrumentation;
+import java.security.ProtectionDomain;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static net.bytebuddy.matcher.ElementMatchers.*;
@@ -63,6 +66,7 @@ public class ByteBuddyFactory {
                 .ignore(nameStartsWith("net.bytebuddy."))
                 .ignore(nameStartsWith("com.dotcms.repackage."))
                         .ignore(nameStartsWith("com.dotcms.business.bytebuddy"))
+                        .ignore(nameEndsWith("LocalTransactionAndCloseDBIfOpenedFactoryTest"))
                 .disableClassFormatChanges()
                 .with(AgentBuilder.InitializationStrategy.Minimal.INSTANCE)
                 .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
