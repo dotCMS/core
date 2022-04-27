@@ -1,6 +1,8 @@
 package com.dotcms.junit;
 
 import com.dotcms.business.bytebuddy.ByteBuddyFactory;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.util.Logger;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import java.util.Arrays;
 
@@ -30,6 +32,11 @@ public class CustomDataProviderRunner extends DataProviderRunner {
             RunRules runRules = new RunRules(methodBlock(method),
                     Arrays.asList(new TestRule[]{new RuleWatcher()}), description);
             runLeaf(runRules, description, notifier);
+            if (DbConnectionFactory.connectionExists())
+            {
+                Logger.error(CustomDataProviderRunner.class,"Connection remains after test = "+description+":"+DbConnectionFactory.connectionExists());
+            }
+
         }
     }
 

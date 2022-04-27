@@ -16,6 +16,7 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.junit.CustomDataProviderRunner;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -72,7 +73,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
-@RunWith(DataProviderRunner.class)
+@RunWith(CustomDataProviderRunner.class)
 public class FolderAPITest {//24 contentlets
 
 	private final static String LOGO_GIF_1 = "logo.gif";
@@ -1097,7 +1098,8 @@ public class FolderAPITest {//24 contentlets
 			invalidFolder.setIdentifier(newIdentifier.getId());
 			folderAPI.save(invalidFolder, APILocator.systemUser(), false);
 		} finally {
-			identifierAPI.delete(newIdentifier);
+			if (newIdentifier!=null)
+				identifierAPI.delete(newIdentifier);
 		}
 	}
 
@@ -1116,7 +1118,8 @@ public class FolderAPITest {//24 contentlets
 
 			folderAPI.copy(invalidFolder, newFolder, APILocator.systemUser(), false);
 		} finally {
-			identifierAPI.delete(newIdentifier);
+			if (newIdentifier!=null)
+				identifierAPI.delete(newIdentifier);
 		}
 	}
 
@@ -1147,9 +1150,8 @@ public class FolderAPITest {//24 contentlets
 
 			folderAPI.renameFolder(folder, reservedName, user, false);
 		} finally {
-			if(newIdentifier!=null) {
+			if(newIdentifier!=null)
 				identifierAPI.delete(newIdentifier);
-			}
 		}
 	}
 
@@ -1175,7 +1177,8 @@ public class FolderAPITest {//24 contentlets
 			invalidFolder.setIdentifier(newIdentifier.getId());
 			folderAPI.save(invalidFolder, APILocator.systemUser(), false);
 		} finally {
-			identifierAPI.delete(newIdentifier);
+			if (newIdentifier!=null)
+				identifierAPI.delete(newIdentifier);
 		}
 	}
 
@@ -1195,7 +1198,8 @@ public class FolderAPITest {//24 contentlets
 
 			folderAPI.renameFolder(folder,reservedName,user,false);
 		} finally {
-			identifierAPI.delete(newIdentifier);
+			if (newIdentifier!=null)
+				identifierAPI.delete(newIdentifier);
 		}
 	}
 

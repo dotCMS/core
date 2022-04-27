@@ -7,6 +7,7 @@ import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.TemplateLoader;
 import com.dotcms.repackage.com.google.common.base.Strings;
@@ -122,6 +123,7 @@ public class WebAssetFactory {
 		permissionAPI = permissionAPIRef;
 	}
 
+	@WrapInTransaction
 	public static void createAsset(WebAsset webasset, String userId, Folder parent) throws DotDataException, DotStateException, DotSecurityException {
 
 		webasset.setModDate(new java.util.Date());
@@ -433,6 +435,7 @@ public class WebAssetFactory {
 	 * @throws DotSecurityException
 	 */
 	@SuppressWarnings("unchecked")
+	@WrapInTransaction
 	public static WebAsset publishAsset(WebAsset currWebAsset, User user, boolean isNewVersion) throws WebAssetException, DotStateException, DotDataException, DotSecurityException {
 
 		Logger.debug(WebAssetFactory.class, "Publishing asset!!!!");
@@ -475,11 +478,6 @@ public class WebAssetFactory {
 			FactoryLocator.getTemplateFactory().save((Template) workingwebasset);
 		} else {
 
-			boolean localTransaction = false;
-			try {
-
-				localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
-
 				// sets new working to live
 				APILocator.getVersionableAPI().setLive(workingwebasset);
 
@@ -491,24 +489,6 @@ public class WebAssetFactory {
 				// persists the webasset
 				HibernateUtil.merge(workingwebasset);
 
-				if (localTransaction) {
-
-					HibernateUtil.commitTransaction();
-				}
-			} catch (Exception e) {
-
-				Logger.error(WebAssetFactory.class, e.getMessage(), e);
-
-				if (localTransaction) {
-
-					HibernateUtil.rollbackTransaction();
-				}
-			} finally {
-
-				if (localTransaction) {
-					DbConnectionFactory.closeConnection();
-				}
-			}
 
 			Logger.debug(WebAssetFactory.class, "HibernateUtil.saveOrUpdate(workingwebasset)");
 		}

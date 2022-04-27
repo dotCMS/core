@@ -45,10 +45,8 @@ public class WrapInTransactionAdvice {
         return info;
     }
 
-    @Advice.OnMethodExit(inline = false, onThrowable = DotDataException.class)
-    public static void exit(@Advice.Enter TransactionInfo info, @Advice.Thrown DotDataException t) throws DotDataException {
-        if (t!=null)
-            throw t;
+    @Advice.OnMethodExit(inline = false, onThrowable = Throwable.class )
+    public static void exit(@Advice.Enter TransactionInfo info, @Advice.Thrown Throwable t) throws Throwable {
         if (info!=null)
         {
             try {
@@ -61,6 +59,8 @@ public class WrapInTransactionAdvice {
                     HibernateUtil.rollbackTransaction();
                     throwException(e);
                 }
+                if (t!=null)
+                    throw t;
             }
             } finally {
                 if (info.isNewConnection) {

@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.templates.business;
 
 import static com.dotcms.util.FunctionUtils.ifOrElse;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.rendering.velocity.services.TemplateLoader;
@@ -96,6 +97,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		save(template, UUIDGenerator.generateUuid());
 	}
 
+	@WrapInTransaction
 	public void save(final Template template, final String inode) throws DotDataException {
 		if(!UtilMethods.isSet(template.getIdentifier())){
 			throw new DotStateException("Cannot save a template without an Identifier");
