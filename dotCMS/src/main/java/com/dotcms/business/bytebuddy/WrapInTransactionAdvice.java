@@ -55,7 +55,7 @@ public class WrapInTransactionAdvice {
                 if (t!=null)
                 {
                     HibernateUtil.rollbackTransaction();
-                    throwException(t);
+                    throw t;
                 }
 
                 try {
@@ -72,6 +72,9 @@ public class WrapInTransactionAdvice {
                 }
             }
         }
+
+        if (t!=null)
+            throw t;
 
 
     }
