@@ -10,6 +10,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.VelocityUtil;
@@ -22,6 +23,9 @@ import org.apache.velocity.context.Context;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
+
+import java.io.File;
 
 /**
  * Generic render for items based on a type.
@@ -66,8 +70,9 @@ class GenericRenderableImpl implements Renderable {
 
             context.put("item", item);
 
-            return VelocityUtil.getInstance().mergeTemplate(this.existsFile(this.defaultPath, host, new User())?
-                    this.defaultPath + type + ".vtl": this.defaultPath + defaultTemplateName, context);
+            final String template = this.existsInFileSystem(this.defaultPath + type + ".vtl")?
+                    this.defaultPath + type + ".vtl": this.defaultPath + defaultTemplateName;
+            return VelocityUtil.getInstance().mergeTemplate(template, context);
         } catch (Exception e) {
 
             Logger.error(this, e.getMessage(), e);
@@ -75,15 +80,61 @@ class GenericRenderableImpl implements Renderable {
         }
     }
 
-    private boolean existsFile (final String path, final Host host, final User user)  {
+    private boolean existsInFileSystem(final String filePath) {
+
+        final File velocityRootPath = new File(Config.CONTEXT.getRealPath(Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity")));
+        final File vtlFile = new File(velocityRootPath, filePath);
+        return vtlFile.exists();
+    }
+
+    private Tuple2<Boolean, String> existsFile (final String path, final Host host, final User user)  {
+
+        final Tuple2<Boolean, String> notFoundResult =  Tuple.of(false, null);
 
         try {
 
-            final Folder folder = APILocator.getFolderAPI().findFolderByPath(path, host, user, false);
-            return null != folder && null != folder.getIdentifier() && APILocator.getFileAssetAPI().fileNameExists(host, folder, type + ".vtl");
+            Folder folder = APILocator.getFolderAPI().findFolderByPath(path, host, user, false);
+            String contentType = StringPool.BLANK;
+
+            if ("dotContent".equalsIgnoreCase(this.type) && this.item instanceof JSONObject) {
+
+                if (JSONObject.class.cast(this.item).has("attrs")) {
+
+                    final JSONObject attrs = JSONObject.class.cast(this.item).getJSONObject("attrs");
+                    if (attrs.has("data")) {
+
+                        final JSONObject data = attrs.getJSONObject("data");
+                        if (data.has("contentType")) {
+
+                            contentType = StringPool.DASH + data.getString("contentType");
+                        }
+                    }
+                }
+            }
+
+            // this one is just the type.vtl
+            final String fileNameType = type + ".vtl";
+            // this one would be when there is a cotentlet aka dotContent to check if exists the content type implement
+            final String fileNameContentType = type + contentType + ".vtl";
+
+             if(null != folder && null != folder.getIdentifier()) {
+
+                 if(APILocator.getFileAssetAPI().fileNameExists(host, folder, fileNameContentType)) {
+
+                     return Tuple.of(true, fileNameContentType);
+                 }
+
+                 if (APILocator.getFileAssetAPI().fileNameExists(host, folder, fileNameType)){
+
+                     return Tuple.of(true, fileNameType);
+                 }
+             }
         } catch (Exception  e) {
-            return false;
+
+            return notFoundResult;
         }
+
+        return notFoundResult;
     }
 
     @Override
@@ -95,8 +146,8 @@ class GenericRenderableImpl implements Renderable {
             final Tuple2<String, Host> hostPathTuple = resolveHost(baseTemplatePath, user);
             final Host host = hostPathTuple._2();
             final String relativePath = hostPathTuple._1();
-
-            if (existsFile(relativePath, host, user)) {
+            final Tuple2<Boolean, String> existFileResult = existsFile(relativePath, host, user);
+            if (existFileResult._1()) {
 
                 Context context = externalContext;
                 if (externalContext == null) {
@@ -108,7 +159,7 @@ class GenericRenderableImpl implements Renderable {
 
                 context.put("item", item);
 
-                final String customTemplate = String.format("#dotParse(\"%s\")", baseTemplatePath + type + ".vtl");
+                final String customTemplate = String.format("#dotParse(\"%s\")", baseTemplatePath + existFileResult._2());
                 return VelocityUtil.getInstance().parseVelocity(customTemplate, context);
             }
 
