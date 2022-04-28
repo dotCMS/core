@@ -74,6 +74,8 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
 
 	private String inode;
 
+	private String path;
+
 	@Override
 	public String getOwner() {
 		return owner;
@@ -359,6 +361,9 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
 	}
 
 	public String getPath() {
+		if (null != this.path){
+			return this.path;
+		}
 
 		Identifier id = null;
 
@@ -370,7 +375,15 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
 			Logger.debug(this, " This is usually not a problem as it is usually just the identifier not being found" +  e.getMessage(), e);
 		}
 
-		return id!=null?id.getPath():null;
+		if (null != id){
+			this.path = id.getPath();
+		}
+
+		return this.path;
+	}
+
+	public void setPath(final String path) {
+		this.path = path;
 	}
 	
 	public boolean equals(Object o){

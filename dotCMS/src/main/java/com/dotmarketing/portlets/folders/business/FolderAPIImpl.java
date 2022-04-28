@@ -683,26 +683,27 @@ public class FolderAPIImpl implements FolderAPI  {
 		while (st.hasMoreTokens()) {
 			final String name = st.nextToken();
 			sb.append(name + "/");
-			Folder f = findFolderByPath(sb.toString(), host, user, respectFrontEndPermissions);
-			if (f == null || !InodeUtils.isSet(f.getInode())) {
-				f= new Folder();
-				f.setName(name);
-				f.setTitle(name);
-				f.setShowOnMenu(false);
-				f.setSortOrder(0);
-				f.setFilesMasks("");
-				f.setHostId(host.getIdentifier());
-				f.setDefaultFileType((parent!=null && parent.getDefaultFileType() !=null) 
+			Folder folder = findFolderByPath(sb.toString(), host, user, respectFrontEndPermissions);
+			if (folder == null || !InodeUtils.isSet(folder.getInode())) {
+				folder= new Folder();
+				folder.setName(name);
+				folder.setTitle(name);
+				folder.setShowOnMenu(false);
+				folder.setSortOrder(0);
+				folder.setFilesMasks("");
+				folder.setHostId(host.getIdentifier());
+				folder.setDefaultFileType((parent!=null && parent.getDefaultFileType() !=null)
 				                ? parent.getDefaultFileType() 
 				                : defaultFileAssetType);
 				final Identifier newIdentifier = !UtilMethods.isSet(parent)?
-						APILocator.getIdentifierAPI().createNew(f, host):
-						APILocator.getIdentifierAPI().createNew(f, parent);
+						APILocator.getIdentifierAPI().createNew(folder, host):
+						APILocator.getIdentifierAPI().createNew(folder, parent);
 
-				f.setIdentifier(newIdentifier.getId());
-				save(f,  user,  respectFrontEndPermissions);
+				folder.setIdentifier(newIdentifier.getId());
+				folder.setPath(newIdentifier.getPath());
+				save(folder,  user,  respectFrontEndPermissions);
 			}
-			parent = f;
+			parent = folder;
 		}
 		return parent;
 	}
