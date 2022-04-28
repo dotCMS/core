@@ -138,13 +138,9 @@ public class StoryBlockMapTest extends IntegrationTestBase {
 
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON_PARAGRAPH);
         final String html = storyBlockMap.toHtml();
-        Assert.assertTrue(html.contains("<p style=\"text-align: left\">\n" +
-                "                \n" +
-                "    \n" +
-                "    this is paragraph\n" +
-                "\n" +
-                "    \n" +
-                "    </p>"));
+        Assert.assertTrue(html.contains("<p style=\"text-align: left\">"));
+        Assert.assertTrue(html.contains("this is paragraph"));
+        Assert.assertTrue(html.contains("</p>"));
     }
 
     /**
