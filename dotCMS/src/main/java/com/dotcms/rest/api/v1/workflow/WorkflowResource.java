@@ -16,8 +16,6 @@ import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
-import com.dotcms.mock.request.DotCMSMockRequest;
-import com.dotcms.mock.request.DotCMSMockRequestWithSession;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
@@ -100,7 +98,6 @@ import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import com.liferay.portal.util.WebKeys;
 import com.liferay.util.HttpHeaders;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
@@ -2312,22 +2309,23 @@ public class WorkflowResource {
         final FireActionByNameForm.Builder fireActionFormBuilder = new FireActionByNameForm.Builder();
         final Tuple2<Map<String,Object>, List<File>> multiPartContent =
                 this.multiPartUtils.getBodyMapAndBinariesFromMultipart(multipart);
-        final LinkedHashSet<String> binaryFields = this.getBinaryFields(multiPartContent._1);
+
+        final LinkedHashSet<String> incomingBinaryFields = this.getBinaryFields(multiPartContent._1);
 
         if (multiPartContent._1.containsKey(CONTENTLET)) {
 
-            contentletMap = this.convertoToContentletMap((JSONObject)multiPartContent._1.get(CONTENTLET));
+            contentletMap = this.convertToContentletMap((JSONObject)multiPartContent._1.get(CONTENTLET));
         }
 
-        this.validateMultiPartContent    (contentletMap, binaryFields);
-        this.processFireActionFormValues (fireActionFormBuilder, multiPartContent._1);
-        this.processFiles                (contentletMap, multiPartContent._2, binaryFields, user);
-        fireActionFormBuilder.contentlet (contentletMap);
+        this.validateMultiPartContent(contentletMap, incomingBinaryFields);
+        this.processFireActionFormValues(fireActionFormBuilder, multiPartContent._1);
+        this.processFiles(contentletMap, multiPartContent._2, incomingBinaryFields, user);
+        fireActionFormBuilder.contentlet(contentletMap);
 
         return fireActionFormBuilder.build();
     }
 
-    private Map<String, Object> convertoToContentletMap(final JSONObject contentletJson) throws IOException {
+    private Map<String, Object> convertToContentletMap(final JSONObject contentletJson) throws IOException {
 
         return DotObjectMapperProvider.getInstance().getDefaultObjectMapper().
                 readValue(contentletJson.toString(), Map.class);
@@ -2395,9 +2393,14 @@ public class WorkflowResource {
                 if (fieldsMap.containsKey(fieldName)) {
 
                     final Field field = fieldsMap.get(fieldName);
-                    // if more fields than files passed, set them to null.
                     final File binary = i < binaryFiles.size()? binaryFiles.get(i): null;
-                    contentMap.put(field.variable(), binary);
+                    if(binary != null){
+                        // if we send null in this map the underlying APIs will understand it as if the binary needs to be removed from the map
+                        // Therefore e the new version of the contentlet will end up losing pieces of content
+                        // if we want to remove the binary the we need to explicitly set in the map as null
+                        //Not sening the binary will cause no difference while sending simething like image=null will cause to be removed
+                       contentMap.put(field.variable(), binary);
+                    }
                 }
             }
         }
