@@ -361,7 +361,7 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
 	}
 
 	public String getPath() {
-		if (null != this.path){
+		if (UtilMethods.isSet(this.path)){
 			return this.path;
 		}
 
