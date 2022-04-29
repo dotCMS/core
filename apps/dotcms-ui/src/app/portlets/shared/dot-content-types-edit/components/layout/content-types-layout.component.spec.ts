@@ -27,6 +27,7 @@ import { TabViewModule } from 'primeng/tabview';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { MenuItem } from 'primeng/api';
 import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
+import { DotInlineEditModule } from '@components/_common/dot-inline-edit/dot-inline-edit.module';
 
 @Component({
     selector: 'dot-content-types-fields-list',
@@ -78,6 +79,7 @@ class FieldDragDropServiceMock {
 
 const fakeContentType: DotCMSContentType = {
     ...dotcmsContentTypeBasicMock,
+    icon: 'testIcon',
     id: '1234567890',
     name: 'name',
     variable: 'helloVariable',
@@ -121,6 +123,7 @@ describe('ContentTypesLayoutComponent', () => {
                 DotCopyLinkModule,
                 DotPipesModule,
                 SplitButtonModule,
+                DotInlineEditModule,
                 HttpClientTestingModule,
                 DotPortletBoxModule
             ],
@@ -155,9 +158,8 @@ describe('ContentTypesLayoutComponent', () => {
     });
 
     it('should set the field and row bag options', () => {
-        const fieldDragDropService: FieldDragDropService = fixture.debugElement.injector.get(
-            FieldDragDropService
-        );
+        const fieldDragDropService: FieldDragDropService =
+            fixture.debugElement.injector.get(FieldDragDropService);
         fixture.componentInstance.contentType = fakeContentType;
         spyOn(fieldDragDropService, 'setBagOptions');
         fixture.detectChanges();
@@ -214,9 +216,42 @@ describe('ContentTypesLayoutComponent', () => {
         });
 
         it('should have elements in the correct place', () => {
+            expect(
+                de.query(By.css('.main-toolbar-left header dot-icon')).componentInstance.name
+            ).toBe(fakeContentType.icon);
+            expect(de.query(By.css('.main-toolbar-left header dot-inline-edit'))).toBeDefined();
+            expect(
+                de.query(By.css('.main-toolbar-left header p-inplace h4')).nativeElement.innerHTML
+            ).toBe(fakeContentType.name);
             expect(de.query(By.css('.main-toolbar-left .content-type__title'))).toBeDefined();
             expect(de.query(By.css('.main-toolbar-left .content-type__info'))).toBeDefined();
             expect(de.query(By.css('.main-toolbar-right #form-edit-button'))).toBeDefined();
+        });
+
+        it('should set and emit change name of Content Type', () => {
+            de.query(By.css('.main-toolbar-left header p-inplace h4')).nativeElement.click();
+            fixture.detectChanges();
+
+            const dotInlineEditComp = de.query(
+                By.css('.main-toolbar-left header dot-inline-edit')
+            ).componentInstance;
+
+            spyOn(de.componentInstance.changeContentTypeName, 'emit');
+            spyOn(dotInlineEditComp, 'hideContent');
+
+            expect(de.query(By.css('.main-toolbar-left header p-inplace input'))).toBeDefined();
+            de.query(By.css('.main-toolbar-left header p-inplace input')).nativeElement.value =
+                'changedName';
+            de.query(By.css('.main-toolbar-left header p-inplace input')).triggerEventHandler(
+                'keydown.enter',
+                {
+                    stopPropagation: jasmine.createSpy('stopPropagation')
+                }
+            );
+            expect(de.componentInstance.changeContentTypeName.emit).toHaveBeenCalledWith(
+                'changedName'
+            );
+            expect(dotInlineEditComp.hideContent).toHaveBeenCalledTimes(1);
         });
 
         it('should have api link component', () => {
@@ -226,8 +261,14 @@ describe('ContentTypesLayoutComponent', () => {
         });
 
         it('should have copy variable link', () => {
-            expect(de.query(By.css('dot-copy-link')).componentInstance.copy).toBe(
-                'helloVariable'
+            expect(
+                de.query(By.css('[data-testId="copyVariableName"]')).componentInstance.copy
+            ).toBe('helloVariable');
+        });
+
+        it('should have copy identifier link', () => {
+            expect(de.query(By.css('[data-testId="copyIdentifier"]')).componentInstance.copy).toBe(
+                '1234567890'
             );
         });
 

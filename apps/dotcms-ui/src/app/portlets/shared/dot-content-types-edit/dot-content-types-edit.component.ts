@@ -125,6 +125,17 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Set updated name on Content Type and send a request to save it
+     * @param {string} name
+     *
+     * @memberof DotContentTypesEditComponent
+     */
+    editContentTypeName(name: string): void {
+        const updatedContentType = { ...this.data, name };
+        this.updateContentType(updatedContentType);
+    }
+
+    /**
      * Set the icon, labels and placeholder in the template
      * @memberof DotContentTypesEditComponent
      */

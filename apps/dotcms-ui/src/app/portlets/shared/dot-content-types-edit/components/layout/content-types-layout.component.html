@@ -2,7 +2,28 @@
     <div class="main-toolbar-left">
         <div class="content-type__title">
             <header>
-                <h4>{{ contentType.name }}</h4>
+                <dot-icon name="{{ contentType.icon }}"></dot-icon>
+                <ng-template #inlineEditDisplayTemplate>
+                    <h4 (click)="editInlineActivate($event)">{{ contentType.name }}</h4>
+                </ng-template>
+                <ng-template #inlineEditContentTemplate>
+                    <input
+                        [style.width.px]="contentTypeNameInputSize"
+                        #contentTypeNameInput
+                        type="text"
+                        [value]="contentType.name"
+                        (keydown.enter)="fireChangeName()"
+                        (keydown.escape)="dotEditInline.hideContent()"
+                        pInputText
+                        dotAutofocus
+                    />
+                </ng-template>
+                <dot-inline-edit
+                    #dotEditInline
+                    [inlineEditDisplayTemplate]="inlineEditDisplayTemplate"
+                    [inlineEditContentTemplate]="inlineEditContentTemplate"
+                >
+                </dot-inline-edit>
                 <dot-api-link href="api/v1/contenttype/id/{{ contentType.id }}"></dot-api-link>
             </header>
         </div>
@@ -10,11 +31,17 @@
         <div class="content-type__info">
             {{ 'contenttypes.content.variable' | dm }}:
             <dot-copy-link
+                data-testId="copyVariableName"
                 [copy]="contentType.variable"
                 [label]="contentType.variable"
             ></dot-copy-link>
             <span class="content-type__dot-separator">•</span>
-            {{ 'contenttypes.form.identifier' | dm }}: {{ contentType.id }}
+            {{ 'contenttypes.form.identifier' | dm }}:
+            <dot-copy-link
+                data-testId="copyIdentifier"
+                [copy]="contentType.id"
+                [label]="contentType.id"
+            ></dot-copy-link>
         </div>
     </div>
     <div class="main-toolbar-right">

@@ -1,6 +1,7 @@
 <dot-content-type-layout
     [contentType]="data"
     (openEditDialog)="startFormDialog()"
+    (changeContentTypeName)="editContentTypeName($event)"
     *ngIf="isEditMode()"
 >
     <dot-content-type-fields-drop-zone

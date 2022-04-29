@@ -102,6 +102,33 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
         header {
             display: flex;
             align-items: center;
+
+            dot-icon {
+                align-items: center;
+                margin-right: $spacing-2;
+            }
+
+            ::ng-deep {
+                p-inplace {
+                    h4,
+                    input {
+                        min-width: 50px;
+                    }
+
+                    .p-inplace-display {
+                        display: flex;
+                        padding: 0;
+                    }
+
+                    .p-inplace-content input {
+                        height: 36px;
+                    }
+
+                    button {
+                        margin-left: $spacing-2;
+                    }
+                }
+            }
         }
 
         h4 {

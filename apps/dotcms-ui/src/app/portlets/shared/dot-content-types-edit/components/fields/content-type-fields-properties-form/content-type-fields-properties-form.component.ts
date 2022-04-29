@@ -42,7 +42,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     constructor(private fb: FormBuilder, private fieldPropertyService: FieldPropertyService) {}
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (changes.formFieldData.currentValue && this.formFieldData) {
+        if (changes.formFieldData?.currentValue && this.formFieldData) {
             this.destroy();
 
             setTimeout(this.init.bind(this), 0);

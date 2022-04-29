@@ -68,6 +68,7 @@ class TestContentTypeFieldsDropZoneComponent {
 class TestContentTypeLayoutComponent {
     @Input() contentType: DotCMSContentType;
     @Output() openEditDialog: EventEmitter<any> = new EventEmitter();
+    @Output() changeContentTypeName: EventEmitter<string> = new EventEmitter();
 }
 
 @Component({
@@ -750,6 +751,32 @@ describe('DotContentTypesEditComponent', () => {
             contentTypeFieldsDropZone.componentInstance.removeFields.emit(fieldToRemove);
 
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
+        });
+
+        it('should update Content Type name on dot-content-type-layout event', () => {
+            const responseContentType = Object.assign({}, fakeContentType, {
+                name: 'CT changed'
+            });
+
+            spyOn(crudService, 'putData').and.returnValue(of(responseContentType));
+
+            const contentTypeLayout = de.query(By.css('dot-content-type-layout'));
+            contentTypeLayout.triggerEventHandler('changeContentTypeName', 'CT changed');
+
+            const replacedWorkflowsPropContentType = {
+                ...responseContentType
+            };
+
+            replacedWorkflowsPropContentType['workflow'] = fakeContentType.workflows.map(
+                (workflow) => workflow.id
+            );
+            delete replacedWorkflowsPropContentType.workflows;
+
+            expect(crudService.putData).toHaveBeenCalledWith(
+                'v1/contenttype/id/1234567890',
+                replacedWorkflowsPropContentType
+            );
+            expect(comp.data).toEqual(responseContentType, 'set data with response');
         });
 
         describe('update', () => {
