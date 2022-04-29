@@ -59,7 +59,7 @@ import java.util.Map;
  * @author JSON.org
  * @version 2009-04-14
  */
-public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.JSONArray implements Serializable {
+public class JSONArray  implements Serializable {
 
 
     /**

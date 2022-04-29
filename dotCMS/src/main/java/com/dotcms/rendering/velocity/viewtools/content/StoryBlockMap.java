@@ -2,9 +2,9 @@ package com.dotcms.rendering.velocity.viewtools.content;
 
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.viewtools.content.util.RenderableFactory;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Field;

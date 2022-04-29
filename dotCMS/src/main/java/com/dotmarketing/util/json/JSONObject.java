@@ -64,7 +64,7 @@ import org.apache.commons.lang.WordUtils;
  * @author JSON.org
  * @version 2010-05-17
  */
-public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.JSONObject implements Serializable {
+public class JSONObject  implements Serializable {
 	
     /**
      * JSONObject.NULL is equivalent to the value that JavaScript calls null,
@@ -380,10 +380,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      */
     public Object get(String key) throws JSONException {
         Object o = opt(key);
-        if (o == null) {
-            throw new JSONException("JSONObject[" + quote(key) +
-                    "] not found.");
-        }
+
         return o;
     }
 
