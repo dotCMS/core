@@ -855,6 +855,8 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
             final TryToAddResult tryToAddResult = tryToAdd(pusheableAsset, asset, reason);
             return TryToAddResult.Result.INCLUDE == tryToAddResult.result;
         } catch (final AssetExcludeException e) {
+            Logger.debug(PushPublishigDependencyProcesor.class,
+                    () -> String.format("Asset [ %s ] has been excluded from bundle: %s", asset, e.getMessage()));
             return false;
         }
     }
