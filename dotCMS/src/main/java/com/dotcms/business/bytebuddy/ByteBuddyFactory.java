@@ -1,5 +1,11 @@
 package com.dotcms.business.bytebuddy;
 
+import static net.bytebuddy.matcher.ElementMatchers.isAnnotatedWith;
+import static net.bytebuddy.matcher.ElementMatchers.isMethod;
+import static net.bytebuddy.matcher.ElementMatchers.nameStartsWith;
+import java.lang.instrument.Instrumentation;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.logging.log4j.Level;
 import com.dotcms.business.CloseDB;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -9,19 +15,10 @@ import net.bytebuddy.agent.ByteBuddyAgent;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.description.annotation.AnnotationDescription;
-import net.bytebuddy.description.annotation.AnnotationList;
 import net.bytebuddy.description.method.MethodDescription;
-import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.matcher.ElementMatchers;
 import net.bytebuddy.utility.JavaModule;
-import org.apache.logging.log4j.Level;
-
-import java.lang.instrument.Instrumentation;
-import java.security.ProtectionDomain;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static net.bytebuddy.matcher.ElementMatchers.*;
 
 /**
  * Initializes ByteBuddy to handle transactional annotations. This replaces AspectJ functionality
