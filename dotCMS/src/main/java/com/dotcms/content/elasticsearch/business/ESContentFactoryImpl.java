@@ -1632,9 +1632,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
         final String indexToHit;
         try {
             indexToHit = inferIndexToHit(query);
+            if (indexToHit==null)
+                return SearchHits.empty();
         } catch (Exception e) {
-            Logger.fatal(this, "Can't get indices information.", e);
-            return null;
+            Logger.error(this, "Can't get indices information.", e);
+            return SearchHits.empty();
         }
 
         final SearchRequest searchRequest = new SearchRequest();

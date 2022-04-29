@@ -1,5 +1,6 @@
 package com.dotmarketing.listeners;
 
+import com.dotcms.business.bytebuddy.ByteBuddyFactory;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.util.AsciiArt;
@@ -52,6 +53,8 @@ public class ContextLifecycleListener implements ServletContextListener {
     }
 
 	public void contextInitialized(ServletContextEvent arg0) {
+
+        ByteBuddyFactory.init();
 
 		Config.setMyApp(arg0.getServletContext());
 

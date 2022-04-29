@@ -24,7 +24,6 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.HostFolderField;
-import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.ImmutableConstantField;
 import com.dotcms.contenttype.model.field.ImmutableDateField;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
@@ -757,10 +756,8 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 	public void testSaveLimitedUserPermissions(final TestCaseUpdateContentTypePermissions testCase)
 			throws DotDataException, DotSecurityException {
 
-		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
-		ContentType contentGenericType = contentTypeAPI.find("webPageContent");
+		ContentType contentGenericType = new ContentTypeDataGen().nextPersisted();
 		final String updatedContentTypeName = "Updated Content Generic";
-		final String originalName = contentGenericType.name();
 		contentGenericType = ContentTypeBuilder.builder(contentGenericType).name(updatedContentTypeName).build();
 
 		final User limitedUserEditPermsPermOnCT = TestUserUtils.getChrisPublisherUser();
@@ -780,7 +777,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 				"PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
 				limitedUserEditPermsPermOnCT);
 
-		contentTypeAPI = new ContentTypeAPIImpl(limitedUserEditPermsPermOnCT, false, FactoryLocator.getContentTypeFactory(),
+		ContentTypeAPI contentTypeAPI = new ContentTypeAPIImpl(limitedUserEditPermsPermOnCT, false, FactoryLocator.getContentTypeFactory(),
 				FactoryLocator.getFieldFactory(), permAPI, APILocator.getContentTypeFieldAPI(),
 				APILocator.getLocalSystemEventsAPI());
 
@@ -792,14 +789,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 			assertFalse(testCase.shouldExecuteAction);
 			return;
 		}finally {
-			// restore original name
-			contentGenericType = contentTypeAPI.find("webPageContent");
-			contentGenericType = ContentTypeBuilder.builder(contentGenericType).name(originalName).build();
-			ContentTypeAPI contentTypeAPI1 = APILocator.getContentTypeAPI(user);
-			contentTypeAPI1.save(contentGenericType);
-
 			restorePermissionsForUser(limitedUserEditPermsPermOnCT, existingPermissions);
-
 		}
 
 		assertTrue(testCase.shouldExecuteAction);

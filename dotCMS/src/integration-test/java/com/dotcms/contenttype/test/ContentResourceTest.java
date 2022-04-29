@@ -1289,7 +1289,7 @@ public class ContentResourceTest extends IntegrationTestBase {
             final Response endpointResponse1 = contentResource.singlePOST(request1, response1, "/save/1");
             assertEquals(Status.BAD_REQUEST.getStatusCode(), endpointResponse1.getStatus());
             assertEquals("Unable to set string value as a Long",
-                    Map.class.cast(endpointResponse1.getEntity()).get("message"));
+                    ((HashMap)endpointResponse1.getEntity()).get("message"));
 
         }finally {
             if(null != contentType){

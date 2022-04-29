@@ -721,7 +721,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         if (!UtilMethods.isSet(id)) {
             return null;
         }
-        return this.getHostFactory().DBSearch(id, user, respectFrontendRoles);
+        return this.getHostFactory().DBSearch(id, respectFrontendRoles);
     }
 
     @Override
