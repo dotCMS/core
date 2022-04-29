@@ -14079,7 +14079,7 @@
 			"name": "fire",
 			"item": [
 				{
-					"name": "21482",
+					"name": "issue-21482",
 					"item": [
 						{
 							"name": "create-content-type-with-binaries",
@@ -14129,7 +14129,7 @@
 										{
 											"key": "file",
 											"type": "file",
-											"src": "resources/issue-21482-01G1S655W8FS7ARE8H5N1HBVFE.tar.gz"
+											"src": "resources/issue-21482-01G1V0Y614KVATW7ZFZR1G4G0H.tar.gz"
 										}
 									]
 								},
@@ -14142,6 +14142,75 @@
 										"api",
 										"bundle",
 										"sync"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "get-contentlet-identifier-by-contnet-type",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200); ",
+											"    let jsonData = pm.response.json();",
+											"    let entiry = (jsonData.entity);",
+											"    let identifier = entiry.jsonObjectView.contentlets[0].identifier;       ",
+											"    pm.collectionVariables.set(\"identifier21482\", identifier);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"query\":\"+contentType:Test21482 +languageId:1 +deleted:false +working:true\",\"sort\":\"modDate desc\",\"offset\":0}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/content/_search",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"content",
+										"_search"
 									]
 								}
 							},
@@ -14195,7 +14264,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"actionName\": \"publish\",\n    \"comments\": \"Publishing content\",\n    \"contentlet\":{\n       \"title\": \"Iron Maiden - Somewhere in time\",\n       \"contentHost\": \"demo.dotcms.com\",\n       \"identifier\": \"d654c8f5a643ff2f71f1886d1a2b3f17\",              \n       \"contentType\":\"Test\"\n   }\n}",
+									"raw": "{\n    \"actionName\": \"publish\",\n    \"comments\": \"Publishing content\",\n    \"contentlet\":{\n       \"title\": \"Iron Maiden - Somewhere in time\",\n       \"contentHost\": \"demo.dotcms.com\",\n       \"identifier\": \"{{identifier21482}}\",              \n       \"contentType\":\"Test\"\n   }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -14266,7 +14335,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"actionName\": \"publish\",\n    \"comments\": \"Publishing content\",\n    \"contentlet\":{\n       \"title\": \"Iron Maiden - Somewhere in time\",\n       \"contentHost\": \"demo.dotcms.com\",\n       \"identifier\": \"d654c8f5a643ff2f71f1886d1a2b3f17\",              \n       \"contentType\":\"Test\",\n       \"image\":null\n   }\n}",
+									"raw": "{\n    \"actionName\": \"publish\",\n    \"comments\": \"Publishing content\",\n    \"contentlet\":{\n       \"title\": \"Iron Maiden - Somewhere in time\",\n       \"contentHost\": \"demo.dotcms.com\",\n       \"identifier\": \"{{identifier21482}}\",              \n       \"contentType\":\"Test\",\n       \"image\":null\n   }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -14401,6 +14470,10 @@
 		},
 		{
 			"key": "contentTypeFieldID",
+			"value": ""
+		},
+		{
+			"key": "identifier21482",
 			"value": ""
 		}
 	]
