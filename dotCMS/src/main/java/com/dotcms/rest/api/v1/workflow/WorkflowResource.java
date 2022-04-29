@@ -2396,9 +2396,9 @@ public class WorkflowResource {
                     final File binary = i < binaryFiles.size()? binaryFiles.get(i): null;
                     if(binary != null){
                         // if we send null in this map the underlying APIs will understand it as if the binary needs to be removed from the map
-                        // Therefore e the new version of the contentlet will end up losing pieces of content
-                        // if we want to remove the binary the we need to explicitly set in the map as null
-                        //Not sening the binary will cause no difference while sending simething like image=null will cause to be removed
+                        // Therefore the new version of the contentlet will end up losing pieces of content
+                        // if we want to remove the binary the we need to explicitly set something like image=null in the map
+                        // Not sending the binary will cause no difference.
                        contentMap.put(field.variable(), binary);
                     }
                 }
