@@ -13,6 +13,7 @@ import com.liferay.portlet.PortletURLImpl;
 import com.liferay.portlet.StrutsPortlet;
 import com.liferay.portlet.VelocityPortlet;
 
+import io.vavr.control.Try;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +46,7 @@ public class MenuHelper implements Serializable {
         for (String portletId : portletIds) {
             menuContext.setPortletId( portletId );
             String linkHREF = getUrl(menuContext);
-            Locale locale = new Locale(menuContext.getHttpServletRequest().getSession().getAttribute("com.dotcms.repackage.org.apache.struts.action.LOCALE").toString());
+            Locale locale = Try.of(()-> new Locale(menuContext.getHttpServletRequest().getSession().getAttribute("com.dotcms.repackage.org.apache.struts.action.LOCALE").toString())).getOrElse(Locale.US);
             String linkName = LanguageUtil.get(locale, "com.dotcms.repackage.javax.portlet.title." + portletId);
             boolean isAngular = isAngular( portletId );
             boolean isAjax = isAjax( portletId );

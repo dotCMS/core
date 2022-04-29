@@ -46,10 +46,12 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.quartz.JobDataMap;
+import org.mockito.Mockito;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 
@@ -57,6 +59,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import org.quartz.Trigger;
 
 import static com.dotmarketing.portlets.templates.model.Template.ANONYMOUS_PREFIX;
 import static org.junit.Assert.assertEquals;
@@ -64,6 +67,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -194,23 +198,24 @@ public class HostAPITest extends IntegrationTestBase  {
         String newHostIdentifier = host.getIdentifier();
         String newHostName = host.getHostname();
 
-        HostCopyOptions options = new HostCopyOptions(true);
-
         // mocking JobExecutionContext to execute HostAssetsJobProxy
-        final JobExecutionContext jobExecutionContext = mock(JobExecutionContext.class);
-        final JobDataMap jobDataMap = mock(JobDataMap.class);
         final JobDetail jobDetail = mock(JobDetail.class);
-
+        final JobExecutionContext jobExecutionContext = mock(JobExecutionContext.class);
+        final Trigger trigger = mock(Trigger.class);
         when(jobExecutionContext.getJobDetail()).thenReturn(jobDetail);
         when(jobExecutionContext.getJobDetail().getName())
                 .thenReturn("setup-host-" + host.getIdentifier());
         when(jobExecutionContext.getJobDetail().getGroup()).thenReturn("setup-host-group");
-        when(jobDetail.getJobDataMap()).thenReturn(jobDataMap);
-        when(jobDataMap.getString("sourceHostId")).thenReturn(source.getIdentifier());
-        when(jobDataMap.getString("destinationHostId")).thenReturn(host.getIdentifier());
-        when((HostCopyOptions) jobDataMap.get("copyOptions")).thenReturn(options);
 
-        HostAssetsJobProxy hostAssetsJobProxy = new HostAssetsJobProxy();
+        final Map dataMap = new HashMap<>();
+        dataMap.put(HostAssetsJobProxy.USER_ID, user.getUserId());
+        dataMap.put(HostAssetsJobProxy.SOURCE_HOST_ID, source.getIdentifier());
+        dataMap.put(HostAssetsJobProxy.DESTINATION_HOST_ID, host.getIdentifier());
+        dataMap.put(HostAssetsJobProxy.COPY_OPTIONS, new HostCopyOptions(true));
+        when(jobExecutionContext.getTrigger()).thenReturn(trigger);
+
+        HostAssetsJobProxy hostAssetsJobProxy = Mockito.spy(new HostAssetsJobProxy());
+        doReturn(dataMap).when(hostAssetsJobProxy).getExecutionData(trigger);
         hostAssetsJobProxy.execute(jobExecutionContext);
 
         Thread.sleep(600); // wait a bit for the index

@@ -2357,6 +2357,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 
 		final List<WorkflowActionClass> actionClasses = processor.getActionClasses();
+
+		final boolean isPublish = actionClasses.stream()
+				.anyMatch((WorkflowActionClass workflowActionClass) -> workflowActionClass.getClazz().equals(
+						PublishContentActionlet.class.getName()));
+
+		contentlet.setProperty(Contentlet.TO_BE_PUBLISH, isPublish);
+
+
 		if(actionClasses != null){
 			for(WorkflowActionClass actionClass : actionClasses){
 				final WorkFlowActionlet actionlet = actionClass.getActionlet();

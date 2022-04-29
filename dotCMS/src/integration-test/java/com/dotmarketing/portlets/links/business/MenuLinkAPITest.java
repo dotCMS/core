@@ -142,11 +142,14 @@ public class MenuLinkAPITest extends IntegrationTestBase {
 
     @Test
     public void testFindLinks() throws DotDataException, DotSecurityException {
+        final Link link = new LinkDataGen().nextPersisted();
+
         final List<Link> result = mAPI
-                .findLinks(user, false, null, hAPI.findDefaultHost(user, false).getIdentifier(), null, null, null, 0, -1, null);
+                .findLinks(user, false, null, hAPI.findDefaultHost(user, false).getIdentifier(), link.getInode(), null, null, 0, -1, null);
 
         assertNotNull(result);
         assertTrue(!result.isEmpty());
+        assertEquals(link.getInode(), result.get(0).getInode());
     }
 
     @Test (expected = NotFoundInDbException.class)

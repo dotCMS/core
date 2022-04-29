@@ -8,6 +8,7 @@ import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
@@ -272,6 +273,7 @@ public class PublishFactory {
 	 * @throws DotDataException 
 	 */
 	@SuppressWarnings("unchecked")
+	@WrapInTransaction  // TODO: we need to create a publishAsset method in API and move transactional annotation to there
 	public static boolean publishAsset(Inode webAsset, User user, boolean respectFrontendRoles, boolean isNewVersion) throws WebAssetException, DotSecurityException, DotDataException 
 	{
 		ContentletAPI conAPI = APILocator.getContentletAPI();
