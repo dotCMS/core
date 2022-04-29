@@ -14129,7 +14129,7 @@
 										{
 											"key": "file",
 											"type": "file",
-											"src": "resources/issue-21482-01G1V0Y614KVATW7ZFZR1G4G0H.tar.gz"
+											"src": "resources/issue-21482-01G1V5NARB2Y8842B61ZCRT3GN.tar.gz"
 										}
 									]
 								},
@@ -14264,7 +14264,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"actionName\": \"publish\",\n    \"comments\": \"Publishing content\",\n    \"contentlet\":{\n       \"title\": \"Iron Maiden - Somewhere in time\",\n       \"contentHost\": \"demo.dotcms.com\",\n       \"identifier\": \"{{identifier21482}}\",              \n       \"contentType\":\"Test\"\n   }\n}",
+									"raw": "{\n    \"actionName\": \"publish\",\n    \"comments\": \"Publishing content\",\n    \"contentlet\":{\n       \"title\": \"Iron Maiden - Somewhere in time\",\n       \"contentHost\": \"demo.dotcms.com\",\n       \"identifier\": \"{{identifier21482}}\",              \n       \"contentType\":\"Test21482\"\n   }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -14335,7 +14335,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"actionName\": \"publish\",\n    \"comments\": \"Publishing content\",\n    \"contentlet\":{\n       \"title\": \"Iron Maiden - Somewhere in time\",\n       \"contentHost\": \"demo.dotcms.com\",\n       \"identifier\": \"{{identifier21482}}\",              \n       \"contentType\":\"Test\",\n       \"image\":null\n   }\n}",
+									"raw": "{\n    \"actionName\": \"publish\",\n    \"comments\": \"Publishing content\",\n    \"contentlet\":{\n       \"title\": \"Iron Maiden - Somewhere in time\",\n       \"contentHost\": \"demo.dotcms.com\",\n       \"identifier\": \"{{identifier21482}}\",              \n       \"contentType\":\"Test21482\",\n       \"image\":null\n   }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
