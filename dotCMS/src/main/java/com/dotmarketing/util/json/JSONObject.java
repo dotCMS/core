@@ -64,7 +64,7 @@ import org.apache.commons.lang.WordUtils;
  * @author JSON.org
  * @version 2010-05-17
  */
-public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.JSONObject implements Serializable {
+public class JSONObject implements Serializable {
 	
     /**
      * JSONObject.NULL is equivalent to the value that JavaScript calls null,
@@ -153,7 +153,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @throws JSONException If there is a syntax error in the source string
      *  or a duplicated key.
      */
-    public JSONObject(JSONTokener x) throws JSONException {
+    public JSONObject(JSONTokener x)  {
         this();
         char c;
         String key;
@@ -285,7 +285,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @exception JSONException If there is a syntax error in the source
      *  string or a duplicated key.
      */
-    public JSONObject(String source) throws JSONException {
+    public JSONObject(String source)  {
         this(new JSONTokener(source));
     }
 
@@ -303,7 +303,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      *  or if the key is null.
      */
     public JSONObject accumulate(String key, Object value)
-            throws JSONException {
+             {
         testValidity(value);
         Object o = opt(key);
         if (o == null) {
@@ -330,7 +330,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @throws JSONException If the key is null or if the current value
      *  associated with the key is not a JSONArray.
      */
-    public JSONObject append(String key, Object value) throws JSONException {
+    public JSONObject append(String key, Object value)  {
         testValidity(value);
         Object o = opt(key);
         if (o == null) {
@@ -378,12 +378,9 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @return      The object associated with the key.
      * @throws   JSONException if the key is not found.
      */
-    public Object get(String key) throws JSONException {
+    public Object get(String key) {
         Object o = opt(key);
-        if (o == null) {
-            throw new JSONException("JSONObject[" + quote(key) +
-                    "] not found.");
-        }
+
         return o;
     }
 
@@ -396,7 +393,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @throws   JSONException
      *  if the value is not a Boolean or the String "true" or "false".
      */
-    public boolean getBoolean(String key) throws JSONException {
+    public boolean getBoolean(String key)  {
         Object o = get(key);
         if (o.equals(Boolean.FALSE) ||
                 (o instanceof String &&
@@ -419,7 +416,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @throws JSONException if the key is not found or
      *  if the value is not a Number object and cannot be converted to a number.
      */
-    public double getDouble(String key) throws JSONException {
+    public double getDouble(String key)  {
         Object o = get(key);
         try {
             return o instanceof Number ?
@@ -440,7 +437,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @throws   JSONException if the key is not found or if the value cannot
      *  be converted to an integer.
      */
-    public int getInt(String key) throws JSONException {
+    public int getInt(String key)  {
         Object o = get(key);
         try {
             return o instanceof Number ?
@@ -461,7 +458,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @throws   JSONException if the key is not found or
      *  if the value is not a JSONArray.
      */
-    public JSONArray getJSONArray(String key) throws JSONException {
+    public JSONArray getJSONArray(String key)  {
         Object o = get(key);
         if (o instanceof JSONArray) {
             return (JSONArray)o;
@@ -479,7 +476,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @throws   JSONException if the key is not found or
      *  if the value is not a JSONObject.
      */
-    public JSONObject getJSONObject(String key) throws JSONException {
+    public JSONObject getJSONObject(String key)  {
         Object o = get(key);
         if (o instanceof JSONObject) {
             return (JSONObject)o;
@@ -502,7 +499,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @throws   JSONException if the key is not found or if the value cannot
      *  be converted to a long.
      */
-    public long getLong(String key) throws JSONException {
+    public long getLong(String key)  {
         Object o = get(key);
         try {
             return o instanceof Number ?
@@ -566,7 +563,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @return      A string which is the value.
      * @throws   JSONException if the key is not found.
      */
-    public String getString(String key) throws JSONException {
+    public String getString(String key)  {
         return get(key).toString();
     }
 
@@ -590,7 +587,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @throws JSONException If there is already a property with this name
      * that is not an Integer, Long, Double, or Float.
      */
-    public JSONObject increment(String key) throws JSONException {
+    public JSONObject increment(String key)  {
     	Object value = opt(key);
     	if (value == null) {
     		put(key, 1);
@@ -665,7 +662,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @throws JSONException If n is a non-finite number.
      */
     static public String numberToString(Number n)
-            throws JSONException {
+             {
         if (n == null) {
             throw new JSONException("Null pointer");
         }
@@ -937,7 +934,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @return this.
      * @throws JSONException If the key is null.
      */
-    public JSONObject put(String key, boolean value) throws JSONException {
+    public JSONObject put(String key, boolean value)  {
         put(key, value ? Boolean.TRUE : Boolean.FALSE);
         return this;
     }
@@ -951,7 +948,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @return      this.
      * @throws JSONException
      */
-    public JSONObject put(String key, Collection value) throws JSONException {
+    public JSONObject put(String key, Collection value)  {
         put(key, new JSONArray(value));
         return this;
     }
@@ -964,7 +961,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @return this.
      * @throws JSONException
      */
-    public JSONObject put(String key, JSONArray value) throws JSONException {
+    public JSONObject put(String key, JSONArray value)  {
         put(key, (Object)value);
         return this;
     }
@@ -977,7 +974,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @return this.
      * @throws JSONException If the key is null or if the number is invalid.
      */
-    public JSONObject put(String key, double value) throws JSONException {
+    public JSONObject put(String key, double value)  {
         put(key, new Double(value));
         return this;
     }
@@ -991,7 +988,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @return this.
      * @throws JSONException If the key is null.
      */
-    public JSONObject put(String key, int value) throws JSONException {
+    public JSONObject put(String key, int value)  {
         put(key, new Integer(value));
         return this;
     }
@@ -1005,7 +1002,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @return this.
      * @throws JSONException If the key is null.
      */
-    public JSONObject put(String key, long value) throws JSONException {
+    public JSONObject put(String key, long value)  {
         put(key, new Long(value));
         return this;
     }
@@ -1019,7 +1016,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @return      this.
      * @throws JSONException
      */
-    public JSONObject put(String key, Map value) throws JSONException {
+    public JSONObject put(String key, Map value)  {
         put(key, new JSONObject(value));
         return this;
     }
@@ -1036,7 +1033,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @throws JSONException If the value is non-finite number
      *  or if the key is null.
      */
-    public JSONObject put(String key, Object value) throws JSONException {
+    public JSONObject put(String key, Object value)  {
         if (key == null) {
             throw new JSONException("Null key.");
         }
@@ -1059,7 +1056,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @return his.
      * @throws JSONException if the key is a duplicate
      */
-    public JSONObject putOnce(String key, Object value) throws JSONException {
+    public JSONObject putOnce(String key, Object value)  {
         if (key != null && value != null) {
             if (opt(key) != null) {
                 throw new JSONException("Duplicate key \"" + key + "\"");
@@ -1080,7 +1077,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @return this.
      * @throws JSONException If the value is a non-finite number.
      */
-    public JSONObject putOpt(String key, Object value) throws JSONException {
+    public JSONObject putOpt(String key, Object value)  {
         if (key != null && value != null) {
             put(key, value);
         }
@@ -1235,7 +1232,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @param o The object to test.
      * @throws JSONException If o is a non-finite number.
      */
-    static void testValidity(Object o) throws JSONException {
+    static void testValidity(Object o)  {
         if (o != null) {
             if (o instanceof Double) {
                 if (((Double)o).isInfinite() || ((Double)o).isNaN()) {
@@ -1260,7 +1257,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @return A JSONArray of values.
      * @throws JSONException If any of the values are non-finite numbers.
      */
-    public JSONArray toJSONArray(JSONArray names) throws JSONException {
+    public JSONArray toJSONArray(JSONArray names)  {
         if (names == null || names.length() == 0) {
             return null;
         }
@@ -1272,16 +1269,14 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
     }
 
     /**
-     * Make a JSON text of this JSONObject. For compactness, no whitespace
-     * is added. If this would not result in a syntactically correct JSON text,
-     * then null will be returned instead.
+     * Make a JSON text of this JSONObject. For compactness, no whitespace is added. If this would not
+     * result in a syntactically correct JSON text, then null will be returned instead.
      * <p>
      * Warning: This method assumes that the data structure is acyclical.
      *
-     * @return a printable, displayable, portable, transmittable
-     *  representation of the object, beginning
-     *  with <code>{</code>&nbsp;<small>(left brace)</small> and ending
-     *  with <code>}</code>&nbsp;<small>(right brace)</small>.
+     * @return a printable, displayable, portable, transmittable representation of the object, beginning
+     *         with <code>{</code>&nbsp;<small>(left brace)</small> and ending with
+     *         <code>}</code>&nbsp;<small>(right brace)</small>.
      */
     public String toString() {
         try {
@@ -1317,7 +1312,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      *  with <code>}</code>&nbsp;<small>(right brace)</small>.
      * @throws JSONException If the object contains an invalid number.
      */
-    public String toString(int indentFactor) throws JSONException {
+    public String toString(int indentFactor)  {
         return toString(indentFactor, 0);
     }
 
@@ -1335,7 +1330,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      *  with <code>}</code>&nbsp;<small>(right brace)</small>.
      * @throws JSONException If the object contains an invalid number.
      */
-    String toString(int indentFactor, int indent) throws JSONException {
+    String toString(int indentFactor, int indent)  {
         int j;
         int n = length();
         if (n == 0) {
@@ -1400,7 +1395,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      *  with <code>}</code>&nbsp;<small>(right brace)</small>.
      * @throws JSONException If the value is or contains an invalid number.
      */
-    static String valueToString(Object value) throws JSONException {
+    static String valueToString(Object value)  {
         if (value == null || value.equals(null)) {
             return "null";
         }
@@ -1451,7 +1446,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @throws JSONException If the object contains an invalid number.
      */
      static String valueToString(Object value, int indentFactor, int indent)
-            throws JSONException {
+             {
         if (value == null || value.equals(null)) {
             return "null";
         }
@@ -1549,7 +1544,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
       * @return The writer.
       * @throws JSONException
       */
-     public Writer write(Writer writer) throws JSONException {
+     public Writer write(Writer writer)  {
         try {
             boolean  b = false;
             Iterator keys = keys();

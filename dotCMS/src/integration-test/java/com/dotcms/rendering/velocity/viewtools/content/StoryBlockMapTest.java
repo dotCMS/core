@@ -1,7 +1,7 @@
 package com.dotcms.rendering.velocity.viewtools.content;
 
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
+import com.dotmarketing.util.json.JSONException;
 import com.dotcms.util.IntegrationTestInitService;
 import org.junit.Assert;
 import org.junit.BeforeClass;
