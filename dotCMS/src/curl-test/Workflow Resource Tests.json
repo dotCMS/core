@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "bdef1af8-0450-42e4-9438-ee84b83323b3",
+		"_postman_id": "40478686-080b-4895-be43-dda33d1a135e",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -14066,6 +14066,224 @@
 										"v1",
 										"folder",
 										"{{folderId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "fire",
+			"item": [
+				{
+					"name": "21482",
+					"item": [
+						{
+							"name": "create-content-type-with-binaries",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);        ",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": "resources/issue-21482-01G1S655W8FS7ARE8H5N1HBVFE.tar.gz"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/bundle/sync",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle",
+										"sync"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "update-contentlet-no-binaries-sent-expect-binaries-not-modified",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);    ",
+											"    let jsonData = pm.response.json();",
+											"    let entiry = (jsonData.entity);",
+											"    pm.expect(entiry.image).to.not.eql(undefined);",
+											"    pm.expect(entiry.video).to.not.eql(undefined);    ",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"actionName\": \"publish\",\n    \"comments\": \"Publishing content\",\n    \"contentlet\":{\n       \"title\": \"Iron Maiden - Somewhere in time\",\n       \"contentHost\": \"demo.dotcms.com\",\n       \"identifier\": \"d654c8f5a643ff2f71f1886d1a2b3f17\",              \n       \"contentType\":\"Test\"\n   }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/fire",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"fire"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "update-contentlet-remove-one-binary",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);    ",
+											"    let jsonData = pm.response.json();",
+											"    let entiry = (jsonData.entity);",
+											"    pm.expect(entiry.image).to.be.eql(undefined);",
+											"    pm.expect(entiry.video).to.not.eql(undefined);    ",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"actionName\": \"publish\",\n    \"comments\": \"Publishing content\",\n    \"contentlet\":{\n       \"title\": \"Iron Maiden - Somewhere in time\",\n       \"contentHost\": \"demo.dotcms.com\",\n       \"identifier\": \"d654c8f5a643ff2f71f1886d1a2b3f17\",              \n       \"contentType\":\"Test\",\n       \"image\":null\n   }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/fire",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"fire"
 									]
 								}
 							},
