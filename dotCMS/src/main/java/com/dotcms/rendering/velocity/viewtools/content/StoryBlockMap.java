@@ -1,11 +1,12 @@
 package com.dotcms.rendering.velocity.viewtools.content;
 
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.viewtools.content.util.RenderableFactory;
-
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.Logger;
@@ -13,10 +14,6 @@ import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.util.StringPool;
-import org.apache.commons.lang.builder.ToStringBuilder;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
 
 /**
  * Converts the json into a map and gets returned when it is requested like this $contentlet.storyBlock (var name of the field is storyBlock).

@@ -58,6 +58,7 @@ import java.util.Map;
  * @author JSON.org
  * @version 2009-04-14
  */
+
 public class JSONArray implements Collection<Object> {
 
 
