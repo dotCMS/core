@@ -1,108 +1,280 @@
 buildscript {
     repositories {
-        maven { url "https://repo.dotcms.com/artifactory/libs-release" }
+        maven  {
+            url "https://repo.dotcms.com/artifactory/libs-release"
+            mavenCentral()
+        }
     }
     dependencies {
-        classpath 'org.ajoberstar:grgit:1.7.0'
-        classpath 'org.unbroken-dome.gradle-plugins:gradle-testsets-plugin:1.4.3'
         classpath 'com.dotcms.lib:dot.commons-io:2.0.1_2'
-        classpath 'nl.eveoh:gradle-aspectj:1.6'
+        classpath group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.11.1'
+        classpath 'org.immutables:value:2.9.0'
+        classpath 'org.codehaus.groovy:groovy-json:3.0.9'
     }
 }
 
 plugins {
-    id "com.palantir.docker" version "0.17.2"  // reference:  https://github.com/palantir/gradle-docker
+    id 'java'
+    id 'idea'
+    id 'war'
+    id 'org.ajoberstar.grgit' version '4.1.1'
+    id "com.palantir.docker" version "0.32.0"  // reference:  https://github.com/palantir/gradle-docker
+
 }
 
-project.ext {
-    aspectjVersion = '1.9.2'
-}
-
-
-
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import groovy.json.JsonSlurper
-
-configurations {
-    compile
-    buildlibs
-    starter
-    testsStarter
-    profiler
-    profilerDependencies
-    provided
-    felix
-}
-
-configurations.all({
-    // dynamic: e.g. 'version: 2.0+'
-    resolutionStrategy.cacheDynamicVersionsFor 1, 'hours'
-    // changing: e.g. 'version 2.0.0-SNAPSHOT'
-    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
-
-    /*POM relocation to an other version number is not fully supported in Gradle : xml-apis#xml-apis;2.0.2 relocated to xml-apis#xml-apis;1.0.b2.
-            Please update your dependency to directly use the correct version 'xml-apis#xml-apis;1.0.b2'.
-    Resolution will only pick dependencies of the relocated element.  Artifacts and other metadata will be ignored.*/
-    resolutionStrategy {
-        force 'xml-apis:xml-apis:1.4.01'
-    }
-})
-
-
-// Apply the java plugin to add support for Java.
-apply plugin: 'java'
-apply plugin: 'aspectj'
-apply plugin: 'war'
-apply plugin: 'org.unbroken-dome.test-sets'
-apply plugin: 'project-report' /*For gradle dependencies: ./gradlew htmlDependencyReport*/
-apply plugin: 'idea'
-apply plugin: 'eclipse'
-
-targetCompatibility = 1.8
-sourceCompatibility = 1.8
-
-// Compile Java.
-compileJava {
-    options.incremental = true
-    options.compilerArgs.addAll(['--release', '8'])
-}
-
-eclipse {
-    project {
-        name = 'dotCMS'
-    }
-}
-
-// In this section you declare where to find the dependencies of your project.
 repositories {
     maven { url "https://repo.dotcms.com/artifactory/libs-release" }
     maven { url "https://repo.dotcms.com/artifactory/libs-snapshot-local" }
     maven { url 'https://jitpack.io' }
+    mavenCentral()
 }
 
-testSets {
-    individualTest { dirName = 'test' }
-    integrationTest { dirName = 'integration-test' }
+project.ext {
+    aspectjVersion = '1.9.2'
+    generatedSourcesDir = project.file("$buildDir/generated/sources/annotationProcessor/java/main")
+
+    dotcmsReleaseBuild = ''
+    dotcmsReleaseName='dotCMS Platform'
+    dotcmsReleaseCodename='Panther'
+    dotcmsReleaseBuild='999999'
+    dotcmsReleaseDdate='Jun 08, 1986'
+    dotcmsReleaseDdate = getDate()
+
+    serverFolder = "$tomcatDistInstallLocation-$tomcatInstallVersion"
+    homeFolder = serverFolder + webAppRootFolder
+    dotcmsHome = serverFolder + webAppRootFolder
+
+
+    if (project.gradle.startParameter.taskNames.contains('deployWarTomcat') || project.gradle.startParameter.taskNames.contains('createDist')|| project.gradle.startParameter.taskNames.contains('docker')){
+        try {
+            git = Grgit.open(file('..'))
+            dotcmsReleaseBuild = git.head().abbreviatedId // abbreviatedId of head() method.
+        } catch (Exception ignored) {
+            println "ERROR:>> " + ignored.getMessage()
+            //Do nothing, this will fail only if git is not installed on this machine
+        }
+    }
+
+    tomcatDistBase = "$distLocation/$tomcatDistInstallLocation-$tomcatInstallVersion"
+    dotcmsDistBase = "../$tomcatDistInstallLocation-$tomcatInstallVersion"
+
+
 }
 
 
-tasks.matching {it instanceof Test}.all {
-    testLogging.events = ["failed", "passed", "skipped"]
+if (project.hasProperty('jarBaseName')) {
+    archivesBaseName = "$jarBaseName"
+}else{
+    archivesBaseName = 'dotcms_'+dotcmsReleaseVersion+'_'+dotcmsReleaseBuild
 }
 
-//Avoid skipping running tests when the integrationTest task is invoked
-project.integrationTest {
-    outputs.upToDateWhen { false }
-}
-integrationTest.dependsOn('prepareIntegrationTests')
+// Utils
 
-//Avoid skipping running tests when the test task is invoked
-project.test {
-    outputs.upToDateWhen { false }
-    reports.junitXml.destination = file("$buildDir/test-results/unit-tests/xml")
-    reports.html.destination = file("$buildDir/test-results/unit-tests/html")
+// Util methods.
+def static getDate() {
+    def fmt = new SimpleDateFormat("MMMM dd, yyyy", Locale.US)
+    def formattedDate = fmt.format(new Date())
+    return formattedDate
 }
 
+//Util method that replaces the occurrence of a string in a specified file
+def replaceText(filePath, fromString, toString) {
+    def updatedContent = project.file(filePath.toString()).getText('UTF-8').replaceAll(fromString, toString)
+    project.file(filePath.toString()).write(updatedContent, 'UTF-8')
+}
+
+
+jar{
+    exclude 'com/dotcms/enterprise/**'
+
+    if (gradle.startParameter.taskNames.contains("deployWarTomcatTests")) {
+        from project.sourceSets.main.output + project.sourceSets.test.output + project.sourceSets.integrationTest.output
+    }
+}
+
+
+sourceSets {
+
+    main {
+
+        java {
+            //We only want to compile using the submodules code when using the deployWarTomcatDev task
+            srcDirs = ["${project.projectDir}/src/main/java", "$enterpriseProjectHome/src/main/java",generatedSourcesDir]
+        }
+        resources {
+            srcDirs = ["${project.projectDir}/src/main/resources","$enterpriseProjectHome/src/main/resources"]
+        }
+        compileClasspath = project.configurations.compileClasspath
+        runtimeClasspath = project.configurations.runtimeClasspath
+    }
+
+    test {
+
+        java {
+            //We only want to compile using the submodules code when using the deployWarTomcatDev task
+            srcDirs = ["${project.projectDir}/src/test/java"]
+        }
+        resources {
+            srcDirs = ["${project.projectDir}/src/test/resources"]
+        }
+
+        compileClasspath += configurations.compileClasspath +  sourceSets.main.output
+        runtimeClasspath += configurations.compileClasspath + sourceSets.main.output
+
+        //  compileClasspath += configurations.compileClasspath + main.output
+        // runtimeClasspath += configurations.runtimeClasspath + main.output
+    }
+
+
+    integrationTest {
+        java {
+            //We only want to compile using the submodules code when using the deployWarTomcatDev task
+            srcDirs = ["${project.projectDir}/src/integration-test/java"]
+
+        }
+        resources {
+            srcDirs = ["${project.projectDir}/src/integration-test/resources"]
+        }
+
+
+        // sourceSetCompileClasspath
+
+        compileClasspath +=  sourceSets.main.output + sourceSets.test.output
+        runtimeClasspath +=  sourceSets.main.output + sourceSets.test.output
+
+        //  compileClasspath = configurations.integrationTestCompileClasspath +  sourceSets.main.output + sourceSets.test.output
+        //    runtimeClasspath = configurations.integrationTestRuntimeClasspath + sourceSets.main.output + sourceSets.test.output
+
+
+        // compileClasspath = configurations.integrationTestCompileClasspath +  sourceSets.main.output + sourceSets.test.output
+        // runtimeClasspath = configurations.integrationTestRuntimeClasspath + sourceSets.main.output + sourceSets.test.output
+    }
+
+
+
+}
+
+configurations {
+
+    if(JavaVersion.current() >= JavaVersion.VERSION_11) {
+        all*.exclude group: "xerces"
+        all*.exclude group: "xml-apis", module: "xml-apiss"
+        all*.exclude group: "com.sun.activation"
+    }
+
+
+
+    testCompileOnly.extendsFrom compileOnly
+    testImplementation.extendsFrom implementation
+
+    integrationTestCompileOnly.extendsFrom compileOnly
+    integrationTestImplementation.extendsFrom compileOnly, testImplementation
+    integrationTestRuntimeOnly.extendsFrom runtimeOnly
+
+    compileOnlyResolvable.extendsFrom compileOnly
+    compileOnlyResolvable.canBeResolved  true
+
+
+
+    generate
+
+    buildlibs
+
+    felix
+    starter
+    testsStarter
+    profiler
+    profilerDependencies
+    byteBuddyAgent
+}
+
+
+
+
+if(JavaVersion.current() >= JavaVersion.VERSION_11) {
+    sourceCompatibility = 11
+    targetCompatibility = 11
+}
+else {
+    sourceCompatibility = JavaVersion.current()
+    targetCompatibility = JavaVersion.current()
+}
+
+
+
+def eeType = dotcmsReleaseVersion == "master" ? '-SNAPSHOT' : ''
+
+dependencies {
+
+    //ajc "org.aspectj:aspectjtools:$aspectjVersion"
+
+
+    implementation "org.immutables:value:2.9.0" // for annotation processor
+
+    annotationProcessor 'org.immutables:value:2.9.0'
+
+
+    //providedCompile "org.immutables:value-annotations:2.9.0" // for annotations
+    //providedCompile "org.immutables:builder:2.9.0" // for annotations
+    //providedCompile "org.immutables:gson:2.9.0" // for annotations
+
+    /*****  Felix libs need to be placed in the WEB-INF/felix/bundle directory. This was previously handled using a pre-build copy task.  *****/
+    felix group: 'org.apache.felix', name: 'org.apache.felix.fileinstall', version: '3.6.4'
+    felix(group: 'org.apache.felix', name: 'org.apache.felix.configadmin', version: '1.9.2') {
+        transitive = false
+    }
+    felix(group: 'org.osgi', name: 'org.osgi.compendium', version: '4.3.1') {
+        transitive = false
+    }
+    felix(group: 'org.apache.tika', name: 'tika-core', version: '1.19') {
+        transitive = false
+    }
+    felix(group: 'org.apache.tika', name: 'tika-bundle', version: '1.19') {
+        transitive = false
+    }
+
+    felix group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.25'
+    felix group: 'org.slf4j', name: 'jcl-over-slf4j', version: '1.7.25'
+    felix group: 'com.dotcms.tika', name: 'com.dotcms.tika', version: '0.2'
+
+    felix group: 'com.dotcms.samlbundle', name: 'com.dotcms.samlbundle', version: '22.03'
+
+
+
+    starter group: 'com.dotcms', name: 'starter', version: 'empty_20220407', ext: 'zip'
+    //Uncomment this line if you want to download the starter that comes with data
+    //starter group: 'com.dotcms', name: 'starter', version: '20220414', ext: 'zip'
+    testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20220407', ext: 'zip'
+
+    profiler group: 'glowroot-custom', name: 'glowroot-agent', version: '0.13.1'
+    profilerDependencies group: 'glowroot-custom', name: 'collector-https-linux', version: '0.13.1'
+    profilerDependencies group: 'glowroot-custom', name: 'collector-https-osx', version: '0.13.1'
+    profilerDependencies group: 'glowroot-custom', name: 'collector-https-windows', version: '0.13.1'
+    profilerDependencies group: 'glowroot-custom', name: 'embedded-collector', version: '0.13.1'
+
+    //individualTestCompile sourceSets.test.output
+    //integrationTestCompile sourceSets.test.output
+
+
+    if (!(project.gradle.startParameter.taskNames.contains('deployWarTomcatDev') || project.gradle.startParameter.taskNames.contains('testDev'))) {
+
+        implementation group: 'com.dotcms.enterprise', name: 'ee', version: dotcmsReleaseVersion + eeType, changing: true
+    }
+}
+
+
+import com.dotcms.repackage.org.apache.commons.io.FileUtils
+import groovy.json.JsonSlurper
+import org.ajoberstar.grgit.Grgit
+import org.gradle.api.tasks.testing.logging.TestLogEvent
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import java.text.SimpleDateFormat
+
+// Import and apply the dependencies from the dependencies scripts.
+apply from: "$rootDir/dependencies.gradle"
+
+
+def enterpriseSrcFolder = file("$enterpriseProjectHome/src/main/java")
 idea {
 
     module {
@@ -120,8 +292,8 @@ idea {
 
         //Extra source dirs
         sourceDirs += file('src/main/enterprise/src/main/java')
-        sourceDirs += file('src/main/generated')
-        generatedSourceDirs += file('src/main/generated')
+        sourceDirs += generatedSourcesDir
+        generatedSourceDirs += generatedSourcesDir
         excludeDirs += file('src/main/enterprise/build')
 
         //Extra test source dirs
@@ -129,96 +301,24 @@ idea {
     }
 }
 
-eclipse.project {
-    natures 'org.springsource.ide.eclipse.gradle.core.nature'
-}
-
-
-dependencies {
-    /*****  Felix libs need to be placed in the WEB-INF/felix/bundle directory. This was previously handled using a pre-build copy task.  *****/
-    felix group: 'org.apache.felix', name: 'org.apache.felix.fileinstall', version: '3.6.4'
-    felix (group: 'org.apache.felix', name: 'org.apache.felix.configadmin', version: '1.9.2') {
-        transitive = false
-    }
-    felix (group: 'org.osgi', name: 'org.osgi.compendium', version: '4.3.1') {
-        transitive = false
-    }
-    felix(group: 'org.apache.tika', name: 'tika-core', version: '1.19') {
-        transitive = false
-    }
-    felix(group: 'org.apache.tika', name: 'tika-bundle', version: '1.19') {
-        transitive = false
-    }
-
-    felix group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.25'
-    felix group: 'org.slf4j', name: 'jcl-over-slf4j', version: '1.7.25'
-    felix group: 'com.dotcms.tika', name: 'com.dotcms.tika', version: '0.2'
-
-    felix group: 'com.dotcms.samlbundle', name: 'com.dotcms.samlbundle', version: '22.03'
-    /**** And now the libs we pull in from internal company sources - libs stored in ./plugins, ./bin, ./libs, the starter site, etc. ****/
-    compile fileTree("src/main/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
-
-    starter group: 'com.dotcms', name: 'starter', version: 'empty_20220407', ext: 'zip'
-    //Uncomment this line if you want to download the starter that comes with data
-    //starter group: 'com.dotcms', name: 'starter', version: '20220414', ext: 'zip'
-    testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20220407', ext: 'zip'
-
-    profiler group: 'glowroot-custom', name: 'glowroot-agent', version: '0.13.1'
-    profilerDependencies group: 'glowroot-custom', name: 'collector-https-linux', version: '0.13.1'
-    profilerDependencies group: 'glowroot-custom', name: 'collector-https-osx', version: '0.13.1'
-    profilerDependencies group: 'glowroot-custom', name: 'collector-https-windows', version: '0.13.1'
-    profilerDependencies group: 'glowroot-custom', name: 'embedded-collector', version: '0.13.1'
-
-    individualTestCompile sourceSets.test.output
-    integrationTestCompile sourceSets.test.output
-
-    if (project.gradle.startParameter.taskNames.contains('deployWarTomcatDev') || project.gradle.startParameter.taskNames.contains('testDev')) {
-        configurations.compile.exclude group: 'com.dotcms.enterprise', module: 'ee'
-    }
-}
-
-// Import and apply the dependencies from the dependencies scripts.
-apply from: "$rootDir/dependencies.gradle"
-
-
-def enterpriseSrcFolder = file("$enterpriseProjectHome/src/main/java")
-
-if (enterpriseSrcFolder.exists()){
-	sourceSets {
-    	main {
-        	java {
-            	srcDirs = ["src/main/java", "$enterpriseProjectHome/src/main/java"]
-	        }
-    	}
-	}
-}
-
 ant.lifecycleLogLevel = "INFO"
 
-ext {
-    // Open the Git repository in the current directory.
+task prepareIntegrationTests(dependsOn: ['dowloadStarterForTests', 'prepareFelixForTests']) {}
+prepareIntegrationTests.group='dotCMS tests'
 
-    dotcmsReleaseBuild = ''
-    dotcmsReleaseName='dotCMS Platform'
-    dotcmsReleaseCodename='Panther'
-    dotcmsReleaseBuild='999999'
-    dotcmsReleaseDdate='Jun 08, 1986'
-    dotcmsReleaseDdate = getDate()
-    serverFolder = "$tomcatDistInstallLocation-$tomcatInstallVersion"
-    homeFolder = serverFolder + webAppRootFolder
-    dotcmsHome = serverFolder + webAppRootFolder
+task dowloadStarterForTests {
 
-    if (project.gradle.startParameter.taskNames.contains('deployWarTomcat') || project.gradle.startParameter.taskNames.contains('createDist')|| project.gradle.startParameter.taskNames.contains('docker')){
-        try {
-            git = org.ajoberstar.grgit.Grgit.open(file('..'))
-            dotcmsReleaseBuild = git.head().abbreviatedId // abbreviatedId of head() method.
-        } catch (Exception exception) {
-            //Do nothing, this will fail only if git is not installed on this machine
-        }
+    copy {
+        from configurations.testsStarter
+        into integrationTestResourcesFolder
+        rename(/starter(.+)\.zip/, "starter.zip")
     }
 }
+dowloadStarterForTests.group = 'dotCMS tests'
+dowloadStarterForTests.description = 'Downloads the test starter zip to the integration tests resources folder'
 
-ext.prepareFelixExternalFolder = { felixExternalFolder ->
+
+ext.prepareFelixExternalFolder = { String felixExternalFolder ->
 
     println "Configuring felix in folder [" + felixExternalFolder + "]"
 
@@ -234,14 +334,15 @@ ext.prepareFelixExternalFolder = { felixExternalFolder ->
             into felixExternalFolder
         }
 
+
         copy {
-            from configurations.compile
+            from sourceSets.main.compileClasspath
             into felixExternalFolder.concat("/bundle")
             include '**/org.apache.felix.http.api*.jar'
         }
 
         copy {
-            from configurations.compile
+            from sourceSets.main.compileClasspath
             into felixExternalFolder.concat("/bundle")
             include '**/org.apache.felix.http.bundle*.jar'
         }
@@ -253,26 +354,294 @@ ext.prepareFelixExternalFolder = { felixExternalFolder ->
 
 }
 
-if (project.hasProperty('jarBaseName')) {
-    archivesBaseName = "$jarBaseName"
-}else{
-    archivesBaseName = 'dotcms_'+dotcmsReleaseVersion+'_'+dotcmsReleaseBuild
+task prepareFelixForTests {
+    group='dotCMS tests'
+    description='Copies the felix bundle jars and the osgi-extra-generated.conf file to the specified felix home location'
+
+    doLast {
+
+        //If we want the felix folder to live in a custom folder
+        if (project.hasProperty("integrationTestFelixFolder")
+                && integrationTestFelixFolder?.trim()) {
+
+            prepareFelixExternalFolder(integrationTestFelixFolder)
+        }
+    }
+
 }
 
-def tomcatDistBase = "$distLocation/$tomcatDistInstallLocation-$tomcatInstallVersion"
-def dotcmsDistBase = "../$tomcatDistInstallLocation-$tomcatInstallVersion"
 
-jar{
-    exclude 'com/dotcms/enterprise/**'
 
-    if (gradle.startParameter.taskNames.contains("deployWarTomcatTests")) {
-        from project.sourceSets.main.output + project.sourceSets.test.output + project.sourceSets.integrationTest.output
+
+task integrationTest(type: Test, dependsOn:['prepareIntegrationTests']) {
+    description = 'Runs the integration tests.'
+    group = "verification"
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+
+
+    // Check if we want to run the tests suite
+    def singleTest = System.getProperty("test.single")
+    if (null != singleTest && singleTest == "com.dotcms.MainSuite"){
+        include "**/MainSuite.class"
+    } else {
+        exclude "**/MainSuite.class"
+    }
+
+
+    doFirst
+            {
+                if (project.hasProperty('databaseType')){
+                    systemProperty "databaseType", "$databaseType"
+                }
+            }
+
+
+    // reports.junitXml.destination project.file("$buildDir/test-results/unit-tests/xml")
+    //reports.html.destination project.file("$buildDir/test-results/unit-tests/html")
+    //mustRunAfter(tasks.named('test'))
+}
+
+
+
+tasks.withType(Test) {
+    useJUnit()
+    maxHeapSize = '1G'
+    // jvmArgs = ["--add-opens=java.base/jdk.internal.loader=ALL-UNNAMED", "-javaagent:${configurations.byteBuddyAgent.singleFile}"]
+
+    testLogging {
+        // set options for log level LIFECYCLE
+        events TestLogEvent.FAILED,
+                TestLogEvent.PASSED,
+                TestLogEvent.SKIPPED
+        exceptionFormat TestExceptionFormat.FULL
+
+    }
+}
+
+
+// End build
+
+//Gradle Custom Task that contains the logic for deploying the app war in the application server
+//It works for dist and development versions
+//Also, copies specific libraries from /libs/buildlibs to tomcat/lib folder
+class DeployWarTomcatTask extends DefaultTask{
+    @Input
+    String tomcatPath
+
+    @TaskAction
+    def deploy(){
+        copyBuildLibs(tomcatPath)
+
+        def zipFile = project.file("$project.buildDir/libs/$project.archivesBaseName" + ".war")
+        project.copy{
+            from project.zipTree(zipFile)
+            into tomcatPath + project.webAppRootFolder.toString()
+        }
+
+        if (project.gradle.startParameter.taskNames.contains("deployWarTomcatTests")) {
+            project.replaceText("$tomcatPath$project.webAppRootFolder/WEB-INF/web.xml", "<!-- TEST FRAMEWORK SERVLETS", "<!-- TEST FRAMEWORK SERVLETS -->")
+            project.replaceText("$tomcatPath$project.webAppRootFolder/WEB-INF/web.xml", "END OF TEST FRAMEWORK SERVLETS -->", "<!-- END OF TEST FRAMEWORK SERVLETS -->")
+        }
+    }
+
+    // Copying libs/buildlibs under tomcat8/lib.
+    def copyBuildLibs(buildLibLocation) {
+
+        project.copy {
+            from project.configurations.compileClasspath
+            into buildLibLocation + '/lib'
+            include '**/ojdbc*.jar'
+            include '**/postgresql*.jar'
+            include '**/mysql-connector-java*.jar'
+            include '**/mssql-jdbc*.jar'
+        }
+
+        project.copy{
+            from '../libs/buildlibs'
+            into buildLibLocation + '/lib'
+            include 'mail.jar'
+            include 'javax.activation-1.2.0.jar'
+        }
+
+    }
+}
+
+abstract class NpmArtifactExtractTask extends DefaultTask {
+    @Input
+    String url = 'https://registry.npmjs.org'
+    @Input
+    String artifactFolder = './tmp'
+    @Input
+    String artifact
+    @Input
+    String version
+
+    @OutputDirectory
+    abstract DirectoryProperty getOutputDir();
+
+    @TaskAction
+    def extract() {
+        project.mkdir(artifactFolder)
+        String artifactUrl = "$url/$artifact"
+        Set<String> knownTags = new HashSet<>(Arrays.asList("latest", "stable", "next", "rc"))
+
+        String artifactVersion = knownTags.contains(version)
+                ? new JsonSlurper().parse(new URL(artifactUrl))."dist-tags"[version]
+                : version
+        String versionUrl = "$artifactUrl/-/$artifact-${artifactVersion}.tgz"
+        println "Downloading from $versionUrl"
+        String downloadArtifact = "$artifactFolder/${artifact}.tgz"
+        def tempDownload = project.file(downloadArtifact)
+        new URL(versionUrl).withInputStream { i -> tempDownload.withOutputStream { it << i } }
+
+        def result = project.copy {
+            from project.tarTree(project.file(downloadArtifact))
+            into outputDir.get().asFile
+        }
+        //outputs.dir(outputDir.get().asFile)
+    }
+}
+
+// Clones dotCMS's tomcat repo following tomcatInstall under gradle.properties.
+// If the tomcat folder exists: git pull, if not: git clone.
+class ClonePullTomcatTask extends DefaultTask{
+    @Input
+    String tomcatLocation = project.tomcatInstallLocation
+
+    @TaskAction
+    def pull(){
+        def folder = project.file( tomcatLocation )
+
+        println folder
+        if( !folder.exists() ) {
+
+            try {
+                println "Cloning the $project.tomcatInstallRepo, branch $project.tomcatInstallBranch on $tomcatLocation"
+                Grgit.clone(dir: folder.absolutePath, uri: "$project.tomcatInstallRepo", refToCheckout: "$project.tomcatInstallBranch")
+            } catch (Exception exception) {
+                println "ERROR:>> " + exception.getMessage()
+                //Do nothing, this will fail only if git is not installed on this machine
+            }
+        } else {
+
+            def tomcatGit = Grgit.open(dir: folder)
+            tomcatGit.pull()
+        }
+    }
+
+}
+
+
+// WAR
+
+task deleteDotCmsUi(type: Delete) {
+    delete "./build/$angularFolder/package"
+}
+
+
+
+
+task extractDotCmsUi(type: NpmArtifactExtractTask) {
+    artifact = 'dotcms-ui'
+    version = coreWebReleaseVersion
+    outputDir = file("$buildDir/packages")
+}
+
+task cleanDotCmsUi {
+    outputs.upToDateWhen { false }
+    delete './tmp/dotcms-ui.tgz'
+    delete "./src/main/webapp/$angularFolder"
+}
+
+task copyDotCmsUi(type: Copy) {
+    from (extractDotCmsUi.outputDir.dir('package'))
+    into "./src/main/webapp/$angularFolder"
+    dependsOn cleanDotCmsUi
+}
+
+task cleanDotCmsWebComponents {
+    outputs.upToDateWhen { false }
+    delete './tmp/dotcms-webcomponents.tgz'
+    delete './src/main/webapp/dotcms-webcomponents/package'
+    delete './src/main/webapp/dotcms-webcomponents/dotcms-webcomponents.js'
+    delete './src/main/webapp/dotcms-webcomponents/dotcms-webcomponents.esm.js'
+}
+
+
+task extractDotCmsWebComponents(type: NpmArtifactExtractTask) {
+    group = 'extract dotcms-webcomponents'
+    description = 'Extracts package from dotcms-webcomponents to dotcms-webcomponents'
+    artifact = 'dotcms-webcomponents'
+    version = webComponentsReleaseVersion
+    outputDir = file("$buildDir/dotcms-webcomponents")
+    dependsOn 'cleanDotCmsWebComponents'
+}
+
+task copyDotCmsWebComponents(type: Copy) {
+    from (extractDotCmsWebComponents.outputDir.dir('package/dist'))
+    into "./src/main/webapp/dotcms-webcomponents"
+    dependsOn cleanDotCmsWebComponents
+}
+
+
+// By default the war task compiles everything under src/main/java into WEB-INF/classes/
+// but, instead, we want to compile everything on a .jar file and put it under WEB-INF/lib.
+
+task cleanTmp(type: Delete) {
+    delete './tmp'
+}
+
+
+task extractDotCmsArtifacts {
+    dependsOn 'copyDotCmsUi', 'copyDotCmsWebComponents'
+    finalizedBy 'cleanTmp'
+}
+
+// This task finds all th plugins and runs 'ant build' inside each one.
+// In order to compile everything it need the dependency jars in a folder ($buildDir/pluginsLib)
+task buildPlugins(dependsOn: 'jar') {
+    group='dotCMS Development'
+    description='Compiles and Builds all the plugins but does not deploy.'
+    doLast {
+        delete "$buildDir/pluginsLib"
+
+        copy {
+            into "$buildDir/pluginsLib"
+            from configurations.compile
+            from "$buildDir/libs/"
+        }
+
+        println project.buildDir
+        println project.buildDir
+
+//        def pluginsFolder = new File("src/main/plugins");
+        def pluginsFolder = file('src/main/plugins')
+
+        if (!pluginsFolder.exists()) {
+            pluginsFolder = project.file("../plugins")
+        }
+
+        pluginsFolder.eachDir() {
+            def pluginPath = it
+            println "Compile Plugin: " + pluginPath
+
+            javaexec {
+                workingDir pluginPath
+                main = "-jar"
+                args = [
+                        "$rootDir/../bin/ant/ant-launcher.jar",
+                        "-buildfile",
+                        pluginPath.getAbsolutePath() + "/build.xml"
+                ]
+            }
+        }
     }
 }
 
 task copyTestRuntimeLibs(type: Copy) {
     into "build/libs/test"
-    from configurations.testCompile - configurations.compile
+    from configurations.testRuntimeClasspath
 }
 
 // Expand the release properties.
@@ -282,33 +651,11 @@ processResources {
     }
 }
 
-// By default the war task compiles everything under src/main/java into WEB-INF/classes/
-// but, instead, we want to compile everything on a .jar file and put it under WEB-INF/lib.
-war.dependsOn 'extractDotCmsArtifacts'
 
 war {
-
-    sourceSets {
-        main {
-            java {
-                //We only want to compile using the submodules code when using the deployWarTomcatDev task
-                if (project.gradle.startParameter.taskNames.contains('deployWarTomcatDev')
-                        || project.gradle.startParameter.taskNames.contains('testDev')) {
-                    if (enterpriseSrcFolder.exists()) {
-                        srcDirs = ["src/main/java", "$generatedSourceFolder", "$enterpriseProjectHome/src/main/java"]
-                    } else {
-                        srcDirs = ["src/main/java", "$generatedSourceFolder"]
-                    }
-                } else {
-                    srcDirs = ["src/main/java", "$generatedSourceFolder"]
-                }
-            }
-        }
-
-    }
-
-    classpath = classpath - sourceSets.main.output.classesDir
-
+    dependsOn 'copyDotCmsUi'
+    dependsOn 'copyDotCmsWebComponents'
+    finalizedBy 'undeployPlugins'
     if (gradle.startParameter.taskNames.contains("deployWarTomcatTests")) {
         classpath = configurations.testRuntime
     }
@@ -317,18 +664,30 @@ war {
         into 'WEB-INF/lib'
     }
 
+    /*
+    from (copyDotCmsUi)
+    {
+        into 'dotAdmin'
+    }
+
+    from (copyDotCmsUi)
+     {
+        into 'dotcms-webcomponents'
+    }
+    */
+
     // Verify if the felix folder is outside the war
     if (!felixFolder.startsWith("/")) { // Relative to the war
         from(configurations.felix) {
             into felixFolder.concat("/bundle")
         }
 
-        from(configurations.compile) {
+        from(configurations.runtimeClasspath) {
             into felixFolder.concat("/bundle")
             include '**/org.apache.felix.http.api*.jar'
         }
 
-        from(configurations.compile) {
+        from(configurations.runtimeClasspath) {
             into felixFolder.concat("/bundle")
             include '**/org.apache.felix.http.bundle*.jar'
         }
@@ -350,126 +709,103 @@ war {
         rename ( /glowroot(.+)\.jar/, "profiler.jar" )
     }
     from (configurations.profilerDependencies) {
-        into profilerFolder.plus("/lib")
+        into profilerFolder + "/lib"
         rename ( /embedded-collector(.+)\.jar/, "glowroot-embedded-collector.jar" )
         rename ( /collector-https-linux(.+)\.jar/, "glowroot-central-collector-https-linux.jar" )
         rename ( /collector-https-osx(.+)\.jar/, "glowroot-central-collector-https-osx.jar" )
         rename ( /collector-https-windows(.+)\.jar/, "glowroot-central-collector-https-windows.jar" )
     }
+
 }
-war.finalizedBy 'undeployPlugins'
 
 task testDev(type: Test) {
     reports.junitXml.setDestination(file("$buildDir/test-results/unit-tests/xml"))
     reports.html.setDestination(file("$buildDir/test-results/unit-tests/html"))
 }
 
-integrationTest {
+// Distribution
 
-    // Check if we want to run the tests suite
-    def singleTest = System.getProperty("test.single")
-    if (null != singleTest && singleTest == "com.dotcms.MainSuite"){
-        include "**/MainSuite.class"
-    } else {
-        exclude "**/MainSuite.class"
-    }
 
-    // https://docs.gradle.org/current/dsl/org.gradle.api.tasks.testing.logging.TestLoggingContainer.html
-    // show standard out and standard error of the test JVM(s) on the console
-    //testLogging.showStandardStreams = true
-    //testLogging.events = ["failed", "passed", "skipped"]
-    //testLogging.events = ["failed", "skipped"]
-    testLogging.exceptionFormat = 'full'
 
-    doFirst
-            {
-                if (project.hasProperty('databaseType')){
-                    systemProperty "databaseType", "$databaseType"
+
+task removeDistFolder(type: Delete){
+    group='dotCMS Util'
+    description='Removes the distribution folder.'
+
+    mustRunAfter 'zip', 'tgzTask', 'docker'
+    delete "$distLocation"
+}
+
+
+//Task used to create a tar.gz from the distribution
+task tgzTask(type: Tar) {
+    if (!"$distUpdate".toBoolean()) {
+        from ("$distLocation"){
+            eachFile { file ->
+                if (file.getName().endsWith(".sh") || file.getName().startsWith("gradle")) {
+                    file.setMode(0755)
                 }
             }
-
-    if(JavaVersion.current() > JavaVersion.VERSION_1_8) {
-        jvmArgs '--add-opens=java.base/jdk.internal.loader=ALL-UNNAMED'
-    }
-}
-integrationTest.group='dotCMS tests'
-
-task prepareIntegrationTests(dependsOn: ['dowloadStarterForTests', 'prepareFelixForTests']) {}
-prepareIntegrationTests.group='dotCMS tests'
-
-task dowloadStarterForTests {
-
-    copy {
-        from configurations.testsStarter
-        into integrationTestResourcesFolder
-        rename(/starter(.+)\.zip/, "starter.zip")
-    }
-}
-dowloadStarterForTests.group = 'dotCMS tests'
-dowloadStarterForTests.description = 'Downloads the test starter zip to the integration tests resources folder'
-
-task prepareFelixForTests {
-
-    doLast {
-
-        //If we want the felix folder to live in a custom folder
-        if (project.hasProperty("integrationTestFelixFolder")
-                && integrationTestFelixFolder?.trim()) {
-
-            prepareFelixExternalFolder(integrationTestFelixFolder)
         }
+        destinationDir file("$outputDistLocation")
+        baseName 'dotcms_'+dotcmsReleaseVersion
+        extension = 'tar.gz'
+        compression = Compression.GZIP
     }
-
 }
-prepareFelixForTests.group='dotCMS tests'
-prepareFelixForTests.description='Copies the felix bundle jars and the osgi-extra-generated.conf file to the specified felix home location'
+
+//Task used to create a .zip file from the distribution
+task zip(type: Zip) {
+    group='dotCMS Util'
+    description='Creates distribution as a .zip file.'
+    from "$distLocation"
+    destinationDir file("$outputDistLocation")
+    baseName 'dotcms_'+dotcmsReleaseVersion
+}
 
 // Delete ROOT under tomcat9/webapps
 task undeployWarTomcat(type: Delete) {
+    group='dotCMS Util'
+    description='Removes /tomcat9/webapps folder. (reset tomcat)'
+
+    mustRunAfter 'backupWarTomcatData'
+
     delete tomcatInstallLocation + webAppRootFolder
     followSymlinks = true
 }
-undeployWarTomcat.group='dotCMS Util'
-undeployWarTomcat.description='Removes /tomcat9/webapps folder. (reset tomcat)'
-
-undeployWarTomcat.mustRunAfter 'backupWarTomcatData'
 
 // Makes all the magic to place the webapp under tomcat8 for devs.
 task deployWarTomcat(type: DeployWarTomcatTask) {
+    group='dotCMS Development'
+    description='Will checkout the tomcat app server, generate a war structure and copy it to the just checked out tomcat. If the app server exist instead of a checkout a git pull will be use.'
     dependsOn 'war', 'clonePullTomcat', 'undeployWarTomcat'
     tomcatPath = tomcatInstallLocation
 }
-deployWarTomcat.group='dotCMS Development'
-deployWarTomcat.description='Will checkout the tomcat app server, generate a war structure and copy it to the just checked out tomcat. If the app server exist instead of a checkout a git pull will be use.'
+
 
 
 //Same as the deploy-war-tomcat except that it will backup the assets, dotsecure, META-INF and H2 folders
 //in order to restore them after the deploy.
 //This is useful in cases when you need to make a deploy-war-tomcat but keeping your current data.
 task deployWarTomcatBackup(type: DeployWarTomcatTask){
+    finalizedBy 'restoreBackupWarTomcatData'
+    group='dotCMS Development'
+    description='Same as deployWarTomcat but will also backup and restore the assets, dotsecure, META-INF and h2 database folders. (Useful for development)'
+
     dependsOn 'war', 'clonePullTomcat', 'backupWarTomcatData', 'undeployWarTomcat'
     tomcatPath = tomcatInstallLocation
-}
-deployWarTomcatBackup.finalizedBy 'restoreBackupWarTomcatData'
-deployWarTomcatBackup.group='dotCMS Development'
-deployWarTomcatBackup.description='Same as deployWarTomcat but will also backup and restore the assets, dotsecure, META-INF and h2 database folders. (Useful for development)'
 
-
-//Executes deployWarTomcat task compiling tests as well
-task deployWarTomcatTests(type: DeployWarTomcatTask){
-    dependsOn 'war', 'clonePullTomcat', 'undeployWarTomcat'
-    tomcatPath = tomcatInstallLocation
 }
-deployWarTomcatTests.group='dotCMS Development'
-deployWarTomcatTests.description='Same as deployWarTomcat but also includes the junit tests.'
+
 
 //Executes deployWarTomcat task from dist version
 task deployWarTomcatDist(type: DeployWarTomcatTask) {
+    group='dotCMS Util'
+    description='Same as deployWarTomcat but ran inside the Distribution. (Useful for development)'
+
     dependsOn 'war'
     tomcatPath = tomcatDistBase
 }
-deployWarTomcatDist.group='dotCMS Util'
-deployWarTomcatDist.description='Same as deployWarTomcat but ran inside the Distribution. (Useful for development)'
 
 //Same as deployWarTomcat but will use the no obfuscated version of the enterprise jars.
 //(Useful for development)
@@ -482,20 +818,22 @@ deployWarTomcatDev.description='Same as deployWarTomcat but will use the no obfu
 
 //Executes a pull or clone to get tomcat from the repository
 task clonePullTomcat(type: ClonePullTomcatTask) {
-
+    group='dotCMS Util'
+    description='Clones or pull /tomcat9 folder.'
 }
-clonePullTomcat.group='dotCMS Util'
-clonePullTomcat.description='Clones or pull /tomcat9 folder.'
+
 
 //Executes clonePullTomcat task from dist version
 task clonePullTomcatDist(type: ClonePullTomcatTask) {
+    group='dotCMS Util'
+    description='Clones or pull /tomcat8 folder to be used on on the distribution.'
     tomcatLocation = tomcatDistBase
 }
-clonePullTomcatDist.group='dotCMS Util'
-clonePullTomcatDist.description='Clones or pull /tomcat8 folder to be used on on the distribution.'
 
 //Creates the final distribution files for dotCMS.
 task createDistPrep(dependsOn: ['clonePullTomcatDist', 'deployWarTomcatDist']) {
+    group='dotCMS Util'
+    description='Creates distribution as a .tgz file.'
 
     doLast {
         copy {
@@ -549,44 +887,8 @@ task createDistPrep(dependsOn: ['clonePullTomcatDist', 'deployWarTomcatDist']) {
 task createDist(dependsOn: ['createDistPrep','zip', 'tgzTask']) {
     group 'dotCMS Development'
     description 'Creates the final distribution files for dotCMS.'
+    finalizedBy 'removeDistFolder'
 }
-createDist.finalizedBy 'removeDistFolder'
-
-//Task used to create a .zip file from the distribution
-task zip(type: Zip) {
-    from "$distLocation"
-    destinationDir file("$outputDistLocation")
-    baseName 'dotcms_'+dotcmsReleaseVersion
-}
-zip.group='dotCMS Util'
-zip.description='Creates distribution as a .zip file.'
-
-//Task used to create a tar.gz from the distribution
-task tgzTask(type: Tar) {
-    if (!"$distUpdate".toBoolean()) {
-        from ("$distLocation"){
-            eachFile { file ->
-                if (file.getName().endsWith(".sh") || file.getName().startsWith("gradle")) {
-                    file.setMode(0755)
-                }
-            }
-        }
-        destinationDir file("$outputDistLocation")
-        baseName 'dotcms_'+dotcmsReleaseVersion
-        extension = 'tar.gz'
-        compression = Compression.GZIP
-    }
-}
-tgzTask.group='dotCMS Util'
-tgzTask.description='Creates distribution as a .tgz file.'
-
-task removeDistFolder(type: Delete){
-    delete "$distLocation"
-}
-removeDistFolder.group='dotCMS Util'
-removeDistFolder.description='Removes the distribution folder.'
-
-removeDistFolder.mustRunAfter 'zip', 'tgzTask', 'docker'
 
 javadoc {
 
@@ -616,122 +918,46 @@ javadoc {
     options.addBooleanOption("-allow-script-in-comments", true)
 }
 
+
 //Task meant to be use from a distribution structure using the buildwar.sh script.
 //This task will just use the already deployed folder inside the app server and compressed to a war file.
 task customDistWar(type: War) {
+    group='dotCMS Development'
+    description='Builds a dotCMS as a war. (Task mean to be use from a distribution structure using the buildwar.sh script. This task will just use the already deployed folder inside the app server and compressed into a war file.)'
+
     dependsOn 'deployPlugins'
     from "$dotcmsDistBase$webAppRootFolder"
     exclude "assets/**", "dotsecure/**"
     baseName "dotcms"
-    destinationDir = file("../WAR")
+    destinationDirectory = file("../WAR")
 }
-customDistWar.group='dotCMS Development'
-customDistWar.description='Builds a dotCMS as a war. (Task mean to be use from a distribution structure using the buildwar.sh script. This task will just use the already deployed folder inside the app server and compressed into a war file.)'
 
-compileAspect.dependsOn 'immutables'
-compileAspect {
-    additionalAjcArgs = ['showWeaveInfo' : 'false']
-    println "\nCompiling Aspect..."
-}
-// This task defines if the immutables folder is generated, otherwise will generate it.
-task immutables() {
-    doLast {
-        println "\nChecking immutables..."
-        def generatedFolder = project.file("$generatedSourceFolder");
-        if (!generatedFolder.exists()) {
-
-            println "Generating immutables...\n"
-
-            def gradleTask = "compileJava"
-            def artefactBuild = project.tasks.create([name: "artefactBuild_$gradleTask", type: GradleBuild])
-            artefactBuild.buildFile = project.file("immutables.gradle")
-            artefactBuild.tasks = [gradleTask]
-            artefactBuild.execute()
-        } else {
-            println "Immutables already generated, skipping generation... (Delete $generatedSourceFolder folder in order to regenerate them)\n"
-        }
-    }
-}
-immutables.group='dotCMS Development'
-immutables.description='Compiles the source code using the compileJava task and generate the immutables, those immutables will be located under the src/main/generated folder'
-
-task cleanImmutables() {
-    doLast {
-        println "\nDeleting immutables folder..."
-        delete "$generatedSourceFolder"
-    }
-}
-cleanImmutables.group='dotCMS Development'
-cleanImmutables.description='Deletes the folder where the immutables are generated'
-
-clean {
-    println "\nExecuting clean task..."
-}
-clean.finalizedBy 'cleanImmutables'
-
-// This task finds all th plugins and runs 'ant build' inside each one.
-// In order to compile everything it need the dependency jars in a folder ($buildDir/pluginsLib)
-task buildPlugins(dependsOn: 'jar') {
-    doLast {
-        delete "$buildDir/pluginsLib"
-
-        copy {
-            into "$buildDir/pluginsLib"
-            from configurations.compile
-            from "$buildDir/libs/"
-        }
-
-        println project.buildDir
-        println project.buildDir
-
-//        def pluginsFolder = new File("src/main/plugins");
-        def pluginsFolder = file('src/main/plugins')
-
-        if (!pluginsFolder.exists()) {
-            pluginsFolder = project.file("../plugins");
-        }
-
-        pluginsFolder.eachDir() {
-            def pluginPath = it
-            println "Compile Plugin: " + pluginPath
-
-            javaexec {
-                workingDir pluginPath
-                main = "-jar";
-                args = [
-                        "$rootDir/../bin/ant/ant-launcher.jar",
-                        "-buildfile",
-                        pluginPath.getAbsolutePath() + "/build.xml"
-                ]
-            }
-        }
-    }
-}
-buildPlugins.group='dotCMS Development'
-buildPlugins.description='Compiles and Builds all the plugins but does not deploy.'
 
 // TODO I think there are variables for this paths.
 // This task will copy what is used to be src-conf (now under resources)
 // to webapp/WEB-INF/classes in order to be merged with the plugins.
-task deployConfig(type: Copy) {
+task deployConfig() {
+    group='dotCMS Util'
+    description='This task will copy what is used to be src-conf to webapp/WEB-INF/classes in order to be merged with the plugins.'
 
-    def webAppFolder = 'src/main/webapp'
+    def resourcesFolder = project.file('src/main/resources')
+    def sourceFolderPath = resourcesFolder.getAbsolutePath()
+    def webAppFolderPath = project.file('src/main/webapp').getAbsolutePath()
 
-    if (project.file('src/main/resources').exists()){
-        from 'src/main/resources'
-    }else{
-        webAppFolder = "$dotcmsDistBase$webAppRootFolder"
-        from "../$confDistLocation"
-
+    if (!resourcesFolder.exists()) {
+        sourceFolderPath = "../$confDistLocation"
+        webAppFolderPath = project.file("$dotcmsDistBase$webAppRootFolder").getAbsolutePath()
     }
-    into "$webAppFolder/WEB-INF/classes"
+    webAppFolderPath = "$webAppFolderPath/WEB-INF/classes"
 
-    filesMatching("release.properties") {
-        expand( project.properties )
+    copy {
+        from (sourceFolderPath)
+        into webAppFolderPath
+        filesMatching("release.properties") {
+            expand( project.properties )
+        }
     }
 }
-deployConfig.group='dotCMS Util'
-deployConfig.description='This task will copy what is used to be src-conf to webapp/WEB-INF/classes in order to be merged with the plugins.'
 
 //TODO Need to check ROOT folder functionality is working.
 // This task will:
@@ -740,14 +966,15 @@ deployConfig.description='This task will copy what is used to be src-conf to web
 // 3. Call the and task def com.dotmarketing.plugin.ant.DeployTask to merge
 //    all the properties/files from the static plugins.
 task deployPlugins(dependsOn: ['buildPlugins']) {
-
+    group='dotCMS Development'
+    description='Builds and deploys all the plugins under /plugins folder.'
     doLast {
 
         def pluginsFolder = project.file("src/main/plugins")
         def webAppFolder = 'src/main/webapp'
 
         if (!pluginsFolder.exists()) {
-            pluginsFolder = project.file("../plugins");
+            pluginsFolder = project.file("../plugins")
             webAppFolder = "$dotcmsDistBase$webAppRootFolder"
         }
 
@@ -778,15 +1005,16 @@ task deployPlugins(dependsOn: ['buildPlugins']) {
                 plugins: "$webAppFolder/WEB-INF/lib")
     }
 }
-deployPlugins.group='dotCMS Development'
-deployPlugins.description='Builds and deploys all the plugins under /plugins folder.'
+
 
 // This task will:
 // 1. Call the and task def com.dotmarketing.plugin.ant.UndeployTask to remove
 //    all the properties/files from the static plugins.
 // 2. Delete plugin.xml from classes and the html of the static plugins.
 task undeployPlugins() {
-
+    group='dotCMS Development'
+    description='Undeploys all plugins, returns overridden files to default state. This task does not need to be executed as a pre-condition of deployPlugins because that task executes it automatically.'
+    finalizedBy 'deployConfig'
     doLast {
         def webAppFolder = 'src/main/webapp'
 
@@ -798,7 +1026,7 @@ task undeployPlugins() {
         ant.taskdef(
                 name: 'pluginUndeployTask',
                 classname: 'com.dotmarketing.plugin.ant.UndeployTask',
-                classpath: configurations.compile.asPath)
+                classpath: configurations.compileClasspath.asPath)
         ant.pluginUndeployTask(
                 distributionPath: '../',
                 dotcmsHome: "$webAppFolder",
@@ -812,11 +1040,11 @@ task undeployPlugins() {
         delete "$webAppFolder/html/plugins"
     }
 }
-undeployPlugins.group='dotCMS Development'
-undeployPlugins.description='Undeploys all plugins, returns overridden files to default state. This task does not need to be executed as a pre-condition of deployPlugins because that task executes it automatically.'
 
 //Creates a backup of assets, dotsecure, META-INF and H2_Database
 task backupWarTomcatData() {
+    group='dotCMS Util'
+    description='Creates a backup of assets, dotsecure, META-INF and H2_Database.'
     doLast {
         delete "$tomcatInstallLocation/temp"
 
@@ -845,11 +1073,13 @@ task backupWarTomcatData() {
         }
     }
 }
-backupWarTomcatData.group='dotCMS Util'
-backupWarTomcatData.description='Creates a backup of assets, dotsecure, META-INF and H2_Database.'
+
 
 //Restores content of assets, dotsecure, META-INF and H2_Database (copy back to webapps/ROOT)
 task restoreBackupWarTomcatData() {
+    group='dotCMS Util'
+    description='Restores content of assets, dotsecure, META-INF and H2_Database.'
+    finalizedBy 'deployConfig'
     doLast {
         delete "$tomcatInstallLocation$webAppRootFolder/assets"
         copy {
@@ -879,233 +1109,65 @@ task restoreBackupWarTomcatData() {
             include "*.db"
         }
 
-        FileUtils.cleanDirectory(project.file("$tomcatInstallLocation/temp"));
+        FileUtils.cleanDirectory(project.file("$tomcatInstallLocation/temp"))
         delete "$tomcatInstallLocation$webAppRootFolder/WEB-INF/classes/com"
     }
 }
-restoreBackupWarTomcatData.group='dotCMS Util'
-restoreBackupWarTomcatData.description='Restores content of assets, dotsecure, META-INF and H2_Database.'
 
-undeployPlugins.finalizedBy 'deployConfig'
+
 
 
 //Generates a no obfuscated version of the enterprise jar
 task generateMoveCleanEnterpriseTomcat(type: GradleBuild) {
-    buildFile = "$enterpriseProjectHome/build.gradle"
+    group='dotCMS Util'
+    description='Creates a no-obfuscated enterprise JAR and moves it into WEB-INF/lib .'
+
+    dir=file("$enterpriseProjectHome/build.gradle")
     tasks = gradle.startParameter.taskNames.contains('clean') ? ['clean', 'build'] : ['build']
-	startParameter.projectProperties = [dotcmsReleaseVersion: "$dotcmsReleaseVersion"]
+    startParameter.projectProperties = [dotcmsReleaseVersion: "$dotcmsReleaseVersion"]
 
-	doLast {
-		delete fileTree("$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"){
-			include "ee-*", "ee_*"
-		}
-
-		copy{
-			from "$enterpriseProjectHome/build/libs"
-			into "$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"
-			include "ee_clean.jar"
-		}
-	}
-}
-generateMoveCleanEnterpriseTomcat.group='dotCMS Util'
-generateMoveCleanEnterpriseTomcat.description='Creates a no-obfuscated enterprise JAR and moves it into WEB-INF/lib .'
-
-// Util methods.
-def getDate() {
-    def fmt = new java.text.SimpleDateFormat("MMMM dd, yyyy", Locale.US)
-    def formattedDate = fmt.format(new Date())
-    return formattedDate
-}
-
-//Util method that replaces the occurrence of a string in a specified file
-def replaceText(filePath, fromString, toString) {
-    def updatedContent = project.file(filePath.toString()).getText('UTF-8').replaceAll(fromString, toString)
-    project.file(filePath.toString()).write(updatedContent, 'UTF-8')
-}
-
-// Clones dotCMS's tomcat repo following tomcatInstall under gradle.properties.
-// If the tomcat folder exists: git pull, if not: git clone.
-class ClonePullTomcatTask extends DefaultTask{
-
-    String tomcatLocation = project.tomcatInstallLocation
-
-    @TaskAction
-    def pull(){
-        def folder = project.file( tomcatLocation )
-
-        println folder
-        if( !folder.exists() ) {
-
-            try {
-
-                println "Cloning the $project.tomcatInstallRepo, branch $project.tomcatInstallBranch on $tomcatLocation";
-                org.ajoberstar.grgit.Grgit.clone(dir: folder.absolutePath, uri: "$project.tomcatInstallRepo", refToCheckout: "$project.tomcatInstallBranch")
-            } catch (Exception exception) {
-                //Do nothing, this will fail only if git is not installed on this machine
-            }
-        } else {
-            def tomcatGit = org.ajoberstar.grgit.Grgit.open(folder);
-            tomcatGit.pull();
-        }
-    }
-
-}
-
-//Gradle Custom Task that contains the logic for deploying the app war in the application server
-//It works for dist and development versions
-//Also, copies specific libraries from /libs/buildlibs to tomcat/lib folder
-class DeployWarTomcatTask extends DefaultTask{
-    String tomcatPath;
-
-    @TaskAction
-    def deploy(){
-        copyBuildLibs(tomcatPath)
-
-        def zipFile = project.file("$project.buildDir/libs/$project.archivesBaseName" + ".war")
-        project.copy{
-            from project.zipTree(zipFile)
-            into tomcatPath + project.webAppRootFolder
+    doLast {
+        delete fileTree("$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"){
+            include "ee-*", "ee_*"
         }
 
-        if (project.gradle.startParameter.taskNames.contains("deployWarTomcatTests")) {
-            project.replaceText("$tomcatPath$project.webAppRootFolder/WEB-INF/web.xml", "<!-- TEST FRAMEWORK SERVLETS", "<!-- TEST FRAMEWORK SERVLETS -->")
-            project.replaceText("$tomcatPath$project.webAppRootFolder/WEB-INF/web.xml", "END OF TEST FRAMEWORK SERVLETS -->", "<!-- END OF TEST FRAMEWORK SERVLETS -->")
-        }
-    }
-
-    // Copying libs/buildlibs under tomcat8/lib.
-    def copyBuildLibs(buildLibLocation) {
-
-        project.copy {
-            from project.configurations.providedCompile
-            into buildLibLocation + '/lib'
-            include '**/ojdbc*.jar'
-            include '**/postgresql*.jar'
-            include '**/mysql-connector-java*.jar'
-            include '**/mssql-jdbc*.jar'
-        }
-
-        project.copy{
-            from '../libs/buildlibs'
-            into buildLibLocation + '/lib'
-            include 'mail.jar'
-            include 'javax.activation-1.2.0.jar'
-        }
-
-    }
-}
-
-class NpmArtifactExtractTask extends DefaultTask {
-    String url = 'https://registry.npmjs.org'
-    String artifactFolder = './tmp'
-    String artifact
-    String version
-    String dest
-
-    @TaskAction
-    def extract() {
-        project.mkdir(artifactFolder)
-        String artifactUrl = "$url/$artifact"
-        Set<String> knownTags = new HashSet<>(Arrays.asList("latest", "stable", "next", "rc"));
-
-        String artifactVersion = knownTags.contains(version)
-                ? new JsonSlurper().parse(new URL(artifactUrl))."dist-tags"[version]
-                : version
-        String versionUrl = "$artifactUrl/-/$artifact-${artifactVersion}.tgz"
-        println "Downloading from $versionUrl"
-        String downloadArtifact = "$artifactFolder/${artifact}.tgz"
-        def downloadFile = project.file(downloadArtifact)
-        new URL(versionUrl).withInputStream { i -> downloadFile.withOutputStream { it << i } }
-
-        project.copy {
-            from project.tarTree(project.file(downloadArtifact))
-            into dest
+        copy{
+            from "$enterpriseProjectHome/build/libs"
+            into "$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"
+            include "ee_clean.jar"
         }
     }
 }
 
-task cleanDotCmsUi {
-    delete './tmp/dotcms-ui.tgz'
-    delete "./src/main/webapp/$angularFolder"
-}
 
-task cleanDotCmsWebComponents {
-    delete './tmp/dotcms-webcomponents.tgz'
-    delete './src/main/webapp/dotcms-webcomponents/package'
-    delete './src/main/webapp/dotcms-webcomponents/dotcms-webcomponents.js'
-    delete './src/main/webapp/dotcms-webcomponents/dotcms-webcomponents.esm.js'
-}
-
-task copyDotCmsUi(type: Copy) {
-    from(file("./src/main/webapp/$angularFolder/package"))
-    into("./src/main/webapp/$angularFolder")
-    finalizedBy 'deleteDotCmsUi'
-}
-
-task copyDotCmsWebComponents(type: Copy) {
-    from "./src/main/webapp/dotcms-webcomponents/package/dist/"
-    into "./src/main/webapp/"
-    include 'dotcms-webcomponents/*'
-}
-
-task deleteDotCmsUi(type: Delete) {
-    delete "./src/main/webapp/$angularFolder/package"
-}
-
-task extractDotCmsUi(type: NpmArtifactExtractTask) {
-    artifact = 'dotcms-ui'
-    version = coreWebReleaseVersion
-    dest = "./src/main/webapp/$angularFolder"
-    dependsOn 'cleanDotCmsUi'
-    finalizedBy 'copyDotCmsUi'
-}
-extractDotCmsUi.group = 'extract dotcms-ui'
-extractDotCmsUi.description = 'Extracts package from dotcms-ui artifact to dotAdmin'
-
-task extractDotCmsWebComponents(type: NpmArtifactExtractTask) {
-    artifact = 'dotcms-webcomponents'
-    version = webComponentsReleaseVersion
-    dest = './src/main/webapp/dotcms-webcomponents'
-    dependsOn 'cleanDotCmsWebComponents'
-    finalizedBy 'copyDotCmsWebComponents'
-}
-extractDotCmsWebComponents.group = 'extract dotcms-webcomponents'
-extractDotCmsWebComponents.description = 'Extracts package from dotcms-webcomponents to dotcms-webcomponents'
-
-task cleanTmp(type: Delete) {
-    delete './tmp'
-}
-
-task extractDotCmsArtifacts {
-    dependsOn 'extractDotCmsUi', 'extractDotCmsWebComponents'
-    finalizedBy 'cleanTmp'
-}
 
 task downloadDependencies(type: Exec) {
 
     // configurations.each { println it.name }
     // ./gradlew --console plain dependencies
 
-    configurations.ajtools.files
-    configurations.compileOnly.files
+    //configurations.ajtools.files
+    configurations.testCompileClasspath.files
+    configurations.testRuntimeClasspath.files
+    configurations.integrationTestCompileClasspath.files
+    configurations.integrationTestRuntimeClasspath.files
+    configurations.compileClasspath.files
+    configurations.runtimeClasspath.files
+
     configurations.default.files
-    configurations.individualTestCompile.files
-    configurations.integrationTestCompile.files
-    configurations.testCompile.files
+
     configurations.testsStarter.files
-    configurations.compile.files
     configurations.buildlibs.files
     configurations.starter.files
     configurations.profiler.files
     configurations.profilerDependencies.files
-    configurations.provided.files
     configurations.felix.files
 
     commandLine 'echo', 'Downloaded all dependencies'
 }
-
 // reference:  https://github.com/palantir/gradle-docker
 docker {
+    dependsOn createDist
     name "dotcms/dotcms:base-$dotcmsReleaseVersion-$dotcmsReleaseBuild"
     tags 'latest'
     dockerfile file('docker/Dockerfile')
@@ -1113,15 +1175,17 @@ docker {
     pull true
     noCache false
 }
-docker.dependsOn createDist
+
 
 // upgrade task
-task upgradeTask << {
-    println "running the task: $task ";
+task upgradeTask  {
+    doLast {
+        println "running the task: $task "
 
-    javaexec {
-        main = "com.dotcms.upgrade.Upgrade"
-        classpath = files("../libs/plugins/plugin-com.dotcms.upgradetask.jar") + files(sourceSets.main.output.classesDir) + files(sourceSets.main.output.resourcesDir) + files(configurations.compile.files)
-        args("$task")
+        javaexec {
+            main = "com.dotcms.upgrade.Upgrade"
+            classpath += files("../libs/plugins/plugin-com.dotcms.upgradetask.jar") + sourceSets.main.runtimeClasspath
+            args = ["${task}"]
+        }
     }
 }
