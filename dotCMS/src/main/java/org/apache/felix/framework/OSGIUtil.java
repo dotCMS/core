@@ -360,16 +360,23 @@ public class OSGIUtil {
 
     private void moveNewBundlesToFelixLoadFolder(final File uploadFolderFile, final String[] pathnames) {
 
-        final File deployDirectory = new File(this.getFelixDeployPath());
+        final File deployDirectory   = new File(this.getFelixDeployPath());
+        final File undeployDirectory = new File(this.getFelixUndeployPath());
         try {
 
             if (deployDirectory.exists() && deployDirectory.canWrite()) {
 
                 for (final String pathname : pathnames) {
 
-                    final File bundle = new File(uploadFolderFile, pathname);
+                    final File bundle      = new File(uploadFolderFile, pathname);
+                    File bundleDestination = new File(deployDirectory, bundle.getName());
+                    if (ResourceCollectorUtil.isFragmentJar(bundle)) {
+
+                        bundleDestination = new File(undeployDirectory, bundle.getName());
+                    }
+
                     Logger.debug(this, "Moving the bundle: " + bundle + " to " + deployDirectory);
-                    final File bundleDestination = new File(deployDirectory, bundle.getName());
+
                     if (FileUtil.move(bundle, bundleDestination)) {
 
                         Try.run(()->APILocator.getSystemEventsAPI()					    // CLUSTER WIDE

@@ -23,6 +23,28 @@ import java.util.zip.ZipFile;
 public class ResourceCollectorUtil {
 
     /**
+     * Returns true if the file is a fragment
+     * @param file {@link File}
+     * @return boolean if it is a fragment
+     */
+    public static boolean isFragmentJar (final File file) {
+
+        boolean isFragment = false;
+        try (final JarFile jarFile     = new JarFile(file)){
+
+            final Manifest manifest    = jarFile.getManifest();
+            final String fragmentHost  = manifest.getMainAttributes().getValue("Fragment-Host");
+            isFragment =  UtilMethods.isSet(fragmentHost) &&
+                    "system.bundle; extension:=framework".equals(fragmentHost.trim());
+        }  catch (Exception e) {
+
+            Logger.error(ResourceCollectorUtil.class, e.getMessage(), e);
+        }
+
+        return isFragment;
+    }
+
+    /**
      * Get the packages for a jar file, if the file is a fragment will return the Export packages
      * If the file is a bundle will return the Import packages
      * @param file File
