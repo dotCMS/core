@@ -20,6 +20,7 @@ import com.dotcms.enterprise.cluster.ClusterFactoryTest;
 import com.dotcms.enterprise.publishing.remote.PushPublishBundleGeneratorTest;
 import com.dotcms.enterprise.publishing.remote.StaticPushPublishBundleGeneratorTest;
 import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundlerTest;
+import com.dotcms.enterprise.publishing.remote.bundler.ContentBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentTypeBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.DependencyBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.FolderBundlerTest;
@@ -513,8 +514,9 @@ import org.junit.runners.Suite.SuiteClasses;
         XmlToolTest.class,
         LanguageFolderTest.class,
         MailAPIImplTest.class,
-        CSSCacheTest.class,
         com.dotcms.rendering.velocity.viewtools.content.BinaryMapTest.class,
+        Task220202RemoveFKStructureFolderConstraintTest.class,
+        ContentBundlerTest.class,
         Task220202RemoveFKStructureFolderConstraintTest.class
 })
 public class MainSuite {
