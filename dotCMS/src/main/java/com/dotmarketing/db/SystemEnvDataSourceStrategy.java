@@ -70,6 +70,12 @@ public class SystemEnvDataSourceStrategy implements DotDataSourceStrategy {
                         ? systemEnvironmentProperties.getVariable(CONNECTION_DB_MAX_TOTAL)
                         : "60"));
 
+        config.setMinimumIdle(Integer.parseInt(
+                        systemEnvironmentProperties.getVariable(CONNECTION_DB_MIN_IDLE) != null
+                                ? systemEnvironmentProperties.getVariable(CONNECTION_DB_MIN_IDLE)
+                                : "10"));
+
+
         config.setIdleTimeout(
                 Integer.parseInt(
                         systemEnvironmentProperties.getVariable(CONNECTION_DB_MIN_IDLE) != null
