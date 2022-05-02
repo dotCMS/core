@@ -535,14 +535,13 @@ import org.junit.runners.Suite.SuiteClasses;
         Task220203RemoveFolderInodeConstraintTest.class,
         Task220214AddOwnerAndIDateToFolderTableTest.class,
         Task220215MigrateDataFromInodeToFolderTest.class,
-        ContentDispositionFileNameParserTest.class,
-        SecureFileValidatorTest.class,
-        BoundedBufferedReaderTest.class,
-        Task220404RemoveCalendarReminderTest.class,
         Task220330ChangeVanityURLSiteFieldTypeTest.class,
         Task220331UpdateDateTimezonesTest.class,
         Task220404RemoveCalendarReminderTest.class,
-        Task220413IncreasePublishedPushedAssetIdColTest.class
+        Task220413IncreasePublishedPushedAssetIdColTest.class,
+        ContentDispositionFileNameParserTest.class,
+        SecureFileValidatorTest.class,
+        BoundedBufferedReaderTest.class
 })
 public class MainSuite {
 
