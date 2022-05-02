@@ -1,31 +1,49 @@
 #parse( "static/storyblock/marks-macro.vtl" )
-#macro(renderNode $content)
-    #set($start = 0)
-    #set($end = $content.length())
-    #set($end = $end - 1)
-    #set($range = [$start..$end])
-    #foreach($i in $range)
-        #set($node = $content.get($i))
-        #if( $node.type == "paragraph" )
-            <p>#renderNode($node.content)</p>
-        #elseif( $node.type == "heading1" )
-            <h1>#renderNode($node.content)</h1>
-        #elseif( $node.type == "heading2" )
-            <h2>#renderNode($node.content)</h2>
-        #elseif( $node.type == "heading3" )
-            <h3>#renderNode($node.content)</h3>
-        #elseif( $node.type == "listItem" )
-            <li>#renderNode($node.content)</li>
-        #elseif( $node.type == "bulletList" )
-            <ul>#renderNode($node.content)</ul>
-        #elseif( $node.type == "codeBlock" )
-            <pre><code>#renderNode($node.content)</code></pre>
-        #elseif( $node.type == "hardBreak" )
+
+#macro(renderNode $data)
+    #foreach($element in $data)
+        #if( $element.type == "paragraph" )
+            <p style="text-align: $!element.attrs.textAlign;">
+                #renderNode($element.content)
+            </p>
+        #elseif( $element.type == "heading" )
+            #if($element.attrs.level == "1")
+                <h1 style="text-align: $!element.attrs.textAlign;">
+                    #renderNode($element.content)
+                </h1>
+            #elseif($element.attrs.level == "2")
+                <h2 style="text-align: $!element.attrs.textAlign;">
+                    #renderNode($element.content)
+                </h2>
+            #elseif($element.attrs.level == "3")
+                <h3 style="text-align: $!element.attrs.textAlign;">
+                    #renderNode($element.content)
+                </h3>
+            #end
+        #elseif( $element.type == "listItem" )
+            <li style="text-align: $!element.attrs.textAlign;">
+                #renderNode($element.content)
+            </li>
+        #elseif( $element.type == "bulletList" )
+            <ul style="text-align: $!element.attrs.textAlign;">
+                #renderNode($element.content)
+            </ul>
+        #elseif( $element.type == "orderedList" )
+            <ul style="text-align: $!element.attrs.textAlign;">
+                #renderNode($element.content)
+            </ul>
+        #elseif( $element.type == "codeBlock" )
+            <pre><code>#renderNode($element.content)</code></pre>
+        #elseif( $element.type == "blockquote" )
+            <blockquote style="text-align: e!lement.attrs.textAlign;">
+                #renderNode($element.content)
+            </blockquote>
+        #elseif( $element.type == "hardBreak" )
             <br />
-        #elseif( $node.type == "horizontalRule" )
+        #elseif( $element.type == "horizontalRule" )
             <hr />
-        #elseif( $node.type == "text" )
-            #renderText($!node)
+        #elseif( $element.type == "text" )
+            #renderText($element)
         #end
     #end
 #end

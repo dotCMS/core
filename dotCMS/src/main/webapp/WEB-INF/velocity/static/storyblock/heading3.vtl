@@ -1,5 +1,9 @@
 #parse( "static/storyblock/render.vtl" )
-<h3 style="text-align: $!item.attrs.textAlign">
-   #renderNode($!item.content)
-</h3>
 
+## Needed to parse JSON into an object
+#set($objectMap = '#set( $objectMap = ' + $item + ' )')
+#evaluate ($objectMap)
+
+<h3 style="text-align: $!objectMap.attrs.textAlign">
+   #renderNode($!objectMap.content)
+</h3>
