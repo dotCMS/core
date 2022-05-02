@@ -111,7 +111,11 @@ function fillAvailableWorkflowActions(actions){
         items: items
     };
     actionStore = new dojo.data.ItemFileReadStore({data:actionData});
-    dijit.byId("wfActionId").attr('store', actionStore);
+    
+    var wfActionHiddenField = dijit.byId("wfActionId");
+    if (wfActionHiddenField) {
+        wfActionHiddenField.attr('store', actionStore);
+    }
 }
 loadWorkflowActions("<%=selectedStructure%>");
 </script>
