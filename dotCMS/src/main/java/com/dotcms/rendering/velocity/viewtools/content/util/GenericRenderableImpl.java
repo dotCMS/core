@@ -82,9 +82,15 @@ class GenericRenderableImpl implements Renderable {
 
     private boolean existsInFileSystem(final String filePath) {
 
-        final File velocityRootPath = new File(Config.CONTEXT.getRealPath(Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity")));
-        final File vtlFile = new File(velocityRootPath, filePath);
-        return vtlFile.exists();
+        final String velocityRoot   = Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
+        final File velocityRootFile = new File(velocityRoot);
+        if (!velocityRootFile.exists()) {
+            final File velocityRootPath = new File(Config.CONTEXT.getRealPath(Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity")));
+            final File vtlFile = new File(velocityRootPath, filePath);
+            return vtlFile.exists();
+        }
+
+        return new File(velocityRootFile, filePath).exists();
     }
 
     private Tuple2<Boolean, String> existsFile (final String path, final Host host, final User user)  {

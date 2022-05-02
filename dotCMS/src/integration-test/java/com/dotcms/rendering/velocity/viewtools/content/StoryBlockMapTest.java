@@ -168,90 +168,14 @@ public class StoryBlockMapTest extends IntegrationTestBase {
 
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON);
         final String html = storyBlockMap.toHtml();
-        Assert.assertTrue(html.contains("test2</h2>"));
-        Assert.assertTrue(html.contains("test2</h2>"));
-        Assert.assertTrue(html.contains("test1</h2>"));
-        Assert.assertTrue(html.contains("<strong>\n" +
-                "                                                \n" +
-                "    heading 1\n" +
-                "\n" +
-                "                                    </strong>"));
-        Assert.assertTrue(html.contains("<h2 style=\"text-align: left\">\n" +
-                "\n" +
-                "                \n" +
-                "    \n" +
-                "                                <strong>\n" +
-                "                                                                                            <u>\n" +
-                "                        \n" +
-                "    heading 2\n" +
-                "\n" +
-                "                                                            </u>\n" +
-                "                                            </strong>\n" +
-                "                                                \n" +
-                "    </h2>"));
-        Assert.assertTrue(html.contains("<ol style=\"text-align: \">\n" +
-                "\n" +
-                "                            <li style=\"text-align: $listItem.attrs.textAlign\">\n" +
-                "\n" +
-                "                                                                    \n" +
-                "    \n" +
-                "    one\n" +
-                "\n" +
-                "    \n" +
-                "                                        </li>\n" +
-                "        \n" +
-                "                        <li style=\"text-align: $listItem.attrs.textAlign\">\n" +
-                "\n" +
-                "                                                                    \n" +
-                "    \n" +
-                "                                <strong>\n" +
-                "                                                \n" +
-                "    two\n" +
-                "\n" +
-                "                                    </strong>\n" +
-                "                                                \n" +
-                "                                        </li>\n" +
-                "        \n" +
-                "                        <li style=\"text-align: $listItem.attrs.textAlign\">\n" +
-                "\n" +
-                "                                                                    \n" +
-                "    \n" +
-                "    tree\n" +
-                "\n" +
-                "    \n" +
-                "                                        </li>\n" +
-                "        \n" +
-                "    </ol>"));
-        Assert.assertTrue(html.contains("<ul>\n" +
-                "\n" +
-                "                            <li style=\"text-align: $listItem.attrs.textAlign\">\n" +
-                "\n" +
-                "                                                                            \n" +
-                "    \n" +
-                "    1\n" +
-                "\n" +
-                "    \n" +
-                "                                                 </li>\n" +
-                "        \n" +
-                "                        <li style=\"text-align: $listItem.attrs.textAlign\">\n" +
-                "\n" +
-                "                                                                            \n" +
-                "    \n" +
-                "    2\n" +
-                "\n" +
-                "    \n" +
-                "                                                 </li>\n" +
-                "        \n" +
-                "                        <li style=\"text-align: $listItem.attrs.textAlign\">\n" +
-                "\n" +
-                "                                                                            \n" +
-                "    \n" +
-                "    3\n" +
-                "\n" +
-                "    \n" +
-                "                                                 </li>\n" +
-                "        \n" +
-                "    </ul>"));
+        Assert.assertTrue(html.contains("<h2 style=\"text-align: \" >test2</h2>"));
+        Assert.assertTrue(html.contains("<h2 style=\"text-align: \" >test1</h2>"));
+        Assert.assertTrue(html.contains("<strong>"));
+        Assert.assertTrue(html.contains("heading 1"));
+        Assert.assertTrue(html.contains("<h2 style=\"text-align: left\">"));
+        Assert.assertTrue(html.contains("heading 2"));
+        Assert.assertTrue(html.contains("</h2>"));
+
     }
 
 
