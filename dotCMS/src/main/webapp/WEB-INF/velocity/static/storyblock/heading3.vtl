@@ -1,12 +1,9 @@
-#parse( "static/storyblock/marks-macro.vtl" )
-<h3 style="text-align: $!item.attrs.textAlign">
+#parse( "static/storyblock/render.vtl" )
 
-    #set($start = 0)
-    #set($end = $item.content.length())
-    #set($end = $end - 1)
-    #set($range = [$start..$end])
-    #foreach($i in $range)
-        #set($content = $item.content.get($i))
-        #renderText($content)
-    #end
+## Needed to parse JSON into a Java object so we can iterate over it
+#set($objectMap = '#set( $objectMap = ' + $item + ' )')
+#evaluate ($objectMap)
+
+<h3 style="text-align: $!objectMap.attrs.textAlign">
+   #renderNode($!objectMap.content)
 </h3>
