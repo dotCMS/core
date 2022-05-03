@@ -7,10 +7,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 import org.apache.commons.lang.WordUtils;
 
@@ -65,7 +65,11 @@ import org.apache.commons.lang.WordUtils;
  * @version 2010-05-17
  */
 
-public class JSONObject implements Serializable {
+public class JSONObject implements Serializable, Map<String, Object> {
+
+
+    private static final long serialVersionUID = 1L;
+
 
     /**
      * JSONObject.NULL is equivalent to the value that JavaScript calls null,
@@ -105,10 +109,85 @@ public class JSONObject implements Serializable {
     }
 
 
+     
+     
+     
+    @Override
+    public int size() {
+        return this.map.size();
+    }
+
+
+    @Override
+    public boolean isEmpty() {
+        return this.map.isEmpty();
+    }
+
+
+    @Override
+    public boolean containsKey(Object key) {
+        return this.map.containsKey(key);
+    }
+
+
+    @Override
+    public boolean containsValue(Object value) {
+        return this.map.containsValue(value);
+    }
+
+
+    @Override
+    public Object get(Object key) {
+        return this.map.get(key);
+    }
+
+
+    @Override
+    public Object remove(Object key) {
+        // TODO Auto-generated method stub
+        return this.map.remove(key);
+    }
+
+
+    @Override
+    public void putAll(Map<? extends String, ? extends Object> m) {
+        this.map.putAll(m);
+        
+    }
+
+
+    @Override
+    public void clear() {
+        this.map.clear();
+        
+    }
+
+
+    @Override
+    public Set<String> keySet() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+
+    @Override
+    public Collection<Object> values() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+
+    @Override
+    public Set<Entry<String, Object>> entrySet() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+
     /**
      * The map where the JSONObject's properties are kept.
      */
-    private Map<String,Object> map = new LinkedHashMap<>();
+    private final Map<String,Object> map;
 
 
     /**
@@ -124,7 +203,7 @@ public class JSONObject implements Serializable {
      * Construct an empty JSONObject.
      */
     public JSONObject() {
-        
+        this.map = new LinkedHashMap<>();
     }
 
 
@@ -217,7 +296,7 @@ public class JSONObject implements Serializable {
      * @throws JSONException 
      */
     public JSONObject(Map<String,Object> incomingMap) {
-        this.map = new HashMap<String,Object>();
+        this();
         if (incomingMap != null) {
             Iterator i = incomingMap.entrySet().iterator();
             while (i.hasNext()) {
