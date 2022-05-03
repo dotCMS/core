@@ -5,9 +5,13 @@
 #end
 
 #macro(renderMarks $content)
-  #foreach($mark in $!content.marks)
-    #parse( "static/storyblock/marks/${mark}.vtl" )
-  #end
+#if($UtilMethods.isEmpty($content.marks) || $content.marks.isEmpty())
+$!content.text
+#end
+#set($markcontent =$!content)
+#foreach($mark in $!content.marks)
+$velutil.mergeTemplate( "static/storyblock/marks/${mark.type}.vtl" )
+#end
 #end
 
 

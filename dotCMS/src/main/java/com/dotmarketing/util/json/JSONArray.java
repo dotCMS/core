@@ -1,7 +1,6 @@
 package com.dotmarketing.util.json;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.io.Writer;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -59,13 +58,16 @@ import java.util.Map;
  * @author JSON.org
  * @version 2009-04-14
  */
-public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.JSONArray implements Serializable {
+public class JSONArray  implements Collection<Object> {
+
+
+
 
 
     /**
      * The arrayList where the JSONArray's properties are kept.
      */
-    private ArrayList myArrayList;
+    private final ArrayList myArrayList= new ArrayList();
 
 
     public void add(int index, Object element) {
@@ -74,17 +76,17 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
 	}
 
 	public boolean add(Object o) {
-		// TODO Auto-generated method stub
+		
 		return myArrayList.add(o);
 	}
 
 	public boolean addAll(Collection<? extends Object> c) {
-		// TODO Auto-generated method stub
+		
 		return myArrayList.add(c);
 	}
 
 	public boolean addAll(int index, Collection<? extends Object> c) {
-		// TODO Auto-generated method stub
+		
 		return myArrayList.addAll( index, c);
 	}
 
@@ -94,82 +96,82 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
 	}
 
 	public boolean contains(Object o) {
-		// TODO Auto-generated method stub
+		
 		return myArrayList.contains(o);
 	}
 
 	public boolean containsAll(Collection<?> c) {
-		// TODO Auto-generated method stub
+		
 		return myArrayList.containsAll(c);
 	}
 
 	public int indexOf(Object o) {
-		// TODO Auto-generated method stub
+		
 		return myArrayList.indexOf(o);
 	}
 
 	public boolean isEmpty() {
-		// TODO Auto-generated method stub
+		
 		return myArrayList.isEmpty();
 	}
 
 	public Iterator<Object> iterator() {
-		// TODO Auto-generated method stub
+		
 		return myArrayList.iterator();
 	}
 
 	public int lastIndexOf(Object o) {
-		// TODO Auto-generated method stub
+		
 		return myArrayList.lastIndexOf(o);
 	}
 
 	public ListIterator<Object> listIterator() {
-		// TODO Auto-generated method stub
+		
 		return myArrayList.listIterator();
 	}
 
 	public ListIterator<Object> listIterator(int index) {
-		// TODO Auto-generated method stub
+		
 		return myArrayList.listIterator(index);
 	}
 
 	public boolean remove(Object o) {
-		// TODO Auto-generated method stub
+		
 		return myArrayList.remove(o);
 	}
 
 	public boolean removeAll(Collection<?> c) {
-		// TODO Auto-generated method stub
+		
 		return myArrayList.removeAll(c);
 	}
 
 	public boolean retainAll(Collection<?> c) {
-		// TODO Auto-generated method stub
+		
 		return myArrayList.retainAll(c);
 	}
 
 	public Object set(int index, Object element) {
-		// TODO Auto-generated method stub
+		
 		return myArrayList.set(index,element);
 	}
 
 	public int size() {
-		// TODO Auto-generated method stub
+		
 		return myArrayList.size();
 	}
 
 	public List<Object> subList(int fromIndex, int toIndex) {
-		// TODO Auto-generated method stub
+		
 		return myArrayList.subList(fromIndex,toIndex);
 	}
 
 	public Object[] toArray() {
-		// TODO Auto-generated method stub
+		
 		return myArrayList.toArray();
 	}
 
 	public <T> T[] toArray(T[] a) {
-		// TODO Auto-generated method stub
+		
 		return (T[]) myArrayList.toArray(a);
 	}
 
@@ -177,7 +179,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * Construct an empty JSONArray.
      */
     public JSONArray() {
-        this.myArrayList = new ArrayList();
+        this.myArrayList.clear();
     }
 
     /**
@@ -247,7 +249,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @param collection     A Collection.
      */
     public JSONArray(Collection collection) {
-		this.myArrayList = new ArrayList();
+		this.myArrayList.clear();
 		if (collection != null) {
 			Iterator iter = collection.iterator();
 			while (iter.hasNext()) {

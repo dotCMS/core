@@ -63,7 +63,6 @@ class GenericRenderableImpl implements Renderable {
             context.put("item", item);
 
 
-            VelocityUtil.getInstance().mergeTemplate("static/storyblock/marks-macro.vtl", context);
             return VelocityUtil.getInstance().mergeTemplate(allowedTypeSet.contains(type)?
                     this.defaultPath + type + ".vtl": this.defaultPath + templateName, context);
         } catch (Exception e) {
@@ -91,7 +90,6 @@ class GenericRenderableImpl implements Renderable {
                     final HttpServletResponse responseProxy = new BaseResponse().response();
                     final Context context = VelocityUtil.getInstance().getContext(requestProxy, responseProxy);
                     context.put("item", item);
-                    VelocityUtil.getInstance().mergeTemplate("static/storyblock/marks-macro.vtl", context);
                     final String customTemplate = String.format("#dotParse(\"%s\")", baseTemplatePath + type + ".vtl");
                     return VelocityUtil.getInstance().parseVelocity(customTemplate, context);
                 }
