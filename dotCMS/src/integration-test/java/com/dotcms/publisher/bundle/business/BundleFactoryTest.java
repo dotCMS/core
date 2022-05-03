@@ -53,30 +53,41 @@ public class BundleFactoryTest {
         return uuid;
     }
 
+    /**
+     * Method to test: findSentBundles
+     * Given Scenario: Create two bundles and checks if them exists
+     * ExpectedResult: Expected result that the assertion is checking against
+     *
+     */
     @Test
     public void test_findSentBundles_byAdminUser() throws DotDataException {
         //Create a few bundles that the owner is the Admin
         final ArrayList<String> bundleIdsAdmin = new ArrayList<>();
-        final String systemUserId = adminUser.getUserId();
-        for(int i=0;i<5;i++){
-            bundleIdsAdmin.add(insertPublishingBundle(systemUserId,new Date()));
-        }
-        //Create a few bundles that the owner is a new User
-        final User newUser = new UserDataGen().nextPersisted();
-        final String newUserId = newUser.getUserId();
-        for(int i=0;i<5;i++){
-            bundleIdsAdmin.add(insertPublishingBundle(newUserId, new Date()));
-        }
+        
+        try {
 
-        final List<Bundle> bundlesSent = bundleFactory.findSentBundles(100,0);
-        final List<String> bundlesSentIds = bundlesSent.stream().map(Bundle::getId).collect(Collectors.toList());
+            final String systemUserId = adminUser.getUserId();
+            for (int i = 0; i < 5; i++) {
+                bundleIdsAdmin.add(insertPublishingBundle(systemUserId, new Date()));
+            }
+            //Create a few bundles that the owner is a new User
+            final User newUser = new UserDataGen().nextPersisted();
+            final String newUserId = newUser.getUserId();
+            for (int i = 0; i < 5; i++) {
+                bundleIdsAdmin.add(insertPublishingBundle(newUserId, new Date()));
+            }
 
-        //All bundles should be returned since the Admin can see all the bundles
-        for(final String bundleId : bundleIdsAdmin){
-            assertTrue(bundlesSentIds.contains(bundleId));
+            final List<Bundle> bundlesSent = bundleFactory.findSentBundles(100, 0);
+            final List<String> bundlesSentIds = bundlesSent.stream().map(Bundle::getId).collect(Collectors.toList());
+
+            //All bundles should be returned since the Admin can see all the bundles
+            for (final String bundleId : bundleIdsAdmin) {
+                assertTrue(bundlesSentIds.contains(bundleId));
+            }
+        } finally {
+
+            deletePublishingBundle(bundleIdsAdmin);
         }
-
-        deletePublishingBundle(bundleIdsAdmin);
     }
 
     @Test

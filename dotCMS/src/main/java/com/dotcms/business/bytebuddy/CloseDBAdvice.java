@@ -6,7 +6,7 @@ import net.bytebuddy.asm.Advice;
 
 public class CloseDBAdvice {
 
-    @Advice.OnMethodExit(inline = false, onThrowable = DotDataException.class)
+    @Advice.OnMethodExit(inline = false, onThrowable = Throwable.class)
     public static void exit(
             @Advice.Thrown Throwable t
             ) throws Throwable {

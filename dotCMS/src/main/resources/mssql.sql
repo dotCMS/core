@@ -747,12 +747,7 @@ INSERT INTO [dbo].[QRTZ_EXCL_LOCKS] VALUES('JOB_ACCESS');
 INSERT INTO [dbo].[QRTZ_EXCL_LOCKS] VALUES('CALENDAR_ACCESS');
 INSERT INTO [dbo].[QRTZ_EXCL_LOCKS] VALUES('STATE_ACCESS');
 INSERT INTO [dbo].[QRTZ_EXCL_LOCKS] VALUES('MISFIRE_ACCESS');
-create table calendar_reminder (
-   user_id NVARCHAR(255) not null,
-   event_id NVARCHAR(36) not null,
-   send_date datetimeoffset(3) not null,
-   primary key (user_id, event_id, send_date)
-);
+
 create table analytic_summary_pages (
    id numeric(19,0) identity not null,
    summary_id numeric(19,0) not null,
@@ -2539,7 +2534,7 @@ alter table publishing_bundle_environment add constraint FK_environment_id forei
 
 create table publishing_pushed_assets(
     bundle_id NVARCHAR(36) NOT NULL,
-    asset_id NVARCHAR(36) NOT NULL,
+    asset_id NVARCHAR(255) NOT NULL,
     asset_type NVARCHAR(255) NOT NULL,
     push_date datetimeoffset(3),
     environment_id NVARCHAR(36) NOT NULL,
@@ -2686,3 +2681,6 @@ create table storage_x_data (
     PRIMARY KEY (storage_hash, data_hash),
     FOREIGN KEY (data_hash) REFERENCES storage_data (hash_id)
 );
+
+CREATE TABLE shedlock(name VARCHAR(64) NOT NULL, lock_until datetime NOT NULL,
+                      locked_at datetime NOT NULL, locked_by VARCHAR(255) NOT NULL, PRIMARY KEY (name));

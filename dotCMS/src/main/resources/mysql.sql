@@ -517,12 +517,7 @@ INSERT INTO QRTZ_EXCL_LOCKS values('JOB_ACCESS');
 INSERT INTO QRTZ_EXCL_LOCKS values('CALENDAR_ACCESS');
 INSERT INTO QRTZ_EXCL_LOCKS values('STATE_ACCESS');
 INSERT INTO QRTZ_EXCL_LOCKS values('MISFIRE_ACCESS');
-create table calendar_reminder (
-   user_id varchar(255) not null,
-   event_id varchar(36) not null,
-   send_date datetime not null,
-   primary key (user_id, event_id, send_date)
-);
+
 create table analytic_summary_pages (
    id bigint not null auto_increment,
    summary_id bigint not null,
@@ -2315,3 +2310,7 @@ create table storage_x_data (
     PRIMARY KEY (storage_hash, data_hash),
     FOREIGN KEY (data_hash) REFERENCES storage_data (hash_id)
 );
+
+-- https://github.com/lukas-krecan/ShedLock
+CREATE TABLE shedlock(name VARCHAR(64) NOT NULL, lock_until datetime2 NOT NULL,
+                      locked_at datetime2 NOT NULL, locked_by VARCHAR(255) NOT NULL, PRIMARY KEY (name));

@@ -393,13 +393,14 @@ public class ShortyServlet extends HttpServlet {
                     pathBuilder.append(resampleOpt > 0 ? "/resize_ro/" + resampleOpt : StringPool.BLANK);
                     continue;
                 }
-                if (quality > 0) {
-                    pathBuilder.append("/quality_q/" + quality);
-                } else {
-                    pathBuilder.append(jpeg ? "/jpeg_q/75" : StringPool.BLANK);
-                    pathBuilder.append(webp ? "/webp_q/75" : StringPool.BLANK);
-                    pathBuilder.append(jpeg && jpegp ? "/jpeg_p/1" : StringPool.BLANK);
-                }
+            }
+
+            if (quality > 0) {
+                pathBuilder.append("/quality_q/" + quality);
+            } else {
+                pathBuilder.append(jpeg ? "/jpeg_q/75" : StringPool.BLANK);
+                pathBuilder.append(webp ? "/webp_q/75" : StringPool.BLANK);
+                pathBuilder.append(jpeg && jpegp ? "/jpeg_p/1" : StringPool.BLANK);
             }
         }
   }

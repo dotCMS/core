@@ -45,15 +45,19 @@ public class WrapInTransactionAdvice {
         return info;
     }
 
-    @Advice.OnMethodExit(inline = false, onThrowable = DotDataException.class)
-    public static void exit(@Advice.Enter TransactionInfo info, @Advice.Thrown DotDataException t) throws DotDataException {
-        if (t!=null)
-            throw t;
+    @Advice.OnMethodExit(inline = false, onThrowable = Throwable.class )
+    public static void exit(@Advice.Enter TransactionInfo info, @Advice.Thrown Throwable t) throws Throwable {
         if (info!=null)
         {
             try {
             if (info.isLocalTransaction)
             {
+                if (t!=null)
+                {
+                    HibernateUtil.rollbackTransaction();
+                    throw t;
+                }
+
                 try {
                     handleTransactionInteruption(info.connection);
                     HibernateUtil.commitTransaction();
@@ -68,6 +72,9 @@ public class WrapInTransactionAdvice {
                 }
             }
         }
+
+        if (t!=null)
+            throw t;
 
 
     }

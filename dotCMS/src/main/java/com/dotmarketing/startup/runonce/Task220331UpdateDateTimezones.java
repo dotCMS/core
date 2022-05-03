@@ -17,7 +17,7 @@ import java.util.Map;
  * fields.  This allows us to store dates and times with timezone information without forcing us to
  * convert every date/time to a Relative TZ
  */
-public class Task220329UpdateDateTimezones extends Task210901UpdateDateTimezones {
+public class Task220331UpdateDateTimezones extends Task210901UpdateDateTimezones {
 
     static final String COLUMN_DATE_TYPE_WITH_TZ_SUPPORT = "datetimeoffset(3)";
 
@@ -42,10 +42,10 @@ public class Task220329UpdateDateTimezones extends Task210901UpdateDateTimezones
 
                 if (typeName.startsWith("datetime")) {
                     final String columnName = results.getString("COLUMN_NAME");
-                    Logger.info(Task220329UpdateDateTimezones.class, "updating " + tableName + "." + columnName + " to " + COLUMN_DATE_TYPE_WITH_TZ_SUPPORT);
+                    Logger.info(Task220331UpdateDateTimezones.class, "updating " + tableName + "." + columnName + " to " + COLUMN_DATE_TYPE_WITH_TZ_SUPPORT);
                     final String statementString = String.format("ALTER TABLE %s ALTER COLUMN %s %s ", tableName, columnName, COLUMN_DATE_TYPE_WITH_TZ_SUPPORT);
                     Try.of(() -> conn.prepareStatement(statementString).execute()).onFailure(throwable -> Logger.error(
-                            Task220329UpdateDateTimezones.class, "error executing: " + statementString, throwable));
+                            Task220331UpdateDateTimezones.class, "error executing: " + statementString, throwable));
                     tableUpdated = true;
                 }
             }

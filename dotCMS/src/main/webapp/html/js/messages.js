@@ -27,8 +27,9 @@ function showDotCMSSystemMessage(message, isError) {
         id: "systemMessages" + messagesCount,
         className: className
     }, holdingDiv);
-
-    systemMessages.innerHTML = message;
+    
+    var messageText = message instanceof Error ? message.message : message;
+    systemMessages.innerHTML = messageText;
 
     dojo.connect(dijit.byId("systemMessages"), "onClick", hideDotCMSSystemMessage);
 
@@ -41,7 +42,7 @@ function showDotCMSSystemMessage(message, isError) {
     var fadeIn = dojo.fadeIn({node: "systemMessages" + messagesCount, duration: 5000, onEnd: fadeOutFn});
     fadeIn.play();
 
-    var ttl = message.split(" ").length;
+    var ttl = messageText ? messageText.split(" ").length : 0;
     ttl = ttl * 200;
     if (ttl < 1000) {
         ttl = 1000;

@@ -202,6 +202,7 @@ else {
 
 
 
+def eeType = dotcmsReleaseVersion == "master" ? '-SNAPSHOT' : ''
 
 dependencies {
 
@@ -219,10 +220,10 @@ dependencies {
 
     /*****  Felix libs need to be placed in the WEB-INF/felix/bundle directory. This was previously handled using a pre-build copy task.  *****/
     felix group: 'org.apache.felix', name: 'org.apache.felix.fileinstall', version: '3.6.4'
-    felix (group: 'org.apache.felix', name: 'org.apache.felix.configadmin', version: '1.9.2') {
+    felix(group: 'org.apache.felix', name: 'org.apache.felix.configadmin', version: '1.9.2') {
         transitive = false
     }
-    felix (group: 'org.osgi', name: 'org.osgi.compendium', version: '4.3.1') {
+    felix(group: 'org.osgi', name: 'org.osgi.compendium', version: '4.3.1') {
         transitive = false
     }
     felix(group: 'org.apache.tika', name: 'tika-core', version: '1.19') {
@@ -238,10 +239,12 @@ dependencies {
 
     felix group: 'com.dotcms.samlbundle', name: 'com.dotcms.samlbundle', version: '22.03'
 
-    starter group: 'com.dotcms', name: 'starter', version: 'empty_20220218', ext: 'zip'
+
+
+    starter group: 'com.dotcms', name: 'starter', version: 'empty_20220407', ext: 'zip'
     //Uncomment this line if you want to download the starter that comes with data
-    //starter group: 'com.dotcms', name: 'starter', version: '20220209', ext: 'zip'
-    testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20220218', ext: 'zip'
+    //starter group: 'com.dotcms', name: 'starter', version: '20220414', ext: 'zip'
+    testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20220407', ext: 'zip'
 
     profiler group: 'glowroot-custom', name: 'glowroot-agent', version: '0.13.1'
     profilerDependencies group: 'glowroot-custom', name: 'collector-https-linux', version: '0.13.1'
@@ -252,8 +255,10 @@ dependencies {
     //individualTestCompile sourceSets.test.output
     //integrationTestCompile sourceSets.test.output
 
-    if (project.gradle.startParameter.taskNames.contains('deployWarTomcatDev') || project.gradle.startParameter.taskNames.contains('testDev')) {
-        configurations.compile.exclude group: 'com.dotcms.enterprise', module: 'ee'
+
+    if (!(project.gradle.startParameter.taskNames.contains('deployWarTomcatDev') || project.gradle.startParameter.taskNames.contains('testDev'))) {
+
+        implementation group: 'com.dotcms.enterprise', name: 'ee', version: dotcmsReleaseVersion + eeType, changing: true
     }
 }
 
@@ -269,7 +274,7 @@ import java.text.SimpleDateFormat
 apply from: "$rootDir/dependencies.gradle"
 
 
-
+def enterpriseSrcFolder = file("$enterpriseProjectHome/src/main/java")
 idea {
 
     module {
@@ -296,6 +301,7 @@ idea {
     }
 }
 
+ant.lifecycleLogLevel = "INFO"
 
 task prepareIntegrationTests(dependsOn: ['dowloadStarterForTests', 'prepareFelixForTests']) {}
 prepareIntegrationTests.group='dotCMS tests'
@@ -525,18 +531,6 @@ class ClonePullTomcatTask extends DefaultTask{
     }
 
 }
-
-//Executes clonePullTomcat task from dist version
-task clonePullTomcatDist(type: ClonePullTomcatTask) {
-    tomcatLocation = tomcatDistBase
-}
-
-
-//Executes a pull or clone to get tomcat from the repository
-task clonePullTomcat(type: ClonePullTomcatTask) {
-
-}
-
 
 
 // WAR
@@ -771,16 +765,38 @@ task zip(type: Zip) {
 
 // Delete ROOT under tomcat9/webapps
 task undeployWarTomcat(type: Delete) {
+    group='dotCMS Util'
+    description='Removes /tomcat9/webapps folder. (reset tomcat)'
+
+    mustRunAfter 'backupWarTomcatData'
+
     delete tomcatInstallLocation + webAppRootFolder
     followSymlinks = true
 }
 
-
 // Makes all the magic to place the webapp under tomcat8 for devs.
 task deployWarTomcat(type: DeployWarTomcatTask) {
+    group='dotCMS Development'
+    description='Will checkout the tomcat app server, generate a war structure and copy it to the just checked out tomcat. If the app server exist instead of a checkout a git pull will be use.'
     dependsOn 'war', 'clonePullTomcat', 'undeployWarTomcat'
     tomcatPath = tomcatInstallLocation
 }
+
+
+
+//Same as the deploy-war-tomcat except that it will backup the assets, dotsecure, META-INF and H2 folders
+//in order to restore them after the deploy.
+//This is useful in cases when you need to make a deploy-war-tomcat but keeping your current data.
+task deployWarTomcatBackup(type: DeployWarTomcatTask){
+    finalizedBy 'restoreBackupWarTomcatData'
+    group='dotCMS Development'
+    description='Same as deployWarTomcat but will also backup and restore the assets, dotsecure, META-INF and h2 database folders. (Useful for development)'
+
+    dependsOn 'war', 'clonePullTomcat', 'backupWarTomcatData', 'undeployWarTomcat'
+    tomcatPath = tomcatInstallLocation
+
+}
+
 
 //Executes deployWarTomcat task from dist version
 task deployWarTomcatDist(type: DeployWarTomcatTask) {
@@ -789,9 +805,30 @@ task deployWarTomcatDist(type: DeployWarTomcatTask) {
 
     dependsOn 'war'
     tomcatPath = tomcatDistBase
-
 }
 
+//Same as deployWarTomcat but will use the no obfuscated version of the enterprise jars.
+//(Useful for development)
+task deployWarTomcatDev (dependsOn: 'deployWarTomcat') {
+
+}
+deployWarTomcatDev.finalizedBy 'generateMoveCleanEnterpriseTomcat'
+deployWarTomcatDev.group='dotCMS Development'
+deployWarTomcatDev.description='Same as deployWarTomcat but will use the no obfuscated version of the enterprise jar. (Useful for development)'
+
+//Executes a pull or clone to get tomcat from the repository
+task clonePullTomcat(type: ClonePullTomcatTask) {
+    group='dotCMS Util'
+    description='Clones or pull /tomcat9 folder.'
+}
+
+
+//Executes clonePullTomcat task from dist version
+task clonePullTomcatDist(type: ClonePullTomcatTask) {
+    group='dotCMS Util'
+    description='Clones or pull /tomcat8 folder to be used on on the distribution.'
+    tomcatLocation = tomcatDistBase
+}
 
 //Creates the final distribution files for dotCMS.
 task createDistPrep(dependsOn: ['clonePullTomcatDist', 'deployWarTomcatDist']) {
@@ -1042,7 +1079,7 @@ task backupWarTomcatData() {
 task restoreBackupWarTomcatData() {
     group='dotCMS Util'
     description='Restores content of assets, dotsecure, META-INF and H2_Database.'
-
+    finalizedBy 'deployConfig'
     doLast {
         delete "$tomcatInstallLocation$webAppRootFolder/assets"
         copy {

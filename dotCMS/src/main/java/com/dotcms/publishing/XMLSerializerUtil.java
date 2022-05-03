@@ -5,8 +5,8 @@ import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.XStreamException;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.DomDriver;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
+
+import java.nio.charset.StandardCharsets;
 
 /**
  * Util for serialize object to XML file
@@ -14,7 +14,7 @@ import java.io.OutputStreamWriter;
 public class XMLSerializerUtil {
 
     private static final XMLSerializerUtil instance= new XMLSerializerUtil();
-    private XStream xmlSerializer = null;
+    private XStream xmlSerializer;
 
 
     /**
@@ -28,7 +28,11 @@ public class XMLSerializerUtil {
     }
 
     private XMLSerializerUtil(){
-        xmlSerializer = new XStream(new DomDriver("UTF-8"));
+        xmlSerializer = new XStream(new DomDriver(StandardCharsets.UTF_8.name()));
+    }
+
+    public XStream getXmlSerializer() {
+        return xmlSerializer;
     }
 
     /**

@@ -562,11 +562,14 @@ public class ContentUtils {
                             .stream().map(cont -> cont.getIdentifier()).collect(
                                     Collectors.toList()))).append(")");
 
-                    final List<String> results = conAPI.searchIndex(pullQuery.toString(), limit,offset, sort, user, true)
+                    final List<String> results = conAPI.searchIndex(pullQuery.toString(), -1,-1, sort, user, true)
                                     .stream()
                                     .map(cs-> cs.getIdentifier()).collect(Collectors.toList());
+
+					final List<Contentlet> filteredList = relatedContent.stream().filter(c->results.contains(c.getIdentifier()))
+							.collect(Collectors.toList());
                     
-                    return relatedContent.stream().filter(c->results.contains(c.getIdentifier())).collect(Collectors.toList());
+                    return filteredList.subList(offset>=0?offset:0, (limit > 0 && limit <= filteredList.size())? limit: filteredList.size());
                 } 
                 
                 //pulling parents
