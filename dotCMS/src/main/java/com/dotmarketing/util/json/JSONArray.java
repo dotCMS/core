@@ -58,16 +58,13 @@ import java.util.Map;
  * @author JSON.org
  * @version 2009-04-14
  */
-public class JSONArray  implements Collection<Object> {
-
-
-
+public class JSONArray implements Collection<Object> {
 
 
     /**
      * The arrayList where the JSONArray's properties are kept.
      */
-    private final ArrayList myArrayList= new ArrayList();
+    private final ArrayList<Object> myArrayList;
 
 
     public void add(int index, Object element) {
@@ -179,7 +176,7 @@ public class JSONArray  implements Collection<Object> {
      * Construct an empty JSONArray.
      */
     public JSONArray() {
-        this.myArrayList.clear();
+        this.myArrayList=new ArrayList<>();
     }
 
     /**
@@ -222,7 +219,7 @@ public class JSONArray  implements Collection<Object> {
             case ']':
             case ')':
                 if (q != c) {
-                    throw x.syntaxError("Expected a '" + new Character(q) + "'");
+                    throw x.syntaxError("Expected a '" + Character.valueOf(q) + "'");
                 }
                 return;
             default:
@@ -248,10 +245,10 @@ public class JSONArray  implements Collection<Object> {
      * Construct a JSONArray from a Collection.
      * @param collection     A Collection.
      */
-    public JSONArray(Collection collection) {
-		this.myArrayList.clear();
+    public JSONArray(Collection<Object> collection) {
+		this();
 		if (collection != null) {
-			Iterator iter = collection.iterator();
+			Iterator<Object> iter = collection.iterator();
 			while (iter.hasNext()) {
 			    Object o = iter.next();
                 this.myArrayList.add(JSONObject.wrap(o));  
@@ -660,7 +657,7 @@ public class JSONArray  implements Collection<Object> {
      * @param value A Collection value.
      * @return      this.
      */
-    public JSONArray put(Collection value) {
+    public JSONArray put(Collection<Object> value) {
         put(new JSONArray(value));
         return this;
     }
@@ -674,7 +671,7 @@ public class JSONArray  implements Collection<Object> {
      * @return this.
      */
     public JSONArray put(double value) throws JSONException {
-        Double d = new Double(value);
+        Double d = Double.valueOf(value);
         JSONObject.testValidity(d);
         put(d);
         return this;
@@ -688,7 +685,7 @@ public class JSONArray  implements Collection<Object> {
      * @return this.
      */
     public JSONArray put(int value) {
-        put(new Integer(value));
+        put( Integer.valueOf(value));
         return this;
     }
 
@@ -700,7 +697,7 @@ public class JSONArray  implements Collection<Object> {
      * @return this.
      */
     public JSONArray put(long value) {
-        put(new Long(value));
+        put( Long.valueOf(value));
         return this;
     }
 
@@ -771,7 +768,7 @@ public class JSONArray  implements Collection<Object> {
      * not finite.
      */
     public JSONArray put(int index, double value) throws JSONException {
-        put(index, new Double(value));
+        put(index, Double.valueOf(value));
         return this;
     }
 
@@ -786,7 +783,7 @@ public class JSONArray  implements Collection<Object> {
      * @throws JSONException If the index is negative.
      */
     public JSONArray put(int index, int value) throws JSONException {
-        put(index, new Integer(value));
+        put(index,  Integer.valueOf(value));
         return this;
     }
 
@@ -801,7 +798,7 @@ public class JSONArray  implements Collection<Object> {
      * @throws JSONException If the index is negative.
      */
     public JSONArray put(int index, long value) throws JSONException {
-        put(index, new Long(value));
+        put(index,  Long.valueOf(value));
         return this;
     }
 
