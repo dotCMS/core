@@ -1,41 +1,23 @@
 #macro(renderText $content)
-
-    #if($content.marks)
-        #set($start = 0)
-        #set($end = $content.marks.length())
-        #set($end = $end - 1)
-        #set($range = [$start..$end])
-
-        #foreach($i in $range)
-            #set($mark = $content.marks.get($i))
-            #if ($mark.type == "bold")
+     #foreach($mark in $!content.marks)
+         #if ($mark.type == "bold")
             <strong>
-            #end
-            #if ($mark.type == "italic")
+         #elseif ($mark.type == "italic")
             <em>
-            #end
-            #if ($mark.type == "underline")
+         #elseif($mark.type == "underline")
             <u>
-            #end
-        #end
-    #end
-
+         #end
+     #end
+    
     $!content.text
 
-    #if($content.marks)
-        #set($range = [$end..$start])
-        #foreach($i in $range)
-            #set($mark = $content.marks.get($i))
-            #if ($mark.type == "bold")
+     #foreach($mark in $!content.marks)
+         #if ($mark.type == "bold")
             </strong>
-            #end
-            #if ($mark.type == "italic")
+         #elseif ($mark.type == "italic")
             </em>
-            #end
-            #if ($mark.type == "underline")
+         #elseif($mark.type == "underline")
             </u>
-            #end
-        #end
-    #end
-
+         #end
+     #end
 #end
