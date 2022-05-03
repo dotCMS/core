@@ -43,6 +43,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -626,7 +627,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     return true;
   }
 
-  final boolean LOAD_FROM_CACHE=Config.getBooleanProperty("LOAD_CONTENTTYPE_DETAILS_FROM_CACHE", true);
+  final static Lazy<Boolean> LOAD_FROM_CACHE=Lazy.of(()->Config.getBooleanProperty("LOAD_CONTENTTYPE_DETAILS_FROM_CACHE", true));
 
   private List<ContentType> dbSearch(final String search, final int baseType, String orderBy, int limit, final int offset,final String hostId)
       throws DotDataException {
@@ -647,7 +648,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     final String hostParam = UtilMethods.isSet(hostId) ? StringPool.PERCENT + hostId + StringPool.PERCENT : StringPool.PERCENT;
     DotConnect dc = new DotConnect();
 
-    if(LOAD_FROM_CACHE) {
+    if(LOAD_FROM_CACHE.get()) {
         dc.setSQL( String.format( this.contentTypeSql.SELECT_INODE_ONLY_QUERY_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ), orderBy ) );
     }else {
         dc.setSQL( String.format( this.contentTypeSql.SELECT_QUERY_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ), orderBy ) );
@@ -663,7 +664,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
     Logger.debug(this, ()-> "QUERY " + dc.getSQL());
 
-    if(LOAD_FROM_CACHE) {
+    if(LOAD_FROM_CACHE.get()) {
         return dc.loadObjectResults()
                     .stream()
                     .map(m-> Try.of(()->find((String) m.get("inode")))

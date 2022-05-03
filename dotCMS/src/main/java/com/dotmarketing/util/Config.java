@@ -522,8 +522,8 @@ public class Config {
 	 * @return
 	 */
 	public static boolean getBooleanProperty (String name, boolean defaultVal) {
-	    _refreshProperties ();
-        Boolean value = Try.of(()->props.getBoolean(envKey(name))).getOrNull();
+
+        Boolean value = props.containsKey(name)  ? Try.of(()->props.getBoolean(envKey(name))).getOrNull() : null;
         if(value!=null) {
             return value;
         }
