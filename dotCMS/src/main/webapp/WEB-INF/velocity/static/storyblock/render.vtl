@@ -1,0 +1,41 @@
+#macro(renderContentBlock $data)
+    #foreach($element in $data)
+        #if( $element.type == "paragraph" )
+            <p style="text-align: $!element.attrs.textAlign;">
+                #renderContentBlock($element.content)
+            </p>
+        #elseif( $element.type == "heading" )
+            #if($element.attrs.level == "1")
+                <h1 style="text-align: $!element.attrs.textAlign;">
+                    #renderContentBlock($element.content)
+                </h1>
+            #elseif($element.attrs.level == "2")
+                <h2 style="text-align: $!element.attrs.textAlign;">
+                    #renderContentBlock($element.content)
+                </h2>
+            #elseif($element.attrs.level == "3")
+                <h3 style="text-align: $!element.attrs.textAlign;">
+                    #renderContentBlock($element.content)
+                </h3>
+            #end
+        #elseif( $element.type == "listItem" )
+            <li style="text-align: $!element.attrs.textAlign;">
+                #renderContentBlock($element.content)
+            </li>
+        #elseif( $element.type == "bulletList" )
+            <ul style="text-align: $!element.attrs.textAlign;">
+                #renderContentBlock($element.content)
+            </ul>
+        #elseif( $element.type == "orderedList" )
+            <ul style="text-align: $!element.attrs.textAlign;">
+                #renderContentBlock($element.content)
+            </ul>
+        #elseif( $element.type == "hardBreak" )
+            <br />
+        #elseif( $element.type == "horizontalRule" )
+            <hr />
+        #elseif( $element.type == "text" )
+            #renderMarks($element)
+        #end
+    #end
+#end

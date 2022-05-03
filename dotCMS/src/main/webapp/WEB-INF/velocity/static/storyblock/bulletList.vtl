@@ -1,14 +1,5 @@
-<ul>
-#foreach($listItem in $item.content)
-#if ($listItem.type == "listItem")
-<li style="text-align: $listItem.attrs.textAlign">
-#foreach($listItemContent in $listItem.content)
-#foreach($listItemContentContent in $listItemContent.content)
-#set($listItemContentContent = $listItemContent.content.get($i3))
-#renderMarks($listItemContentContent)
-#end
-#end
-</li>
-#end
-#end
+#parse( "static/storyblock/render.vtl" )
+
+<ul> 
+#renderContentBlock($item.content)
 </ul>

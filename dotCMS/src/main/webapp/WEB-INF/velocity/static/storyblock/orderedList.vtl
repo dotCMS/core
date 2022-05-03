@@ -1,13 +1,5 @@
+#parse( "static/storyblock/render.vtl" )
+
 <ol style="text-align: $!item.attrs.textAlign">
-   #foreach($listItem in $item.content)
-      #if ($listItem.type == "listItem")
-      <li style="text-align: $listItem.attrs.textAlign">
-         #foreach($listItemContent in $listItem.content)
-            #foreach($listItemContentContent in $listItemContent.content)
-                #renderMarks($listItemContentContent)
-            #end
-         #end
-      </li>
-      #end
-   #end
+    #renderContentBlock($!item.content)
 </ol>

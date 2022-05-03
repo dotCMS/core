@@ -1,5 +1,5 @@
+#parse( "static/storyblock/render.vtl" )
+
 <p style="text-align: $!item.attrs.textAlign">
-#foreach($zContent in $item.content)
-#renderMarks($zContent)
-#end
+    #renderContentBlock($!item.content)
 </p>
