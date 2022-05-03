@@ -1,11 +1,35 @@
 package com.dotcms.rendering.velocity.viewtools.content;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
+import com.dotcms.contenttype.model.type.FileAssetContentType;
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.liferay.portal.model.User;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Date;
+import java.util.List;
+
+import static junit.framework.TestCase.assertEquals;
 
 public class StoryBlockMapTest extends IntegrationTestBase {
 
@@ -175,6 +199,72 @@ public class StoryBlockMapTest extends IntegrationTestBase {
         Assert.assertTrue(html.contains("<h2 style=\"text-align: left\">"));
         Assert.assertTrue(html.contains("heading 2"));
         Assert.assertTrue(html.contains("</h2>"));
+
+    }
+
+    /**
+     * Method to test: {@link StoryBlockMap#toHtml()}
+     * Given Scenario: Will parse the json paragraph and render the custom html
+     * ExpectedResult: The html rendered is the custom one
+     *
+     */
+    @Test
+    public void test_overridden_render_to_html() throws JSONException, DotDataException, DotSecurityException, IOException {
+
+        final String fileName = "paragraph.vtl";
+        final String storyBlockPath = "/application/story-test/blocks/";
+        final User user = APILocator.systemUser();
+        final Host host = APILocator.getHostAPI().findDefaultHost(user, false);
+        final Folder folder = APILocator.getFolderAPI().createFolders(storyBlockPath,
+                host, user, false);
+
+        if(!APILocator.getFileAssetAPI().fileNameExists(host, folder, fileName)) {
+
+            final File tempTestFile = File
+                    .createTempFile("paragraph" , ".vtl");
+            FileUtils.writeStringToFile(tempTestFile,
+                    "<p>\n" +
+                            "    #set($start = 0)\n" +
+                            "    #set($end = $item.content.length())\n" +
+                            "    #set($end = $end - 1)\n" +
+                            "    #set($range = [$start..$end])\n" +
+                            "    #foreach($i in $range)\n" +
+                            "    #set($content = $item.content.get($i))\n" +
+                            "        $content.text\n" +
+                            "    #end\n" +
+                            "</p>");
+
+            final String variable = "testFileAsset" + System.currentTimeMillis();
+            final ContentType fileAssetContentType = APILocator.getContentTypeAPI(user).save(ContentTypeBuilder
+                    .builder(FileAssetContentType.class).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name(variable)
+                    .owner(user.getUserId()).build());
+
+            assertEquals(fileAssetContentType.baseType(), BaseContentType.FILEASSET);
+            assertEquals(fileAssetContentType.variable().toLowerCase(), variable.toLowerCase());
+
+            final Contentlet paragraphFileAsset = new Contentlet();
+            paragraphFileAsset.setContentType(fileAssetContentType);
+            paragraphFileAsset.setBinary(FileAssetContentType.FILEASSET_FILEASSET_FIELD_VAR, tempTestFile);
+            paragraphFileAsset.setProperty(FileAssetContentType.FILEASSET_FILE_NAME_FIELD_VAR, fileName);
+            paragraphFileAsset.setProperty(Contentlet.TITTLE_KEY, fileName);
+            paragraphFileAsset.setProperty(Contentlet.HOST_KEY, host.getIdentifier());
+            paragraphFileAsset.setProperty(Contentlet.FOLDER_KEY, folder.getIdentifier());
+            paragraphFileAsset.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
+
+            final Contentlet checkinContentlet = APILocator.getContentletAPI().checkin(paragraphFileAsset,
+                    new ContentletDependencies.Builder()
+                            .modUser(user).indexPolicy(IndexPolicy.FORCE).build());
+
+            APILocator.getContentletAPI().publish(checkinContentlet, user, false);
+        }
+
+
+        final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON_PARAGRAPH);
+        final String html = storyBlockMap.toHtml(storyBlockPath);
+        // expecting diff html here (not the default)
+        Assert.assertTrue(html.contains("<p>"));
+        Assert.assertTrue(html.contains("this is paragraph"));
+        Assert.assertTrue(html.contains("</p>"));
 
     }
 
