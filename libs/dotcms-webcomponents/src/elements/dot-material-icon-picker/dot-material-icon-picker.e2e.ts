@@ -24,6 +24,13 @@ describe('dot-material-icon-picker', () => {
             expect(icons.length).toBeGreaterThan(0);
         });
 
+        it('should button be type "button"', async () => {
+            const dropdownButton = await page.find(
+                'dot-material-icon-picker .dot-material-icon__button'
+            );
+            expect(dropdownButton.getAttribute('type')).toBe('button');
+        });
+
         it('should have input color', async () => {
             const inputColor = await page.find('dot-material-icon-picker #iconColor');
             expect(inputColor.getAttribute('type')).toBe('color');
@@ -103,7 +110,7 @@ describe('dot-material-icon-picker', () => {
             await input.type('tool');
             await page.waitForChanges();
             const icons: E2EElement[] = await page.findAll('[aria-labelledby]');
-            icons.forEach( (icon) =>  results.push(icon.innerText));
+            icons.forEach((icon) => results.push(icon.innerText));
             expect(results).toContain('pan_tool');
         });
 

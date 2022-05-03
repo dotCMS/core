@@ -210,6 +210,7 @@ export class DotMaterialIcon {
                         <button
                             class="dot-material-icon__button"
                             role="button"
+                            type="button"
                             onClick={(e: MouseEvent) => {
                                 e.preventDefault();
                                 this.onFocus(true);

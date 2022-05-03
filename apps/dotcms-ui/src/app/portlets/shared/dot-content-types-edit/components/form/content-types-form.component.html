@@ -21,6 +21,7 @@
         <dot-md-icon-selector
             id="content-type-form-icon"
             formControlName="icon"
+            [tabindex]="2"
         ></dot-md-icon-selector>
     </div>
 
@@ -34,7 +35,7 @@
             id="content-type-form-description"
             name="description"
             formControlName="description"
-            [tabindex]="2"
+            [tabindex]="3"
         />
     </div>
     <div class="field">
@@ -45,7 +46,7 @@
             id="content-type-form-host"
             formControlName="host"
             [system]="true"
-            [tabindex]="3"
+            [tabindex]="4"
         ></dot-site-selector-field>
     </div>
     <div class="field">
@@ -53,6 +54,7 @@
             'contenttypes.form.label.workflow' | dm
         }}</label>
         <dot-workflows-selector-field
+            [tabindex]="5"
             id="content-type-form-workflow"
             formControlName="workflows"
         ></dot-workflows-selector-field>
@@ -62,6 +64,7 @@
             'contenttypes.form.label.workflow.actions' | dm
         }}</label>
         <dot-workflows-actions-selector-field
+            [tabindex]="6"
             formControlName="NEW"
             [workflows]="workflowsSelected$ | async"
         ></dot-workflows-actions-selector-field>
@@ -85,7 +88,7 @@
                 formControlName="publishDateVar"
                 (onChange)="handleDateVarChange($event, 'publishDateVar')"
                 [style]="{ 'min-width': '90px' }"
-                [tabindex]="5"
+                [tabindex]="7"
             ></p-dropdown>
         </div>
         <div class="field col">
@@ -100,7 +103,7 @@
                 formControlName="expireDateVar"
                 (onChange)="handleDateVarChange($event, 'expireDateVar')"
                 [style]="{ 'min-width': '90px' }"
-                [tabindex]="6"
+                [tabindex]="8"
             ></p-dropdown>
         </div>
     </div>
@@ -115,7 +118,7 @@
         <dot-page-selector
             id="content-type-form-detail-page"
             formControlName="detailPage"
-            [tabindex]="7"
+            [tabindex]="9"
             [label]="'contenttypes.form.field.detail.page' | dm"
         ></dot-page-selector>
     </div>
@@ -132,7 +135,7 @@
             id="content-type-form-url-map-pattern"
             name="urlMapPattern"
             formControlName="urlMapPattern"
-            [tabindex]="8"
+            [tabindex]="10"
         />
     </div>
 </form>
