@@ -131,6 +131,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	private List<Container> findAllHostDataBaseContainers() throws DotDataException {
 
 		final String tableName 			 = Type.CONTAINERS.getTableName();
+
 		final StringBuilder sql = new StringBuilder()
 				.append("SELECT ")
 				.append(tableName)
@@ -154,19 +155,24 @@ public class ContainerFactoryImpl implements ContainerFactory {
       Container container = CacheLocator.getContainerCache().get(inode);
       //If it is not in cache.
       if(container == null){
-          
-          //Get container from DB.
-          HibernateUtil dh = new HibernateUtil(Container.class);
-          
-          Container containerAux= (Container) dh.load(inode);
+		  final String tableName 			 = Type.CONTAINERS.getTableName();
+		  final StringBuilder sql = new StringBuilder()
+				  .append("SELECT ")
+				  .append(tableName)
+				  .append(".*, dot_containers_1_.* from ")
+				  .append(tableName)
+				  .append(", inode dot_containers_1_, container_version_info vv where vv.working_inode= ")
+				  .append(tableName)
+				  .append(".inode and ")
+				  .append(tableName)
+				  .append(".inode = dot_containers_1_.inode and dot_containers_1_.type='containers'")
+				  .append(" and dot_containers_1_.inode = ?");
 
-          if(InodeUtils.isSet(containerAux.getInode())){
-              //container is the one we are going to return.
-              container = containerAux;
-              //Add to cache.
-              CacheLocator.getContainerCache().add(container);
-          }
-          
+		  container = TransformerLocator.createContainerTransformer
+				  (new DotConnect().setSQL(sql.toString()).addParam(inode).loadObjectResults())
+				  .findFirst();
+
+		  CacheLocator.getContainerCache().add(container);
       }
       
       return container;
@@ -917,11 +923,12 @@ public class ContainerFactoryImpl implements ContainerFactory {
            dc.addParam(replacementUserId);
            dc.addParam(userId);
            dc.loadResult();
-         
+
+           Logger.info(this, "containers to update: " + containers);
            for(HashMap<String, String> ident:containers){
                String identifier = ident.get("identifier");
+               Logger.info(this, "Updating container: " + identifier);
                if (UtilMethods.isSet(identifier)) {
-
         			   final VersionInfo info =APILocator.getVersionableAPI().getVersionInfo(identifier);
         			   CacheLocator.getContainerCache().remove(info);
 
