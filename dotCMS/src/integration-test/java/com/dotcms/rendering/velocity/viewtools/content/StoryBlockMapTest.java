@@ -1,12 +1,18 @@
 package com.dotcms.rendering.velocity.viewtools.content;
 
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.util.json.JSONException;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+/**
+ * Integration Tests for operations related to data manipulation of Story Block fields.
+ *
+ * @author Jonathan Sanchez
+ * @since Mar 1st, 2022
+ */
 public class StoryBlockMapTest extends IntegrationTestBase {
 
     private static final String JSON =
@@ -36,8 +42,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
      *
      */
     @Test(expected = JSONException.class)
-    public void test_empty_json_to_html() throws  JSONException {
-
+    public void test_empty_json_to_html() {
         new StoryBlockMap("");
     }
 
@@ -48,7 +53,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
      *
      */
     @Test
-    public void test_default_olist_render_to_html() throws  JSONException {
+    public void test_default_olist_render_to_html() {
 
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON_OLIST);
         final String html = storyBlockMap.toHtml();
@@ -91,7 +96,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
      *
      */
     @Test
-    public void test_default_ulist_render_to_html() throws  JSONException {
+    public void test_default_ulist_render_to_html() {
 
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON_ULIST);
         final String html = storyBlockMap.toHtml();
@@ -134,7 +139,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
      *
      */
     @Test
-    public void test_default_paragraph_render_to_html() throws  JSONException {
+    public void test_default_paragraph_render_to_html() {
 
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON_PARAGRAPH);
         final String html = storyBlockMap.toHtml();
@@ -154,7 +159,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
      *
      */
     @Test
-    public void test_default_contentlet_render_to_html() throws  JSONException {
+    public void test_default_contentlet_render_to_html() {
 
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON_CONTENTLET);
         final String html = storyBlockMap.toHtml();
@@ -168,7 +173,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
      *
      */
     @Test
-    public void test_default_render_to_html() throws  JSONException {
+    public void test_default_render_to_html() {
 
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON);
         final String html = storyBlockMap.toHtml();
@@ -176,7 +181,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
         Assert.assertTrue(html.contains("test2</h2>"));
         Assert.assertTrue(html.contains("test1</h2>"));
         Assert.assertTrue(html.contains("<strong>\n" +
-                "                                                \n" +
+                "                                                                        \n" +
                 "    heading 1\n" +
                 "\n" +
                 "                                    </strong>"));
@@ -185,13 +190,13 @@ public class StoryBlockMapTest extends IntegrationTestBase {
                 "                \n" +
                 "    \n" +
                 "                                <strong>\n" +
-                "                                                                                            <u>\n" +
-                "                        \n" +
+                "                                                                                                                                <u>\n" +
+                "                                    \n" +
                 "    heading 2\n" +
                 "\n" +
-                "                                                            </u>\n" +
-                "                                            </strong>\n" +
-                "                                                \n" +
+                "                                                                        </u>\n" +
+                "                                                        </strong>\n" +
+                "                                                                        \n" +
                 "    </h2>"));
         Assert.assertTrue(html.contains("<ol style=\"text-align: \">\n" +
                 "\n" +
@@ -209,11 +214,11 @@ public class StoryBlockMapTest extends IntegrationTestBase {
                 "                                                                    \n" +
                 "    \n" +
                 "                                <strong>\n" +
-                "                                                \n" +
+                "                                                                        \n" +
                 "    two\n" +
                 "\n" +
                 "                                    </strong>\n" +
-                "                                                \n" +
+                "                                                                        \n" +
                 "                                        </li>\n" +
                 "        \n" +
                 "                        <li style=\"text-align: $listItem.attrs.textAlign\">\n" +
@@ -257,6 +262,5 @@ public class StoryBlockMapTest extends IntegrationTestBase {
                 "        \n" +
                 "    </ul>"));
     }
-
 
 }
