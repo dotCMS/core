@@ -48,7 +48,7 @@ export class SuggestionListComponent implements AfterContentInit {
     setFirstItemActive() {
         this.keyManager.activeItem?.unfocus();
         this.keyManager.setFirstItemActive();
-        this.keyManager.activeItem.focus();
+        this.keyManager.activeItem?.focus();
     }
 
     /**

@@ -5,7 +5,9 @@ import {
     OnInit,
     ViewChild,
     HostListener,
-    AfterViewInit
+    AfterViewInit,
+    Output,
+    EventEmitter
 } from '@angular/core';
 
 import { SafeUrl } from '@angular/platform-browser';
@@ -31,6 +33,12 @@ export interface DotMenuItem extends Omit<MenuItem, 'icon'> {
     data?: Record<string, unknown>;
 }
 
+enum ItemsType {
+    BLOCK = 'block',
+    CONTENTTYPE = 'contentType',
+    CONTENT = 'content'
+}
+
 @Component({
     selector: 'dotcms-suggestions',
     templateUrl: './suggestions.component.html',
@@ -43,8 +51,13 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
 
     @Input() items: DotMenuItem[] = [];
     @Input() title = 'Select a block';
+    @Input() noResultsMessage = 'No Results';
     @Input() isOpen = false;
+    @Output() clearFilter: EventEmitter<string> = new EventEmitter<string>();
 
+    initialItems: DotMenuItem[];
+    isFilterActive = false;
+    private itemsLoaded: ItemsType;
     private mouseMove = true;
     private dotLang: Languages;
 
@@ -65,6 +78,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
             this.items = suggestionOptions;
             this.items.forEach((item) => {
                 item.command = () => {
+                    this.clearFilter.emit('');
                     item.id.includes('heading')
                         ? this.onSelection({
                               type: { name: 'heading', ...item.attributes }
@@ -78,13 +92,15 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
                     label: 'Contentlets',
                     icon: 'receipt',
                     command: () => {
+                        this.clearFilter.emit('contentlet');
                         this.initContentletSelection();
                     }
                 },
                 ...this.items
             ];
         }
-
+        this.initialItems = this.items;
+        this.itemsLoaded = ItemsType.BLOCK;
         this.dotLanguageService
             .getLanguages()
             .pipe(take(1))
@@ -125,7 +141,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
      * @memberof SuggestionsComponent
      */
     setFirstItemActive() {
-        this.list.setFirstItemActive();
+        this.list?.setFirstItemActive();
     }
 
     /**
@@ -196,6 +212,27 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
         this.initContentletSelection();
     }
 
+    /**
+     * Set items visible based on filter
+     *
+     * @param {string} filter
+     * @memberof SuggestionsComponent
+     */
+    filterItems(filter: string = '') {
+        switch (this.itemsLoaded) {
+            case ItemsType.BLOCK:
+                this.items = this.initialItems.filter((item) =>
+                    item.label.toLowerCase().includes(filter.trim().toLowerCase())
+                );
+                break;
+            case ItemsType.CONTENTTYPE:
+                //TODO: need to define pagination approach.
+                break;
+        }
+        this.isFilterActive = !!filter.length;
+        this.setFirstItemActive();
+    }
+
     private initContentletSelection() {
         this.suggestionsService
             .getContentTypes()
@@ -232,6 +269,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
                                         });
 
                                         if (this.items.length) {
+                                            this.itemsLoaded = ItemsType.CONTENT;
                                             this.title = 'Select a contentlet';
                                             this.cd.detectChanges();
                                             this.resetKeyManager();
@@ -249,6 +287,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
             .subscribe((items) => {
                 this.title = 'Select a content type';
                 this.items = items;
+                this.itemsLoaded = ItemsType.CONTENTTYPE;
                 this.cd.detectChanges();
                 this.resetKeyManager();
             });

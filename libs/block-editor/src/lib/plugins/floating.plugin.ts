@@ -92,11 +92,7 @@ export class FloatingActionsView {
      */
     mousedownHandler = (e: MouseEvent): void => {
         e.preventDefault();
-
-        const transaction = this.editor.state.tr.setMeta(FLOATING_ACTIONS_MENU_KEYBOARD, {
-            open: true
-        });
-        this.editor.view.dispatch(transaction);
+        this.editor.chain().insertContent('/').run();
     };
 
     /**
@@ -152,7 +148,6 @@ export class FloatingActionsView {
         this.tippy.setProps({
             getReferenceClientRect: () => posToDOMRect(view, from, to)
         });
-
         this.show();
 
         if (next.open) {

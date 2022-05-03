@@ -3,7 +3,6 @@ import { NodeSelection, Plugin, PluginKey } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { ViewContainerRef } from '@angular/core';
 import { DragHandlerComponent } from './components/drag-handler/drag-handler.component';
-
 export const DragHandler = (viewContainerRef: ViewContainerRef) => {
     return Extension.create({
         name: 'dragHandler',
@@ -93,6 +92,14 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                 dragHandler.style.display = 'none';
             }
 
+            function canDragNode(node): boolean {
+                return (
+                    node &&
+                    !node.classList?.contains('ProseMirror') && // is not root node.
+                    !node.innerText.startsWith('/') // The suggestion is not open.
+                );
+            }
+
             return [
                 new Plugin({
                     key: new PluginKey('dragHandler'),
@@ -130,10 +137,7 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                                 const position = view.posAtCoords(coords);
                                 if (position && nodeHasContent(view, position.inside)) {
                                     nodeToBeDragged = getDirectChild(view.nodeDOM(position.inside));
-                                    if (
-                                        nodeToBeDragged &&
-                                        !nodeToBeDragged.classList?.contains('ProseMirror')
-                                    ) {
+                                    if (canDragNode(nodeToBeDragged)) {
                                         const { top, left } = getPositon(
                                             view.dom.parentElement,
                                             nodeToBeDragged

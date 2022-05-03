@@ -66,3 +66,19 @@ function sanitizeUrl(url: string): SafeUrl {
 }
 
 export const suggestionOptions: DotMenuItem[] = [...headings, ...paragraph, ...list, ...block];
+
+export const SuggestionPopperModifiers = [
+    {
+        name: 'flip',
+        options: {
+            fallbackPlacements: ['top']
+        }
+    },
+    {
+        name: 'preventOverflow',
+        options: {
+            altAxis: false,
+            tether: false
+        }
+    }
+];

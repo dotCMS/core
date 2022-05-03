@@ -1,4 +1,7 @@
-<div (mousedown)="onMouseDownHandler($event)" *ngIf="items.length; else emptyBlock">
+<div
+    (mousedown)="onMouseDownHandler($event)"
+    *ngIf="items.length; else isFilterActive ? noResults : emptyBlock"
+>
     <h3>{{ title }}</h3>
 
     <dotcms-suggestion-list class="suggestion-list-container" #list>
@@ -20,5 +23,11 @@
     <div class="empty">
         <p [innerHTML]="title"></p>
         <button (mousedown)="handleBackButton($event)">Back</button>
+    </div>
+</ng-template>
+
+<ng-template #noResults>
+    <div class="empty">
+        <p [innerHTML]="noResultsMessage"></p>
     </div>
 </ng-template>
