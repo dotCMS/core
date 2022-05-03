@@ -159,14 +159,12 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		  final StringBuilder sql = new StringBuilder()
 				  .append("SELECT ")
 				  .append(tableName)
-				  .append(".*, dot_containers_1_.* from ")
+				  .append(".*, inode.* from ")
 				  .append(tableName)
-				  .append(", inode dot_containers_1_, container_version_info vv where vv.working_inode= ")
+				  .append(", inode inode where ")
 				  .append(tableName)
-				  .append(".inode and ")
-				  .append(tableName)
-				  .append(".inode = dot_containers_1_.inode and dot_containers_1_.type='containers'")
-				  .append(" and dot_containers_1_.inode = ?");
+				  .append(".inode = inode.inode and inode.type='containers'")
+				  .append(" and inode.inode = ?");
 
 		  container = TransformerLocator.createContainerTransformer
 				  (new DotConnect().setSQL(sql.toString()).addParam(inode).loadObjectResults())
