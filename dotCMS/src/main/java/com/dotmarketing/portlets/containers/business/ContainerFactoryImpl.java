@@ -924,10 +924,8 @@ public class ContainerFactoryImpl implements ContainerFactory {
            dc.addParam(userId);
            dc.loadResult();
 
-           Logger.info(this, "containers to update: " + containers);
            for(HashMap<String, String> ident:containers){
                String identifier = ident.get("identifier");
-               Logger.info(this, "Updating container: " + identifier);
                if (UtilMethods.isSet(identifier)) {
         			   final VersionInfo info =APILocator.getVersionableAPI().getVersionInfo(identifier);
         			   CacheLocator.getContainerCache().remove(info);
