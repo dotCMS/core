@@ -4,6 +4,13 @@
 	${UtilMethods.fixBreaks($stringToFix)}
 #end
 
+#macro(renderMarks $content)
+  #foreach($mark in $!content.marks)
+    #parse( "static/storyblock/marks/${mark}.vtl" )
+  #end
+#end
+
+
 
 
 #macro(editContentlet $CONTENT_INODE)
