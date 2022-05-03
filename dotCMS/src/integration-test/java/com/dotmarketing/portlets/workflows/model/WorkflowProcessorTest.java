@@ -36,7 +36,8 @@ public class WorkflowProcessorTest extends BaseWorkflowIntegrationTest {
     }
 
     /**
-     * Test that
+     * Test that verifies that the attribute history remains null until we call the getHistory method
+     * Method to test {@link WorkflowProcessor#getHistory()}
      * @throws DotDataException
      */
     @Test
