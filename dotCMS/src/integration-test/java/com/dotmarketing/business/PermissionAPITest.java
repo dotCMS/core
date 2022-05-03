@@ -1188,6 +1188,7 @@ public class PermissionAPITest extends IntegrationTestBase {
 
         final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
         final User systemUser = APILocator.systemUser();
+        HibernateUtil.startTransaction();
         final Host site = new SiteDataGen().nextPersisted();
 
         assertNotNull(permissionAPI.getInheritablePermissions(site.getParentPermissionable()));
@@ -1253,6 +1254,7 @@ public class PermissionAPITest extends IntegrationTestBase {
         assertEquals(pagePermissionsAfterClearReference, pagePermissionsInheritedFromFolder);
 
         permissionAPI.removePermissions(folder);
+        HibernateUtil.closeAndCommitTransaction();
 
         final List<Permission> pagePermissionsRestoredInheritance = permissionAPI.getPermissions(page, true);
         assertEquals(pagePermissionsRestoredInheritance, pagePermissionsInheritedFromSite);
