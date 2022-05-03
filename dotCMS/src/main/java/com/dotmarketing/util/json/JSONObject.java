@@ -76,8 +76,8 @@ public class JSONObject implements Serializable, Map<String, Object> {
      * whilst Java's null is equivalent to the value that JavaScript calls
      * undefined.
      */
-     private static final class Null {
-
+     private static final class Null implements Serializable{
+         private static final long serialVersionUID = 1L;
         /**
          * There is only intended to be a single instance of the NULL object,
          * so the clone method returns itself.
@@ -165,22 +165,21 @@ public class JSONObject implements Serializable, Map<String, Object> {
 
     @Override
     public Set<String> keySet() {
-        // TODO Auto-generated method stub
-        return null;
+        return this.map.keySet();
     }
 
 
     @Override
     public Collection<Object> values() {
         // TODO Auto-generated method stub
-        return null;
+        return this.map.values();
     }
 
 
     @Override
     public Set<Entry<String, Object>> entrySet() {
         // TODO Auto-generated method stub
-        return null;
+        return this.map.entrySet();
     }
 
 
@@ -1015,7 +1014,7 @@ public class JSONObject implements Serializable, Map<String, Object> {
      * @throws JSONException If the key is null.
      */
     public JSONObject put(String key, boolean value) throws JSONException {
-        put(key, value ? Boolean.TRUE : Boolean.FALSE);
+        this.map.put(key, value );
         return this;
     }
 
@@ -1042,7 +1041,7 @@ public class JSONObject implements Serializable, Map<String, Object> {
      * @throws JSONException
      */
     public JSONObject put(String key, JSONArray value) throws JSONException {
-        put(key, (Object)value);
+        this.map.put(key, value);
         return this;
     }
 
@@ -1055,7 +1054,7 @@ public class JSONObject implements Serializable, Map<String, Object> {
      * @throws JSONException If the key is null or if the number is invalid.
      */
     public JSONObject put(String key, double value) throws JSONException {
-        put(key, new Double(value));
+        this.map.put(key, new Double(value));
         return this;
     }
 
@@ -1069,7 +1068,7 @@ public class JSONObject implements Serializable, Map<String, Object> {
      * @throws JSONException If the key is null.
      */
     public JSONObject put(String key, int value) throws JSONException {
-        put(key, new Integer(value));
+        this.map.put(key, new Integer(value));
         return this;
     }
 
@@ -1083,7 +1082,7 @@ public class JSONObject implements Serializable, Map<String, Object> {
      * @throws JSONException If the key is null.
      */
     public JSONObject put(String key, long value) throws JSONException {
-        put(key, new Long(value));
+        this.map.put(key, new Long(value));
         return this;
     }
 
@@ -1097,7 +1096,7 @@ public class JSONObject implements Serializable, Map<String, Object> {
      * @throws JSONException
      */
     public JSONObject put(String key, Map value) throws JSONException {
-        put(key, new JSONObject(value));
+        this.map.put(key, wrap(value));
         return this;
     }
 
@@ -1119,7 +1118,7 @@ public class JSONObject implements Serializable, Map<String, Object> {
         }
         if (value != null) {
             testValidity(value);
-            this.map.put(key, value);
+            this.map.put(key, wrap(value));
         } else {
             remove(key);
         }
