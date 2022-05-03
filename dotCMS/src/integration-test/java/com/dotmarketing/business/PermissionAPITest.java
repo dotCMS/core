@@ -1189,75 +1189,88 @@ public class PermissionAPITest extends IntegrationTestBase {
         final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
         final User systemUser = APILocator.systemUser();
         HibernateUtil.startTransaction();
-        final Host site = new SiteDataGen().nextPersisted();
 
-        assertNotNull(permissionAPI.getInheritablePermissions(site.getParentPermissionable()));
+        try {
+            final Host site = new SiteDataGen().nextPersisted();
 
-        assertTrue(permissionAPI.isInheritingPermissions(site));
-        final PermissionCache permissionCache = CacheLocator.getPermissionCache();
+            assertNotNull(permissionAPI.getInheritablePermissions(site.getParentPermissionable()));
 
-        final Folder folder = new FolderDataGen()
-                .name("about")
-                .title("about")
-                .site(site)
-                .showOnMenu(true)
-                .nextPersisted();
+            assertTrue(permissionAPI.isInheritingPermissions(site));
+            final PermissionCache permissionCache = CacheLocator.getPermissionCache();
 
-        assertTrue(permissionAPI.isInheritingPermissions(folder));
+            final Folder folder = new FolderDataGen()
+                    .name("about")
+                    .title("about")
+                    .site(site)
+                    .showOnMenu(true)
+                    .nextPersisted();
 
-        //After calling get permission we should expect the permissions to be in cache.
-        permissionAPI.getPermissions(folder, true);
+            assertTrue(permissionAPI.isInheritingPermissions(folder));
 
-        assertNotNull(permissionCache.getPermissionsFromCache(folder.getPermissionId()));
+            //After calling get permission we should expect the permissions to be in cache.
+            permissionAPI.getPermissions(folder, true);
 
-        final Contentlet page = new HTMLPageDataGen(folder, template)
-                .friendlyName("index")
-                .pageURL("index")
-                .title("index")
-                .nextPersisted();
+            assertNotNull(permissionCache.getPermissionsFromCache(folder.getPermissionId()));
 
-        assertTrue(permissionAPI.isInheritingPermissions(page));
-        final List<Permission> pagePermissionsInheritedFromSite = permissionAPI.getPermissions(page, true);
-        final List<Permission> inheritedPermissionsFromCache = permissionCache
-                .getPermissionsFromCache(page.getPermissionId());
+            final Contentlet page = new HTMLPageDataGen(folder, template)
+                    .friendlyName("index")
+                    .pageURL("index")
+                    .title("index")
+                    .nextPersisted();
 
-        assertEquals(pagePermissionsInheritedFromSite, inheritedPermissionsFromCache);
+            assertTrue(permissionAPI.isInheritingPermissions(page));
+            final List<Permission> pagePermissionsInheritedFromSite = permissionAPI.getPermissions(
+                    page, true);
+            final List<Permission> inheritedPermissionsFromCache = permissionCache
+                    .getPermissionsFromCache(page.getPermissionId());
 
-        HTMLPageDataGen.publish(page);
+            assertEquals(pagePermissionsInheritedFromSite, inheritedPermissionsFromCache);
 
-        final Role role = new RoleDataGen()
-                .name(String.format("role-%d", System.currentTimeMillis())).nextPersisted();
-        //Assign permissions to the folder to simulate inherited permission on the page
-        permissionAPI.save(
-                new Permission(PermissionableType.HTMLPAGES.getCanonicalName(), folder.getPermissionId(),
-                        role.getId(),
-                        PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT),
-                folder, systemUser, false);
+            HTMLPageDataGen.publish(page);
 
-        assertTrue(permissionAPI.isInheritingPermissions(page));
+            final Role role = new RoleDataGen()
+                    .name(String.format("role-%d", System.currentTimeMillis())).nextPersisted();
+            //Assign permissions to the folder to simulate inherited permission on the page
+            permissionAPI.save(
+                    new Permission(PermissionableType.HTMLPAGES.getCanonicalName(),
+                            folder.getPermissionId(),
+                            role.getId(),
+                            PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT),
+                    folder, systemUser, false);
 
+            assertTrue(permissionAPI.isInheritingPermissions(page));
 
-        final List<Permission> pagePermissionsInheritedFromFolder = permissionAPI.getPermissions(page, true);
-        //Here we verify the permissions are not the same since the page now inherits'em from the folder.
-        assertNotEquals(pagePermissionsInheritedFromSite, pagePermissionsInheritedFromFolder);
+            final List<Permission> pagePermissionsInheritedFromFolder = permissionAPI.getPermissions(
+                    page, true);
+            //Here we verify the permissions are not the same since the page now inherits'em from the folder.
+            assertNotEquals(pagePermissionsInheritedFromSite, pagePermissionsInheritedFromFolder);
 
-        HTMLPageDataGen.unpublish(page);
+            HTMLPageDataGen.unpublish(page);
 
-        final List<Permission> pagePermissionsAfterUnpublish = permissionAPI.getPermissions(page, true);
+            final List<Permission> pagePermissionsAfterUnpublish = permissionAPI.getPermissions(
+                    page, true);
 
-        assertEquals(pagePermissionsAfterUnpublish, pagePermissionsInheritedFromFolder);
+            assertEquals(pagePermissionsAfterUnpublish, pagePermissionsInheritedFromFolder);
 
-        permissionAPI.resetPermissionReferences(folder);
+            permissionAPI.resetPermissionReferences(folder);
 
-         //Resilience test
-        final List<Permission> pagePermissionsAfterClearReference = permissionAPI.getPermissions(page, true);
-        assertEquals(pagePermissionsAfterClearReference, pagePermissionsInheritedFromFolder);
+            //Resilience test
+            final List<Permission> pagePermissionsAfterClearReference = permissionAPI.getPermissions(
+                    page, true);
+            assertEquals(pagePermissionsAfterClearReference, pagePermissionsInheritedFromFolder);
 
-        permissionAPI.removePermissions(folder);
-        HibernateUtil.closeAndCommitTransaction();
+            permissionAPI.removePermissions(folder);
+            HibernateUtil.commitTransaction();
 
-        final List<Permission> pagePermissionsRestoredInheritance = permissionAPI.getPermissions(page, true);
-        assertEquals(pagePermissionsRestoredInheritance, pagePermissionsInheritedFromSite);
+            final List<Permission> pagePermissionsRestoredInheritance = permissionAPI.getPermissions(
+                    page, true);
+            assertEquals(pagePermissionsRestoredInheritance, pagePermissionsInheritedFromSite);
+        }catch(Exception e){
+            HibernateUtil.rollbackTransaction();
+            Logger.error(PermissionAPITest.class, e.getMessage());
+        }finally {
+            HibernateUtil.closeSessionSilently();
+        }
 
     }
 
