@@ -233,9 +233,9 @@ public class SiteSearchJobImpl {
             if (path != null) {
                 path = path.replace(',', '\r');
                 path = path.replace('\n', '\r');
-                for (String x : path.split("\r")) {
-                    if (UtilMethods.isSet(x)) {
-                        paths.add(x);
+                for (String pathSplit : path.split("\r")) {
+                    if (UtilMethods.isSet(pathSplit)) {
+                        paths.add(pathSplit.trim());
                     }
                 }
             }

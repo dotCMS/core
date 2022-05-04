@@ -316,3 +316,4 @@ This maintenance release includes the following code fixes:
 159. https://github.com/dotCMS/core/issues/20153 : Editor in rules trying to add a condition for a session attribute #20153
 160. https://github.com/dotCMS/core/issues/21811 : Limit of 250 Widgets and Forms in Content Selector Popup #21811
 161. https://github.com/dotCMS/core/issues/21249 : [Content] : Problems editing pages for Users with both FE and BE access #21249
+162. https://github.com/dotCMS/core/issues/21613 : URL Mapped content is not showing up in site search when using the include functionality #21613
