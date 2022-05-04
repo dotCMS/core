@@ -15,15 +15,7 @@ import com.dotcms.enterprise.HTMLDiffUtilTest;
 import com.dotcms.enterprise.cluster.ClusterFactoryTest;
 import com.dotcms.enterprise.publishing.remote.PushPublishBundleGeneratorTest;
 import com.dotcms.enterprise.publishing.remote.StaticPushPublishBundleGeneratorTest;
-import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundlerTest;
-import com.dotcms.enterprise.publishing.remote.bundler.ContentTypeBundlerTest;
-import com.dotcms.enterprise.publishing.remote.bundler.DependencyBundlerTest;
-import com.dotcms.enterprise.publishing.remote.bundler.FolderBundlerTest;
-import com.dotcms.enterprise.publishing.remote.bundler.HostBundlerTest;
-import com.dotcms.enterprise.publishing.remote.bundler.LinkBundlerTest;
-import com.dotcms.enterprise.publishing.remote.bundler.RuleBundlerTest;
-import com.dotcms.enterprise.publishing.remote.bundler.TemplateBundlerTest;
-import com.dotcms.enterprise.publishing.remote.bundler.WorkflowBundlerTest;
+import com.dotcms.enterprise.publishing.remote.bundler.*;
 import com.dotcms.enterprise.publishing.remote.handler.ContentHandlerTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
@@ -426,7 +418,8 @@ import org.junit.runners.Suite.SuiteClasses;
         StaticPushPublishBundleGeneratorTest.class,
         CookieToolTest.class,
         BinaryMapTest.class,
-        CSSCacheTest.class
+        CSSCacheTest.class,
+        URLMapBundlerTest.class
 })
 public class MainSuite {
 
