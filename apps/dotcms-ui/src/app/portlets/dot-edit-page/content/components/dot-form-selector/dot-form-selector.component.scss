@@ -15,6 +15,16 @@
             }
         }
 
+        .dot-form-selector-list-row {
+            align-items: baseline;
+            display: flex;
+            justify-content: space-between;
+
+            button {
+                margin-left: $spacing-5;
+            }
+        }
+
         .p-paginator-bottom {
             @include paginator-bottom-absolute;
         }
