@@ -59,7 +59,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
      * ExpectedResult: Expected a JSONException
      *
      */
-    @Test(expected = JSONException.class)
+    @Test(expected = com.dotmarketing.util.json.JSONException.class)
     public void test_empty_json_to_html() throws  JSONException {
 
         new StoryBlockMap("");
@@ -76,36 +76,12 @@ public class StoryBlockMapTest extends IntegrationTestBase {
 
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON_OLIST);
         final String html = storyBlockMap.toHtml();
-        Assert.assertTrue(html.contains("<ol style=\"text-align: \">\n" +
-                "\n" +
-                "                            <li style=\"text-align: left\">\n" +
-                "\n" +
-                "                                                                    \n" +
-                "    \n" +
-                "    one\n" +
-                "\n" +
-                "    \n" +
-                "                                        </li>\n" +
-                "        \n" +
-                "                        <li style=\"text-align: left\">\n" +
-                "\n" +
-                "                                                                    \n" +
-                "    \n" +
-                "    two\n" +
-                "\n" +
-                "    \n" +
-                "                                        </li>\n" +
-                "        \n" +
-                "                        <li style=\"text-align: left\">\n" +
-                "\n" +
-                "                                                                    \n" +
-                "    \n" +
-                "    tree\n" +
-                "\n" +
-                "    \n" +
-                "                                        </li>\n" +
-                "        \n" +
-                "    </ol>"));
+        Assert.assertTrue(html.contains("<ol style=\"text-align: \">"));
+        Assert.assertTrue(html.contains("<li style=\"text-align: left;\">"));
+        Assert.assertTrue(html.contains("<p style=\"text-align: left;\">"));
+        Assert.assertTrue(html.contains("one"));
+        Assert.assertTrue(html.contains("two"));
+        Assert.assertTrue(html.contains("tree"));
     }
 
     /**
@@ -119,36 +95,15 @@ public class StoryBlockMapTest extends IntegrationTestBase {
 
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON_ULIST);
         final String html = storyBlockMap.toHtml();
-        Assert.assertTrue(html.contains("<ul>\n" +
-                "\n" +
-                "                            <li style=\"text-align: left\">\n" +
-                "\n" +
-                "                                                                            \n" +
-                "    \n" +
-                "    1\n" +
-                "\n" +
-                "    \n" +
-                "                                                 </li>\n" +
-                "        \n" +
-                "                        <li style=\"text-align: left\">\n" +
-                "\n" +
-                "                                                                            \n" +
-                "    \n" +
-                "    2\n" +
-                "\n" +
-                "    \n" +
-                "                                                 </li>\n" +
-                "        \n" +
-                "                        <li style=\"text-align: left\">\n" +
-                "\n" +
-                "                                                                            \n" +
-                "    \n" +
-                "    3\n" +
-                "\n" +
-                "    \n" +
-                "                                                 </li>\n" +
-                "        \n" +
-                "    </ul>"));
+        Assert.assertTrue(html.contains("<ul>"));
+        Assert.assertTrue(html.contains("<li style=\"text-align: left;\">"));
+        Assert.assertTrue(html.contains("<p style=\"text-align: left;\">"));
+        Assert.assertTrue(html.contains("1"));
+        Assert.assertTrue(html.contains("2"));
+        Assert.assertTrue(html.contains("3"));
+        Assert.assertTrue(html.contains("</p>"));
+        Assert.assertTrue(html.contains("</li>"));
+        Assert.assertTrue(html.contains("</ul>"));
     }
 
     /**
