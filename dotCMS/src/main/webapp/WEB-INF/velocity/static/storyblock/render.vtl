@@ -27,9 +27,15 @@
                 #renderContentBlock($element.content)
             </ul>
         #elseif( $element.type == "orderedList" )
-            <ul style="text-align: $!element.attrs.textAlign;">
+            <ol style="text-align: $!element.attrs.textAlign;">
                 #renderContentBlock($element.content)
-            </ul>
+            </ol>
+        #elseif( $element.type == "codeBlock" )
+            <pre><code>#renderContentBlock($element.content)</code></pre>
+        #elseif( $element.type == "blockquote" )
+            <blockquote style="text-align: e!lement.attrs.textAlign;">
+                #renderContentBlock($element.content)
+            </blockquote>
         #elseif( $element.type == "hardBreak" )
             <br />
         #elseif( $element.type == "horizontalRule" )

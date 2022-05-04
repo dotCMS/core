@@ -5,48 +5,57 @@
 #end
 
 #macro(renderMarks $content)
-#if($UtilMethods.isEmpty($content.marks) || $content.marks.isEmpty())
-$!content.text
-#else
-    #foreach($mark in $!content.marks)
-        #if ($mark.type == "bold")
-        <strong>
-        #end
-        #if ($mark.type == "italic")
-        <em>
-        #end
-        #if ($mark.type == "strike")
-        <s>
-        #end
-        #if ($mark.type == "underline")
-        <u>
-        #end
-        #if ($mark.type == "link")
-        <a href="$mark.attrs.href" target="$mark.attrs.target">
+
+    #if($content.marks)
+        #set($start = 0)
+        #set($end = $content.marks.length())
+        #set($end = $end - 1)
+        #set($range = [$start..$end])
+
+        #foreach($i in $range)
+            #set($mark = $content.marks.get($i))
+            #if ($mark.type == "bold")
+            <strong>
+            #end
+            #if ($mark.type == "italic")
+            <em>
+            #end
+            #if ($mark.type == "strike")
+            <s>
+            #end
+            #if ($mark.type == "underline")
+            <u>
+            #end
+            #if ($mark.type == "link")
+            <a href="$mark.attrs.href" target="$mark.attrs.target">
+            #end
         #end
     #end
 
     $!content.text
 
-    #foreach($mark in $!content.marks)
-        #set($mark = $content.marks.get($i))
-        #if ($mark.type == "bold")
-        </strong>
-        #end
-        #if ($mark.type == "italic")
-        </em>
-        #end
-        #if ($mark.type == "strike")
-        </s>
-        #end
-        #if ($mark.type == "underline")
-        </u>
-        #end
-        #if($mark.type == "link")
-        </a>
+    #if($content.marks)
+        #set($range = [$end..$start])
+        #foreach($i in $range)
+            #set($mark = $content.marks.get($i))
+            #if ($mark.type == "bold")
+            </strong>
+            #end
+            #if ($mark.type == "italic")
+            </em>
+            #end
+            #if ($mark.type == "strike")
+            </s>
+            #end
+            #if ($mark.type == "underline")
+            </u>
+            #end
+            #if($mark.type == "link")
+            </a>
+            #end
         #end
     #end
-  #end
+
 #end
 
 
