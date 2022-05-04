@@ -9,12 +9,18 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.publisher.bundle.bean.Bundle;
+import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.business.PublishQueueElement;
+import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherAPIImpl;
+import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -44,6 +50,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.validation.constraints.AssertTrue;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -71,7 +78,7 @@ public class PushNowActionletTest extends BaseWorkflowIntegrationTest {
 
     }
 
-    private void createWorkflowWithPushNowActionlet(final String environmentNameParam, final String filterKeyParam)
+    private void createWorkflowWithPushNowActionlet(final String environmentNameParam, final String filterKeyParam, final boolean pushRemove)
             throws DotSecurityException, AlreadyExistException, DotDataException, InstantiationException, IllegalAccessException {
         // Create the scheme and actions. This method allows you to add just one sub-action
         final long sysTime = System.currentTimeMillis();
@@ -86,7 +93,7 @@ public class PushNowActionletTest extends BaseWorkflowIntegrationTest {
                 schemeStepActionResult.getAction());
         WorkflowActionClass workflowActionClass = actionletClasses.get(1);
         addParameterValuesToActionlet(workflowActionClass,
-                Arrays.asList(environmentNameParam,filterKeyParam));
+                Arrays.asList(environmentNameParam,filterKeyParam, Boolean.toString(pushRemove)));
         // Set the role ID of the people who can use the action
         addWhoCanUseToAction(schemeStepActionResult.getAction(),
                 Collections.singletonList(TestUserUtils.getOrCreateAdminRole().getId()));
@@ -154,7 +161,7 @@ public class PushNowActionletTest extends BaseWorkflowIntegrationTest {
         //Create Environment
         final Environment environment = createEnvironment("TestEnvironment_" + System.currentTimeMillis());
         //Create Workflow and pass the env and the filterKey
-        createWorkflowWithPushNowActionlet(environment.getName(),filterKey);
+        createWorkflowWithPushNowActionlet(environment.getName(),filterKey, false);
         //Create Contentlet
         final Contentlet cont = new Contentlet();
         cont.setContentTypeId(type.id());
@@ -212,5 +219,54 @@ public class PushNowActionletTest extends BaseWorkflowIntegrationTest {
         Assert.assertTrue(((MultiSelectionWorkflowActionletParameter) parameters.get(1)).getMultiValues().stream().anyMatch(multiKeyValue -> multiKeyValue.getKey().equalsIgnoreCase(filterKey1)));
         Assert.assertTrue(((MultiSelectionWorkflowActionletParameter) parameters.get(1)).getMultiValues().stream().anyMatch(multiKeyValue -> multiKeyValue.getKey().equalsIgnoreCase(filterKey2)));
     }
+
+    /**
+     * Small test that corroborates that passing a Push remove param to the actionlet fires an unpublish operation
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws IllegalAccessException
+     * @throws AlreadyExistException
+     * @throws InstantiationException
+     * @throws DotPublisherException
+     */
+    @Test
+    public void test_PushNowActionlet_With_Push_Remove_Param()
+            throws DotSecurityException, DotDataException, IllegalAccessException, AlreadyExistException, InstantiationException, DotPublisherException {
+        //Create Content Type
+        createTestContentType();
+        //Create Filter
+        final String defaultFilterKey = "testDefaultFilterKey.yml"+System.currentTimeMillis();
+        createFilterDescriptor(defaultFilterKey,true);
+        final String filterKey = "testFilterKey.yml"+System.currentTimeMillis();
+        createFilterDescriptor(filterKey,false);
+        //Create Environment
+        final Environment environment = createEnvironment("TestEnvironment_" + System.currentTimeMillis());
+        //Create Workflow and pass the env and the filterKey
+        createWorkflowWithPushNowActionlet(environment.getName(),filterKey, true);
+        //Create Contentlet
+
+       final Contentlet contentlet = new ContentletDataGen(type.id()).nextPersisted();
+
+        // Set the appropriate workflow action to the contentlet
+        contentlet.setActionId(
+                schemeStepActionResult.getAction().getId());
+
+        final User sysUser = APILocator.systemUser();
+
+        // Triggering the actionlets
+        WorkflowProcessor processor =
+                workflowAPI.fireWorkflowPreCheckin(contentlet, sysUser);
+        workflowAPI.fireWorkflowPostCheckin(processor);
+        final PublisherAPI publisherAPI = PublisherAPI.getInstance();
+        final List<PublishQueueElement> queueElements = publisherAPI.getQueueElements();
+        Assert.assertFalse(queueElements.isEmpty());
+        final Optional<PublishQueueElement> first = queueElements.stream()
+                .filter(publishQueueElement -> contentlet.getIdentifier()
+                        .equals(publishQueueElement.getAsset())).findFirst();
+        Assert.assertTrue(first.isPresent());
+        Assert.assertEquals(first.get().getOperation().intValue(), PublisherAPI.DELETE_ELEMENT);
+
+    }
+
 
 }
