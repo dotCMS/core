@@ -319,17 +319,6 @@ public abstract class ContentletFactory {
 	protected abstract void cleanField(String structureInode, Field field) throws DotDataException, DotStateException, DotSecurityException;
 	
 	/**
-	 * Set the system host in the identifier of all the contents of the specified structure. 
-	 * 
-	 * @param structureInode
-	 * @throws DotDataException
-	 * @throws DotMappingException 
-	 * @throws DotSecurityException 
-	 * @throws DotStateException 
-	 */ 
-	protected abstract void cleanIdentifierHostField(String structureInode) throws DotDataException, DotMappingException, DotStateException, DotSecurityException;
-	
-	/**
 	 * 
 	 * @param deleteFrom
 	 * @return

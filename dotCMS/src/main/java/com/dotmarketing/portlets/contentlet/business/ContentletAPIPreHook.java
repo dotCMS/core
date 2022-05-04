@@ -319,20 +319,6 @@ public interface ContentletAPIPreHook {
             final Field field, final User user, final boolean respectFrontendRoles) {
         return true;
     }
-
-
-    /**
-	 * Will get all the contentlets for a structure and set the default values for the host fields  
-	 * Will check Write/Edit permissions on the Contentlet. So to guarantee all COntentlets will be cleaned make 
-	 * sure to pass in an Admin User.  If a user doesn't have permissions to clean all teh contentlets it will clean 
-	 * as many as it can and throw the DotSecurityException  
-	 * @param structure
-	 * @param user
-	 * @param respectFrontendRoles
-	 */
-	public default boolean cleanHostField(Structure structure, User user, boolean respectFrontendRoles){
-      return true;
-    }
 	
 	/**
 	 * Finds the next date that a contentlet must be reviewed

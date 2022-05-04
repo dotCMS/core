@@ -274,18 +274,6 @@ public interface ContentletAPIPostHook {
     default void cleanField(final Structure structure, final Date deletionDate, final Field field,
             final User user, final boolean respectFrontendRoles) {
     }
-
-
-    /**
-	 * Will get all the contentlets for a structure and set the default values for a host field.  
-	 * Will check Write/Edit permissions on the Contentlet. So to guarantee all Contentlets will be cleaned make 
-	 * sure to pass in an Admin User.  If a user doesn't have permissions to clean all teh contentlets it will clean 
-	 * as many as it can and throw the DotSecurityException  
-	 * @param structure
-	 * @param user
-	 * @param respectFrontendRoles
-	 */
-	public default void cleanHostField(Structure structure, User user, boolean respectFrontendRoles){}
 	
 	/**
 	 * Finds the next date that a contentlet must be reviewed

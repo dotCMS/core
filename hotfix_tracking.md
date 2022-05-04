@@ -319,3 +319,4 @@ This maintenance release includes the following code fixes:
 162. https://github.com/dotCMS/core/issues/21613 : URL Mapped content is not showing up in site search when using the include functionality #21613
 163. https://github.com/dotCMS/core/issues/21670 : #editContentlet macro does not work in the LTS release even though it does not have inline editing #21670
 164. https://github.com/dotCMS/core/issues/21714 : content in a "drafted state" can fail to push publish. #21714
+165. https://github.com/dotCMS/core/issues/20850 : When you remove a Site/Folder field it moves all contentlets to SYSTEM_HOST regardless of where the Content Type lives #20850
