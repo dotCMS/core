@@ -1407,6 +1407,7 @@ public class WorkflowResource {
                                               @Context final HttpServletResponse response,
                                               @QueryParam("inode")            final String inode,
                                               @QueryParam("identifier")       final String identifier,
+                                              @QueryParam("indexPolicy")      final String indexPolicy,
                                               @DefaultValue("-1") @QueryParam("language")         final String   language,
                                               final FormDataMultiPart multipart) {
 
@@ -1419,7 +1420,7 @@ public class WorkflowResource {
         try {
 
             Logger.debug(this, ()-> "On Fire Action: inode = " + inode +
-                    ", identifier = " + identifier + ", language = " + language);
+                    ", identifier = " + identifier + ", language = " + language + " indexPolicy = " + indexPolicy);
 
             final long languageId = LanguageUtil.getLanguageId(language);
             final PageMode mode = PageMode.get(request);
@@ -1429,6 +1430,10 @@ public class WorkflowResource {
                     (inode, identifier, languageId,
                             ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
                             fireActionForm, initDataObject, mode);
+
+            if (UtilMethods.isSet(indexPolicy)) {
+                contentlet.setIndexPolicy(IndexPolicy.parseIndexPolicy(indexPolicy));
+            }
 
             actionId = this.workflowHelper.getActionIdOnList
                     (fireActionForm.getActionName(), contentlet, initDataObject.getUser());
@@ -1461,6 +1466,7 @@ public class WorkflowResource {
     public final Response fireActionByName(@Context final HttpServletRequest request,
                                      @QueryParam("inode")                        final String inode,
                                      @QueryParam("identifier")                   final String identifier,
+                                     @QueryParam("indexPolicy")                  final String indexPolicy,
                                      @DefaultValue("-1") @QueryParam("language") final String   language,
                                      final FireActionByNameForm fireActionForm) {
 
@@ -1474,7 +1480,7 @@ public class WorkflowResource {
 
             Logger.debug(this, ()-> "On Fire Action: action name = '" + (null != fireActionForm? fireActionForm.getActionName(): StringPool.BLANK)
                     + "', inode = " + inode +
-                    ", identifier = " + identifier + ", language = " + language);
+                    ", identifier = " + identifier + ", language = " + language + " indexPolicy = " + indexPolicy);
             final long languageId = LanguageUtil.getLanguageId(language);
             final PageMode mode = PageMode.get(request);
             //if inode is set we use it to look up a contentlet
@@ -1482,6 +1488,10 @@ public class WorkflowResource {
                     (inode, identifier, languageId,
                             ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
                             fireActionForm, initDataObject, mode);
+
+            if (UtilMethods.isSet(indexPolicy)) {
+                contentlet.setIndexPolicy(IndexPolicy.parseIndexPolicy(indexPolicy));
+            }
 
             actionId = this.workflowHelper.getActionIdOnList
                     (fireActionForm.getActionName(), contentlet, initDataObject.getUser());
@@ -1592,6 +1602,7 @@ public class WorkflowResource {
                                      @Context final HttpServletResponse response,
                                      @QueryParam("inode")            final String inode,
                                      @QueryParam("identifier")       final String identifier,
+                                     @QueryParam("indexPolicy")      final String indexPolicy,
                                      @DefaultValue("-1") @QueryParam("language") final String language,
                                      @PathParam("systemAction") final WorkflowAPI.SystemAction systemAction,
                                      final FireActionForm fireActionForm) {
@@ -1604,7 +1615,7 @@ public class WorkflowResource {
         try {
 
             Logger.debug(this, ()-> "On Fire Action: systemAction = " + systemAction + ", inode = " + inode +
-                    ", identifier = " + identifier + ", language = " + language);
+                    ", identifier = " + identifier + ", language = " + language + " indexPolicy = " + indexPolicy);
 
             final PageMode mode   = PageMode.get(request);
             final long languageId = LanguageUtil.getLanguageId(language);
@@ -1613,6 +1624,10 @@ public class WorkflowResource {
                     (inode, identifier, languageId,
                             ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
                             fireActionForm, initDataObject, mode);
+
+            if (UtilMethods.isSet(indexPolicy)) {
+                contentlet.setIndexPolicy(IndexPolicy.parseIndexPolicy(indexPolicy));
+            }
 
             this.checkContentletState (contentlet, systemAction);
 
@@ -2125,6 +2140,7 @@ public class WorkflowResource {
                                      @PathParam ("actionId")         final String actionId,
                                      @QueryParam("inode")            final String inode,
                                      @QueryParam("identifier")       final String identifier,
+                                     @QueryParam("indexPolicy")       final String indexPolicy,
                                      @DefaultValue("-1") @QueryParam("language") final String   language,
                                      final FireActionForm fireActionForm) {
 
@@ -2136,7 +2152,7 @@ public class WorkflowResource {
         try {
 
             Logger.debug(this, ()-> "On Fire Action: action Id " + actionId + ", inode = " + inode +
-                    ", identifier = " + identifier + ", language = " + language);
+                    ", identifier = " + identifier + ", language = " + language + " indexPolicy = " + indexPolicy);
 
             final long languageId = LanguageUtil.getLanguageId(language);
             final PageMode mode = PageMode.get(request);
@@ -2146,6 +2162,9 @@ public class WorkflowResource {
                             ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
                             fireActionForm, initDataObject, mode);
 
+            if (UtilMethods.isSet(indexPolicy)) {
+                contentlet.setIndexPolicy(IndexPolicy.parseIndexPolicy(indexPolicy));
+            }
             return fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId, Optional.empty());
         } catch (Exception e) {
 
@@ -2178,6 +2197,7 @@ public class WorkflowResource {
                                               @Context final HttpServletResponse response,
                                               @QueryParam("inode")       final String inode,
                                               @QueryParam("identifier")  final String identifier,
+                                              @QueryParam("indexPolicy") final String indexPolicy,
                                               @DefaultValue("-1") @QueryParam("language") final String   language,
                                               @PathParam("systemAction") final WorkflowAPI.SystemAction systemAction,
                                               final FormDataMultiPart multipart) {
@@ -2190,7 +2210,7 @@ public class WorkflowResource {
         try {
 
             Logger.debug(this, ()-> "On Fire Action Multipart: systemAction = " + systemAction + ", inode = " + inode +
-                    ", identifier = " + identifier + ", language = " + language);
+                    ", identifier = " + identifier + ", language = " + language + " indexPolicy = " + indexPolicy);
 
             final long languageId = LanguageUtil.getLanguageId(language);
             final PageMode mode = PageMode.get(request);
@@ -2200,6 +2220,10 @@ public class WorkflowResource {
                     (inode, identifier, languageId,
                             ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
                             fireActionForm, initDataObject, mode);
+
+            if (UtilMethods.isSet(indexPolicy)) {
+                contentlet.setIndexPolicy(IndexPolicy.parseIndexPolicy(indexPolicy));
+            }
 
             this.checkContentletState (contentlet, systemAction);
 
@@ -2261,6 +2285,7 @@ public class WorkflowResource {
                                               @PathParam ("actionId")         final String actionId,
                                               @QueryParam("inode")            final String inode,
                                               @QueryParam("identifier")       final String identifier,
+                                              @QueryParam("indexPolicy")      final String indexPolicy,
                                               @DefaultValue("-1") @QueryParam("language") final String   language,
                                               final FormDataMultiPart multipart) {
 
@@ -2272,7 +2297,7 @@ public class WorkflowResource {
         try {
 
             Logger.debug(this, ()-> "On Fire Action Multipart: action Id " + actionId + ", inode = " + inode +
-                    ", identifier = " + identifier + ", language = " + language);
+                    ", identifier = " + identifier + ", language = " + language + " indexPolicy = " + indexPolicy);
 
             final long languageId = LanguageUtil.getLanguageId(language);
             final PageMode mode = PageMode.get(request);
@@ -2282,6 +2307,10 @@ public class WorkflowResource {
                     (inode, identifier, languageId,
                             ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
                             fireActionForm, initDataObject, mode);
+
+            if (UtilMethods.isSet(indexPolicy)) {
+                contentlet.setIndexPolicy(IndexPolicy.parseIndexPolicy(indexPolicy));
+            }
 
             return fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId, Optional.empty());
         } catch (Exception e) {
