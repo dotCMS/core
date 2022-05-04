@@ -135,4 +135,4 @@ This maintenance release includes the following code fixes:
 72. https://github.com/dotCMS/core/issues/21249 : [Content] : Problems editing pages for Users with both FE and BE access #21249
 73. https://github.com/dotCMS/core/issues/21613 : URL Mapped content is not showing up in site search when using the include functionality #21613
 74. https://github.com/dotCMS/core/issues/21670 : #editContentlet macro does not work in the LTS release even though it does not have inline editing #21670
-75. 
+75. https://github.com/dotCMS/core/issues/21714 : content in a "drafted state" can fail to push publish. #21714
