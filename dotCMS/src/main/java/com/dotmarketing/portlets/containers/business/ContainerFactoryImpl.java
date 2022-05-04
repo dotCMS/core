@@ -177,6 +177,26 @@ public class ContainerFactoryImpl implements ContainerFactory {
     }
 
 	@Override
+	public void deleteContainerByInode(String containerInode) throws DotDataException {
+		deleteContainerInDB(containerInode);
+		deleteInodeInDB(containerInode);
+	}
+
+	private void deleteInodeInDB(final String inode) throws DotDataException{
+		DotConnect dc = new DotConnect();
+		dc.setSQL("delete from inode where inode = ? and type='containers'");
+		dc.addParam(inode);
+		dc.loadResult();
+	}
+
+	private void deleteContainerInDB(final String inode) throws DotDataException{
+		DotConnect dc = new DotConnect();
+		dc.setSQL("delete from " + Type.CONTAINERS.getTableName() + " where inode = ?");
+		dc.addParam(inode);
+		dc.loadResult();
+	}
+
+	@Override
 	public Container getLiveContainerByFolderPath(final String path, final Host host, final User user,
 												  final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
 
