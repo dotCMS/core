@@ -38,6 +38,10 @@ public class StoryBlockViewStrategy extends AbstractTransformStrategy<Contentlet
     @Override
     protected Map<String, Object> transform(Contentlet source, Map<String, Object> map, Set<TransformOptions> options,
                                             User user) throws DotDataException, DotSecurityException {
+        if (null == source.getContentType() || UtilMethods.isNotSet(source.getContentType().id())) {
+            throw new DotDataException(
+                    String.format("Content Type in Contentlet '%s' is not set", source.getIdentifier()));
+        }
         final List<Field> storyBlockFields = source.getContentType().fields(StoryBlockField.class);
         if (UtilMethods.isSet(storyBlockFields)) {
             storyBlockFields.forEach(field -> {
