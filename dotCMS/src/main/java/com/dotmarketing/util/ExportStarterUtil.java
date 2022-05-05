@@ -1,5 +1,7 @@
 package com.dotmarketing.util;
 
+import static java.io.File.separator;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
 import com.dotcms.publishing.BundlerUtil;
@@ -16,7 +18,6 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.portlets.calendar.model.CalendarReminder;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.cmsmaintenance.util.AssetFileNameFilter;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -37,10 +38,6 @@ import com.liferay.portal.ejb.ImageLocalManagerUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.output.TeeOutputStream;
-
-import javax.servlet.ServletException;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -52,8 +49,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.zip.ZipOutputStream;
-
-import static java.io.File.separator;
+import javax.servlet.ServletException;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.output.TeeOutputStream;
 
 public class ExportStarterUtil {
 
@@ -205,9 +203,6 @@ public class ExportStarterUtil {
                     }
                     else if(Tag.class.equals(clazz)){
                         _dh.setQuery("from " + clazz.getName() + " order by tag_id, tagname");
-                    }
-                    else if(CalendarReminder.class.equals(clazz)){
-                        _dh.setQuery("from " + clazz.getName() + " order by user_id, event_id, send_date");
                     }
                     else if(Identifier.class.equals(clazz)){
                         dc = new DotConnect();

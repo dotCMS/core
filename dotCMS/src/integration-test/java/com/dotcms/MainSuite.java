@@ -50,7 +50,6 @@ import com.dotcms.publisher.business.PublishQueueElementTransformerTest;
 import com.dotcms.publisher.receiver.BundlePublisherTest;
 import com.dotcms.publisher.util.DependencyManagerTest;
 import com.dotcms.publisher.util.DependencyModDateUtilTest;
-import com.dotcms.publishing.PublisherAPIImplTest;
 import com.dotcms.publishing.PublisherFilterImplTest;
 import com.dotcms.publishing.PushPublishFiltersInitializerTest;
 import com.dotcms.publishing.job.SiteSearchJobImplTest;
@@ -150,6 +149,10 @@ import com.dotmarketing.startup.runonce.Task211103RenameHostNameLabelTest;
 import com.dotmarketing.startup.runonce.Task220203RemoveFolderInodeConstraintTest;
 import com.dotmarketing.startup.runonce.Task220214AddOwnerAndIDateToFolderTableTest;
 import com.dotmarketing.startup.runonce.Task220215MigrateDataFromInodeToFolderTest;
+import com.dotmarketing.startup.runonce.Task220330ChangeVanityURLSiteFieldTypeTest;
+import com.dotmarketing.startup.runonce.Task220331UpdateDateTimezonesTest;
+import com.dotmarketing.startup.runonce.Task220404RemoveCalendarReminderTest;
+import com.dotmarketing.startup.runonce.Task220413IncreasePublishedPushedAssetIdColTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -166,7 +169,12 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        FolderCacheImplIntegrationTest.class,
+        StaticPublisherIntegrationTest.class,
+        com.dotcms.publishing.PublisherAPIImplTest.class,
+        SiteSearchJobImplTest.class,
         PushPublishBundleGeneratorTest.class,
+        LegacyShortyIdApiTest.class,
         RuleBundlerTest.class,
         com.dotcms.content.elasticsearch.business.ESMappingAPITest.class,
         org.apache.velocity.runtime.parser.node.SimpleNodeTest.class,
@@ -317,8 +325,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.rules.conditionlet.VisitedUrlConditionletTest.class,
         com.dotmarketing.portlets.rules.business.RulesCacheFTest.class,
         com.dotmarketing.portlets.templates.business.TemplateAPITest.class,
-        com.dotmarketing.portlets.folders.business.FolderAPITest.class,
         com.dotmarketing.portlets.containers.business.ContainerAPIImplTest.class,
+        com.dotmarketing.portlets.folders.business.FolderAPITest.class,
         com.dotmarketing.portlets.containers.business.ContainerAPITest.class,
         com.dotmarketing.portlets.containers.business.FileAssetContainerUtilTest.class,
         com.dotmarketing.portlets.htmlpages.business.HTMLPageAPITest.class,
@@ -402,7 +410,6 @@ import org.junit.runners.Suite.SuiteClasses;
         LanguageUtilTest.class,
         FolderResourceTest.class,
         Task05225RemoveLoadRecordsToIndexTest.class,
-        BundleFactoryTest.class,
         PublisherFilterImplTest.class,
         PushPublishFiltersInitializerTest.class,
         PushPublishFilterResourceTest.class,
@@ -430,7 +437,6 @@ import org.junit.runners.Suite.SuiteClasses;
         IntegrityDataGenerationJobTest.class,
         BundleAPITest.class,
         Task05390MakeRoomForLongerJobDetailTest.class,
-        IntegrityDataGenerationJobTest.class,
         Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest.class,
         JSONToolTest.class,
         BundlePublisherResourceIntegrationTest.class,
@@ -458,10 +464,7 @@ import org.junit.runners.Suite.SuiteClasses;
         LinkBundlerTest.class,
         TemplateBundlerTest.class,
         WorkflowBundlerTest.class,
-        PublisherAPIImplTest.class,
-        LegacyShortyIdApiTest.class,
         AutoLoginFilterTest.class,
-        FolderCacheImplIntegrationTest.class,
         Task210218MigrateUserProxyTableTest.class,
         com.dotmarketing.startup.runonce.Task210316UpdateLayoutIconsTest.class,
         Task210319CreateStorageTableTest.class,
@@ -470,7 +473,6 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentHandlerTest.class,
         ESIndexAPITest.class,
         FileAssetTemplateUtilTest.class,
-        SiteSearchJobImplTest.class,
         Task210506UpdateStorageTableTest.class,
         Task210520UpdateAnonymousEmailTest.class,
         Task210510UpdateStorageTableDropMetadataColumnTest.class,
@@ -503,9 +505,7 @@ import org.junit.runners.Suite.SuiteClasses;
         ManifestReaderFactoryTest.class,
         ResourceCollectorUtilTest.class,
         Task211007RemoveNotNullConstraintFromCompanyMXColumnTest.class,
-        ManifestReaderFactoryTest.class,
         Task211012AddCompanyDefaultLanguageTest.class,
-        StaticPublisherIntegrationTest.class,
         HostIntegrityCheckerTest.class,
         MetaWebInterceptorTest.class,
         BrowserUtilTest.class,
@@ -513,7 +513,6 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentletJsonAPITest.class,
         VelocityScriptActionletAbortTest.class,
         StoryBlockMapTest.class,
-        ContentletJsonAPITest.class,
         HandlerUtilTest.class,
         Task211103RenameHostNameLabelTest.class,
         ContentSecurityPolicyUtilTest.class,
@@ -525,14 +524,18 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rendering.velocity.viewtools.content.BinaryMapTest.class,
         IntegrityUtilTest.class,
         Task220202RemoveFKStructureFolderConstraintTest.class,
-        PublisherAPIImplTest.class,
+        com.dotcms.publisher.business.PublisherAPIImplTest.class,
         ContentBundlerTest.class,
         ObjectMapperTest.class,
         URLMapBundlerTest.class,
         PermissionBitFactoryImplTest.class,
         Task220203RemoveFolderInodeConstraintTest.class,
         Task220214AddOwnerAndIDateToFolderTableTest.class,
-        Task220215MigrateDataFromInodeToFolderTest.class
+        Task220215MigrateDataFromInodeToFolderTest.class,
+        Task220330ChangeVanityURLSiteFieldTypeTest.class,
+        Task220331UpdateDateTimezonesTest.class,
+        Task220404RemoveCalendarReminderTest.class,
+        Task220413IncreasePublishedPushedAssetIdColTest.class
 })
 public class MainSuite {
 

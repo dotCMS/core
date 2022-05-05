@@ -178,7 +178,8 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
 
         final String assetType = resolveAssetType(asset);
         final String assetName = resolveAssetName(asset);
-        final String deterministicId = (assetType + StringPool.COLON + parentHost.getHostname() + StringPool.FORWARD_SLASH + parentFolder.getPath() + assetName).toLowerCase();
+        final String deterministicId = (assetType + StringPool.COLON + parentHost.getHostname() +
+                parentFolder.getPath() + assetName).toLowerCase();
 
         Logger.debug(DeterministicIdentifierAPIImpl.class,
                 String.format(" assetType: %s, assetName: %s,  deterministicId: %s", assetType, assetName,
@@ -211,7 +212,7 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
         final String assetName = folder.getName();
 
         final String deterministicId = (assetType + StringPool.COLON + parentHost.getHostname()
-                + StringPool.FORWARD_SLASH + parentFolder.getPath() + assetName).toLowerCase();
+                + parentFolder.getPath() + assetName).toLowerCase();
 
         Logger.debug(DeterministicIdentifierAPIImpl.class,
                 String.format(" assetType: %s, assetName: %s,  deterministicId: %s", assetType, assetName,

@@ -78,8 +78,7 @@ class GenericRenderableImpl implements Renderable {
 
             if (this.allowedTypeSet.contains(type)) {
 
-                final Optional<User> userOpt = this.resolveUser();
-                final User user = userOpt.orElse(APILocator.systemUser());
+                final User user = APILocator.systemUser();
                 final Tuple2<String, Host> hostPathTuple = resolveHost(baseTemplatePath, user);
                 final Host host = hostPathTuple._2();
                 final String relativePath = hostPathTuple._1();
@@ -115,13 +114,5 @@ class GenericRenderableImpl implements Renderable {
         return hostPathTuple._2() == null?
                 Tuple.of(hostPathTuple._1(), APILocator.getHostAPI().findDefaultHost(user, false)):
                 hostPathTuple;
-    }
-
-    private Optional<User> resolveUser() {
-
-        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-        return null != request?
-                Optional.ofNullable(Try.of(()-> WebAPILocator.getUserWebAPI().getUser(request)).getOrNull()):
-                Optional.empty();
     }
 }

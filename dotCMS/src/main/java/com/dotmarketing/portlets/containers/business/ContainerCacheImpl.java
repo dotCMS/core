@@ -46,13 +46,16 @@ public class ContainerCacheImpl extends ContainerCache {
     cache.flushGroup(primaryGroup);
   }
   @Override
-  public void remove(VersionInfo cvinfo) {
-      cache.remove(primaryGroup + cvinfo.getWorkingInode(), primaryGroup);
-      cache.remove(primaryGroup + cvinfo.getIdentifier(), primaryGroup);
-      if(UtilMethods.isSet(cvinfo.getLiveInode())) {
-          cache.remove(primaryGroup + cvinfo.getLiveInode(), primaryGroup);
-      }
+  public void remove(final VersionInfo cvinfo) {
+
+    if(null != cvinfo) {
       
+        cache.remove(primaryGroup + cvinfo.getWorkingInode(), primaryGroup);
+        cache.remove(primaryGroup + cvinfo.getIdentifier(), primaryGroup);
+        if (UtilMethods.isSet(cvinfo.getLiveInode())) {
+          cache.remove(primaryGroup + cvinfo.getLiveInode(), primaryGroup);
+        }
+    }
   }
   public void remove(Container container) {
 

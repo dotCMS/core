@@ -4,25 +4,24 @@ import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils.SubnetInfo;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import io.netty.util.NetUtil;
+import io.vavr.control.Try;
+import org.apache.commons.lang.StringUtils;
+import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
+import javax.management.Query;
+import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
 import java.lang.management.ManagementFactory;
-import java.net.InetAddress;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
-import javax.management.ObjectName;
-import javax.management.Query;
-import javax.servlet.http.HttpServletRequest;
-import org.apache.commons.lang.StringUtils;
+import org.elasticsearch.common.network.InetAddresses;
 
 /**
  * Provides quick access to information that can be obtained from the HTTP
@@ -70,53 +69,10 @@ public class HttpRequestDataUtil {
 	 */
 	public static InetAddress getIpAddress(HttpServletRequest request)
 			throws UnknownHostException {
-		InetAddress ipAddress = null;
-		String ip = request.getHeader("X-Forwarded-For");
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("Proxy-Client-IP");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("WL-Proxy-Client-IP");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("HTTP_X_FORWARDED_FOR");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("HTTP_X_FORWARDED");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("HTTP_X_CLUSTER_CLIENT_IP");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("HTTP_CLIENT_IP");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("HTTP_FORWARDED_FOR");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("HTTP_FORWARDED");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("HTTP_VIA");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("REMOTE_ADDR");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("X-Real-IP");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getRemoteAddr();
-		}
-		if (UtilMethods.isSet(ip)) {
-		    //If X-Forwarded-For has multiple addresses, let's grab the first one only
-		    if(ip.indexOf(',') > -1){
-		        String[] ipAddresses = ip.split(",");
-		        ip = ipAddresses[0];
-		    }
-			ipAddress = InetAddress.getByName(ip);
-		}
-		return ipAddress;
+		byte[] remoteAddr = Try.of(()->InetAddresses.isInetAddress(request.getRemoteAddr())).getOrElse(false)
+				? NetUtil.createByteArrayFromIpAddressString(request.getRemoteAddr())
+				: new byte[]{127, 0, 0, 1};
+		return InetAddress.getByAddress(remoteAddr);
 	}
 
 	/**
@@ -238,6 +194,21 @@ public class HttpRequestDataUtil {
 			return null;
 		}
     }
+
+	/**
+	 * Returns the value of a given attribute in the HTTP Request object, or the default value if not present.
+	 *
+	 * @param request       An instance of the {@link HttpServletRequest} object.
+	 * @param attributeName The name of the attribute that should be present in the request.
+	 * @param defaultValue  The default value that will be returned in case the expected one is NOT present.
+	 * @return The value of the specified request attribute.
+	 */
+	public static <T> T getAttribute(final HttpServletRequest request, final String attributeName, final T defaultValue) {
+		if (null != request.getAttribute(attributeName)) {
+			return (T) request.getAttribute(attributeName);
+		}
+		return defaultValue;
+	}
 
 	/**
 	 * Convenience method to get the server port and cache it to use it must likely in logs.

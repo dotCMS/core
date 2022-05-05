@@ -96,9 +96,9 @@ public class TailLogServlet extends HttpServlet {
 				+ "<head>"
 				+ "<title>dotCMS Log</title>"
 				+ "<style type='text/css'>@import '/html/css/dot_admin.css';</style>"
-				+ "<script>var working =false;"
+				+ "<script>"
 				+ "function doS(){"
-				+ "if(!working){working=true;if(parent.document.getElementById('scrollMe').checked){dh=document.body.scrollHeight;ch=document.body.clientHeight;if(dh>ch){moveme=dh-ch;window.scrollTo(0,moveme);}}working=false;}"
+				+ "var logEvent=new CustomEvent('logUpdated',{detail:{msg:'log updated'},bubbles:true,cancelable:true});document.body.dispatchEvent(logEvent);"
 				+ "}</script>" + "</head><body class='tailerBody'>");
 
 		out.flush();

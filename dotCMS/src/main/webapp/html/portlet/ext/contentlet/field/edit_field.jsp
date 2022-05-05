@@ -31,6 +31,9 @@
 <%@ page import="com.dotmarketing.portlets.folders.model.Folder" %>
 <%@ page import="com.dotcms.contenttype.transform.field.LegacyFieldTransformer" %>
 <%@ page import="static com.dotmarketing.portlets.contentlet.business.ContentletAPI.dnsRegEx" %>
+<%@ page import="io.vavr.control.Try" %>
+<%@ page import="com.dotcms.contenttype.model.field.HostFolderField" %>
+<%@ page import="com.dotmarketing.beans.Host" %>
 
 
 <%
@@ -152,9 +155,31 @@
             
             // The extra single quotes indicate that it will return an empty string -> "''"
             String textValue = UtilMethods.isSet(value) ? value.toString() : (UtilMethods.isSet(defaultValue) ? defaultValue : "''");
+            String customStyles = "";
+            String customClassName = "";
+
+            List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
+            for(FieldVariable fv : acceptTypes){
+                if("styles".equalsIgnoreCase(fv.getKey())){
+                    customStyles = fv.getValue();
+                    customClassName = "block-custom-styles";
+                }
+            }
             %>
+            <style type="text/css">
+                dotcms-block-editor {
+                    width: 100%; 
+                    height: 500px; 
+                    display: block;   
+                }
+
+                dotcms-block-editor.block-custom-styles {
+                    <%=customStyles%>
+                }
+            </style>
+
             <script src="/html/dotcms-block-editor.js"></script>
-            <dotcms-block-editor style="width: 100%; height: 500px; display: block;"></dotcms-block-editor>
+            <dotcms-block-editor class="<%=customClassName%>"></dotcms-block-editor>
             <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"/>
 
             <script>
@@ -370,6 +395,11 @@
             <div id="acheck<%=field.getVelocityVarName()%>"></div>
 
         </div>
+        <style>
+            .editWYSIWYGField.aceText.aceTall {
+                height: 400px;
+            }
+        </style>
         <script type="text/javascript">
             dojo.addOnLoad(function () {
                 <% if (!wysiwygDisabled) { %>
@@ -774,8 +804,23 @@
 
     <script>
         dojo.addOnLoad(function() {
-            var tagField = dojo.byId("<%=field.getVelocityVarName()%>");
-            dojo.connect(tagField, "onkeyup", suggestTagsForSearch);
+
+            <%
+              Optional<com.dotcms.contenttype.model.field.Field> hostFolderField = Optional.empty();
+              final ContentType contentType = Try.of(()->APILocator.getContentTypeAPI(APILocator.systemUser()).find(structure.getVelocityVarName())).getOrNull();
+              if(null != contentType){
+                  hostFolderField = contentType.fields(HostFolderField.class).stream().findFirst();
+              }
+            %>
+
+            let tagField = dojo.byId("<%=field.getVelocityVarName()%>");
+            dojo.connect(tagField, "onkeyup", function(e){
+
+                let selectedHost = "<%= contentType != null ? contentType.host() : Host.SYSTEM_HOST%>";
+                let hostOrFolderField = dojo.byId("<%=hostFolderField
+                        .map(com.dotcms.contenttype.model.field.Field::variable).orElse(null)%>");
+                suggestTagsForContent(e, null, hostOrFolderField, selectedHost);
+            });
             dojo.connect(tagField, "onblur", closeSuggetionBox);
             var textValue = "<%=textValue%>";
             if (textValue != "") {
@@ -1146,7 +1191,8 @@
                 padding: 0;
             }
             dot-key-value .key-value-table-wc__key,
-            dot-key-value .key-value-table-wc__value {
+            dot-key-value .key-value-table-wc__value,
+            dot-key-value .key-value-table-wc__action {
                 padding-left: 0.5rem;
             }
             dot-key-value key-value-form label {
@@ -1168,7 +1214,7 @@
                 border: solid 1px var(--color-main);
                 color: var(--color-main);
             }
-            dot-key-value key-value-form button[disabled] {
+            dot-key-value button[disabled] {
                 background: #f3f3f3;
                 border: 1px solid #b3b1b8;
                 color: #b3b1b8;

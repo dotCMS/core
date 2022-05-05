@@ -132,6 +132,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   @VisibleForTesting
   public static final String IS_TEST_MODE = "_is_test_mode";
 
+  public static final String TO_BE_PUBLISH = "to_be_publish";
+
   /**
    * Flag to avoid to trigger the workflow again on the checkin when it is already in progress.
    */
@@ -153,7 +155,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   public static final String PATH_TO_MOVE = "_path_to_move";
   public static final String TEMP_BINARY_IMAGE_INODES_LIST = "tempBinaryImageInodesList";
   public static final String RELATIONSHIP_KEY = "__##relationships##__";
-  public static final String OLD_HOST_ID = "old_host";
 
   private transient ContentType contentType;
   protected Map<String, Object> map = new ContentletHashMap();

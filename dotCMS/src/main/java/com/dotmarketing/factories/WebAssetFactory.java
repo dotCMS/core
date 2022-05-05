@@ -7,6 +7,7 @@ import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.TemplateLoader;
 import com.dotcms.repackage.com.google.common.base.Strings;
@@ -67,6 +68,8 @@ import java.util.Map;
 
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
+import io.vavr.control.Try;
+
 import java.util.Optional;
 
 /**
@@ -120,6 +123,7 @@ public class WebAssetFactory {
 		permissionAPI = permissionAPIRef;
 	}
 
+	@WrapInTransaction
 	public static void createAsset(WebAsset webasset, String userId, Folder parent) throws DotDataException, DotStateException, DotSecurityException {
 
 		webasset.setModDate(new java.util.Date());
@@ -137,8 +141,12 @@ public class WebAssetFactory {
 		HibernateUtil.saveOrUpdate(webasset);
         APILocator.getVersionableAPI().setWorking(webasset);
 
-		systemEventsAPI.pushAsync(SystemEventType.SAVE_LINK, new Payload(webasset, Visibility.EXCLUDE_OWNER,
-				new ExcludeOwnerVerifierBean(userId, PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+		final Map webAssetMap = webasset.getMap();
+		HibernateUtil.addCommitListener(id.getId(), ()-> {
+
+			Try.run(()->systemEventsAPI.pushAsync(SystemEventType.SAVE_LINK, new Payload(webAssetMap, Visibility.EXCLUDE_OWNER,
+					new ExcludeOwnerVerifierBean(userId, PermissionAPI.PERMISSION_READ, Visibility.PERMISSION))));
+		});
 	}
 
 	public static void createAsset(WebAsset webasset, String userId, Host host) throws DotDataException, DotStateException, DotSecurityException {
@@ -158,8 +166,11 @@ public class WebAssetFactory {
 
 		APILocator.getVersionableAPI().setWorking(webasset);
 
-		systemEventsAPI.pushAsync(SystemEventType.SAVE_LINK, new Payload(webasset, Visibility.EXCLUDE_OWNER,
-				new ExcludeOwnerVerifierBean(userId, PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+		final Map webAssetMap = webasset.getMap();
+		HibernateUtil.addCommitListener(id.getId(), ()-> {
+			Try.run(()->systemEventsAPI.pushAsync(SystemEventType.SAVE_LINK, new Payload(webAssetMap, Visibility.EXCLUDE_OWNER,
+					new ExcludeOwnerVerifierBean(userId, PermissionAPI.PERMISSION_READ, Visibility.PERMISSION))));
+		});
 	}
 
 	public static void createAsset(WebAsset webasset, String userId, Inode parent, Identifier identifier) throws DotDataException, DotStateException, DotSecurityException {
@@ -466,11 +477,6 @@ public class WebAssetFactory {
 			FactoryLocator.getTemplateFactory().save((Template) workingwebasset);
 		} else {
 
-			boolean localTransaction = false;
-			try {
-
-				localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
-
 				// sets new working to live
 				APILocator.getVersionableAPI().setLive(workingwebasset);
 
@@ -482,31 +488,15 @@ public class WebAssetFactory {
 				// persists the webasset
 				HibernateUtil.merge(workingwebasset);
 
-				if (localTransaction) {
-
-					HibernateUtil.commitTransaction();
-				}
-			} catch (Exception e) {
-
-				Logger.error(WebAssetFactory.class, e.getMessage(), e);
-
-				if (localTransaction) {
-
-					HibernateUtil.rollbackTransaction();
-				}
-			} finally {
-
-				if (localTransaction) {
-					DbConnectionFactory.closeConnection();
-				}
-			}
 
 			Logger.debug(WebAssetFactory.class, "HibernateUtil.saveOrUpdate(workingwebasset)");
 		}
 
-
-		systemEventsAPI.pushAsync(SystemEventType.PUBLISH_LINK, new Payload(currWebAsset, Visibility.EXCLUDE_OWNER,
-				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+		final Map webAssetMap = currWebAsset.getMap();
+		HibernateUtil.addCommitListener(identifier.getId(), ()-> {
+			Try.run(()->systemEventsAPI.pushAsync(SystemEventType.PUBLISH_LINK, new Payload(webAssetMap, Visibility.EXCLUDE_OWNER,
+					new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION))));
+		});
 
 		return livewebasset;
 	}
@@ -578,8 +568,11 @@ public class WebAssetFactory {
 				HibernateUtil.saveOrUpdate(workingwebasset);
 			}
 
-			systemEventsAPI.pushAsync(SystemEventType.ARCHIVE_LINK, new Payload(currWebAsset, Visibility.EXCLUDE_OWNER,
-					new ExcludeOwnerVerifierBean(userId, PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+			final Map webAssetMap = currWebAsset.getMap();
+			HibernateUtil.addCommitListener(identifier.getId(), ()-> {
+				Try.run(()->systemEventsAPI.pushAsync(SystemEventType.ARCHIVE_LINK, new Payload(webAssetMap, Visibility.EXCLUDE_OWNER,
+						new ExcludeOwnerVerifierBean(userId, PermissionAPI.PERMISSION_READ, Visibility.PERMISSION))));
+			});
 
 			return true;
 		}
@@ -602,16 +595,18 @@ public class WebAssetFactory {
 		APILocator.getVersionableAPI().setLocked(currWebAsset, false, null);
 	}
 
-	public static void unArchiveAsset(WebAsset currWebAsset) throws DotDataException, DotStateException, DotSecurityException {
+	public static void unArchiveAsset(final WebAsset currWebAsset) throws DotDataException, DotStateException, DotSecurityException {
 
 		RefreshMenus.deleteMenu(currWebAsset);
-		Identifier ident=APILocator.getIdentifierAPI().find(currWebAsset);
+		final Identifier ident=APILocator.getIdentifierAPI().find(currWebAsset);
 		CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
 		// gets the identifier for this asset
 		APILocator.getVersionableAPI().setDeleted(currWebAsset, false);
 
-		systemEventsAPI.pushAsync(SystemEventType.UN_ARCHIVE_SITE, new Payload(currWebAsset, Visibility.EXCLUDE_OWNER,
-				new ExcludeOwnerVerifierBean(currWebAsset.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+		HibernateUtil.addCommitListener(ident.getId(), ()-> {
+			Try.run(()->systemEventsAPI.pushAsync(SystemEventType.UN_ARCHIVE_SITE, new Payload(currWebAsset.getMap(), Visibility.EXCLUDE_OWNER,
+					new ExcludeOwnerVerifierBean(currWebAsset.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION))));
+		});
 	}
 
 	public static boolean unPublishAsset(WebAsset currWebAsset, String userId, Treeable parent) throws DotStateException, DotDataException, DotSecurityException {
@@ -677,11 +672,10 @@ public class WebAssetFactory {
 					}
 				}
 
-
-
-
-				systemEventsAPI.pushAsync(SystemEventType.UN_PUBLISH_LINK, new Payload(currWebAsset, Visibility.EXCLUDE_OWNER,
-						new ExcludeOwnerVerifierBean(currWebAsset.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+				HibernateUtil.addCommitListener(identifier.getId(), ()-> {
+					Try.run(()->systemEventsAPI.pushAsync(SystemEventType.UN_PUBLISH_LINK, new Payload(currWebAsset, Visibility.EXCLUDE_OWNER,
+							new ExcludeOwnerVerifierBean(currWebAsset.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION))));
+				});
 				return true;
 			} catch (Exception e) {
 				return false;
@@ -740,7 +734,7 @@ public class WebAssetFactory {
 	 *             The method throw an exception when the new asset identifier
 	 *             or the working folder cannot be found.
 	 */
-	public static WebAsset saveAsset(WebAsset newWebAsset, Identifier id) throws Exception {
+	public static WebAsset saveAsset(final WebAsset newWebAsset, final Identifier id) throws Exception {
 		if (!InodeUtils.isSet(id.getInode())) {
 			throw new Exception("Web asset Identifier not found!");
 		}
@@ -761,9 +755,12 @@ public class WebAssetFactory {
 
 		 APILocator.getVersionableAPI().setWorking(newWebAsset);
 
-		SystemEventType systemEventType = newWebAsset.getInode() == null ? SystemEventType.SAVE_LINK : SystemEventType.UPDATE_LINK;
-		systemEventsAPI.pushAsync(systemEventType, new Payload(newWebAsset, Visibility.EXCLUDE_OWNER,
-				new ExcludeOwnerVerifierBean(newWebAsset.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+		HibernateUtil.addCommitListener(id.getId(), ()-> {
+
+			final SystemEventType systemEventType = newWebAsset.getInode() == null ? SystemEventType.SAVE_LINK : SystemEventType.UPDATE_LINK;
+			Try.run(()->systemEventsAPI.pushAsync(systemEventType, new Payload(newWebAsset, Visibility.EXCLUDE_OWNER,
+					new ExcludeOwnerVerifierBean(newWebAsset.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION))));
+		});
 
 		return newWebAsset;
 	}
@@ -1000,11 +997,13 @@ public class WebAssetFactory {
 			//### Delete the Identifier ###
 			returnValue = true;
 
-			systemEventsAPI.pushAsync(SystemEventType.DELETE_LINK, new Payload(currWebAsset, Visibility.EXCLUDE_OWNER,
-					new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
-		}
-		else
-		{
+			final Map webAssetMap = currWebAsset.getMap();
+			HibernateUtil.addCommitListener(identifier.getId(), ()-> {
+				Try.run(()->systemEventsAPI.pushAsync(SystemEventType.DELETE_LINK, new Payload(webAssetMap, Visibility.EXCLUDE_OWNER,
+						new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION))));
+			});
+		} else {
+
 			throw new Exception(WebKeys.USER_PERMISSIONS_EXCEPTION);
 		}
 		return returnValue;

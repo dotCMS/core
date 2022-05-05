@@ -1,6 +1,9 @@
 package com.dotcms.publisher.pusher.wrapper;
 
 import com.dotcms.publishing.PublisherConfig.Operation;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 
 /**
  * @author Jonathan Gamba
@@ -11,7 +14,8 @@ public class OSGIWrapper {
     private Operation operation;
     private String jarName;
 
-    public OSGIWrapper ( String jarName, Operation operation ) {
+    @JsonCreator
+    public OSGIWrapper (@JsonProperty("jarName") String jarName, @JsonProperty("operation") Operation operation ) {
         this.operation = operation;
         this.jarName = jarName;
     }

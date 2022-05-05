@@ -1,5 +1,7 @@
 package com.dotcms.datagen;
 
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.vanityurl.business.VanityUrlAPI;
 import com.dotcms.vanityurl.model.DefaultVanityUrl;
 import com.dotmarketing.business.APILocator;
@@ -17,22 +19,22 @@ import io.vavr.control.Try;
  * @author Nollymar Longa
  */
 public class VanityUrlDataGen extends ContentletDataGen {
-
-
-
   private String uri;
   private String forwardTo;
   private int action;
   private int order;
-  private long language;
   private String title;
-  private Folder folder;
-  
+
   public VanityUrlDataGen() {
-    super(Try.of(()->APILocator.getContentTypeAPI(APILocator.systemUser()).find(VanityUrlAPI.DEFAULT_VANITY_URL_STRUCTURE_VARNAME).id()).getOrElseThrow(e->new DotRuntimeException(e)));
+    super(Try.of(()-> createVanityURLContentType()).getOrElseThrow(e->new DotRuntimeException(e)));
     this.language(Try.of(()->APILocator.getLanguageAPI().getDefaultLanguage().getId()).getOrElseThrow(e->new DotRuntimeException(e)));
     this.host(APILocator.systemHost());
-    this.folder(Try.of(()->APILocator.getFolderAPI().findSystemFolder()).getOrElseThrow(e->new DotRuntimeException(e)));
+  }
+
+  private static ContentType createVanityURLContentType() {
+    return new ContentTypeDataGen()
+            .baseContentType(BaseContentType.VANITY_URL)
+            .nextPersisted();
   }
 
   public VanityUrlDataGen uri(final String uri) {
@@ -70,7 +72,7 @@ public class VanityUrlDataGen extends ContentletDataGen {
     return this;
   }
   public VanityUrlDataGen language(final long language) {
-    this.language = language;
+    this.languageId = language;
     return this;
   }
   @Override
@@ -80,12 +82,11 @@ public class VanityUrlDataGen extends ContentletDataGen {
     url.setContentTypeId(this.contentTypeId);
     url.setOrder(order);
     url.setURI(uri);
-    url.setLanguageId(language);
-    url.setTitle(UtilMethods.isSet(title) ? title : "Vanuty Test " + System.currentTimeMillis());
+    url.setLanguageId(languageId);
+    url.setTitle(UtilMethods.isSet(title) ? title : "Vanity Test " + System.currentTimeMillis());
     url.setForwardTo(forwardTo);
-    url.setFolder(folder.getIdentifier());
-    url.setSite(this.host.getIdentifier());
     url.setHost(this.host.getIdentifier());
+
     return url;
   }
 
