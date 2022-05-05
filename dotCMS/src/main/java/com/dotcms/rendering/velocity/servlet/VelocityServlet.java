@@ -1,5 +1,7 @@
 package com.dotcms.rendering.velocity.servlet;
 
+import static com.dotmarketing.util.WebKeys.LOGIN_MODE_PARAMETER;
+
 import com.dotcms.business.CloseDB;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
@@ -182,7 +184,7 @@ public class VelocityServlet extends HttpServlet {
   private boolean isFrontendLogin(final HttpServletRequest request){
       final HttpSession session = request.getSession(false);
       if (null != session) {
-          final LoginMode mode = (LoginMode) session.getAttribute("login_mode");
+          final LoginMode mode = (LoginMode) session.getAttribute(LOGIN_MODE_PARAMETER);
           return (LoginMode.FE == mode);
       }
       return false;
