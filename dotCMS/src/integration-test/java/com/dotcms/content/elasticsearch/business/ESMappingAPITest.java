@@ -211,7 +211,7 @@ public class ESMappingAPITest {
         final String fullFieldKey =
                 contentType.variable().toLowerCase() + "." + hiddenField.variable().toLowerCase();
         assertTrue(contentletMap.get(fullFieldKey) instanceof String);
-        assertEquals(ESMappingAPIImpl.elasticSearchDateTimeFormat.format(hiddenDate).toLowerCase(),
+        assertEquals(ESMappingAPIImpl.formatDate(hiddenDate).toLowerCase(),
                 contentletMap.get(fullFieldKey));
     }
 
