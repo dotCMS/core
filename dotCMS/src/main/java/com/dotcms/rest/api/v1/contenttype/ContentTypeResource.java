@@ -20,6 +20,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.PermissionsUtil;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.PaginationUtil;
@@ -56,29 +57,22 @@ import org.glassfish.jersey.server.JSONP;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.liferay.util.StringPool.COMMA;
+
+/**
+ *
+ *
+ * @author Will Ezell
+ * @since Sep 11th, 2016
+ */
 @Path("/v1/contenttype")
 public class ContentTypeResource implements Serializable {
 	private final WebResource 		webResource;
@@ -598,6 +592,58 @@ public class ContentTypeResource implements Serializable {
 		return response;
 	}
 
+	/**
+	 *
+	 * @param req
+	 * @param res
+	 * @param form
+	 * @return
+	 */
+	@POST
+	@Path("/allowedtypes")
+	@JSONP
+	@NoCache
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	public final Response allowedContentTypes(@Context final HttpServletRequest req,
+											  @Context final HttpServletResponse res,
+											  //@QueryParam(PaginationUtil.FILTER) final String filter,
+											  @QueryParam(PaginationUtil.PAGE) final int page,
+											  @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+											  @DefaultValue("upper(title)") @QueryParam(PaginationUtil.ORDER_BY) String orderBy,
+											  @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) String direction,
+											  final AllowedContentTypesForm form) {
+		if (null == form) {
+			return ExceptionMapperUtil.createResponse(null, "The request to 'allowedtypes' needs a POST JSON body");
+		}
+		if (UtilMethods.isNotSet(form.getTypes())) {
+			throw new BadRequestException("The 'types' property must be present");
+		}
+		final InitDataObject initData = this.webResource.init(null, req, res, true, null);
+		final User user = initData.getUser();
+		Response response;
+		final List<String> typeVarNames = Arrays.asList(form.getTypes().split(COMMA));
+
+		final Map<String, Object> extraParams = new HashMap<>();
+		if (UtilMethods.isSet(typeVarNames)) {
+			extraParams.put(ContentTypesPaginator.TYPES_PARAMETER_NAME, typeVarNames);
+		}
+		try {
+			final PaginationUtil paginationUtil =
+					new PaginationUtil(new ContentTypesPaginator(APILocator.getContentTypeAPI(user)));
+			response =
+					paginationUtil.getPage(req, user, null, page, perPage, orderBy, OrderDirection.valueOf(direction),
+							extraParams);
+			//response = Response.ok(new ResponseEntityView(this.contentTypeHelper.getTypes(typeVarNames, user))).build();
+		} catch (final Exception e) {
+			if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
+				throw new ForbiddenException(e);
+			}
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+			Logger.error(this, e.getMessage(), e);
+		}
+		return response;
+	}
 
 	@GET
 	@Path("/basetypes")

@@ -1,9 +1,8 @@
 package com.dotcms.contenttype.business;
 
 import com.dotcms.enterprise.license.LicenseLevel;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
@@ -69,6 +68,22 @@ public interface ContentTypeAPI {
    * @throws DotDataException Error occurred when performing the action.
    */
   ContentType find(String inodeOrVar) throws DotSecurityException, DotDataException;
+
+  /**
+   * Returns a list of Content Types based on the specified list of Velocity Variable Names.
+   *
+   * @param varNames The list of Velocity Variable Names each corresponding to a Content Type.
+   * @param offset   The specified offset in the result set, for pagination purposes.
+   * @param limit    The specified limit in the result set, for pagination purposes.
+   * @param orderBy  The order-by clause, which is internally snitized by the API.
+   *
+   * @return The list of {@link ContentType} objects matching the specified variable names.
+   *
+   * @throws DotSecurityException
+   * @throws DotDataException     An error occurred when interacting with the data source.
+   */
+  Optional<List<ContentType>> find(final List<String> varNames, final int offset,
+                                   final int limit, String orderBy) throws DotSecurityException, DotDataException;
 
   /**
    * Finds All the Content Types that exists in the system
