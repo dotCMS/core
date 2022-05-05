@@ -58,8 +58,8 @@ export const primary = () => ({
             {
                 provide: SuggestionsService,
                 useValue: {
-                    getContentTypes() {
-                        return of([
+                    getContentTypes(filter = '') {
+                        const items = [
                             {
                                 name: 'Empty Content',
                                 icon: 'hourglass_disabled',
@@ -95,7 +95,12 @@ export const primary = () => ({
                                 icon: 'storefront',
                                 variable: 'retail'
                             }
-                        ]);
+                        ];
+                        return of(
+                            filter
+                                ? items.filter((item) => item.name.match(new RegExp(filter, 'i')))
+                                : items
+                        );
                     },
                     getContentlets(type) {
                         if (type === 'empty') {

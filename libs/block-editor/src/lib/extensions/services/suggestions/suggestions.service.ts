@@ -19,7 +19,7 @@ export class SuggestionsService {
 
     getContentTypes(filter = ''): Observable<DotCMSContentType[]> {
         return this.http
-            .get(`/api/v1/contenttype?filter=${filter}&orderby=name&direction=ASC`, {
+            .get(`/api/v1/contenttype?filter=${filter}&orderby=name&direction=ASC&per_page=40`, {
                 headers: this.defaultHeaders
             })
             .pipe(pluck('entity'));

@@ -93,7 +93,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
                     icon: 'receipt',
                     command: () => {
                         this.clearFilter.emit('contentlet');
-                        this.initContentletSelection();
+                        this.loadContentTypes();
                     }
                 },
                 ...this.items
@@ -159,7 +159,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
      * @memberof SuggestionsComponent
      */
     resetKeyManager() {
-        this.list.resetKeyManager();
+        this.list?.resetKeyManager();
     }
 
     /**
@@ -209,7 +209,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
     handleBackButton(event: MouseEvent): void {
         event.preventDefault();
         event.stopPropagation();
-        this.initContentletSelection();
+        this.loadContentTypes();
     }
 
     /**
@@ -226,16 +226,16 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
                 );
                 break;
             case ItemsType.CONTENTTYPE:
-                //TODO: need to define pagination approach.
+                this.loadContentTypes(filter);
                 break;
         }
         this.isFilterActive = !!filter.length;
         this.setFirstItemActive();
     }
 
-    private initContentletSelection() {
+    private loadContentTypes(filter = '') {
         this.suggestionsService
-            .getContentTypes()
+            .getContentTypes(filter)
             .pipe(
                 map((items) => {
                     return items.map((item) => {
