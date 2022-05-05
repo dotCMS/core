@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "40478686-080b-4895-be43-dda33d1a135e",
+		"_postman_id": "2d62a856-ed0a-4236-bd8b-3763c95bcb93",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -14129,7 +14129,7 @@
 										{
 											"key": "file",
 											"type": "file",
-											"src": "resources/issue-21482-01G1VQ6TRFC2JQXAM8T10XER4A.tar.gz"
+											"src": "resources/issue-21482-01G2AM0CE9G41M4B0P7HAYDNWT.tar.gz"
 										}
 									]
 								},
@@ -14195,7 +14195,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\"query\":\"+contentType:Test21482 +languageId:1 +deleted:false +working:true\",\"sort\":\"modDate desc\",\"offset\":0}",
+									"raw": "{\"query\":\"+contentType:Issue21482 +languageId:1 +deleted:false +working:true\",\"sort\":\"modDate desc\",\"offset\":0}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -14264,7 +14264,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"actionName\": \"publish\",\n    \"comments\": \"Publishing content\",\n    \"contentlet\":{\n       \"title\": \"Iron Maiden - Somewhere in time\",\n       \"contentHost\": \"demo.dotcms.com\",\n       \"identifier\": \"{{identifier21482}}\",              \n       \"contentType\":\"Test21482\"\n   }\n}",
+									"raw": "{\n    \"actionName\": \"publish\",\n    \"comments\": \"Publishing content\",\n    \"contentlet\":{\n       \"title\": \"Iron Maiden - Somewhere in time\",\n       \"contentHost\": \"demo.dotcms.com\",\n       \"identifier\": \"{{identifier21482}}\",              \n       \"contentType\":\"Issue21482\"\n   }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -14335,7 +14335,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"actionName\": \"publish\",\n    \"comments\": \"Publishing content\",\n    \"contentlet\":{\n       \"title\": \"Iron Maiden - Somewhere in time\",\n       \"contentHost\": \"demo.dotcms.com\",\n       \"identifier\": \"{{identifier21482}}\",              \n       \"contentType\":\"Test21482\",\n       \"image\":null\n   }\n}",
+									"raw": "{\n    \"actionName\": \"publish\",\n    \"comments\": \"Publishing content\",\n    \"contentlet\":{\n       \"title\": \"Iron Maiden - Somewhere in time\",\n       \"contentHost\": \"demo.dotcms.com\",\n       \"identifier\": \"{{identifier21482}}\",              \n       \"contentType\":\"Issue21482\",\n       \"image\":null\n   }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
