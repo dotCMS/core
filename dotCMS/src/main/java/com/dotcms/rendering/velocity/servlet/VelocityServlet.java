@@ -18,6 +18,7 @@ import com.dotmarketing.util.LoginMode;
 import com.dotmarketing.util.PageMode;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import javax.servlet.http.HttpSession;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
 import javax.servlet.ServletConfig;
@@ -87,7 +88,7 @@ public class VelocityServlet extends HttpServlet {
         }
         
         // if you are a backend user, redirect you to the page edit screen
-        if (user!=null && user.hasConsoleAccess() && !comeFromSomeWhere){
+        if (user!=null && user.hasConsoleAccess() && !comeFromSomeWhere && !isFrontendLogin(request)){
             goToEditPage(uri,request, response);
             return;
         } 
@@ -171,6 +172,20 @@ public class VelocityServlet extends HttpServlet {
     response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     final String url = String.format("/dotAdmin/#/edit-page/content?url=%s", requestURI);
     response.sendRedirect(url);
+  }
+
+    /**
+     * This revise if the use is logged in from the frontend
+     * @param request
+     * @return
+     */
+  private boolean isFrontendLogin(final HttpServletRequest request){
+      final HttpSession session = request.getSession(false);
+      if (null != session) {
+          final LoginMode mode = (LoginMode) session.getAttribute("login_mode");
+          return (LoginMode.FE == mode);
+      }
+      return false;
   }
 
 }
