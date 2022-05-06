@@ -282,6 +282,12 @@ public interface ContainerAPI {
 	Container save(Container container, List<ContainerStructure> containerStructureList, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
+	 * Deletes the template version by inode
+	 * @param inode String
+	 */
+	void deleteVersionByInode(String inode);
+
+	/**
 	 * Delete the specified container
 	 *
 	 * @param container
