@@ -18,7 +18,7 @@
 							"    var jsonData = pm.response.json();",
 							"    console.log(jsonData);",
 							"",
-							"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"visitorsip-01G1KYXEQJEKYHE2Y2W8P46V6W.tar.gz\");",
+							"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"pageDisplayingVisitor.tar.gz\");",
 							"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
 							"});"
 						],
@@ -61,7 +61,7 @@
 						{
 							"key": "file",
 							"type": "file",
-							"src": "resources/visitorsip-01G1KYXEQJEKYHE2Y2W8P46V6W.tar.gz"
+							"src": "resources/pageDisplayingVisitor.tar.gz"
 						}
 					]
 				},
@@ -122,12 +122,13 @@
 					}
 				],
 				"url": {
-					"raw": "{{serverURL}}/visitorsip",
+					"raw": "{{serverURL}}/application/displayip",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
-						"visitorsip"
+						"application",
+						"displayip"
 					]
 				}
 			},
@@ -165,12 +166,13 @@
 					}
 				],
 				"url": {
-					"raw": "{{serverURL}}/visitorsip",
+					"raw": "{{serverURL}}/application/displayip",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
-						"visitorsip"
+						"application",
+						"displayip"
 					]
 				}
 			},
