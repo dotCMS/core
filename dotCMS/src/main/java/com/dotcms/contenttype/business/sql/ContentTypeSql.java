@@ -95,6 +95,6 @@ public abstract class ContentTypeSql {
 	
 	public static String UPDATE_TYPE_MOD_DATE_BY_INODE = "update structure set mod_date = ? where inode = ?";
 
-	public static String ORDER_BY = " ORDER BY ?";
+	public static String ORDER_BY = " ORDER BY %s";
 
 }

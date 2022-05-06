@@ -28,7 +28,7 @@ public interface ContentTypeFactory {
 	 * @param varNames The list of Velocity Variable Names each corresponding to a Content Type.
 	 * @param offset   The specified offset in the result set, for pagination purposes.
 	 * @param limit    The specified limit in the result set, for pagination purposes.
-	 * @param orderBy  The order-by clause, which is internally snitized by the API.
+	 * @param orderBy  The order-by clause, which is internally sanitized by the API.
 	 *
 	 * @return The list of {@link ContentType} objects matching the specified variable names.
 	 *

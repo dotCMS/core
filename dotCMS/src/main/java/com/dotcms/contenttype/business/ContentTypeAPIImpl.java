@@ -134,7 +134,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   }
 
   @Override
-  public Optional<List<ContentType>> find(final List<String> varNames, int offset, int limit,
+  public Optional<List<ContentType>> find(final List<String> varNames, final int offset, final int limit,
                                           final String orderBy) throws DotSecurityException, DotDataException {
     if (UtilMethods.isNotSet(varNames)) {
       return Optional.empty();
@@ -150,25 +150,19 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     } else {
       contentTypeList = this.contentTypeFactory.find(varNames, internalOffset, internalLimit, orderBy);
     }
-    final List<ContentType> nonAccessibleContentTypes = contentTypeList.stream()
+    final List<ContentType> accessibleContentTypes = contentTypeList.stream()
             .filter(type -> {
               try {
-                return !this.perms.doesUserHavePermission(type, PermissionAPI.PERMISSION_READ, user);
+                return this.perms.doesUserHavePermission(type, PermissionAPI.PERMISSION_READ, user);
               } catch (final DotDataException e) {
+                // Exclude inaccessible Content Types from result list
                 Logger.warn(this,
-                        String.format("READ Permission on Content Type '%s' [%s] could not be checked: %s", type.name(),
+                        String.format("READ Permission for user '%s' on Content Type '%s' [%s] could not be checked: %s", user.getUserId(), type.name(),
                                 type.id(), e.getMessage()));
                 return Boolean.FALSE;
               }
             }).collect(Collectors.toList());
-    if (!nonAccessibleContentTypes.isEmpty()) {
-      final List<String> nonAccessibleTypes = nonAccessibleContentTypes.stream().map(type -> type.name()).collect(
-              Collectors.toList());
-      final String typeNames = String.join(", ", nonAccessibleTypes);
-      throw new DotSecurityException(
-              String.format("User '%s' does not have READ permissions on Content Types: %s", typeNames));
-    }
-    return Optional.of(contentTypeList);
+    return Optional.of(accessibleContentTypes);
   }
 
   @CloseDBIfOpened
