@@ -253,12 +253,10 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
             this.dotThemesService
                 .get(this.theme)
                 .pipe(take(1))
-                .subscribe(
-                    (theme: DotTheme) => {
-                        this.currentTheme = theme;
-                        this.cd.detectChanges();
-                    }
-                );
+                .subscribe((theme: DotTheme) => {
+                    this.currentTheme = theme;
+                    this.cd.detectChanges();
+                });
             this.initialFormValue = _.cloneDeep(this.form.value);
         }
     }

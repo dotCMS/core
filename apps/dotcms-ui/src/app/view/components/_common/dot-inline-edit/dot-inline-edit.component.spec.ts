@@ -28,7 +28,7 @@ class HostTestComponent {
     @Input() inlineEditContentTemplate?: TemplateRef<unknown>;
 }
 
-fdescribe('DotInlineEditComponent', () => {
+describe('DotInlineEditComponent', () => {
     let hostFixture: ComponentFixture<HostTestComponent>;
     let comp: DotInlineEditComponent;
     let de: DebugElement;
