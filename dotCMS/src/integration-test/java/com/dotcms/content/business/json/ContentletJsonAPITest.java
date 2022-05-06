@@ -55,6 +55,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -502,6 +503,7 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
             throws IOException {
         final String resource = ConfigTestHelper.getPathToTestResource(RESOURCE);
         final String resourceAsString = new String(Files.readAllBytes(new File(resource).toPath()));
+        Assert.assertTrue(resourceAsString.contains("unknownProperty"));
         final com.dotcms.content.model.Contentlet immutableFromJson = INSTANCE.get()
                 .immutableFromJson(resourceAsString);
         //Even though we could have this patched and return the new version..
