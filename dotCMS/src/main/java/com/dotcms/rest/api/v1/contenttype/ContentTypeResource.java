@@ -606,7 +606,7 @@ public class ContentTypeResource implements Serializable {
 											  @Context final HttpServletResponse res,
 											  @QueryParam(PaginationUtil.PAGE) final int page,
 											  @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
-											  @DefaultValue("upper(title)") @QueryParam(PaginationUtil.ORDER_BY) String orderBy,
+											  @DefaultValue("UPPER(name)") @QueryParam(PaginationUtil.ORDER_BY) String orderBy,
 											  @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) String direction,
 											  final AllowedContentTypesForm form) {
 		if (null == form) {

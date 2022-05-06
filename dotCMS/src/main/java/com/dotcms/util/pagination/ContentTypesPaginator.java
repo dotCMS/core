@@ -54,12 +54,16 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
     }
 
     /**
-     * Return the total
-     * @param condition
-     * @return
+     * Returns the total amount of Contentlets living in a Site that belong to a specific Base Content Type.
+     *
+     * @param condition Condition that the base Content Type needs to meet.
+     * @param type      The Base Content Type to search for.
+     * @param siteId    The ID of the Site where the total amount of Contentlets will be determined.
+     *
+     * @return The total amount of Contentlet of a given Base Type in a Site.
      */
-    private long getTotalRecords(final String condition, final BaseContentType type, final String hostId) {
-        return Sneaky.sneak(() ->this.contentTypeAPI.count(condition, type, hostId));
+    private long getTotalRecords(final String condition, final BaseContentType type, final String siteId) {
+        return Sneaky.sneak(() ->this.contentTypeAPI.count(condition, type, siteId));
     }
 
     @Override
@@ -71,12 +75,14 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
                 (List<String>) extraParams.get(TYPES_PARAMETER_NAME) : null;
         final String siteId = UtilMethods.isSet(extraParams) && extraParams.containsKey(HOST_PARAMETER_ID) ?
                 extraParams.get(HOST_PARAMETER_ID).toString() : null;
-         
-        String orderByString = UtilMethods.isSet(orderBy) ? orderBy : "mod_date " + OrderDirection.DESC.name();
-        orderByString =  orderByString.trim().toLowerCase().endsWith(SPACE + OrderDirection.ASC.name()) ||
-                orderByString.trim().toLowerCase().endsWith(SPACE + OrderDirection.DESC.name())
+
+        String orderByString =
+                UtilMethods.isSet(orderBy) ? orderBy : "mod_date " + OrderDirection.DESC.name().toLowerCase();
+        orderByString = orderByString.trim().toLowerCase().endsWith(SPACE + OrderDirection.ASC.name().toLowerCase()) ||
+                orderByString.trim().toLowerCase().endsWith(SPACE + OrderDirection.DESC.name().toLowerCase())
                 ? orderByString
-                : orderByString + SPACE + (UtilMethods.isSet(direction) ? direction.toString().toLowerCase(): OrderDirection.ASC.name());
+                : orderByString + SPACE + (UtilMethods.isSet(direction) ? direction.toString().toLowerCase() :
+                OrderDirection.ASC.name().toLowerCase());
         try {
             List<ContentType> contentTypes;
             final PaginatedArrayList<Map<String, Object>> result = new PaginatedArrayList<>();

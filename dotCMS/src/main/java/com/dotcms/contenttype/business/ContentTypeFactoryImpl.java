@@ -140,13 +140,13 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
       }
       String sql = String.format(ContentTypeSql.SELECT_BY_VAR_NAMES,
               String.join(COMMA, Collections.nCopies(varNames.size(), "?")));
-      sql = UtilMethods.isSet(orderBy) ? sql + ContentTypeSql.ORDER_BY : sql;
+      if (UtilMethods.isSet(orderBy)) {
+          sql = UtilMethods.isSet(orderBy) ? sql + ContentTypeSql.ORDER_BY : sql;
+          final String sanitizedOrderBy = SQLUtil.sanitizeSortBy(orderBy);
+          sql = String.format(sql, sanitizedOrderBy);
+      }
       dc.setSQL(sql);
       varNames.forEach(varName -> dc.addParam(varName.toLowerCase()));
-      if (UtilMethods.isSet(orderBy)) {
-          final String sanitizedOrderBy = SQLUtil.sanitizeSortBy(orderBy);
-          dc.addParam(sanitizedOrderBy);
-      }
       final List<Map<String, Object>> results = dc.loadObjectResults();
       return new DbContentTypeTransformer(results).asList();
     }

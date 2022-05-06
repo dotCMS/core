@@ -77,7 +77,8 @@ public interface ContentTypeAPI {
    * @param varNames The list of Velocity Variable Names each corresponding to a Content Type.
    * @param offset   The specified offset in the result set, for pagination purposes.
    * @param limit    The specified limit in the result set, for pagination purposes.
-   * @param orderBy  The order-by clause, which is internally snitized by the API.
+   * @param orderBy  The order-by clause, which is internally sanitized by the API. For more information, please refer
+   *                 to {@link com.dotmarketing.common.util.SQLUtil#ORDERBY_WHITELIST}
    *
    * @return The list of {@link ContentType} objects matching the specified variable names.
    *
@@ -85,8 +86,8 @@ public interface ContentTypeAPI {
    *                              action.
    * @throws DotDataException     An error occurred when interacting with the data source.
    */
-  Optional<List<ContentType>> find(final List<String> varNames, final int offset,
-                                   final int limit, String orderBy) throws DotSecurityException, DotDataException;
+  Optional<List<ContentType>> find(final List<String> varNames, final int offset, final int limit,
+                                   final String orderBy) throws DotSecurityException, DotDataException;
 
   /**
    * Finds All the Content Types that exists in the system
