@@ -589,6 +589,10 @@ public class ContentTypeResource implements Serializable {
 	 *
 	 * @param req
 	 * @param res
+	 * @param page
+	 * @param perPage
+	 * @param orderBy
+	 * @param direction
 	 * @param form
 	 * @return
 	 */
@@ -600,7 +604,6 @@ public class ContentTypeResource implements Serializable {
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public final Response allowedContentTypes(@Context final HttpServletRequest req,
 											  @Context final HttpServletResponse res,
-											  //@QueryParam(PaginationUtil.FILTER) final String filter,
 											  @QueryParam(PaginationUtil.PAGE) final int page,
 											  @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
 											  @DefaultValue("upper(title)") @QueryParam(PaginationUtil.ORDER_BY) String orderBy,
@@ -627,7 +630,6 @@ public class ContentTypeResource implements Serializable {
 			response =
 					paginationUtil.getPage(req, user, null, page, perPage, orderBy, OrderDirection.valueOf(direction),
 							extraParams);
-			//response = Response.ok(new ResponseEntityView(this.contentTypeHelper.getTypes(typeVarNames, user))).build();
 		} catch (final Exception e) {
 			if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
 				throw new ForbiddenException(e);

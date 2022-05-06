@@ -70,7 +70,9 @@ public interface ContentTypeAPI {
   ContentType find(String inodeOrVar) throws DotSecurityException, DotDataException;
 
   /**
-   * Returns a list of Content Types based on the specified list of Velocity Variable Names.
+   * Returns a list of Content Types based on the specified list of Velocity Variable Names. If one or more Velocity
+   * Variable Names don't exist in the content repository, or if current User doesn't have access to them, they will
+   * not be added to the result list.
    *
    * @param varNames The list of Velocity Variable Names each corresponding to a Content Type.
    * @param offset   The specified offset in the result set, for pagination purposes.
@@ -79,7 +81,8 @@ public interface ContentTypeAPI {
    *
    * @return The list of {@link ContentType} objects matching the specified variable names.
    *
-   * @throws DotSecurityException
+   * @throws DotSecurityException The User accessing this API does not have the required permissions to perform this
+   *                              action.
    * @throws DotDataException     An error occurred when interacting with the data source.
    */
   Optional<List<ContentType>> find(final List<String> varNames, final int offset,

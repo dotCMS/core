@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static com.liferay.util.StringPool.BLANK;
+import static com.liferay.util.StringPool.SPACE;
 
 /**
  * Handle {@link ContentType} pagination
@@ -73,10 +73,10 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
                 extraParams.get(HOST_PARAMETER_ID).toString() : null;
          
         String orderByString = UtilMethods.isSet(orderBy) ? orderBy : "mod_date " + OrderDirection.DESC.name();
-        orderByString =  orderByString.trim().toLowerCase().endsWith(" " + OrderDirection.ASC.name()) ||
-                orderByString.trim().toLowerCase().endsWith(" " + OrderDirection.DESC.name())
+        orderByString =  orderByString.trim().toLowerCase().endsWith(SPACE + OrderDirection.ASC.name()) ||
+                orderByString.trim().toLowerCase().endsWith(SPACE + OrderDirection.DESC.name())
                 ? orderByString
-                : orderByString + BLANK + (UtilMethods.isSet(direction) ? direction.toString().toLowerCase(): OrderDirection.ASC.name());
+                : orderByString + SPACE + (UtilMethods.isSet(direction) ? direction.toString().toLowerCase(): OrderDirection.ASC.name());
         try {
             List<ContentType> contentTypes;
             final PaginatedArrayList<Map<String, Object>> result = new PaginatedArrayList<>();
