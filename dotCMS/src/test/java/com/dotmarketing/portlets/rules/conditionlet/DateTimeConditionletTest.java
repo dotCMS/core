@@ -156,7 +156,7 @@ public class DateTimeConditionletTest extends UnitTestBase {
 
         public TestCase(String testDescription) {
             this.testDescription = testDescription;
-            this.request = Mockito.spy(HttpServletRequest.class);
+            this.request = mock(HttpServletRequest.class);
             this.response = mock(HttpServletResponse.class);
             conditionlet = new DateTimeConditionlet(geoIp2Util);
         }
