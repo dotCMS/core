@@ -14,8 +14,14 @@
             #if ($mark.type == "italic")
             <em>
             #end
+            #if ($mark.type == "strike")
+            <s>
+            #end
             #if ($mark.type == "underline")
             <u>
+            #end
+            #if ($mark.type == "link")
+            <a href="$mark.attrs.href" target="$mark.attrs.target">
             #end
         #end
     #end
@@ -32,8 +38,14 @@
             #if ($mark.type == "italic")
             </em>
             #end
+            #if ($mark.type == "strike")
+            </s>
+            #end
             #if ($mark.type == "underline")
             </u>
+            #end
+            #if($mark.type == "link")
+            </a>
             #end
         #end
     #end

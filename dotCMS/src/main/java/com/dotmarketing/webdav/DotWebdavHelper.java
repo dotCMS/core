@@ -5,6 +5,8 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rendering.velocity.services.DotResourceCache;
 import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
 import com.dotcms.repackage.com.bradmcevoy.http.HttpManager;
@@ -177,6 +179,7 @@ public class DotWebdavHelper {
 		}
 	}
 
+	@CloseDBIfOpened
 	public User authorizePrincipal(final String username, final String passwd) throws DotSecurityException, NoSuchUserException, DotDataException {
 
 
@@ -235,7 +238,7 @@ public class DotWebdavHelper {
 
 		return tokenOpt.isPresent() && tokenOpt.get().getUserId().equals(user.getUserId());
 	}
-
+	@CloseDBIfOpened
 	public boolean isFolder(String uriAux, User user) throws IOException {
 		Logger.debug(this, "isFolder");
 		boolean returnValue = false;
@@ -282,7 +285,7 @@ public class DotWebdavHelper {
 		}
 		return returnValue;
 	}
-
+	@CloseDBIfOpened
 	public boolean isResource(String uri, User user) throws IOException {
 		uri = stripMapping(uri);
 		Logger.debug(this.getClass(), "In the Method isResource");
@@ -335,7 +338,8 @@ public class DotWebdavHelper {
 		}
 		return returnValue;
 	}
-
+	
+	@CloseDBIfOpened
 	public IFileAsset loadFile(String url, User user) throws IOException, DotDataException, DotSecurityException{
 		url = stripMapping(url);
 		String hostName = getHostname(url);
@@ -381,7 +385,7 @@ public class DotWebdavHelper {
 		}
 		return fileAsset.getFileName();
 	}
-
+	@CloseDBIfOpened
 	public Folder loadFolder(String url,User user) throws IOException{
 		url = stripMapping(url);
 		String hostName = getHostname(url);
@@ -422,6 +426,7 @@ public class DotWebdavHelper {
 	 * @return
 	 * @throws IOException
 	 */
+	@CloseDBIfOpened
 	public List<Resource> getChildrenOfFolder ( Folder parentFolder, User user, boolean isAutoPub, long lang ) throws IOException {
 
 		String prePath = "/webdav/";
@@ -627,6 +632,7 @@ public class DotWebdavHelper {
 		setResourceContent(toPath, getResourceContent(fromPath,user), null, null, user);
 	}
 
+	@WrapInTransaction
 	public void copyFolder(String sourcePath, String destinationPath, User user, boolean autoPublish) throws IOException, DotDataException {
 		try{
 			destinationPath=stripMapping(destinationPath);
@@ -710,6 +716,7 @@ public class DotWebdavHelper {
 		return fileData;
 	}
 
+	@WrapInTransaction
 	public void setResourceContent(String resourceUri,
 								   InputStream content,	String contentType, String characterEncoding, Date modifiedDate, User user, boolean isAutoPub) throws Exception {
 		resourceUri = stripMapping(resourceUri);
@@ -724,13 +731,10 @@ public class DotWebdavHelper {
 		Host host;
 		try {
 			host = hostAPI.findByName(hostName, user, false);
-		} catch (DotDataException e) {
+		} catch (Exception e) {
 			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 			throw new IOException(e.getMessage(),e);
-		} catch (DotSecurityException e) {
-			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-			throw new IOException(e.getMessage(),e);
-		}
+		} 
 
 		Folder folder = new Folder();
 		try {
@@ -851,7 +855,7 @@ public class DotWebdavHelper {
 			}
 		}
 	} // setResourceContent.
-
+	@CloseDBIfOpened
 	private void validatePermissions(User user, boolean isAutoPub, boolean disableWorkflow,
 									 Contentlet fileAsset) throws DotDataException, DotSecurityException {
 		if (isAutoPub && !perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_PUBLISH, user)) {
@@ -1032,7 +1036,8 @@ public class DotWebdavHelper {
 
 		return fileData;
 	}
-
+	
+	@CloseDBIfOpened
 	public Folder createFolder(String folderUri, User user) throws IOException, DotDataException {
 		Folder folder = null;
 		folderUri = stripMapping(folderUri);
@@ -1088,7 +1093,8 @@ public class DotWebdavHelper {
 		}
 		return folder;
 	}
-
+	
+	@WrapInTransaction
 	public void move(String fromPath, String toPath, User user,boolean autoPublish)throws IOException, DotDataException {
 		String resourceFromPath = fromPath;
 		final String fromPathStripped = stripMapping(fromPath);
@@ -1294,7 +1300,7 @@ public class DotWebdavHelper {
 		}
 
 	}
-
+	@WrapInTransaction
 	public void removeObject(String uri, User user) throws IOException, DotDataException, DotSecurityException {
 		String resourceUri = uri;
 		uri = stripMapping(uri);
@@ -1380,6 +1386,7 @@ public class DotWebdavHelper {
 	 * @param resourceValidationName
 	 * @return
 	 */
+	@CloseDBIfOpened
 	boolean isSameTargetAndDestinationResourceOnMove(final String resourceValidationName) {
 		final Request request = HttpManager.request();
 		if (null != request) {
@@ -1405,6 +1412,7 @@ public class DotWebdavHelper {
 	 * @param targetPath
 	 * @return
 	 */
+	
 	boolean isSameResourcePath(final String sourcePath, final String targetPath, final User user) {
 		try {
 			final Folder sourceFolder = getFolder(sourcePath, user);
@@ -1420,7 +1428,7 @@ public class DotWebdavHelper {
 		}
 		return false;
 	}
-
+	@CloseDBIfOpened
 	private Folder getFolder(final String uri, final User user)
 			throws DotSecurityException, DotDataException {
 	   final String hostName = getHostName(uri);

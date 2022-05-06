@@ -24,9 +24,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static net.bytebuddy.matcher.ElementMatchers.*;
 
 /**
- * Initializes ByteBuddy to handle transactional annotations.  This replaces
- * AspectJ functionality and injects at runtime.  This should be initialized
- * as early as possible and before any methods using the annotations are called.
+ * Initializes ByteBuddy to handle transactional annotations. This replaces AspectJ functionality
+ * and injects at runtime. This should be initialized as early as possible and before any methods
+ * using the annotations are called.
  *
  * @author sbolton
  */
@@ -50,79 +50,68 @@ public class ByteBuddyFactory {
     }
 
 
-    public static void premain(final String arg, final Instrumentation inst)  throws Exception  {
+    public static void premain(final String arg, final Instrumentation inst) throws Exception {
         System.out.println("In ByteBuddyAgent premain");
-        if (!agentLoaded.compareAndSet(false,true))
+        if (!agentLoaded.compareAndSet(false, true))
             return;
         AgentBuilder.LocationStrategy bootFallbackLocationStrategy = new AgentBuilder.LocationStrategy() {
             @Override
             public ClassFileLocator classFileLocator(final ClassLoader classLoader, final JavaModule module) {
-                return new ClassFileLocator.Compound(ClassFileLocator.ForClassLoader.of(classLoader), ClassFileLocator.ForClassLoader.of(this.getClass().getClassLoader()));
+                return new ClassFileLocator.Compound(ClassFileLocator.ForClassLoader.of(classLoader),
+                                ClassFileLocator.ForClassLoader.of(this.getClass().getClassLoader()));
             }
         };
 
-    try {
-                AgentBuilder builder = new AgentBuilder.Default()
-                .ignore(nameStartsWith("net.bytebuddy."))
-                .ignore(nameStartsWith("com.dotcms.repackage."))
-                        .ignore(nameStartsWith("com.dotcms.business.bytebuddy"))
-                      //  .ignore(nameEndsWith("LocalTransactionAndCloseDBIfOpenedFactoryTest"))
-                        //  .ignore(nameEndsWith("FolderAPITest"))
-                .disableClassFormatChanges()
-                .with(AgentBuilder.InitializationStrategy.Minimal.INSTANCE)
-                .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
-                .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION);
+        try {
+            AgentBuilder builder = new AgentBuilder.Default().ignore(nameStartsWith("net.bytebuddy."))
+                            .ignore(nameStartsWith("com.dotcms.repackage."))
+                            .ignore(nameStartsWith("com.dotcms.business.bytebuddy"))
+                            // .ignore(nameEndsWith("LocalTransactionAndCloseDBIfOpenedFactoryTest"))
+                            // .ignore(nameEndsWith("FolderAPITest"))
+                            .disableClassFormatChanges().with(AgentBuilder.InitializationStrategy.Minimal.INSTANCE)
+                            .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
+                            .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION);
 
-                /*
-                We do not use Config class for this as we do not want to load classes
-                that may need transformation or require annotation processing.
-                */
-                if (Boolean.parseBoolean(System.getenv("DOTCMS_BYTEBUDDY_DEBUG")))
-                {
-                   builder = ((AgentBuilder.RedefinitionListenable)builder).with(AgentBuilder.RedefinitionStrategy.Listener.StreamWriting.toSystemError())
-                            .with(AgentBuilder.Listener.StreamWriting.toSystemError().withTransformationsOnly())
-                            .with(AgentBuilder.InstallationListener.StreamWriting.toSystemError());
-                }
+            /*
+             * We do not use Config class for this as we do not want to load classes that may need
+             * transformation or require annotation processing.
+             */
+            if (Boolean.parseBoolean(System.getenv("DOTCMS_BYTEBUDDY_DEBUG"))) {
+                builder = ((AgentBuilder.RedefinitionListenable) builder)
+                                .with(AgentBuilder.RedefinitionStrategy.Listener.StreamWriting.toSystemError())
+                                .with(AgentBuilder.Listener.StreamWriting.toSystemError().withTransformationsOnly())
+                                .with(AgentBuilder.InstallationListener.StreamWriting.toSystemError());
+            }
 
-                 builder.with(bootFallbackLocationStrategy)
-                .type(ElementMatchers.nameStartsWith("com.dotcms"))
-                         .or(ElementMatchers.nameStartsWith("com.dotmarketing"))
-                         .or(ElementMatchers.nameStartsWith("com.liferay"))
-                         .transform(
-                        new AgentBuilder.Transformer.ForAdvice()
-                                .withExceptionHandler(Advice.ExceptionHandler.Default.RETHROWING)
-                                .advice(isMethod().and(isAnnotatedWith(CloseDB.class))
-                                        , CloseDBAdvice.class.getName())
-                )
+            builder.with(bootFallbackLocationStrategy).type(ElementMatchers.nameStartsWith("com.dotcms"))
+                            .or(ElementMatchers.nameStartsWith("com.dotmarketing"))
+                            .or(ElementMatchers.nameStartsWith("com.liferay"))
+                            .transform(new AgentBuilder.Transformer.ForAdvice()
+                                            .withExceptionHandler(Advice.ExceptionHandler.Default.RETHROWING)
+                                            .advice(isMethod().and(isAnnotatedWith(CloseDB.class)),
+                                                            CloseDBAdvice.class.getName()))
 
-                .transform(
-                        new AgentBuilder.Transformer.ForAdvice()
-                                .withExceptionHandler(Advice.ExceptionHandler.Default.RETHROWING)
-                                .advice(isMethod().and(isAnnotatedWith(CloseDBIfOpened.class))
-                                        , CloseDBIfOpenedAdvice.class.getName())
-                )
+                            .transform(new AgentBuilder.Transformer.ForAdvice()
+                                            .withExceptionHandler(Advice.ExceptionHandler.Default.RETHROWING)
+                                            .advice(isMethod().and(isAnnotatedWith(CloseDBIfOpened.class)),
+                                                            CloseDBIfOpenedAdvice.class.getName()))
 
-                .transform(
-                        new AgentBuilder.Transformer.ForAdvice()
+                            .transform(new AgentBuilder.Transformer.ForAdvice()
 
-                                .withExceptionHandler(Advice.ExceptionHandler.Default.RETHROWING)
-                                .advice(isMethod().and(isAnnotatedWith(WrapInTransaction.class))
-                                        , WrapInTransactionAdvice.class.getName())
-                )
+                                            .withExceptionHandler(Advice.ExceptionHandler.Default.RETHROWING)
+                                            .advice(isMethod().and(isAnnotatedWith(WrapInTransaction.class)),
+                                                            WrapInTransactionAdvice.class.getName()))
 
 
-                .transform(
-                        new AgentBuilder.Transformer.ForAdvice()
-                                .advice(isMethod().and(ByteBuddyFactory::checkLogLevelRequired)
-                                        , LogTimeAdvice.class.getName())
-                )
+                            .transform(new AgentBuilder.Transformer.ForAdvice().advice(
+                                            isMethod().and(ByteBuddyFactory::checkLogLevelRequired),
+                                            LogTimeAdvice.class.getName()))
 
-                .installOn(inst);
-        Logger.info(ByteBuddyFactory.class,"ByteBuddy Initialized");
-    } catch (Exception e)
-    {
-        Logger.error(ByteBuddyFactory.class, "Error Initializing ByteBuddy",e);
-    }
+                            .installOn(inst);
+            Logger.info(ByteBuddyFactory.class, "ByteBuddy Initialized");
+        } catch (Exception e) {
+            Logger.error(ByteBuddyFactory.class, "Error Initializing ByteBuddy", e);
+        }
 
     }
 
