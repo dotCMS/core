@@ -341,7 +341,7 @@ public class VersionableHelper {
                 this.checkPermission(user, container);
                 this.checkIsLiveOrIsWorking(container);
                 this.containerAPI.deleteContainerContentTypesByContainerInode(container);
-                WebAssetFactory.deleteAssetVersion(container);
+                this.containerAPI.deleteVersionByInode(inode);
             } else {
 
                 throw new DoesNotExistException("The container inode: " + inode + " does not exists");
