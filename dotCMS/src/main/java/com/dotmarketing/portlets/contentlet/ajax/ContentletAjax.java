@@ -1402,7 +1402,7 @@ public class ContentletAjax {
             final int currentIndex = i;
             if (Arrays.stream(defaultFields)
                     .noneMatch(field -> field.equalsIgnoreCase(fields.get(currentIndex)))
-                    && UtilMethods.isSet(fields.get(i+1))) {
+                    && i + 1 < fields.size() && UtilMethods.isSet(fields.get(i+1))) {
                 //Case when it is not a default field and has a value set (ie. a user searchable field)
                 return true;
             }

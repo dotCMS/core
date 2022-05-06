@@ -206,6 +206,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.activation.MimeType;
 import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
@@ -214,7 +215,7 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.springframework.beans.BeanUtils;
+
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -3903,7 +3904,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 : live);
             }
 
-            if (sortBy != null){
+            if (UtilMethods.isSet(sortBy)){
                 Collections.sort(relatedContentlet, new ContentMapComparator(sortBy));
             }
 
@@ -4586,7 +4587,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final String title = contentletIn.getTitle();
             final String actionId = workflowActionOpt.get().getId();
 
-            // if the default action is in the avalable actions for the content.
+            // if the default action is in the available actions for the content.
             if (!isDefaultActionOnAvailableActions(contentletIn, user, workflowAPI, actionId)) {
                 return Optional.empty();
             }
@@ -4848,8 +4849,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 CacheLocator.getVanityURLCache().remove(oldHostId, contentlet.getLanguageId());
             }
 
-            //Include system fields to generate a json representation - these fields are later removed before contentlet gets saved
-            contentlet = includeSystemFields(contentlet, contentletRaw, tagsValues, categories, user);
             contentlet = applyNullProperties(contentlet);
 
             //This is executed first hand to create the inode-contentlet relationship.
@@ -5106,7 +5105,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             identifier = identifierAPI.save(identifier);
 
-            return ! oldURI.equals(identifier.getURI());
+            return UtilMethods.isSet(oldURI) && !oldURI.equals(identifier.getURI());
         }
     }
 
@@ -6858,7 +6857,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             hasError = true;
                             cve.addPatternField(field);
                             Logger.warn(this, "Field with number regex [" + field.getVelocityVarName() + "] does not " +
-                                    "match");
+                                    "match. Regex: " + regext);
                             continue;
                         }
                     }else if(fieldValue instanceof String && UtilMethods.isSet(((String)fieldValue).trim())){
@@ -6868,7 +6867,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             hasError = true;
                             cve.addPatternField(field);
                             Logger.warn(this, "Field with string regex [" + field.getVelocityVarName() + "] does not " +
-                                    "match");
+                                    "match. Regex: " + regext);
                             continue;
                         }
                     }
@@ -7991,7 +7990,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(null != task) {
 
             final WorkflowTask newTask = new WorkflowTask();
-            BeanUtils.copyProperties(task, newTask);
+            Try.run(()->  BeanUtils.copyProperties(newTask, task));
             newTask.setId(null);
             newTask.setWebasset(copyContentlet.getIdentifier());
             newTask.setLanguageId(copyContentlet.getLanguageId());

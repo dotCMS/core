@@ -36,6 +36,7 @@ public class EMAWebInterceptorTest {
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
+        APILocator.getContentletIndexAPI().checkAndInitialiazeIndex();
 
         emaWebInterceptor = new EMAWebInterceptor();
         admin = TestUserUtils.getAdminUser();

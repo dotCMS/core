@@ -1211,8 +1211,8 @@ dd.leftdl {
 
 </style>
 
-<div class="portlet-main">
-	<div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
+<div class="portlet-main" style="height: 100%;">
+	<div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false" style="height: 100%;">
 
     <html:form styleId="cmsMaintenanceForm" method="POST" action="/ext/cmsmaintenance/view_cms_maintenance" enctype="multipart/form-data">
         <input type="hidden" name="userId"  id="userId" value="<%=user.getUserId()%>">
@@ -1696,7 +1696,7 @@ dd.leftdl {
     <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
     <!-- START Logging TAB -->
     <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
-    <div id="Logging" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Log-Files") %>" >
+    <div id="Logging" style="height: calc(100% - 42px);" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Log-Files") %>" >
 		<%@ include file="/html/portlet/ext/cmsmaintenance/tail_log.jsp"%>
     </div>
 

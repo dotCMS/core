@@ -136,6 +136,13 @@ public class DotTemplateTool implements ViewTool {
     }
 
     private static DrawedBody getDrawedBody(String templateInodeOrId, User user) throws DotDataException, DotSecurityException {
+
+        if (Template.SYSTEM_TEMPLATE.equals(templateInodeOrId)) {
+
+            final Template workingTemplate = APILocator.getTemplateAPI().systemTemplate();
+            return new DrawedBody(workingTemplate.getTitle(), workingTemplate.getDrawedBody());
+        }
+
         final boolean isIdentifier = APILocator.getIdentifierAPI().isIdentifier(templateInodeOrId);
         String identifier = templateInodeOrId;
         if(!isIdentifier && !FileAssetTemplateUtil.getInstance().isFolderAssetTemplateId(templateInodeOrId)){

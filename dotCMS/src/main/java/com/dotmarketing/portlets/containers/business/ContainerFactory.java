@@ -161,4 +161,12 @@ public interface ContainerFactory {
      * @throws DotSecurityException
      */
 	Container find(String inode) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Deletes a container by inode
+	 * @param containerInode containerInode to be deleted
+	 * @throws DotDataException
+	 */
+	void deleteContainerByInode(final String containerInode) throws DotDataException;
+
 }

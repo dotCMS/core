@@ -7,6 +7,7 @@ import static com.dotmarketing.util.WebKeys.*;
 import com.dotcms.keyvalue.model.KeyValue;
 import com.dotcms.rendering.velocity.viewtools.util.ConversionUtils;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.MessageEntity;
@@ -15,6 +16,8 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.I18NForm;
+import com.dotcms.rest.api.v1.languages.LanguageTransform;
+import com.dotcms.rest.api.v1.languages.RestLanguage;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.I18NUtil;
 import com.dotmarketing.business.APILocator;
@@ -83,6 +86,33 @@ public class LanguagesResource {
         this.languageAPI  = languageAPI;
         this.webResource  = webResource;
         this.oldLanguagesResource = new com.dotcms.rest.api.v1.languages.LanguagesResource(languageAPI, webResource, I18NUtil.INSTANCE);
+    }
+
+    /**
+     * Get a language by Id
+     * @param request {@link HttpServletRequest}
+     * @param response {@link HttpServletResponse}
+     * @param languageId {@link Long}
+     * @return Response
+     */
+    @GET
+    @Path("/id/{languageid}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response get(@Context HttpServletRequest request,
+                        @Context final HttpServletResponse response,
+                        @PathParam("languageid") final long languageId) {
+
+        webResource.init(request, response, true);
+
+        final Language language = this.languageAPI.getLanguage(languageId);
+        if (null == language) {
+
+            throw new DoesNotExistException("The language id = " + languageId + " does not exists");
+        }
+
+        return Response.ok(new ResponseEntityView(new LanguageView(language))).build();
     }
 
     @GET

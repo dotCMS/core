@@ -30,8 +30,6 @@ import com.dotmarketing.common.reindex.ReindexQueueFactory;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.plugin.business.PluginFactory;
 import com.dotmarketing.plugin.business.PluginFactoryDBImpl;
-import com.dotmarketing.portlets.calendar.business.CalendarReminderFactory;
-import com.dotmarketing.portlets.calendar.business.CalendarReminderFactoryImpl;
 import com.dotmarketing.portlets.calendar.business.EventFactory;
 import com.dotmarketing.portlets.calendar.business.EventFactoryImpl;
 import com.dotmarketing.portlets.categories.business.CategoryFactory;
@@ -39,6 +37,8 @@ import com.dotmarketing.portlets.categories.business.CategoryFactoryImpl;
 import com.dotmarketing.portlets.containers.business.ContainerFactory;
 import com.dotmarketing.portlets.containers.business.ContainerFactoryImpl;
 import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
+import com.dotmarketing.portlets.contentlet.business.HostFactory;
+import com.dotmarketing.portlets.contentlet.business.HostFactoryImpl;
 import com.dotmarketing.portlets.dashboard.business.DashboardFactory;
 import com.dotmarketing.portlets.fileassets.business.FileAssetFactory;
 import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryImpl;
@@ -127,10 +127,6 @@ public class FactoryLocator extends Locator<FactoryIndex>{
     @Deprecated
     public static UserFactoryLiferay getUserFactoryLiferay(){
         return (UserFactoryLiferay) getInstance(FactoryIndex.USER_FACTORY_LIFERAY);
-    }
-
-    public static CalendarReminderFactory getCalendarReminderFactory(){
-    	return (CalendarReminderFactory) getInstance(FactoryIndex.CALENDAR_REMINDER_FACTORY);
     }
 
        public static TemplateFactory getTemplateFactory(){
@@ -233,6 +229,15 @@ public class FactoryLocator extends Locator<FactoryIndex>{
         return (FileAssetFactory)getInstance(FactoryIndex.FileAsset_Factory);
     }
 
+    /**
+     * Returns the Factory object that handles operations related to Sites in dotCMS.
+     *
+     * @return An instance of the {@link HostFactory} object.
+     */
+    public static HostFactory getHostFactory() {
+        return (HostFactory) getInstance(FactoryIndex.HOST_FACTORY);
+    }
+
     private static Object getInstance(FactoryIndex index) {
 
 		if(instance == null){
@@ -276,7 +281,6 @@ enum FactoryIndex
 	USER_FACTORY,
     USER_FACTORY_LIFERAY,
 	CHAIN_FACTORY,
-	CALENDAR_REMINDER_FACTORY,
 	USER_PROXY_FACTORY,
 	TEMPLATE_FACTORY,
 	ROLE_FACTORY,
@@ -320,7 +324,6 @@ enum FactoryIndex
             case DISTRIBUTED_JOURNAL_FACTORY: return new ReindexQueueFactory();
             case USER_FACTORY : return new UserFactoryImpl();
             case USER_FACTORY_LIFERAY : return new UserFactoryLiferayImpl();
-            case CALENDAR_REMINDER_FACTORY: return new CalendarReminderFactoryImpl();
             case TEMPLATE_FACTORY: return new TemplateFactoryImpl();
             case HOST_VARIABLE_FACTORY: return new HostVariableFactoryImpl();
             case LAYOUT_FACTORY : return new LayoutFactoryImpl();
@@ -346,6 +349,7 @@ enum FactoryIndex
             case RELATIONSHIP_FACTORY: return RelationshipFactoryImpl.instance();
             case TAG_FACTORY: return new TagFactoryImpl();
             case FileAsset_Factory: return new FileAssetFactoryImpl();
+            case HOST_FACTORY : return new HostFactoryImpl();
 		}
 		throw new AssertionError("Unknown Factory Index: " + this);
 	}
