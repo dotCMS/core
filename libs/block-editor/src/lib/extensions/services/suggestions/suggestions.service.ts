@@ -25,12 +25,13 @@ export class SuggestionsService {
             .pipe(pluck('entity'));
     }
 
-    getContentlets(contentType = ''): Observable<DotCMSContentlet[]> {
+    getContentlets(contentType = '', filter = ''): Observable<DotCMSContentlet[]> {
         return this.http
             .post('/api/content/_search', {
-                query: `+contentType:${contentType} +languageId:1 +deleted:false +working:true`,
+                query: `+contentType:${contentType} +languageId:1 +deleted:false +working:true +catchall:${filter}* title:'${filter}'^15`,
                 sort: 'modDate desc',
-                offset: 0
+                offset: 0,
+                limit: 40
             })
             .pipe(pluck('entity', 'jsonObjectView', 'contentlets'));
     }

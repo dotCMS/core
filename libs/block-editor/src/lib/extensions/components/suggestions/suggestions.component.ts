@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 
 import { SafeUrl } from '@angular/platform-browser';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
 import { map, take } from 'rxjs/operators';
 import { MenuItem } from 'primeng/api';
@@ -33,7 +33,7 @@ export interface DotMenuItem extends Omit<MenuItem, 'icon'> {
     data?: Record<string, unknown>;
 }
 
-enum ItemsType {
+export enum ItemsType {
     BLOCK = 'block',
     CONTENTTYPE = 'contentType',
     CONTENT = 'content'
@@ -58,6 +58,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
     initialItems: DotMenuItem[];
     isFilterActive = false;
     private itemsLoaded: ItemsType;
+    private selectedContentType: DotCMSContentType;
     private mouseMove = true;
     private dotLang: Languages;
 
@@ -78,7 +79,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
             this.items = suggestionOptions;
             this.items.forEach((item) => {
                 item.command = () => {
-                    this.clearFilter.emit('');
+                    this.clearFilter.emit(ItemsType.BLOCK);
                     item.id.includes('heading')
                         ? this.onSelection({
                               type: { name: 'heading', ...item.attributes }
@@ -92,7 +93,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
                     label: 'Contentlets',
                     icon: 'receipt',
                     command: () => {
-                        this.clearFilter.emit('contentlet');
+                        this.clearFilter.emit(ItemsType.CONTENTTYPE);
                         this.loadContentTypes();
                     }
                 },
@@ -228,6 +229,8 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
             case ItemsType.CONTENTTYPE:
                 this.loadContentTypes(filter);
                 break;
+            case ItemsType.CONTENT:
+                this.loadContentlets(this.selectedContentType, filter);
         }
         this.isFilterActive = !!filter.length;
         this.setFirstItemActive();
@@ -243,41 +246,10 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
                             label: item.name,
                             icon: item.icon,
                             command: () => {
-                                this.suggestionsService
-                                    .getContentlets(item.variable)
-                                    .pipe(take(1))
-                                    .subscribe((contentlets) => {
-                                        this.items = contentlets.map((contentlet) => {
-                                            const { languageId } = contentlet;
-                                            contentlet.language =
-                                                this.getContentletLanguage(languageId);
-                                            return {
-                                                label: contentlet.title,
-                                                icon: 'contentlet/image',
-                                                data: {
-                                                    contentlet: contentlet
-                                                },
-                                                command: () => {
-                                                    this.onSelection({
-                                                        payload: contentlet,
-                                                        type: {
-                                                            name: 'dotContent'
-                                                        }
-                                                    });
-                                                }
-                                            };
-                                        });
-
-                                        if (this.items.length) {
-                                            this.itemsLoaded = ItemsType.CONTENT;
-                                            this.title = 'Select a contentlet';
-                                            this.cd.detectChanges();
-                                            this.resetKeyManager();
-                                        } else {
-                                            this.title = `No results for <b>${item.name}</b>`;
-                                            this.cd.detectChanges();
-                                        }
-                                    });
+                                this.selectedContentType = item;
+                                this.itemsLoaded = ItemsType.CONTENT;
+                                this.loadContentlets(item);
+                                this.clearFilter.emit(ItemsType.CONTENT);
                             }
                         };
                     });
@@ -290,6 +262,41 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
                 this.itemsLoaded = ItemsType.CONTENTTYPE;
                 this.cd.detectChanges();
                 this.resetKeyManager();
+            });
+    }
+
+    private loadContentlets(contentType: DotCMSContentType, filter = '') {
+        this.suggestionsService
+            .getContentlets(contentType.variable, filter)
+            .pipe(take(1))
+            .subscribe((contentlets) => {
+                this.items = contentlets.map((contentlet) => {
+                    const { languageId } = contentlet;
+                    contentlet.language = this.getContentletLanguage(languageId);
+                    return {
+                        label: contentlet.title,
+                        icon: 'contentlet/image',
+                        data: {
+                            contentlet: contentlet
+                        },
+                        command: () => {
+                            this.onSelection({
+                                payload: contentlet,
+                                type: {
+                                    name: 'dotContent'
+                                }
+                            });
+                        }
+                    };
+                });
+                if (this.items.length) {
+                    this.title = 'Select a contentlet';
+                    this.cd.detectChanges();
+                    this.resetKeyManager();
+                } else {
+                    this.title = `No results for <b>${contentType.name}</b>`;
+                    this.cd.detectChanges();
+                }
             });
     }
 

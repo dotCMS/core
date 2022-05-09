@@ -102,11 +102,11 @@ export const primary = () => ({
                                 : items
                         );
                     },
-                    getContentlets(type) {
+                    getContentlets(type, filter = '') {
                         if (type === 'empty') {
                             return of([]).pipe(delay(800));
                         }
-                        return of([
+                        const items = [
                             {
                                 modDate: '2021-10-20 14:56:53.052',
                                 title: 'Easy Snowboard Tricks You can Start Using Right Away',
@@ -587,7 +587,12 @@ export const primary = () => ({
                                 contentTypeIcon: 'file_copy',
                                 contentType: 'Blog'
                             }
-                        ]).pipe(delay(800));
+                        ];
+                        return of(
+                            filter
+                                ? items.filter((item) => item.title.match(new RegExp(filter, 'i')))
+                                : items
+                        );
                     }
                 }
             },

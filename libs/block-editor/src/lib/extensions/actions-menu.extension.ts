@@ -13,6 +13,7 @@ import {
     FLOATING_ACTIONS_MENU_KEYBOARD
 } from '../plugins/floating.plugin';
 import {
+    ItemsType,
     SuggestionsCommandProps,
     SuggestionsComponent
 } from './components/suggestions/suggestions.component';
@@ -132,7 +133,7 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
         suggestionsComponent.instance.clearFilter.pipe(takeUntil(destroy$)).subscribe((type) => {
             const queryRange = {
                 to: range.to + suggestionKey.getState(editor.view.state).query.length,
-                from: type === 'contentlet' ? range.from + 1 : range.from
+                from: type === ItemsType.BLOCK ? range.from : range.from + 1
             };
             editor.chain().deleteRange(queryRange).run();
         });
