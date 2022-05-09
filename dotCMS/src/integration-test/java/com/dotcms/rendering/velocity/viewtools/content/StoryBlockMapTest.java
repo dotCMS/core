@@ -163,7 +163,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
     public void test_overridden_render_to_html() throws JSONException, DotDataException, DotSecurityException, IOException {
 
         final String fileName = "paragraph.vtl";
-        final String storyBlockPath = "/application/story-test/blocks/";
+        final String storyBlockPath = "/application/storytest/blocks/";
         final User user = APILocator.systemUser();
         final Host host = APILocator.getHostAPI().findDefaultHost(user, false);
         final Folder folder = APILocator.getFolderAPI().createFolders(storyBlockPath,
@@ -174,16 +174,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
             final File tempTestFile = File
                     .createTempFile("paragraph" , ".vtl");
             FileUtils.writeStringToFile(tempTestFile,
-                    "<p>\n" +
-                            "    #set($start = 0)\n" +
-                            "    #set($end = $item.content.length())\n" +
-                            "    #set($end = $end - 1)\n" +
-                            "    #set($range = [$start..$end])\n" +
-                            "    #foreach($i in $range)\n" +
-                            "    #set($content = $item.content.get($i))\n" +
-                            "        $content.text\n" +
-                            "    #end\n" +
-                            "</p>");
+                    "<p> $!item.content </p>");
 
             final String variable = "testFileAsset" + System.currentTimeMillis();
             final ContentType fileAssetContentType = APILocator.getContentTypeAPI(user).save(ContentTypeBuilder
