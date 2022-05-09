@@ -786,13 +786,6 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 		return container;
 	}
 
-	@Override
-	@WrapInTransaction
-	public void deleteVersionByInode(final String inode) {
-		Logger.debug(this, ()-> "Deleting container inode: " + inode);
-		Try.run(()->containerFactory.deleteContainerByInode(inode)).onFailure(e -> new RuntimeException(e));
-	}
-
 	@WrapInTransaction
 	@Override
 	public boolean delete(final Container container, final User user, final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
