@@ -67,6 +67,15 @@ public class ContentletJsonHelper {
         return objectMapper.get().writeValueAsString(object);
     }
 
+    /**
+     * Returns the current instance of the JSON Object Mapper class.
+     *
+     * @return The instance of the {@link ObjectMapper} class.
+     */
+    public ObjectMapper objectMapper() {
+        return this.objectMapper.get();
+    }
+
     public enum INSTANCE {
         INSTANCE;
         private final ContentletJsonHelper helper = new ContentletJsonHelper();
@@ -76,4 +85,5 @@ public class ContentletJsonHelper {
         }
 
     }
+
 }

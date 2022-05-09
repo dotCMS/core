@@ -572,6 +572,8 @@ public class UserAPITest extends IntegrationTestBase {
 		Logger.info(this, "ES query: " + luceneQuery.toString());
 		Logger.info(this, "contentlets.size: " + contentlets.size());
 
+		APILocator.getNotificationAPI().deleteNotifications(systemUser.getUserId());
+
 		userAPI.delete(userToDelete, replacementUser, systemUser,false);
 
 		waitForDeleteCompletedNotification(userToDelete);

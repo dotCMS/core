@@ -1,21 +1,8 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_NAME;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CONSTANTS;
-
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.KEY_VALUE_VIEW;
-
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.TAGS;
-
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
-import static com.dotmarketing.util.UtilMethods.isSet;
-
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.strategy.StrategyResolver;
 import com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions;
@@ -23,11 +10,14 @@ import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.vavr.Tuple;
+
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.*;
 
 /**
  * This class intents to be the single point of transformation logic
@@ -38,7 +28,7 @@ class DotContentletTransformerImpl implements DotContentletTransformer {
 
     static final Set<TransformOptions> defaultOptions = EnumSet.of(
 
-            COMMON_PROPS, CONSTANTS, VERSION_INFO, BINARIES, CATEGORIES_NAME, TAGS
+            COMMON_PROPS, CONSTANTS, VERSION_INFO, BINARIES, CATEGORIES_NAME, TAGS, STORY_BLOCK_VIEW
 
     );
 
