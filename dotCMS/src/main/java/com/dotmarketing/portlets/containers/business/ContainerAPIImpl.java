@@ -30,6 +30,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.HostUtil;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
@@ -681,6 +682,13 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		new ContainerLoader().invalidate(container);
 
 		return container;
+	}
+
+	@Override
+	@WrapInTransaction
+	public void deleteVersionByInode(final String inode) {
+		Logger.debug(this, ()-> "Deleting container inode: " + inode);
+		Try.run(()->containerFactory.deleteContainerByInode(inode)).onFailure(e -> new RuntimeException(e));
 	}
 
 	@WrapInTransaction
