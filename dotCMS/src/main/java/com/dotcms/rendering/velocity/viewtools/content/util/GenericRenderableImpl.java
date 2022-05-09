@@ -98,6 +98,7 @@ class GenericRenderableImpl implements Renderable {
         final Tuple2<Boolean, String> notFoundResult =  Tuple.of(false, null);
 
         Logger.debug(this, ()-> "host: " + host.getHostname() + ", type: " + type);
+        Logger.debug(this, ()-> "item: " + item.toString());
         try {
 
             Folder folder = APILocator.getFolderAPI().findFolderByPath(path, host, user, false);
