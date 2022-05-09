@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * DBTransformer that converts DB objects into Container instances
  */
-public class ContainerTransformer implements DBTransformer {
+public class ContainerTransformer implements DBTransformer<Container> {
     final List<Container> list;
 
 
