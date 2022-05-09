@@ -1,0 +1,5 @@
+<h1>$!{title}</h1>
+#set($contentlet = $dotcontent.find($!{ContentIdentifier}))
+#if ("TITLE_IMAGE_NOT_FOUND" != $!{contentlet.titleImage})
+<img src="/contentAsset/raw-data/$!{ContentIdentifier}/$!{contentlet.titleImage}">
+#end

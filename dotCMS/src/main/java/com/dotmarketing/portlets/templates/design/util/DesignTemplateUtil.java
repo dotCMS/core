@@ -12,6 +12,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.PreviewFileAsset;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
@@ -410,8 +411,8 @@ public class DesignTemplateUtil {
 	 */
 	public static String getContainerIdentifierOrPath(final String containerId) throws DotDataException {
 
-		if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerId)) {
-
+		if (Container.SYSTEM_CONTAINER.equals(containerId) || FileAssetContainerUtil.getInstance()
+				.isFolderAssetContainerId(containerId)) {
 			return containerId;
 		}
 
@@ -456,8 +457,4 @@ public class DesignTemplateUtil {
 		return "^["+SPLIT_BODY_ID_PREFIX+"]*[0-9]{1,}$";
 	}
 
-//	private static String getRegexForHrefReplace(){
-//		return "[href=][\"/_-.0-9a-zA-z\"]{1,}";
-//	}
 }
-
