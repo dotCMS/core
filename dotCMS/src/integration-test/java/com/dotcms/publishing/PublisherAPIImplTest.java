@@ -484,7 +484,7 @@ public class PublisherAPIImplTest {
 
         if (!Rule.class.isInstance(testAsset.asset)) {
             final ManifestItemsMapTest manifestLines = testAsset.manifestLines();
-            manifestLines.addExcludes(map("Excluded System Folder/Host",
+            manifestLines.addExcludes(map("Excluded System Folder/Host/Container/Template",
                     list(APILocator.getHostAPI().findSystemHost(), APILocator.getFolderAPI().findSystemFolder())));
 
             addLanguageVariableManifestItem(
@@ -541,10 +541,10 @@ public class PublisherAPIImplTest {
                     String.format(DEPENDENCY_FROM_TEMPLATE, languageVariablesContentType.id(), languageVariablesContentType.name()));
 
             final Host systemHost = APILocator.getHostAPI().findSystemHost();
-            manifestLines.addExclude(systemHost, "Excluded System Folder/Host");
+            manifestLines.addExclude(systemHost, "Excluded System Folder/Host/Container/Template");
 
             manifestLines.addExclude(APILocator.getFolderAPI().findSystemFolder(),
-                    "Excluded System Folder/Host");
+                    "Excluded System Folder/Host/Container/Template");
         }
     }
 

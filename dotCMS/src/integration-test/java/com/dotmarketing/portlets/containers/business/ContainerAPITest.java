@@ -20,8 +20,10 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.portal.model.User;
+
 import java.util.ArrayList;
 import java.util.List;
+
 import org.apache.commons.beanutils.BeanUtils;
 import org.junit.Test;
 
@@ -267,13 +269,15 @@ public class ContainerAPITest extends ContentletBaseTest {
      */
     @Test(expected = IllegalArgumentException.class)
     public void deletingSystemContainer() throws DotDataException, DotSecurityException {
+        // Initialization
         final User systemUser = APILocator.systemUser();
-        try {
-            final Container systemContainer = containerAPI.systemContainer();
-            containerAPI.delete(systemContainer, systemUser, false);
-        } finally {
-            // System Container cannot be saved
-        }
+
+        // Test data generation
+        final Container systemContainer = containerAPI.systemContainer();
+        containerAPI.delete(systemContainer, systemUser, false);
+
+        // Assertions
+        // See expected exception in this method's signature
     }
 
     /**
