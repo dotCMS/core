@@ -1,8 +1,10 @@
 package com.dotmarketing.portlets.containers.business;
 
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -188,5 +190,15 @@ public interface ContainerFactory {
 	 * @throws DotDataException
 	 */
 	void deleteContainerByInode(final String containerInode) throws DotDataException;
+
+	/**
+	 * Returns the list of associated Container-to-Content-Type relationships for a given Container. This list
+	 * determines what Contentlets or a specific type can be added and rendered by a Container.
+	 *
+	 * @param container The {@link Container} whose associated Content Types will be determined.
+	 *
+	 * @return the list of {@link ContainerStructure} objects.
+	 */
+	List<ContainerStructure> getRelatedContainerContentTypes(final Container container) throws DotHibernateException;
 
 }

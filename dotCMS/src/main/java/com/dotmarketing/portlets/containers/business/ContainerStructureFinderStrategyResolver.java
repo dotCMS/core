@@ -212,23 +212,9 @@ public class ContainerStructureFinderStrategyResolver {
                         addAllContentTypesToSystemContainer(builder);
                         containerStructures = builder.build();
                     } else {
-                        final HibernateUtil dh = new HibernateUtil(ContainerStructure.class);
-                        dh.setSQLQuery("select {container_structures.*} from container_structures " +
-                                "where container_structures.container_id = ? " +
-                                "and container_structures.container_inode = ?");
-                        dh.setParam(container.getIdentifier());
-                        dh.setParam(container.getInode());
-                        builder.addAll(dh.list());
-
-                        //Add the list to cache.
-                        containerStructures = builder.build();
-                        containerStructures = containerStructures.stream().map((cs) -> {
-                            if (cs.getCode() == null) {
-                                cs.setCode("");
-                            }
-                            return cs;
-                        }).collect(Collectors.toList());
+                        containerStructures = APILocator.getContainerAPI().getRelatedContainerContentTypes(container);
                     }
+                    // Add the list cache
                     CacheLocator.getContentTypeCache().addContainerStructures(containerStructures, container.getIdentifier(), container.getInode());
                 } catch (final DotHibernateException e) {
                     final String errorMsg = String.format(
