@@ -153,6 +153,8 @@ class GenericRenderableImpl implements Renderable {
             final Host host = hostPathTuple._2();
             final String relativePath = hostPathTuple._1();
             final Tuple2<Boolean, String> existFileResult = existsFile(relativePath, host, user);
+            Logger.debug(this, ()-> "Checking if exists the path: " + relativePath + ", existFileResult: "
+                    + existFileResult._1() + ", " + existFileResult._2());
             if (existFileResult._1()) {
 
                 Context context = externalContext;
@@ -166,6 +168,8 @@ class GenericRenderableImpl implements Renderable {
                 context.put("item", item);
 
                 final String customTemplate = String.format("#dotParse(\"%s\")", baseTemplatePath + existFileResult._2());
+
+                Logger.debug(this, ()-> "Using the customTemplate: " + customTemplate);
                 return VelocityUtil.getInstance().parseVelocity(customTemplate, context);
             }
 
