@@ -119,7 +119,6 @@
     var lastTabSelected;
     var parentCats = new Array();
 
-
     // format the name column of the grid to be an <a> element
     var formatHref = function(value, index) {
         return "<a href=\"javascript:drillDown("+index+")\" >"+value+"</a>";
@@ -133,7 +132,6 @@
         var toSel = document.activeElement;
         document.getElementById(toSel.id).setAttribute("unselectable", "off");
     };
-
 
     var fixFocus = function() {
         var toBlur = document.activeElement;
@@ -238,10 +236,34 @@
         dojo.query("#catHolder").addClass('view-categories__categories-list');
     }
 
+    function onSelectedCategoryRow(event) {
+        var selectedItems = grid.selection.selected.filter(item => item).length;
+        var perPage = grid.rowsPerPage;
+        var totalCats = grid.store._numRows;
+        document.getElementById("fullCommand").value = "false";
+
+        if(selectedItems === perPage) {
+            var html = '' +
+                '   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "all")) %> ' + selectedItems + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "categories-on-this-page-are-selected")) %>';
+            if (perPage < totalCats) {
+                html += ' <a href="javascript: selectAllCategories()" style="text-decoration: underline;"> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Select-all" )) %> ' + totalCats + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "category-s" )) %>.</a>';
+            }
+            dojo.byId("warningDiv").innerHTML = html;
+        } else {
+            dojo.byId("warningDiv").innerHTML = '';
+        }
+    }
+
+    function bindGridEvents() {
+        dojo.connect(grid.selection, 'onSelected', onSelectedCategoryRow)
+        dojo.connect(grid.selection, 'onDeselected', onSelectedCategoryRow)
+
+        // when Select All checkbox is changed
+        dojo.connect(grid.rowSelectCell, 'toggleAllSelection', onSelectedCategoryRow)
+    }
 
 
     dojo.addOnLoad(function() {
-
         refreshCrumbs();
 
         // ajax loading of permissions tab when clicked
@@ -257,30 +279,12 @@
         createStore();
         createGrid();
         grid.startup();
+        bindGridEvents();
 
         dojo.connect(dijit.byId("add_category_dialog"), "hide", function (evt) {
             dojo.byId("savedMessage").innerHTML = "";
         });
-
-        dojo.connect(dijit.byId("catHolder_rowSelector_-1"), "onclick", function (evt) {
-            var selectedItems = grid.selection.getSelected();
-            var perPage = grid.rowsPerPage;
-            var totalCats = grid.store._numRows;
-
-            if(selectedItems.length>1) {
-
-                var html = '' +
-                    '   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "all")) %> ' + selectedItems.length + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "categories-on-this-page-are-selected")) %>';
-                if (perPage < totalCats) {
-                    html += ' <a href="javascript: selectAllCategories()" style="text-decoration: underline;"> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Select-all" )) %> ' + totalCats + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "category-s" )) %>.</a>';
-                }
-                dojo.byId("warningDiv").innerHTML = html;
-            } else if(selectedItems.length==1){
-                dojo.byId("warningDiv").innerHTML = '';
-            } else {
-                dojo.byId("warningDiv").innerHTML = '';
-            }
-        });
+        
     });
 
     function selectAllCategories() {
@@ -311,6 +315,7 @@
         createStore(params);
         createGrid();
         grid.startup();
+        bindGridEvents();
 
         if(!importing) {
             dojo.hash(params);
@@ -322,6 +327,7 @@
         createStore(params);
         createGrid();
         grid.startup();
+        bindGridEvents();
     }
 
     function showEditButtonsRow() {
@@ -356,6 +362,7 @@
         var relation = dojo.byId("addCatName").value;
         var upperCase = false;
         var newString = "";
+
         for(var i=0;i < relation.length ; i++){
             var c = relation.charAt(i);
             if(upperCase){
@@ -372,6 +379,7 @@
                 newString+=c;
             }
         }
+
         var re = /[^a-zA-Z0-9]+/g;
         newString = newString.replace(re, "");
 
@@ -466,7 +474,6 @@
                 dojo.place("<a id=\"a_"+inode+"\" href=\"javascript:rollUp('"+inode+"', '"+name+"');  \"><li  style=\"cursor:pointer\"  >"+name+"</li></a>", "ulNav", "last");
             }
         }
-
     }
 
     function prepareCrumbs(inode, name) {
@@ -477,6 +484,7 @@
 
     function buildCrumbs(inode, name) {
         dijit.byId("mainTabContainer").selectChild(dijit.byId("TabOne"));
+
         if(inode =="0"){
             currentInodeOrIdentifier="";
         }
@@ -504,6 +512,7 @@
         }
 
         newCrumbs[newCrumbs.length] = inode + "---------" + name;
+
         if (backOrForward) {
             previousCrumbs = newCrumbs;
             myCrumbs = previousCrumbs;
@@ -529,13 +538,13 @@
         prepareCrumbs(inode, name);
         dojo.byId("propertiesNA").style.display = "none";
         dojo.byId("propertiesDiv").style.display = "block";
+
         if(permissionsTab) {
 			dojo.byId("permissionNA").style.display = "none";
 			dojo.byId("permissionDiv").style.display = "block";
 		}
 
         currentCatName = name;
-
         currentInodeOrIdentifier = inode;
         key = key=="null"?"":key;
         keywords = keywords=="null"?"":keywords;
@@ -575,7 +584,6 @@
     }
 
     function getCategoryMapCallback(categoryMap){
-
         var inode = categoryMap['inode'];
         var name = categoryMap['category_name'];
         var velVar = categoryMap['category_velocity_var_name'];
@@ -590,19 +598,19 @@
         dojo.byId("CatKeywords").value = keywords;
         dijit.byId('catFilter').attr('value', '');
         doSearch();
-
     }
+
     // delete muliple or single category, via ajax
     function deleteCategories() {
-
-
         var items = grid.selection.getSelected();
         var full = dojo.byId("fullCommand").value;
+        var allItemsOnFirstPageSelected = grid.selection.selected.filter(item => item).length === grid.rowsPerPage;
 
-        if(full=="true") {
+        if(full=="true" && allItemsOnFirstPageSelected) {
             deleteFunction = function() {
                 var dia = dijit.byId('dotDeleteCategoriesDialog');
                 dia.show();
+
                 CategoryAjax.deleteCategories(currentInodeOrIdentifier, {
                     callback:function(result) {
                         if(result==0) {
@@ -657,11 +665,7 @@
                         dia.hide();
                     }
                 });
-
-
-
             };
-
         }
 
         if (items.length) {
@@ -685,6 +689,7 @@
         var velVar = dojo.byId(prefix+"CatVelVarName").value;
         var key = dojo.byId(prefix+"CatKey").value;
         var keywords = dojo.byId(prefix+"CatKeywords").value;
+
         CategoryAjax.saveOrUpdateCategory(save, currentInodeOrIdentifier, name, velVar, key, keywords, {
             callback:function(result) {
                 doSearch(false, true);
@@ -731,12 +736,11 @@
     }
 
     function importCategories() {
-
         var file = dwr.util.getValue('uploadFile');
         var filter = dojo.byId("catFilter").value;
         var merge = dojo.byId("radioTwo");
-
         var exportType = "replace";
+
         if(merge.checked) {
             exportType = "merge";
         }
@@ -760,7 +764,6 @@
             dia.hide();
             doSearch(false, true);
             grid.selection.clear();
-
         });
     }
 
@@ -819,7 +822,6 @@
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp" >
 	<liferay:param name="box_title" value="<%= LanguageUtil.get(pageContext,\"view-categories\") %>" />
 
-
 	<div class="portlet-main view-categories">
 
 		<!-- START Actions -->
@@ -853,8 +855,6 @@
 		</div>
 		<!-- END Actions -->
 
-
-
 		<!--  START TABS -->
 		<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer">
 
@@ -864,13 +864,10 @@
 					<div class="portlet-toolbar__actions-primary">
 						<%@ include file="/html/portlet/ext/common/sub_nav_inc.jsp" %>
 
-
 						<!-- ++++++++++++++++++++++++++++  -->
 						<!-- +++++ Start breadcrumps ++++  -->
-
 						<%
 							if (0 < crumbTrailEntries.size()) {
-
 								boolean _amITheFirst = true;
 						%>
 
@@ -935,7 +932,6 @@
 						%>
 
 						<script type="text/javascript">
-
                             function showHostPreview() {
                                 window.location = '<%=_browserCrumbUrl%>';
                             }
@@ -948,8 +944,6 @@
 
 						<!-- ++++++ End breadcrumps +++++  -->
 						<!-- ++++++++++++++++++++++++++++  -->
-
-
 					</div>
 
 					<div class="portlet-toolbar__info">
@@ -1047,7 +1041,6 @@
             }
             t.start();
         });
-
 	</script>
 
 </liferay:box>
