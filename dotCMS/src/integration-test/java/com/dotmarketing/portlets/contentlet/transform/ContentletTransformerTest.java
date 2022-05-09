@@ -211,16 +211,16 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
     @Test
     public void Test_Hydrate_Contentlet_WithUrl() throws DotDataException {
-
+        final ContentType testContentType = TestDataUtils.getBannerLikeContentType();
         final IdentifierAPI identifierAPI = mock(IdentifierAPI.class);
         final ContentHelper contentHelper = new ContentHelper(identifierAPI, MapToContentletPopulator.INSTANCE);
         final String identifier = "1234";
-        Identifier identifierObject = new Identifier();
-        String urlExpected = "home_page";
+        final Identifier identifierObject = new Identifier();
+        final String urlExpected = "home_page";
         identifierObject.setAssetName(urlExpected);
         identifierObject.setId(identifier);
-        Contentlet contentlet = new Contentlet();
-
+        final Contentlet contentlet = new Contentlet();
+        contentlet.setContentType(testContentType);
         contentlet.getMap().put(ContentletForm.IDENTIFIER_KEY, identifier);
         contentlet.getMap().put(HTMLPageAssetAPI.URL_FIELD, urlExpected);
         contentlet.getMap().put(Contentlet.LANGUAGEID_KEY, 1L);
@@ -241,6 +241,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
     @Test
     public void Test_Hydrate_Contentlet_Without_Url_And_AssetName_Does_Not_Exist() throws DotDataException {
+        final ContentType testContentType = TestDataUtils.getBannerLikeContentType();
         final String  anyUrl = "anyUrl";
         final IdentifierAPI identifierAPI = mock(IdentifierAPI.class);
         final ContentHelper contentHelper = new ContentHelper(identifierAPI, MapToContentletPopulator.INSTANCE){
@@ -255,8 +256,8 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
         final StrategyResolverImpl resolver = new StrategyResolverImpl(toolbox);
 
-        Contentlet contentlet = new Contentlet();
-
+        final Contentlet contentlet = new Contentlet();
+        contentlet.setContentType(testContentType);
         contentlet.getMap().put(ContentletForm.IDENTIFIER_KEY, identifier);
         contentlet.getMap().put(Contentlet.LANGUAGEID_KEY, 1L);
 
@@ -276,7 +277,8 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
     @Test
     public void Test_Hydrate_Contentlet_Without_Url() throws DotDataException {
-        String urlExpected = "home_page";
+        final ContentType testContentType = TestDataUtils.getBannerLikeContentType();
+        final String urlExpected = "home_page";
         final IdentifierAPI identifierAPI = mock(IdentifierAPI.class);
         final ContentHelper contentHelper = new ContentHelper(identifierAPI, MapToContentletPopulator.INSTANCE){
             @Override
@@ -293,8 +295,8 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         Identifier identifierObject = new Identifier();
         identifierObject.setAssetName(urlExpected);
         identifierObject.setId(identifier);
-        Contentlet contentlet = new Contentlet();
-
+        final Contentlet contentlet = new Contentlet();
+        contentlet.setContentType(testContentType);
         contentlet.getMap().put(ContentletForm.IDENTIFIER_KEY, identifier);
         contentlet.getMap().put(Contentlet.LANGUAGEID_KEY, 1L);
         when(identifierAPI.find(identifier)).thenReturn(identifierObject);

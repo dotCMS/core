@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.container;
 
-
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
@@ -119,8 +118,8 @@ public class ContainerResource implements Serializable {
      *
      * <code> { contentTypes: array of Container total: total number of Containers } <code/>
      *
-     * Url sintax:
-     * api/v1/container?filter=filter-string&page=page-number&per_page=per-page&ordeby=order-field-name&direction=order-direction&host=host-id
+     * Url syntax:
+     * api/v1/container?filter=filter-string&page=page-number&per_page=per-page&ordeby=order-field-name&direction=order-direction&host=host-id&system=true|false
      *
      * where:
      *
@@ -131,6 +130,7 @@ public class ContainerResource implements Serializable {
      * <li>ordeby: field to order by</li>
      * <li>direction: asc for upward order and desc for downward order</li>
      * <li>host: filter by host's id</li>
+     * <li>system: If the System Container object must be returned, set to {@code true}. Otherwise, set to {@code false}.</li>
      * </ul>
      *
      * Url example: v1/container?filter=test&page=2&orderby=title
@@ -150,7 +150,8 @@ public class ContainerResource implements Serializable {
             @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
             @DefaultValue("title") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
             @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION)  final String direction,
-            @QueryParam(ContainerPaginator.HOST_PARAMETER_ID)           final String hostId) {
+            @QueryParam(ContainerPaginator.HOST_PARAMETER_ID)           final String hostId,
+            @QueryParam(ContainerPaginator.SYSTEM_PARAMETER_NAME)       final Boolean showSystemContainer) {
 
         final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true, null);
         final User user = initData.getUser();
@@ -162,9 +163,10 @@ public class ContainerResource implements Serializable {
             if (checkedHostId.isPresent()) {
                 extraParams.put(ContainerPaginator.HOST_PARAMETER_ID, checkedHostId.get());
             }
+            extraParams.put(ContainerPaginator.SYSTEM_PARAMETER_NAME, showSystemContainer);
             return this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy, OrderDirection.valueOf(direction),
                     extraParams);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             Logger.error(this, e.getMessage(), e);
             return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
@@ -392,29 +394,42 @@ public class ContainerResource implements Serializable {
         velocityUtil.merge(pageKey.path, context);
     }
 
-
-    private Container getContainer(final String containerId, final User user, final Host host) throws DotDataException, DotSecurityException {
-
+    /**
+     * Returns the Container that matches the specified ID.
+     *
+     * @param containerId The Identifier of the Container being returned.
+     * @param user        The {@link User} performing this action.
+     * @param site        The {@link Host} object representing the Site that the Container lives in.
+     *
+     * @return The {@link Container} matching the ID.
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The specified user does not have the required permissions to perform this action.
+     */
+    private Container getContainer(final String containerId, final User user, final Host site) throws DotDataException, DotSecurityException {
+        if (Container.SYSTEM_CONTAINER.equals(containerId)) {
+            return this.containerAPI.systemContainer();
+        }
         final PageMode mode = PageMode.EDIT_MODE; // todo: ask for this, does not make sense ask for mode.showLive
 
         if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerId)) {
 
-            final Optional<Host> hostOpt = HostUtil.getHostFromPathOrCurrentHost(containerId, Constants.CONTAINER_FOLDER_PATH);
-            final Host   containerHost   = hostOpt.isPresent()? hostOpt.get():host;
-            final String relativePath    = FileAssetContainerUtil.getInstance().getPathFromFullPath(containerHost.getHostname(), containerId);
+            final Optional<Host> siteOpt = HostUtil.getHostFromPathOrCurrentHost(containerId, Constants.CONTAINER_FOLDER_PATH);
+            final Host   containerSite   = siteOpt.isPresent()? siteOpt.get():site;
+            final String relativePath    = FileAssetContainerUtil.getInstance().getPathFromFullPath(containerSite.getHostname(), containerId);
             try {
 
                 return mode.showLive ?
-                        this.containerAPI.getLiveContainerByFolderPath(relativePath, containerHost, user, mode.respectAnonPerms) :
-                        this.containerAPI.getWorkingContainerByFolderPath(relativePath, containerHost, user, mode.respectAnonPerms);
-            } catch (NotFoundInDbException e) {
+                        this.containerAPI.getLiveContainerByFolderPath(relativePath, containerSite, user, mode.respectAnonPerms) :
+                        this.containerAPI.getWorkingContainerByFolderPath(relativePath, containerSite, user, mode.respectAnonPerms);
+            } catch (final NotFoundInDbException e) {
 
-                // if does not found in the host path or current host, tries the default one if it is not the same
-                final Host defaultHost = WebAPILocator.getHostWebAPI().findDefaultHost(user, false);
-                if (!defaultHost.getIdentifier().equals(containerHost.getIdentifier())) {
+                // If the Container is not found in the Site path or current Site, tries the default one if it is not the same
+                final Host defaultSite = WebAPILocator.getHostWebAPI().findDefaultHost(user, false);
+                if (!defaultSite.getIdentifier().equals(containerSite.getIdentifier())) {
 
                     return  this.containerAPI.getWorkingContainerByFolderPath(relativePath,
-                            defaultHost, APILocator.getUserAPI().getSystemUser(), false);
+                            defaultSite, APILocator.getUserAPI().getSystemUser(), false);
                 }
             }
         }
@@ -551,6 +566,5 @@ public class ContainerResource implements Serializable {
             throw new ForbiddenException(e);
         }
     }
-
 
 }
