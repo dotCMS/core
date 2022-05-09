@@ -133,6 +133,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     throw new DotSecurityException("User " + user + " does not have READ permissions on ContentType " + type);
   }
 
+  @CloseDBIfOpened
   @Override
   public Optional<List<ContentType>> find(final List<String> varNames, final int offset, final int limit,
                                           final String orderBy) throws DotSecurityException, DotDataException {
@@ -150,18 +151,9 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     } else {
       contentTypeList = this.contentTypeFactory.find(varNames, internalOffset, internalLimit, orderBy);
     }
-    final List<ContentType> accessibleContentTypes = contentTypeList.stream()
-            .filter(type -> {
-              try {
-                return this.perms.doesUserHavePermission(type, PermissionAPI.PERMISSION_READ, user);
-              } catch (final DotDataException e) {
-                // Exclude inaccessible Content Types from result list
-                Logger.warn(this,
-                        String.format("READ Permission for user '%s' on Content Type '%s' [%s] could not be checked: %s", user.getUserId(), type.name(),
-                                type.id(), e.getMessage()));
-                return Boolean.FALSE;
-              }
-            }).collect(Collectors.toList());
+    // Exclude inaccessible Content Types from result list
+    final List<ContentType> accessibleContentTypes =
+            contentTypeList.stream().filter(type -> hasReadPermission(type)).collect(Collectors.toList());
     return Optional.of(accessibleContentTypes);
   }
 
@@ -752,4 +744,25 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
         return LicenseManager.getInstance().isEnterprise() || !BaseContentType
                 .getEnterpriseBaseTypes().contains(contentType.baseType());
     }
+
+  /**
+   * Utility method which verifies whether the current User has {@link PermissionAPI#PERMISSION_READ} permission on a
+   * given Content Type or not.
+   *
+   * @param type The {@link ContentType} use permission will be checked.
+   *
+   * @return If the {@link User} used by this API has {@code READ} permission on the specific Content Type, returns
+   * {@code true}.
+   */
+  private boolean hasReadPermission(final ContentType type) {
+    try {
+      return this.perms.doesUserHavePermission(type, PermissionAPI.PERMISSION_READ, user);
+    } catch (final DotDataException e) {
+      Logger.warn(this,
+              String.format("READ Permission for user '%s' on Content Type '%s' [%s] could not be checked: %s", user.getUserId(), type.name(),
+                      type.id(), e.getMessage()));
+      return Boolean.FALSE;
+    }
+  }
+
 }

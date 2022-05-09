@@ -68,7 +68,7 @@ import java.util.stream.Collectors;
 import static com.liferay.util.StringPool.COMMA;
 
 /**
- *
+ * This REST Endpoint provides information related to Content Types in the current dotCMS repository.
  *
  * @author Will Ezell
  * @since Sep 11th, 2016
@@ -593,28 +593,46 @@ public class ContentTypeResource implements Serializable {
 	}
 
 	/**
+	 * Returns the list of Content Type objects that match the specified list of Velocity Variable Names based on the
+	 * optional pagination criteria.
+	 * <p>Example:</p>
+	 * <pre>
+	 * {@code
+	 *     {{serverURL}}/api/v1/contenttype/_allowed
+	 * }
+	 * </pre>
+	 * JSON body:
+	 * <pre>
+	 * {@code
+	 *     {
+	 *     		"types": "calendarEvent,Vanityurl,webPageContent,DotAsset,persona",
+	 *     		"page": 2,
+	 *     		"perPage": 3,
+	 *     		"orderBy": "mod_date,
+	 *     		"direction": ASC
+	 * 	   }
+	 * }
+	 * </pre>
 	 *
-	 * @param req
-	 * @param res
-	 * @param page
-	 * @param perPage
-	 * @param orderBy
-	 * @param direction
-	 * @param form
-	 * @return
+	 * @param req  The current {@link HttpServletRequest} instance.
+	 * @param res  The current {@link HttpServletResponse} instance.
+	 * @param form The {@link AllowedContentTypesForm} containing the required information and optional pagination
+	 *             parameters.
+	 *
+	 * @return The JSON response with the Content Types matching the specified Velocity Variable Names.
 	 */
 	@POST
-	@Path("/allowedtypes")
+	@Path("/_allowed")
 	@JSONP
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public final Response allowedContentTypes(@Context final HttpServletRequest req,
 											  @Context final HttpServletResponse res,
-											  @QueryParam(PaginationUtil.PAGE) final int page,
+											  /*@QueryParam(PaginationUtil.PAGE) final int page,
 											  @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
 											  @DefaultValue("UPPER(name)") @QueryParam(PaginationUtil.ORDER_BY) String orderBy,
-											  @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) String direction,
+											  @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) String direction,*/
 											  final AllowedContentTypesForm form) {
 		if (null == form) {
 			return ExceptionMapperUtil.createResponse(null, "The request to 'allowedtypes' needs a POST JSON body");
@@ -634,9 +652,8 @@ public class ContentTypeResource implements Serializable {
 		try {
 			final PaginationUtil paginationUtil =
 					new PaginationUtil(new ContentTypesPaginator(APILocator.getContentTypeAPI(user)));
-			response =
-					paginationUtil.getPage(req, user, null, page, perPage, orderBy, OrderDirection.valueOf(direction),
-							extraParams);
+			response = paginationUtil.getPage(req, user, null, form.getPage(), form.getPerPage(), form.getOrderBy(),
+					OrderDirection.valueOf(form.getDirection()), extraParams);
 		} catch (final Exception e) {
 			if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
 				throw new ForbiddenException(e);
