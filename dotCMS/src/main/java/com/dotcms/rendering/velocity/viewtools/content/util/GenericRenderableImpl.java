@@ -97,6 +97,7 @@ class GenericRenderableImpl implements Renderable {
 
         final Tuple2<Boolean, String> notFoundResult =  Tuple.of(false, null);
 
+        Logger.debug(this, ()-> "host: " + host.getHostname() + ", type: " + type);
         try {
 
             Folder folder = APILocator.getFolderAPI().findFolderByPath(path, host, user, false);
@@ -123,6 +124,7 @@ class GenericRenderableImpl implements Renderable {
             // this one would be when there is a cotentlet aka dotContent to check if exists the content type implement
             final String fileNameContentType = type + contentType + ".vtl";
 
+            Logger.debug(this, ()-> "fileNameType: " + fileNameType + ", fileNameContentType: " + fileNameContentType);
              if(null != folder && null != folder.getIdentifier()) {
 
                  if(APILocator.getFileAssetAPI().fileNameExists(host, folder, fileNameContentType)) {
