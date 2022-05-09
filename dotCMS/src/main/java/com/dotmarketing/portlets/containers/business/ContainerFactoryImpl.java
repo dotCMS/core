@@ -126,6 +126,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	private List<Container> findAllHostDataBaseContainers() throws DotDataException {
 
 		final String tableName 			 = Type.CONTAINERS.getTableName();
+
 		final StringBuilder sql = new StringBuilder()
 				.append("SELECT ")
 				.append(tableName)
@@ -148,23 +149,46 @@ public class ContainerFactoryImpl implements ContainerFactory {
       Container container = CacheLocator.getContainerCache().get(inode);
       //If it is not in cache.
       if(container == null){
-          
-          //Get container from DB.
-          HibernateUtil dh = new HibernateUtil(Container.class);
-          
-          Container containerAux= (Container) dh.load(inode);
+		  final String tableName 			 = Type.CONTAINERS.getTableName();
+		  final StringBuilder sql = new StringBuilder()
+				  .append("SELECT ")
+				  .append(tableName)
+				  .append(".*, inode.* from ")
+				  .append(tableName)
+				  .append(", inode inode where ")
+				  .append(tableName)
+				  .append(".inode = inode.inode and inode.type='containers'")
+				  .append(" and inode.inode = ?");
 
-          if(InodeUtils.isSet(containerAux.getInode())){
-              //container is the one we are going to return.
-              container = containerAux;
-              //Add to cache.
-              CacheLocator.getContainerCache().add(container);
-          }
-          
+		  container = TransformerLocator.createContainerTransformer
+				  (new DotConnect().setSQL(sql.toString()).addParam(inode).loadObjectResults())
+				  .findFirst();
+
+		  CacheLocator.getContainerCache().add(container);
       }
       
       return container;
     }
+
+	@Override
+	public void deleteContainerByInode(String containerInode) throws DotDataException {
+		deleteContainerInDB(containerInode);
+		deleteInodeInDB(containerInode);
+	}
+
+	private void deleteInodeInDB(final String inode) throws DotDataException{
+		DotConnect dc = new DotConnect();
+		dc.setSQL("delete from inode where inode = ? and type='containers'");
+		dc.addParam(inode);
+		dc.loadResult();
+	}
+
+	private void deleteContainerInDB(final String inode) throws DotDataException{
+		DotConnect dc = new DotConnect();
+		dc.setSQL("delete from " + Type.CONTAINERS.getTableName() + " where inode = ?");
+		dc.addParam(inode);
+		dc.loadResult();
+	}
 
 	@Override
 	public Container getLiveContainerByFolderPath(final String path, final Host host, final User user,
@@ -956,11 +980,10 @@ public class ContainerFactoryImpl implements ContainerFactory {
            dc.addParam(replacementUserId);
            dc.addParam(userId);
            dc.loadResult();
-         
+
            for(HashMap<String, String> ident:containers){
                String identifier = ident.get("identifier");
                if (UtilMethods.isSet(identifier)) {
-
         			   final VersionInfo info =APILocator.getVersionableAPI().getVersionInfo(identifier);
         			   CacheLocator.getContainerCache().remove(info);
 

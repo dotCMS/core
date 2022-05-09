@@ -19,34 +19,11 @@
 
 package com.liferay.portal.servlet;
 
-import com.dotcms.enterprise.license.LicenseManager;
-import com.dotmarketing.startup.runalways.Task00030ClusterInitialize;
-import java.io.File;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Optional;
-import java.util.TreeMap;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.servlet.jsp.PageContext;
-
-import org.apache.commons.beanutils.PropertyUtils;
-import org.apache.commons.beanutils.SuppressPropertiesBeanIntrospector;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.dom4j.Document;
-import org.dom4j.DocumentException;
-import org.dom4j.Element;
-import org.dom4j.io.SAXReader;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.bytebuddy.ByteBuddyFactory;
 import com.dotcms.config.DotInitializationService;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.com.httpbridge.webproxy.http.TaskController;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.action.ActionServlet;
@@ -56,6 +33,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.servlets.InitServlet;
 import com.dotmarketing.startup.StartupTasksExecutor;
+import com.dotmarketing.startup.runalways.Task00030ClusterInitialize;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
@@ -85,6 +63,24 @@ import com.liferay.util.ParamUtil;
 import com.liferay.util.StringUtil;
 import com.liferay.util.servlet.EncryptedServletRequest;
 import com.liferay.util.servlet.UploadServletRequest;
+import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.commons.beanutils.SuppressPropertiesBeanIntrospector;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.servlet.jsp.PageContext;
+import java.io.File;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Optional;
+import java.util.TreeMap;
 
 /**
  * <a href="MainServlet.java.html"><b><i>View Source</i></b></a>
@@ -96,9 +92,10 @@ import com.liferay.util.servlet.UploadServletRequest;
  */
 public class MainServlet extends ActionServlet {
 
-  @CloseDBIfOpened
+  @CloseDBIfOpened // Note if ByteBuddyFactory not initialized before this class this may not be wrapped
   public void init(ServletConfig config) throws ServletException {
     synchronized (MainServlet.class) {
+      ByteBuddyFactory.init();
       super.init(config);
       Config.initializeConfig();
       com.dotmarketing.util.Config.setMyApp(config.getServletContext());

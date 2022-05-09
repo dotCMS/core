@@ -152,6 +152,7 @@ import com.dotmarketing.startup.runonce.Task220215MigrateDataFromInodeToFolderTe
 import com.dotmarketing.startup.runonce.Task220330ChangeVanityURLSiteFieldTypeTest;
 import com.dotmarketing.startup.runonce.Task220331UpdateDateTimezonesTest;
 import com.dotmarketing.startup.runonce.Task220404RemoveCalendarReminderTest;
+import com.dotmarketing.startup.runonce.Task220413IncreasePublishedPushedAssetIdColTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -409,7 +410,6 @@ import org.junit.runners.Suite.SuiteClasses;
         LanguageUtilTest.class,
         FolderResourceTest.class,
         Task05225RemoveLoadRecordsToIndexTest.class,
-        BundleFactoryTest.class,
         PublisherFilterImplTest.class,
         PushPublishFiltersInitializerTest.class,
         PushPublishFilterResourceTest.class,
@@ -437,7 +437,6 @@ import org.junit.runners.Suite.SuiteClasses;
         IntegrityDataGenerationJobTest.class,
         BundleAPITest.class,
         Task05390MakeRoomForLongerJobDetailTest.class,
-        IntegrityDataGenerationJobTest.class,
         Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest.class,
         JSONToolTest.class,
         BundlePublisherResourceIntegrationTest.class,
@@ -506,9 +505,7 @@ import org.junit.runners.Suite.SuiteClasses;
         ManifestReaderFactoryTest.class,
         ResourceCollectorUtilTest.class,
         Task211007RemoveNotNullConstraintFromCompanyMXColumnTest.class,
-        ManifestReaderFactoryTest.class,
         Task211012AddCompanyDefaultLanguageTest.class,
-
         HostIntegrityCheckerTest.class,
         MetaWebInterceptorTest.class,
         BrowserUtilTest.class,
@@ -516,7 +513,6 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentletJsonAPITest.class,
         VelocityScriptActionletAbortTest.class,
         StoryBlockMapTest.class,
-        ContentletJsonAPITest.class,
         HandlerUtilTest.class,
         Task211103RenameHostNameLabelTest.class,
         ContentSecurityPolicyUtilTest.class,
@@ -539,7 +535,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task220330ChangeVanityURLSiteFieldTypeTest.class,
         Task220331UpdateDateTimezonesTest.class,
         Task220404RemoveCalendarReminderTest.class,
-        com.dotcms.util.pagination.ContainerPaginatorTest.class
+        Task220413IncreasePublishedPushedAssetIdColTest.class
 })
 public class MainSuite {
 

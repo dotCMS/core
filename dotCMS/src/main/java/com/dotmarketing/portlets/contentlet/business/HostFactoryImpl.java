@@ -312,7 +312,7 @@ public class HostFactoryImpl implements HostFactory {
             return systemHost;
         }
         final String systemHostId = dbResults.get(0).get("id");
-        systemHost = DBSearch(systemHostId, user, respectFrontendRoles);
+        systemHost = DBSearch(systemHostId, respectFrontendRoles);
         if (dbResults.size() > 1) {
             Logger.fatal(this, "ERROR: There's more than one working version of the System Host!!");
         }
@@ -346,13 +346,13 @@ public class HostFactoryImpl implements HostFactory {
             this.getContentletFactory().save(systemHost);
             APILocator.getVersionableAPI().setWorking(systemHost);
         } else {
-            systemHost = DBSearch(dbResults.get(0).get("id"), systemUser, false);
+            systemHost = DBSearch(dbResults.get(0).get("id"), false);
         }
         return systemHost;
     }
 
     @Override
-    public Host DBSearch(final String id, final User user, final boolean respectFrontendRoles) throws
+    public Host DBSearch(final String id, final boolean respectFrontendRoles) throws
             DotDataException, DotSecurityException {
         Host site = null;
         final List<ContentletVersionInfo> versionInfos = APILocator.getVersionableAPI().findContentletVersionInfos(id);
@@ -366,10 +366,10 @@ public class HostFactoryImpl implements HostFactory {
                                 .getId()));
                         return versionInfos.get(0);
                     });
+            final User systemUser = APILocator.systemUser();
             final String siteInode = versionInfo.getWorkingInode();
-            final Contentlet siteAsContentlet = this.getContentletAPI().find(siteInode, user, respectFrontendRoles);
-            final ContentType hostContentType = APILocator.getContentTypeAPI(APILocator.systemUser(),
-                    respectFrontendRoles).find(Host.HOST_VELOCITY_VAR_NAME);
+            final Contentlet siteAsContentlet = this.getContentletAPI().find(siteInode, systemUser, respectFrontendRoles);
+            final ContentType hostContentType = APILocator.getContentTypeAPI(systemUser, respectFrontendRoles).find(Host.HOST_VELOCITY_VAR_NAME);
             if (siteAsContentlet.getContentType().id().equals(hostContentType.inode())) {
                 site = new Host(siteAsContentlet);
                 this.siteCache.add(site);

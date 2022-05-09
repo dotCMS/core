@@ -155,9 +155,31 @@
             
             // The extra single quotes indicate that it will return an empty string -> "''"
             String textValue = UtilMethods.isSet(value) ? value.toString() : (UtilMethods.isSet(defaultValue) ? defaultValue : "''");
+            String customStyles = "";
+            String customClassName = "";
+
+            List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
+            for(FieldVariable fv : acceptTypes){
+                if("styles".equalsIgnoreCase(fv.getKey())){
+                    customStyles = fv.getValue();
+                    customClassName = "block-custom-styles";
+                }
+            }
             %>
+            <style type="text/css">
+                dotcms-block-editor {
+                    width: 100%; 
+                    height: 500px; 
+                    display: block;   
+                }
+
+                dotcms-block-editor.block-custom-styles {
+                    <%=customStyles%>
+                }
+            </style>
+
             <script src="/html/dotcms-block-editor.js"></script>
-            <dotcms-block-editor style="width: 100%; height: 500px; display: block;"></dotcms-block-editor>
+            <dotcms-block-editor class="<%=customClassName%>"></dotcms-block-editor>
             <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"/>
 
             <script>
