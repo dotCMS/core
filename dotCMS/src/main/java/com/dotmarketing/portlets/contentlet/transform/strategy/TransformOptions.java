@@ -25,6 +25,7 @@ public enum TransformOptions {
     CATEGORIES_VIEW, //This emulates the Category To MapTransformer.
     FILEASSET_VIEW,
     SITE_VIEW,
+    STORY_BLOCK_VIEW,
 
     AVOID_MAP_SUFFIX_FOR_VIEWS,
     RENDER_FIELDS; // will velocity-render the render-able fields
@@ -52,4 +53,5 @@ public enum TransformOptions {
     public boolean isDefaultProperty() {
         return defaultProperty;
     }
+
 }
