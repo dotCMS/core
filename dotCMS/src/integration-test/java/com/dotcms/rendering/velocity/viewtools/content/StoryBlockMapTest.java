@@ -1,11 +1,9 @@
 package com.dotcms.rendering.velocity.viewtools.content;
 
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
@@ -26,8 +24,6 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Date;
-import java.util.List;
 
 import static junit.framework.TestCase.assertEquals;
 
