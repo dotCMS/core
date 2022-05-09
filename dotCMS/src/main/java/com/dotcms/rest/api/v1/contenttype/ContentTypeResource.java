@@ -629,10 +629,6 @@ public class ContentTypeResource implements Serializable {
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public final Response allowedContentTypes(@Context final HttpServletRequest req,
 											  @Context final HttpServletResponse res,
-											  /*@QueryParam(PaginationUtil.PAGE) final int page,
-											  @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
-											  @DefaultValue("UPPER(name)") @QueryParam(PaginationUtil.ORDER_BY) String orderBy,
-											  @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) String direction,*/
 											  final AllowedContentTypesForm form) {
 		if (null == form) {
 			return ExceptionMapperUtil.createResponse(null, "The request to 'allowedtypes' needs a POST JSON body");
