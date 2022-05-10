@@ -1,9 +1,6 @@
 package com.dotcms.rendering.velocity.viewtools.content;
 
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.viewtools.content.util.RenderableFactory;
 import com.dotmarketing.business.APILocator;
@@ -14,6 +11,10 @@ import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.util.StringPool;
+import org.apache.commons.lang.builder.ToStringBuilder;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 /**
  * Converts the json into a map and gets returned when it is requested like this $contentlet.storyBlock (var name of the field is storyBlock).
@@ -100,6 +101,15 @@ public class StoryBlockMap implements Renderable {
         }
 
         return builder.toString();
+    }
+
+    /**
+     * Returns the JSON object representation of this Story Block field.
+     *
+     * @return The {@link JSONObject} field value.
+     */
+    public JSONObject getJson() {
+        return this.jsonContFieldValue;
     }
 
     private String processType(final JSONObject jsonObjectItem) throws JSONException {
