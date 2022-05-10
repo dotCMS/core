@@ -5730,11 +5730,9 @@
 									"",
 									"var jsonData = pm.response.json();",
 									"",
-									"pm.test(\"body check\", function () {",
-									"    pm.expect(jsonData.entity.fails[0].element).to.eql('');",
+									"pm.test(\"Check that the response is just empty\", function () {",
+									"    pm.expect(jsonData.entity.fails[0]).to.eql(undefined);",
 									"});",
-									"",
-									"",
 									""
 								],
 								"type": "text/javascript"
