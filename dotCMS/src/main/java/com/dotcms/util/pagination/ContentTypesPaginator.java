@@ -87,7 +87,8 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
             List<ContentType> contentTypes;
             final PaginatedArrayList<Map<String, Object>> result = new PaginatedArrayList<>();
             if (UtilMethods.isSet(contentTypeList)) {
-                final Optional<List<ContentType>> optionalTypeList = this.contentTypeAPI.find(contentTypeList, offset, limit, orderByString);
+                final Optional<List<ContentType>> optionalTypeList =
+                        this.contentTypeAPI.find(contentTypeList, filter, offset, limit, orderByString);
                 contentTypes = optionalTypeList.orElseGet(() -> new ArrayList<>());
                 result.setTotalResults(contentTypeList.size());
             } else {

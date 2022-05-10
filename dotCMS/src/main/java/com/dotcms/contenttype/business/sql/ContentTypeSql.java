@@ -35,6 +35,7 @@ public abstract class ContentTypeSql {
 	public static String SELECT_BY_INODE = SELECT_ALL_STRUCTURE_FIELDS + " and inode.inode = ?";
     public static String SELECT_BY_VAR = SELECT_ALL_STRUCTURE_FIELDS + " and lower(structure.velocity_var_name) like ?";
 	public static String SELECT_BY_VAR_NAMES = SELECT_ALL_STRUCTURE_FIELDS + " AND LOWER(structure.velocity_var_name) IN (%s)";
+	public static String SELECT_BY_VAR_NAMES_FILTERED = SELECT_BY_VAR_NAMES + " AND (name LIKE ? OR structure.velocity_var_name LIKE ?)";
 	public static String SELECT_ALL = SELECT_ALL_STRUCTURE_FIELDS + " order by %s  ";
 	public static String SELECT_BY_TYPE = SELECT_ALL_STRUCTURE_FIELDS + " and structuretype= ? order by %s ";
 	public static String SELECT_DEFAULT_TYPE = SELECT_ALL_STRUCTURE_FIELDS + " and default_structure = " + DbConnectionFactory.getDBTrue();

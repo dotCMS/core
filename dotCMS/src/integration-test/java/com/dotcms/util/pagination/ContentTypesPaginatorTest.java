@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -207,12 +208,13 @@ public class ContentTypesPaginatorTest {
      *
      * Given Scenario: Get the complete list of Content Types without any pagination, ordered by their names.
      *
-     * Expected Result: A list with 5 Content Type objects order by name.
+     * Expected Result: A list with 5 Content Type objects ordered by name.
      */
     @Test
     public void getAllAllowedContentTypesOrderedByName() {
         // Initialization
         final String DEFAULT_ORDER_BY = "UPPER(name)";
+        final String NO_FILTER = StringPool.BLANK;
         final String contentTypeVars = "webPageContent,calendarEvent,Vanityurl,DotAsset,htmlpageasset";
         final List<String> typeVarNames = Arrays.asList(contentTypeVars.split(COMMA));
         final Map<String, Object> extraParams = new HashMap<>();
@@ -221,14 +223,71 @@ public class ContentTypesPaginatorTest {
 
         // Test data generation
         final PaginatedArrayList<Map<String, Object>> contentTypes =
-                paginator.getItems(user, null, -1, 0, DEFAULT_ORDER_BY, OrderDirection.ASC, extraParams);
+                paginator.getItems(user, NO_FILTER, -1, -1, DEFAULT_ORDER_BY, OrderDirection.ASC, extraParams);
 
         // Assertions
         assertEquals("There must be 5 Content Types returned by the paginator", 5, contentTypes.size());
         assertEquals("The 'Content (Generic)' type must come first", "Content (Generic)",
                 contentTypes.get(0).get("name").toString());
+    }
 
-        // Cleanup
+    /**
+     * Method to test: {@link ContentTypesPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     *
+     * Given Scenario: Get the filtered list of Content Types with the letters "ent" without any pagination, ordered by
+     * their names.
+     *
+     * Expected Result: A list with 2 Content Type objects ordered by name.
+     */
+    @Test
+    public void getFilteredAllowedContentTypesOrderedByName() {
+        // Initialization
+        final String DEFAULT_ORDER_BY = "UPPER(name)";
+        final String FILTER = "ent";
+        final String contentTypeVars = "webPageContent,calendarEvent,Vanityurl,DotAsset,htmlpageasset";
+        final List<String> typeVarNames = Arrays.asList(contentTypeVars.split(COMMA));
+        final Map<String, Object> extraParams = new HashMap<>();
+        extraParams.put(ContentTypesPaginator.TYPES_PARAMETER_NAME, typeVarNames);
+        final ContentTypesPaginator paginator = new ContentTypesPaginator();
+
+        // Test data generation
+        final PaginatedArrayList<Map<String, Object>> contentTypes =
+                paginator.getItems(user, FILTER, -1, -1, DEFAULT_ORDER_BY, OrderDirection.ASC, extraParams);
+
+        // Assertions
+        assertEquals("There must be 2 Content Types returned by the paginator", 2, contentTypes.size());
+        assertEquals("The 'Content (Generic)' type must come first", "Content (Generic)",
+                contentTypes.get(0).get("name").toString());
+    }
+
+    /**
+     * Method to test: {@link ContentTypesPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     *
+     * Given Scenario: Get the filtered paginated list of Content Types with the letters "set",  ordered by their names.
+     *
+     * Expected Result: A list with 1 Content Type object must be returned, as we're excluding one result.
+     */
+    @Test
+    public void getFilteredPaginatedAllowedContentTypesOrderedByName() {
+        // Initialization
+        final String DEFAULT_ORDER_BY = "UPPER(name)";
+        final String FILTER = "set";
+        final String contentTypeVars = "webPageContent,calendarEvent,Vanityurl,DotAsset,htmlpageasset";
+        final List<String> typeVarNames = Arrays.asList(contentTypeVars.split(COMMA));
+        final Map<String, Object> extraParams = new HashMap<>();
+        extraParams.put(ContentTypesPaginator.TYPES_PARAMETER_NAME, typeVarNames);
+        final ContentTypesPaginator paginator = new ContentTypesPaginator();
+
+        // Test data generation
+        // Results must contain "DotAsset" and "htmlpageasset"
+        final int offset = 0;
+        final int limit = 4;
+        final PaginatedArrayList<Map<String, Object>> contentTypes =
+                paginator.getItems(user, FILTER, limit, offset, DEFAULT_ORDER_BY, OrderDirection.ASC, extraParams);
+
+        // Assertions
+        assertEquals("There must be two Content Types returned by the paginator", 2, contentTypes.size());
+        assertEquals("The 'dotAsset' type must come first", "dotAsset", contentTypes.get(0).get("name").toString());
     }
 
     /**
@@ -242,6 +301,7 @@ public class ContentTypesPaginatorTest {
     public void getPaginatedAllowedContentTypesOrderedByName() {
         // Initialization
         final String DEFAULT_ORDER_BY = "UPPER(name)";
+        final String NO_FILTER = StringPool.BLANK;
         final String contentTypeVars = "webPageContent,calendarEvent,Vanityurl,DotAsset,htmlpageasset";
         final List<String> typeVarNames = Arrays.asList(contentTypeVars.split(COMMA));
         final Map<String, Object> extraParams =
@@ -255,49 +315,11 @@ public class ContentTypesPaginatorTest {
 
         // Test data generation
         final PaginatedArrayList<Map<String, Object>> contentTypes =
-                paginator.getItems(user, null, limit, offset, DEFAULT_ORDER_BY, OrderDirection.ASC, extraParams);
+                paginator.getItems(user, NO_FILTER, limit, offset, DEFAULT_ORDER_BY, OrderDirection.ASC, extraParams);
 
         // Assertions
         assertEquals("There must be 2 Content Types returned by the paginator", 2, contentTypes.size());
         assertEquals("The 'dotAsset' type must come first", "dotAsset", contentTypes.get(0).get("name").toString());
-    }
-
-    @Test
-    public void getAllowedContentTypesByLimitedUser() throws DotDataException, DotSecurityException {
-        // Initialization
-        //final Host defaultSite = APILocator.getHostAPI().findDefaultHost(user, false);
-        final String DEFAULT_ORDER_BY = "UPPER(name)";
-        final String contentTypeVars = "webPageContent,calendarEvent,Vanityurl,DotAsset,htmlpageasset";
-        final List<String> typeVarNames = Arrays.asList(contentTypeVars.split(COMMA));
-        final Map<String, Object> extraParams = new HashMap<>();
-        extraParams.put(ContentTypesPaginator.TYPES_PARAMETER_NAME, typeVarNames);
-
-        // Test data generation
-        final Role role = new RoleDataGen().nextPersisted();
-        final User limitedUser = new UserDataGen().firstName("test").lastName("user")
-                .emailAddress("testuser@dot.com").nextPersisted();
-                //.emailAddress("testuser@dot.com").roles(role).nextPersisted();
-        //this.addPermission(role, defaultSite);
-        final ContentTypesPaginator paginator = new ContentTypesPaginator(APILocator.getContentTypeAPI(limitedUser));
-
-        // Test data generation
-        final PaginatedArrayList<Map<String, Object>> contentTypes =
-                paginator.getItems(limitedUser, null, -1, 0, DEFAULT_ORDER_BY, OrderDirection.ASC, extraParams);
-
-        // Test data generation
-        try {
-            assertEquals("There must be 5 Content Types returned by the paginator", 5, contentTypes.size());
-            assertEquals("The 'Content (Generic)' type must come first", "Content (Generic)",
-                    contentTypes.get(0).get("name").toString());
-        } finally {
-            // Cleanup
-            /*if (null != limitedUser) {
-                APILocator.getUserAPI().delete(limitedUser, user, false);
-            }
-            if (null != role) {
-                APILocator.getRoleAPI().delete(role);
-            }*/
-        }
     }
 
 }

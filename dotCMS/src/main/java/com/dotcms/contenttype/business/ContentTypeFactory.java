@@ -26,6 +26,7 @@ public interface ContentTypeFactory {
 	 * Returns a list of Content Types based on the specified list of Velocity Variable Names.
 	 *
 	 * @param varNames The list of Velocity Variable Names each corresponding to a Content Type.
+	 * @param filter   Optional filtering parameter used to query for a specific Content Type name or Variable Name.
 	 * @param offset   The specified offset in the result set, for pagination purposes.
 	 * @param limit    The specified limit in the result set, for pagination purposes.
 	 * @param orderBy  The order-by clause, which is internally sanitized by the API.
@@ -34,7 +35,7 @@ public interface ContentTypeFactory {
 	 *
 	 * @throws DotDataException An error occurred when interacting with the data source.
 	 */
-	List<ContentType> find(final Collection<String> varNames, final int offset, final int limit,
+	List<ContentType> find(final Collection<String> varNames, final String filter, final int offset, final int limit,
 						   final String orderBy) throws DotDataException;
 
 	List<ContentType> findAll() throws DotDataException;

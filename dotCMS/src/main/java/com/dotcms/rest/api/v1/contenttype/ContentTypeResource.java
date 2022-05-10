@@ -593,54 +593,54 @@ public class ContentTypeResource implements Serializable {
 	}
 
 	/**
-	 * Returns the list of Content Type objects that match the specified list of Velocity Variable Names based on the
-	 * optional pagination criteria.
+	 * Returns the list of Content Type objects that match the specified filter and the optional pagination criteria.
 	 * <p>Example:</p>
 	 * <pre>
 	 * {@code
-	 *     {{serverURL}}/api/v1/contenttype/_allowed
+	 *     {{serverURL}}/api/v1/contenttype/_filter
 	 * }
 	 * </pre>
 	 * JSON body:
 	 * <pre>
 	 * {@code
 	 *     {
-	 *     		"types": "calendarEvent,Vanityurl,webPageContent,DotAsset,persona",
-	 *     		"page": 2,
-	 *     		"perPage": 3,
-	 *     		"orderBy": "mod_date,
-	 *     		"direction": ASC
-	 * 	   }
+	 *         "filter" : {
+	 *             "data" : "calendarEvent,Vanityurl,webPageContent,DotAsset,persona",
+	 *             "query": ""
+	 *         },
+	 *         "page": 0,
+	 *         "perPage": 5
+	 *     }
 	 * }
 	 * </pre>
 	 *
 	 * @param req  The current {@link HttpServletRequest} instance.
 	 * @param res  The current {@link HttpServletResponse} instance.
-	 * @param form The {@link AllowedContentTypesForm} containing the required information and optional pagination
+	 * @param form The {@link FilteredContentTypesForm} containing the required information and optional pagination
 	 *             parameters.
 	 *
 	 * @return The JSON response with the Content Types matching the specified Velocity Variable Names.
 	 */
 	@POST
-	@Path("/_allowed")
+	@Path("/_filter")
 	@JSONP
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public final Response allowedContentTypes(@Context final HttpServletRequest req,
-											  @Context final HttpServletResponse res,
-											  final AllowedContentTypesForm form) {
+	public final Response filteredContentTypes(@Context final HttpServletRequest req,
+											   @Context final HttpServletResponse res,
+											   final FilteredContentTypesForm form) {
 		if (null == form) {
-			return ExceptionMapperUtil.createResponse(null, "The request to 'allowedtypes' needs a POST JSON body");
+			return ExceptionMapperUtil.createResponse(null, "Requests to '_filter' need a POST JSON body");
 		}
-		if (UtilMethods.isNotSet(form.getTypes())) {
-			throw new BadRequestException("The 'types' property must be present");
+		if (null == form.getFilter() || form.getFilter().isEmpty()) {
+			throw new BadRequestException("The 'filter' property must be present");
 		}
 		final InitDataObject initData = this.webResource.init(null, req, res, true, null);
 		final User user = initData.getUser();
 		Response response;
-		final List<String> typeVarNames = Arrays.asList(form.getTypes().split(COMMA));
-
+		final List<String> typeVarNames = Arrays.asList(form.getFilter().get("data").toString().split(COMMA));
+		final String filter = String.class.cast(form.getFilter().get("query"));
 		final Map<String, Object> extraParams = new HashMap<>();
 		if (UtilMethods.isSet(typeVarNames)) {
 			extraParams.put(ContentTypesPaginator.TYPES_PARAMETER_NAME, typeVarNames);
@@ -648,7 +648,7 @@ public class ContentTypeResource implements Serializable {
 		try {
 			final PaginationUtil paginationUtil =
 					new PaginationUtil(new ContentTypesPaginator(APILocator.getContentTypeAPI(user)));
-			response = paginationUtil.getPage(req, user, null, form.getPage(), form.getPerPage(), form.getOrderBy(),
+			response = paginationUtil.getPage(req, user, filter, form.getPage(), form.getPerPage(), form.getOrderBy(),
 					OrderDirection.valueOf(form.getDirection()), extraParams);
 		} catch (final Exception e) {
 			if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
