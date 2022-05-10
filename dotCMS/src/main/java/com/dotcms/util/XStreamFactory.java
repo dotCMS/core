@@ -26,7 +26,8 @@ public enum XStreamFactory {
         XStream xstream = xstreams.get(encoding);
 
         if (!UtilMethods.isSet(xstream)) {
-            xstream = new XStream(new DomDriver(encoding.toString()));
+            final String encodingAsString = UtilMethods.isSet(encoding) ? encoding.toString() : null;
+            xstream = new XStream(new DomDriver(encodingAsString));
             xstreams.put(encoding, xstream);
         }
 
