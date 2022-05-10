@@ -59,6 +59,12 @@ public interface PublisherAPI {
     List<FilterDescriptor> getFiltersDescriptorsByRole(final User user) throws DotDataException;
 
     /**
+     * Returns true if the filter descriptor exists
+     * @return boolean
+     */
+    boolean existsFilterDescriptor(final String filterKey);
+
+    /**
      * Get a FilterDescriptor using the FilterDescriptor.Key as key
      * @param filterKey key of the filterDescriptor
      * @return filterDescriptor referenced to that key
