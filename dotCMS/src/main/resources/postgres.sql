@@ -2312,7 +2312,7 @@ alter table publishing_bundle_environment add constraint FK_environment_id forei
 
 create table publishing_pushed_assets(
 	bundle_id varchar(36) NOT NULL,
-	asset_id varchar(36) NOT NULL,
+	asset_id varchar(255) NOT NULL,
 	asset_type varchar(255) NOT NULL,
 	push_date timestamptz,
 	environment_id varchar(36) NOT NULL,
@@ -2479,7 +2479,9 @@ create table storage_x_data (
     FOREIGN KEY (data_hash) REFERENCES storage_data (hash_id)
 );
 
-
+-- https://github.com/lukas-krecan/ShedLock
+CREATE TABLE shedlock(name VARCHAR(64) NOT NULL, lock_until timestamptz NOT NULL,
+                      locked_at timestamptz NOT NULL, locked_by VARCHAR(255) NOT NULL, PRIMARY KEY (name));
 
 
 

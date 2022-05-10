@@ -131,6 +131,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   @VisibleForTesting
   public static final String IS_TEST_MODE = "_is_test_mode";
 
+  public static final String TO_BE_PUBLISH = "to_be_publish";
+
   /**
    * Flag to avoid to trigger the workflow again on the checkin when it is already in progress.
    */

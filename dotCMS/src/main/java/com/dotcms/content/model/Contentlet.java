@@ -1,6 +1,7 @@
 package com.dotcms.content.model;
 
 import com.dotcms.content.model.version.ToCurrentVersionConverter;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -23,6 +24,7 @@ import com.github.jonpeterson.jackson.module.versioning.JsonVersionedModel;
 @JsonInclude(Include.NON_NULL)
 @JsonSerialize(as = ImmutableContentlet.class)
 @JsonDeserialize(as = ImmutableContentlet.class)
+@JsonIgnoreProperties(ignoreUnknown = true)
 @JsonVersionedModel(currentVersion = Contentlet.CURRENT_MODEL_VERSION, defaultDeserializeToVersion = "1", toCurrentConverterClass = ToCurrentVersionConverter.class)
 public interface Contentlet {
 

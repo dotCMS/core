@@ -59,7 +59,7 @@ public class UserResourceIntegrationTest {
     private static HttpServletRequest mockRequest() {
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(
-                        new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
+                        new MockAttributeRequest(new MockHttpRequestIntegrationTest(host.getHostname(), "/").request())
                                 .request())
                         .request());
 
@@ -67,7 +67,7 @@ public class UserResourceIntegrationTest {
                 "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
 
         request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST,host);
-        request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID,host);
+        request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID,host.getIdentifier());
 
         return request;
     }

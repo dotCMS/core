@@ -1,5 +1,44 @@
 package org.apache.felix.framework;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.concurrent.Debouncer;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.lock.ClusterLockManager;
+import com.dotcms.dotpubsub.DotPubSubEvent;
+import com.dotcms.dotpubsub.DotPubSubProvider;
+import com.dotcms.dotpubsub.DotPubSubProviderLocator;
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.osgi.HostActivator;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.ResourceCollectorUtil;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
+import com.google.common.collect.ImmutableList;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.util.FileUtil;
+import com.liferay.util.MathUtil;
+import com.liferay.util.StringPool;
+import io.vavr.control.Try;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.SuffixFileFilter;
+import org.apache.felix.framework.util.FelixConstants;
+import org.apache.felix.main.AutoProcessor;
+import org.apache.felix.main.Main;
+import org.apache.velocity.tools.view.PrimitiveToolboxManager;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+import org.osgi.framework.launch.Framework;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -24,41 +63,11 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.SuffixFileFilter;
-import org.apache.felix.framework.util.FelixConstants;
-import org.apache.felix.main.AutoProcessor;
-import org.apache.felix.main.Main;
-import org.apache.velocity.tools.view.PrimitiveToolboxManager;
-import org.eclipse.jetty.util.ConcurrentHashSet;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
-import org.osgi.framework.launch.Framework;
-import com.dotcms.api.system.event.Payload;
-import com.dotcms.api.system.event.SystemEventType;
-import com.dotcms.api.system.event.message.MessageSeverity;
-import com.dotcms.api.system.event.message.SystemMessageEventUtil;
-import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
-import com.dotcms.concurrent.Debouncer;
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.osgi.HostActivator;
-import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.ResourceCollectorUtil;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
-import com.google.common.collect.ImmutableList;
-import com.liferay.portal.language.LanguageUtil;
-import com.liferay.util.FileUtil;
-import com.liferay.util.StringPool;
-import io.vavr.control.Try;
 
 /**
  * Created by Jonathan Gamba
@@ -67,6 +76,15 @@ import io.vavr.control.Try;
 public class OSGIUtil {
 
     private static final String OSGI_EXTRA_CONFIG_FILE_PATH_KEY = "OSGI_EXTRA_CONFIG_FILE_PATH_KEY";
+    private static final String OSGI_USE_FILE_WATCHER = "OSGI_USE_FILE_WATCHER";
+    private static final String OSGI_RESTART_LOCK_KEY = "osgi_restart_lock";
+    private static final String OSGI_CHECK_UPLOAD_FOLDER_FREQUENCY = "OSGI_CHECK_UPLOAD_FOLDER_FREQUENCY";
+    // by default the upload folder checker is 10 seconds
+    private static final int OSGI_CHECK_UPLOAD_FOLDER_FREQUENCY_DEFAULT_VAL = 10;
+    // by default the max number of count for upload folder read is 10, after that the cycle reinits.
+    private static final int MAX_UPLOAD_FOLDER_COUNT_VAL = 10;
+
+    // how long way the debouncer
     private static final int RESTART_FELIX_AWARE_DELAY = 10;// 10 secons
 
     //List of jar prefixes of the jars to be included in the osgi-extra.conf file
@@ -84,11 +102,37 @@ public class OSGIUtil {
     private static final String UTF_8 = "utf-8";
     private final TreeSet<String> exportedPackagesSet = new TreeSet<>();
     private final Debouncer debouncer = new Debouncer();
+
+    // PUBSUB
+    private final static  String TOPIC_NAME = OsgiRestartTopic.OSGI_RESTART_TOPIC;
+    private final DotPubSubProvider pubsub;
+    private final OsgiRestartTopic osgiRestartTopic;
+
+    private Framework felixFramework;
+    private final Map<String, RestartOSgiAware> restartFelixAwares = new ConcurrentHashMap<>();
+
+    public void registerRestartFelixAware (final String objectKey, final RestartOSgiAware restartFelixAware) {
+
+        this.restartFelixAwares.put(objectKey, restartFelixAware);
+    }
+
+    //// When the strategy to discover jars on the upload folder is not by folder watcher (watchers do not work on docker)
+    /// we have a job that runs every 10 seconds (it is configurable) and checks if there is any jars in the upload folder
+    /// if they are; runs a process to reload (copy the jars to load folder and so on)
+    /// Does not make sense to spend the I/O every 10 seconds reading the folder, so these counters helps to balance
+    // hits to that folder. So as soon as the job starts the first read will be in 10 seconds, the next will be in 20 seconds, 30 sec, 40 sec
+    // etc, until 100 seconds; here will be reset to 10 seconds again. It helps to balance a bit the I/O time.
+    // if some of the reads to the upload folder founds a jar, the counts are reset to the initial values again and the cycle begins one more time.
+    private final AtomicInteger uploadFolderReadsCount = new AtomicInteger(0);
+    private final AtomicInteger currentJobRestartIterationsCount = new AtomicInteger(0);
+
+    // Indicates the job were already started, so next restart of the OSGI framework won't create a new one job.
+    private final AtomicBoolean isStartedOsgiRestartSchedule = new AtomicBoolean(false);
     /**
      * Felix directory list
      */
     private static final String[] FELIX_DIRECTORIES = new String[] {
-        FELIX_BASE_DIR, FELIX_UPLOAD_DIR, FELIX_FILEINSTALL_DIR, FELIX_UNDEPLOYED_DIR, AUTO_DEPLOY_DIR_PROPERTY, FELIX_FRAMEWORK_STORAGE
+            FELIX_BASE_DIR, FELIX_UPLOAD_DIR, FELIX_FILEINSTALL_DIR, FELIX_UNDEPLOYED_DIR, AUTO_DEPLOY_DIR_PROPERTY, FELIX_FRAMEWORK_STORAGE
     };
 
     public static final String BUNDLE_HTTP_BRIDGE_SYMBOLIC_NAME = "org.apache.felix.http.bundle";
@@ -103,12 +147,14 @@ public class OSGIUtil {
         private static OSGIUtil instance = new OSGIUtil();
     }
 
-    private Framework felixFramework;
-    private final Map<String, RestartOSgiAware> restartFelixAwares = new ConcurrentHashMap<>();
+    private OSGIUtil() {
 
-    public void registerRestartFelixAware (final String objectKey, final RestartOSgiAware restartFelixAware) {
+        this.pubsub                = DotPubSubProviderLocator.provider.get();
+        this.osgiRestartTopic = new OsgiRestartTopic();
+        Logger.debug(this.getClass(), "Starting hook with PubSub on OSGI");
 
-        this.restartFelixAwares.put(objectKey, restartFelixAware);
+        this.pubsub.start();
+        this.pubsub.subscribe(this.osgiRestartTopic);
     }
 
     /**
@@ -254,18 +300,122 @@ public class OSGIUtil {
 
     private void startWatchingUploadFolder(final String uploadFolder) {
 
+        final boolean useFileWatcher = Config.getBooleanProperty(OSGI_USE_FILE_WATCHER, false);
+
+        if (useFileWatcher) {
+
+            this.runFileWatcher(uploadFolder);
+        } else if(!this.isStartedOsgiRestartSchedule.get()) {
+
+            this.runUploadFolderCheckerJob(uploadFolder);
+            this.isStartedOsgiRestartSchedule.set(true);
+        }
+    }
+
+    private void runUploadFolderCheckerJob(final String uploadFolder) {
+
+        Logger.debug(this, ()->
+                "Using Schedule fixed job to discover changes on the OSGI upload folder: " + uploadFolder);
+        // use a schedule thread with shad lock
+        final ClusterLockManager<String> lockManager = DotConcurrentFactory.getInstance().getClusterLockManager(OSGI_RESTART_LOCK_KEY);
+        final String serverId = APILocator.getServerAPI().readServerId();
+        final long delay = Config.getLongProperty(OSGI_CHECK_UPLOAD_FOLDER_FREQUENCY, OSGI_CHECK_UPLOAD_FOLDER_FREQUENCY_DEFAULT_VAL); // check each 10 seconds
+        final long initialDelay = MathUtil.sumAndModule(serverId.toCharArray(), delay);
+        final File uploadFolderFile = new File(uploadFolder);
+        Logger.debug(this, ()-> "Starting the schedule fix job, serverId: " + serverId
+                + ", delay: " + delay + ", initialDelay: " + initialDelay);
+        DotConcurrentFactory.getScheduledThreadPoolExecutor().scheduleWithFixedDelay(
+                ()-> this.checkUploadFolder(uploadFolderFile, lockManager),
+                initialDelay, delay, TimeUnit.SECONDS);
+    }
+
+    private void runFileWatcher(final String uploadFolder) {
         try {
 
+            Logger.debug(this, ()-> "Using file watcher to discover changes on the OSGI upload folder");
             final File uploadFolderFile = new File(uploadFolder);
-            Logger.debug(APILocator.class, "Start watching OSGI Upload dir: " + uploadFolder);
+            Logger.debug(APILocator.class, ()-> "Start watching OSGI Upload dir: " + uploadFolder);
             APILocator.getFileWatcherAPI().watchFile(uploadFolderFile,
-                    ()->this.fireReload(uploadFolderFile));
+                    () -> this.fireReload(uploadFolderFile));
         } catch (IOException e) {
             Logger.error(Config.class, e.getMessage(), e);
         }
     }
 
+    // fi the job counts is great or equals to the upload folder reads, allow to do a new retry to read the upload folder for jar
+    private boolean allowedToReadUploadFolder () {
+
+        if (this.currentJobRestartIterationsCount.intValue() >= this.uploadFolderReadsCount.intValue()) {
+
+            // if gonna enter then reset the job counts
+            this.currentJobRestartIterationsCount.set(0);
+            return true;
+        }
+
+        this.currentJobRestartIterationsCount.incrementAndGet();
+        return false;
+    }
+
+    /**
+     * Tries to run the upload folder now
+     */
+    public void tryUploadFolderReload() {
+
+        this.uploadFolderReadsCount.set(0);
+        this.currentJobRestartIterationsCount.set(0);
+    }
+
+    // this method is called by the schedule to see if jars has been added to the framework
+    private void checkUploadFolder(final File uploadFolderFile, final ClusterLockManager<String> lockManager) {
+
+        Logger.debug(this, ()-> "Calling the check upload folder job, uploadFolderFile: " +
+                uploadFolderFile + ", currentJobRestartIterationsCount: " + this.currentJobRestartIterationsCount.intValue() +
+                ", uploadFolderReadsCount: " + this.uploadFolderReadsCount.intValue());
+        // we do not want to read every 10 seconds, so we read at 20, 30, 40, etc
+        if (this.allowedToReadUploadFolder()) {
+
+            Logger.debug(this, ()-> "***** Checking the upload folder for jars");
+            if (this.anyJarOnUploadFolder(uploadFolderFile)) {
+
+                // if enter here, means there are jars on the upload folder.
+                uploadFolderReadsCount.set(0);
+
+                Logger.debug(this, ()-> "****** Has found jars on upload, folder, acquiring the lock and reloading the OSGI restart *****");
+
+                try {
+
+                    Logger.debug(this, () -> "Trying to lock to start the reload");
+                    lockManager.tryClusterLock(() -> this.fireReload(uploadFolderFile));
+                    Logger.debug(this, () -> "File Reload Done");
+                } catch (Throwable e) {
+
+                    Logger.error(this, "Error try to acquire the lock, uploadFolder: " + uploadFolderFile +
+                            ", msg: " + e.getMessage(), e);
+                }
+            } else {
+
+                Logger.debug(this, ()-> "Not jars on upload folder");
+                // if not jars we want to wait for the next read of the upload folder
+                this.uploadFolderReadsCount.incrementAndGet();
+                if (this.uploadFolderReadsCount.intValue() >= MAX_UPLOAD_FOLDER_COUNT_VAL) {
+
+                    // no more than 10, if so, reset to zero
+                    uploadFolderReadsCount.set(0);
+                }
+            }
+        }
+    }
+
+    private boolean anyJarOnUploadFolder(final File uploadFolderFile) {
+
+        Logger.debug(this, ()-> "Check if any jar on the upload folder");
+        final String[] pathnames = uploadFolderFile.list(new SuffixFileFilter(".jar"));
+        return UtilMethods.isSet(pathnames) && pathnames.length > 0;
+    }
+
     private void fireReload(final File uploadFolderFile) {
+
+        Logger.debug(this, ()-> "Starting the osgi reload on folder: " + uploadFolderFile);
 
         APILocator.getLocalSystemEventsAPI().asyncNotify(
                 new OSGIUploadBundleEvent(Instant.now(), uploadFolderFile));
@@ -335,35 +485,61 @@ public class OSGIUtil {
 
             this.moveNewBundlesToFelixLoadFolder(uploadPath, pathnames);
 
-            if (null != this.portletIDsStopped && !this.portletIDsStopped.isEmpty()) {
-                //Remove Portlets in the list
-                this.portletIDsStopped.stream().forEach(APILocator.getPortletAPI()::deletePortlet);
-                Logger.info(this, "Portlets Removed: " + this.portletIDsStopped.toString());
-            }
+            this.restartOsgiClusterWide();
 
-            if (null != this.actionletsStopped && !this.actionletsStopped.isEmpty()) {
-                //Remove Actionlets in the list
-                this.actionletsStopped.stream().forEach(this.workflowOsgiService::removeActionlet);
-                Logger.info(this, "Actionlets Removed: " + this.actionletsStopped.toString());
-            }
-
-            //Cleanup lists
-            this.portletIDsStopped.clear();
-            this.actionletsStopped.clear();
-
-            //First we need to stop the framework
-            this.stopFramework();
-
-            //Now we need to initialize it
-            this.initializeFramework();
-
-            Try.run(()->APILocator.getSystemEventsAPI()					    // CLUSTER WIDE
-                    .push(SystemEventType.OSGI_FRAMEWORK_RESTART, new Payload(pathnames)))
+            Try.run(()->APILocator.getSystemEventsAPI()
+                            .push(SystemEventType.OSGI_FRAMEWORK_RESTART, new Payload(pathnames)))
                     .onFailure(e -> Logger.error(OSGIUtil.this, e.getMessage()));
 
-            // notify all awares that the framework has been restarted
-            debouncer.debounce("notifyRestartFelixAware", this::notifyRestartFelixAware, RESTART_FELIX_AWARE_DELAY, TimeUnit.SECONDS);
         }
+    }
+
+    /**
+     * Restart the current instance and notify the rest of the nodes in the cluster that restart is needed
+     */
+    public void restartOsgiClusterWide() {
+
+        this.restartOsgiOnlyLocal();
+        Logger.debug(this, ()-> "Sending a PubSub Osgi Restart event");
+
+        final DotPubSubEvent event = new DotPubSubEvent.Builder ()
+                .addPayload("sourceNode", APILocator.getServerAPI().readServerId())
+                .withTopic(TOPIC_NAME)
+                .withType(OsgiRestartTopic.EventType.OGSI_RESTART_REQUEST.name())
+                .build();
+
+        this.pubsub.publish(event);
+    }
+
+    /**
+     * Do the restart only for the current node (locally)
+     */
+    public void restartOsgiOnlyLocal() {
+
+        if (null != this.portletIDsStopped && !this.portletIDsStopped.isEmpty()) {
+            //Remove Portlets in the list
+            this.portletIDsStopped.stream().forEach(APILocator.getPortletAPI()::deletePortlet);
+            Logger.info(this, "Portlets Removed: " + this.portletIDsStopped.toString());
+        }
+
+        if (null  != this.workflowOsgiService && null != this.actionletsStopped && !this.actionletsStopped.isEmpty()) {
+            //Remove Actionlets in the list
+            this.actionletsStopped.stream().forEach(this.workflowOsgiService::removeActionlet);
+            Logger.info(this, "Actionlets Removed: " + this.actionletsStopped.toString());
+        }
+
+        //Cleanup lists
+        this.portletIDsStopped.clear();
+        this.actionletsStopped.clear();
+
+        //First we need to stop the framework
+        this.stopFramework();
+
+        //Now we need to initialize it
+        this.initializeFramework();
+
+        // notify all awares that the framework has been restarted
+        debouncer.debounce("notifyRestartFelixAware", this::notifyRestartFelixAware, RESTART_FELIX_AWARE_DELAY, TimeUnit.SECONDS);
     }
 
     private void notifyRestartFelixAware () {
@@ -402,7 +578,7 @@ public class OSGIUtil {
                     if (FileUtil.move(bundle, bundleDestination)) {
 
                         Try.run(()->APILocator.getSystemEventsAPI()					    // CLUSTER WIDE
-                                .push(SystemEventType.OSGI_BUNDLES_LOADED, new Payload(pathnames)))
+                                        .push(SystemEventType.OSGI_BUNDLES_LOADED, new Payload(pathnames)))
                                 .onFailure(e -> Logger.error(OSGIUtil.this, e.getMessage()));
 
                         Logger.debug(this, "Moved the bundle: " + bundle + " to " + deployDirectory);
@@ -414,6 +590,7 @@ public class OSGIUtil {
                 final String messageKey      = pathnames.length > 1? "new-osgi-plugins-installed":"new-osgi-plugin-installed";
                 final String successMessage  = Try.of(()->LanguageUtil.get(APILocator.getCompanyAPI()
                         .getDefaultCompany().getLocale(), messageKey)).getOrElse(()-> "New OSGi Plugin(s) have been installed");
+
                 SystemMessageEventUtil.getInstance().pushMessage("OSGI_BUNDLES_LOADED",new SystemMessageBuilder().setMessage(successMessage)
                         .setLife(DateUtil.FIVE_SECOND_MILLIS)
                         .setSeverity(MessageSeverity.SUCCESS).create(), null);
@@ -427,6 +604,8 @@ public class OSGIUtil {
             Logger.error(this, e.getMessage(), e);
         }
     }
+
+
 
     /**
      * Stops the OSGi framework
@@ -525,7 +704,7 @@ public class OSGIUtil {
             if (key.startsWith("felix.")) {
 
                 final String value = (UtilMethods.isSet(Config.getStringProperty(key, null))) ? Config.getStringProperty(key)
-                                : null;
+                        : null;
                 String felixKey = key.substring(6);
                 properties.put(felixKey, value);
                 Logger.info(OSGIUtil.class, () -> "Found property  " + felixKey + "=" + value);
@@ -534,14 +713,14 @@ public class OSGIUtil {
             if (key.startsWith("DOT_FELIX_FELIX")) {
                 final String felixKey = key.replace("DOT_FELIX_FELIX", "FELIX").replace("_", ".").toLowerCase();
                 String value = (UtilMethods.isSet(Config.getStringProperty(key, null))) ? Config.getStringProperty(key)
-                                : null;
+                        : null;
                 properties.put(felixKey, value);
                 Logger.info(OSGIUtil.class, () -> "Found property  " + felixKey + "=" + value);
             }
             if (key.startsWith("DOT_FELIX_OSGI")) {
                 final String felixKey = key.replace("DOT_FELIX_OSGI", "OSGI").replace("_", ".").toLowerCase();
                 String value = (UtilMethods.isSet(Config.getStringProperty(key, null))) ? Config.getStringProperty(key)
-                                : null;
+                        : null;
                 properties.put(felixKey, value);
                 Logger.info(OSGIUtil.class, () -> "Found property  " + felixKey + "=" + value);
             }
@@ -827,7 +1006,7 @@ public class OSGIUtil {
     private String getFelixBaseDirFromConfig() {
 
         String defaultBasePath = Config.CONTEXT.getRealPath(WEB_INF_FOLDER);
-        
+
 
         return new File(Config
                 .getStringProperty(FELIX_BASE_DIR,

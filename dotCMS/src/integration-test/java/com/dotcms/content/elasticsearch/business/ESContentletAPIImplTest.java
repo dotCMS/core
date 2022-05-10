@@ -1256,11 +1256,10 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
         final Contentlet checkout = ContentletDataGen.checkout(vanityURL);
         checkout.setHost(host_1.getIdentifier());
-        checkout.setProperty(VanityUrlContentType.SITE_FIELD_VAR, host_1.getIdentifier());
         checkout.setProperty(VanityUrlContentType.FORWARD_TO_FIELD_VAR, "/test-url_2.html");
 
+        checkout.setProperty(Contentlet.TO_BE_PUBLISH, true);
         ContentletDataGen.checkin(checkout);
-
         ContentletDataGen.publish(checkout);
 
         final VanityUrl vanityUrlUpdated = APILocator.getVanityUrlAPI().fromContentlet(checkout);

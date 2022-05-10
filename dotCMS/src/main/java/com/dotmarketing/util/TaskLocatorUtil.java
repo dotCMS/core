@@ -314,8 +314,10 @@ public class TaskLocatorUtil {
 		.add(Task220203RemoveFolderInodeConstraint.class)
 		.add(Task220214AddOwnerAndIDateToFolderTable.class)
 		.add(Task220215MigrateDataFromInodeToFolder.class)
-		.add(Task220329UpdateDateTimezones.class)
+		.add(Task220330ChangeVanityURLSiteFieldType.class)
+		.add(Task220331UpdateDateTimezones.class)
 		.add(Task220404RemoveCalendarReminder.class)
+		.add(Task220413IncreasePublishedPushedAssetIdCol.class)
 		.build();
         
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
