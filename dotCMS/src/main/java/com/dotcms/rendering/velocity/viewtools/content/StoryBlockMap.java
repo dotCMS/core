@@ -1,13 +1,11 @@
 package com.dotcms.rendering.velocity.viewtools.content;
 
-
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.viewtools.content.util.RenderableFactory;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.Logger;
@@ -104,6 +102,15 @@ public class StoryBlockMap implements Renderable {
         return builder.toString();
     }
 
+    /**
+     * Returns the JSON object representation of this Story Block field.
+     *
+     * @return The {@link JSONObject} field value.
+     */
+    public JSONObject getJson() {
+        return this.jsonContFieldValue;
+    }
+
     private String processType(final JSONObject jsonObjectItem) throws JSONException {
         // heading is a special composite case, type + level
         final String type = jsonObjectItem.get("type").toString();
@@ -125,4 +132,5 @@ public class StoryBlockMap implements Renderable {
                 .append("</code>")
                 .append("</pre>");
     }
+
 }

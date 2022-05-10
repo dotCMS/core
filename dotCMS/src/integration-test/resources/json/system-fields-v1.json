@@ -38,5 +38,6 @@
   "contentType": "40d3059aced29dbbfdcd7a8bb1da104e",
   "disabledWysiwyg": [
     "  "
-  ]
+  ],
+  "unknownProperty":"Regardless of this we should be able to keep things working nice and smooth."
 }

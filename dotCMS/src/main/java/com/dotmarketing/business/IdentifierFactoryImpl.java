@@ -271,19 +271,22 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 	@Override
 	protected Identifier createNewIdentifier(final Folder folder, final Folder parent, final String existingId) throws DotDataException {
-		final User systemUser = APILocator.getUserAPI().getSystemUser();
 		final Identifier identifier = new Identifier();
 
 		identifier.setId(existingId!=null?existingId:UUIDGenerator.generateUuid());
-
-		final Identifier parentId = APILocator.getIdentifierAPI().find(parent.getIdentifier());
 
 		identifier.setAssetType(Identifier.ASSET_TYPE_FOLDER);
 		identifier.setAssetName(folder.getName());
 		identifier.setOwner(folder.getOwner());
 
-		identifier.setHostId(getHost(parent, systemUser, identifier).getIdentifier());
-		identifier.setParentPath(parentId.getPath());
+		if (Host.SYSTEM_HOST.equals(parent.getHostId())) {
+			Logger.error(this, "A folder cannot be saved on the system host.");
+			throw new DotStateException("A folder cannot be saved on the system host.");
+
+		}
+
+		identifier.setHostId(parent.getHostId());
+		identifier.setParentPath(parent.getPath());
 
 		identifier.setCreateDate(folder.getIDate()!=null? folder.getIDate():new Date());
 		saveIdentifier(identifier);
@@ -316,7 +319,6 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 	@Override
 	protected Identifier createNewIdentifier(final Versionable versionable, final Folder folder, final String existingId) throws DotDataException {
-		final User systemUser = APILocator.getUserAPI().getSystemUser();
 		final Identifier identifier = new Identifier();
 
 		identifier.setId(existingId!=null?existingId:UUIDGenerator.generateUuid());
@@ -366,7 +368,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		identifier.setOwner((versionable instanceof WebAsset)
 				? ((WebAsset) versionable).getOwner() : versionable.getModUser());
 
-		identifier.setHostId(getHost(folder, systemUser, identifier).getIdentifier());
+		identifier.setHostId(parentId.getHostId());
 		identifier.setParentPath(parentId.getPath());
 
         final Inode inode;
@@ -386,26 +388,6 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 		versionable.setVersionId(identifier.getId());
 		return identifier;
-	}
-
-	private Host getHost(Folder folder, User systemUser, Identifier identifier)
-			throws DotDataException {
-		Host site;
-		try {
-			site = APILocator.getHostAPI().findParentHost(folder, systemUser, false);
-		} catch (DotSecurityException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotStateException(
-					String.format("Parent site of folder '%s' could not be found.", folder.getName()));
-		}
-		if (Identifier.ASSET_TYPE_FOLDER.equals(identifier.getAssetType())
-				&& APILocator.getHostAPI().findSystemHost().getIdentifier()
-				.equals(site.getIdentifier())) {
-			Logger.error(this, "A folder cannot be saved on the system host.");
-			throw new DotStateException("A folder cannot be saved on the system host.");
-
-		}
-		return site;
 	}
 
 	@Override

@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "41764286-f2b7-47ba-8f60-61e4eed68455",
+		"_postman_id": "48bb5984-692a-449e-9eae-3b0fb157ae98",
 		"name": "ContentType Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -760,7 +760,7 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"pm.test(\"Contentlet StoryBlock has value\", function() {",
-									"    pm.expect(jsonData.entity.block).contains(\"Wow, this editor instance exports its content as JSON\");",
+									"    pm.expect(jsonData.entity.block.content[0].content[0].text).contains(\"Wow, this editor instance exports its content as JSON\");",
 									"});"
 								],
 								"type": "text/javascript"
@@ -817,7 +817,8 @@
 								"fire",
 								"PUBLISH"
 							]
-						}
+						},
+						"description": "Publishes a piece of content with a Story Block field, and verifies that the copy in it is returned in the REST response as a valid JSON object."
 					},
 					"response": []
 				}
@@ -1337,8 +1338,8 @@
 									"pm.test(\"Content Type has the provided name\", function() {",
 									"    pm.expect(contentType.name).to.eql(\"File Asset Copy\");",
 									"});",
-									"pm.test(\"Content Type should have 10 fields\", function() {",
-									"    pm.expect(contentType.fields.length).to.eql(10);",
+									"pm.test(\"Content Type should have 9 fields\", function() {",
+									"    pm.expect(contentType.fields.length).to.gt(8);",
 									"});"
 								],
 								"type": "text/javascript"

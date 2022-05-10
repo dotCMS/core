@@ -210,6 +210,12 @@ public class PublisherAPIImpl implements PublisherAPI {
         return filters;
     }
 
+    @Override
+    public boolean existsFilterDescriptor(final String filterKey) {
+
+        return this.loadedFilters.containsKey(filterKey);
+    }
+
     @VisibleForTesting
     public Map<String, FilterDescriptor> getFilterDescriptorMap() {
         return this.loadedFilters;

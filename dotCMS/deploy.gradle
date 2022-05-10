@@ -144,6 +144,9 @@ ext {
         fileToUpload = "$file"
     }
 
+    if (project.hasProperty('groupId')) {
+        artifactGroupId = "$groupId"
+    }
 
     releaseUpload = "false"
     if (project.hasProperty('release')) {

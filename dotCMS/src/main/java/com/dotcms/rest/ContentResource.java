@@ -2,6 +2,7 @@ package com.dotcms.rest;
 
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -1347,12 +1348,47 @@ public class ContentResource {
         return jsonFields;
     }
 
-    public static JSONObject contentletToJSON(Contentlet con, HttpServletRequest request,
-            HttpServletResponse response, String render, User user, final boolean allCategoriesInfo)
+    /**
+     * Transforms the specified Contentlet object into its JSON representation.
+     *
+     * @param con               The {@link Contentlet} object that will be transformed.
+     * @param request           The current {@link HttpServletRequest} instance.
+     * @param response          The current {@link HttpServletResponse} instance.
+     * @param render            If the rendered HTML version must be included in the response, set to {@code true}.
+     * @param user              The {@link User} performing this action.
+     * @param allCategoriesInfo If information about Categories must be included, set to {@code true}.
+     *
+     * @return The representation of the Contentlet as a {@link JSONObject}.
+     *
+     * @throws JSONException        An error occurred when generating the JSON object.
+     * @throws IOException          An error occurred when generating the printable Contentlet map.
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The specified User does not have the required permissions to perform this action.
+     */
+    public static JSONObject contentletToJSON(final Contentlet con, final HttpServletRequest request,
+            final HttpServletResponse response, final String render, final User user, final boolean allCategoriesInfo)
             throws JSONException, IOException, DotDataException, DotSecurityException {
         return contentletToJSON(con, request, response, render, user, allCategoriesInfo, false);
     }
 
+    /**
+     * Transforms the specified Contentlet object into its JSON representation.
+     *
+     * @param contentlet        The {@link Contentlet} object that will be transformed.
+     * @param request           The current {@link HttpServletRequest} instance.
+     * @param response          The current {@link HttpServletResponse} instance.
+     * @param render            If the rendered HTML version must be included in the response, set to {@code true}.
+     * @param user              The {@link User} performing this action.
+     * @param allCategoriesInfo If information about Categories must be included, set to {@code true}.
+     * @param hydrateRelated
+     *
+     * @return The representation of the Contentlet as a {@link JSONObject}.
+     *
+     * @throws JSONException        An error occurred when generating the JSON object.
+     * @throws IOException          An error occurred when generating the printable Contentlet map.
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The specified User does not have the required permissions to perform this action.
+     */
     public static JSONObject contentletToJSON(Contentlet contentlet, final HttpServletRequest request,
             final HttpServletResponse response, final String render, final User user,
             final boolean allCategoriesInfo, final boolean hydrateRelated)
@@ -1385,6 +1421,8 @@ public class ContentResource {
                         final Collection<?> tags = (Collection<?>) map.get(key);
                         jsonObject.put(key, new JSONArray(tags));
                         // this might be coming from transformers views, so let's try to make them JSONObjects
+                } else if (isStoryBlockField(type, key)) {
+                    jsonObject.put(key, new JSONObject(String.class.cast(map.get(key))));
                 } else if(hydrateRelated) {
                     if(map.get(key) instanceof Map) {
                         jsonObject.put(key, new JSONObject((Map) map.get(key)));
@@ -1435,6 +1473,25 @@ public class ContentResource {
             Logger.error(ContentResource.class, "Error getting field " + key, e);
         }
         return false;
+    }
+
+    /**
+     * Verifies if the specified field in a Content Type is of type {@link StoryBlockField}.
+     *
+     * @param type         The {@link ContentType} containing such a field.
+     * @param fieldVarName The Velocity Variable Name of the field that must be checked.
+     *
+     * @return If the field is of type {@link StoryBlockField}, returns {@code true}.
+     */
+    private static boolean isStoryBlockField(final ContentType type, final String fieldVarName) {
+        try {
+            final com.dotcms.contenttype.model.field.Field field = type.fieldMap().get(fieldVarName);
+            return field != null && field instanceof StoryBlockField;
+        } catch (final Exception e) {
+            Logger.error(ContentResource.class,
+                    String.format("Error checking StoryBlock type on field '%s': %s", fieldVarName, e.getMessage()), e);
+        }
+        return Boolean.FALSE;
     }
 
     public class MapEntryConverter implements Converter {
@@ -2203,4 +2260,5 @@ public class ContentResource {
 
 
     }
+
 }
