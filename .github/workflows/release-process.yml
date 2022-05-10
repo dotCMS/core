@@ -79,7 +79,7 @@ jobs:
         uses: rtCamp/action-slack-notify@master
         env:
           SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
-          SLACK_USERNAME: DotBot
+          SLACK_USERNAME: dotBot
           SLACK_TITLE: "Important news!"
           SLACK_MSG_AUTHOR: " "
           MSG_MINIMAL: true
