@@ -5,17 +5,18 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+import java.util.Map;
+
 /**
- * Provides the list of Content Types -- in the form of Velocity Variable Names -- that can be referenced inside a Story
- * Block field. Any other Content Type that is NOT part if this list cannot be referenced t all.
+ * Provides filtering capabilities for querying information on specific Content Types in the dotCMS repository.
  *
  * @author Jose Castro
  * @since Apr 27th, 2022
  */
-@JsonDeserialize(builder = AllowedContentTypesForm.Builder.class)
-public class AllowedContentTypesForm extends Validated {
+@JsonDeserialize(builder = FilteredContentTypesForm.Builder.class)
+public class FilteredContentTypesForm extends Validated {
 
-    private final String types;
+    private final Map<String, Object> filter;
     private final int page;
     private final int perPage;
     private final String orderBy;
@@ -27,10 +28,10 @@ public class AllowedContentTypesForm extends Validated {
     /**
      * Internal class constructor meant to be used by the Builder class.
      *
-     * @param builder The Builder object for the {@link AllowedContentTypesForm} class.
+     * @param builder The Builder object for the {@link FilteredContentTypesForm} class.
      */
-    private AllowedContentTypesForm(final Builder builder) {
-        this.types = builder.types;
+    private FilteredContentTypesForm(final Builder builder) {
+        this.filter = builder.filter;
         this.page = builder.page;
         this.perPage = builder.perPage;
         this.orderBy = builder.orderBy;
@@ -43,8 +44,8 @@ public class AllowedContentTypesForm extends Validated {
      *
      * @return The comma-separated list of Velocity Variable Names.
      */
-    public String getTypes() {
-        return this.types;
+    public Map<String, Object> getFilter() {
+        return this.filter;
     }
 
     /**
@@ -85,12 +86,12 @@ public class AllowedContentTypesForm extends Validated {
     }
 
     /**
-     * Builder class used to create an instance of the {@link AllowedContentTypesForm} class.
+     * Builder class used to create an instance of the {@link FilteredContentTypesForm} class.
      */
     public static final class Builder {
 
         @JsonProperty(required = true)
-        private String types;
+        private Map<String, Object> filter;
         @JsonProperty
         private int page;
         @JsonProperty
@@ -111,8 +112,8 @@ public class AllowedContentTypesForm extends Validated {
          *
          * @return An instance of the {@link Builder} class.
          */
-        public AllowedContentTypesForm.Builder types(final String types) {
-            this.types = types;
+        public FilteredContentTypesForm.Builder filter(final Map<String, Object> filter) {
+            this.filter = filter;
             return this;
         }
 
@@ -123,7 +124,7 @@ public class AllowedContentTypesForm extends Validated {
          *
          * @return An instance of the {@link Builder} class.
          */
-        public AllowedContentTypesForm.Builder page(final int page) {
+        public FilteredContentTypesForm.Builder page(final int page) {
             this.page = page;
             return this;
         }
@@ -136,7 +137,7 @@ public class AllowedContentTypesForm extends Validated {
          *
          * @return An instance of the {@link Builder} class.
          */
-        public AllowedContentTypesForm.Builder perPage(final int perPage) {
+        public FilteredContentTypesForm.Builder perPage(final int perPage) {
             this.perPage = perPage;
             return this;
         }
@@ -148,7 +149,7 @@ public class AllowedContentTypesForm extends Validated {
          *
          * @return An instance of the {@link Builder} class.
          */
-        public AllowedContentTypesForm.Builder orderBy(final String orderBy) {
+        public FilteredContentTypesForm.Builder orderBy(final String orderBy) {
             this.orderBy = orderBy;
             return this;
         }
@@ -160,18 +161,18 @@ public class AllowedContentTypesForm extends Validated {
          *
          * @return An instance of the {@link Builder} class.
          */
-        public AllowedContentTypesForm.Builder direction(final String direction) {
+        public FilteredContentTypesForm.Builder direction(final String direction) {
             this.direction = direction;
             return this;
         }
 
         /**
-         * Creates an instance of the {@link AllowedContentTypesForm} class.
+         * Creates an instance of the {@link FilteredContentTypesForm} class.
          *
-         * @return An instance of the {@link AllowedContentTypesForm} class.
+         * @return An instance of the {@link FilteredContentTypesForm} class.
          */
-        public AllowedContentTypesForm build() {
-            return new AllowedContentTypesForm(this);
+        public FilteredContentTypesForm build() {
+            return new FilteredContentTypesForm(this);
         }
 
     }

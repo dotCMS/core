@@ -126,27 +126,31 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     }
 
     @Override
-    public List<ContentType> find(final Collection<String> varNames, final int offset, final int limit,
+    public List<ContentType> find(final Collection<String> varNames, final String filter, final int offset, final int limit,
                                   final String orderBy) throws DotDataException {
       if (UtilMethods.isNotSet(varNames)) {
           return null;
       }
       final DotConnect dc = new DotConnect();
-      if (offset > 0) {
-          dc.setStartRow(offset);
-      }
-      if (limit > 0) {
-         dc.setMaxRows(limit);
-      }
-      String sql = String.format(ContentTypeSql.SELECT_BY_VAR_NAMES,
-              String.join(COMMA, Collections.nCopies(varNames.size(), "?")));
+      String sql = UtilMethods.isSet(filter) ? ContentTypeSql.SELECT_BY_VAR_NAMES_FILTERED : ContentTypeSql.SELECT_BY_VAR_NAMES;
+      sql = String.format(sql, String.join(COMMA, Collections.nCopies(varNames.size(), "?")));
       if (UtilMethods.isSet(orderBy)) {
           sql = UtilMethods.isSet(orderBy) ? sql + ContentTypeSql.ORDER_BY : sql;
           final String sanitizedOrderBy = SQLUtil.sanitizeSortBy(orderBy);
           sql = String.format(sql, sanitizedOrderBy);
       }
       dc.setSQL(sql);
-      varNames.forEach(varName -> dc.addParam(varName.toLowerCase()));
+      varNames.forEach(varName -> dc.addParam(varName));
+      if (UtilMethods.isSet(filter)) {
+        dc.addParam("%" + filter + "%");
+        dc.addParam("%" + filter + "%");
+      }
+      if (offset > 0) {
+        dc.setStartRow(offset);
+      }
+      if (limit > 0) {
+        dc.setMaxRows(limit);
+      }
       final List<Map<String, Object>> results = dc.loadObjectResults();
       return new DbContentTypeTransformer(results).asList();
     }

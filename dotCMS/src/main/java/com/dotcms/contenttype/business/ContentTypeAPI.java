@@ -75,6 +75,7 @@ public interface ContentTypeAPI {
    * not be added to the result list.
    *
    * @param varNames The list of Velocity Variable Names each corresponding to a Content Type.
+   * @param filter   Optional filtering parameter used to query for a specific Content Type name or Variable Name.
    * @param offset   The specified offset in the result set, for pagination purposes.
    * @param limit    The specified limit in the result set, for pagination purposes.
    * @param orderBy  The order-by clause, which is internally sanitized by the API. For more information, please refer
@@ -86,7 +87,7 @@ public interface ContentTypeAPI {
    *                              action.
    * @throws DotDataException     An error occurred when interacting with the data source.
    */
-  Optional<List<ContentType>> find(final List<String> varNames, final int offset, final int limit,
+  Optional<List<ContentType>> find(final List<String> varNames, final String filter, final int offset, final int limit,
                                    final String orderBy) throws DotSecurityException, DotDataException;
 
   /**
