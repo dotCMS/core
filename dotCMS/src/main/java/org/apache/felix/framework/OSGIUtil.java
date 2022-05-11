@@ -84,7 +84,7 @@ public class OSGIUtil {
     // by default the max number of count for upload folder read is 10, after that the cycle reinits.
     private static final int MAX_UPLOAD_FOLDER_COUNT_VAL = 10;
 
-    // how long way the debouncer
+    // how long waits the debouncer to rewire the instances.
     private static final int RESTART_FELIX_AWARE_DELAY = 10;// 10 secons
 
     //List of jar prefixes of the jars to be included in the osgi-extra.conf file
