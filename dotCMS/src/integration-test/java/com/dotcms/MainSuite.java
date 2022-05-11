@@ -80,6 +80,9 @@ import com.dotcms.saml.SamlConfigurationServiceTest;
 import com.dotcms.security.ContentSecurityPolicyUtilTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotcms.security.apps.AppsCacheImplTest;
+import com.dotcms.security.multipart.BoundedBufferedReaderTest;
+import com.dotcms.security.multipart.ContentDispositionFileNameParserTest;
+import com.dotcms.security.multipart.SecureFileValidatorTest;
 import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
@@ -537,6 +540,9 @@ import org.junit.runners.Suite.SuiteClasses;
         Task220331UpdateDateTimezonesTest.class,
         Task220404RemoveCalendarReminderTest.class,
         Task220413IncreasePublishedPushedAssetIdColTest.class,
+        ContentDispositionFileNameParserTest.class,
+        SecureFileValidatorTest.class,
+        BoundedBufferedReaderTest.class,
         ContentWorkflowHandlerTest.class
 })
 public class MainSuite {
