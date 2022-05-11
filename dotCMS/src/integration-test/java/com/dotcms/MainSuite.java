@@ -82,6 +82,7 @@ import com.dotcms.security.apps.AppsCacheImplTest;
 import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
+import com.dotcms.util.XStreamFactoryTest;
 import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotmarketing.beans.HostTest;
 import com.dotmarketing.business.DeterministicIdentifierAPITest;
@@ -535,7 +536,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task220330ChangeVanityURLSiteFieldTypeTest.class,
         Task220331UpdateDateTimezonesTest.class,
         Task220404RemoveCalendarReminderTest.class,
-        Task220413IncreasePublishedPushedAssetIdColTest.class
+        Task220413IncreasePublishedPushedAssetIdColTest.class,
+        XStreamFactoryTest.class
 })
 public class MainSuite {
 
