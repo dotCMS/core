@@ -1043,7 +1043,7 @@ public class WebAssetFactory {
 		}
 
 
-	    totalCount =  elements!=null?((PaginatedArrayList)elements).getTotalResults():0;
+		totalCount =  elements!=null?((PaginatedArrayList)elements).getTotalResults():0;
 	    java.util.Iterator<? extends Permissionable> elementsIter = elements.iterator();
 
 		while (elementsIter.hasNext()) {
