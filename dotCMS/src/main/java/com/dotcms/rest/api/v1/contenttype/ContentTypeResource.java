@@ -633,14 +633,12 @@ public class ContentTypeResource implements Serializable {
 		if (null == form) {
 			return ExceptionMapperUtil.createResponse(null, "Requests to '_filter' need a POST JSON body");
 		}
-		if (null == form.getFilter() || form.getFilter().isEmpty()) {
-			throw new BadRequestException("The 'filter' property must be present");
-		}
 		final InitDataObject initData = this.webResource.init(null, req, res, true, null);
 		final User user = initData.getUser();
 		Response response;
-		final List<String> typeVarNames = Arrays.asList(form.getFilter().get("data").toString().split(COMMA));
-		final String filter = String.class.cast(form.getFilter().get("query"));
+		final String types = getFilterValue(form, "types", StringPool.BLANK);
+		final List<String> typeVarNames = UtilMethods.isSet(types) ? Arrays.asList(types.split(COMMA)) : null;
+		final String filter = getFilterValue(form, "query", StringPool.BLANK);
 		final Map<String, Object> extraParams = new HashMap<>();
 		if (UtilMethods.isSet(typeVarNames)) {
 			extraParams.put(ContentTypesPaginator.TYPES_PARAMETER_NAME, typeVarNames);
@@ -770,6 +768,23 @@ public class ContentTypeResource implements Serializable {
 		} else {
 			return orderbyParam;
 		}
+	}
+
+	/**
+	 * Utility method used to return a specific parameter from the Content Type Filtering Form. If not present, a
+	 * default value will be returned.
+	 *
+	 * @param form         The {@link FilteredContentTypesForm} in the request.
+	 * @param param        The parameter being requested.
+	 * @param defaultValue The default value in case the parameter is not present or set.
+	 *
+	 * @return The form parameter or the specified default value.
+	 */
+	private <T> T getFilterValue(final FilteredContentTypesForm form, final String param, T defaultValue) {
+		if (null == form || null == form.getFilter() || form.getFilter().isEmpty()) {
+			return defaultValue;
+		}
+		return UtilMethods.isSet(form.getFilter().get(param)) ? (T) form.getFilter().get(param) : defaultValue;
 	}
 
 }
