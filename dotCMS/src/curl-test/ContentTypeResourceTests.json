@@ -1960,7 +1960,7 @@
 								"_filter"
 							]
 						},
-						"description": "Returns the appropriate JSON data with Content Type information based on the specified list of Velocity Variable Names **and the specified filter including the letters that might be present in either the Content Type's name or Velocity Var Name.**\n\nIn this case, the second page is being requested."
+						"description": "Returns the appropriate JSON data with **ALL** the Content Types in the content repo as no filtering parameters were provided."
 					},
 					"response": []
 				}
