@@ -1238,12 +1238,13 @@ dojo.declare(
                         cellData['languageId']
                     ) {
                         var cell = row.insertCell(row.cells.length);
+                        var flagUrl = this.availableLanguages[l]['countryCode'] ? this.availableLanguages[l]['languageCode'] +
+                        '_' + this.availableLanguages[l]['countryCode'] : this.availableLanguages[l]['languageCode'];
                         var langStr =
                             '<img src="/html/images/languages/' +
-                            this.availableLanguages[l]['languageCode'] +
-                            '_' +
-                            this.availableLanguages[l]['countryCode'] +
+                            flagUrl +
                             '.gif" width="16px" height="11px" />&nbsp;';
+                            
                         cell.innerHTML =
                             langStr +
                             this.availableLanguages[l]['language'] +
