@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "b9b22320-d0e4-4467-bafa-1e37a3704c33",
+		"_postman_id": "ee5e42a5-0c7d-487f-9a8d-c48815c618da",
 		"name": "ContentType Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -1561,7 +1561,7 @@
 			"name": "Test Filtered Content Types",
 			"item": [
 				{
-					"name": "Get Allowed Content Types - First page",
+					"name": "Get Content Types - First page",
 					"event": [
 						{
 							"listen": "test",
@@ -1607,7 +1607,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"filter\" : {\n        \"data\" : \"calendarEvent,Vanityurl,webPageContent,htmlpageasset,FileAsset\"\n    },\n    \"page\": 1,\n    \"perPage\": 3\n}",
+							"raw": "{\n    \"filter\" : {\n        \"types\" : \"calendarEvent,Vanityurl,webPageContent,htmlpageasset,FileAsset\"\n    },\n    \"page\": 1,\n    \"perPage\": 3\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1631,7 +1631,7 @@
 					"response": []
 				},
 				{
-					"name": "Get Allowed Content Types - Second page",
+					"name": "Get Content Types - Second page",
 					"event": [
 						{
 							"listen": "test",
@@ -1677,7 +1677,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"filter\" : {\n        \"data\" : \"calendarEvent,Vanityurl,webPageContent,DotAsset,persona\"\n    },\n    \"page\": 2,\n    \"perPage\": 3\n}",
+							"raw": "{\n    \"filter\" : {\n        \"types\" : \"calendarEvent,Vanityurl,webPageContent,DotAsset,persona\"\n    },\n    \"page\": 2,\n    \"perPage\": 3\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1701,7 +1701,7 @@
 					"response": []
 				},
 				{
-					"name": "Get Allowed Content Types - Not paginated",
+					"name": "Get Content Types - Not paginated",
 					"event": [
 						{
 							"listen": "test",
@@ -1743,7 +1743,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"filter\" : {\n        \"data\" : \"calendarEvent,Vanityurl,webPageContent,DotAsset,persona\"\n    }\n}",
+							"raw": "{\n    \"filter\" : {\n        \"types\" : \"calendarEvent,Vanityurl,webPageContent,DotAsset,persona\"\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1767,7 +1767,7 @@
 					"response": []
 				},
 				{
-					"name": "Get Allowed Content Types - Filtered",
+					"name": "Get Content Types - Filtered",
 					"event": [
 						{
 							"listen": "test",
@@ -1809,7 +1809,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"filter\" : {\n        \"data\" : \"calendarEvent,Vanityurl,webPageContent,DotAsset,persona\",\n        \"query\": \"ent\"\n    }\n}",
+							"raw": "{\n    \"filter\" : {\n        \"types\" : \"calendarEvent,Vanityurl,webPageContent,DotAsset,persona\",\n        \"query\": \"ent\"\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1833,7 +1833,7 @@
 					"response": []
 				},
 				{
-					"name": "Get Allowed Content Types - Filtered Paginated",
+					"name": "Get Content Types - Filtered Paginated",
 					"event": [
 						{
 							"listen": "test",
@@ -1875,7 +1875,73 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"filter\" : {\n        \"data\" : \"calendarEvent,Vanityurl,webPageContent,DotAsset,persona\",\n        \"query\": \"set\"\n    },\n    \"page\": 1,\n    \"perPage\": 3\n}",
+							"raw": "{\n    \"filter\" : {\n        \"types\" : \"calendarEvent,Vanityurl,webPageContent,DotAsset,persona\",\n        \"query\": \"set\"\n    },\n    \"page\": 1,\n    \"perPage\": 3\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/_filter",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"_filter"
+							]
+						},
+						"description": "Returns the appropriate JSON data with Content Type information based on the specified list of Velocity Variable Names **and the specified filter including the letters that might be present in either the Content Type's name or Velocity Var Name.**\n\nIn this case, the second page is being requested."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Content Types - All types",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"pm.test(\"Status code must be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"At least 12 Content Types must be returned, as not filter is set!'\", function () {",
+									"    pm.expect(jsonData.entity.length).to.greaterThan(11)",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"orderBy\": \"name\",\n    \"direction\": \"ASC\",\n    \"perPage\": 40\n}",
 							"options": {
 								"raw": {
 									"language": "json"
