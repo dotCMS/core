@@ -27,6 +27,11 @@ const enterprisePorlets: DotUnlicensedPortletData[] = [
         url: '/c/site-search'
     },
     {
+        icon: 'person',
+        titleKey: 'com.dotcms.repackage.javax.portlet.title.personas',
+        url: '/c/c_Personas'
+    },
+    {
         icon: 'update',
         titleKey: 'com.dotcms.repackage.javax.portlet.title.time-machine',
         url: '/c/time-machine'
