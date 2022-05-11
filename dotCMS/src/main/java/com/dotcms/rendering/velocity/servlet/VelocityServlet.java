@@ -1,10 +1,13 @@
 package com.dotcms.rendering.velocity.servlet;
 
+import static com.dotmarketing.util.WebKeys.LOGIN_MODE_PARAMETER;
+
 import com.dotcms.business.CloseDB;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.UserWebAPIImpl;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -12,12 +15,14 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
+import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.LoginMode;
 import com.dotmarketing.util.PageMode;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import javax.servlet.http.HttpSession;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
 import javax.servlet.ServletConfig;
@@ -30,11 +35,19 @@ import java.io.IOException;
 public class VelocityServlet extends HttpServlet {
 
 
-    
-    private UserWebAPIImpl userApi = (UserWebAPIImpl) WebAPILocator.getUserWebAPI();
-    
-    
-    
+    private final UserWebAPIImpl userApi;
+    private final HTMLPageAssetRenderedAPI htmlPageAssetRenderedAPI;
+
+    @VisibleForTesting
+    public VelocityServlet(final UserWebAPI userApi, final HTMLPageAssetRenderedAPI htmlPageAssetRenderedAPI) {
+        this.userApi = (UserWebAPIImpl)userApi;
+        this.htmlPageAssetRenderedAPI = htmlPageAssetRenderedAPI;
+    }
+
+    public VelocityServlet() {
+        this(WebAPILocator.getUserWebAPI(),APILocator.getHTMLPageAssetRenderedAPI());
+    }
+
     /**
      * 
      */
@@ -67,7 +80,7 @@ public class VelocityServlet extends HttpServlet {
         final VelocityRequestWrapper request =VelocityRequestWrapper.wrapVelocityRequest(req);
         final String uri = CMSUrlUtil.getCurrentURI(request);
         final boolean comeFromSomeWhere = request.getHeader("referer") != null;
-        
+
         final User user = (userApi.getLoggedInUser(request)!=null)
                         ? userApi.getLoggedInUser(request) 
                         : userApi.getLoggedInFrontendUser(request) !=null
@@ -87,7 +100,7 @@ public class VelocityServlet extends HttpServlet {
         }
         
         // if you are a backend user, redirect you to the page edit screen
-        if (user!=null && user.hasConsoleAccess() && !comeFromSomeWhere){
+        if (user!=null && user.hasConsoleAccess() && !isFrontendLogin(request) && !comeFromSomeWhere){
             goToEditPage(uri,request, response);
             return;
         } 
@@ -104,7 +117,7 @@ public class VelocityServlet extends HttpServlet {
         
         // try to get the page
         try {
-            final String pageHtml = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+            final String pageHtml = htmlPageAssetRenderedAPI.getPageHtml(
                     PageContextBuilder.builder()
                             .setPageUri(uri)
                             .setPageMode(mode)
@@ -150,7 +163,7 @@ public class VelocityServlet extends HttpServlet {
 
     @Override
     public void init(final ServletConfig config) throws ServletException {
-        Logger.info(this.getClass(), "Initing VelocityServlet");
+        Logger.info(this.getClass(), "Initializing VelocityServlet");
 
 
     }
@@ -171,6 +184,20 @@ public class VelocityServlet extends HttpServlet {
     response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     final String url = String.format("/dotAdmin/#/edit-page/content?url=%s", requestURI);
     response.sendRedirect(url);
+  }
+
+    /**
+     * This revise if the use is logged in from the frontend
+     * @param request
+     * @return
+     */
+  private boolean isFrontendLogin(final HttpServletRequest request){
+      final HttpSession session = request.getSession(false);
+      if (null != session) {
+          final LoginMode mode = (LoginMode) session.getAttribute(LOGIN_MODE_PARAMETER);
+          return (LoginMode.FE == mode);
+      }
+      return false;
   }
 
 }

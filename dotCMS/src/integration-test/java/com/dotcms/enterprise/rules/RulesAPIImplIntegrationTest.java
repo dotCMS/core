@@ -21,6 +21,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.form.business.FormAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.RuleDataGen;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionDataGen;
@@ -32,6 +33,7 @@ import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.List;
@@ -550,7 +552,9 @@ public class RulesAPIImplIntegrationTest {
         final HTMLPageAsset anotherHtmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
         final Rule rule3 = new RuleDataGen().page(anotherHtmlPageAsset).nextPersisted();
 
+        APILocator.getContentletAPI().publish(htmlPageAsset, APILocator.systemUser(), false);
         addPermissionToReadRulesFolder(role, folder);
+        this.addPermission(user, htmlPageAsset, PermissionAPI.PERMISSION_READ);
 
         final List<Rule> rules = rulesAPI.getAllRulesByParent(htmlPageAsset.getIdentifier(), user, false);
 
@@ -712,6 +716,20 @@ public class RulesAPIImplIntegrationTest {
 
         try {
             APILocator.getPermissionAPI().save(publishPermission, permissionable, systemUser, false);
+        } catch (DotDataException | DotSecurityException e){
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void addPermission(
+            final User user,
+            final Permissionable permissionable,
+            final int permission) {
+
+        try {
+
+            final Permission objPermission = new Permission(permissionable.getPermissionId(), user.getUserRole().getId(), permission, true);
+            APILocator.getPermissionAPI().save(objPermission, permissionable, systemUser, false);
         } catch (DotDataException | DotSecurityException e){
             throw new RuntimeException(e);
         }
