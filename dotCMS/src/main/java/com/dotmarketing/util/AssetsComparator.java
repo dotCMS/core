@@ -6,7 +6,6 @@ import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 
 
 
@@ -29,7 +28,7 @@ public class AssetsComparator implements Comparator {
 	    if(obj instanceof WebAsset) return ((WebAsset)obj).getSortOrder();
 	    if(obj instanceof Folder) return ((Folder)obj).getSortOrder();
 	    if(obj instanceof FileAsset) return ((FileAsset)obj).getSortOrder();
-	    if(obj instanceof HTMLPageAsset) return ((Contentlet)obj).getSortOrder();
+	    if(obj instanceof Contentlet) return ((Contentlet)obj).getSortOrder();
 	    return 0;
 	}
 
