@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "20659268-cbbb-4f5b-84b7-c09f2dd53b6c",
+		"_postman_id": "0d1bb7c9-5bfb-4875-8b4a-ab4e84c0eff2",
 		"name": "Template Resource",
 		"description": "Make the test for the template resource crud",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -5731,7 +5731,7 @@
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"body check\", function () {",
-									"    pm.expect(jsonData.entity.fails[0].element).to.eql('SYSTEM_TEMPLATE');",
+									"    pm.expect(jsonData.entity.fails[0]).to.eql(undefined);",
 									"});",
 									"",
 									"",
@@ -5975,8 +5975,8 @@
 						}
 					},
 					"response": []
-		},
-		{
+				},
+				{
 					"name": "UnArchiveSystemTemplate",
 					"event": [
 						{
@@ -6044,13 +6044,13 @@
 				},
 				{
 					"name": "DeleteSystemTemplate",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
 									"pm.test(\"Status code should be ok 200\", function () {",
-							"    pm.response.to.have.status(200);",
+									"    pm.response.to.have.status(200);",
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
