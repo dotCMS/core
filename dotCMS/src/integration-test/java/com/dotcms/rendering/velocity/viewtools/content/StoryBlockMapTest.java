@@ -163,7 +163,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
     public void test_overridden_render_to_html() throws JSONException, DotDataException, DotSecurityException, IOException {
 
         final String fileName = "paragraph.vtl";
-        final String storyBlockPath = "/application/storytest/blocks/";
+        final String storyBlockPath = "/application/storytest/blocks"+System.currentTimeMillis()+"/";
         final User user = APILocator.systemUser();
         final Host host = APILocator.getHostAPI().findDefaultHost(user, false);
         final Folder folder = APILocator.getFolderAPI().createFolders(storyBlockPath,
@@ -204,7 +204,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON_PARAGRAPH);
         final String html = storyBlockMap.toHtml(storyBlockPath);
         // expecting diff html here (not the default)
-        Assert.assertTrue(html.contains("<p>"));
+        Assert. assertTrue(html.contains("<p>"));
         Assert.assertTrue(html.contains("this is paragraph"));
         Assert.assertTrue(html.contains("</p>"));
 
