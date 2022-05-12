@@ -33,6 +33,7 @@ import com.dotcms.enterprise.publishing.remote.bundler.TemplateBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.WorkflowBundlerTest;
 import com.dotcms.enterprise.publishing.remote.handler.ContentHandlerTest;
 import com.dotcms.enterprise.publishing.remote.handler.HandlerUtilTest;
+import com.dotcms.enterprise.publishing.staticpublishing.AWSS3PublisherTest;
 import com.dotcms.enterprise.publishing.staticpublishing.LanguageFolderTest;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
@@ -543,7 +544,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.util.pagination.ContainerPaginatorTest.class,
         ContentDispositionFileNameParserTest.class,
         SecureFileValidatorTest.class,
-        BoundedBufferedReaderTest.class
+        BoundedBufferedReaderTest.class,
+        AWSS3PublisherTest.class
 })
 public class MainSuite {
 
