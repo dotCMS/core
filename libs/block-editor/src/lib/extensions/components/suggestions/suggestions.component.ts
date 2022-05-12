@@ -1,13 +1,13 @@
 import {
+    AfterViewInit,
     ChangeDetectorRef,
     Component,
+    EventEmitter,
+    HostListener,
     Input,
     OnInit,
-    ViewChild,
-    HostListener,
-    AfterViewInit,
     Output,
-    EventEmitter
+    ViewChild
 } from '@angular/core';
 
 import { SafeUrl } from '@angular/platform-browser';
@@ -16,10 +16,10 @@ import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 import { map, take } from 'rxjs/operators';
 import { MenuItem } from 'primeng/api';
 
-import { Languages, DotLanguageService } from '../../services/dot-language/dot-language.service';
+import { DotLanguageService, Languages } from '../../services/dot-language/dot-language.service';
 import { SuggestionListComponent } from '../suggestion-list/suggestion-list.component';
 import { SuggestionsService } from '../../services/suggestions/suggestions.service';
-import { suggestionOptions } from '@dotcms/block-editor';
+import { DEFAULT_LANG_ID, suggestionOptions } from '@dotcms/block-editor';
 
 export interface SuggestionsCommandProps {
     payload?: DotCMSContentlet;
@@ -48,19 +48,21 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
     @ViewChild('list', { static: false }) list: SuggestionListComponent;
 
     @Input() onSelection: (props: SuggestionsCommandProps) => void;
-
     @Input() items: DotMenuItem[] = [];
     @Input() title = 'Select a block';
     @Input() noResultsMessage = 'No Results';
     @Input() isOpen = false;
+    @Input() currentLanguage = DEFAULT_LANG_ID;
+
     @Output() clearFilter: EventEmitter<string> = new EventEmitter<string>();
 
-    initialItems: DotMenuItem[];
-    isFilterActive = false;
     private itemsLoaded: ItemsType;
     private selectedContentType: DotCMSContentType;
     private mouseMove = true;
-    private dotLang: Languages;
+    private dotLangs: Languages;
+    private initialItems: DotMenuItem[];
+
+    isFilterActive = false;
 
     @HostListener('mousemove', ['$event'])
     onMousemove() {
@@ -105,7 +107,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
         this.dotLanguageService
             .getLanguages()
             .pipe(take(1))
-            .subscribe((dotLang) => (this.dotLang = dotLang));
+            .subscribe((dotLang) => (this.dotLangs = dotLang));
     }
 
     ngAfterViewInit() {
@@ -267,7 +269,11 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
 
     private loadContentlets(contentType: DotCMSContentType, filter = '') {
         this.suggestionsService
-            .getContentlets(contentType.variable, filter)
+            .getContentlets({
+                contentType: contentType.variable,
+                filter,
+                currentLanguage: this.currentLanguage
+            })
             .pipe(take(1))
             .subscribe((contentlets) => {
                 this.items = contentlets.map((contentlet) => {
@@ -301,7 +307,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
     }
 
     private getContentletLanguage(languageId: number): string {
-        const { languageCode, countryCode } = this.dotLang[languageId];
+        const { languageCode, countryCode } = this.dotLangs[languageId];
 
         if (!languageCode || !countryCode) {
             return '';

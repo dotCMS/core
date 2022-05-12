@@ -5,6 +5,15 @@ import { BubbleMenuPluginProps, BubbleMenuViewProps } from '@tiptap/extension-bu
 import { ComponentRef, EventEmitter } from '@angular/core';
 import { SuggestionsComponent } from '../extensions/components/suggestions/suggestions.component';
 
+export const DEFAULT_LANG_ID = 1;
+export type DotConfigKeys = 'lang';
+
+export interface ContentletFilters {
+    contentType: string;
+    filter: string;
+    currentLanguage: number;
+}
+
 export interface ShouldShowProps {
     editor: Editor;
     view: EditorView;
