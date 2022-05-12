@@ -134,6 +134,13 @@ public class Task220330ChangeVanityURLSiteFieldTypeTest {
         }
     }
 
+    @Test
+    public void runTUTwice() throws DotDataException {
+        final Task220330ChangeVanityURLSiteFieldType task = new Task220330ChangeVanityURLSiteFieldType();
+        task.executeUpgrade();
+        task.executeUpgrade();
+    }
+
     private void assertContentlet(Host host, Contentlet vanityURL_1) {
         final Optional<Contentlet> inDb = APILocator.getContentletAPI()
                 .findInDb(vanityURL_1.getInode());
