@@ -20,7 +20,7 @@ public class ContainerStructure implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	private String id;
-	private String contentTypeId;
+	private String structureId;
     private String containerInode;
     private String containerId;
     private String code;
@@ -102,7 +102,7 @@ public class ContainerStructure implements Serializable {
 	 * @return The Content Type's ID.
 	 */
 	public String getStructureId() {
-		return contentTypeId;
+		return structureId;
 	}
 
 	/**
@@ -111,7 +111,7 @@ public class ContainerStructure implements Serializable {
 	 * @param contentTypeId The Content Type's ID.
 	 */
 	public void setStructureId(final String contentTypeId) {
-		this.contentTypeId = contentTypeId;
+		this.structureId = contentTypeId;
 	}
 
 	/**
