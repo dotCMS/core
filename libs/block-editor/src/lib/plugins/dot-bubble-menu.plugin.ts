@@ -1,27 +1,30 @@
 import { EditorView } from 'prosemirror-view';
 import { isNodeSelection, posToDOMRect } from '@tiptap/core';
-import { PluginKey, Plugin, EditorState } from 'prosemirror-state';
+import { EditorState, Plugin, PluginKey } from 'prosemirror-state';
 import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
 import tippy, { Instance } from 'tippy.js';
 
 // Utils
-import { getNodePosition, suggestionOptions } from '@dotcms/block-editor';
+// Model
+import {
+    BubbleMenuComponentProps,
+    BubbleMenuItem,
+    CustomNodeTypes,
+    DotBubbleMenuPluginProps,
+    DotBubbleMenuViewProps,
+    getNodePosition,
+    NodeTypes,
+    suggestionOptions
+} from '@dotcms/block-editor';
 import { ComponentRef } from '@angular/core';
 import { SuggestionsComponent } from '../extensions/components/suggestions/suggestions.component';
 import {
-    bubbleMenuItems,
     bubbleMenuImageItems,
+    bubbleMenuItems,
     isListNode,
     popperModifiers
 } from '../utils/bubble-menu.utils';
-
-// Model
-import {
-    BubbleMenuItem,
-    BubbleMenuComponentProps,
-    DotBubbleMenuPluginProps,
-    DotBubbleMenuViewProps
-} from '@dotcms/block-editor';
+import { findParentNode } from '../utils/prosemirror.utils';
 
 export const DotBubbleMenuPlugin = (options: DotBubbleMenuPluginProps) => {
     const component = options.component.instance;
@@ -71,6 +74,9 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
     private shouldShowProp = false;
 
+    private selection$FromPos;
+    private selectionNode;
+
     /* @Overrrider */
     constructor(props: DotBubbleMenuViewProps) {
         // Inherit the parent class
@@ -112,6 +118,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
     update(view: EditorView, oldState?: EditorState) {
         const { state, composing } = view;
         const { doc, selection } = state;
+
         const isSame = oldState && oldState.doc.eq(doc) && oldState.selection.eq(selection);
 
         if (composing || isSame) {
@@ -123,6 +130,9 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
         // support for CellSelections
         const { ranges } = selection;
+
+        this.selection$FromPos = ranges[0].$from;
+
         const from = Math.min(...ranges.map((range) => range.$from.pos));
         const to = Math.max(...ranges.map((range) => range.$to.pos));
 
@@ -213,6 +223,8 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         const node = doc.nodeAt(from);
         const isDotImage = node?.type.name == 'dotImage';
 
+        this.selectionNode = node;
+
         this.component.instance.items = isDotImage ? bubbleMenuImageItems : bubbleMenuItems;
     }
 
@@ -259,6 +271,10 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                 break;
             case 'link':
                 this.editor.commands.toogleLinkForm();
+                break;
+            case 'deleteNode':
+                this.deleteNode();
+
                 break;
             case 'clearAll':
                 this.editor.commands.unsetAllMarks();
@@ -371,6 +387,48 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
     hanlderScroll() {
         if (this.tippyChangeTo?.state.isVisible) {
             this.tippyChangeTo?.hide();
+        }
+    }
+
+    private deleteNode() {
+        if (CustomNodeTypes.includes(this.selectionNode.type.name)) {
+            this.deleteSelectedCustomNodeType();
+        } else {
+            this.deleteSelectionNode();
+        }
+    }
+
+    private deleteSelectedCustomNodeType() {
+        const from = this.selection$FromPos.pos;
+        const to = from + 1;
+
+        // TODO: Try to make the `deleteNode` command works with custom nodes.
+        this.editor.chain().deleteRange({ from, to }).blur().run();
+    }
+
+    private deleteSelectionNode() {
+        const selectionParentNode = findParentNode(this.selection$FromPos);
+        const nodeSelectionNodeType: NodeTypes = selectionParentNode.type.name;
+
+        switch (nodeSelectionNodeType) {
+            case NodeTypes.ORDERED_LIST:
+            case NodeTypes.BULLET_LIST:
+                const closestOrderedOrBulletNode = findParentNode(this.selection$FromPos, [
+                    NodeTypes.ORDERED_LIST,
+                    NodeTypes.BULLET_LIST
+                ]);
+                const { childCount } = closestOrderedOrBulletNode;
+                if (childCount > 1) {
+                    //delete only the list item selected
+                    this.editor.chain().deleteNode(NodeTypes.LIST_ITEM).blur().run();
+                } else {
+                    // delete the order/bullet node
+                    this.editor.chain().deleteNode(closestOrderedOrBulletNode.type).blur().run();
+                }
+                break;
+            default:
+                this.editor.chain().deleteNode(selectionParentNode.type).blur().run();
+                break;
         }
     }
 }
