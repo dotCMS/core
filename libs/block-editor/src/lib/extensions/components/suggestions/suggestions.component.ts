@@ -53,6 +53,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
     @Input() noResultsMessage = 'No Results';
     @Input() isOpen = false;
     @Input() currentLanguage = DEFAULT_LANG_ID;
+    @Input() allowedContentTypes = '';
 
     @Output() clearFilter: EventEmitter<string> = new EventEmitter<string>();
 
@@ -240,7 +241,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
 
     private loadContentTypes(filter = '') {
         this.suggestionsService
-            .getContentTypes(filter)
+            .getContentTypes(filter, this.allowedContentTypes)
             .pipe(
                 map((items) => {
                     return items.map((item) => {

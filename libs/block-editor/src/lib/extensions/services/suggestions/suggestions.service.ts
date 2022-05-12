@@ -18,10 +18,16 @@ export class SuggestionsService {
         return headers;
     }
 
-    getContentTypes(filter = ''): Observable<DotCMSContentType[]> {
+    getContentTypes(filter = '', allowedTypes = ''): Observable<DotCMSContentType[]> {
         return this.http
-            .get(`/api/v1/contenttype?filter=${filter}&orderby=name&direction=ASC&per_page=40`, {
-                headers: this.defaultHeaders
+            .post(`/api/v1/contenttype/_filter`, {
+                filter: {
+                    types: allowedTypes,
+                    query: filter
+                },
+                orderBy: 'name',
+                direction: 'ASC',
+                perPage: 40
             })
             .pipe(pluck('entity'));
     }

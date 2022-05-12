@@ -33,6 +33,7 @@ function toTitleCase(str) {
 })
 export class DotBlockEditorComponent implements OnInit {
     @Input() lang = DEFAULT_LANG_ID;
+    @Input() allowedContentTypes = '';
 
     editor: Editor;
 
@@ -71,7 +72,12 @@ export class DotBlockEditorComponent implements OnInit {
         this.setEditorStorageData();
     }
 
+    // Here we create the dotConfig name space
+    // to storage information in the editor.
     private setEditorStorageData() {
-        this.editor.storage.dotConfig = { lang: this.lang };
+        this.editor.storage.dotConfig = {
+            lang: this.lang,
+            allowedContentTypes: this.allowedContentTypes
+        };
     }
 }
