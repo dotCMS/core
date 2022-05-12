@@ -376,14 +376,14 @@ public class DotWebdavHelper {
 		return f;
 	}
 
-	public String getAssetName(final IFileAsset fileAsset){
+	public String getAssetName(final Contentlet fileAsset){
 		try{
 			final Identifier identifier = APILocator.getIdentifierAPI().find(fileAsset.getIdentifier());
 			return identifier.getAssetName();
 		}catch (Exception e){
 			Logger.error( DotWebdavHelper.class," Failed to obtain file-asset name ", e);
 		}
-		return fileAsset.getFileName();
+		return fileAsset.getStringProperty(FileAssetAPI.FILE_NAME_FIELD);
 	}
 	@CloseDBIfOpened
 	public Folder loadFolder(String url,User user) throws IOException{
@@ -577,12 +577,12 @@ public class DotWebdavHelper {
 				copyFolderToTemp(fr.getFolder(), tf, user, fr.getFolder().getName(),isAutoPub, lang);
 			}else{
 				FileResourceImpl fr = (FileResourceImpl)resource;
-				copyFileToTemp(fr.getFile(), tf);
+				copyFileToTemp((Contentlet)fr.getFile(), tf);
 			}
 		}
 	}
 
-	public File copyFileToTemp(IFileAsset file, File tempFolder) throws IOException{
+	public File copyFileToTemp(Contentlet file, File tempFolder) throws IOException{
 		File f = null;
 
 		f = ((Contentlet)file).getBinary(FileAssetAPI.BINARY_FIELD);

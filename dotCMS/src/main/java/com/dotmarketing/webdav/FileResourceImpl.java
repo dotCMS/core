@@ -1,5 +1,12 @@
 package com.dotmarketing.webdav;
 
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.util.Date;
+import java.util.Map;
 import com.dotcms.repackage.com.bradmcevoy.http.Auth;
 import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
 import com.dotcms.repackage.com.bradmcevoy.http.FileItem;
@@ -13,42 +20,36 @@ import com.dotcms.repackage.com.bradmcevoy.http.LockableResource;
 import com.dotcms.repackage.com.bradmcevoy.http.Range;
 import com.dotcms.repackage.com.bradmcevoy.http.Request;
 import com.dotcms.repackage.com.bradmcevoy.http.Request.Method;
+import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.util.Date;
-import java.util.Map;
+import io.vavr.control.Try;
 
 public class FileResourceImpl implements FileResource, LockableResource {
 
-	private static final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
-	private DotWebdavHelper dotDavHelper;
-	private IFileAsset file;
-	String path;
-	private boolean isAutoPub = false;
-	private PermissionAPI perAPI;
 
+	private final static DotWebdavHelper dotDavHelper = new DotWebdavHelper();
+	private final Contentlet file;
+	private final String  path;
+	private boolean isAutoPub = false;
+	private final static PermissionAPI perAPI= APILocator.getPermissionAPI();
+	private final Metadata metadata;
+	
 	public FileResourceImpl(IFileAsset file, String path) {
-		perAPI = APILocator.getPermissionAPI();
-		dotDavHelper = new DotWebdavHelper();
+
 		this.isAutoPub = dotDavHelper.isAutoPub(path);
 		this.path = path;
-		this.file = file;
-
+		this.file = (Contentlet) file;
+		this.metadata = Try.of(()-> ((Contentlet) file).getBinaryMetadata(FileAssetAPI.BINARY_FIELD)).getOrElseThrow(DotRuntimeException::new);
 	}
 
 	public void copyTo(CollectionResource collRes, String name) throws DotRuntimeException {
@@ -111,10 +112,9 @@ public class FileResourceImpl implements FileResource, LockableResource {
 	}
 
 	public Long getContentLength() {
-		java.io.File workingFile;
+
 		try {
-			workingFile = ((Contentlet)file).getBinary(FileAssetAPI.BINARY_FIELD);
-			return workingFile.length();
+			return (long) metadata.getLength();
 		} catch (Exception e) {
 			Logger.warnAndDebug(this.getClass(), "Webdav unable to read file length for " + this.path,e);
 			return new Long(0);
@@ -122,7 +122,7 @@ public class FileResourceImpl implements FileResource, LockableResource {
 	}
 
 	public String getContentType(String accepts) {
-		return fileAssetAPI.getMimeType(file.getUnderlyingFileName());
+		return metadata.getContentType();
 	}
 
 	public Date getModifiedDate() {
@@ -222,21 +222,16 @@ public class FileResourceImpl implements FileResource, LockableResource {
 		return 0;
 	}
 
-	public IFileAsset getFile() {
+	public Contentlet getFile() {
 		return file;
 	}
 
-	public void setFile(FileAsset file) {
-		this.file = file;
-	}
 
 	public String getPath() {
 		return path;
 	}
 
-	public void setPath(String path) {
-		this.path = path;
-	}
+
 
 	public LockResult lock(LockTimeout timeout, LockInfo lockInfo) {
 		return dotDavHelper.lock(timeout, lockInfo, getUniqueId());

@@ -27,6 +27,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.CompanyUtils;
 import com.dotmarketing.util.Logger;
@@ -131,7 +132,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 					return resource;
 				}
 			}else{
-				final String name = ((FileResourceImpl)resource).getFile().getFileName();
+				final String name = ((FileResourceImpl)resource).getFile().getStringProperty(FileAssetAPI.FILE_NAME_FIELD);
 				if(name.equalsIgnoreCase(childName)){
 					return resource;
 				}
