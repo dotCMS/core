@@ -25,6 +25,7 @@ import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -51,6 +52,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Implementation class for the {@link ContainerFactory}. This class provides database-level access to information
+ * related to Containers in the current dotCMS content repository.
+ *
+ * @author root
+ * @since Mar 22nd, 2012
+ */
 public class ContainerFactoryImpl implements ContainerFactory {
 
 	static ContainerCache  containerCache       = CacheLocator.getContainerCache();
@@ -174,6 +182,21 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	public void deleteContainerByInode(String containerInode) throws DotDataException {
 		deleteContainerInDB(containerInode);
 		deleteInodeInDB(containerInode);
+	}
+
+	@Override
+	public List<ContainerStructure> getRelatedContainerContentTypes(final Container container) throws DotHibernateException {
+		final ImmutableList.Builder<ContainerStructure> builder =
+				new ImmutableList.Builder<>();
+		final HibernateUtil dh = new HibernateUtil(ContainerStructure.class);
+		dh.setSQLQuery("select {container_structures.*} from container_structures " +
+				"where container_structures.container_id = ? " +
+				"and container_structures.container_inode = ?");
+		dh.setParam(container.getIdentifier());
+		dh.setParam(container.getInode());
+		builder.addAll(dh.list());
+		final List<ContainerStructure> containerStructures = builder.build();
+		return containerStructures;
 	}
 
 	private void deleteInodeInDB(final String inode) throws DotDataException{

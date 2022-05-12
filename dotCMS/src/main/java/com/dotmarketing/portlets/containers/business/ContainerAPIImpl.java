@@ -32,6 +32,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -42,6 +43,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.net.URL;
 import java.util.*;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Implementation class of the {@link ContainerAPI}.
@@ -561,8 +563,23 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 
 		return containerStructures;
 	}
-	
-    @CloseDBIfOpened
+
+	@CloseDBIfOpened
+	@Override
+	public List<ContainerStructure> getRelatedContainerContentTypes(final Container container) throws
+			DotHibernateException {
+		List<ContainerStructure> relatedContainerContentTypes =
+				containerFactory.getRelatedContainerContentTypes(container);
+		relatedContainerContentTypes = relatedContainerContentTypes.stream().map((cs) -> {
+			if (cs.getCode() == null) {
+				cs.setCode(StringPool.BLANK);
+			}
+			return cs;
+		}).collect(Collectors.toList());
+		return relatedContainerContentTypes;
+	}
+
+	@CloseDBIfOpened
     @Override
     public List<ContentType> getContentTypesInContainer(final Container container)
 			throws DotStateException, DotDataException, DotSecurityException {

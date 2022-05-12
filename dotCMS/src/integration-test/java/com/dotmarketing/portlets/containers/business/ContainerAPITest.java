@@ -19,10 +19,9 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
+import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.apache.commons.beanutils.BeanUtils;
 import org.junit.Test;
 
