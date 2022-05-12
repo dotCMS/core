@@ -18,7 +18,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.IdentifierCache;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.common.db.DotConnect;
@@ -26,12 +25,12 @@ import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.ContainerVersionInfo;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -39,7 +38,6 @@ import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
@@ -54,29 +52,35 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Implementation class for the {@link ContainerFactory}. This class provides database-level access to information
+ * related to Containers in the current dotCMS content repository.
+ *
+ * @author root
+ * @since Mar 22nd, 2012
+ */
 public class ContainerFactoryImpl implements ContainerFactory {
 
-	static IdentifierCache identifierCache      = CacheLocator.getIdentifierCache();
 	static ContainerCache  containerCache       = CacheLocator.getContainerCache();
 	private final PermissionAPI  permissionAPI  = APILocator.getPermissionAPI();
 	private final FolderAPI      folderAPI      = APILocator.getFolderAPI();
     private final FileAssetAPI   fileAssetAPI   = APILocator.getFileAssetAPI();
     private final HostAPI        hostAPI        = APILocator.getHostAPI();
 	private final IdentifierAPI  identifierAPI  = APILocator.getIdentifierAPI();
-	private final ContentletAPI  contentletAPI  = APILocator.getContentletAPI();
 
-
+	@Override
 	public void save(final Container container) throws DotDataException {
 		HibernateUtil.save(container);
 		containerCache.remove(container);
 	}
 
+	@Override
 	public void save(final Container container, final String existingId) throws DotDataException {
 		HibernateUtil.saveWithPrimaryKey(container, existingId);
 		containerCache.remove(container);
 	}
 
-	@SuppressWarnings("unchecked")
+	@Override
 	public List<Container> findContainersUnder(final Host parentPermissionable) throws DotDataException {
 
 		final List<Container> containers = new ArrayList<>();
@@ -109,7 +113,6 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public List<Container> findAllContainers(final Host currentHost) throws DotDataException {
 
 		final List<Container> containers = new ArrayList<>();
@@ -150,7 +153,6 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	}
 
 	@Override
-    @SuppressWarnings("unchecked")
     public Container find(final String inode) throws DotDataException, DotSecurityException {
       Container container = CacheLocator.getContainerCache().get(inode);
       //If it is not in cache.
@@ -180,6 +182,21 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	public void deleteContainerByInode(String containerInode) throws DotDataException {
 		deleteContainerInDB(containerInode);
 		deleteInodeInDB(containerInode);
+	}
+
+	@Override
+	public List<ContainerStructure> getRelatedContainerContentTypes(final Container container) throws DotHibernateException {
+		final ImmutableList.Builder<ContainerStructure> builder =
+				new ImmutableList.Builder<>();
+		final HibernateUtil dh = new HibernateUtil(ContainerStructure.class);
+		dh.setSQLQuery("select {container_structures.*} from container_structures " +
+				"where container_structures.container_id = ? " +
+				"and container_structures.container_inode = ?");
+		dh.setParam(container.getIdentifier());
+		dh.setParam(container.getInode());
+		builder.addAll(dh.list());
+		final List<ContainerStructure> containerStructures = builder.build();
+		return containerStructures;
 	}
 
 	private void deleteInodeInDB(final String inode) throws DotDataException{
@@ -297,7 +314,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		return container;
 	}
 
-	@Override
+    @Override
 	public Container getContainerByFolder(final Host host, final Folder folder, final User user, final boolean showLive, final boolean includeHostOnPath) throws DotSecurityException, DotDataException {
 
         if (!this.isValidContainerPath (folder)) {
@@ -343,6 +360,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
         return container;
     }
+
     /*
     * Finds the containers on the file system, base on a folder
     * showLive in true means get just container published.
@@ -379,26 +397,39 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 	@Override
 	public List<Container> findContainers(final User user, final boolean includeArchived,
-			final Map<String, Object> params, final String hostId,
+			final Map<String, Object> params, final String siteId,
 			final String inode, final String identifier, final String parent,
 			final int offset, final int limit, final String orderByParam) throws DotSecurityException,
 			DotDataException {
+		final ContainerAPI.SearchParams searchParams = ContainerAPI.SearchParams.newBuilder()
+				.includeArchived(includeArchived)
+				.filteringCriterion(params)
+				.siteId(siteId)
+				.containerInode(inode)
+				.containerIdentifier(identifier)
+				.contentTypeIdOrVar(parent)
+				.offset(offset)
+				.limit(limit)
+				.orderBy(orderByParam).build();
+		return this.findContainers(user, searchParams);
+	}
 
+	@Override
+	public List<Container> findContainers(final User user, final ContainerAPI.SearchParams searchParams) throws DotSecurityException, DotDataException {
 		final ContentTypeAPI contentTypeAPI        = APILocator.getContentTypeAPI(user);
 		final StringBuffer conditionBuffer         = new StringBuffer();
-		final List<Object> paramValues 			   = this.getConditionParametersAndBuildConditionQuery(params, conditionBuffer);
+		final List<Object> paramValues 			   = this.getConditionParametersAndBuildConditionQuery(searchParams.filteringCriteria(), conditionBuffer);
 		final PaginatedArrayList<Container> assets = new PaginatedArrayList<>();
 		final List<Permissionable> toReturn        = new ArrayList<>();
 		int     internalLimit                      = 500;
 		int     internalOffset                     = 0;
 		boolean done                               = false;
-		String  orderBy                            = SQLUtil.sanitizeSortBy(orderByParam) ;
+		String  orderBy                            = SQLUtil.sanitizeSortBy(searchParams.orderBy()) ;
 		final StringBuilder query 				   = new StringBuilder().append("select asset.*, inode.* from ")
 				.append(Type.CONTAINERS.getTableName()).append(" asset, inode, identifier, ")
 				.append(Type.CONTAINERS.getVersionTableName()).append(" vinfo");
 
-		this.buildFindContainersQuery(includeArchived, hostId, inode,
-				identifier, parent, contentTypeAPI, query);
+		this.buildFindContainersQuery(searchParams, contentTypeAPI, query);
 
 		orderBy = UtilMethods.isEmpty(orderBy) ? "mod_date desc" : orderBy;
 
@@ -419,16 +450,15 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				}
 			}
 
-			// adding the container from the site browser
-			toReturn.addAll(this.findFolderAssetContainers(user, hostId, orderByParam,
-					includeArchived, Optional.ofNullable(parent), params != null? params.values(): Collections.emptyList()));
+			// Adding Containers as Files located in the /application/containers/ folder
+			toReturn.addAll(this.findFolderAssetContainers(user, searchParams));
 
 			while(!done) {
 
 				dotConnect.setStartRow(internalOffset).setMaxRows(internalLimit);
 				resultList = TransformerLocator.createContainerTransformer(dotConnect.loadObjectResults()).asList();
 				toReturn.addAll(this.permissionAPI.filterCollection(resultList, PermissionAPI.PERMISSION_READ, false, user));
-				if(countLimit > 0 && toReturn.size() >= countLimit + offset) {
+				if (countLimit > 0 && toReturn.size() >= countLimit + searchParams.offset()) {
 					done = true;
 				} else if(resultList.size() < internalLimit) {
 					done = true;
@@ -437,10 +467,11 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				internalOffset += internalLimit;
 			}
 
-			getPaginatedAssets(offset, limit, assets, toReturn);
-		} catch (Exception e) {
-			Logger.error(ContainerFactoryImpl.class, "findContainers failed:" + e, e);
-			throw new DotRuntimeException(e.toString());
+			getPaginatedAssets(searchParams.offset(), searchParams.limit(), assets, toReturn);
+		} catch (final Exception e) {
+			Logger.error(ContainerFactoryImpl.class,
+					String.format("An error occurred when finding Containers [ %s ]: '%s'", searchParams, e), e);
+			throw new DotRuntimeException(String.format("An error occurred when finding Containers: '%s'", e));
 		}
 
 		return assets;
@@ -498,34 +529,32 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	}
 
 	/**
-	 * Finds all file base container for an user. Also order by orderByParam values (title asc, title desc, modDate asc, modDate desc)
-	 * @param user {@link User} to check the permissions
-	 * @param hostId {@link String} host id to find the containers
-	 * @param orderByParam {@link String} order by parameter
-	 * @param includeArchived {@link Boolean} if wants to include archive containers
+	 * Finds all File-bases Containers for a given User and sorts the results based on the specified search parameter.
+	 *
+	 * @param user         The {@link User} performing this action.
+	 * @param searchParams Query parameters used to filter the expected Containers.
+	 *
+	 * @return The sorted list of {@link Container} objects based on the search parameters.
 	 **/
-	private Collection<? extends Permissionable> findFolderAssetContainers(final User user, final String hostId,
-																		   final String orderByParam, final boolean includeArchived,
-																		   final Optional<String> contentTypeId,
-																		   final Collection<Object> filterByNameCollection) {
+	private Collection<? extends Permissionable> findFolderAssetContainers(final User user, final ContainerAPI.SearchParams searchParams) {
 
 		try {
 
-			final Host host     			 = this.hostAPI.find(hostId, user, false);
-			final List<Folder> subFolders    = this.findContainersAssetsByHost(host, user, includeArchived);
-			List<Container> containers = this.getFolderContainers(host, user, subFolders, false);
+			final Host site     			 = this.hostAPI.find(searchParams.siteId(), user, false);
+			final List<Folder> subFolders    = this.findContainersAssetsByHost(site, user, searchParams.includeArchived());
+			List<Container> containers = this.getFolderContainers(site, user, subFolders, false);
 
-			if (contentTypeId.isPresent() && UtilMethods.isSet(contentTypeId.get())) {
+			if (UtilMethods.isSet(searchParams.contentTypeIdOrVar())) {
 
-				containers = this.filterFileAssetContainersByContentType(containers, contentTypeId.get(), user);
+				containers = this.filterFileAssetContainersByContentType(containers, searchParams.contentTypeIdOrVar(), user);
 
 			}
 
-			if (UtilMethods.isSet(filterByNameCollection)) {
+			if (UtilMethods.isSet(searchParams.filteringCriteria())) {
 
 				containers = containers.stream().filter(container -> {
 
-					for (final Object name : filterByNameCollection) {
+					for (final Object name : searchParams.filteringCriteria().values()) {
 
 						if (container.getName().toLowerCase().contains(name.toString())) {
 							return true;
@@ -535,8 +564,8 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				}).collect(Collectors.toList());
 			}
 
-			if (UtilMethods.isSet(orderByParam)) {
-				switch (orderByParam.toLowerCase()) {
+			if (UtilMethods.isSet(searchParams.orderBy())) {
+				switch (searchParams.orderBy().toLowerCase()) {
 					case "title asc":
 						containers.sort(Comparator.comparing(Container::getTitle));
 					break;
@@ -556,9 +585,9 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			}
 
 			return containers;
-		} catch (Exception e) {
-
-			Logger.error(this, e.getMessage(), e);
+		} catch (final Exception e) {
+			Logger.warn(this, String.format("An error occurred when finding File-based Containers for Site '%s': %s",
+					searchParams.siteId(), e.getMessage()), e);
 			return Collections.emptyList();
 		}
 	}
@@ -716,14 +745,23 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		return containers;
 	}
 
-	private void buildFindContainersQuery(final boolean includeArchived, final String hostId, final String inode,
-										  final String identifier, final String parent, final ContentTypeAPI contentTypeAPI,
+	/**
+	 * Builds the main part of the SQL query that will be used to find Containers in the dotCMS repository.
+	 *
+	 * @param searchParams   User-specified search criteria.
+	 * @param contentTypeAPI An instance of the {@link ContentTypeAPI}.
+	 * @param query          The SQL query being built.
+	 *
+	 * @throws DotSecurityException The user cannot perform this action.
+	 * @throws DotDataException     An error occurred when interacting with the data source.
+	 */
+	private void buildFindContainersQuery(final ContainerAPI.SearchParams searchParams, final ContentTypeAPI contentTypeAPI,
 										  final StringBuilder query) throws DotSecurityException, DotDataException {
 
-		if(UtilMethods.isSet(parent)) {
+		if(UtilMethods.isSet(searchParams.contentTypeIdOrVar())) {
 
 			//Search for the given ContentType inode
-			final ContentType foundContentType = contentTypeAPI.find(parent);
+			final ContentType foundContentType = contentTypeAPI.find(searchParams.contentTypeIdOrVar());
 
 			if (null != foundContentType && InodeUtils.isSet(foundContentType.inode())) {
 				query.append(
@@ -731,13 +769,13 @@ public class ContainerFactoryImpl implements ContainerFactory {
 						.append(
 								" and exists (select * from container_structures cs where cs.container_id = asset.identifier")
 						.append(" and cs.structure_id = '")
-						.append(parent)
+						.append(searchParams.contentTypeIdOrVar())
 						.append("' ) ");
 			}else {
 				query.append(
 						" ,tree where asset.inode = inode.inode and asset.identifier = identifier.id")
 						.append(" and tree.parent = '")
-						.append(parent)
+						.append(searchParams.contentTypeIdOrVar())
 						.append("' and tree.child=asset.inode");
 			}
 		} else {
@@ -746,33 +784,44 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 		query.append(" and vinfo.identifier=identifier.id and vinfo.working_inode=asset.inode ");
 
-		if(!includeArchived) {
+		if(!searchParams.includeArchived()) {
 			query.append(" and vinfo.deleted=");
 			query.append(DbConnectionFactory.getDBFalse());
 		}
 
-		if(UtilMethods.isSet(hostId)) {
+		if(UtilMethods.isSet(searchParams.siteId())) {
 			query.append(" and identifier.host_inode = '");
-			query.append(hostId).append('\'');
+			query.append(searchParams.siteId()).append('\'');
 		}
 
-		if(UtilMethods.isSet(inode)) {
+		if(UtilMethods.isSet(searchParams.containerInode())) {
 			query.append(" and asset.inode = '");
-			query.append(inode).append('\'');
+			query.append(searchParams.containerInode()).append('\'');
 		}
 
-		if(UtilMethods.isSet(identifier)) {
+		if(UtilMethods.isSet(searchParams.containerIdentifier())) {
 			query.append(" and asset.identifier = '");
-			query.append(identifier);
+			query.append(searchParams.containerIdentifier());
 			query.append('\'');
 		}
 	}
 
+	/**
+	 * Traverses the map of optional query parameters that are used to search for Containers in the system. Such
+	 * parameters are completely optional, and are simply meant to narrow down potential results. You can take a look at
+	 * the database definition of the {@code dot_containers} table in order to determine what specific columns can be
+	 * queried.
+	 *
+	 * @param params               User-specified search parameters.
+	 * @param conditionQueryBuffer The SQL query that is being put together based on the different search parameters.
+	 *
+	 * @return The values for each specific search parameter.
+	 */
 	private List<Object> getConditionParametersAndBuildConditionQuery(final Map<String, Object> params, final StringBuffer conditionQueryBuffer) {
 
 		List<Object> paramValues = null;
 
-		if(params!=null && params.size()>0) {
+		if (params != null && !params.isEmpty()) {
 
 			conditionQueryBuffer.append(" and (");
 			paramValues = new ArrayList<>();
@@ -792,6 +841,21 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		return paramValues;
 	}
 
+	/**
+	 * Generates the appropriate SQL condition based on the nature of the specified search parameter. In summary:
+	 * <ul>
+	 *     <li>For String parameters -- except for {@code identifier} and {@code inode} -- the query will use the
+	 *     {@code LIKE} operator to compare the existing value.</li>
+	 *     <li>For any other data types, the {@code "="} operator will be used.</li>
+	 * </ul>
+	 *
+	 * @param entry                The search parameter in the form of key/value, represented as an {@link Map.Entry}
+	 *                             object.
+	 * @param paramValues          The list of String parameters, which require the appended {@code "%"} signs.
+	 * @param conditionQueryBuffer The resulting SQL query.
+	 * @param prefix               The connecting command between every SQL condition. For example, the {@code OR} or
+	 *                             {@code AND} commands from SQL.
+	 */
 	private void buildConditionParameterAndBuildConditionQuery (final Map.Entry<String, Object> entry,
 																final List<Object> paramValues,
 																final StringBuffer conditionQueryBuffer,
@@ -899,8 +963,6 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		return Collections.emptyList();
 	}
 
-
-
 	/**
 	 * Finds all container that have the contentTypeVarNameFileName as a vtl in their folders
 	 * (reference to the content type for the file asset containers)
@@ -979,6 +1041,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	 * @throws DotStateException There is a data inconsistency
 	 * @throws DotSecurityException 
 	 */
+	@Override
 	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException{
 		DotConnect dc = new DotConnect();
         StringBuilder query = new StringBuilder();
@@ -1018,4 +1081,5 @@ public class ContainerFactoryImpl implements ContainerFactory {
             throw new DotDataException(e.getMessage(), e);
         }
 	}
+
 }

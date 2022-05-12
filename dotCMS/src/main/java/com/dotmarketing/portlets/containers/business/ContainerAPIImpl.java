@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.containers.business;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.config.DotInitializer;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -27,6 +28,7 @@ import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
+import com.dotmarketing.portlets.containers.model.SystemContainer;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.ApplicationContainerFolderListener;
@@ -35,17 +37,17 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.Constants;
-import com.dotmarketing.util.HostUtil;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import org.apache.commons.io.IOUtils;
 
 import javax.servlet.http.HttpServletRequest;
+import java.net.URL;
 import java.util.*;
 import java.util.function.Supplier;
 
@@ -53,6 +55,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_EDIT;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
+import java.util.stream.Collectors;
 
 /**
  * Implementation class of the {@link ContainerAPI}.
@@ -62,11 +65,15 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
  * @since Mar 22, 2012
  *
  */
-public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
+public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, DotInitializer {
+
 	protected PermissionAPI    permissionAPI;
 	protected ContainerFactory containerFactory;
 	protected HostAPI          hostAPI;
 	protected FolderAPI        folderAPI;
+	protected Lazy<Container> systemContainer = Lazy.of(() -> new SystemContainer());
+
+	private static final String DEFAULT_CONTAINER_FILE_NAME = "com/dotmarketing/portlets/containers/business/default_container.vtl";
 
 	/**
 	 * Constructor
@@ -79,18 +86,60 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
         this.folderAPI        = APILocator.getFolderAPI();
 	}
 
+	@Override
+	public void init() {
+		Logger.debug(this, ()-> "Initializing the System Container");
+		this.systemContainer.get().setCode(codeFromFile());
+	}
+
+	/**
+	 * Reads the Velocity code of the System Container from the appropriate {@link #DEFAULT_CONTAINER_FILE_NAME} file.
+	 * This is the boilerplate that will be used to render any type of content that is added to the System Container.
+	 *
+	 * @return The Velocity code for the System Container.
+	 */
+	private String codeFromFile() {
+		final ClassLoader loader = Thread.currentThread().getContextClassLoader();
+		final URL resourceURL = loader.getResource(DEFAULT_CONTAINER_FILE_NAME);
+		try {
+			Logger.debug(this, ()-> "Reading System Template default code.");
+			return IOUtils.toString(resourceURL, UtilMethods.getCharsetConfiguration());
+		} catch (final Exception e) {
+			Logger.error(this,
+					String.format("An error occurred when reading System Container code: %s", e.getMessage()), e);
+			return "<h1>$!{title}</h1>\n" +
+					"#set($contentlet = $dotcontent.find($!{ContentIdentifier}))\n" +
+					"#if (\"TITLE_IMAGE_NOT_FOUND\" != $!{contentlet.titleImage})\n" +
+					"<img src=\"/contentAsset/raw-data/$!{ContentIdentifier}/$!{contentlet.titleImage}\">\n" +
+					"#end";
+		}
+	}
+
+	@Override
+	public Container systemContainer() {
+		return this.systemContainer.get();
+	}
+
 	@WrapInTransaction
 	@Override
 	public Container copy(final Container source, Host destination, final User user, final boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
-
+		if (Container.SYSTEM_CONTAINER.equals(source.getIdentifier())) {
+			final String errorMsg = "System Container cannot be copied.";
+			Logger.error(this, errorMsg);
+			throw new IllegalArgumentException(errorMsg);
+		}
 		if (!permissionAPI.doesUserHavePermission(source, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-			throw new DotSecurityException("You don't have permission to read the source container.");
+			throw new DotSecurityException(
+					String.format("User '%s' does not have READ permission on source Container '%s' [%s]",
+							user.getUserId(), source.getName(), source.getIdentifier()));
 		}
 
 		if (!permissionAPI.doesUserHavePermission(destination, PermissionAPI.PERMISSION_WRITE, user,
 				respectFrontendRoles)) {
-			throw new DotSecurityException("You don't have permission to wirte in the destination folder.");
+			throw new DotSecurityException(
+					String.format("User '%s' does not have WRITE permission on destination Container '%s' [%s]",
+							user.getUserId(), destination.getName(), destination.getIdentifier()));
 		}
 
 		//gets the new information for the template from the request object
@@ -177,6 +226,10 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	 * @throws DotDataException
 	 */
 	private void save(final Container container) throws DotDataException {
+		if (Container.SYSTEM_CONTAINER.equals(container.getIdentifier())) {
+			Logger.debug(this, "System Container cannot be saved.");
+			return;
+		}
 		containerFactory.save(container);
 	}
 
@@ -187,6 +240,10 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	 * @throws DotDataException
 	 */
 	private void save(final Container container, final String existingId) throws DotDataException {
+		if (Container.SYSTEM_CONTAINER.equals(container.getIdentifier())) {
+			Logger.debug(this, "System Container cannot be saved/updated.");
+			return;
+		}
 		containerFactory.save(container, existingId);
 	}
 
@@ -220,7 +277,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 			throws DotDataException {
 
 		List<Container> containers;
-		String temp = new String(containerTitle);
+		String temp = containerTitle;
 		String result = "";
 		final DotConnect dc = new DotConnect();
 		String sql = "SELECT " + Inode.Type.CONTAINERS.getTableName() + ".*, dot_containers_1_.* from "
@@ -261,7 +318,9 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
     @Override
     @SuppressWarnings("unchecked")
     public Container find(final String inode, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-
+		if (Container.SYSTEM_CONTAINER.equals(inode)) {
+			return this.systemContainer();
+		}
 	      final  Identifier  identifier = Try.of(()->APILocator.getIdentifierAPI().findFromInode(inode)).getOrNull();
         final Container container = this.isContainerFile(identifier) ?
 				this.getWorkingContainerByFolderPath(identifier.getParentPath(), identifier.getHostId(), user, respectFrontendRoles):
@@ -271,7 +330,9 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
             return null;
         }
         if (!permissionAPI.doesUserHavePermission(container, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-            throw new DotSecurityException("You don't have permission to read the source file.");
+			throw new DotSecurityException(
+					String.format("User '%s' does not have READ permission on Container with Inode '%s'",
+							user.getUserId(), inode));
         }
 
         return container;
@@ -281,7 +342,9 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	@Override
 	@SuppressWarnings("unchecked")
 	public Container getWorkingContainerById(final String identifierParameter, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-
+		if (Container.SYSTEM_CONTAINER.equals(identifierParameter)) {
+			return this.systemContainer();
+		}
         final  Identifier  identifier = APILocator.getIdentifierAPI().find(identifierParameter);
 
         if (null != identifier && UtilMethods.isSet(identifier.getId())) {
@@ -345,6 +408,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	    return this.containerFactory.getWorkingContainerByFolderPath(path, host, user, respectFrontEndPermissions);
     }
 
+
 	@CloseDBIfOpened
 	@Override
 	public Container getWorkingArchiveContainerByFolderPath(final String path, final Host host, final User user,
@@ -387,7 +451,9 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
      * @throws DotSecurityException
      */
     private Container getWorkingVersionInfoContainerById(final String containerId, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-
+		if (Container.SYSTEM_CONTAINER.equals(containerId)) {
+			return this.systemContainer();
+		}
         final  VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(containerId);
         return info !=null? find(info.getWorkingInode(), user, respectFrontendRoles): null;
     }
@@ -395,7 +461,9 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	@Override
 	@SuppressWarnings("unchecked")
 	public Container getLiveContainerById(final String containerId, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-
+		if (Container.SYSTEM_CONTAINER.equals(containerId)) {
+			return this.systemContainer();
+		}
 		final  Identifier  identifier = APILocator.getIdentifierAPI().find(containerId);
 
 		if (null != identifier && UtilMethods.isSet(identifier.getId())) {
@@ -435,7 +503,9 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
      * @throws DotSecurityException
      */
 	private Container getLiveVersionInfoContainerById(final String containerId, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-
+		if (Container.SYSTEM_CONTAINER.equals(containerId)) {
+			return this.systemContainer();
+		}
 		final VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(containerId);
 		return (info !=null && UtilMethods.isSet(info.getLiveInode())) ? find(info.getLiveInode(), user, respectFrontendRoles) : null;
 	}
@@ -469,19 +539,16 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	@Override
 	public void saveContainerStructures(final List<ContainerStructure> containerStructureList) throws DotStateException, DotDataException, DotSecurityException  {
 	    
-		if(!containerStructureList.isEmpty()) {
-
+		if (null != containerStructureList && !containerStructureList.isEmpty()) {
+			//Get one of the relations to get the container id.
+			final String containerIdentifier = containerStructureList.get(0).getContainerId();
+			final String containerInode = containerStructureList.get(0).getContainerInode();
 			try {
-
-				//Get one of the relations to get the container id.
-				String containerIdentifier = containerStructureList.get(0).getContainerId();
-                String containerInode = containerStructureList.get(0).getContainerInode();
-
 				HibernateUtil.delete("from container_structures in class com.dotmarketing.beans.ContainerStructure " +
                         "where container_id = '" + containerIdentifier + "'" +
                         "and container_inode = '" + containerInode+ "'");
 
-				for(ContainerStructure containerStructure : containerStructureList){
+				for (final ContainerStructure containerStructure : containerStructureList){
 					HibernateUtil.save(containerStructure);
 				}
 				
@@ -489,9 +556,12 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
                 final VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(containerIdentifier);
 				CacheLocator.getContainerCache().remove(info);
 
-			} catch(DotHibernateException e){
-				throw new DotDataException(e.getMessage(),e);
-
+			} catch (final DotHibernateException e) {
+				final String errorMsg = String.format(
+						"An error occurred when saving Container-to-Content Type associations for Container '%s': %s",
+						containerIdentifier, e.getMessage());
+				Logger.error(this, errorMsg, e);
+				throw new DotDataException(errorMsg, e);
 			}
 		}
 		
@@ -500,7 +570,6 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	@CloseDBIfOpened
 	@Override
 	@SuppressWarnings({ "unchecked" })
-
 	public List<ContainerStructure> getContainerStructures(final Container container) throws DotStateException, DotDataException, DotSecurityException  {
 
 		final ContainerStructureFinderStrategyResolver resolver   =
@@ -515,8 +584,23 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 
 		return containerStructures;
 	}
-	
-    @CloseDBIfOpened
+
+	@CloseDBIfOpened
+	@Override
+	public List<ContainerStructure> getRelatedContainerContentTypes(final Container container) throws
+			DotHibernateException {
+		List<ContainerStructure> relatedContainerContentTypes =
+				containerFactory.getRelatedContainerContentTypes(container);
+		relatedContainerContentTypes = relatedContainerContentTypes.stream().map((cs) -> {
+			if (cs.getCode() == null) {
+				cs.setCode(StringPool.BLANK);
+			}
+			return cs;
+		}).collect(Collectors.toList());
+		return relatedContainerContentTypes;
+	}
+
+	@CloseDBIfOpened
     @Override
     public List<ContentType> getContentTypesInContainer(final Container container)
 			throws DotStateException, DotDataException, DotSecurityException {
@@ -582,6 +666,9 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 
 					contentTypeList.add(type);
 				} catch (DotSecurityException e) {
+					Logger.debug(this, () -> String.format(
+							"An error occurred when User '%s' tried to check information from Content Type '%s': %s",
+							containerStructure.getStructureId(), container.getIdentifier()));
 					continue;
 				}
 			}
@@ -591,6 +678,9 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 					.collect(CollectionsUtils.toImmutableList());
 
 		} catch (DotSecurityException e) {
+			Logger.debug(this, () -> String.format(
+					"An error occurred when User '%s' tried to get the Content Types from Container '%s' [%s]: %s",
+					user.getUserId(), container.getName(), container.getIdentifier()));
 			return Collections.EMPTY_LIST;
 		}
 	}
@@ -611,6 +701,10 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	@Override
 	@SuppressWarnings("unchecked")
 	public Container save(Container container, List<ContainerStructure> containerStructureList, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		if (Container.SYSTEM_CONTAINER.equals(container.getIdentifier())) {
+			Logger.debug(this, "System Container cannot be saved/updated.");
+			throw new IllegalArgumentException("System Container and its associated data cannot be saved.");
+		}
 		Container currentContainer = null;
 		List<Template> currentTemplates = null;
 		Identifier identifier = null;
@@ -642,19 +736,24 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		}
 
 		if ((identifier != null && !existingInode)  && !permissionAPI.doesUserHavePermission(currentContainer, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
-			throw new DotSecurityException("You don't have permission to write the container.");
+			throw new DotSecurityException(
+					String.format("User '%s' does not have WRITE permission on Container '%s'", user.getUserId(),
+							container.getName()));
 		}
 
 		for (ContainerStructure cs : containerStructureList) {
 			Structure st = CacheLocator.getContentTypeCache().getStructureByInode(cs.getStructureId());
 			if((st != null && !existingInode) && !permissionAPI.doesUserHavePermission(st, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-				throw new DotSecurityException("You don't have permission to use the structure. Structure Name: " + st.getName());
+				throw new DotSecurityException(
+						String.format("User '%s' does not have WRITE permission on Content Type '%s'", user.getUserId(),
+								st.getName()));
 			}
 		}
 
 
 		if(!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
-			throw new DotSecurityException("You don't have permission to write on the given host.");
+			throw new DotSecurityException(
+					String.format("User '%s' does not have WRITE permission on Site '%s'", user.getUserId(), host));
 		}
 
 		String userId = user.getUserId();
@@ -686,7 +785,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 
 			// update templates to new version
 			while (it.hasNext()) {
-				Template parentInode = (Template) it.next();
+				Template parentInode = it.next();
 				TreeFactory.saveTree(new Tree(parentInode.getInode(), container.getInode()));
 			}
 		}
@@ -713,6 +812,10 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	@WrapInTransaction
 	@Override
 	public boolean delete(final Container container, final User user, final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+		if (Container.SYSTEM_CONTAINER.equals(container.getIdentifier())) {
+			Logger.debug(this, "System Container cannot be deleted.");
+			throw new IllegalArgumentException("System Container cannot be deleted.");
+		}
 		if(permissionAPI.doesUserHavePermission(container, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
 			deleteContainerStructuresByContainer(container);
 			return deleteAsset(container);
@@ -743,19 +846,40 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	@CloseDBIfOpened
 	@Override
 	public Host getParentHost(final Container cont, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		if (Container.SYSTEM_CONTAINER.equals(cont.getIdentifier())) {
+			return APILocator.systemHost();
+		}
 		return hostAPI.findParentHost(cont, user, respectFrontendRoles);
+	}
+
+	@Deprecated
+	@Override
+	public List<Container> findContainers(final User user, final boolean includeArchived,
+			final Map<String, Object> params, final String siteId, final String inode, final String identifier, final String parent,
+			final int offset, final int limit, final String orderBy) throws DotSecurityException,
+			DotDataException {
+		final SearchParams searchParams = SearchParams.newBuilder()
+				.includeArchived(includeArchived)
+				.filteringCriterion(params)
+				.siteId(siteId)
+				.containerInode(inode)
+				.containerIdentifier(identifier)
+				.contentTypeIdOrVar(parent)
+				.offset(offset)
+				.limit(limit)
+				.orderBy(orderBy).build();
+		return this.findContainers(user, searchParams);
 	}
 
 	@CloseDBIfOpened
 	@Override
-	public List<Container> findContainers(final User user, final boolean includeArchived,
-			final Map<String, Object> params, final String hostId, final String inode, final String identifier, final String parent,
-			final int offset, final int limit, final String orderBy) throws DotSecurityException,
+	public List<Container> findContainers(final User user, final SearchParams searchParams) throws DotSecurityException,
 			DotDataException {
-		return containerFactory.findContainers(user, includeArchived, params, hostId, inode, identifier, parent, offset, limit, orderBy);
+		// Include System Container only if required AND if the first page is being requested
+		return searchParams.includeSystemContainer() && searchParams.offset() == 0 ?
+				includeSystemContainer(this.containerFactory.findContainers(user, searchParams)) :
+				this.containerFactory.findContainers(user, searchParams);
 	}
-
-
 
 	@CloseDBIfOpened
 	@Override
@@ -1090,4 +1214,25 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		APILocator.getFolderAPI().subscribeFolderListener(appContainerFolder, new ApplicationContainerFolderListener(),
 				childName -> null != childName && childName.endsWith(Constants.VELOCITY_FILE_EXTENSION));
 	}
+
+	/**
+	 * Utility method used to include the {@link SystemContainer} object as part of the set of Containers that are being
+	 * returned.
+	 *
+	 * @param originalContainers The original list of {@link Container} objects.
+	 *
+	 * @return The list of Containers including the System Container object.
+	 */
+	private List<Container> includeSystemContainer(final List<Container> originalContainers) {
+		final PaginatedArrayList<Container> containers = new PaginatedArrayList<>();
+		if (originalContainers instanceof PaginatedArrayList) {
+			containers.setQuery(PaginatedArrayList.class.cast(originalContainers).getQuery());
+			// System Container is being included, so increase the total result count by 1
+			containers.setTotalResults(PaginatedArrayList.class.cast(originalContainers).getTotalResults() + 1L);
+		}
+		containers.add(systemContainer());
+		containers.addAll(originalContainers);
+		return containers;
+	}
+
 }

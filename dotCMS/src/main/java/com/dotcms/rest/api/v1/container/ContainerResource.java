@@ -1,13 +1,11 @@
 package com.dotcms.rest.api.v1.container;
 
-
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -20,22 +18,16 @@ import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
-import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -46,9 +38,6 @@ import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.structure.factories.StructureFactory;
-import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.HostUtil;
@@ -61,9 +50,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.liferay.portal.model.User;
-import com.liferay.portal.struts.ActionException;
-import com.liferay.util.servlet.SessionMessages;
-import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ResourceNotFoundException;
@@ -88,15 +74,10 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * This resource provides all the different end-points associated to information and actions that
@@ -154,8 +135,8 @@ public class ContainerResource implements Serializable {
      *
      * <code> { contentTypes: array of Container total: total number of Containers } <code/>
      *
-     * Url sintax:
-     * api/v1/container?filter=filter-string&page=page-number&per_page=per-page&ordeby=order-field-name&direction=order-direction&host=host-id
+     * Url syntax:
+     * api/v1/container?filter=filter-string&page=page-number&per_page=per-page&ordeby=order-field-name&direction=order-direction&host=host-id&system=true|false
      *
      * where:
      *
@@ -166,6 +147,7 @@ public class ContainerResource implements Serializable {
      * <li>ordeby: field to order by</li>
      * <li>direction: asc for upward order and desc for downward order</li>
      * <li>host: filter by host's id</li>
+     * <li>system: If the System Container object must be returned, set to {@code true}. Otherwise, set to {@code false}.</li>
      * </ul>
      *
      * Url example: v1/container?filter=test&page=2&orderby=title
@@ -185,7 +167,8 @@ public class ContainerResource implements Serializable {
             @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
             @DefaultValue("title") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
             @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION)  final String direction,
-            @QueryParam(ContainerPaginator.HOST_PARAMETER_ID)           final String hostId) {
+            @QueryParam(ContainerPaginator.HOST_PARAMETER_ID)           final String hostId,
+            @QueryParam(ContainerPaginator.SYSTEM_PARAMETER_NAME)       final Boolean showSystemContainer) {
 
         final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true, null);
         final User user = initData.getUser();
@@ -197,9 +180,10 @@ public class ContainerResource implements Serializable {
             if (checkedHostId.isPresent()) {
                 extraParams.put(ContainerPaginator.HOST_PARAMETER_ID, checkedHostId.get());
             }
+            extraParams.put(ContainerPaginator.SYSTEM_PARAMETER_NAME, showSystemContainer);
             return this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy, OrderDirection.valueOf(direction),
                     extraParams);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             Logger.error(this, e.getMessage(), e);
             return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
@@ -461,7 +445,23 @@ public class ContainerResource implements Serializable {
         return  this.getContainer(containerId, user, host, mode, false);
     }
 
+    /**
+     * Returns the Container that matches the specified ID.
+     *
+     * @param containerId The Identifier of the Container being returned.
+     * @param user        The {@link User} performing this action.
+     * @param site        The {@link Host} object representing the Site that the Container lives in.
+     *
+     * @return The {@link Container} matching the ID.
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The specified user does not have the required permissions to perform this action.
+     */
     private Container getContainer(final String containerId, final User user, final Host host, final PageMode mode, final boolean archive) throws DotDataException, DotSecurityException {
+
+        if (Container.SYSTEM_CONTAINER.equals(containerId)) {
+            return this.containerAPI.systemContainer();
+        }
 
         if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerId)) {
 
@@ -469,7 +469,7 @@ public class ContainerResource implements Serializable {
             final Host   containerHost   = hostOpt.isPresent()? hostOpt.get():host;
             final String relativePath    = FileAssetContainerUtil.getInstance().getPathFromFullPath(containerHost.getHostname(), containerId);
             try {
-                
+
                 return mode.showLive ?
                         this.containerAPI.getLiveContainerByFolderPath(relativePath, containerHost, user, mode.respectAnonPerms) :
                         (archive?
@@ -493,10 +493,10 @@ public class ContainerResource implements Serializable {
                 });
 
         return (containerShorty.type != ShortType.IDENTIFIER)
-                    ? this.containerAPI.find(containerId, user, mode.showLive)
-                    : (mode.showLive) ?
-                            this.containerAPI.getLiveContainerById(containerShorty.longId, user, mode.respectAnonPerms) :
-                            this.containerAPI.getWorkingContainerById(containerShorty.longId, user, mode.respectAnonPerms);
+                ? this.containerAPI.find(containerId, user, mode.showLive)
+                : (mode.showLive) ?
+                this.containerAPI.getLiveContainerById(containerShorty.longId, user, mode.respectAnonPerms) :
+                this.containerAPI.getWorkingContainerById(containerShorty.longId, user, mode.respectAnonPerms);
     }
 
     @DELETE
@@ -619,7 +619,6 @@ public class ContainerResource implements Serializable {
             throw new ForbiddenException(e);
         }
     }
-
 
     ///////
 
