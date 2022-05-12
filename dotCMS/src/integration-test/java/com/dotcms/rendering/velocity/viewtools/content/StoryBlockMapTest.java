@@ -17,6 +17,7 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -70,6 +71,12 @@ public class StoryBlockMapTest extends IntegrationTestBase {
     @Test
     public void test_default_olist_render_to_html() throws  JSONException {
 
+        final String velocityRoot   = Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
+        final File velocityRootFile = new File(velocityRoot);
+
+        Assert.assertTrue("the " + velocityRoot + "/static/storyblock/bulletList.vtl" + " should exists",
+                new File(velocityRootFile, "static/storyblock/bulletList.vtl").exists());
+
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON_OLIST);
         final String html = storyBlockMap.toHtml();
         Assert.assertTrue(html.contains("<ol style=\"text-align: \">"));
@@ -88,6 +95,12 @@ public class StoryBlockMapTest extends IntegrationTestBase {
      */
     @Test
     public void test_default_ulist_render_to_html() throws  JSONException {
+
+        final String velocityRoot   = Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
+        final File velocityRootFile = new File(velocityRoot);
+
+        Assert.assertTrue("the " + velocityRoot + "/static/storyblock/orderedList.vtl" + " should exists",
+                new File(velocityRootFile, "static/storyblock/orderedList.vtl").exists());
 
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON_ULIST);
         final String html = storyBlockMap.toHtml();
@@ -110,6 +123,12 @@ public class StoryBlockMapTest extends IntegrationTestBase {
      */
     @Test
     public void test_default_paragraph_render_to_html() throws  JSONException {
+
+        final String velocityRoot   = Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
+        final File velocityRootFile = new File(velocityRoot);
+
+        Assert.assertTrue("the " + velocityRoot + "/static/storyblock/paragraph.vtl" + " should exists",
+                new File(velocityRootFile, "static/storyblock/paragraph.vtl").exists());
 
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON_PARAGRAPH);
         final String html = storyBlockMap.toHtml();
@@ -140,6 +159,12 @@ public class StoryBlockMapTest extends IntegrationTestBase {
      */
     @Test
     public void test_default_render_to_html() throws  JSONException {
+
+        final String velocityRoot   = Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
+        final File velocityRootFile = new File(velocityRoot);
+
+        Assert.assertTrue("the " + velocityRoot + "/static/storyblock/default.vtl" + " should exists",
+                new File(velocityRootFile, "static/storyblock/default..vtl").exists());
 
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON);
         final String html = storyBlockMap.toHtml();
