@@ -1,0 +1,40 @@
+@use "variables" as *;
+
+:host {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    height: $navigation-item-height;
+    width: 100%;
+
+    &:hover {
+        background-color: $bg-hover;
+    }
+
+    dot-avatar {
+        margin: 0 $spacing-3;
+    }
+
+    .dot-persona-selector-option__label {
+        display: -webkit-box;
+        display: -moz-box;
+        flex: 1;
+        max-height: 42px;
+        -webkit-line-clamp: 2;
+        overflow: hidden;
+
+        &.dot-persona-selector-option__personalized {
+            color: $body-font-color;
+        }
+
+        &.dot-persona-selector-option__selected {
+            color: $black;
+            font-weight: $font-weight-semi-bold;
+        }
+    }
+
+    button {
+        margin-left: $spacing-4;
+        margin-right: $spacing-3;
+    }
+}
