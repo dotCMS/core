@@ -7,7 +7,7 @@ jobs:
     name: Release Process Automation
     runs-on: ubuntu-latest
     env:
-      DOT_CICD_BRANCH: master
+      DOT_CICD_BRANCH: release-22.06
       GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
       REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
@@ -79,7 +79,7 @@ jobs:
         uses: rtCamp/action-slack-notify@master
         env:
           SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
-          SLACK_USERNAME: dotcms-bot
+          SLACK_USERNAME: dotBot
           SLACK_TITLE: "Important news!"
           SLACK_MSG_AUTHOR: " "
           MSG_MINIMAL: true
