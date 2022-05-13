@@ -1,5 +1,6 @@
 package com.dotmarketing.util;
 
+import com.google.common.collect.ImmutableList;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,6 +10,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.configuration.Configuration;
@@ -191,7 +193,7 @@ public class Config {
 					if (lastDotmarketingModified.after(lastRefreshTime)
 							|| lastClusterModified.after(lastRefreshTime)) {
 						try {
-							props = new PropertiesConfiguration();
+							// props = new PropertiesConfiguration();
 							// Cleanup and read the properties for both files
 							readProperties(dotmarketingFile,
 									"dotmarketing-config.properties");
@@ -248,6 +250,7 @@ public class Config {
             propsInputStream = Files.newInputStream(fileToRead.toPath());
             props.load( new InputStreamReader( propsInputStream ) );
             Logger.info( Config.class, "dotCMS Properties [" + fileName + "] Loaded" );
+            /*
             postProperties();
             // check if the configuration for the watcher has changed.
 			useWatcherMode.set(getBooleanProperty(DOTCMS_USEWATCHERMODE, true));
@@ -258,6 +261,7 @@ public class Config {
 				unregisterWatcher (fileToRead);
 				isWatching.set(false);
 			}
+			*/
         } catch ( Exception e ) {
             Logger.fatal( Config.class, "Exception loading properties for file [" + fileName + "]", e );
             props = null;
@@ -303,8 +307,13 @@ public class Config {
 
 	private static void readEnvironmentVariables() {
 		synchronized (Config.class) {
+			Logger.warn(Config.class,"read Env ::::: ");
 			System.getenv().entrySet().stream().filter(e -> e.getKey().startsWith(ENV_PREFIX))
-					.forEach(e -> props.setProperty(e.getKey(), e.getValue()));
+					.forEach(e -> {
+						props.setProperty(e.getKey(), e.getValue());
+						Logger.warn(Config.class,String.format(" envKey: %s,  val: %s",e.getKey(), e.getValue()));
+					});
+			Logger.warn(Config.class,"done read Env ::::: ");
 		}
 	}
 	
@@ -522,7 +531,7 @@ public class Config {
 	 * @return
 	 */
 	public static boolean getBooleanProperty (String name, boolean defaultVal) {
-
+		_refreshProperties ();
         final Boolean value = props.containsKey(name)  ? Try.of(()->props.getBoolean(envKey(name))).getOrNull() : null;
         if(null != value) {
             return value;
@@ -562,6 +571,15 @@ public class Config {
 		return ImmutableSet.copyOf(props.subset(prefix).getKeys()).iterator();
 	}
 
+	static void printKeys(){
+		if(null != props){
+			List<String> keys = ImmutableList.copyOf(props.getKeys());
+			Logger.warn(Config.class, "====================================================");
+			Logger.warn(Config.class, "\n" + String.join("\n", keys));
+		} else {
+			Logger.warn(Config.class, "Props is Null.");
+		}
+	}
 
 	/**
 	 * Spindle Config
