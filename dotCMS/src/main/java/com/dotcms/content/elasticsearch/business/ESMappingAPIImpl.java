@@ -209,7 +209,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			synchronized (this.getClass().getName()) {
 				if (mapper == null) {
 					mapper = new ObjectMapper();
-					ThreadSafeSimpleDateFormat df = new ThreadSafeSimpleDateFormat(elasticSearchDateTimeFormatPattern);
+					ThreadSafeSimpleDateFormat df = new ThreadSafeSimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 					mapper.setDateFormat(df);
 				}
 			}
