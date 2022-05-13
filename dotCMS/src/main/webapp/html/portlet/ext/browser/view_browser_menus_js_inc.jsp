@@ -27,6 +27,7 @@
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
 
+<% boolean enableClickStreamTracking = Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false); %>
 
 <script src="/dwr/interface/UserAjax.js" type="text/javascript"></script>
 <script language="JavaScript"><!--
@@ -50,7 +51,6 @@
 	String frameName = (String)request.getSession().getAttribute(WebKeys.FRAME);
 
 	%>
-
 
 
 
@@ -634,6 +634,7 @@
 		var read = hasReadPermissions(page.permissions);
 		var write = hasWritePermissions(page.permissions);
 		var publish = hasPublishPermissions(page.permissions);
+        var enableClickStreamTracking = <%= enableClickStreamTracking %>;
 		var live = page.live;
 		var working = page.working;
 		var archived = page.deleted;
@@ -660,7 +661,7 @@
 			}
 		}
 
-        if (!archived) {
+        if (!archived && enableClickStreamTracking) {
 	      strHTML += '<a href="javascript: viewHTMLPageStatistics(\'' + objId + '\', \'' + referer + '\');" class="context-menu__item">';
 		      strHTML += '<span class="statisticsIcon"></span>';
 		      strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "View-Statistics")) %>';

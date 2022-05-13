@@ -1,14 +1,9 @@
 package com.dotcms.publishing.manifest;
 
-import com.dotcms.publisher.util.dependencies.DependencyManager;
-import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.util.StringPool;
-import java.text.SimpleDateFormat;
+
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -23,7 +18,7 @@ public enum ManifestReason {
     INCLUDE_BY_USER ("Added directly by User"),
     INCLUDE_DEPENDENCY_FROM("Dependency from: %s", argument -> getDependencyFromArgument(argument)),
     INCLUDE_AUTOMATIC_BY_DOTCMS("Added Automatically by dotCMS"),
-    EXCLUDE_SYSTEM_OBJECT("Excluded System Folder/Host"),
+    EXCLUDE_SYSTEM_OBJECT("Excluded System Folder/Host/Container/Template"),
     EXCLUDE_BY_FILTER("Excluded by filter"),
     EXCLUDE_BY_MOD_DATE("Excluded by mod_date"),
     EXCLUDE_BY_OPERATION("Excluded by Operation: %s", argument -> argument.toString());

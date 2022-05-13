@@ -33,6 +33,7 @@ import com.dotcms.enterprise.publishing.remote.bundler.TemplateBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.WorkflowBundlerTest;
 import com.dotcms.enterprise.publishing.remote.handler.ContentHandlerTest;
 import com.dotcms.enterprise.publishing.remote.handler.HandlerUtilTest;
+import com.dotcms.enterprise.publishing.staticpublishing.AWSS3PublisherTest;
 import com.dotcms.enterprise.publishing.staticpublishing.LanguageFolderTest;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
@@ -79,9 +80,13 @@ import com.dotcms.saml.SamlConfigurationServiceTest;
 import com.dotcms.security.ContentSecurityPolicyUtilTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotcms.security.apps.AppsCacheImplTest;
+import com.dotcms.security.multipart.BoundedBufferedReaderTest;
+import com.dotcms.security.multipart.ContentDispositionFileNameParserTest;
+import com.dotcms.security.multipart.SecureFileValidatorTest;
 import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
+import com.dotcms.util.XStreamFactoryTest;
 import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotmarketing.beans.HostTest;
 import com.dotmarketing.business.DeterministicIdentifierAPITest;
@@ -535,7 +540,14 @@ import org.junit.runners.Suite.SuiteClasses;
         Task220330ChangeVanityURLSiteFieldTypeTest.class,
         Task220331UpdateDateTimezonesTest.class,
         Task220404RemoveCalendarReminderTest.class,
-        Task220413IncreasePublishedPushedAssetIdColTest.class
+        Task220413IncreasePublishedPushedAssetIdColTest.class,
+        XStreamFactoryTest.class,
+        Task220404RemoveCalendarReminderTest.class,
+        com.dotcms.util.pagination.ContainerPaginatorTest.class,
+        ContentDispositionFileNameParserTest.class,
+        SecureFileValidatorTest.class,
+        BoundedBufferedReaderTest.class,
+        AWSS3PublisherTest.class
 })
 public class MainSuite {
 
