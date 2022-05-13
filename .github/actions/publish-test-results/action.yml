@@ -34,8 +34,8 @@ inputs:
   tests_run_exit_code:
     description: 'Test run exit code'
     required: true
-  test_results_location:
-    description: 'Folder where test results are located'
+  tests_report_location:
+    description: 'Unit tests report location'
     required: true
   cicd_github_token:
     description: 'Token to use when it comes to push to results repo'

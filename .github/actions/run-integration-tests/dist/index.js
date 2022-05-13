@@ -1,7 +1,7 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 497:
+/***/ 991:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -39,37 +39,448 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.build = void 0;
+exports.runTests = exports.COMMANDS = void 0;
 const core = __importStar(__nccwpck_require__(186));
 const exec = __importStar(__nccwpck_require__(514));
-const COMMANDS = {
+const path = __importStar(__nccwpck_require__(17));
+const setup = __importStar(__nccwpck_require__(957));
+const buildEnv = core.getInput('build_env');
+const projectRoot = core.getInput('project_root');
+const workspaceRoot = path.dirname(projectRoot);
+const dotCmsRoot = path.join(projectRoot, 'dotCMS');
+const dbType = core.getInput('db_type');
+const runtTestsPrefix = 'integration-tests:';
+/**
+ * Based on dbType resolves the ci index
+ * @returns
+ */
+const resolveCiIndex = () => {
+    if (dbType === 'postgres') {
+        return 0;
+    }
+    else if (dbType === 'mssql') {
+        return 1;
+    }
+    return -1;
+};
+exports.COMMANDS = {
     gradle: {
         cmd: './gradlew',
-        args: ['createDistPrep', 'prepareIntegrationTests'],
-        workingDir: 'dotCMS'
+        args: ['integrationTest', `-PdatabaseType=${dbType}`],
+        workingDir: dotCmsRoot,
+        outputDir: `${dotCmsRoot}/build/test-results/integrationTest`,
+        reportDir: `${dotCmsRoot}/build/reports/tests/integrationTest`,
+        ciIndex: resolveCiIndex()
     },
     maven: {
         cmd: './mvnw',
-        args: ['package', '-DskipTests'],
-        workingDir: 'dotCMS'
+        args: ['integrationTest', `-PdatabaseType=${dbType}`],
+        workingDir: dotCmsRoot,
+        outputDir: `${dotCmsRoot}/build/test-results/integrationTest`,
+        reportDir: `${dotCmsRoot}/build/reports/tests/integrationTest`,
+        ciIndex: resolveCiIndex()
     }
 };
+const START_DEPENDENCIES_CMD = {
+    cmd: 'docker-compose',
+    args: ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, 'up', '-d'],
+    workingDir: `${projectRoot}/cicd/docker`
+};
+const STOP_DEPENDENCIES_CMD = {
+    cmd: 'docker-compose',
+    args: ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, 'down'],
+    workingDir: `${projectRoot}/cicd/docker`
+};
 /**
- * Based on a detected build environment, that is gradle or maven, this resolves the command to run in order to build core.
+ * Based on a revolved {@link Command}, resolve the command to execute in order to run integration tests.
  *
- * @param buildEnv build environment
+ * @param cmd resolved command
  * @returns a number representing the command exit code
  */
-const build = (buildEnv) => __awaiter(void 0, void 0, void 0, function* () {
-    const cmd = COMMANDS[buildEnv];
-    if (!cmd) {
-        core.error('Cannot resolve build tool, aborting');
-        return Promise.resolve(127);
-    }
+const runTests = (cmd) => __awaiter(void 0, void 0, void 0, function* () {
+    // Setup ITs
+    setup.setupTests(propertyMap());
+    // Starting dependencies
+    core.info(`
+    =======================================
+    Starting integration tests dependencies
+    =======================================`);
+    core.info(`Executing command: ${START_DEPENDENCIES_CMD.cmd} ${START_DEPENDENCIES_CMD.args.join(' ')}`);
+    yield exec.exec(START_DEPENDENCIES_CMD.cmd, START_DEPENDENCIES_CMD.args, { cwd: START_DEPENDENCIES_CMD.workingDir });
+    // Wait until DB is ready
+    const wait = 30;
+    core.info(`
+    Waiting ${wait} seconds for dependencies: ES and ${dbType}`);
+    yield delay(wait);
+    core.info(`
+    Waiting on dependencies (ES and ${dbType}) loading has ended`);
+    // Executes ITs
+    resolveParams(cmd);
+    core.info(`
+    ===========================================
+    Running integration tests against ${dbType}
+    ===========================================`);
     core.info(`Executing command: ${cmd.cmd} ${cmd.args.join(' ')}`);
-    return yield exec.exec(cmd.cmd, cmd.args, { cwd: cmd.workingDir });
+    const itCode = yield exec.exec(cmd.cmd, cmd.args, { cwd: cmd.workingDir });
+    // Starting dependencies
+    core.info(`
+    =======================================
+    Stopping integration tests dependencies
+    =======================================`);
+    core.info(`Executing command: ${STOP_DEPENDENCIES_CMD.cmd} ${STOP_DEPENDENCIES_CMD.args.join(' ')}`);
+    yield exec.exec(STOP_DEPENDENCIES_CMD.cmd, STOP_DEPENDENCIES_CMD.args, { cwd: STOP_DEPENDENCIES_CMD.workingDir });
+    return itCode;
 });
-exports.build = build;
+exports.runTests = runTests;
+/**
+ * Creates property map with DotCMS property information to override/append
+ *
+ * @returns map with property data
+ */
+const propertyMap = () => {
+    const properties = new Map();
+    properties.set('dotSecureFolder', appendToWorkspace('custom/dotsecure'));
+    properties.set('dotCmsFolder', dotCmsRoot);
+    properties.set('felixFolder', appendToWorkspace('custom/felix'));
+    properties.set('assetsFolder', appendToWorkspace('custom/assets'));
+    properties.set('esDataFolder', appendToWorkspace('custom/esdata'));
+    properties.set('logsFolder', appendToWorkspace('custom/output/logs'));
+    properties.set('dbType', dbType);
+    return properties;
+};
+/**
+ * Append folder to workspace
+ *
+ * @param folder folder to append to workspace
+ * @returns workspace + folder
+ */
+const appendToWorkspace = (folder) => path.join(workspaceRoot, folder);
+/**
+ * Resolve paramateres to produce command arguments
+ *
+ * @param cmd {@link Command} object holding command and arguments
+ */
+const resolveParams = (cmd) => {
+    var _a;
+    const tests = (_a = core.getInput('tests')) === null || _a === void 0 ? void 0 : _a.trim();
+    if (!tests) {
+        core.info('No specific integration tests found');
+        return;
+    }
+    core.info(`Found tests to run: "${tests}"`);
+    tests.split('\n').forEach(l => {
+        const line = l.trim();
+        if (!line.toLowerCase().startsWith(runtTestsPrefix)) {
+            return;
+        }
+        const testLine = line.slice(runtTestsPrefix.length).trim();
+        if (buildEnv === 'gradle') {
+            testLine.split(',').forEach(test => {
+                cmd.args.push('--tests');
+                cmd.args.push(test.trim());
+            });
+        }
+        else if (buildEnv === 'maven') {
+            const normalized = testLine
+                .split(',')
+                .map(t => t.trim())
+                .join(',');
+            cmd.args.push(`-Dit.test=${normalized}`);
+        }
+    });
+    core.info(`Resolved params ${cmd.args.join(' ')}`);
+};
+/**
+ * Delays the resolve part of a promise to simulate a sleep
+ *
+ * @param seconds number of seconds
+ * @returns void promise
+ */
+const delay = (seconds) => new Promise(resolve => setTimeout(resolve, seconds * 1000));
+
+
+/***/ }),
+
+/***/ 957:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.setupTests = void 0;
+const core = __importStar(__nccwpck_require__(186));
+const exec = __importStar(__nccwpck_require__(514));
+const fs = __importStar(__nccwpck_require__(147));
+const path = __importStar(__nccwpck_require__(17));
+const TEST_RESOURCES = ['log4j2.xml'];
+const SOURCE_TEST_RESOURCES_FOLDER = 'cicd/resources';
+const TARGET_TEST_RESOURCES_FOLDER = 'dotCMS/src/test/resources';
+const LICENSE_FOLDER = 'custom/dotsecure/license';
+const IT_FOLDERS = [
+    'custom/assets',
+    'custom/dotsecure',
+    'custom/esdata',
+    'custom/output/log',
+    'custom/felix',
+    LICENSE_FOLDER
+];
+const projectRoot = core.getInput('project_root');
+const debug = core.getBooleanInput('debug');
+const worskpaceFolder = path.dirname(projectRoot);
+/**
+ * Setup location folders and files. Override and add properties to config files so ITs can run.
+ *
+ * @param propertyMap properties vaslues map
+ */
+const setupTests = (propertyMap) => {
+    // prepare folders and copy files
+    prepareTests();
+    // override existing properties
+    overrideProperties(propertyMap);
+    // append new properties
+    appendProperties(propertyMap);
+    // prepare license
+    prepareLicense();
+};
+exports.setupTests = setupTests;
+/**
+ * Gets the value from the properties map otherwise empty.
+ *
+ * @param propertyMap properties map
+ * @param key key to look for
+ * @returns value found in the map
+ */
+const getValue = (propertyMap, key) => propertyMap.get(key) || '';
+/**
+ * Prepares by creating necessary folders and copying files.
+ */
+const prepareTests = () => {
+    core.info('Preparing integration tests');
+    IT_FOLDERS.forEach(folder => {
+        const itFolder = path.join(worskpaceFolder, folder);
+        core.info(`Creating IT folder ${itFolder}`);
+        fs.mkdirSync(itFolder, { recursive: true });
+    });
+    TEST_RESOURCES.forEach(res => {
+        const source = path.join(projectRoot, SOURCE_TEST_RESOURCES_FOLDER, res);
+        const dest = path.join(projectRoot, TARGET_TEST_RESOURCES_FOLDER, res);
+        core.info(`Copying resource ${source} to ${dest}`);
+        fs.copyFileSync(source, dest);
+    });
+};
+/**
+ * Overrides with provided values the defined config files.
+ *
+ * @param propertyMap properties map
+ */
+const overrideProperties = (propertyMap) => __awaiter(void 0, void 0, void 0, function* () {
+    core.info('Overriding properties');
+    const overrides = getOverrides(propertyMap);
+    core.info(`Detected overrides ${JSON.stringify(overrides, null, 2)}`);
+    for (const file of overrides.files) {
+        core.info(`Overriding properties at ${file.file}`);
+        for (const prop of file.properties) {
+            yield exec.exec('sed', ['-i', `s,${prop.original},${prop.replacement},g`, file.file]);
+        }
+        if (debug) {
+            core.info(`Reviewing changes for ${file.file}`);
+            yield exec.exec('cat', [file.file]);
+        }
+    }
+});
+/**
+ * Append provided properties to defined config files.
+ *
+ * @param propertyMap properties map
+ */
+const appendProperties = (propertyMap) => {
+    core.info('Adding properties');
+    const appends = getAppends(propertyMap);
+    core.info(`Detected appends ${JSON.stringify(appends, null, 2)}`);
+    appends.files.forEach(file => {
+        core.info(`Appending properties to ${file.file}`);
+        const line = file.lines.join('\n');
+        core.info(`Appeding properties:\n ${line}`);
+        fs.appendFileSync(file.file, line, { encoding: 'utf8', flag: 'a+', mode: 0o666 });
+    });
+};
+/**
+ * Get override properties object
+ *
+ * @param propertyMap properties map
+ * @returns {@link OverrideProperties} object
+ */
+const getOverrides = (propertyMap) => {
+    const dotSecureFolder = getValue(propertyMap, 'dotSecureFolder');
+    const dotCmsFolder = getValue(propertyMap, 'dotCmsFolder');
+    const felixFolder = getValue(propertyMap, 'felixFolder');
+    const assetsFolder = getValue(propertyMap, 'assetsFolder');
+    const resourcesFolder = path.join(dotCmsFolder, 'src/main/resources');
+    const itResourcesFolder = path.join(dotCmsFolder, 'src/integration-test/resources');
+    const dbType = getValue(propertyMap, 'dbType');
+    return {
+        files: [
+            {
+                file: `${dotCmsFolder}/gradle.properties`,
+                properties: [
+                    {
+                        original: '^# integrationTestFelixFolder=.*$',
+                        replacement: `integrationTestFelixFolder=${felixFolder}`
+                    }
+                ]
+            },
+            {
+                file: `${resourcesFolder}/dotmarketing-config.properties`,
+                properties: [
+                    {
+                        original: '^#DYNAMIC_CONTENT_PATH=.*$',
+                        replacement: `DYNAMIC_CONTENT_PATH=${dotSecureFolder}`
+                    }
+                ]
+            },
+            {
+                file: `${itResourcesFolder}/${dbType}-db-config.properties`,
+                properties: [
+                    {
+                        original: '://database',
+                        replacement: '://localhost'
+                    }
+                ]
+            },
+            {
+                file: `${itResourcesFolder}/it-dotcms-config-cluster.properties`,
+                properties: [
+                    {
+                        original: '^es.path.home=.*$',
+                        replacement: `es.path.home=${dotCmsFolder}/src/main/webapp/WEB-INF/elasticsearch`
+                    },
+                    {
+                        original: '^ES_HOSTNAME=.*$',
+                        replacement: 'ES_HOSTNAME=127.0.0.1'
+                    }
+                ]
+            },
+            {
+                file: `${itResourcesFolder}/it-dotmarketing-config.properties`,
+                properties: [
+                    {
+                        original: '^DYNAMIC_CONTENT_PATH=.*$',
+                        replacement: `DYNAMIC_CONTENT_PATH=${dotSecureFolder}`
+                    },
+                    {
+                        original: '^TAIL_LOG_LOG_FOLDER=.*$',
+                        replacement: `TAIL_LOG_LOG_FOLDER=${dotSecureFolder}/logs/`
+                    },
+                    {
+                        original: '^ASSET_REAL_PATH =.*$',
+                        replacement: `ASSET_REAL_PATH=${assetsFolder}`
+                    },
+                    {
+                        original: '^#TOOLBOX_MANAGER_PATH=.*$',
+                        replacement: `TOOLBOX_MANAGER_PATH=${dotCmsFolder}/src/main/webapp/WEB-INF/toolbox.xml`
+                    },
+                    {
+                        original: '^VELOCITY_ROOT =.*$',
+                        replacement: `VELOCITY_ROOT=${dotCmsFolder}/src/main/webapp/WEB-INF/velocity`
+                    },
+                    {
+                        original: '^GEOIP2_CITY_DATABASE_PATH_OVERRIDE=.*$',
+                        replacement: `GEOIP2_CITY_DATABASE_PATH_OVERRIDE=${dotCmsFolder}/src/main/webapp/WEB-INF/geoip2/GeoLite2-City.mmdb`
+                    },
+                    {
+                        original: '^felix.base.dir=.*$',
+                        replacement: `felix.base.dir=${felixFolder}`
+                    }
+                ]
+            }
+        ]
+    };
+};
+/**
+ * Get apeend properties object.
+ *
+ * @param propertyMap properties map
+ * @returns {@link AppendProperties} object
+ */
+const getAppends = (propertyMap) => {
+    const felixFolder = getValue(propertyMap, 'felixFolder');
+    const esDataFolder = getValue(propertyMap, 'esDataFolder');
+    const logsFolder = getValue(propertyMap, 'logsFolder');
+    const dotCmsFolder = getValue(propertyMap, 'dotCmsFolder');
+    const itResourcesFolder = path.join(dotCmsFolder, 'src/integration-test/resources');
+    return {
+        files: [
+            {
+                file: `${itResourcesFolder}/it-dotmarketing-config.properties`,
+                lines: [
+                    `felix.felix.fileinstall.dir=${felixFolder}/load`,
+                    `felix.felix.undeployed.dir=${felixFolder}/undeploy`,
+                    'dotcms.concurrent.locks.disable=false'
+                ]
+            },
+            // {
+            //   file: `${itResourcesFolder}/it-dotcms-config-cluster.properties`,
+            //   lines: ['ES_ENDPOINTS=http://localhost:9200', 'ES_PROTOCOL=http', 'ES_HOSTNAME=localhost', 'ES_PORT=9200']
+            // },
+            {
+                file: `${dotCmsFolder}/src/main/webapp/WEB-INF/elasticsearch/config/elasticsearch-override.yml`,
+                lines: [
+                    'cluster.name: dotCMSContentIndex_docker',
+                    `path.data: ${esDataFolder}`,
+                    `path.repo: ${esDataFolder}/essnapshot/snapshots`,
+                    `path.logs: ${logsFolder}`,
+                    'http.enabled: false',
+                    'http.cors.enabled: false',
+                    'cluster.routing.allocation.disk.threshold_enabled: false'
+                ]
+            }
+        ]
+    };
+};
+/**
+ * Creates license folder and file with appropiate key.
+ */
+const prepareLicense = () => __awaiter(void 0, void 0, void 0, function* () {
+    const licensePath = path.join(worskpaceFolder, LICENSE_FOLDER);
+    const licenseKey = core.getInput('license_key');
+    const licenseFile = path.join(licensePath, 'license.dat');
+    core.info(`Adding license to ${licenseFile}`);
+    fs.writeFileSync(licenseFile, licenseKey, { encoding: 'utf8', flag: 'a+', mode: 0o777 });
+    yield exec.exec('cat', [licenseFile]);
+    yield exec.exec('ls', ['-las', licenseFile]);
+});
 
 
 /***/ }),
@@ -104,22 +515,46 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(186));
-const builder = __importStar(__nccwpck_require__(497));
+const fs = __importStar(__nccwpck_require__(147));
+const integration = __importStar(__nccwpck_require__(991));
 /**
  * Main entry point for this action.
  */
 const run = () => {
+    core.info("Running Core's integration tests");
     const buildEnv = core.getInput('build_env');
-    core.info(`Attempting to build core with ${buildEnv}`);
-    builder
-        .build(buildEnv)
-        .then(returnCode => {
-        if (returnCode != 0) {
-            core.setFailed(`Process executed returned code ${returnCode}`);
-            return;
-        }
+    const cmd = integration.COMMANDS[buildEnv];
+    if (!cmd) {
+        core.error('Cannot resolve build tool, aborting');
+        return;
+    }
+    integration
+        .runTests(cmd)
+        .then(exitCode => {
+        const results = {
+            testsRunExitCode: exitCode,
+            testResultsLocation: cmd.outputDir,
+            skipResultsReport: false
+        };
+        core.info(`Integration test results:\n${JSON.stringify(results)}`);
+        core.setOutput('tests_run_exit_code', exitCode);
+        core.setOutput('tests_results_status', exitCode === 0 ? 'PASSED' : 'FAILED');
+        core.setOutput('tests_results_location', cmd.outputDir);
+        core.setOutput('tests_report_location', cmd.reportDir);
+        core.setOutput('skip_results_report', false);
+        core.setOutput('ci_index', cmd.ciIndex);
     })
-        .catch(reason => core.setFailed(`Build core failed due to ${reason}`));
+        .catch(reason => {
+        const messg = `Running integration tests failed due to ${reason}`;
+        const skipResults = cmd.outputDir && !fs.existsSync(cmd.outputDir);
+        core.setOutput('tests_run_exit_code', 1);
+        core.setOutput('tests_results_status', 'FAILED');
+        core.setOutput('tests_results_location', cmd.outputDir);
+        core.setOutput('tests_report_location', cmd.reportDir);
+        core.setOutput('skip_results_report', skipResults);
+        core.setOutput('ci_index', cmd.ciIndex);
+        core.setFailed(messg);
+    });
 };
 // Run main function
 run();

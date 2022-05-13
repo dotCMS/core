@@ -29,10 +29,16 @@ jobs:
       DEBUG: true
     outputs:
       cache_metadata: ${{ steps.cache-core.outputs.cache_metadata }}
+      commit_message: ${{ steps.get-commit-message.outputs.commit_message }}
     steps:
       - id: fetch-core
         name: Fetch Core repo
         uses: actions/checkout@v3
+      - name: Get commit message
+        id: get-commit-message
+        uses: dotcms/get-commit-message@master
+        with:
+          accessToken: ${{ secrets.GITHUB_TOKEN }}
       - id: read-cicd-local-env
         name: Read CICD local library
         run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
@@ -48,6 +54,7 @@ jobs:
         uses: ./.github/actions/core-cache-locator
         with:
           build_env: ${{ env.BUILD_ENV }}
+          cache_build_output: false
         if: success()
       - id: cache-core
         name: Cache Core
@@ -80,43 +87,154 @@ jobs:
         uses: ./.github/actions/run-unit-tests
         with:
           build_env: ${{ env.BUILD_ENV }}
-      - id: unit-tests-results
-        name: Unit Tests Results
-        uses: dorny/test-reporter@v1
-        with:
-          name: Unit Test Results
-          path: ${{ steps.run-unit-tests.outputs.tests-results-location }}/*.xml
-          reporter: java-junit
-          max-annotations: 50
-          fail-on-error: false
-        if: always() && steps.run-unit-tests.outputs.skip-results-report == 'false'
+          tests: ${{ needs.build-core-job.outputs.commit_message }}
       - id: unit-tests-comment
         name: Unit Test Comment
         uses: EnricoMi/publish-unit-test-result-action@v1
         with:
-          files: ${{ steps.run-unit-tests.outputs.tests-results-location }}/*.xml
+          files: ${{ steps.run-unit-tests.outputs.tests_results_location }}/*.xml
           check_name: 'Unit Tests Report'
-        if: always() && steps.run-unit-tests.outputs.skip-results-report == 'false'
+          tests: ${{ needs.build-core-job.outputs.commit_message }}
+        if: always() && steps.run-unit-tests.outputs.skip_results_report != 'true'
       - id: publish-unit-tests
-        name: Publish Unit Tests
-        uses: ./.github/actions/publish-test-results
+        name: 'Publish unit tests to Testmo'
+        uses: ./.github/actions/testmo-wrapper
         with:
-          build_id: ${{ env.BUILD_ID }}
-          build_hash: ${{ env.BUILD_HASH }}
+          operation: submit
+          github_sha: ${{ env.BUILD_HASH }}
+          testmo_url: 'https://dotcms.testmo.net' #${{ secrets.TESTMO_URL }}
+          testmo_token: ${{ secrets.TESTMO_TOKEN }}
+          testmo_project_id: 1
           test_type: unit
-          pull_request: ${{ github.event.number }}
-          tests_run_exit_code: ${{ steps.run-unit-tests.outputs.tests-run-exit-code }}
-          test_results_location: ${{ steps.run-unit-tests.outputs.tests-results-location }}/html
-          cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
-        if: always() && steps.run-unit-tests.outputs.skip-results-report == 'false'
+          tests_results_location: ${{ steps.run-unit-tests.outputs.tests_results_location }}/*.xml
+          debug: true
+        if: always() && steps.run-unit-tests.outputs.skip_results_report != 'true'
       - id: github-status
         name: Send Github Status
         uses: ./.github/actions/github-status
         with:
           test_type: unit
-          test_results_status: ${{ steps.run-unit-tests.outputs.tests-results-status }}
+          test_results_status: ${{ steps.run-unit-tests.outputs.tests_results_status }}
           pull_request: ${{ github.event.number }}
           github_user: ${{ env.GITHUB_USER }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
-          report_url: ${{ steps.publish-unit-tests.outputs.test_results_commit_url }}
-        if: always() && steps.run-unit-tests.outputs.skip-results-report == 'false'
+          tests_report_url: ${{ steps.publish-unit-tests.outputs.tests_report_url }}
+        if: always() && steps.run-unit-tests.outputs.skip_results_report != 'true'
+  integration-tests-thread-setup-job:
+    name: Integration tests thread (matrix) setup
+    runs-on: ubuntu-latest
+    needs: build-core-job
+    outputs:
+      testmo_run_id: ${{ steps.thread-setup.outputs.testmo_run_id }}
+    steps:
+      - id: fetch-core
+        name: Fetch Core Repo
+        uses: actions/checkout@v3
+      - id: read-cicd-local-env
+        name: Read CICD local library
+        run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
+        if: success()
+      - id: thread-setup
+        name: Initial thread (matrix) setup
+        uses: ./.github/actions/testmo-wrapper
+        with:
+          operation: thread-resources
+          github_sha: ${{ env.BUILD_HASH }}
+          testmo_url: 'https://dotcms.testmo.net' #${{ secrets.TESTMO_URL }}
+          testmo_token: ${{ secrets.TESTMO_TOKEN }}
+          testmo_project_id: 1
+          test_type: integration
+          debug: true
+        if: success()
+  run-integration-tests-job:
+    name: Run Integration Tests
+    runs-on: ubuntu-latest
+    needs: [ build-core-job, integration-tests-thread-setup-job ]
+    strategy:
+      fail-fast: false
+      matrix:
+        db_type: [ postgres, mssql ]
+    steps:
+      - id: fetch-core
+        name: Fetch Core Repo
+        uses: actions/checkout@v3
+      - id: read-cicd-local-env
+        name: Read CICD local library
+        run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
+        if: success()
+      - id: restore-core
+        name: Restore Core Cache
+        uses: ./.github/actions/restore-core
+        with:
+          cache_metadata: ${{ needs.build-core-job.outputs.cache_metadata }}
+        if: success()
+      - id: run-integration-tests
+        name: Run Integration Tests
+        uses: ./.github/actions/run-integration-tests
+        with:
+          build_env: ${{ env.BUILD_ENV }}
+          db_type: ${{ matrix.db_type }}
+          license_key: ${{ secrets.DOTCMS_LICENSE }}
+          tests: ${{ needs.build-core-job.outputs.commit_message }}
+        if: success()
+      - id: integration-tests-comment
+        name: Integration Test Comment
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        with:
+          files: ${{ steps.run-integration-tests.outputs.tests_results_location }}/*.xml
+          check_name: 'Integration Tests [${{ matrix.db_type }}] Report'
+        if: always() && steps.run-integration-tests.outputs.skip_results_report != 'true'
+      - id: publish-integration-tests
+        name: 'Publish integration tests to Testmo'
+        uses: ./.github/actions/testmo-wrapper
+        with:
+          operation: submit-thread
+          github_sha: ${{ env.BUILD_HASH }}
+          testmo_url: 'https://dotcms.testmo.net' #${{ secrets.TESTMO_URL }}
+          testmo_token: ${{ secrets.TESTMO_TOKEN }}
+          testmo_project_id: 1
+          testmo_run_id: ${{ needs.integration-tests-thread-setup-job.outputs.testmo_run_id }}
+          test_type: integration
+          tests_results_location: ${{ steps.run-integration-tests.outputs.tests_results_location }}/*.xml
+          ci_index: ${{ steps.run-integration-tests.outputs.ci_index }}
+          ci_total: 2
+          ci_label: ${{ matrix.db_type }}
+          debug: true
+        if: always() && steps.run-integration-tests.outputs.skip_results_report != 'true'
+      - id: github-status
+        name: Send Github Status
+        uses: ./.github/actions/github-status
+        with:
+          test_type: integration
+          db_type: ${{ matrix.db_type }}
+          test_results_status: ${{ steps.run-integration-tests.outputs.tests_results_status }}
+          pull_request: ${{ github.event.number }}
+          github_user: ${{ env.GITHUB_USER }}
+          cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+          tests_report_url: ${{ steps.publish-integration-tests.outputs.tests_report_url }}
+        if: always() && steps.run-integration-tests.outputs.skip_results_report != 'true'
+  integration-tests-complete-job:
+    name: Integration tests publish complete setup
+    runs-on: ubuntu-latest
+    needs: [ integration-tests-thread-setup-job, run-integration-tests-job ]
+    if: always() && needs.run-integration-tests-job.outputs.skip_results_report != 'true'
+    steps:
+      - id: fetch-core
+        name: Fetch Core Repo
+        uses: actions/checkout@v3
+      - id: read-cicd-local-env
+        name: Read CICD local library
+        run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
+        if: success()
+      - id: complete
+        name: Post submit complete
+        uses: ./.github/actions/testmo-wrapper
+        with:
+          operation: complete
+          github_sha: ${{ env.BUILD_HASH }}
+          testmo_url: 'https://dotcms.testmo.net' #${{ secrets.TESTMO_URL }}
+          testmo_token: ${{ secrets.TESTMO_TOKEN }}
+          testmo_project_id: 1
+          testmo_run_id: ${{ needs.integration-tests-thread-setup-job.outputs.testmo_run_id }}
+          test_type: integration
+          debug: true

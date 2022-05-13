@@ -47,9 +47,9 @@ export const cacheCore = async (): Promise<CacheMetadata> => {
   const cacheLocations: CacheLocations = JSON.parse(core.getInput('cache_locations'))
   core.info(`Attempting to cache core using these locations:\n ${JSON.stringify(cacheLocations, null, 2)}`)
 
-  const availableCacheKeysStr = core.getInput('available-cache-keys')
+  const availableCacheKeysStr = core.getInput('available_cache_keys')
   core.info(`Available cache keys: ${availableCacheKeysStr}`)
-  const availableCacheKeys: CacheKeys = JSON.parse(core.getInput('available-cache-keys'))
+  const availableCacheKeys: CacheKeys = JSON.parse(core.getInput('available_cache_keys'))
 
   const cacheKeys = availableCacheKeys[buildEnv as keyof CacheKeys]
   core.info(`Cache keys: ${JSON.stringify(cacheKeys, null, 2)}`)

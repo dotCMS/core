@@ -3,11 +3,20 @@ import * as exec from '@actions/exec'
 import * as fs from 'fs'
 import * as path from 'path'
 
+const buildEnv = core.getInput('build_env')
+const projectRoot = core.getInput('project_root')
+const dotCmsRoot = path.join(projectRoot, 'dotCMS')
+const testResources = ['log4j2.xml']
+const srcTestResourcesFolder = 'cicd/resources'
+const targetTestResourcesFolder = 'dotCMS/src/test/resources'
+const runtTestsPrefix = 'unit-tests:'
+
 interface Command {
   cmd: string
   args: string[]
   workingDir?: string
   outputDir: string
+  reportDir: string
 }
 
 export interface Commands {
@@ -19,20 +28,18 @@ export const COMMANDS: Commands = {
   gradle: {
     cmd: './gradlew',
     args: ['test'],
-    workingDir: 'dotCMS',
-    outputDir: 'dotCMS/build/test-results/unit-tests/xml'
+    workingDir: dotCmsRoot,
+    outputDir: `${dotCmsRoot}/build/test-results/test`,
+    reportDir: `${dotCmsRoot}/build/reports/tests/test`
   },
   maven: {
     cmd: './mvnw',
     args: ['test'],
-    workingDir: 'dotCMS',
-    outputDir: 'dotCMS/target/surefire-reports'
+    workingDir: dotCmsRoot,
+    outputDir: `${dotCmsRoot}/target/surefire-reports`,
+    reportDir: `${dotCmsRoot}/build/reports/tests/test`
   }
 }
-
-const TEST_RESOURCES = ['log4j2.xml']
-const SOURCE_TEST_RESOURCES_FOLDER = 'cicd/resources'
-const TARGET_TEST_RESOURCES_FOLDER = 'dotCMS/src/test/resources'
 
 /**
  * Based on a revolved {@link Command}, resolve the command to execute in order to run unit tests.
@@ -43,17 +50,63 @@ const TARGET_TEST_RESOURCES_FOLDER = 'dotCMS/src/test/resources'
 export const runTests = async (cmd: Command): Promise<number> => {
   prepareTests()
 
+  resolveParams(cmd)
+
+  core.info(`
+    ==================
+    Running unit tests
+    ==================`)
   core.info(`Executing command: ${cmd.cmd} ${cmd.args.join(' ')}`)
   return await exec.exec(cmd.cmd, cmd.args, {cwd: cmd.workingDir})
 }
 
+/**
+ * Prepares tests by copyng necessary files into workspace
+ */
 const prepareTests = () => {
-  const projectRoot = core.getInput('project_root')
   core.info('Preparing unit tests')
-  TEST_RESOURCES.forEach(res => {
-    const source = path.join(projectRoot, SOURCE_TEST_RESOURCES_FOLDER, res)
-    const dest = path.join(projectRoot, TARGET_TEST_RESOURCES_FOLDER, res)
+  testResources.forEach(res => {
+    const source = path.join(projectRoot, srcTestResourcesFolder, res)
+    const dest = path.join(projectRoot, targetTestResourcesFolder, res)
     core.info(`Copying resource ${source} to ${dest}`)
     fs.copyFileSync(source, dest)
   })
+}
+
+/**
+ * Add extra parameters to command arguments
+ *
+ * @param cmd {@link Command} object holding command and arguments
+ */
+const resolveParams = (cmd: Command) => {
+  const tests = core.getInput('tests')?.trim()
+  if (!tests) {
+    core.info('No specific unit tests found')
+    return
+  }
+
+  core.info(`Found tests to run: "${tests}"`)
+
+  tests.split('\n').forEach(l => {
+    const line = l.trim()
+    if (!line.toLowerCase().startsWith(runtTestsPrefix)) {
+      return
+    }
+
+    const testLine = line.slice(runtTestsPrefix.length).trim()
+    if (buildEnv === 'gradle') {
+      testLine.split(',').forEach(test => {
+        cmd.args.push('--tests')
+        cmd.args.push(test.trim())
+      })
+    } else if (buildEnv === 'maven') {
+      const normalized = testLine
+        .split(',')
+        .map(t => t.trim())
+        .join(',')
+      cmd.args.push(`-Dit.test=${normalized}`)
+    }
+  })
+
+  core.info(`Resolved params ${cmd.args.join(' ')}`)
 }

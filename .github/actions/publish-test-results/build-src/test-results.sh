@@ -183,7 +183,7 @@ function copyResults {
   mkdir -p ${LOGS_FOLDER}
 
   echo "Copying ${INPUT_TEST_TYPE} tests reports to [${REPORTS_FOLDER}]"
-  executeCmd "cp -R ${INPUT_PROJECT_ROOT}/dotCMS/build/test-results/${INPUT_TEST_TYPE}-tests/html/* ${REPORTS_FOLDER}/"
+  executeCmd "cp -R ${INPUT_TESTS_REPORT_LOCATION}/* ${REPORTS_FOLDER}/"
   executeCmd "cp -R ${INPUT_PROJECT_ROOT}/dotCMS/dotcms.log ${LOGS_FOLDER}/"
 }
 
