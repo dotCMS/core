@@ -2323,12 +2323,16 @@ public class WorkflowResource {
         }
     } // fire.
 
-    private LinkedHashSet<String> getBinaryFields(final Map<String,Object> mapContent) {
+    private LinkedHashSet<String> getBinaryFields(final Map<String, Object> mapContent) {
 
-        return mapContent.containsKey(BINARY_FIELDS)?
-                ConversionUtils.INSTANCE.convert((JSONArray)mapContent.get(BINARY_FIELDS),
-                        new JsonArrayToLinkedSetConverter<>(Object::toString)):
-                JsonArrayToLinkedSetConverter.EMPTY_LINKED_SET;
+        List array = (List) mapContent.getOrDefault(BINARY_FIELDS, Collections.EMPTY_LIST);
+
+
+        final LinkedHashSet<String> hashSet = new LinkedHashSet<>();
+        array.forEach(a -> hashSet.add(a.toString()));
+
+        return hashSet;
+
     }
 
     private FireActionByNameForm processForm(final FormDataMultiPart multipart, final User user)
