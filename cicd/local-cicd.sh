@@ -23,6 +23,93 @@ ${cmd}"
   echo
 }
 
+# Announces and wait for specifies time.
+#
+# $1: message: message to print
+# $2: $wait: wait time
+function waitFor {
+  local message=${1}
+  local wait=${2}
+  echo "Waiting ${wait} for ${messg} to be ready"
+  sleep ${wait}
+}
+
+# Creates license file in provided path
+#
+# $1: $license_folder: provided license folder
+function prepareLicense {
+  local license_folder=${1}
+  local license_path=${CUSTOM_FOLDER}/${license_folder}
+  export LICENSE_FILE="${license_path}/license.dat"
+  echo "Adding license to ${LICENSE_FILE}"
+  touch ${LICENSE_FILE}
+  chmod 777 ${LICENSE_FILE}
+  echo "${INPUT_LICENSE_KEY}" > ${LICENSE_FILE}
+}
+
+# Validates that a license path exists.
+#
+# $1: $licensePath: provided license path
+function validateLicense {
+  local license_path=${1}
+  [[ -z "${license_path}" ]] \
+    && echo 'No license path provided, aborting' \
+    && exit 1
+  [[ ! -s ${license_path} ]] \
+    && echo "========================================
+    License file at ${license_path} NOT FOUND
+    ========================================" \
+    && return 1
+}
+
+# Start integration or postman tests dependencies
+#
+# $1: $test_type: test type
+function startDependencies {
+  local test_type=${1}
+  echo "Starting ${test_type} dependencies"
+
+  executeCmd "docker-compose
+    -f open-distro-compose.yml
+    -f ${INPUT_DB_TYPE}-compose.yml
+    up
+    --abort-on-container-exit &"
+}
+
+# Stop integration or postman tests dependencies
+#
+# $1: $test_type: test type
+function stopDependencies {
+  local test_type=${1}
+  echo "Stopping ${test_type} dependencies"
+
+  executeCmd "docker-compose
+    -f open-distro-compose.yml
+    -f ${INPUT_DB_TYPE}-compose.yml
+    down"
+}
+
+# Set Test Github Action outputs
+function setOutputs {
+  local return_code=${1}
+  local results_location=${2}
+
+  echo "::set-output name=tests-run-exit-code::${return_code}"
+  if [[ ${return_code} == 0 ]]; then
+    local status='PASSED'
+  else
+    local status='FAILED'
+  fi
+  echo "::set-output name=tests-results-status::${status}"
+  echo "::set-output name=tests-results-location::${results_location}"
+  if [[ -d ${results_location} ]]; then
+    local skip_report='false'
+  else
+    local skip_report='true'
+  fi
+  echo "::set-output name=skip-results-report::${skip_report}"
+}
+
 # HTTP-Encodes a provided string
 #
 # $1: string: url to encode
@@ -48,6 +135,7 @@ function urlEncode {
 # $1: path: initial path
 function resolveResultsPath {
   local path="${1}"
+  [[ -n "${TEST_TYPE}" ]] && path="${path}/${TEST_TYPE}"
   [[ -n "${TEST_TYPE}" ]] && path="${path}/${TEST_TYPE}"
   [[ -n "${DB_TYPE}" ]] && path="${path}/${DB_TYPE}"
   echo "${path}"

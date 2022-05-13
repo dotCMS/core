@@ -34,7 +34,7 @@ inputs:
   cicd_github_token:
     description: 'Github CICD token'
     required: true
-  report_url:
+  tests_report_url:
     description: 'Test results report url'
     required: true
 

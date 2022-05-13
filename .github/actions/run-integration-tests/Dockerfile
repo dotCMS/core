@@ -1,5 +1,8 @@
 FROM alpine:3.14.6 as results-base
 
+ARG BRANCH=master
+ENV BRANCH=${BRANCH}
+
 WORKDIR /srv
 
 RUN apk update \

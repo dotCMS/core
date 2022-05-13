@@ -37,7 +37,7 @@ const unit = __importStar(__nccwpck_require__(733));
  * Main entry point for this action.
  */
 const run = () => {
-    core.info('Running Core unit tests');
+    core.info("Running Core's unit tests");
     const buildEnv = core.getInput('build_env');
     const cmd = unit.COMMANDS[buildEnv];
     if (!cmd) {
@@ -53,18 +53,20 @@ const run = () => {
             skipResultsReport: false
         };
         core.info(`Unit test results:\n${JSON.stringify(results)}`);
-        core.setOutput('tests-run-exit-code', exitCode === 0 ? 'PASSED' : 'FAILED');
-        core.setOutput('tests-results-status', cmd.outputDir);
-        core.setOutput('tests-results-location', cmd.outputDir);
-        core.setOutput('skip-results-report', false);
+        core.setOutput('tests_run_exit_code', exitCode);
+        core.setOutput('tests_results_status', exitCode === 0 ? 'PASSED' : 'FAILED');
+        core.setOutput('tests_results_location', cmd.outputDir);
+        core.setOutput('tests_report_location', cmd.reportDir);
+        core.setOutput('skip_results_report', false);
     })
         .catch(reason => {
         const messg = `Running unit tests failed due to ${reason}`;
         const skipResults = !fs.existsSync(cmd.outputDir);
-        core.setOutput('tests-run-exit-code', 1);
-        core.setOutput('tests-run-exit-code', 'FAILED');
-        core.setOutput('tests-results-location', cmd.outputDir);
-        core.setOutput('skip-results-report', skipResults);
+        core.setOutput('tests_run_exit_code', 1);
+        core.setOutput('tests_run_exit_status', 'FAILED');
+        core.setOutput('tests_results_location', cmd.outputDir);
+        core.setOutput('tests_report_location', cmd.reportDir);
+        core.setOutput('skip_results_report', skipResults);
         core.setFailed(messg);
     });
 };
@@ -117,23 +119,29 @@ const core = __importStar(__nccwpck_require__(186));
 const exec = __importStar(__nccwpck_require__(514));
 const fs = __importStar(__nccwpck_require__(147));
 const path = __importStar(__nccwpck_require__(17));
+const buildEnv = core.getInput('build_env');
+const projectRoot = core.getInput('project_root');
+const dotCmsRoot = path.join(projectRoot, 'dotCMS');
+const testResources = ['log4j2.xml'];
+const srcTestResourcesFolder = 'cicd/resources';
+const targetTestResourcesFolder = 'dotCMS/src/test/resources';
+const runtTestsPrefix = 'unit-tests:';
 exports.COMMANDS = {
     gradle: {
         cmd: './gradlew',
         args: ['test'],
-        workingDir: 'dotCMS',
-        outputDir: 'dotCMS/build/test-results/unit-tests/xml'
+        workingDir: dotCmsRoot,
+        outputDir: `${dotCmsRoot}/build/test-results/test`,
+        reportDir: `${dotCmsRoot}/build/reports/tests/test`
     },
     maven: {
         cmd: './mvnw',
         args: ['test'],
-        workingDir: 'dotCMS',
-        outputDir: 'dotCMS/target/surefire-reports'
+        workingDir: dotCmsRoot,
+        outputDir: `${dotCmsRoot}/target/surefire-reports`,
+        reportDir: `${dotCmsRoot}/build/reports/tests/test`
     }
 };
-const TEST_RESOURCES = ['log4j2.xml'];
-const SOURCE_TEST_RESOURCES_FOLDER = 'cicd/resources';
-const TARGET_TEST_RESOURCES_FOLDER = 'dotCMS/src/test/resources';
 /**
  * Based on a revolved {@link Command}, resolve the command to execute in order to run unit tests.
  *
@@ -142,19 +150,61 @@ const TARGET_TEST_RESOURCES_FOLDER = 'dotCMS/src/test/resources';
  */
 const runTests = (cmd) => __awaiter(void 0, void 0, void 0, function* () {
     prepareTests();
+    resolveParams(cmd);
+    core.info(`
+    ==================
+    Running unit tests
+    ==================`);
     core.info(`Executing command: ${cmd.cmd} ${cmd.args.join(' ')}`);
     return yield exec.exec(cmd.cmd, cmd.args, { cwd: cmd.workingDir });
 });
 exports.runTests = runTests;
+/**
+ * Prepares tests by copyng necessary files into workspace
+ */
 const prepareTests = () => {
-    const projectRoot = core.getInput('project_root');
     core.info('Preparing unit tests');
-    TEST_RESOURCES.forEach(res => {
-        const source = path.join(projectRoot, SOURCE_TEST_RESOURCES_FOLDER, res);
-        const dest = path.join(projectRoot, TARGET_TEST_RESOURCES_FOLDER, res);
+    testResources.forEach(res => {
+        const source = path.join(projectRoot, srcTestResourcesFolder, res);
+        const dest = path.join(projectRoot, targetTestResourcesFolder, res);
         core.info(`Copying resource ${source} to ${dest}`);
         fs.copyFileSync(source, dest);
     });
+};
+/**
+ * Add extra parameters to command arguments
+ *
+ * @param cmd {@link Command} object holding command and arguments
+ */
+const resolveParams = (cmd) => {
+    var _a;
+    const tests = (_a = core.getInput('tests')) === null || _a === void 0 ? void 0 : _a.trim();
+    if (!tests) {
+        core.info('No specific unit tests found');
+        return;
+    }
+    core.info(`Found tests to run: "${tests}"`);
+    tests.split('\n').forEach(l => {
+        const line = l.trim();
+        if (!line.toLowerCase().startsWith(runtTestsPrefix)) {
+            return;
+        }
+        const testLine = line.slice(runtTestsPrefix.length).trim();
+        if (buildEnv === 'gradle') {
+            testLine.split(',').forEach(test => {
+                cmd.args.push('--tests');
+                cmd.args.push(test.trim());
+            });
+        }
+        else if (buildEnv === 'maven') {
+            const normalized = testLine
+                .split(',')
+                .map(t => t.trim())
+                .join(',');
+            cmd.args.push(`-Dit.test=${normalized}`);
+        }
+    });
+    core.info(`Resolved params ${cmd.args.join(' ')}`);
 };
 
 

@@ -68,8 +68,8 @@ const send = (testType, dbType, testResultsStatus) => __awaiter(void 0, void 0, 
         return;
     }
     const pr = (yield prResponse.json());
-    const reportUrl = core.getInput('report_url');
-    const status = createStatus(testType, dbType, testResultsStatus, reportUrl);
+    const testsReportUrl = core.getInput('tests_report_url');
+    const status = createStatus(testType, dbType, testResultsStatus, testsReportUrl);
     const statusResponse = yield postStatus(pr._links.statuses.href, creds, status);
     if (!statusResponse.ok) {
         core.warning(`Could not send Github status for ${testType} tests`);
@@ -102,10 +102,10 @@ const resolveStastusLabel = (testType, dbType) => {
  * @param testType test type
  * @param dbType database type
  * @param testResultsStatus test results status
- * @param reportUrl report url where tests resutls are located
+ * @param testsReportUrl report url where tests results are located
  * @returns {@link GithubStatus} object to be used when reporting
  */
-const createStatus = (testType, dbType, testResultsStatus, reportUrl) => {
+const createStatus = (testType, dbType, testResultsStatus, testsReportUrl) => {
     let statusLabel;
     let description;
     if (testResultsStatus === 'PASSED') {
@@ -119,7 +119,7 @@ const createStatus = (testType, dbType, testResultsStatus, reportUrl) => {
     return {
         state: statusLabel,
         description,
-        target_url: reportUrl,
+        target_url: testsReportUrl,
         context: `Github Actions - ${resolveStastusLabel(testType, dbType)}`
     };
 };
