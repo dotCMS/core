@@ -705,6 +705,15 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 			Logger.debug(this, "System Container cannot be saved/updated.");
 			throw new IllegalArgumentException("System Container and its associated data cannot be saved.");
 		}
+
+		if(!APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles)
+				|| !APILocator.getPermissionAPI().doesUserHavePermissions(PermissionAPI.PermissionableType.CONTAINERS, PermissionAPI.PERMISSION_EDIT, user)) {
+
+			Logger.info(this, "The user: " + user.getUserId() + ", does not have ADD children permissions to the host: " + host.getHostname()
+					+ " or add containers");
+			throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
+		}
+
 		Container currentContainer = null;
 		List<Template> currentTemplates = null;
 		Identifier identifier = null;

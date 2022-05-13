@@ -342,7 +342,6 @@ public interface ContainerAPI {
 	Host getParentHost(Container cont, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
-	 * Retrieves a paginated list of containers the user can use
 	 * @param user
 	 * @param includeArchived
 	 * @param params
@@ -353,10 +352,15 @@ public interface ContainerAPI {
 	 * @param offset
 	 * @param limit
 	 * @param orderBy
+	 *
 	 * @return
+	 *
 	 * @throws DotSecurityException
 	 * @throws DotDataException
+	 * @deprecated Use method {@link #findContainers(User, SearchParams)} instead, which allows you to set the same
+	 * query parameters in the method's signature via the {@link SearchParams} object more easily.
 	 */
+	@Deprecated
 	List<Container> findContainers(User user, boolean includeArchived, Map<String,Object> params, String hostId, String inode, String identifier, String parent, int offset, int limit, String orderBy) throws DotSecurityException, DotDataException;
 
     /**

@@ -647,14 +647,6 @@ public class ContainerResource implements Serializable {
         final PageMode pageMode = PageMode.get(request);
         Container container     = new Container();
 
-        if(!APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, pageMode.respectAnonPerms)
-                || !APILocator.getPermissionAPI().doesUserHavePermissions(PermissionAPI.PermissionableType.CONTAINERS, PermissionAPI.PERMISSION_EDIT, user)) {
-
-            Logger.debug(this, ()-> "The user: " + user.getUserId() + ", does not have ADD children permissions to the host: " + host.getHostname()
-                                        + " or add containers");
-            throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
-        }
-
         ActivityLogger.logInfo(this.getClass(), "Save Container",
                 "User " + user.getPrimaryKey() + " saved " + container.getTitle(), host.getHostname());
 
@@ -702,15 +694,6 @@ public class ContainerResource implements Serializable {
         final User user         = initData.getUser();
         final Host host         = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
         final PageMode pageMode = PageMode.get(request);
-
-        if(!APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, pageMode.respectAnonPerms)
-                || !APILocator.getPermissionAPI().doesUserHavePermissions(PermissionAPI.PermissionableType.CONTAINERS, PermissionAPI.PERMISSION_EDIT, user)) {
-
-            Logger.error(this, "The user: " + user.getUserId() + ", does not have ADD children permissions to the host: " + host.getHostname()
-                    + " or add containers");
-            throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
-        }
-
         final Container container = this.getContainerWorking(containerForm.getIdentifier(), user, host);
 
         if (null == container || !InodeUtils.isSet(container.getInode())) {
