@@ -1,4 +1,4 @@
-FROM alpine:3.14.6 as results-base
+FROM node:16.15.0-alpine as results-base
 
 WORKDIR /srv
 

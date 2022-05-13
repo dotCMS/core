@@ -13,7 +13,7 @@ inputs:
   cache_locations:
     description: 'Locations to cache'
     required: true
-  available-cache-keys:
+  available_cache_keys:
     description: 'Available cache keys'
     required: true
     default: |

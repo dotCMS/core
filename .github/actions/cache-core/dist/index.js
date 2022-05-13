@@ -58,9 +58,9 @@ const cacheCore = () => __awaiter(void 0, void 0, void 0, function* () {
     core.info(`Resolving cache locations with buid env ${buildEnv}`);
     const cacheLocations = JSON.parse(core.getInput('cache_locations'));
     core.info(`Attempting to cache core using these locations:\n ${JSON.stringify(cacheLocations, null, 2)}`);
-    const availableCacheKeysStr = core.getInput('available-cache-keys');
+    const availableCacheKeysStr = core.getInput('available_cache_keys');
     core.info(`Available cache keys: ${availableCacheKeysStr}`);
-    const availableCacheKeys = JSON.parse(core.getInput('available-cache-keys'));
+    const availableCacheKeys = JSON.parse(core.getInput('available_cache_keys'));
     const cacheKeys = availableCacheKeys[buildEnv];
     core.info(`Cache keys: ${JSON.stringify(cacheKeys, null, 2)}`);
     const cacheMetadata = {
