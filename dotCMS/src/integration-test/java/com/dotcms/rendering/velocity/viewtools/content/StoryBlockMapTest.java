@@ -80,7 +80,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON_OLIST);
         final String html = storyBlockMap.toHtml();
         Assert.assertTrue(html.contains("<ol style=\"text-align: \">"));
-        Assert.assertTrue(html.contains("<li style=\"text-align: left\">"));
+        Assert.assertTrue(html + ": <li style=\"text-align: left\">", html.contains("<li style=\"text-align: left\">"));
         Assert.assertTrue(html.contains("one"));
         Assert.assertTrue(html.contains("two"));
         Assert.assertTrue(html.contains("tree"));
@@ -104,7 +104,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON_ULIST);
         final String html = storyBlockMap.toHtml();
         Assert.assertTrue(html.contains("<ul>"));
-        Assert.assertTrue(html.contains("<li style=\"text-align: left\">"));
+        Assert.assertTrue(html + ": does not contains <li style=\"text-align: left\">", html.contains("<li style=\"text-align: left\">"));
         Assert.assertTrue(html.contains("1"));
         Assert.assertTrue(html.contains("2"));
         Assert.assertTrue(html.contains("3"));
@@ -130,7 +130,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON_PARAGRAPH);
         final String html = storyBlockMap.toHtml();
         Assert.assertTrue(html.contains("<p style=\"text-align: left\">"));
-        Assert.assertTrue(html.contains("this is paragraph"));
+        Assert.assertTrue(html + ": does not contains this is paragraph", html.contains("this is paragraph"));
         Assert.assertTrue(html.contains("</p>"));
     }
 
@@ -167,7 +167,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
         final String html = storyBlockMap.toHtml();
         Assert.assertTrue(html.contains("<h2 style=\"text-align: \" >test2</h2>"));
         Assert.assertTrue(html.contains("<h2 style=\"text-align: \" >test1</h2>"));
-        Assert.assertTrue(html.contains("<strong>"));
+        Assert.assertTrue(html + ": does not contains <strong>", html.contains("<strong>"));
         Assert.assertTrue(html.contains("heading 1"));
         Assert.assertTrue(html.contains("<h2 style=\"text-align: left\">"));
         Assert.assertTrue(html.contains("heading 2"));
