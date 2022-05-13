@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 import org.apache.commons.lang.WordUtils;
 
@@ -64,7 +65,7 @@ import org.apache.commons.lang.WordUtils;
  * @author JSON.org
  * @version 2010-05-17
  */
-public class JSONObject implements Serializable {
+public class JSONObject implements Serializable, Map {
 	
     /**
      * JSONObject.NULL is equivalent to the value that JavaScript calls null,
@@ -107,7 +108,7 @@ public class JSONObject implements Serializable {
     /**
      * The map where the JSONObject's properties are kept.
      */
-    private Map<String,Object> map = new LinkedHashMap<>();
+    private final Map map;
 
 
     /**
@@ -123,7 +124,7 @@ public class JSONObject implements Serializable {
      * Construct an empty JSONObject.
      */
     public JSONObject() {
-        
+        this.map= new HashMap();
     }
 
 
@@ -215,8 +216,8 @@ public class JSONObject implements Serializable {
      *  the JSONObject.
      * @throws JSONException 
      */
-    public JSONObject(Map<String,Object> incomingMap) {
-        this.map = new HashMap<String,Object>();
+    public JSONObject(Map incomingMap) {
+        this();
         if (incomingMap != null) {
             Iterator i = incomingMap.entrySet().iterator();
             while (i.hasNext()) {
@@ -1573,5 +1574,81 @@ public class JSONObject implements Serializable {
             throw new JSONException(exception);
         }
      }
+
+
+    @Override
+    public int size() {
+        return this.map.size();
+    }
+
+
+    @Override
+    public boolean isEmpty() {
+ 
+        return this.map.isEmpty();
+    }
+
+
+    @Override
+    public boolean containsKey(Object key) {
+
+        return this.map.containsKey(key);
+    }
+
+
+    @Override
+    public boolean containsValue(Object value) {
+        return this.map.containsValue(value);
+    }
+
+
+    @Override
+    public Object get(Object key) {
+        return this.map.get(key);
+    }
+
+
+    @Override
+    public Object put(Object key, Object value) {
+        return this.map.put(key, value);
+    }
+
+
+    @Override
+    public Object remove(Object key) {
+        return this.map.remove(key);
+    }
+
+
+    @Override
+    public void putAll(Map m) {
+       this.map.putAll(m);
+        
+    }
+
+
+    @Override
+    public void clear() {
+        this.map.clear();
+        
+    }
+
+
+    @Override
+    public Set keySet() {
+        return this.map.keySet();
+    }
+
+
+    @Override
+    public Collection values() {
+        return this.map.values();
+    }
+
+
+    @Override
+    public Set entrySet() {
+        return this.map.entrySet();
+    }
 
 }

@@ -6,10 +6,13 @@ import java.io.Writer;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Spliterator;
+import java.util.function.UnaryOperator;
 
 /**
  * A JSONArray is an ordered sequence of values. Its external text form is a
@@ -59,13 +62,13 @@ import java.util.Map;
  * @author JSON.org
  * @version 2009-04-14
  */
-public class JSONArray  implements Serializable {
+public class JSONArray  implements List,Serializable {
 
 
     /**
      * The arrayList where the JSONArray's properties are kept.
      */
-    private ArrayList myArrayList;
+    private final ArrayList myArrayList;
 
 
     public void add(int index, Object element) {
@@ -78,12 +81,12 @@ public class JSONArray  implements Serializable {
 		return myArrayList.add(o);
 	}
 
-	public boolean addAll(Collection<? extends Object> c) {
+	public boolean addAll(Collection c) {
 		// TODO Auto-generated method stub
 		return myArrayList.add(c);
 	}
 
-	public boolean addAll(int index, Collection<? extends Object> c) {
+	public boolean addAll(int index, Collection c) {
 		// TODO Auto-generated method stub
 		return myArrayList.addAll( index, c);
 	}
@@ -94,86 +97,102 @@ public class JSONArray  implements Serializable {
 	}
 
 	public boolean contains(Object o) {
-		// TODO Auto-generated method stub
 		return myArrayList.contains(o);
 	}
 
-	public boolean containsAll(Collection<?> c) {
-		// TODO Auto-generated method stub
+	public boolean containsAll(Collection c) {
+
 		return myArrayList.containsAll(c);
 	}
 
 	public int indexOf(Object o) {
-		// TODO Auto-generated method stub
+
 		return myArrayList.indexOf(o);
 	}
 
 	public boolean isEmpty() {
-		// TODO Auto-generated method stub
+
 		return myArrayList.isEmpty();
 	}
 
 	public Iterator<Object> iterator() {
-		// TODO Auto-generated method stub
+
 		return myArrayList.iterator();
 	}
 
 	public int lastIndexOf(Object o) {
-		// TODO Auto-generated method stub
+
 		return myArrayList.lastIndexOf(o);
 	}
 
 	public ListIterator<Object> listIterator() {
-		// TODO Auto-generated method stub
+
 		return myArrayList.listIterator();
 	}
 
 	public ListIterator<Object> listIterator(int index) {
-		// TODO Auto-generated method stub
+
 		return myArrayList.listIterator(index);
 	}
 
 	public boolean remove(Object o) {
-		// TODO Auto-generated method stub
+
 		return myArrayList.remove(o);
 	}
 
-	public boolean removeAll(Collection<?> c) {
-		// TODO Auto-generated method stub
+	public boolean removeAll(Collection c) {
+
 		return myArrayList.removeAll(c);
 	}
 
-	public boolean retainAll(Collection<?> c) {
-		// TODO Auto-generated method stub
+	public boolean retainAll(Collection c) {
+
 		return myArrayList.retainAll(c);
 	}
 
 	public Object set(int index, Object element) {
-		// TODO Auto-generated method stub
+
 		return myArrayList.set(index,element);
 	}
 
 	public int size() {
-		// TODO Auto-generated method stub
+
 		return myArrayList.size();
 	}
 
 	public List<Object> subList(int fromIndex, int toIndex) {
-		// TODO Auto-generated method stub
+
 		return myArrayList.subList(fromIndex,toIndex);
 	}
 
 	public Object[] toArray() {
-		// TODO Auto-generated method stub
+
 		return myArrayList.toArray();
 	}
 
-	public <T> T[] toArray(T[] a) {
-		// TODO Auto-generated method stub
-		return (T[]) myArrayList.toArray(a);
-	}
 
-	/**
+	@Override
+    public Object[] toArray(Object[] a) {
+
+        return myArrayList.toArray(a);
+    }
+
+    @Override
+    public void replaceAll(UnaryOperator operator) {
+        myArrayList.replaceAll(operator);
+    }
+
+    @Override
+    public void sort(Comparator c) {
+        myArrayList.sort(c);
+    }
+
+    @Override
+    public Spliterator spliterator() {
+        return myArrayList.spliterator();
+    }
+
+    /**
      * Construct an empty JSONArray.
      */
     public JSONArray() {
