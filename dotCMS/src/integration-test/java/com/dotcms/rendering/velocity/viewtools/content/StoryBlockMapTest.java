@@ -80,8 +80,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON_OLIST);
         final String html = storyBlockMap.toHtml();
         Assert.assertTrue(html.contains("<ol style=\"text-align: \">"));
-        Assert.assertTrue(html.contains("<li style=\"text-align: left;\">"));
-        Assert.assertTrue(html.contains("<p style=\"text-align: left;\">"));
+        Assert.assertTrue(html.contains("<li style=\"text-align: left\">"));
         Assert.assertTrue(html.contains("one"));
         Assert.assertTrue(html.contains("two"));
         Assert.assertTrue(html.contains("tree"));
@@ -105,12 +104,10 @@ public class StoryBlockMapTest extends IntegrationTestBase {
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON_ULIST);
         final String html = storyBlockMap.toHtml();
         Assert.assertTrue(html.contains("<ul>"));
-        Assert.assertTrue(html.contains("<li style=\"text-align: left;\">"));
-        Assert.assertTrue(html.contains("<p style=\"text-align: left;\">"));
+        Assert.assertTrue(html.contains("<li style=\"text-align: left\">"));
         Assert.assertTrue(html.contains("1"));
         Assert.assertTrue(html.contains("2"));
         Assert.assertTrue(html.contains("3"));
-        Assert.assertTrue(html.contains("</p>"));
         Assert.assertTrue(html.contains("</li>"));
         Assert.assertTrue(html.contains("</ul>"));
     }
@@ -164,7 +161,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
         final File velocityRootFile = new File(velocityRoot);
 
         Assert.assertTrue("the " + velocityRoot + "/static/storyblock/default.vtl" + " should exists",
-                new File(velocityRootFile, "static/storyblock/default..vtl").exists());
+                new File(velocityRootFile, "static/storyblock/default.vtl").exists());
 
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON);
         final String html = storyBlockMap.toHtml();
@@ -199,7 +196,9 @@ public class StoryBlockMapTest extends IntegrationTestBase {
             final File tempTestFile = File
                     .createTempFile("paragraph" , ".vtl");
             FileUtils.writeStringToFile(tempTestFile,
-                    "<p> $!item.content </p>");
+                    "#foreach($element in $!item.content)" +
+                            "<p> $element.text </p>" +
+                          "#end");
 
             final String variable = "testFileAsset" + System.currentTimeMillis();
             final ContentType fileAssetContentType = APILocator.getContentTypeAPI(user).save(ContentTypeBuilder
