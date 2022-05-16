@@ -1054,7 +1054,11 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
             throw new AssertionError("DotRuntimeException Expected");
         }catch (DotRuntimeException e) {
-            assertEquals(e.getMessage(), "Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s).");
+            final String expectedMessage = String.format("Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s).\n"
+                    + "List of non valid fields\n"
+                    + "UNIQUE: %s/%s\n\n", uniqueTextField.variable(), uniqueTextField.name());
+
+            assertEquals(expectedMessage, e.getMessage());
         }
     }
 
@@ -1103,8 +1107,11 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
                 throw new AssertionError("DotRuntimeException Expected");
             } catch (DotRuntimeException e) {
-                assertEquals(e.getMessage(),
-                        "Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s).");
+                final String expectedMessage = String.format("Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s).\n"
+                        + "List of non valid fields\n"
+                        + "UNIQUE: %s/%s\n\n", uniqueTextField.variable(), uniqueTextField.name());
+
+                assertEquals(expectedMessage, e.getMessage());
             }
         } finally {
             ESContentletAPIImpl.setUniquePerSite(uniquePerSite);
@@ -1209,8 +1216,11 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
                 throw new AssertionError("DotRuntimeException Expected");
             } catch (DotRuntimeException e) {
-                assertEquals(e.getMessage(),
-                        "Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s).");
+                final String expectedMessage = String.format("Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s).\n"
+                        + "List of non valid fields\n"
+                        + "UNIQUE: %s/%s\n\n", uniqueTextField.variable(), uniqueTextField.name());
+
+                assertEquals(expectedMessage, e.getMessage());
             }
         } finally {
             ESContentletAPIImpl.setUniquePerSite(uniquePerSite);
@@ -1617,8 +1627,11 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
             throw new AssertionError("DotRuntimeException Expected");
         } catch (DotRuntimeException e) {
-            assertEquals(e.getMessage(),
-                    "Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s).");
+            final String expectedMessage = String.format("Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s).\n"
+                    + "List of non valid fields\n"
+                    + "UNIQUE: %s/%s\n\n", uniqueTextField.variable(), uniqueTextField.name());
+
+            assertEquals(expectedMessage, e.getMessage());
         }
     }
 

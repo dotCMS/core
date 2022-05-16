@@ -149,9 +149,11 @@ public class PublisherAPIImpl implements PublisherAPI {
 
                 PushPublishLogger.log(this.getClass(), "Completed Publishing Task", config.getId());
             }
-        } catch ( Exception e ) {
-            Logger.error( PublisherAPIImpl.class, e.getMessage(), e );
-            throw new DotPublishingException( e.getMessage(), e );
+        } catch (final Exception e) {
+            final String errorMsg =
+                    String.format("Error generating bundle ID '%s': %s", config.getId(), e.getMessage());
+            Logger.error( PublisherAPIImpl.class, errorMsg, e );
+            throw new DotPublishingException(errorMsg, e);
         }
 
         return status;
@@ -208,6 +210,12 @@ public class PublisherAPIImpl implements PublisherAPI {
         }
 
         return filters;
+    }
+
+    @Override
+    public boolean existsFilterDescriptor(final String filterKey) {
+
+        return this.loadedFilters.containsKey(filterKey);
     }
 
     @VisibleForTesting

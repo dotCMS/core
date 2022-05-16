@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "20659268-cbbb-4f5b-84b7-c09f2dd53b6c",
+		"_postman_id": "fc99e9b3-8d44-4b9a-b0bc-8a757291bd27",
 		"name": "Template Resource",
 		"description": "Make the test for the template resource crud",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -5730,11 +5730,9 @@
 									"",
 									"var jsonData = pm.response.json();",
 									"",
-									"pm.test(\"body check\", function () {",
-									"    pm.expect(jsonData.entity.fails[0].element).to.eql('SYSTEM_TEMPLATE');",
+									"pm.test(\"Check that the response is just empty\", function () {",
+									"    pm.expect(jsonData.entity.fails[0]).to.eql(undefined);",
 									"});",
-									"",
-									"",
 									""
 								],
 								"type": "text/javascript"
@@ -5779,7 +5777,8 @@
 								"templates",
 								"_publish"
 							]
-						}
+						},
+						"description": "Makes sure that dotCMS does not try to publish the System Template. Doing this should just (1) log an INFO message saying that the System Template cannot be published, and (2) return an empty response."
 					},
 					"response": []
 				},
@@ -5975,8 +5974,8 @@
 						}
 					},
 					"response": []
-		},
-		{
+				},
+				{
 					"name": "UnArchiveSystemTemplate",
 					"event": [
 						{
@@ -6044,13 +6043,13 @@
 				},
 				{
 					"name": "DeleteSystemTemplate",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
 									"pm.test(\"Status code should be ok 200\", function () {",
-							"    pm.response.to.have.status(200);",
+									"    pm.response.to.have.status(200);",
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
