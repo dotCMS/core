@@ -1,5 +1,6 @@
 package com.dotmarketing.util;
 
+import com.google.common.collect.ImmutableList;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,6 +10,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.configuration.Configuration;
@@ -522,9 +524,8 @@ public class Config {
 	 * @return
 	 */
 	public static boolean getBooleanProperty (String name, boolean defaultVal) {
-	    _refreshProperties ();
-        Boolean value = Try.of(()->props.getBoolean(envKey(name))).getOrNull();
-        if(value!=null) {
+        final Boolean value = props.containsKey(envKey(name))  ? Try.of(()->props.getBoolean(envKey(name))).getOrNull() : null;
+        if(null != value) {
             return value;
         }
         return props.getBoolean(name, defaultVal);
