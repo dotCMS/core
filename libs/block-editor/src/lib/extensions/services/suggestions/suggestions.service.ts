@@ -6,6 +6,7 @@ import { pluck } from 'rxjs/operators';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 // eslint-disable-next-line max-len
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { ContentletFilters } from '../../../models/dot-bubble-menu.model';
 
 @Injectable()
 export class SuggestionsService {
@@ -17,18 +18,28 @@ export class SuggestionsService {
         return headers;
     }
 
-    getContentTypes(filter = ''): Observable<DotCMSContentType[]> {
+    getContentTypes(filter = '', allowedTypes = ''): Observable<DotCMSContentType[]> {
         return this.http
-            .get(`/api/v1/contenttype?filter=${filter}&orderby=name&direction=ASC&per_page=40`, {
-                headers: this.defaultHeaders
+            .post(`/api/v1/contenttype/_filter`, {
+                filter: {
+                    types: allowedTypes,
+                    query: filter
+                },
+                orderBy: 'name',
+                direction: 'ASC',
+                perPage: 40
             })
             .pipe(pluck('entity'));
     }
 
-    getContentlets(contentType = '', filter = ''): Observable<DotCMSContentlet[]> {
+    getContentlets({
+        contentType,
+        filter,
+        currentLanguage
+    }: ContentletFilters): Observable<DotCMSContentlet[]> {
         return this.http
             .post('/api/content/_search', {
-                query: `+contentType:${contentType} +languageId:1 +deleted:false +working:true +catchall:${filter}* title:'${filter}'^15`,
+                query: `+contentType:${contentType} +languageId:${currentLanguage} +deleted:false +working:true +catchall:${filter}* title:'${filter}'^15`,
                 sort: 'modDate desc',
                 offset: 0,
                 limit: 40

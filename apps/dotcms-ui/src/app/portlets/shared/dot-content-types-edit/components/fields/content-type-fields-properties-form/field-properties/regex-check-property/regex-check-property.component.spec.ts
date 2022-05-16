@@ -71,7 +71,7 @@ describe('RegexCheckPropertyComponent', () => {
 
         const pDropDown: DebugElement = fixture.debugElement.query(By.css('p-dropdown'));
         expect(pDropDown).not.toBeNull();
-        expect(comp.regexCheckTempletes).toBe(pDropDown.componentInstance.options);
+        expect(comp.regexCheckTemplates).toBe(pDropDown.componentInstance.options);
     });
 
     it('should change the input value', () => {

@@ -60,8 +60,8 @@ export class DotLanguageService {
     }
 
     /**
-     * Transform an array of languages into a object
-     * using the language id as a object key.
+     * Transform an array of languages into an object
+     * using the language id as an object key.
      * @private
      * @param {DotLanguage[]} lang
      * @return {*}  {Languages}

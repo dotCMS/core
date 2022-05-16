@@ -13,7 +13,7 @@ export interface RegexTemplate {
     styleUrls: ['./regex-check-property.component.scss']
 })
 export class RegexCheckPropertyComponent implements OnInit {
-    regexCheckTempletes: RegexTemplate[] = [];
+    regexCheckTemplates: RegexTemplate[] = [];
 
     property: FieldProperty;
     group: FormGroup;
@@ -21,7 +21,7 @@ export class RegexCheckPropertyComponent implements OnInit {
     constructor(private dotMessageService: DotMessageService) {}
 
     ngOnInit() {
-        this.regexCheckTempletes = [
+        this.regexCheckTemplates = [
             {
                 label: this.dotMessageService.get(
                     'contenttypes.field.properties.validation_regex.values.select'
@@ -76,7 +76,7 @@ export class RegexCheckPropertyComponent implements OnInit {
                 label: this.dotMessageService.get(
                     'contenttypes.field.properties.validation_regex.values.no_html'
                 ),
-                value: '[^(<[.\n]+>)]*'
+                value: '^[^<><|>]+$'
             }
         ];
     }

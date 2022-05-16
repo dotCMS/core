@@ -2,4 +2,11 @@
     position: absolute;
     cursor: grab;
     z-index: 1;
+    opacity: 0;
+    color: var(--color-background);
+    transition: opacity 250ms, top 150ms;
+
+    &.visible {
+        opacity: 1;
+    }
 }

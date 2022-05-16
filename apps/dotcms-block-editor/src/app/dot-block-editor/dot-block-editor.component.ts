@@ -1,4 +1,4 @@
-import { Component, OnInit, Injector } from '@angular/core';
+import { Component, Injector, Input, OnInit, ViewContainerRef } from '@angular/core';
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -7,6 +7,7 @@ import {
     ActionsMenu,
     BubbleLinkFormExtension,
     ContentletBlock,
+    DEFAULT_LANG_ID,
     DotBubbleMenuExtension,
     DragHandler,
     ImageBlock,
@@ -18,7 +19,6 @@ import { Highlight } from '@tiptap/extension-highlight';
 import { Link } from '@tiptap/extension-link';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
-import { ViewContainerRef } from '@angular/core';
 
 function toTitleCase(str) {
     return str.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {
@@ -32,6 +32,9 @@ function toTitleCase(str) {
     styleUrls: ['./dot-block-editor.component.scss']
 })
 export class DotBlockEditorComponent implements OnInit {
+    @Input() lang = DEFAULT_LANG_ID;
+    @Input() allowedContentTypes = '';
+
     editor: Editor;
 
     value = ''; // can be HTML or JSON, see https://www.tiptap.dev/api/editor#content
@@ -65,5 +68,16 @@ export class DotBlockEditorComponent implements OnInit {
                 })
             ]
         });
+
+        this.setEditorStorageData();
+    }
+
+    // Here we create the dotConfig name space
+    // to storage information in the editor.
+    private setEditorStorageData() {
+        this.editor.storage.dotConfig = {
+            lang: this.lang,
+            allowedContentTypes: this.allowedContentTypes
+        };
     }
 }

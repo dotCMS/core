@@ -6,6 +6,12 @@ export const fallbackErrorMessages = {
     401: '401 Unauthorized Error'
 };
 
+export interface UploadTempFileProps<T = string | File | File[]> {
+    file: T;
+    progressCallBack?;
+    maxSize?: string;
+}
+
 const TEMP_API_URL = '/api/v1/temp';
 
 /**
@@ -15,11 +21,15 @@ const TEMP_API_URL = '/api/v1/temp';
  * @param maxSize
  *
  */
-export function uploadFile(file: string | File, maxSize?: string): Promise<DotCMSTempFile> {
+export function uploadFile({
+    file,
+    progressCallBack,
+    maxSize
+}: UploadTempFileProps): Promise<DotCMSTempFile> {
     if (typeof file === 'string') {
         return uploadFileByURL(file);
     } else {
-        return uploadBinaryFile(file, maxSize) as Promise<DotCMSTempFile>;
+        return uploadBinaryFile({ file, progressCallBack, maxSize }) as Promise<DotCMSTempFile>;
     }
 }
 
@@ -52,19 +62,18 @@ function uploadFileByURL(url: string): Promise<DotCMSTempFile> {
  * @param maxSize
  *
  */
-export function uploadBinaryFile(
-    data: File | File[],
-    progressCallBack?,
-    maxSize?: string
-): Promise<DotCMSTempFile | DotCMSTempFile[]> {
+export function uploadBinaryFile({
+    file: data,
+    progressCallBack,
+    maxSize
+}: UploadTempFileProps<File | File[]>): Promise<DotCMSTempFile | DotCMSTempFile[]> {
     let path = TEMP_API_URL;
     path += maxSize ? `?maxFileLength=${maxSize}` : '';
     const formData = new FormData();
 
     const files = Array.isArray(data) ? data : [data];
-    files.forEach((file: File) => {
-        formData.append('files', file);
-    });
+
+    files.forEach((file: File) => formData.append('files', file));
 
     return dotRequest(
         path,
@@ -75,7 +84,7 @@ export function uploadBinaryFile(
         },
         progressCallBack
     )
-        .then(async (request: XMLHttpRequest) => {
+        .then((request: XMLHttpRequest) => {
             if (request.status === 200) {
                 const data = JSON.parse(request.response).tempFiles;
                 return data.length > 1 ? data : data[0];
@@ -83,7 +92,7 @@ export function uploadBinaryFile(
                 throw request;
             }
         })
-        .catch((request) => {
+        .catch((request: XMLHttpRequest) => {
             throw errorHandler(JSON.parse(request.response), request.status);
         });
 }
@@ -91,7 +100,9 @@ export function uploadBinaryFile(
 function dotRequest(
     url: string,
     opts: DotHttpRequestOptions,
-    progressCallBack: (progress: number) => {}
+    progressCallBack: (progress: number) => {
+        /* */
+    }
 ): Promise<XMLHttpRequest> {
     return new Promise((res, rej) => {
         const xhr = new XMLHttpRequest();
@@ -111,7 +122,7 @@ function dotRequest(
     });
 }
 
-function errorHandler(response: any, status: number): DotHttpErrorResponse {
+function errorHandler(response: Record<string, string>, status: number): DotHttpErrorResponse {
     let message = '';
     try {
         message = response.message || fallbackErrorMessages[status];

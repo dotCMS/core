@@ -7,10 +7,10 @@ import Suggestion, { SuggestionOptions, SuggestionProps } from '@tiptap/suggesti
 import tippy, { GetReferenceClientRect } from 'tippy.js';
 
 import {
+    FLOATING_ACTIONS_MENU_KEYBOARD,
     FloatingActionsKeydownProps,
     FloatingActionsPlugin,
-    FloatingActionsProps,
-    FLOATING_ACTIONS_MENU_KEYBOARD
+    FloatingActionsProps
 } from '../plugins/floating.plugin';
 import {
     ItemsType,
@@ -125,6 +125,9 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
      */
     function onStart({ editor, range, clientRect }: SuggestionProps | FloatingActionsProps): void {
         suggestionsComponent = getSuggestionComponent(viewContainerRef);
+        suggestionsComponent.instance.currentLanguage = editor.storage.dotConfig.lang;
+        suggestionsComponent.instance.allowedContentTypes =
+            editor.storage.dotConfig.allowedContentTypes;
         suggestionsComponent.instance.onSelection = (item) => {
             const suggestionQuery = suggestionKey.getState(editor.view.state).query?.length || 0;
             range.to = range.to + suggestionQuery;
