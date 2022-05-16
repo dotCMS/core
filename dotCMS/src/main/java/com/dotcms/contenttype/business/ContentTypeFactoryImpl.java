@@ -21,6 +21,7 @@ import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.lang.time.DateUtils;
 
@@ -38,7 +39,8 @@ import static com.liferay.util.StringPool.COMMA;
  */
 public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
-  final ContentTypeSql contentTypeSql;
+    private static final String LOAD_CONTENTTYPE_DETAILS_FROM_CACHE = "LOAD_CONTENTTYPE_DETAILS_FROM_CACHE";
+    final ContentTypeSql contentTypeSql;
   final ContentTypeCache2 cache;
 
   public static final Set<String> reservedContentTypeVars = ImmutableSet.<String>builder()
@@ -636,7 +638,8 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     return true;
   }
 
-  final boolean LOAD_FROM_CACHE=Config.getBooleanProperty("LOAD_CONTENTTYPE_DETAILS_FROM_CACHE", true);
+  final Lazy<Boolean> LOAD_FROM_CACHE=Lazy.of(()->Config.getBooleanProperty(
+          LOAD_CONTENTTYPE_DETAILS_FROM_CACHE, true));
 
   private List<ContentType> dbSearch(final String search, final int baseType, String orderBy, int limit, final int offset,final String hostId)
       throws DotDataException {
@@ -657,7 +660,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     final String hostParam = UtilMethods.isSet(hostId) ? StringPool.PERCENT + hostId + StringPool.PERCENT : StringPool.PERCENT;
     DotConnect dc = new DotConnect();
 
-    if(LOAD_FROM_CACHE) {
+    if(LOAD_FROM_CACHE.get()) {
         dc.setSQL( String.format( this.contentTypeSql.SELECT_INODE_ONLY_QUERY_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ), orderBy ) );
     }else {
         dc.setSQL( String.format( this.contentTypeSql.SELECT_QUERY_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ), orderBy ) );
@@ -673,7 +676,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
     Logger.debug(this, ()-> "QUERY " + dc.getSQL());
 
-    if(LOAD_FROM_CACHE) {
+    if(LOAD_FROM_CACHE.get()) {
         return dc.loadObjectResults()
                     .stream()
                     .map(m-> Try.of(()->find((String) m.get("inode")))

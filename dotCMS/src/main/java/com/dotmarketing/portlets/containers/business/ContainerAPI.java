@@ -537,7 +537,7 @@ public interface ContainerAPI {
 		/**
 		 * Finds information for Containers that are related to a specific Content Type.
 		 *
-		 * @return The ID of Velocity Variable Name of the Content Type that must be associated to the Containers that
+		 * @return The ID or Velocity Variable Name of the Content Type that must be associated to the Containers that
 		 * will be returned.
 		 */
 		public String contentTypeIdOrVar() {
@@ -707,7 +707,7 @@ public interface ContainerAPI {
 			/**
 			 * Finds information for Containers that are related to a specific Content Type.
 			 *
-			 * @param contentTypeIdOrVar The ID of Velocity Variable Name of the Content Type that must be associated to
+			 * @param contentTypeIdOrVar The ID or Velocity Variable Name of the Content Type that must be associated to
 			 *                           the Containers that will be returned.
 			 *
 			 * @return The {@link SearchParams.Builder} object.
