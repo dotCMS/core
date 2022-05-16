@@ -318,6 +318,7 @@ public class TaskLocatorUtil {
 		.add(Task220331UpdateDateTimezones.class)
 		.add(Task220404RemoveCalendarReminder.class)
 		.add(Task220413IncreasePublishedPushedAssetIdCol.class)
+		.add(Task220512UpdateNoHTMLRegexValue.class)
 		.build();
         
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());

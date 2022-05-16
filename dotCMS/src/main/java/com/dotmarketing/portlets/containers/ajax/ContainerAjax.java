@@ -30,22 +30,11 @@ import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 /**
- * This class handles the communication between the UI and the back-end service that returns information to the user
- * regarding Containers in dotCMS. The information provided by this service is accessed via DWR.
- * <p>
- * For example, the <b>Container</b> portlet uses this class to display Container information to the users, which can
- * be filtered by specific search criteria.
  *
  * @author root
  * @version 1.0
