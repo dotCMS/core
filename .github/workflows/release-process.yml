@@ -35,7 +35,7 @@ jobs:
           BUILD_HASH=$(git log -1 --pretty=%h)
           eval $(cat dotCMS/gradle.properties| grep dotcmsReleaseVersion)
           DOTCMS_VERSION="${dotcmsReleaseVersion}"
-
+          
           if [[ ${BUILD_ID} =~ ^release-[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$|^v[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$ ]]; then
             IS_RELEASE='true'
             DRY_RUN='false'
@@ -43,12 +43,26 @@ jobs:
             IS_RELEASE='false'
             DRY_RUN='true'
           fi
+          
+          RELEASE_NAME="${{ github.event.release.name }}"
+          if [[ -n "${RELEASE_NAME}" && "${RELEASE_NAME^^}" =~ [[:blank:]].?LTS$ ]]; then
+            IS_LTS=true
+            RELEASE_LABEL=lts
+          fi
+          if [[ "${IS_RELEASE}" == 'true' && "${IS_LTS}" != 'true' ]]; then
+            ALSO_LATEST='true'
+          else
+            ALSO_LATEST='false'
+          fi
 
           echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
           echo "EE_BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
           echo "BUILD_HASH=${BUILD_HASH}" >> $GITHUB_ENV
           echo "DOTCMS_VERSION=${DOTCMS_VERSION}" >> $GITHUB_ENV
           echo "IS_RELEASE=${IS_RELEASE}" >> $GITHUB_ENV
+          echo "IS_LTS=${IS_LTS}" >> $GITHUB_ENV
+          echo "RELEASE_LABEL=${RELEASE_LABEL}" >> $GITHUB_ENV
+          echo "ALSO_LATEST=${ALSO_LATEST}" >> $GITHUB_ENV
       - name: Prepare dot-cicd
         run: |
           sh -c "$(curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/${DOT_CICD_BRANCH}/seed/install-dot-cicd.sh)"
@@ -61,8 +75,9 @@ jobs:
         with:
           version: ${{ env.DOTCMS_VERSION }}
           hash: ${{ env.BUILD_HASH }}
+          label: ${{ env.RELEASE_LABEL }}
           update_stable: ${{ env.IS_RELEASE }}
-          also_latest: ${{ env.IS_RELEASE }}
+          also_latest: ${{ env.ALSO_LATEST }}
       - name: Publish docker image
         id: publish-docker-image
         uses: dotcms/publish-docker-image-action@main
