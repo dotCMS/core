@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "ee5e42a5-0c7d-487f-9a8d-c48815c618da",
+		"_postman_id": "692d2982-fe05-48c1-a53f-a3185640390e",
 		"name": "ContentType Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -1561,6 +1561,89 @@
 			"name": "Test Filtered Content Types",
 			"item": [
 				{
+					"name": "pre - Import Test Content Types",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Bundle 'bundle-with-content-types-issue-22039.tar.gz' was not uploaded!\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"bundle-with-content-types-issue-22039.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "/Users/josecastro/dotCMS/git/dev/misc-master/core/dotCMS/src/curl-test/resources/ContentTypeResource/bundle-with-content-types-issue-22039.tar.gz"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle containing the Content Types that are supposed to exist for the subsequent tests to work as expected."
+					},
+					"response": []
+				},
+				{
 					"name": "Get Content Types - First page",
 					"event": [
 						{
@@ -1964,7 +2047,8 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"description": "This Test Collection will verify that the Content Type Filtering Endpoint works as expected. This endpoint can take a list of specific Content Types and perform filtering and pagination operations on them."
 		}
 	],
 	"variable": [
