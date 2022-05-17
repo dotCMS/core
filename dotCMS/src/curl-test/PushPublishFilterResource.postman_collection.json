@@ -1,21 +1,25 @@
 {
 	"info": {
-		"_postman_id": "93f937d9-6c07-4d0e-b18a-b863707aaae2",
+		"_postman_id": "214ebbd5-cae7-4080-806c-e7cf3a9f7dc3",
 		"name": "PushPublishFilterResource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "GetFilters",
+			"name": "Get All Filters",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
+							"pm.test(\"Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
 							"var jsonData = pm.response.json();",
 							"",
-							"pm.test(\"body check\", function () {",
-							"    pm.expect(jsonData.entity[0].key).to.eql('ForcePush.yml');",
+							"pm.test(\"The 'ContentOnly.yml' Filter must be the first one in the list\", function () {",
+							"    pm.expect(jsonData.entity[0].key).to.eql('ContentOnly.yml');",
 							"    pm.expect(jsonData.entity[0].roles).to.eql('DOTCMS_BACK_END_USER');",
 							"});",
 							""
@@ -58,15 +62,19 @@
 			"response": []
 		},
 		{
-			"name": "GetFilter",
+			"name": "Get a Specific Filter",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
+							"pm.test(\"Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
 							"var jsonData = pm.response.json();",
 							"",
-							"pm.test(\"body check\", function () {",
+							"pm.test(\"The 'ForcePush.yml' Filter mut be the only result\", function () {",
 							"    pm.expect(jsonData.entity.key).to.eql('ForcePush.yml');",
 							"    pm.expect(jsonData.entity.roles).to.eql('DOTCMS_BACK_END_USER');",
 							"});",
@@ -117,10 +125,13 @@
 					"listen": "test",
 					"script": {
 						"exec": [
+							"pm.test(\"Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
 							"var text = pm.response.text();",
 							"",
-							"pm.test(\"body check\", function () {",
-							"    pm.expect(text).contains('ForcePush.yml');",
+							"pm.test(\"The 'NoWorkflow.yml' Filter must be present in the filter list via Form\", function () {",
 							"    pm.expect(text).contains('NoWorkflow.yml');",
 							"});",
 							""
@@ -178,10 +189,13 @@
 					"listen": "test",
 					"script": {
 						"exec": [
+							"pm.test(\"Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
 							"var text = pm.response.text();",
 							"",
-							"pm.test(\"body check\", function () {",
-							"    pm.expect(text).contains('ForcePush.yml');",
+							"pm.test(\"The 'TestPPFilter.yml' Filter must be present in the filter list via File\", function () {",
 							"    pm.expect(text).contains('TestPPFilter.yml');",
 							"});",
 							""
@@ -216,12 +230,7 @@
 							"type": "file",
 							"src": "resources/TestPPFilter.yml"
 						}
-					],
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
+					]
 				},
 				"url": {
 					"raw": "{{serverURL}}/api/v1/pushpublish/filters",
@@ -245,10 +254,13 @@
 					"listen": "test",
 					"script": {
 						"exec": [
+							"pm.test(\"Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
 							"var text = pm.response.text();",
 							"",
-							"pm.test(\"body check\", function () {",
-							"    pm.expect(text).contains('ForcePush.yml');",
+							"pm.test(\"The 'NoWorkflow.yml' must have been updated via Form\", function () {",
 							"    pm.expect(text).contains('NoWorkflow.yml');",
 							"});",
 							""
@@ -306,10 +318,13 @@
 					"listen": "test",
 					"script": {
 						"exec": [
+							"pm.test(\"Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
 							"var text = pm.response.text();",
 							"",
-							"pm.test(\"body check\", function () {",
-							"    pm.expect(text).contains('ForcePush.yml');",
+							"pm.test(\"The 'TestPPFilter.yml' Filter must have been pudated via File\", function () {",
 							"    pm.expect(text).contains('TestPPFilter.yml');",
 							"});",
 							""
@@ -344,12 +359,7 @@
 							"type": "file",
 							"src": "resources/TestPPFilter.yml"
 						}
-					],
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
+					]
 				},
 				"url": {
 					"raw": "{{serverURL}}/api/v1/pushpublish/filters",
@@ -368,6 +378,25 @@
 		},
 		{
 			"name": "Delete No Workflow",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var text = pm.response.text();",
+							"",
+							"pm.test(\"The 'NoWorkflow.yml' must NOT be part of the list now\", function () {",
+							"    pm.expect(text).not.contains('NoWorkflow.yml');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "DELETE",
 				"header": [],
@@ -389,6 +418,25 @@
 		},
 		{
 			"name": "Delete Test PP Filter",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var text = pm.response.text();",
+							"",
+							"pm.test(\"The 'TestPPFilter.yml' must NOT be part of the list now\", function () {",
+							"    pm.expect(text).not.contains('TestPPFilter.yml');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "DELETE",
 				"header": [],
