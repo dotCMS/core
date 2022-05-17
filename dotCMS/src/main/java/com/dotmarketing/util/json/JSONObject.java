@@ -222,7 +222,7 @@ public class JSONObject implements Serializable, Map {
             Iterator i = incomingMap.entrySet().iterator();
             while (i.hasNext()) {
                 Map.Entry<String,Object> e = (Map.Entry)i.next();
-                this.map.put(e.getKey(), wrap(e.getValue()));
+                _put(e.getKey(), e.getValue());
             }
         }
     }
@@ -308,7 +308,7 @@ public class JSONObject implements Serializable, Map {
         testValidity(value);
         Object o = opt(key);
         if (o == null) {
-            put(key, value instanceof JSONArray ?
+            _put(key, value instanceof JSONArray ?
                     new JSONArray().put(value) :
                     value);
         } else if (o instanceof JSONArray) {
@@ -335,9 +335,9 @@ public class JSONObject implements Serializable, Map {
         testValidity(value);
         Object o = opt(key);
         if (o == null) {
-            put(key, new JSONArray().put(value));
+            _put(key, new JSONArray().put(value));
         } else if (o instanceof JSONArray) {
-            put(key, ((JSONArray)o).put(value));
+            _put(key, ((JSONArray)o).put(value));
         } else {
             throw new JSONException("JSONObject[" + key +
                     "] is not a JSONArray.");
@@ -936,7 +936,7 @@ public class JSONObject implements Serializable, Map {
      * @throws JSONException If the key is null.
      */
     public JSONObject put(String key, boolean value)  {
-        put(key, value ? Boolean.TRUE : Boolean.FALSE);
+        _put(key, value ? Boolean.TRUE : Boolean.FALSE);
         return this;
     }
 
@@ -950,7 +950,8 @@ public class JSONObject implements Serializable, Map {
      * @throws JSONException
      */
     public JSONObject put(String key, Collection value)  {
-        put(key, new JSONArray(value));
+                
+        _put(key, wrap(value));
         return this;
     }
 
@@ -963,7 +964,7 @@ public class JSONObject implements Serializable, Map {
      * @throws JSONException
      */
     public JSONObject put(String key, JSONArray value)  {
-        put(key, (Object)value);
+        _put(key, wrap(value));
         return this;
     }
 
@@ -976,7 +977,7 @@ public class JSONObject implements Serializable, Map {
      * @throws JSONException If the key is null or if the number is invalid.
      */
     public JSONObject put(String key, double value)  {
-        put(key, new Double(value));
+        _put(key, new Double(value));
         return this;
     }
 
@@ -990,7 +991,7 @@ public class JSONObject implements Serializable, Map {
      * @throws JSONException If the key is null.
      */
     public JSONObject put(String key, int value)  {
-        put(key, new Integer(value));
+        _put(key, new Integer(value));
         return this;
     }
 
@@ -1004,7 +1005,7 @@ public class JSONObject implements Serializable, Map {
      * @throws JSONException If the key is null.
      */
     public JSONObject put(String key, long value)  {
-        put(key, new Long(value));
+        _put(key, new Long(value));
         return this;
     }
 
@@ -1018,7 +1019,8 @@ public class JSONObject implements Serializable, Map {
      * @throws JSONException
      */
     public JSONObject put(String key, Map value)  {
-        put(key, new JSONObject(value));
+        
+        _put(key, wrap(value));
         return this;
     }
 
@@ -1035,19 +1037,27 @@ public class JSONObject implements Serializable, Map {
      *  or if the key is null.
      */
     public JSONObject put(String key, Object value)  {
+        return _put(key, wrap(value));
+    }
+    
+    
+    private JSONObject _put(String key, Object value)  {
         if (key == null) {
             throw new JSONException("Null key.");
         }
         if (value != null) {
             testValidity(value);
-            this.map.put(key, value);
+            this.map.put(key, wrap(value));
         } else {
             remove(key);
         }
         return this;
     }
+    
 
 
+    
+    
     /**
      * Put a key/value pair in the JSONObject, but only if the key and the
      * value are both non-null, and only if there is not already a member
@@ -1610,7 +1620,7 @@ public class JSONObject implements Serializable, Map {
 
     @Override
     public Object put(Object key, Object value) {
-        return this.map.put(key, value);
+        return this.map.put(key, wrap(value));
     }
 
 
@@ -1621,8 +1631,14 @@ public class JSONObject implements Serializable, Map {
 
 
     @Override
-    public void putAll(Map m) {
-       this.map.putAll(m);
+    public void putAll(Map incomingMap) {
+        if (incomingMap != null) {
+            Iterator i = incomingMap.entrySet().iterator();
+            while (i.hasNext()) {
+                Map.Entry<String,Object> e = (Map.Entry)i.next();
+                this.map.put(e.getKey(), wrap(e.getValue()));
+            }
+        }
         
     }
 
