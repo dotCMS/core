@@ -1011,7 +1011,7 @@ public class WorkflowResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response saveAction(@Context final HttpServletRequest request,
                                      @Context final HttpServletResponse response,
-                                @BeanParam final WorkflowActionForm workflowActionForm) {
+                                final WorkflowActionForm workflowActionForm) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, request, response, true, null);

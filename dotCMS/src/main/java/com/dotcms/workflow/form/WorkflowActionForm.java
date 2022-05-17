@@ -17,14 +17,12 @@ public class WorkflowActionForm extends Validated {
     private final String        actionId;
 
     @NotNull
-    @FormParam("schemeId")
     private final String        schemeId;
 
     // you can send an optional stepId for a new Action when you want to associated the action to the step in the same transaction.
     private final String        stepId;
 
     @NotNull
-    @FormParam("actionName")
     private final String        actionName;
     private final List<String>  whoCanUse;
     private final String        actionIcon;
