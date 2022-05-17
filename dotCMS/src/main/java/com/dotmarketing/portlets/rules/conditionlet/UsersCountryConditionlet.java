@@ -50,6 +50,7 @@ public class UsersCountryConditionlet extends Conditionlet<UsersCountryCondition
     private final GeoIp2CityDbUtil geoIp2Util;
 
     private static final DropdownInput countries = new DropdownInput()
+        .minSelections(1)
         .option("AF")
         .option("AL")
         .option("DZ")
