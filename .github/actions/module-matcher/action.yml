@@ -1,0 +1,36 @@
+name: 'Workflow router'
+description: 'Based on event (push or pull request) gather the involved commits to determine if workflow is allowed run'
+author: 'victoralfaro-dotcms'
+inputs:
+  current:
+    description: 'Current module'
+    required: true
+  modules:
+    description: 'Modules configuration, space delimited list of modules'
+    required: true
+    default: |
+            [
+              {
+                "module": "core",
+                "folder": ".",
+                "main": true
+              },
+              {
+                "module": "core-web"
+              }
+            ]
+#    default: 'coreweb'
+  pull_request:
+    description: 'Pull request ID'
+    required: false
+  commit:
+    description: 'Commit SHA'
+    required: false
+outputs:
+  module_found:
+    description: 'Boolean result: true for ound, otherwise false'
+runs:
+  using: node16
+  main: dist/index.js
+  # using: 'docker'
+  # image: 'Dockerfile'
