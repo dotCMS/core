@@ -7,10 +7,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 import org.apache.commons.lang.WordUtils;
 
@@ -64,15 +64,20 @@ import org.apache.commons.lang.WordUtils;
  * @author JSON.org
  * @version 2010-05-17
  */
-public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.JSONObject implements Serializable {
-	
+
+public class JSONObject implements Serializable, Map<String, Object> {
+
+
+    private static final long serialVersionUID = 1L;
+
+
     /**
      * JSONObject.NULL is equivalent to the value that JavaScript calls null,
      * whilst Java's null is equivalent to the value that JavaScript calls
      * undefined.
      */
-     private static final class Null {
-
+     private static final class Null implements Serializable{
+         private static final long serialVersionUID = 1L;
         /**
          * There is only intended to be a single instance of the NULL object,
          * so the clone method returns itself.
@@ -104,10 +109,84 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
     }
 
 
+     
+     
+     
+    @Override
+    public int size() {
+        return this.map.size();
+    }
+
+
+    @Override
+    public boolean isEmpty() {
+        return this.map.isEmpty();
+    }
+
+
+    @Override
+    public boolean containsKey(Object key) {
+        return this.map.containsKey(key);
+    }
+
+
+    @Override
+    public boolean containsValue(Object value) {
+        return this.map.containsValue(value);
+    }
+
+
+    @Override
+    public Object get(Object key) {
+        return this.map.get(key);
+    }
+
+
+    @Override
+    public Object remove(Object key) {
+        // TODO Auto-generated method stub
+        return this.map.remove(key);
+    }
+
+
+    @Override
+    public void putAll(Map<? extends String, ? extends Object> m) {
+        this.map.putAll(m);
+        
+    }
+
+
+    @Override
+    public void clear() {
+        this.map.clear();
+        
+    }
+
+
+    @Override
+    public Set<String> keySet() {
+        return this.map.keySet();
+    }
+
+
+    @Override
+    public Collection<Object> values() {
+        // TODO Auto-generated method stub
+        return this.map.values();
+    }
+
+
+    @Override
+    public Set<Entry<String, Object>> entrySet() {
+        // TODO Auto-generated method stub
+        return this.map.entrySet();
+    }
+
+
     /**
      * The map where the JSONObject's properties are kept.
      */
-    private Map<String,Object> map = new LinkedHashMap<>();
+    private final Map<String,Object> map;
 
 
     /**
@@ -123,7 +202,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * Construct an empty JSONObject.
      */
     public JSONObject() {
-        
+        this.map = new LinkedHashMap<>();
     }
 
 
@@ -216,7 +295,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @throws JSONException 
      */
     public JSONObject(Map<String,Object> incomingMap) {
-        this.map = new HashMap<String,Object>();
+        this();
         if (incomingMap != null) {
             Iterator i = incomingMap.entrySet().iterator();
             while (i.hasNext()) {
@@ -380,10 +459,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      */
     public Object get(String key) throws JSONException {
         Object o = opt(key);
-        if (o == null) {
-            throw new JSONException("JSONObject[" + quote(key) +
-                    "] not found.");
-        }
+
         return o;
     }
 
@@ -938,7 +1014,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @throws JSONException If the key is null.
      */
     public JSONObject put(String key, boolean value) throws JSONException {
-        put(key, value ? Boolean.TRUE : Boolean.FALSE);
+        this.map.put(key, value );
         return this;
     }
 
@@ -965,7 +1041,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @throws JSONException
      */
     public JSONObject put(String key, JSONArray value) throws JSONException {
-        put(key, (Object)value);
+        this.map.put(key, value);
         return this;
     }
 
@@ -978,7 +1054,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @throws JSONException If the key is null or if the number is invalid.
      */
     public JSONObject put(String key, double value) throws JSONException {
-        put(key, new Double(value));
+        this.map.put(key, new Double(value));
         return this;
     }
 
@@ -992,7 +1068,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @throws JSONException If the key is null.
      */
     public JSONObject put(String key, int value) throws JSONException {
-        put(key, new Integer(value));
+        this.map.put(key, new Integer(value));
         return this;
     }
 
@@ -1006,7 +1082,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @throws JSONException If the key is null.
      */
     public JSONObject put(String key, long value) throws JSONException {
-        put(key, new Long(value));
+        this.map.put(key, new Long(value));
         return this;
     }
 
@@ -1020,7 +1096,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      * @throws JSONException
      */
     public JSONObject put(String key, Map value) throws JSONException {
-        put(key, new JSONObject(value));
+        this.map.put(key, wrap(value));
         return this;
     }
 
@@ -1042,7 +1118,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
         }
         if (value != null) {
             testValidity(value);
-            this.map.put(key, value);
+            this.map.put(key, wrap(value));
         } else {
             remove(key);
         }
