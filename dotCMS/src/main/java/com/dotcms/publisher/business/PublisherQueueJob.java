@@ -29,6 +29,7 @@ import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.google.common.collect.Sets;
 import com.dotcms.rest.RestClientBuilder;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -48,6 +49,8 @@ import java.util.Map;
 import java.util.Set;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
+
+import com.liferay.util.StringPool;
 import org.apache.logging.log4j.ThreadContext;
 import org.jetbrains.annotations.NotNull;
 import org.quartz.JobExecutionContext;
@@ -140,6 +143,7 @@ public class PublisherQueueJob implements StatefulJob {
 
 					ThreadContext.put(BUNDLE_ID, BUNDLE_ID + "=" + tempBundleId);
 
+					Date bundleStart;
 					try {
 						PushPublishLogger.log(this.getClass(), "Pre-publish work started.");
 						final List<PublishQueueElement> tempBundleContents = pubAPI.getQueueElementsByBundleId(tempBundleId);
@@ -170,7 +174,8 @@ public class PublisherQueueJob implements StatefulJob {
 						pconf.setLuceneQueries(PublisherUtil.prepareQueries(tempBundleContents));
 						pconf.setId(tempBundleId);
 						pconf.setUser(APILocator.getUserAPI().getSystemUser());
-						pconf.setStartDate(new Date());
+						bundleStart = new Date();
+						pconf.setStartDate(bundleStart);
 						pconf.runNow();
 						pconf.setPublishers(new ArrayList<>(getPublishersForBundle(tempBundleId)));
 						pconf.setDeliveryStrategy(deliveryStrategy);
@@ -191,6 +196,9 @@ public class PublisherQueueJob implements StatefulJob {
 							 */
 							Logger.error(PublisherQueueJob.class, "Unable to publish Bundle '" + pconf.getId() + "': " + e.getMessage(), e);
 							PushPublishLogger.log(this.getClass(), "Status Update: Failed to bundle '" + pconf.getId() + "'");
+							updateAuditStatusErrorMsg(historyPojo, e.getMessage());
+							historyPojo.setBundleStart(bundleStart);
+							historyPojo.setBundleEnd(new Date());
 							pubAuditAPI.updatePublishAuditStatus(pconf.getId(), PublishAuditStatus.Status.FAILED_TO_BUNDLE, historyPojo);
 							pubAPI.deleteElementsFromPublishQueueTable(pconf.getId());
 						}
@@ -709,6 +717,22 @@ public class PublisherQueueJob implements StatefulJob {
 	 */
 	private Client getRestClient() {
 		return RestClientBuilder.newClient();
+	}
+
+	/**
+	 * Utility method used to reflect the appropriate error message in the Bundle Status modal in case a bundle fails
+	 * during its creation process.
+	 *
+	 * @param auditHistory The {@link PublishAuditHistory} object for the specific failing bundle.
+	 * @param errorMsg     The error message that users will read when the bundle creation process fails.
+	 */
+	private void updateAuditStatusErrorMsg(final PublishAuditHistory auditHistory, final String errorMsg) {
+		final EndpointDetail endpointDetail = new EndpointDetail();
+		endpointDetail.setStatus(PublishAuditStatus.Status.FAILED_TO_BUNDLE.getCode());
+		endpointDetail.setInfo(errorMsg);
+		// Environment and Endpoint IDs don't matter in this case
+		auditHistory.setEndpointsMap(
+				CollectionsUtils.map(StringPool.BLANK, CollectionsUtils.map(StringPool.BLANK, endpointDetail)));
 	}
 
 }
