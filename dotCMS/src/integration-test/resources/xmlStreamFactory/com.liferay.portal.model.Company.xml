@@ -1,0 +1,30 @@
+<com.google.common.collect.RegularImmutableList resolves-to="com.google.common.collect.ImmutableList$SerializedForm">
+  <elements>
+    <com.liferay.portal.model.Company>
+      <__new>false</__new>
+      <__modified>false</__modified>
+      <__companyId>dotcms.org</__companyId>
+      <__key>rO0ABXNyAB9qYXZheC5jcnlwdG8uc3BlYy5TZWNyZXRLZXlTcGVjW0cLZuIwYU0CAAJMAAlhbGdvcml0aG10ABJMamF2YS9sYW5nL1N0cmluZztbAANrZXl0AAJbQnhwdAADQUVTdXIAAltCrPMX+AYIVOACAAB4cAAAACCY0IUeWDxw+s+VhAxXL0f0fQciai7SJo+JsiuA3IirwQ==</__key>
+      <__portalURL>localhost</__portalURL>
+      <__homeURL>/html/images/backgrounds/bg-11.jpg</__homeURL>
+      <__mx></__mx>
+      <__name>dotcms.org</__name>
+      <__shortName>dotcms.org</__shortName>
+      <__type>#576be8</__type>
+      <__size>#1b3359</__size>
+      <__street>#2f3e6c</__street>
+      <__city>/dA/8c3df099-20ba-47ed-b7a3-2896be5bdc02/asset/company_logo.png</__city>
+      <__zip>33133</__zip>
+      <__phone>3058581422</__phone>
+      <__fax></__fax>
+      <__emailAddress>dotCMS Website &lt;website@dotcms.com&gt;</__emailAddress>
+      <__authType>emailAddress</__authType>
+      <__autoLogin>true</__autoLogin>
+      <__strangers>false</__strangers>
+      <__keyObj class="javax.crypto.spec.SecretKeySpec">
+        <key>mNCFHlg8cPrPlYQMVy9H9H0HImou0iaPibIrgNyIq8E=</key>
+        <algorithm>AES</algorithm>
+      </__keyObj>
+    </com.liferay.portal.model.Company>
+  </elements>
+</com.google.common.collect.RegularImmutableList>
