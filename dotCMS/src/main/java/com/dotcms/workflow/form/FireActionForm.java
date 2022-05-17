@@ -23,6 +23,7 @@ public class FireActionForm extends Validated {
     private final String pathToMove;
     private final String timezoneId;
 
+    @JsonProperty("contentlet")
     private final Map<String, Object> contentletFormData;
 
     public String getComments() {

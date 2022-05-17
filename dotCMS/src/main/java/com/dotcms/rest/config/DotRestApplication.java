@@ -66,6 +66,11 @@ import com.dotcms.rest.api.v1.vtl.VTLResource;
 import com.dotcms.rest.personas.PersonasResourcePortlet;
 import com.dotcms.rest.servlet.ReloadableServletContainer;
 import com.google.common.collect.ImmutableSet;
+import io.swagger.v3.jaxrs2.integration.resources.AcceptHeaderOpenApiResource;
+import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.info.Contact;
+import io.swagger.v3.oas.annotations.info.Info;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 
 import java.util.Map;
@@ -81,8 +86,14 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since Dec 5, 2013
  *
  */
-public class DotRestApplication extends javax.ws.rs.core.Application {
 
+@OpenAPIDefinition(
+		info =
+		@Info(
+				title = "dotCMS REST API",
+				version = "1.0.0",
+				description = "dotCMS REST API"))
+public class DotRestApplication extends javax.ws.rs.core.Application {
 
 	/**
 	 * these are system resources and should never change
@@ -176,6 +187,8 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 			.add(CacheResource.class)
 			.add(JVMInfoResource.class)
 			.add(FormResource.class)
+			.add(OpenApiResource.class)
+			.add(AcceptHeaderOpenApiResource.class)
 			.build();
 
 
