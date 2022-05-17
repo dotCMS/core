@@ -39,7 +39,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.zip.GZIPOutputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
-import org.apache.felix.framework.OSGIUtil;
+import org.apache.felix.framework.OSGISystem;
 
 public class TikaUtils {
 
@@ -52,12 +52,12 @@ public class TikaUtils {
 
     public TikaUtils() throws DotDataException {
 
-        osgiInitialized = OSGIUtil.getInstance().isInitialized();
+        osgiInitialized = OSGISystem.getInstance().isInitialized();
         try {
             if (!osgiInitialized) {
                 Logger.warn(this.getClass(),
                         "OSGI Framework not initialized, trying to initialize...");
-                OSGIUtil.getInstance().initializeFramework();
+                OSGISystem.getInstance().initializeFramework();
                 osgiInitialized = true;
             }
         } catch (Exception e) {
@@ -69,7 +69,7 @@ public class TikaUtils {
             //Search for the TikaServiceBuilder service instance expose through OSGI
             TikaServiceBuilder tikaServiceBuilder = null;
             try {
-                tikaServiceBuilder = OSGIUtil.getInstance()
+                tikaServiceBuilder = OSGISystem.getInstance()
                         .getService(TikaServiceBuilder.class,
                                 OSGIConstants.BUNDLE_NAME_DOTCMS_TIKA);
 

@@ -17,7 +17,7 @@ import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import io.vavr.control.Try;
-import org.apache.felix.framework.OSGIUtil;
+import org.apache.felix.framework.OSGISystem;
 import org.tuckey.web.filters.urlrewrite.NormalRule;
 
 import java.io.File;
@@ -132,20 +132,20 @@ public class DotSamlProxyFactory implements EventSubscriber<AppSecretSavedEvent>
                 if (null == this.samlServiceBuilder) {
 
                     try {
-                        if (!OSGIUtil.getInstance().isInitialized()) {
+                        if (!OSGISystem.getInstance().isInitialized()) {
                             Logger.warn(this.getClass(),
                                     "OSGI Framework not initialized, trying to initialize...");
-                            OSGIUtil.getInstance().initializeFramework();
+                            OSGISystem.getInstance().initializeFramework();
                         }
                     } catch (Exception e) {
 
                         Logger.error(this.getClass(), "Unable to initialized OSGI Framework", e);
                     }
 
-                    if (OSGIUtil.getInstance().isInitialized()) {
+                    if (OSGISystem.getInstance().isInitialized()) {
                         try {
 
-                            this.samlServiceBuilder = OSGIUtil.getInstance().getService(SamlServiceBuilder.class,
+                            this.samlServiceBuilder = OSGISystem.getInstance().getService(SamlServiceBuilder.class,
                                     OSGIConstants.BUNDLE_NAME_DOTCMS_SAML);
 
                             Logger.info(this, "SAML Osgi Bundle has been started");

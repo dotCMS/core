@@ -23,6 +23,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 
 import org.apache.commons.lang.SystemUtils;
+import org.apache.felix.framework.OSGISystem;
 import org.apache.felix.framework.OSGIUtil;
 import org.apache.lucene.search.BooleanQuery;
 import org.quartz.SchedulerException;
@@ -244,6 +245,7 @@ public class InitServlet extends HttpServlet {
         System.setProperty(WebKeys.DOTCMS_STARTED_UP, "true");
 
         //Initializing felix
+        OSGISystem.getInstance().initializeFramework();
         OSGIUtil.getInstance().initializeFramework();
 
         // Record how long it took to start us up.
