@@ -1,12 +1,13 @@
 package com.dotcms.rendering.velocity.viewtools.content;
 
 import com.dotcms.IntegrationTestBase;
+
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
+import com.dotmarketing.util.json.JSONException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
