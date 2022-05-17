@@ -1614,7 +1614,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "/Users/josecastro/dotCMS/git/dev/misc-master/core/dotCMS/src/curl-test/resources/ContentTypeResource/bundle-with-content-types-issue-22039.tar.gz"
+									"src": "resources/ContentTypeResource/bundle-with-content-types-issue-22039.tar.gz"
 								}
 							]
 						},
