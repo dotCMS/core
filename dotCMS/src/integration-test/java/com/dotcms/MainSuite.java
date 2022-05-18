@@ -209,7 +209,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.auth.providers.jwt.services.JsonWebTokenServiceIntegrationTest.class,
         DependencyModDateUtilTest.class,*/
 
-        /*com.dotcms.publisher.business.PublisherTest.class,
+        com.dotcms.publisher.business.PublisherTest.class,
         com.dotcms.publisher.endpoint.bean.PublishingEndPointTest.class,
         com.dotcms.publisher.endpoint.business.PublishingEndPointAPITest.class,
         com.dotcms.publisher.endpoint.business.PublishingEndPointFactoryImplTest.class,
@@ -217,15 +217,15 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.notification.business.NotificationAPITest.class,
         com.dotcms.business.LocalTransactionAndCloseDBIfOpenedFactoryTest.class,
         com.dotcms.content.elasticsearch.business.IndiciesFactoryTest.class,
-        com.dotcms.content.elasticsearch.business.ESIndexSpeedTest.class,*/
+        com.dotcms.content.elasticsearch.business.ESIndexSpeedTest.class,
 
-        com.dotcms.content.elasticsearch.business.ESSiteSearchAPITest.class,
+        /*com.dotcms.content.elasticsearch.business.ESSiteSearchAPITest.class,
         com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplTest.class,
         com.dotcms.content.elasticsearch.business.ES6UpgradeTest.class,
         com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest.class,
         com.dotcms.keyvalue.busines.KeyValueAPIImplTest.class,
         com.dotcms.keyvalue.business.KeyValueAPITest.class,
-        com.dotcms.tika.TikaUtilsTest.class,
+        com.dotcms.tika.TikaUtilsTest.class,*/
 
 
 
