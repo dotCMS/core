@@ -1,0 +1,29 @@
+{
+    "root": "apps/dotcdn-e2e",
+    "sourceRoot": "apps/dotcdn-e2e/src",
+    "projectType": "application",
+    "targets": {
+        "e2e": {
+            "executor": "@nrwl/cypress:cypress",
+            "options": {
+                "cypressConfig": "apps/dotcdn-e2e/cypress.json",
+                "tsConfig": "apps/dotcdn-e2e/tsconfig.e2e.json",
+                "devServerTarget": "dotcdn:serve"
+            },
+            "configurations": {
+                "production": {
+                    "devServerTarget": "dotcdn:serve:production"
+                }
+            }
+        },
+        "lint": {
+            "executor": "@nrwl/linter:eslint",
+            "options": {
+                "lintFilePatterns": ["apps/dotcdn-e2e/**/*.{js,ts}"]
+            },
+            "outputs": ["{options.outputFile}"]
+        }
+    },
+    "tags": [],
+    "implicitDependencies": ["dotcdn"]
+}
