@@ -126,10 +126,15 @@ const moduleMatches = () => __awaiter(void 0, void 0, void 0, function* () {
         return false;
     }
     const commits = yield resolveCommits();
+    if (commits.length == 250) {
+        // Probably not found bu the amount of commits definitevly calls for returnin true
+        core.info('Commits reached max capacity, probably I good idea to allow workflows to run');
+        return true;
+    }
     const found = searchInCommits(currentModule, commits);
     found
         ? core.info(`Current module ${current} matched with changes`)
-        : core.warning(`Could not match module ${current} with changes, disrding it...`);
+        : core.warning(`Could not match module ${current} with changes, discarding it...`);
     return found;
 });
 exports.moduleMatches = moduleMatches;
@@ -155,7 +160,10 @@ const validateConf = () => {
 const searchInCommits = (module, commits) => {
     var _a;
     for (const sha of commits) {
-        const output = ((_a = shelljs.exec(`git diff-tree --no-commit-id --name-only -r ${sha}`)) === null || _a === void 0 ? void 0 : _a.stdout) || '';
+        const cmd = `git diff-tree --no-commit-id --name-only -r ${sha}`;
+        core.info(`Searching in commit ${sha} by running:\n${cmd}`);
+        const output = ((_a = shelljs.exec(cmd)) === null || _a === void 0 ? void 0 : _a.stdout) || '';
+        core.info(`Returned these changes:\n${output}`);
         const changed = output.split('\n');
         if (searchInChanges(module, changed)) {
             return true;
@@ -195,7 +203,8 @@ const resolveCommits = () => __awaiter(void 0, void 0, void 0, function* () {
             return [];
         }
         const commits = (yield response.json()).map(c => c.sha);
-        core.info(`Found pull request ${pullRequest} commits: ${commits.join(', ')}`);
+        //const commits = [detached]
+        core.info(`Found pull request ${pullRequest} commits:\n${commits.join(', ')}`);
         return commits;
     }
     else if (commit) {
@@ -214,10 +223,10 @@ const resolveCommits = () => __awaiter(void 0, void 0, void 0, function* () {
  * @returns {@link Response} object
  */
 const getPullRequestCommits = () => __awaiter(void 0, void 0, void 0, function* () {
-    const url = `https://api.github.com/repos/dotCMS/core/pulls/${pullRequest}/commits`;
+    const url = `https://api.github.com/repos/dotCMS/core/pulls/${pullRequest}/commits?per_page=250`;
     core.info(`Sending GET to ${url}`);
     const response = yield (0, node_fetch_1.default)(url, { method: 'GET' });
-    core.info(`Got response:\n${JSON.stringify(response.body, null, 2)}`);
+    core.info(`Got response: ${response.status}`);
     return response;
 });
 /**

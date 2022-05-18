@@ -1,5 +1,4 @@
 {
-    "root": "apps/dotcdn-e2e",
     "sourceRoot": "apps/dotcdn-e2e/src",
     "projectType": "application",
     "targets": {

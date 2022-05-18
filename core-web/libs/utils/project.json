@@ -1,6 +1,5 @@
 {
     "projectType": "library",
-    "root": "libs/utils",
     "sourceRoot": "libs/utils/src",
     "prefix": "dotcms",
     "targets": {

@@ -6,7 +6,6 @@
             "storybook": false
         }
     },
-    "root": "libs/dotcms-field-elements",
     "sourceRoot": "libs/dotcms-field-elements/src",
     "targets": {
         "test": {

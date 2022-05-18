@@ -37,12 +37,19 @@ export const moduleMatches = async (): Promise<boolean> => {
   }
 
   const commits = await resolveCommits()
+  if (commits.length == 250) {
+    // Probably not found bu the amount of commits definitevly calls for returnin true
+    core.info(
+      'Commits reached max capacity, probably I good idea to allow workflows to run'
+    )
+    return true
+  }
 
   const found = searchInCommits(currentModule, commits)
   found
     ? core.info(`Current module ${current} matched with changes`)
     : core.warning(
-        `Could not match module ${current} with changes, disrding it...`
+        `Could not match module ${current} with changes, discarding it...`
       )
 
   return found
@@ -76,9 +83,11 @@ const validateConf = (): ModuleConf => {
  */
 const searchInCommits = (module: ModuleConf, commits: string[]): boolean => {
   for (const sha of commits) {
-    const output =
-      shelljs.exec(`git diff-tree --no-commit-id --name-only -r ${sha}`)
-        ?.stdout || ''
+    const cmd = `git diff-tree --no-commit-id --name-only -r ${sha}`
+    core.info(`Searching in commit ${sha} by running:\n${cmd}`)
+
+    const output = shelljs.exec(cmd)?.stdout || ''
+    core.info(`Returned these changes:\n${output}`)
     const changed = output.split('\n')
     if (searchInChanges(module, changed)) {
       return true
@@ -129,8 +138,9 @@ const resolveCommits = async (): Promise<string[]> => {
     }
 
     const commits = ((await response.json()) as Commit[]).map(c => c.sha)
+    //const commits = [detached]
     core.info(
-      `Found pull request ${pullRequest} commits: ${commits.join(', ')}`
+      `Found pull request ${pullRequest} commits:\n${commits.join(', ')}`
     )
     return commits
   } else if (commit) {
@@ -149,10 +159,10 @@ const resolveCommits = async (): Promise<string[]> => {
  * @returns {@link Response} object
  */
 const getPullRequestCommits = async (): Promise<Response> => {
-  const url = `https://api.github.com/repos/dotCMS/core/pulls/${pullRequest}/commits`
+  const url = `https://api.github.com/repos/dotCMS/core/pulls/${pullRequest}/commits?per_page=250`
   core.info(`Sending GET to ${url}`)
   const response: Response = await fetch(url, {method: 'GET'})
-  core.info(`Got response:\n${JSON.stringify(response.body, null, 2)}`)
+  core.info(`Got response: ${response.status}`)
   return response
 }
 
