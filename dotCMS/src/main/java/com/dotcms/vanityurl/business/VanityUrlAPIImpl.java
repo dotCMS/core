@@ -267,7 +267,6 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     checkMissingField(contentlet, language, VanityUrlContentType.ACTION_FIELD_VAR);
     checkMissingField(contentlet, language, VanityUrlContentType.URI_FIELD_VAR);
     checkMissingField(contentlet, language, VanityUrlContentType.FORWARD_TO_FIELD_VAR);
-    checkMissingField(contentlet, language, VanityUrlContentType.SITE_FIELD_VAR);
     checkMissingField(contentlet, language, VanityUrlContentType.TITLE_FIELD_VAR);
     checkMissingField(contentlet, language, VanityUrlContentType.ORDER_FIELD_VAR);
 
