@@ -6,15 +6,33 @@ on:
       - master
       - release-*
 jobs:
+  module-matcher-job:
+    name: Module Matcher job
+    runs-on: ubuntu-latest
+    outputs:
+      module_found: ${{ steps.module-matcher.outputs.module_found }}
+    steps:
+      - id: fetch-core
+        name: Fetch Core repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - id: module-matcher
+        name: Module Matcher
+        uses: ./.github/actions/module-matcher
+        with:
+          current: core
   run-unit-tests-job:
     name: Unit Tests
     runs-on: ubuntu-latest
+    needs: module-matcher-job
     env:
       DOT_CICD_BRANCH: master
       EXPORT_REPORTS: true
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
+    if: ${{ needs.module-matcher-job.outputs.module_found }} == 'true'
     steps:
       - name: GITHUB CONTEXT
         env:
@@ -56,6 +74,8 @@ jobs:
   run-curl-tests-job:
     name: Curl Tests
     runs-on: ubuntu-latest
+    needs: module-matcher-job
+    if: ${{ needs.module-matcher-job.outputs.module_found }} == 'true'
     env:
       DOT_CICD_BRANCH: master
       EXPORT_REPORTS: true
@@ -117,6 +137,8 @@ jobs:
   run-integration-tests-job:
     name: Integration Tests
     runs-on: ubuntu-latest
+    needs: module-matcher-job
+    if: ${{ needs.module-matcher-job.outputs.module_found }} == 'true'
     continue-on-error: true
     strategy:
       fail-fast: false
