@@ -242,7 +242,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.contenttype.test.ContentTypeResourceTest.class,
         com.dotcms.contenttype.business.RelationshipAPITest.class,
         com.dotcms.contenttype.business.FieldAPITest.class,
-        com.dotcms.contenttype.business.RelationshipFactoryImplTest.class,
+        com.dotcms.contenttype.business.RelationshipFactoryImplTest.class,/*
         com.dotcms.contenttype.model.field.layout.FieldUtilTest.class,
         com.dotcms.contenttype.model.field.layout.FieldLayoutColumnSerializerTest.class,
         com.dotcms.contenttype.model.field.layout.FieldLayoutSerializerTest.class,
@@ -297,7 +297,11 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.languagesmanager.business.LanguageAPITest.class,
         com.dotmarketing.portlets.languagesmanager.business.LanguageFactoryIntegrationTest.class,
         com.dotmarketing.portlets.linkchecker.business.LinkCheckerAPITest.class,
-        com.dotmarketing.portlets.contentlet.util.ContentletUtilTest.class,/*
+        com.dotmarketing.portlets.contentlet.util.ContentletUtilTest.class,
+
+
+
+
         com.dotmarketing.portlets.contentlet.business.ContentletCheckInTest.class,
         com.dotmarketing.portlets.contentlet.business.ContentletFactoryTest.class,
         com.dotmarketing.portlets.contentlet.business.HostAPITest.class,
@@ -398,6 +402,8 @@ import org.junit.runners.Suite.SuiteClasses;
         TestConfig.class,
         ConfigTest.class,
         FolderTest.class,*/
+
+
         PublishAuditAPITest.class/*,
         BundleFactoryTest.class,
         com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class,
