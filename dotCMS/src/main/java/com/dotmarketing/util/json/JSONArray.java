@@ -73,7 +73,7 @@ public class JSONArray  implements List,Serializable {
 
 
     public void add(int index, Object element) {
-    	myArrayList.add(index, element);
+    	_put(index, element);
 		
 	}
 
@@ -115,7 +115,7 @@ public class JSONArray  implements List,Serializable {
 
 	public boolean contains(Object o) {
 
-		return myArrayList.contains(o);
+		return myArrayList.contains(o) || myArrayList.contains(JSONObject.wrap(o));
 	}
 
 	public boolean containsAll(Collection c) {
@@ -133,7 +133,7 @@ public class JSONArray  implements List,Serializable {
 		return myArrayList.isEmpty();
 	}
 
-	public Iterator<Object> iterator() {
+	public Iterator iterator() {
 
 		return myArrayList.iterator();
 	}
@@ -143,12 +143,12 @@ public class JSONArray  implements List,Serializable {
 		return myArrayList.lastIndexOf(o);
 	}
 
-	public ListIterator<Object> listIterator() {
+	public ListIterator listIterator() {
 
 		return myArrayList.listIterator();
 	}
 
-	public ListIterator<Object> listIterator(int index) {
+	public ListIterator listIterator(int index) {
 
 		return myArrayList.listIterator(index);
 	}
@@ -177,7 +177,7 @@ public class JSONArray  implements List,Serializable {
 		return myArrayList.size();
 	}
 
-	public List<Object> subList(int fromIndex, int toIndex) {
+	public List subList(int fromIndex, int toIndex) {
 
 		return myArrayList.subList(fromIndex,toIndex);
 	}
@@ -678,8 +678,8 @@ public class JSONArray  implements List,Serializable {
      * @return this.
      */
     public JSONArray put(boolean value) {
-        put(value ? Boolean.TRUE : Boolean.FALSE);
-        return this;
+        return _put(length(),value ? Boolean.TRUE : Boolean.FALSE);
+
     }
 
 
@@ -690,8 +690,8 @@ public class JSONArray  implements List,Serializable {
      * @return      this.
      */
     public JSONArray put(Collection value) {
-        put(new JSONArray(value));
-        return this;
+        return _put(length(),value);
+
     }
 
 
@@ -706,8 +706,8 @@ public class JSONArray  implements List,Serializable {
         Double d = Double.valueOf(value);
 
         JSONObject.testValidity(d);
-        put(d);
-        return this;
+        return _put(length(),d);
+
     }
 
 
@@ -718,8 +718,8 @@ public class JSONArray  implements List,Serializable {
      * @return this.
      */
     public JSONArray put(int value) {
-        put( Integer.valueOf(value));
-        return this;
+        return _put(length(),Integer.valueOf(value));
+
     }
 
 
@@ -730,8 +730,8 @@ public class JSONArray  implements List,Serializable {
      * @return this.
      */
     public JSONArray put(long value) {
-        put( Long.valueOf(value));
-        return this;
+        return _put(length(),Long.valueOf(value));
+
     }
 
 
@@ -742,8 +742,8 @@ public class JSONArray  implements List,Serializable {
      * @return      this.
      */
     public JSONArray put(Map value) {
-        put(JSONObject.wrap(value));
-        return this;
+        return _put(length(),JSONObject.wrap(value));
+
     }
 
 
@@ -755,8 +755,8 @@ public class JSONArray  implements List,Serializable {
      * @return this.
      */
     public JSONArray put(Object value) {
-        this.myArrayList.add(value);
-        return this;
+        return _put(length(),value);
+
     }
 
 
@@ -770,8 +770,8 @@ public class JSONArray  implements List,Serializable {
      * @throws JSONException If the index is negative.
      */
     public JSONArray put(int index, boolean value)  {
-        put(index, value ? Boolean.TRUE : Boolean.FALSE);
-        return this;
+        return _put(index, value ? Boolean.TRUE : Boolean.FALSE);
+
     }
 
 
@@ -785,8 +785,8 @@ public class JSONArray  implements List,Serializable {
      * not finite.
      */
     public JSONArray put(int index, Collection value)  {
-        put(index, new JSONArray(value));
-        return this;
+        return _put(index, value);
+
     }
 
 
@@ -802,8 +802,8 @@ public class JSONArray  implements List,Serializable {
      */
 
     public JSONArray put(int index, double value)  {
-        put(index, new Double(value));
-        return this;
+        return _put(index, new Double(value));
+
     }
 
 
@@ -818,8 +818,8 @@ public class JSONArray  implements List,Serializable {
      */
 
     public JSONArray put(int index, int value)  {
-        put(index, new Integer(value));
-        return this;
+        return _put(index, new Integer(value));
+
     }
 
 
@@ -834,8 +834,8 @@ public class JSONArray  implements List,Serializable {
      */
 
     public JSONArray put(int index, long value)  {
-        put(index, new Long(value));
-        return this;
+        return _put(index, new Long(value));
+
     }
 
 
@@ -849,11 +849,16 @@ public class JSONArray  implements List,Serializable {
      *  an invalid number.
      */
     public JSONArray put(int index, Map value)  {
-        put(index, JSONObject.wrap(value));
-        return this;
+        return _put(index, JSONObject.wrap(value));
     }
 
-
+    public JSONArray put(int index, Object value)  {
+        return _put(index, value);
+    }
+    
+    
+    
+    
     /**
      * Put or replace an object value in the JSONArray. If the index is greater
      *  than the length of the JSONArray, then null elements will be added as
@@ -866,18 +871,18 @@ public class JSONArray  implements List,Serializable {
      * @throws JSONException If the index is negative or if the the value is
      *  an invalid number.
      */
-    public JSONArray put(int index, Object value)  {
+    JSONArray _put(int index, Object value)  {
         JSONObject.testValidity(value);
         if (index < 0) {
             throw new JSONException("JSONArray[" + index + "] not found.");
         }
         if (index < length()) {
-            this.myArrayList.set(index, value);
+            this.myArrayList.set(index, JSONObject.wrap(value));
         } else {
             while (index != length()) {
-                put(JSONObject.NULL);
+                this.myArrayList.add(JSONObject.NULL);
             }
-            put(value);
+            this.myArrayList.add(JSONObject.wrap(value));
         }
         return this;
     }
