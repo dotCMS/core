@@ -69,8 +69,14 @@ import com.google.common.collect.ImmutableSet;
 import io.swagger.v3.jaxrs2.integration.resources.AcceptHeaderOpenApiResource;
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeIn;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.info.Contact;
 import io.swagger.v3.oas.annotations.info.Info;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import io.swagger.v3.oas.annotations.security.SecurityScheme;
+import io.swagger.v3.oas.annotations.servers.Server;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 
 import java.util.Map;
@@ -91,8 +97,20 @@ import java.util.concurrent.ConcurrentHashMap;
 		info =
 		@Info(
 				title = "dotCMS REST API",
-				version = "1.0.0",
-				description = "dotCMS REST API"))
+				version = "3",
+				description = "dotCMS REST API"),
+		security = {
+				@SecurityRequirement(name = "API Token"),
+				@SecurityRequirement(name = "Basic Auth")
+		},
+		servers = {
+				@Server(
+						description = "dotCMS Server",
+						url = "http://localhost:8080/api")
+						})
+
+@SecurityScheme(name = "API Token", description = "API Token Authentication", type = SecuritySchemeType.APIKEY, scheme = "Bearer", in = SecuritySchemeIn.HEADER)
+@SecurityScheme(name = "Basic Auth", type = SecuritySchemeType.HTTP, scheme = "Basic")
 public class DotRestApplication extends javax.ws.rs.core.Application {
 
 	/**
