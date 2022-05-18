@@ -14,7 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 
-/**com.dotcms.repackage.org.json.JSONObject
+/**
  * Created by Jonathan Gamba.
  * Date: 5/18/12
  */
