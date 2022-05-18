@@ -207,7 +207,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.auth.providers.jwt.JsonWebTokenUtilsIntegrationTest.class,
         com.dotcms.auth.providers.jwt.factories.ApiTokenAPITest.class,
         com.dotcms.auth.providers.jwt.services.JsonWebTokenServiceIntegrationTest.class,
-        DependencyModDateUtilTest.class,
+        DependencyModDateUtilTest.class,/*
         com.dotcms.publisher.business.PublisherTest.class,
         com.dotcms.publisher.endpoint.bean.PublishingEndPointTest.class,
         com.dotcms.publisher.endpoint.business.PublishingEndPointAPITest.class,
@@ -242,7 +242,12 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.contenttype.test.ContentTypeResourceTest.class,
         com.dotcms.contenttype.business.RelationshipAPITest.class,
         com.dotcms.contenttype.business.FieldAPITest.class,
-        com.dotcms.contenttype.business.RelationshipFactoryImplTest.class,/*
+        com.dotcms.contenttype.business.RelationshipFactoryImplTest.class,
+
+
+
+
+
         com.dotcms.contenttype.model.field.layout.FieldUtilTest.class,
         com.dotcms.contenttype.model.field.layout.FieldLayoutColumnSerializerTest.class,
         com.dotcms.contenttype.model.field.layout.FieldLayoutSerializerTest.class,
