@@ -218,14 +218,13 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.business.LocalTransactionAndCloseDBIfOpenedFactoryTest.class,
         com.dotcms.content.elasticsearch.business.IndiciesFactoryTest.class,
         com.dotcms.content.elasticsearch.business.ESIndexSpeedTest.class,
-
-        /*com.dotcms.content.elasticsearch.business.ESSiteSearchAPITest.class,
+        com.dotcms.content.elasticsearch.business.ESSiteSearchAPITest.class,
         com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplTest.class,
         com.dotcms.content.elasticsearch.business.ES6UpgradeTest.class,
         com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest.class,
         com.dotcms.keyvalue.busines.KeyValueAPIImplTest.class,
         com.dotcms.keyvalue.business.KeyValueAPITest.class,
-        com.dotcms.tika.TikaUtilsTest.class,*/
+        com.dotcms.tika.TikaUtilsTest.class,
 
 
 
