@@ -179,7 +179,7 @@
             </style>
 
             <script src="/html/dotcms-block-editor.js"></script>
-            <dotcms-block-editor class="<%=customClassName%>"></dotcms-block-editor>
+            <dotcms-block-editor class="<%=customClassName%>" lang="<%=contentLanguage%>"></dotcms-block-editor>
             <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"/>
 
             <script>

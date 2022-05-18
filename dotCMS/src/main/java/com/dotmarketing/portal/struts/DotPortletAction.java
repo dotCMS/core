@@ -4,13 +4,7 @@
  */
 package com.dotmarketing.portal.struts;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -19,13 +13,8 @@ import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.util.SecurityUtils;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.Inode;
-import com.dotmarketing.beans.PermissionAsset;
-import com.dotmarketing.beans.WebAsset;
+import com.dotmarketing.beans.*;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
@@ -38,20 +27,12 @@ import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.SystemContainer;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.templates.model.SystemTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.ActivityLogger;
-import com.dotmarketing.util.HostUtil;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.PaginatedArrayList;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
-import com.dotmarketing.util.WebKeys.Cache;
+import com.dotmarketing.util.*;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
@@ -61,13 +42,16 @@ import com.liferay.portal.struts.PortletAction;
 import com.liferay.portal.util.Constants;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.servlet.SessionMessages;
-import java.util.ArrayList;
-import java.util.List;
+import org.apache.commons.beanutils.BeanUtils;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.PageContext;
-import org.apache.commons.beanutils.BeanUtils;
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.dotmarketing.business.PermissionAPI.*;
 
 /**
  * Provides utility methods to interact with {@link WebAsset} objects in dotCMS.
@@ -412,28 +396,35 @@ public class DotPortletAction extends PortletAction {
 	}
 
 	/**
-	 * Generic method to retrieve a WebAsset based on the inode on the request
+	 * Generic method which retrieves a WebAsset object based on the value of the Inode in the request.
 	 *
-	 * @param req
-	 * @param res
-	 * @param config
-	 * @param form
-	 * @param user
-	 * @param myClass
-	 * @param webkey
-	 * @throws Exception
+	 * @param req     The HTTP Request object wrapped in to the {@link ActionRequest} class.
+	 * @param res     Not used.
+	 * @param config  Not used.
+	 * @param form    Not used.
+	 * @param user    The {@link User} performing this action.
+	 * @param myClass The type of dotCMS WebAsset object being requested.
+	 * @param webkey  The key that will be used to set the retrieved WebAsset in the HTTP Request object.
+	 *
+	 * @throws Exception An error occurred when finding the required WebAsset.
 	 */
-	public void _retrieveWebAsset(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user, Class myClass,
+	public void _retrieveWebAsset(final ActionRequest req, final ActionResponse res, final PortletConfig config, final ActionForm form, final User user, final Class myClass,
 			String webkey) throws Exception {
 		WebAsset webAsset;
-		Identifier ident = null;
-		String inode=req.getParameter("inode");
+		Identifier ident;
+		final String inode = req.getParameter("inode");
 		
 		if(InodeUtils.isSet(inode)) {
 			// editing existing asset
-			if(Template.class.equals(myClass)){
+			if (Template.class.equals(myClass)){
+				if (SystemTemplate.SYSTEM_TEMPLATE.equalsIgnoreCase(inode)) {
+					throw new Exception("System Template and its associated data cannot be saved/updated.");
+				}
 				ident = APILocator.getIdentifierAPI().find(APILocator.getTemplateAPI().find(inode,user,false).getIdentifier());
 			} else {
+				if (SystemContainer.SYSTEM_CONTAINER.equalsIgnoreCase(inode)) {
+					throw new Exception("System Container and its associated data cannot be saved/updated.");
+				}
 				ident = APILocator.getIdentifierAPI().findFromInode(inode);
 			}
 			webAsset = (WebAsset) APILocator.getVersionableAPI().findWorkingVersion(ident, user, false);
@@ -447,8 +438,7 @@ public class DotPortletAction extends PortletAction {
 			
 			// Checking permissions
 			_checkUserPermissions(webAsset, user, PERMISSION_READ);
-
-			Logger.debug(this, "webAsset:" + webAsset.toString());
+			Logger.debug(this, "webAsset:" + webAsset);
 			Logger.debug(this, "webAsset:" + webAsset.getInode());
 		}
 		else {
@@ -457,10 +447,8 @@ public class DotPortletAction extends PortletAction {
 		}
 		
 		req.setAttribute(webkey, webAsset);
-
 		// Asset Versions to list in the versions tab
 		req.setAttribute(WebKeys.VERSIONS_INODE_EDIT, webAsset);
-
 	}
 
 	/**

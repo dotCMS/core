@@ -32,6 +32,7 @@ import com.dotcms.enterprise.publishing.remote.bundler.RuleBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.TemplateBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.WorkflowBundlerTest;
 import com.dotcms.enterprise.publishing.remote.handler.ContentHandlerTest;
+import com.dotcms.enterprise.publishing.remote.handler.ContentWorkflowHandlerTest;
 import com.dotcms.enterprise.publishing.remote.handler.HandlerUtilTest;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3PublisherTest;
 import com.dotcms.enterprise.publishing.staticpublishing.LanguageFolderTest;
@@ -158,6 +159,7 @@ import com.dotmarketing.startup.runonce.Task220330ChangeVanityURLSiteFieldTypeTe
 import com.dotmarketing.startup.runonce.Task220331UpdateDateTimezonesTest;
 import com.dotmarketing.startup.runonce.Task220404RemoveCalendarReminderTest;
 import com.dotmarketing.startup.runonce.Task220413IncreasePublishedPushedAssetIdColTest;
+import com.dotmarketing.startup.runonce.Task220512UpdateNoHTMLRegexValueTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -547,7 +549,10 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentDispositionFileNameParserTest.class,
         SecureFileValidatorTest.class,
         BoundedBufferedReaderTest.class,
-        AWSS3PublisherTest.class*/
+        AWSS3PublisherTest.class
+        ContentWorkflowHandlerTest.class,
+        Task220512UpdateNoHTMLRegexValueTest.class*/
+
 })
 public class MainSuite {
 
