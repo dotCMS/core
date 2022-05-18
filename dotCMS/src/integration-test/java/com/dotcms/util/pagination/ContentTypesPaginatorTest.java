@@ -5,22 +5,34 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.UserDataGen;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 import static com.dotcms.util.CollectionsUtils.list;
+import static com.liferay.util.StringPool.COMMA;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -173,6 +185,141 @@ public class ContentTypesPaginatorTest {
                 .variable("velocityVarNameTesting" + i);
 
         return contentTypeApi.save(builder.build());
+    }
+
+    /**
+     *
+     * @param role
+     * @param site
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    private void addPermission(final Role role, final Host site) throws DotDataException, DotSecurityException {
+        final User systemUser = APILocator.systemUser();
+        final Permission permission = new Permission();
+        permission.setInode(site.getPermissionId());
+        permission.setRoleId(role.getId());
+        permission.setPermission(PermissionAPI.PERMISSION_READ);
+        APILocator.getPermissionAPI().save(CollectionsUtils.list(permission), site, systemUser, false);
+    }
+
+    /**
+     * Method to test: {@link ContentTypesPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     *
+     * Given Scenario: Get the complete list of Content Types without any pagination, ordered by their names.
+     *
+     * Expected Result: A list with 5 Content Type objects ordered by name.
+     */
+    @Test
+    public void getAllAllowedContentTypesOrderedByName() {
+        // Initialization
+        final String DEFAULT_ORDER_BY = "UPPER(name)";
+        final String NO_FILTER = StringPool.BLANK;
+        final String contentTypeVars = "webPageContent,calendarEvent,Vanityurl,DotAsset,htmlpageasset";
+        final List<String> typeVarNames = Arrays.asList(contentTypeVars.split(COMMA));
+        final Map<String, Object> extraParams = new HashMap<>();
+        extraParams.put(ContentTypesPaginator.TYPES_PARAMETER_NAME, typeVarNames);
+        final ContentTypesPaginator paginator = new ContentTypesPaginator();
+
+        // Test data generation
+        final PaginatedArrayList<Map<String, Object>> contentTypes =
+                paginator.getItems(user, NO_FILTER, -1, -1, DEFAULT_ORDER_BY, OrderDirection.ASC, extraParams);
+
+        // Assertions
+        assertEquals("There must be 5 Content Types returned by the paginator", 5, contentTypes.size());
+        assertEquals("The 'Content (Generic)' type must come first", "Content (Generic)",
+                contentTypes.get(0).get("name").toString());
+    }
+
+    /**
+     * Method to test: {@link ContentTypesPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     *
+     * Given Scenario: Get the filtered list of Content Types with the letters "ent" without any pagination, ordered by
+     * their names.
+     *
+     * Expected Result: A list with 2 Content Type objects ordered by name.
+     */
+    @Test
+    public void getFilteredAllowedContentTypesOrderedByName() {
+        // Initialization
+        final String DEFAULT_ORDER_BY = "UPPER(name)";
+        final String FILTER = "ent";
+        final String contentTypeVars = "webPageContent,calendarEvent,Vanityurl,DotAsset,htmlpageasset";
+        final List<String> typeVarNames = Arrays.asList(contentTypeVars.split(COMMA));
+        final Map<String, Object> extraParams = new HashMap<>();
+        extraParams.put(ContentTypesPaginator.TYPES_PARAMETER_NAME, typeVarNames);
+        final ContentTypesPaginator paginator = new ContentTypesPaginator();
+
+        // Test data generation
+        final PaginatedArrayList<Map<String, Object>> contentTypes =
+                paginator.getItems(user, FILTER, -1, -1, DEFAULT_ORDER_BY, OrderDirection.ASC, extraParams);
+
+        // Assertions
+        assertEquals("There must be 2 Content Types returned by the paginator", 2, contentTypes.size());
+        assertEquals("The 'Content (Generic)' type must come first", "Content (Generic)",
+                contentTypes.get(0).get("name").toString());
+    }
+
+    /**
+     * Method to test: {@link ContentTypesPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     *
+     * Given Scenario: Get the filtered paginated list of Content Types with the letters "set",  ordered by their names.
+     *
+     * Expected Result: A list with 1 Content Type object must be returned, as we're excluding one result.
+     */
+    @Test
+    public void getFilteredPaginatedAllowedContentTypesOrderedByName() {
+        // Initialization
+        final String DEFAULT_ORDER_BY = "UPPER(name)";
+        final String FILTER = "set";
+        final String contentTypeVars = "webPageContent,calendarEvent,Vanityurl,DotAsset,htmlpageasset";
+        final List<String> typeVarNames = Arrays.asList(contentTypeVars.split(COMMA));
+        final Map<String, Object> extraParams = new HashMap<>();
+        extraParams.put(ContentTypesPaginator.TYPES_PARAMETER_NAME, typeVarNames);
+        final ContentTypesPaginator paginator = new ContentTypesPaginator();
+
+        // Test data generation
+        // Results must contain "DotAsset" and "htmlpageasset"
+        final int offset = 0;
+        final int limit = 4;
+        final PaginatedArrayList<Map<String, Object>> contentTypes =
+                paginator.getItems(user, FILTER, limit, offset, DEFAULT_ORDER_BY, OrderDirection.ASC, extraParams);
+
+        // Assertions
+        assertEquals("There must be two Content Types returned by the paginator", 2, contentTypes.size());
+        assertEquals("The 'dotAsset' type must come first", "dotAsset", contentTypes.get(0).get("name").toString());
+    }
+
+    /**
+     * Method to test: {@link ContentTypesPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     *
+     * Given Scenario: Get a paginated list of Content Types, ordered by their names.
+     *
+     * Expected Result: Get the second page of results, which must have only 2 Content Types.
+     */
+    @Test
+    public void getPaginatedAllowedContentTypesOrderedByName() {
+        // Initialization
+        final String DEFAULT_ORDER_BY = "UPPER(name)";
+        final String NO_FILTER = StringPool.BLANK;
+        final String contentTypeVars = "webPageContent,calendarEvent,Vanityurl,DotAsset,htmlpageasset";
+        final List<String> typeVarNames = Arrays.asList(contentTypeVars.split(COMMA));
+        final Map<String, Object> extraParams =
+                CollectionsUtils.map(ContentTypesPaginator.TYPES_PARAMETER_NAME, typeVarNames);
+        final ContentTypesPaginator paginator = new ContentTypesPaginator();
+        // Offset and Limit are automatically adjusted by the PaginationUtil class. So, set them up as the class would
+        // Get the result page #2, so set this to 3
+        final int offset = 3;
+        // And set a total of 3 items per page
+        final int limit = 3;
+
+        // Test data generation
+        final PaginatedArrayList<Map<String, Object>> contentTypes =
+                paginator.getItems(user, NO_FILTER, limit, offset, DEFAULT_ORDER_BY, OrderDirection.ASC, extraParams);
+
+        // Assertions
+        assertEquals("There must be 2 Content Types returned by the paginator", 2, contentTypes.size());
+        assertEquals("The 'dotAsset' type must come first", "dotAsset", contentTypes.get(0).get("name").toString());
     }
 
 }
