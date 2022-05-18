@@ -316,7 +316,6 @@ public class TaskLocatorUtil {
 		.add(Task220215MigrateDataFromInodeToFolder.class)
 		.add(Task220330ChangeVanityURLSiteFieldType.class)
 		.add(Task220331UpdateDateTimezones.class)
-		.add(Task220404RemoveCalendarReminder.class)
 		.add(Task220413IncreasePublishedPushedAssetIdCol.class)
 		.add(Task220512UpdateNoHTMLRegexValue.class)
 		.build();
