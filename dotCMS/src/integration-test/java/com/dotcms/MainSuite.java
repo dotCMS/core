@@ -176,7 +176,7 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
-        /*FolderCacheImplIntegrationTest.class,
+        FolderCacheImplIntegrationTest.class,
         StaticPublisherIntegrationTest.class,
         com.dotcms.publishing.PublisherAPIImplTest.class,
         SiteSearchJobImplTest.class,
@@ -397,7 +397,7 @@ import org.junit.runners.Suite.SuiteClasses;
         TemplateFactoryImplTest.class,
         TestConfig.class,
         ConfigTest.class,
-        FolderTest.class,*/
+        FolderTest.class,
         PublishAuditAPITest.class/*,
         BundleFactoryTest.class,
         com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class,
