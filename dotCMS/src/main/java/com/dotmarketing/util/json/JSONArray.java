@@ -277,10 +277,10 @@ public class JSONArray  implements List,Serializable {
      * Construct a JSONArray from a Collection.
      * @param collection     A Collection.
      */
-    public JSONArray(Collection<Object> collection) {
+    public JSONArray(Collection collection) {
 		this();
 		if (collection != null) {
-			Iterator<Object> iter = collection.iterator();
+			Iterator iter = collection.iterator();
 			while (iter.hasNext()) {
 			    Object o = iter.next();
                 this.myArrayList.add(JSONObject.wrap(o));  
@@ -689,7 +689,7 @@ public class JSONArray  implements List,Serializable {
      * @param value A Collection value.
      * @return      this.
      */
-    public JSONArray put(Collection<Object> value) {
+    public JSONArray put(Collection value) {
         put(new JSONArray(value));
         return this;
     }
