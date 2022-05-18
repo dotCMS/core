@@ -240,14 +240,14 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.contenttype.test.ContentTypeFactoryImplTest.class,
         com.dotcms.contenttype.test.ContentTypeImportExportTest.class,
         com.dotcms.contenttype.test.FieldFactoryImplTest.class,
-        com.dotcms.contenttype.test.JsonContentTypeTransformerTest.class,
+        /*com.dotcms.contenttype.test.JsonContentTypeTransformerTest.class,
         com.dotcms.contenttype.test.ContentResourceTest.class,
         com.dotcms.contenttype.test.FieldBuilderTest.class,
         com.dotcms.contenttype.test.KeyValueFieldUtilTest.class,
         com.dotcms.contenttype.test.ContentTypeResourceTest.class,
         com.dotcms.contenttype.business.RelationshipAPITest.class,
         com.dotcms.contenttype.business.FieldAPITest.class,
-        com.dotcms.contenttype.business.RelationshipFactoryImplTest.class,
+        com.dotcms.contenttype.business.RelationshipFactoryImplTest.class,*/
 
 
 
