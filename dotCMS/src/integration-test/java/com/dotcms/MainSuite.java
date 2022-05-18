@@ -174,7 +174,7 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
-        FolderCacheImplIntegrationTest.class,
+        /*FolderCacheImplIntegrationTest.class,
         StaticPublisherIntegrationTest.class,
         com.dotcms.publishing.PublisherAPIImplTest.class,
         SiteSearchJobImplTest.class,
@@ -395,8 +395,8 @@ import org.junit.runners.Suite.SuiteClasses;
         TemplateFactoryImplTest.class,
         TestConfig.class,
         ConfigTest.class,
-        FolderTest.class,
-        PublishAuditAPITest.class,
+        FolderTest.class,*/
+        PublishAuditAPITest.class/*,
         BundleFactoryTest.class,
         com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class,
         AppsAPIImplTest.class,
@@ -547,7 +547,7 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentDispositionFileNameParserTest.class,
         SecureFileValidatorTest.class,
         BoundedBufferedReaderTest.class,
-        AWSS3PublisherTest.class
+        AWSS3PublisherTest.class*/
 })
 public class MainSuite {
 
