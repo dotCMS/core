@@ -224,7 +224,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest.class,
         com.dotcms.keyvalue.busines.KeyValueAPIImplTest.class,
         com.dotcms.keyvalue.business.KeyValueAPITest.class,
-        com.dotcms.tika.TikaUtilsTest.class,
+        com.dotcms.tika.TikaUtilsTest.class,/*
         com.dotcms.http.CircuitBreakerUrlTest.class,
         com.dotcms.visitor.filter.logger.VisitorLoggerTest.class,
         com.dotcms.visitor.filter.characteristics.VisitorCharacterTest.class,
@@ -243,7 +243,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.contenttype.test.ContentTypeResourceTest.class,
         com.dotcms.contenttype.business.RelationshipAPITest.class,
         com.dotcms.contenttype.business.FieldAPITest.class,
-        com.dotcms.contenttype.business.RelationshipFactoryImplTest.class,/*
+        com.dotcms.contenttype.business.RelationshipFactoryImplTest.class,
 
 
 
