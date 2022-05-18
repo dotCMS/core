@@ -108,6 +108,15 @@ public class ConfigTestHelper extends Config {
         if (velocityDirectory.exists() && velocityDirectory.canRead()) {
 
             FileUtil.copyDirectory(velocityDirectory, new File(topPathDirectory, "/WEB-INF/velocity"));
+        } else {
+
+            final String userDirPath = System.getProperty("user.dir");
+            final String userDirPathComplete = userDirPath + "/src/main/webapp/WEB-INF/velocity";
+            final File velocityDirectory2 = new File(userDirPathComplete);
+            if (velocityDirectory2.exists() && velocityDirectory2.canRead()) {
+
+                FileUtil.copyDirectory(velocityDirectory2, new File(topPathDirectory, "/WEB-INF/velocity"));
+            }
         }
 
     }
