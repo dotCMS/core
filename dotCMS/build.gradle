@@ -580,7 +580,8 @@ task extractDotCmsWebComponents(type: NpmArtifactExtractTask) {
 
 task copyDotCmsWebComponents(type: Copy) {
     from (extractDotCmsWebComponents.outputDir.dir('package/dist'))
-    into "./src/main/webapp/dotcms-webcomponents"
+    into "./src/main/webapp"
+    include 'dotcms-webcomponents/*'
     dependsOn cleanDotCmsWebComponents
 }
 
