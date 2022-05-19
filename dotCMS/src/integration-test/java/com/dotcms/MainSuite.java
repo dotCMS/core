@@ -209,7 +209,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.auth.providers.jwt.factories.ApiTokenAPITest.class,
         com.dotcms.auth.providers.jwt.services.JsonWebTokenServiceIntegrationTest.class,
         DependencyModDateUtilTest.class,
-
         com.dotcms.publisher.business.PublisherTest.class,
         com.dotcms.publisher.endpoint.bean.PublishingEndPointTest.class,
         com.dotcms.publisher.endpoint.business.PublishingEndPointAPITest.class,
@@ -226,10 +225,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.keyvalue.busines.KeyValueAPIImplTest.class,
         com.dotcms.keyvalue.business.KeyValueAPITest.class,
         com.dotcms.tika.TikaUtilsTest.class,
-
-
-
-
         com.dotcms.http.CircuitBreakerUrlTest.class,
         com.dotcms.visitor.filter.logger.VisitorLoggerTest.class,
         com.dotcms.visitor.filter.characteristics.VisitorCharacterTest.class,
@@ -241,7 +236,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.contenttype.test.ContentTypeFactoryImplTest.class,
         com.dotcms.contenttype.test.ContentTypeImportExportTest.class,
         com.dotcms.contenttype.test.FieldFactoryImplTest.class,
-
         com.dotcms.contenttype.test.JsonContentTypeTransformerTest.class,
         com.dotcms.contenttype.test.ContentResourceTest.class,
         com.dotcms.contenttype.test.FieldBuilderTest.class,
@@ -250,11 +244,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.contenttype.business.RelationshipAPITest.class,
         com.dotcms.contenttype.business.FieldAPITest.class,
         com.dotcms.contenttype.business.RelationshipFactoryImplTest.class,
-
-
-
-
-
         com.dotcms.contenttype.model.field.layout.FieldUtilTest.class,
         com.dotcms.contenttype.model.field.layout.FieldLayoutColumnSerializerTest.class,
         com.dotcms.contenttype.model.field.layout.FieldLayoutSerializerTest.class,
@@ -310,10 +299,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.languagesmanager.business.LanguageFactoryIntegrationTest.class,
         com.dotmarketing.portlets.linkchecker.business.LinkCheckerAPITest.class,
         com.dotmarketing.portlets.contentlet.util.ContentletUtilTest.class,
-
-
-
-
         com.dotmarketing.portlets.contentlet.business.ContentletCheckInTest.class,
         com.dotmarketing.portlets.contentlet.business.ContentletFactoryTest.class,
         com.dotmarketing.portlets.contentlet.business.HostAPITest.class,
@@ -414,9 +399,6 @@ import org.junit.runners.Suite.SuiteClasses;
         TestConfig.class,
         ConfigTest.class,
         FolderTest.class,
-
-
-        //
         BundleFactoryTest.class,
         com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class,
         AppsAPIImplTest.class,
