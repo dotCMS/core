@@ -111,7 +111,7 @@ function replaceWithIcon(parentElement, iconName) {
 				          title="<%=LanguageUtil.get(pageContext, "default-language")%>"
 						<% } %>
 				>
-					<span><img src="/html/images/languages/<%= langIcon %>.gif" border="0" onError="replaceWithIcon(this.parentElement, 'emoji_flags')" /></span>
+					<span><img src="/html/images/languages/<%= langIcon %>.gif" border="0" onError="replaceWithIcon(this.parentElement, 'language')" /></span>
 					<%= strLanguage %>&nbsp;<%= (UtilMethods.isSet(strCountryCode) ? ("(" + strCountryCode + ")&nbsp;") : StringPool.BLANK) %>
 			    </a>
 
