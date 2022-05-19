@@ -166,7 +166,7 @@ public class OSGIResource  {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public final Response updateBundles(@Context final HttpServletRequest request,
                                               @Context final HttpServletResponse response,
-                                              final FormDataMultiPart multipart) throws IOException, com.dotcms.repackage.org.codehaus.jettison.json.JSONException {
+                                              final FormDataMultiPart multipart) throws IOException, com.dotmarketing.util.json.JSONException {
 
         new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)

@@ -1,6 +1,6 @@
 package com.dotcms.rest;
 
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
+import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 @JsonSerialize(using = JsonObjectViewSerializer.class)
