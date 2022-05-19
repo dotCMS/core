@@ -5,6 +5,8 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
+import com.dotcms.mock.request.FakeHttpRequest;
+import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.util.IntegrationTestInitService;
@@ -18,13 +20,24 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
+import io.vavr.control.Try;
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.context.Context;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
 
 import static junit.framework.TestCase.assertEquals;
 
@@ -44,10 +57,79 @@ public class StoryBlockMapTest extends IntegrationTestBase {
 
     private static final String JSON_ULIST =
             "{\"type\":\"doc\",\"content\":[{\"type\":\"bulletList\",\"content\":[{\"type\":\"listItem\",\"attrs\":{\"textAlign\":\"left\"},\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"1\"}]}]},{\"type\":\"listItem\",\"attrs\":{\"textAlign\":\"left\"},\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"2\"}]}]},{\"type\":\"listItem\",\"attrs\":{\"textAlign\":\"left\"},\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"3\"}]}]}]}]}";
+
+    private static final String MACRO = "#macro(renderMarks $content)\n" +
+            "\n" +
+            "    #if($content.marks)\n" +
+            "        #set($start = 0)\n" +
+            "        #set($end = $content.marks.length())\n" +
+            "        #set($end = $end - 1)\n" +
+            "        #set($range = [$start..$end])\n" +
+            "\n" +
+            "        #foreach($i in $range)\n" +
+            "            #set($mark = $content.marks.get($i))\n" +
+            "            #if ($mark.type == \"bold\")\n" +
+            "            <strong>\n" +
+            "            #end\n" +
+            "            #if ($mark.type == \"italic\")\n" +
+            "            <em>\n" +
+            "            #end\n" +
+            "            #if ($mark.type == \"strike\")\n" +
+            "            <s>\n" +
+            "            #end\n" +
+            "            #if ($mark.type == \"underline\")\n" +
+            "            <u>\n" +
+            "            #end\n" +
+            "            #if ($mark.type == \"link\")\n" +
+            "            <a href=\"$mark.attrs.href\" target=\"$mark.attrs.target\">\n" +
+            "            #end\n" +
+            "        #end\n" +
+            "    #end\n" +
+            "\n" +
+            "    $!content.text\n" +
+            "\n" +
+            "    #if($content.marks)\n" +
+            "        #set($range = [$end..$start])\n" +
+            "        #foreach($i in $range)\n" +
+            "            #set($mark = $content.marks.get($i))\n" +
+            "            #if ($mark.type == \"bold\")\n" +
+            "            </strong>\n" +
+            "            #end\n" +
+            "            #if ($mark.type == \"italic\")\n" +
+            "            </em>\n" +
+            "            #end\n" +
+            "            #if ($mark.type == \"strike\")\n" +
+            "            </s>\n" +
+            "            #end\n" +
+            "            #if ($mark.type == \"underline\")\n" +
+            "            </u>\n" +
+            "            #end\n" +
+            "            #if($mark.type == \"link\")\n" +
+            "            </a>\n" +
+            "            #end\n" +
+            "        #end\n" +
+            "    #end\n" +
+            "\n" +
+            "#end";
+
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
+    }
+
+    @Before
+    public void before () {
+
+        final Host   host     = Try.of(()->APILocator.getHostAPI().findDefaultHost(
+                APILocator.systemUser(), false)).getOrNull();
+        final String hostname = null == host? host.getHostname():"dotcms.com"; // fake host
+        final HttpServletRequest requestProxy = new FakeHttpRequest(hostname, null).request();
+        final HttpServletResponse responseProxy = new BaseResponse().response();
+        final Context context = VelocityUtil.getInstance().getContext(requestProxy, responseProxy);
+        final Reader reader   = new StringReader(MACRO);
+        final StringWriter evalResult = new StringWriter();
+        com.dotcms.rendering.velocity.util.VelocityUtil.getEngine().evaluate(context, evalResult, StringPool.BLANK, reader);
     }
 
     /**
@@ -80,7 +162,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON_OLIST);
         final String html = storyBlockMap.toHtml();
         Assert.assertTrue(html.contains("<ol style=\"text-align: \">"));
-        Assert.assertTrue(html + ": <li style=\"text-align: left\">", html.contains("<li style=\"text-align: left\">"));
+        Assert.assertTrue(html + ": <li style=\"text-align: left", html.contains("<li style=\"text-align: left"));
         Assert.assertTrue(html.contains("one"));
         Assert.assertTrue(html.contains("two"));
         Assert.assertTrue(html.contains("tree"));
@@ -104,7 +186,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON_ULIST);
         final String html = storyBlockMap.toHtml();
         Assert.assertTrue(html.contains("<ul>"));
-        Assert.assertTrue(html + ": does not contains <li style=\"text-align: left\">", html.contains("<li style=\"text-align: left\">"));
+        Assert.assertTrue(html + ": does not contains <li style=\"text-align: left", html.contains("<li style=\"text-align: left"));
         Assert.assertTrue(html.contains("1"));
         Assert.assertTrue(html.contains("2"));
         Assert.assertTrue(html.contains("3"));
