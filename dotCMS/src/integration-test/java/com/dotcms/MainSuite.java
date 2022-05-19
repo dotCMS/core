@@ -229,17 +229,19 @@ import org.junit.runners.Suite.SuiteClasses;
 
 
 
-        com.dotcms.http.CircuitBreakerUrlTest.class,
+        /*com.dotcms.http.CircuitBreakerUrlTest.class,
         com.dotcms.visitor.filter.logger.VisitorLoggerTest.class,
         com.dotcms.visitor.filter.characteristics.VisitorCharacterTest.class,
         com.dotcms.graphql.business.GraphqlAPITest.class,
         com.dotcms.contenttype.test.ContentTypeTest.class,
-        com.dotcms.contenttype.test.DeleteFieldJobTest.class,/*
+        com.dotcms.contenttype.test.DeleteFieldJobTest.class,*/
+
+
         com.dotcms.contenttype.test.ContentTypeAPIImplTest.class,
         com.dotcms.contenttype.test.ContentTypeBuilderTest.class,
         com.dotcms.contenttype.test.ContentTypeFactoryImplTest.class,
         com.dotcms.contenttype.test.ContentTypeImportExportTest.class,
-        com.dotcms.contenttype.test.FieldFactoryImplTest.class,*/
+        com.dotcms.contenttype.test.FieldFactoryImplTest.class,
 
         /*com.dotcms.contenttype.test.JsonContentTypeTransformerTest.class,
         com.dotcms.contenttype.test.ContentResourceTest.class,
