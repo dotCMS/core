@@ -34,7 +34,7 @@ var sendingEndpoints = <%=UtilMethods.isSet(sendingEndpoints) && !sendingEndpoin
 var pushHandler = new dotcms.dojo.push.PushHandler('Push Publish');
 
 function replaceWithIcon(parentElement, iconName) {
-    parentElement.innerHTML = '<dot-contentlet-icon icon="' + iconName +'" size="48px" />'
+    parentElement.innerHTML = '<dot-contentlet-icon icon="' + iconName +'" size="16px" />'
 }
 </script>
 
