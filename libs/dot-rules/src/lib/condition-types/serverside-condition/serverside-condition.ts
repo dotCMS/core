@@ -5,11 +5,11 @@ import { CwDropdownInputModel } from '../../services/util/CwInputModel';
 import { CwComponent } from '../../services/util/CwComponent';
 import { ServerSideFieldModel } from '../../services/ServerSideFieldModel';
 import { I18nService } from '../../services/system/locale/I18n';
-import { ObservableHack } from '../../services/util/ObservableHack';
 import { CwRestDropdownInputModel } from '../../services/util/CwInputModel';
 import { Verify } from '../../services/validation/Verify';
 import { ConditionModel, ParameterModel } from '../../services/Rule';
 import { LoggerService } from '@dotcms/dotcms-js';
+import { of } from 'rxjs/internal/observable/of';
 
 @Component({
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -360,7 +360,7 @@ export class ServersideCondition {
 
         if (needsCustomAttribute) {
             opts.push({
-                label: ObservableHack.of(currentValue),
+                label: of(currentValue),
                 value: currentValue
             });
         }
