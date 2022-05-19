@@ -176,7 +176,8 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
-        /*FolderCacheImplIntegrationTest.class,
+        PublishAuditAPITest.class,
+        FolderCacheImplIntegrationTest.class,
         StaticPublisherIntegrationTest.class,
         com.dotcms.publishing.PublisherAPIImplTest.class,
         SiteSearchJobImplTest.class,
@@ -207,9 +208,9 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.auth.providers.jwt.JsonWebTokenUtilsIntegrationTest.class,
         com.dotcms.auth.providers.jwt.factories.ApiTokenAPITest.class,
         com.dotcms.auth.providers.jwt.services.JsonWebTokenServiceIntegrationTest.class,
-        DependencyModDateUtilTest.class,*/
+        DependencyModDateUtilTest.class,
 
-        /*com.dotcms.publisher.business.PublisherTest.class,
+        com.dotcms.publisher.business.PublisherTest.class,
         com.dotcms.publisher.endpoint.bean.PublishingEndPointTest.class,
         com.dotcms.publisher.endpoint.business.PublishingEndPointAPITest.class,
         com.dotcms.publisher.endpoint.business.PublishingEndPointFactoryImplTest.class,
@@ -224,39 +225,37 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest.class,
         com.dotcms.keyvalue.busines.KeyValueAPIImplTest.class,
         com.dotcms.keyvalue.business.KeyValueAPITest.class,
-        com.dotcms.tika.TikaUtilsTest.class,*/
+        com.dotcms.tika.TikaUtilsTest.class,
 
 
 
 
-        /*com.dotcms.http.CircuitBreakerUrlTest.class,
+        com.dotcms.http.CircuitBreakerUrlTest.class,
         com.dotcms.visitor.filter.logger.VisitorLoggerTest.class,
         com.dotcms.visitor.filter.characteristics.VisitorCharacterTest.class,
         com.dotcms.graphql.business.GraphqlAPITest.class,
         com.dotcms.contenttype.test.ContentTypeTest.class,
-        com.dotcms.contenttype.test.DeleteFieldJobTest.class,*/
-
-
+        com.dotcms.contenttype.test.DeleteFieldJobTest.class,
         com.dotcms.contenttype.test.ContentTypeAPIImplTest.class,
         com.dotcms.contenttype.test.ContentTypeBuilderTest.class,
         com.dotcms.contenttype.test.ContentTypeFactoryImplTest.class,
         com.dotcms.contenttype.test.ContentTypeImportExportTest.class,
         com.dotcms.contenttype.test.FieldFactoryImplTest.class,
 
-        /*com.dotcms.contenttype.test.JsonContentTypeTransformerTest.class,
+        com.dotcms.contenttype.test.JsonContentTypeTransformerTest.class,
         com.dotcms.contenttype.test.ContentResourceTest.class,
         com.dotcms.contenttype.test.FieldBuilderTest.class,
         com.dotcms.contenttype.test.KeyValueFieldUtilTest.class,
         com.dotcms.contenttype.test.ContentTypeResourceTest.class,
         com.dotcms.contenttype.business.RelationshipAPITest.class,
         com.dotcms.contenttype.business.FieldAPITest.class,
-        com.dotcms.contenttype.business.RelationshipFactoryImplTest.class,*/
+        com.dotcms.contenttype.business.RelationshipFactoryImplTest.class,
 
 
 
 
 
-        /*com.dotcms.contenttype.model.field.layout.FieldUtilTest.class,
+        com.dotcms.contenttype.model.field.layout.FieldUtilTest.class,
         com.dotcms.contenttype.model.field.layout.FieldLayoutColumnSerializerTest.class,
         com.dotcms.contenttype.model.field.layout.FieldLayoutSerializerTest.class,
         com.dotcms.contenttype.model.field.layout.FieldLayoutRowSerializerTest.class,
@@ -414,10 +413,10 @@ import org.junit.runners.Suite.SuiteClasses;
         TemplateFactoryImplTest.class,
         TestConfig.class,
         ConfigTest.class,
-        FolderTest.class,*/
+        FolderTest.class,
 
 
-        PublishAuditAPITest.class/*,
+        //
         BundleFactoryTest.class,
         com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class,
         AppsAPIImplTest.class,
@@ -570,7 +569,7 @@ import org.junit.runners.Suite.SuiteClasses;
         BoundedBufferedReaderTest.class,
         AWSS3PublisherTest.class
         ContentWorkflowHandlerTest.class,
-        Task220512UpdateNoHTMLRegexValueTest.class*/
+        Task220512UpdateNoHTMLRegexValueTest.class
 
 })
 public class MainSuite {
