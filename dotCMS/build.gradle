@@ -566,6 +566,8 @@ task cleanDotCmsWebComponents {
     delete './src/main/webapp/dotcms-webcomponents/package'
     delete './src/main/webapp/dotcms-webcomponents/dotcms-webcomponents.js'
     delete './src/main/webapp/dotcms-webcomponents/dotcms-webcomponents.esm.js'
+    //Cleanup for issue #22255 can be removed when no longer required
+    delete './src/main/webapp/dotcms-webcomponents/dotcms-webcomponents'
 }
 
 
