@@ -203,7 +203,10 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
      */
     mapTableItems(templates: DotTemplate[]): DotTemplate[] {
         return templates.map((template) => {
-            template.disableInteraction = template.identifier.includes('/') ? true : false;
+            template.disableInteraction =
+                template.identifier.includes('/') || template.identifier === 'SYSTEM_TEMPLATE'
+                    ? true
+                    : false;
             return template;
         });
     }

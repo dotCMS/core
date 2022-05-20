@@ -36,20 +36,22 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit() {
-        this.vm$.pipe(takeUntil(this.destroy$)).subscribe(({ original, working }: DotTemplateState) => {
-            const template = original.type === 'design' ? working : original;
-            if (this.form) {
-                const value = this.getFormValue(template);
+        this.vm$
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(({ original, working }: DotTemplateState) => {
+                const template = original.type === 'design' ? working : original;
+                if (this.form) {
+                    const value = this.getFormValue(template);
 
-                this.form.setValue(value);
-            } else {
-                this.form = this.getForm(template);
-            }
+                    this.form.setValue(value);
+                } else {
+                    this.form = this.getForm(template);
+                }
 
-            if (!template.identifier) {
-                this.createTemplate();
-            }
-        });
+                if (!template.identifier) {
+                    this.createTemplate();
+                }
+            });
         this.setSwitchSiteListener();
     }
 
@@ -71,7 +73,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
                 template: this.form.value,
                 onSave: (value: DotTemplateItem) => {
                     // If it is a template Desing, save entire template
-                    if( value.type === 'design' ) {
+                    if (value.type === 'design') {
                         this.store.saveTemplate(value);
                     } else {
                         this.store.saveProperties(value);
