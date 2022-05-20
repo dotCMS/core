@@ -35,7 +35,7 @@
     loadingIcon="fa fa-circle-o-notch fa-spin"
 >
     <ng-template let-columns pTemplate="header">
-        <tr *ngIf="items?.length" data-testClass="testHeadTableRow">
+        <tr *ngIf="items?.length">
             <th *ngIf="checkbox" style="width: 5%">
                 <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
             </th>
@@ -50,10 +50,7 @@
         <tr
             (click)="handleRowClick(rowData)"
             (keyup.enter)="handleRowClick(rowData)"
-            [ngClass]="{ 'disabled-row': rowData?.owner === 'system' }"
-            [pSelectableRowDisabled]="rowData?.owner === 'system'"
-            [pContextMenuRowDisabled]="rowData.disableInteraction"
-            [attr.data-testRowId]="rowData.identifier"
+            [pContextMenuRowDisabled]="rowData.disableInteraction === true"
             [pContextMenuRow]="rowData"
             [pSelectableRow]="rowData"
             data-testClass="testTableRow"
@@ -61,9 +58,8 @@
             <td *ngIf="checkbox">
                 <p-tableCheckbox
                     (click)="$event.stopPropagation()"
-                    *ngIf="!rowData.disableInteraction"
+                    *ngIf="rowData.disableInteraction === undefined || rowData.disableInteraction === false"
                     [value]="rowData"
-                    [attr.test-id]="rowData.friendlyName"
                 ></p-tableCheckbox>
             </td>
             <ng-container
@@ -115,9 +111,9 @@
             [routerLink]="rowData.variable === 'Host' ? '/c/sites' : '/c/content'"
         >
             {{
-                col.textContent
-                    ? (col.textContent | dotStringFormat: [rowData[col.fieldName]])
-                    : rowData[col.fieldName]
+            col.textContent
+                ? (col.textContent | dotStringFormat: [rowData[col.fieldName]])
+                : rowData[col.fieldName]
             }}
         </a>
     </td>
@@ -130,3 +126,4 @@
         </dot-action-menu-button>
     </td>
 </ng-template>
+

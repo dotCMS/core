@@ -158,7 +158,6 @@ describe('DotTemplateStore', () => {
                             data: of({
                                 template: undefined
                             }),
-                            snapshot: { params: { id: '222-3000-333---30303-394' } },
                             params: of({
                                 type: 'design'
                             })
@@ -695,35 +694,6 @@ describe('DotTemplateStore', () => {
                     });
                 });
             });
-        });
-    });
-
-    describe('redirect', () => {
-        beforeEach(() => {
-            TestBed.configureTestingModule({
-                providers: [
-                    ...BASIC_PROVIDERS,
-                    {
-                        provide: ActivatedRoute,
-                        useValue: {
-                            data: of({
-                                template: undefined
-                            }),
-                            snapshot: { params: { id: 'SYSTEM_TEMPLATE' } },
-                            params: of({
-                                id: 'SYSTEM_TEMPLATE',
-                                type: 'design'
-                            })
-                        }
-                    }
-                ]
-            });
-            service = TestBed.inject(DotTemplateStore);
-            dotRouterService = TestBed.inject(DotRouterService);
-        });
-
-        it('Should redirect to templates listing when trying to edit a SYSTEM_TEMPALTE', () => {
-            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('templates');
         });
     });
 });

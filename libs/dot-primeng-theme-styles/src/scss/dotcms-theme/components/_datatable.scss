@@ -162,12 +162,6 @@ $datatable-bg-hover: rgba($brand-secondary_rgb, 0.05);
     color: $text-color-highlight;
 }
 
-.p-datatable .p-datatable-tbody > tr.disabled-row {
-    background: $gray-bg;
-    color: $gray;
-    cursor: default;
-}
-
 .p-datatable .p-datatable-tbody > tr.p-datatable-dragpoint-top > td {
     box-shadow: inset 0 2px 0 0 $datatable-bg-hover;
 }
@@ -179,11 +173,6 @@ $datatable-bg-hover: rgba($brand-secondary_rgb, 0.05);
 .p-datatable.p-datatable-hoverable-rows .p-datatable-tbody > tr:not(.p-highlight):hover {
     background: $datatable-bg-hover;
     color: $text-color-hover;
-}
-
-.p-datatable.p-datatable-hoverable-rows .p-datatable-tbody > tr.disabled-row:hover {
-    background: $gray-bg;
-    color: $gray;
 }
 
 .p-datatable .p-column-resizer-helper {

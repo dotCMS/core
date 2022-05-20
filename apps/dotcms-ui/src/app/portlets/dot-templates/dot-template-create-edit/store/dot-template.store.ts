@@ -265,13 +265,6 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
         const template$ = this.activatedRoute.data.pipe(pluck('template'));
         const type$ = this.activatedRoute.params.pipe(pluck('type'));
 
-        // If it is a system template, redirect to template
-        const templateId = this.activatedRoute.snapshot.params['id'];
-        if (templateId === 'SYSTEM_TEMPLATE') {
-            this.goToTemplateList();
-            return;
-        }
-
         zip(template$, type$)
             .pipe(take(1))
             .subscribe(([dotTemplate, type]: [DotTemplate, string]) => {

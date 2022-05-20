@@ -68,7 +68,7 @@ export class DotListingDataTableComponent implements OnInit {
     @ContentChild('headerTemplate') headerTemplate: TemplateRef<unknown>;
 
     readonly DATE_FORMAT = 'date';
-    items: unknown[];
+    items: unknown[] ;
     selected: Record<string, unknown>[];
     filter;
     isContentFiltered = false;
@@ -117,11 +117,7 @@ export class DotListingDataTableComponent implements OnInit {
      *
      * @memberof DotListingDataTableComponent
      */
-    handleRowClick(rowData: Record<string, unknown>): void {
-        // If the system template is clicked, do nothings.
-        if (rowData?.identifier === 'SYSTEM_TEMPLATE') {
-            return;
-        }
+    handleRowClick(rowData: unknown): void {
         this.rowWasClicked.emit(rowData);
     }
 
@@ -211,10 +207,7 @@ export class DotListingDataTableComponent implements OnInit {
      * @memberof ListingDataTableComponent
      */
     handleFilter(): void {
-        this.isContentFiltered = Object.prototype.hasOwnProperty.call(
-            this.dataTable.filters,
-            'global'
-        );
+        this.isContentFiltered = Object.prototype.hasOwnProperty.call(this.dataTable.filters, 'global');
     }
 
     private formatData(items: Record<string, string>[]): Record<string, unknown>[] {

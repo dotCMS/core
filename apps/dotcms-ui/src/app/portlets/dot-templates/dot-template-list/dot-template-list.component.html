@@ -67,7 +67,7 @@
         </td>
         <td style="width: 5%; height: 3.85rem">
             <dot-action-menu-button
-                *ngIf="!rowData.disableInteraction"
+                *ngIf="rowData.disableInteraction === undefined || rowData.disableInteraction === false"
                 [attr.data-testid]="rowData.identifier"
                 class="listing-datatable__action-button"
                 [actions]="setTemplateActions(rowData)"
