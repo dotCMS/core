@@ -1,6 +1,8 @@
 package com.dotcms.rest.api.v1.folder;
 
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.Date;
 import java.util.List;
 
@@ -12,6 +14,8 @@ import java.util.List;
  */
 public class FolderView {
 
+    @JsonIgnore
+    private final Folder folder;
     private final String path;
     private final String defaultFileType;
     private final String filesMasks;
@@ -28,6 +32,7 @@ public class FolderView {
     private final List<FolderView> subFolders;
 
     public FolderView(final Folder folder, final List<FolderView> subFolders){
+        this.folder = folder;
         this.name = folder.getName();
         this.defaultFileType = folder.getDefaultFileType();
         this.iDate = folder.getIDate();
@@ -98,5 +103,10 @@ public class FolderView {
 
     public List<FolderView> getSubFolders() {
         return subFolders;
+    }
+
+    @JsonIgnore
+    public Folder getFolder() {
+        return folder;
     }
 }
