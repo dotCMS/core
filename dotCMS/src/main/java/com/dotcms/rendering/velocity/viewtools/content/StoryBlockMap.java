@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.viewtools.content;
 
+
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.viewtools.content.util.RenderableFactory;
 import com.dotmarketing.business.APILocator;
@@ -136,5 +137,4 @@ public class StoryBlockMap implements Renderable {
                 .append("</code>")
                 .append("</pre>");
     }
-
 }
