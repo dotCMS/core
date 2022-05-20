@@ -56,14 +56,14 @@ dotCMS/classes
 
 # Changes after gradle migration #
 ###############################
-dist/
+/dist/
 dist-output/
 dotCMS/build/
 dotCMS/.gradle/
 dotCMS/.settings/
 dotCMS/src/main/webapp/WEB-INF/classes/
 dotCMS/src/main/webapp/WEB-INF/lib/
-dotCMS/src/main/webapp/WEB-INF/velocity/static/plugins/
+dotCMS/src/main/webapp/WEB-INF/velocity/static/plugiga ns/
 dotCMS/src/main/webapp/html/plugins/
 
 # immutables.github.io generated folder#
@@ -78,3 +78,6 @@ docker/tests/integration/backup
 
 dot-cicd/
 tmp/
+
+core-web/node_modules
+core-web/.angular/
