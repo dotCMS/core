@@ -1,6 +1,5 @@
 {
     "projectType": "application",
-    "root": "apps/dotcms-block-editor",
     "sourceRoot": "apps/dotcms-block-editor/src",
     "prefix": "dotcms",
     "targets": {

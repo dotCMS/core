@@ -1,6 +1,5 @@
 {
     "projectType": "library",
-    "root": "libs/dot-rules",
     "sourceRoot": "libs/dot-rules/src",
     "prefix": "",
     "targets": {

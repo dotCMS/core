@@ -1,5 +1,4 @@
 {
-    "root": "apps/dotcms-ui-e2e",
     "sourceRoot": "apps/dotcms-ui-e2e/src",
     "projectType": "application",
     "targets": {

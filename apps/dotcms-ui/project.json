@@ -1,6 +1,5 @@
 {
     "projectType": "application",
-    "root": "apps/dotcms-ui",
     "sourceRoot": "apps/dotcms-ui/src",
     "prefix": "dot",
     "targets": {

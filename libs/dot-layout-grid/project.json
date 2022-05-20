@@ -1,6 +1,5 @@
 {
     "projectType": "library",
-    "root": "libs/dot-layout-grid",
     "sourceRoot": "libs/dot-layout-grid/src",
     "prefix": "",
     "targets": {

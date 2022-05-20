@@ -1,5 +1,4 @@
 {
-    "root": "apps/dotcms-block-editor-e2e",
     "sourceRoot": "apps/dotcms-block-editor-e2e/src",
     "projectType": "application",
     "targets": {

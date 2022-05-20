@@ -1,6 +1,5 @@
 {
     "projectType": "library",
-    "root": "libs/block-editor",
     "sourceRoot": "libs/block-editor/src",
     "prefix": "dotcms",
     "targets": {
@@ -18,7 +17,7 @@
             "executor": "@nrwl/jest:jest",
             "outputs": ["coverage/libs/block-editor"],
             "options": {
-                "jestConfig": "libs/block-editor/jest.config.js",
+                "jestConfig": "libs/block-editor/jest.config.ts",
                 "passWithNoTests": true
             }
         },

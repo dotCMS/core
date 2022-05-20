@@ -24,7 +24,8 @@ import {
 } from '@dotcms/block-editor';
 
 export default {
-    title: 'Block Editor'
+    title: 'Block Editor',
+    component: DotBlockEditorComponent
 };
 
 export const primary = () => ({
@@ -632,6 +633,5 @@ export const primary = () => ({
             LoaderComponent,
             BubbleMenuLinkFormComponent
         ]
-    },
-    component: DotBlockEditorComponent
+    }
 });
