@@ -1,0 +1,97 @@
+@use "variables" as *;
+@import "mixins";
+@import "dotcms-theme/utils/theme-variables";
+
+:host {
+    display: block;
+
+    &.dot-nav-item__collapsed {
+        position: relative;
+        transition: background-color $basic-speed ease;
+
+        &:hover {
+            background-color: rgba($white_rgb, 0.1);
+
+            dot-sub-nav {
+                height: auto !important;
+                left: $navigation-width-collased;
+                opacity: 1;
+                pointer-events: all;
+                position: absolute;
+                top: 0;
+                transform: translateY(0);
+                transition: opacity $basic-speed ease, transform $basic-speed ease;
+                z-index: 2;
+            }
+        }
+
+        dot-sub-nav,
+        .dot-nav__item-label,
+        .dot-nav__item-arrow {
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        dot-sub-nav {
+            background: var(--color-background);
+            border-bottom-right-radius: 0.1875rem;
+            border-top-right-radius: 0.1875rem;
+            box-shadow: $md-shadow-2;
+            transform: translateY(1rem);
+        }
+
+        dot-icon {
+            opacity: 0;
+        }
+
+        .dot-nav__title {
+            width: $navigation-width-collased;
+        }
+
+        .dot-nav__item {
+            height: $navigation-item-height;
+        }
+
+        .dot-nav__item--active {
+            background-color: $brand-primary;
+        }
+    }
+}
+
+.dot-nav__title {
+    overflow: hidden;
+    transition: width $basic-speed ease;
+    width: $navigation-width;
+}
+
+.dot-nav__item {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    min-height: $navigation-item-height;
+    padding: 14px 22px 13px 25px; // top and bottom padding to get min 48px height
+    position: relative;
+    transition: background-color $basic-speed ease;
+    width: $navigation-width;
+}
+
+.dot-nav__item-label {
+    flex: 1;
+    margin-left: $spacing-3;
+    word-break: break-word;
+    transition: opacity $basic-speed ease;
+}
+
+dot-icon {
+    opacity: 1;
+    position: absolute;
+    right: $spacing-1;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: opacity $basic-speed ease;
+}
+
+dot-nav-icon {
+    flex-shrink: 0;
+    pointer-events: none;
+}

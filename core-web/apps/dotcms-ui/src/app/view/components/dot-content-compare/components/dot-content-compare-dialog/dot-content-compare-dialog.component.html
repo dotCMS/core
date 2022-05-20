@@ -1,0 +1,7 @@
+<dot-dialog [visible]="show"
+            (hide)="close()"
+            [header]="'compare' |dm"
+            width="90vw"
+            height="90vh">
+    <dot-content-compare [data]='data$ | async' (shutdown)='close()' ></dot-content-compare>
+</dot-dialog>
