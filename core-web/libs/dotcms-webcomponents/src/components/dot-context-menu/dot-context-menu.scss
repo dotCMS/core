@@ -1,0 +1,24 @@
+@import "../../global/variables";
+
+:host {
+    @include mwc-dotcms-theme;
+    --mdc-icon-size: 24px;
+    display: inline-block;
+}
+
+button {
+    align-items: center;
+    background: none;
+    border-radius: 50%;
+    border: 0;
+    color: var(--color-gray);
+    cursor: pointer;
+    display: inline-flex;
+    height: 32px;
+    padding: 0;
+    width: 32px;
+}
+
+mwc-list-item {
+    font-size: var(--menu-item-font-size);
+}

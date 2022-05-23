@@ -1,0 +1,18 @@
+{
+    "projectType": "library",
+    "sourceRoot": "libs/dot-primeng-theme-styles/src",
+    "prefix": "dotcms",
+    "targets": {
+        "lint": {
+            "executor": "@nrwl/linter:eslint",
+            "options": {
+                "lintFilePatterns": [
+                    "libs/dot-primeng-theme-styles/src/**/*.ts",
+                    "libs/dot-primeng-theme-styles/src/**/*.html"
+                ]
+            },
+            "outputs": ["{options.outputFile}"]
+        }
+    },
+    "tags": []
+}

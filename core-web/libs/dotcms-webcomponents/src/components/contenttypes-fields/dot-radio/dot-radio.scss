@@ -1,0 +1,13 @@
+.dot-radio__items {
+    display: flex;
+    flex-direction: column;
+
+    label {
+        align-items: center;
+        display: flex;
+    }
+
+    input {
+        margin: 0 0.25rem 0 0;
+    }
+}
