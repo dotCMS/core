@@ -166,6 +166,7 @@
                     customClassName = "block-custom-styles";
                 }
                 if("contentTypes".equalsIgnoreCase(fv.getKey())){
+                    //only allow alphanumeric character an comma
                     allowedContentTypes = fv.getValue().replaceAll("[^a-zA-Z0-9,]", "");
                 }
             }
