@@ -1,5 +1,6 @@
 package org.apache.felix.framework;
 
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -15,14 +16,19 @@ import org.osgi.framework.ServiceReference;
 import org.osgi.framework.launch.Framework;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.StringWriter;
 import java.net.URL;
 import java.nio.file.Files;
-import java.util.Iterator;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Properties;
+import java.util.function.Supplier;
 
 /**
  * This OSGI framework only encapsulates the system osgi bundles (not the plugin, for them @see @{@link org.apache.felix.framework.OSGIUtil})
@@ -31,16 +37,16 @@ import java.util.Properties;
  */
 public class OSGISystem {
 
+    private static final String OSGI_EXTRA_CONFIG_FILE_PATH_KEY = "sytem.OSGI_EXTRA_CONFIG_FILE_PATH_KEY";
     private static final String WEB_INF_FOLDER = "/WEB-INF";
     private static final String FELIX_BASE_DIR = "felix.base.dir";
     private static final String FELIX_FRAMEWORK_STORAGE  = org.osgi.framework.Constants.FRAMEWORK_STORAGE;
     private static final String AUTO_DEPLOY_DIR_PROPERTY =  AutoProcessor.AUTO_DEPLOY_DIR_PROPERTY;
-    /**
-     * Felix directory list
-     */
-    private static final String[] FELIX_DIRECTORIES = new String[] {
-            FELIX_BASE_DIR, AUTO_DEPLOY_DIR_PROPERTY, FELIX_FRAMEWORK_STORAGE
-    };
+    private static final String FELIX_FILEINSTALL_DIR = "felix.fileinstall.dir";
+    private static final String FELIX_UNDEPLOYED_DIR = "felix.undeployed.dir";
+    private static final String UTF_8 = "utf-8";
+    public String felixExtraPackagesFile;
+
     private Framework felixFramework;
 
     public static OSGISystem getInstance() {
@@ -64,18 +70,22 @@ public class OSGISystem {
         Logger.info(this, () -> "Felix System base dir: " + felixDirectory);
 
         final String felixAutoDeployDirectory = Config.getStringProperty("system."+AUTO_DEPLOY_DIR_PROPERTY,  felixDirectory + File.separator + "bundle") ;
+        final String felixLoadDirectory =       Config.getStringProperty("system."+FELIX_FILEINSTALL_DIR,     felixDirectory + File.separator + "load") ;
+        final String felixUndeployDirectory =   Config.getStringProperty("system."+FELIX_UNDEPLOYED_DIR,      felixDirectory + File.separator + "undeployed") ;
         final String felixCacheDirectory =      Config.getStringProperty("system."+FELIX_FRAMEWORK_STORAGE,   felixDirectory + File.separator + "felix-cache") ;
 
         felixProps.put(FELIX_BASE_DIR, felixDirectory);
         felixProps.put(AUTO_DEPLOY_DIR_PROPERTY, felixAutoDeployDirectory);
         felixProps.put(FELIX_FRAMEWORK_STORAGE, felixCacheDirectory);
+        felixProps.put(FELIX_FILEINSTALL_DIR, felixLoadDirectory);
+        felixProps.put(FELIX_UNDEPLOYED_DIR, felixUndeployDirectory);
 
         felixProps.put("felix.auto.deploy.action", "install,start");
-        felixProps.put("felix.fileinstall.start.level", "1");
-        felixProps.put("felix.fileinstall.log.level", "3");
+        felixProps.put("felix.fileinstall.start.level", "4");
+        felixProps.put("felix.fileinstall.log.level", "4");
         felixProps.put("org.osgi.framework.startlevel.beginning", "2");
         felixProps.put("org.osgi.framework.storage.clean", "onFirstInit");
-        felixProps.put("felix.log.level", "3");
+        felixProps.put("felix.log.level", "4");
         felixProps.put("felix.fileinstall.disableNio2", "true");
         felixProps.put("gosh.args", "--noi");
 
@@ -84,6 +94,22 @@ public class OSGISystem {
         felixProps.put(FelixConstants.SYSTEMBUNDLE_ACTIVATORS_PROP, ImmutableList.of(hostActivator));
 
         return felixProps;
+    }
+
+    private void createNewExtraPackageFile(final File extraPackagesFile) throws IOException {
+
+        try (BufferedWriter writer = new BufferedWriter(
+                new OutputStreamWriter(Files.newOutputStream(extraPackagesFile.toPath()), UTF_8));
+             InputStream initialStream = OSGIUtil.class.getResourceAsStream("/osgi/osgi-extra.conf")) {
+
+            final byte[] buffer = new byte[1024];
+            int bytesRead = -1;
+            while ((bytesRead = initialStream.read(buffer)) != -1) {
+                writer.write(new String(buffer, UTF_8), 0, bytesRead);
+            }
+
+            writer.flush();
+        }
     }
 
     /**
@@ -103,6 +129,16 @@ public class OSGISystem {
 
         try {
 
+            felixExtraPackagesFile = this.getOsgiExtraConfigPath();
+            final File extraPackagesFile = new File(felixExtraPackagesFile);
+
+            if (!extraPackagesFile.exists()) {
+
+                if (extraPackagesFile.getParentFile().mkdirs()) {
+                    this.createNewExtraPackageFile (extraPackagesFile);
+                }
+            }
+
             // before init we have to check if any new bundle has been upload
             // Create an instance and initialize the framework.
             final FrameworkFactory factory = this.getFrameworkFactory();
@@ -119,6 +155,14 @@ public class OSGISystem {
         System.setProperty("system"+WebKeys.OSGI_ENABLED, "true");
 
         return felixFramework;
+    }
+
+    private String getOsgiExtraConfigPath () {
+
+        final Supplier<String> supplier = () -> APILocator.getFileAssetAPI().getRealAssetsRootPath()
+                + File.separator + "server" + File.separator + "osgi" + File.separator +  "osgi-extra.conf";
+        final String dirPath = Config.getStringProperty(OSGI_EXTRA_CONFIG_FILE_PATH_KEY, supplier.get());
+        return Paths.get(dirPath).normalize().toString();
     }
 
     /**
@@ -198,7 +242,7 @@ public class OSGISystem {
 
         return new File(Config
                 .getStringProperty(FELIX_BASE_DIR,
-                        defaultBasePath + File.separator + "system-felix"))
+                        defaultBasePath + File.separator + "felix-system"))
                 .getAbsolutePath();
     }
 
