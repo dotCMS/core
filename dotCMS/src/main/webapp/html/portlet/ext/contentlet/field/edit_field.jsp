@@ -157,12 +157,16 @@
             String textValue = UtilMethods.isSet(value) ? value.toString() : (UtilMethods.isSet(defaultValue) ? defaultValue : "''");
             String customStyles = "";
             String customClassName = "";
+            String allowedContentTypes = "";
 
             List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
             for(FieldVariable fv : acceptTypes){
                 if("styles".equalsIgnoreCase(fv.getKey())){
                     customStyles = fv.getValue();
                     customClassName = "block-custom-styles";
+                }
+                if("contentTypes".equalsIgnoreCase(fv.getKey())){
+                    allowedContentTypes = fv.getValue();
                 }
             }
             %>
@@ -179,7 +183,11 @@
             </style>
 
             <script src="/html/dotcms-block-editor.js"></script>
-            <dotcms-block-editor class="<%=customClassName%>"></dotcms-block-editor>
+            <dotcms-block-editor 
+                allowed-content-types="<%=allowedContentTypes%>" 
+                class="<%=customClassName%>" 
+                lang="<%=contentLanguage%>">
+            </dotcms-block-editor>
             <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"/>
 
             <script>

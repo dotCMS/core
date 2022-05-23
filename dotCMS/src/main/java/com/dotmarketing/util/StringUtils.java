@@ -3,8 +3,8 @@ package com.dotmarketing.util;
 import static org.apache.commons.lang.StringUtils.split;
 
 import com.dotcms.repackage.com.google.common.base.CaseFormat;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONObject;
 import com.dotcms.repackage.org.jsoup.Jsoup;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.uuid.shorty.ShortyException;

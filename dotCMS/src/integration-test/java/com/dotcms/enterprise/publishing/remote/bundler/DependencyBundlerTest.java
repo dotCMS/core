@@ -75,7 +75,7 @@ public class DependencyBundlerTest {
     private static  Map<String, List<ManifestItem>> excludeSystemFolder;
     private static  Map<String, List<ManifestItem>> excludeSystemFolderAndSystemHost;
 
-    public static final String EXCLUDE_SYSTEM_FOLDER_HOST = "Excluded System Folder/Host";
+    public static final String EXCLUDE_SYSTEM_FOLDER_HOST = "Excluded System Folder/Host/Container/Template";
     private static String FILTER_EXCLUDE_REASON = "Excluded by filter";
     private static String FILTER_EXCLUDE_BY_OPERATION = "Excluded by Operation: ";
     private BundlerStatus status = null;

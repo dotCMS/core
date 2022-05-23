@@ -25,6 +25,7 @@ public class FieldDataGen extends AbstractDataGen<Field> {
     private boolean unique = Boolean.FALSE;
     private String contentTypeId;
     private String relationType;
+    private String regexCheck;
     private DataTypes dataType;
 
     private String id;
@@ -128,6 +129,12 @@ public class FieldDataGen extends AbstractDataGen<Field> {
     }
 
     @SuppressWarnings("unused")
+    public FieldDataGen regexCheck(final String regexCheck) {
+        this.regexCheck = regexCheck;
+        return this;
+    }
+
+    @SuppressWarnings("unused")
     public FieldDataGen searchable(final boolean searchable) {
         this.searchable = searchable;
         return this;
@@ -158,6 +165,7 @@ public class FieldDataGen extends AbstractDataGen<Field> {
             .readOnly(readOnly)
             .searchable(searchable)
             .unique(unique)
+            .regexCheck(regexCheck)
             .relationType(relationType);
 
         if (dataType != null) {
