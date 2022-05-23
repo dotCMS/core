@@ -1,0 +1,30 @@
+@use "libs/dot-primeng-theme-styles/src/scss/variables" as *;
+
+:host {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-bubble-menu {
+    background: $white;
+    border: none;
+    color: $black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    width: 2.286rem;
+    height: 2.286rem;
+    border-radius: $border-radius;
+
+    &:hover {
+        background: $gray-bg;
+    }
+
+    &.btn-active {
+        background: $gray-bg;
+        color: $black;
+        border: 1px solid $gray-light;
+    }
+}

@@ -1,0 +1,118 @@
+<dot-secondary-toolbar>
+    <div class="main-toolbar-left">
+        <div class="content-type__title">
+            <header>
+                <dot-icon name="{{ contentType.icon }}"></dot-icon>
+                <ng-template #inlineEditDisplayTemplate>
+                    <h4 (click)="editInlineActivate($event)">{{ contentType.name }}</h4>
+                </ng-template>
+                <ng-template #inlineEditContentTemplate>
+                    <input
+                        [style.width.px]="contentTypeNameInputSize"
+                        #contentTypeNameInput
+                        type="text"
+                        [value]="contentType.name"
+                        (keydown.enter)="fireChangeName()"
+                        (keydown.escape)="dotEditInline.hideContent()"
+                        pInputText
+                        dotAutofocus
+                    />
+                </ng-template>
+                <dot-inline-edit
+                    #dotEditInline
+                    [inlineEditDisplayTemplate]="inlineEditDisplayTemplate"
+                    [inlineEditContentTemplate]="inlineEditContentTemplate"
+                >
+                </dot-inline-edit>
+                <dot-api-link href="api/v1/contenttype/id/{{ contentType.id }}"></dot-api-link>
+            </header>
+        </div>
+
+        <div class="content-type__info">
+            {{ 'contenttypes.content.variable' | dm }}:
+            <dot-copy-link
+                data-testId="copyVariableName"
+                [copy]="contentType.variable"
+                [label]="contentType.variable"
+            ></dot-copy-link>
+            <span class="content-type__dot-separator">•</span>
+            {{ 'contenttypes.form.identifier' | dm }}:
+            <dot-copy-link
+                data-testId="copyIdentifier"
+                [copy]="contentType.id"
+                [label]="contentType.id"
+            ></dot-copy-link>
+        </div>
+    </div>
+    <div class="main-toolbar-right">
+        <button
+            type="button"
+            pButton
+            class="p-button-secondary"
+            label="{{ 'contenttypes.action.edit' | dm }}"
+            (click)="openEditDialog.next()"
+            icon="fa fa-edit"
+            id="form-edit-button"
+        ></button>
+    </div>
+</dot-secondary-toolbar>
+<p-tabView>
+    <p-tabPanel
+        class="content-type__properties"
+        header="{{ 'contenttypes.tab.fields.header' | dm }}"
+    >
+        <div class="content-type__fields-layout" id="content-type-form-layout">
+            <div class="content-type__fields-main" id="content-type-form-main">
+                <ng-content></ng-content>
+            </div>
+            <div class="content-type__fields-sidebar">
+                <p-splitButton
+                    icon="pi pi-plus"
+                    label="{{ 'contenttypes.content.row' | dm }}"
+                    (onClick)="fireAddRowEvent()"
+                    [model]="actions"
+                >
+                </p-splitButton>
+                <dot-content-types-fields-list
+                    [baseType]="contentType.baseType"
+                ></dot-content-types-fields-list>
+            </div>
+        </div>
+    </p-tabPanel>
+    <p-tabPanel
+        class="content-type__relationships"
+        header="{{ 'contenttypes.tab.relationship.header' | dm }}"
+        *ngIf="contentType"
+        [cache]="false"
+    >
+        <ng-template pTemplate="content">
+            <dot-portlet-box>
+                <dot-iframe [src]="relationshipURL"></dot-iframe>
+            </dot-portlet-box>
+        </ng-template>
+    </p-tabPanel>
+    <p-tabPanel
+        class="content-type__permissions"
+        header="{{ 'contenttypes.tab.permissions.header' | dm }}"
+        *ngIf="contentType && showPermissionsTab | async"
+        [cache]="false"
+    >
+        <ng-template pTemplate="content">
+            <dot-portlet-box>
+                <dot-iframe [src]="permissionURL"></dot-iframe>
+            </dot-portlet-box>
+        </ng-template>
+    </p-tabPanel>
+    <p-tabPanel
+        class="content-type__push_history"
+        header="{{ 'contenttypes.tab.publisher.push.history.header' | dm }}"
+        *ngIf="contentType"
+        [cache]="false"
+    >
+        <ng-template pTemplate="content">
+            <dot-portlet-box>
+                <dot-iframe [src]="pushHistoryURL"></dot-iframe>
+            </dot-portlet-box>
+        </ng-template>
+    </p-tabPanel>
+</p-tabView>
