@@ -38,7 +38,7 @@ export const moduleMatches = async (): Promise<boolean> => {
 
   const commits = await resolveCommits()
   core.info(`Commits found: ${commits.length}`)
-  if (commits.length == 250) {
+  if (commits.length >= 100) {
     // Probably not found bu the amount of commits definitively calls for returning true
     core.info(
       'Commits reached max capacity, probably I good idea to allow workflows to run'
