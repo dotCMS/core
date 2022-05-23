@@ -83,7 +83,8 @@ class TestHostComponent {
 
     mapItems(items: any[]): any[] {
         return items.map((item) => {
-            item.disableInteraction = item.variable === 'Host';
+            item.disableInteraction =
+                item.variable === 'Host' || item.identifier === 'SYSTEM_TEMPLATE';
             return item;
         });
     }
@@ -96,6 +97,8 @@ describe('DotListingDataTableComponent', () => {
     let de: DebugElement;
     let el: HTMLElement;
     let items;
+    let enabledItems;
+    let disabledItems;
     let coreWebService: CoreWebService;
 
     beforeEach(() => {
@@ -175,20 +178,13 @@ describe('DotListingDataTableComponent', () => {
         de = hostFixture.debugElement.query(By.css('p-table'));
         el = de.nativeElement;
 
-        items = [
+        enabledItems = [
             {
                 field1: 'item2-value1',
                 field2: 'item2-value2',
                 field3: 'item2-value3',
                 nEntries: 'item1-value4',
                 variable: 'Banner'
-            },
-            {
-                field1: 'item1-value1',
-                field2: 'item1-value2',
-                field3: 'item1-value3',
-                nEntries: 'item1-value4',
-                variable: 'Host'
             },
             {
                 field1: 'item3-value1',
@@ -226,6 +222,26 @@ describe('DotListingDataTableComponent', () => {
                 variable: 'Banner'
             }
         ];
+
+        disabledItems = [
+            {
+                field1: 'item1-value1',
+                field2: 'item1-value2',
+                field3: 'item1-value3',
+                nEntries: 'item1-value4',
+                variable: 'Host'
+            },
+            {
+                identifier: 'SYSTEM_TEMPLATE',
+                field1: 'item8-value1',
+                field2: 'item8-value2',
+                field3: 'item8-value3',
+                nEntries: 'item1-value4',
+                variable: 'Banner'
+            }
+        ];
+
+        items = [...enabledItems, ...disabledItems];
     });
 
     it('should have default attributes', () => {
@@ -250,10 +266,11 @@ describe('DotListingDataTableComponent', () => {
         hostFixture.detectChanges();
         tick(1);
         hostFixture.detectChanges();
-        const rows = el.querySelectorAll('tr');
-        expect(8).toEqual(rows.length);
+        const rows = el.querySelectorAll('[data-testclass="testTableRow"]');
+        expect(items.length).toEqual(rows.length);
 
-        const headers = rows[0].querySelectorAll('th');
+        const headRow = el.querySelector('[data-testclass="testHeadTableRow"]');
+        const headers = headRow.querySelectorAll('th');
         expect(5).toEqual(headers.length);
 
         hostComponent.columns.forEach((_col, index) => {
@@ -265,7 +282,7 @@ describe('DotListingDataTableComponent', () => {
         rows.forEach((row, rowIndex) => {
             if (rowIndex) {
                 const cells = row.querySelectorAll('td');
-                const item = items[rowIndex - 1];
+                const item = items[rowIndex];
                 cells.forEach((_cell, cellIndex) => {
                     if (cellIndex < 3) {
                         expect(cells[cellIndex].querySelector('span').textContent).toContain(
@@ -302,11 +319,12 @@ describe('DotListingDataTableComponent', () => {
         tick(1);
         hostFixture.detectChanges();
 
-        const rows = el.querySelectorAll('tr');
-        expect(8).toEqual(rows.length, 'tr');
+        const rows = el.querySelectorAll('[data-testclass="testTableRow"]');
+        expect(items.length).toEqual(rows.length);
 
-        const headers = rows[0].querySelectorAll('th');
-        expect(5).toEqual(headers.length, 'th');
+        const headRow = el.querySelector('[data-testclass="testHeadTableRow"]');
+        const headers = headRow.querySelectorAll('th');
+        expect(5).toEqual(headers.length);
 
         hostComponent.columns.forEach((_col, index) =>
             expect(hostComponent.columns[index].header).toEqual(headers[index].textContent.trim())
@@ -315,7 +333,7 @@ describe('DotListingDataTableComponent', () => {
         rows.forEach((row, rowIndex) => {
             if (rowIndex) {
                 const cells = row.querySelectorAll('td');
-                const item = items[rowIndex - 1];
+                const item = items[rowIndex];
 
                 cells.forEach((_cell, cellIndex) => {
                     if (cellIndex < 4) {
@@ -340,10 +358,12 @@ describe('DotListingDataTableComponent', () => {
         hostFixture.detectChanges();
         tick(1);
         hostFixture.detectChanges();
-        const rows = el.querySelectorAll('tr');
-        expect(8).toEqual(rows.length);
 
-        const headers = rows[0].querySelectorAll('th');
+        const rows = el.querySelectorAll('[data-testclass="testTableRow"]');
+        expect(items.length).toEqual(rows.length);
+
+        const headRow = el.querySelector('[data-testclass="testHeadTableRow"]');
+        const headers = headRow.querySelectorAll('th');
         expect(5).toEqual(headers.length);
     }));
 
@@ -416,7 +436,7 @@ describe('DotListingDataTableComponent', () => {
         comp.loadFirstPage();
         tick(1);
         expect(comp.dataTable.first).toBe(1);
-        expect(comp.items.length).toBe(7);
+        expect(comp.items.length).toBe(items.length);
     }));
 
     it('should focus first row on arrowDown in Global Search Input', fakeAsync(() => {
@@ -464,6 +484,23 @@ describe('DotListingDataTableComponent', () => {
         expect(comp.rowWasClicked.emit).toHaveBeenCalledTimes(2);
     }));
 
+    it('should never emit when a SYSTEM TEMPLATE row is clicked or enter', fakeAsync(() => {
+        setRequestSpy(items);
+        spyOn(comp.rowWasClicked, 'emit');
+
+        comp.loadFirstPage();
+
+        hostFixture.detectChanges();
+        tick(1);
+        hostFixture.detectChanges();
+
+        const systemFile: DebugElement = de.query(By.css('tr[data-testRowId="SYSTEM_TEMPLATE"]'));
+        systemFile.triggerEventHandler('click', null);
+        systemFile.triggerEventHandler('keyup.enter', null);
+
+        expect(comp.rowWasClicked.emit).not.toHaveBeenCalled();
+    }));
+
     it('should set pContextMenuRowDisabled correctly', fakeAsync(() => {
         setRequestSpy(items);
         spyOn(comp.rowWasClicked, 'emit');
@@ -471,9 +508,10 @@ describe('DotListingDataTableComponent', () => {
         hostFixture.detectChanges();
         tick(1);
         hostFixture.detectChanges();
-        const rows = document.querySelectorAll('[data-testclass="testTableRow"]');
-        expect(rows[0].getAttribute('ng-reflect-p-context-menu-row-disabled')).toEqual('false');
-        expect(rows[1].getAttribute('ng-reflect-p-context-menu-row-disabled')).toEqual('true');
+        const enabledRow = document.querySelectorAll('[data-testclass="testTableRow"]')[0];
+        const disabledRow = document.querySelector('[data-testRowId="SYSTEM_TEMPLATE"]');
+        expect(enabledRow.getAttribute('ng-reflect-p-context-menu-row-disabled')).toEqual('false');
+        expect(disabledRow.getAttribute('ng-reflect-p-context-menu-row-disabled')).toEqual('true');
     }));
 
     describe('with checkBox', () => {
@@ -492,7 +530,7 @@ describe('DotListingDataTableComponent', () => {
         it('should renderer table', () => {
             const headerCheckBoxes = el.querySelectorAll('p-tableheadercheckbox');
             expect(1).toEqual(headerCheckBoxes.length);
-            expect(6).toEqual(bodyCheckboxes.length);
+            expect(enabledItems.length).toEqual(bodyCheckboxes.length);
         });
     });
 
