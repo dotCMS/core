@@ -357,6 +357,8 @@
 
 	// File Popup
 	function showFilePopUp(file, cmsAdminUser, origReferer, e) {
+		console.log("IMAGE:", file);
+
 		var workFlowAssign = false;
 		var fileWfActionAssign = file.wfActionAssign;
 		//var wfActions = file.wfActions;
@@ -432,6 +434,12 @@
 				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>';
 				strHTML += '</a>';
 			}
+		}
+
+		if(file?.mimeType?.includes('image')) {
+			strHTML += '<span class="context-menu__item" onClick="copyToClipboard(\'' + 'text' + '\', \'' + objId + '\')">';
+			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy-relative-path")) %>';
+			strHTML += '</span>';
 		}
 
 		// If archived, only display the "Remove" option in the Push Dialog
@@ -1027,7 +1035,12 @@
 
     var contentAdmin ;
 
-
+	function copyToClipboard(relativePath, objId) {
+		navigator.clipboard.writeText(relativePath)
+		.then()
+		.catch((error) => alert('Error:', err))
+		.finally(() => hidePopUp('context_menu_popup_'+objId))
+	}
 
 
 --></script>
