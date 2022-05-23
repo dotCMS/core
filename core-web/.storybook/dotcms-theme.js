@@ -33,6 +33,5 @@ export default create({
 
     brandTitle: 'DotCMS Components Library',
     brandUrl: 'https://dotcms.com',
-    brandImage:
-        'https://dotcms.com/dA/99fe3769-d649/256w/dotcms.png'
+    brandImage: 'https://dotcms.com/dA/99fe3769-d649/256w/dotcms.png'
 });
