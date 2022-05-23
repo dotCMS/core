@@ -6,10 +6,13 @@ import java.io.Writer;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Spliterator;
+import java.util.function.UnaryOperator;
 
 /**
  * A JSONArray is an ordered sequence of values. Its external text form is a
@@ -59,33 +62,50 @@ import java.util.Map;
  * @author JSON.org
  * @version 2009-04-14
  */
-public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.JSONArray implements Serializable {
+
+public class JSONArray  implements List,Serializable {
 
 
-    /**
-     * The arrayList where the JSONArray's properties are kept.
-     */
-    private ArrayList myArrayList;
+
+
+    private final ArrayList myArrayList;
+
 
 
     public void add(int index, Object element) {
-    	myArrayList.add(index, element);
+    	_put(index, element);
 		
 	}
 
 	public boolean add(Object o) {
-		// TODO Auto-generated method stub
-		return myArrayList.add(o);
+	    if (o == null) {
+	        return false;
+	    }
+		return myArrayList.add(JSONObject.wrap(o));
 	}
 
-	public boolean addAll(Collection<? extends Object> c) {
-		// TODO Auto-generated method stub
-		return myArrayList.add(c);
+
+	public boolean addAll(Collection c) {
+        if (c != null) {
+            Iterator i = c.iterator();
+            while (i.hasNext()) {
+                Object o = i.next();
+                myArrayList.add(JSONObject.wrap(o));
+            }
+        }
+		return true;
 	}
 
-	public boolean addAll(int index, Collection<? extends Object> c) {
-		// TODO Auto-generated method stub
-		return myArrayList.addAll( index, c);
+	public boolean addAll(int index, Collection c) {
+        if (c != null) {
+            Iterator i = c.iterator();
+            while (i.hasNext()) {
+                Object o = i.next();
+                myArrayList.add(index++,JSONObject.wrap(o));
+            }
+        }
+        return true;
+
 	}
 
 	public void clear() {
@@ -94,90 +114,101 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
 	}
 
 	public boolean contains(Object o) {
-		// TODO Auto-generated method stub
-		return myArrayList.contains(o);
+
+		return myArrayList.contains(o) || myArrayList.contains(JSONObject.wrap(o));
 	}
 
-	public boolean containsAll(Collection<?> c) {
-		// TODO Auto-generated method stub
+	public boolean containsAll(Collection c) {
+
 		return myArrayList.containsAll(c);
 	}
 
 	public int indexOf(Object o) {
-		// TODO Auto-generated method stub
+
 		return myArrayList.indexOf(o);
 	}
 
 	public boolean isEmpty() {
-		// TODO Auto-generated method stub
+
 		return myArrayList.isEmpty();
 	}
 
-	public Iterator<Object> iterator() {
-		// TODO Auto-generated method stub
+	public Iterator iterator() {
+
 		return myArrayList.iterator();
 	}
 
 	public int lastIndexOf(Object o) {
-		// TODO Auto-generated method stub
+
 		return myArrayList.lastIndexOf(o);
 	}
 
-	public ListIterator<Object> listIterator() {
-		// TODO Auto-generated method stub
+	public ListIterator listIterator() {
+
 		return myArrayList.listIterator();
 	}
 
-	public ListIterator<Object> listIterator(int index) {
-		// TODO Auto-generated method stub
+	public ListIterator listIterator(int index) {
+
 		return myArrayList.listIterator(index);
 	}
 
 	public boolean remove(Object o) {
-		// TODO Auto-generated method stub
+
 		return myArrayList.remove(o);
 	}
 
-	public boolean removeAll(Collection<?> c) {
-		// TODO Auto-generated method stub
+	public boolean removeAll(Collection c) {
+
 		return myArrayList.removeAll(c);
 	}
 
-	public boolean retainAll(Collection<?> c) {
-		// TODO Auto-generated method stub
+	public boolean retainAll(Collection c) {
 		return myArrayList.retainAll(c);
 	}
 
 	public Object set(int index, Object element) {
-		// TODO Auto-generated method stub
-		return myArrayList.set(index,element);
+
+		return myArrayList.set(index,JSONObject.wrap(element));
 	}
 
 	public int size() {
-		// TODO Auto-generated method stub
+
 		return myArrayList.size();
 	}
 
-	public List<Object> subList(int fromIndex, int toIndex) {
-		// TODO Auto-generated method stub
+	public List subList(int fromIndex, int toIndex) {
+
 		return myArrayList.subList(fromIndex,toIndex);
 	}
 
-	public Object[] toArray() {
-		// TODO Auto-generated method stub
-		return myArrayList.toArray();
-	}
 
-	public <T> T[] toArray(T[] a) {
-		// TODO Auto-generated method stub
-		return (T[]) myArrayList.toArray(a);
-	}
+	@Override
+    public Object[] toArray(Object[] a) {
 
-	/**
+        return myArrayList.toArray(a);
+    }
+
+    @Override
+    public void replaceAll(UnaryOperator operator) {
+        myArrayList.replaceAll(operator);
+    }
+
+    @Override
+    public void sort(Comparator c) {
+        myArrayList.sort(c);
+    }
+
+    @Override
+    public Spliterator spliterator() {
+        return myArrayList.spliterator();
+    }
+
+    /**
      * Construct an empty JSONArray.
      */
     public JSONArray() {
-        this.myArrayList = new ArrayList();
+        this.myArrayList=new ArrayList<>();
     }
 
     /**
@@ -185,7 +216,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @param x A JSONTokener
      * @throws JSONException If there is a syntax error.
      */
-    public JSONArray(JSONTokener x) throws JSONException {
+    public JSONArray(JSONTokener x)  {
         this();
         char c = x.nextClean();
         char q;
@@ -220,7 +251,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
             case ']':
             case ')':
                 if (q != c) {
-                    throw x.syntaxError("Expected a '" + new Character(q) + "'");
+                    throw x.syntaxError("Expected a '" + Character.valueOf(q) + "'");
                 }
                 return;
             default:
@@ -237,7 +268,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      *  and ends with <code>]</code>&nbsp;<small>(right bracket)</small>.
      *  @throws JSONException If there is a syntax error.
      */
-    public JSONArray(String source) throws JSONException {
+    public JSONArray(String source)  {
         this(new JSONTokener(source));
     }
 
@@ -247,7 +278,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @param collection     A Collection.
      */
     public JSONArray(Collection collection) {
-		this.myArrayList = new ArrayList();
+		this();
 		if (collection != null) {
 			Iterator iter = collection.iterator();
 			while (iter.hasNext()) {
@@ -262,7 +293,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * Construct a JSONArray from an array
      * @throws JSONException If not an array.
      */
-    public JSONArray(Object array) throws JSONException {
+    public JSONArray(Object array)  {
         this();
         if (array.getClass().isArray()) {
             int length = Array.getLength(array);
@@ -299,7 +330,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @throws JSONException If there is no value for the index or if the
      *  value is not convertable to boolean.
      */
-    public boolean getBoolean(int index) throws JSONException {
+    public boolean getBoolean(int index)  {
         Object o = get(index);
         if (o.equals(Boolean.FALSE) ||
                 (o instanceof String &&
@@ -322,7 +353,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @throws   JSONException If the key is not found or if the value cannot
      *  be converted to a number.
      */
-    public double getDouble(int index) throws JSONException {
+    public double getDouble(int index)  {
         Object o = get(index);
         try {
             return o instanceof Number ?
@@ -344,7 +375,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      *  be converted to a number.
      *  if the value cannot be converted to a number.
      */
-    public int getInt(int index) throws JSONException {
+    public int getInt(int index)  {
         Object o = get(index);
         return o instanceof Number ?
                 ((Number)o).intValue() : (int)getDouble(index);
@@ -358,7 +389,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @throws JSONException If there is no value for the index. or if the
      * value is not a JSONArray
      */
-    public JSONArray getJSONArray(int index) throws JSONException {
+    public JSONArray getJSONArray(int index)  {
         Object o = get(index);
         if (o instanceof JSONArray) {
             return (JSONArray)o;
@@ -375,7 +406,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @throws JSONException If there is no value for the index or if the
      * value is not a JSONObject
      */
-    public JSONObject getJSONObject(int index) throws JSONException {
+    public JSONObject getJSONObject(int index)  {
         Object o = get(index);
         if (o instanceof JSONObject) {
             return (JSONObject)o;
@@ -393,7 +424,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @throws   JSONException If the key is not found or if the value cannot
      *  be converted to a number.
      */
-    public long getLong(int index) throws JSONException {
+    public long getLong(int index)  {
         Object o = get(index);
         return o instanceof Number ?
                 ((Number)o).longValue() : (long)getDouble(index);
@@ -406,7 +437,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @return      A string value.
      * @throws JSONException If there is no value for the index.
      */
-    public String getString(int index) throws JSONException {
+    public String getString(int index)  {
         return get(index).toString();
     }
 
@@ -429,7 +460,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @return a string.
      * @throws JSONException If the array contains an invalid number.
      */
-    public String join(String separator) throws JSONException {
+    public String join(String separator)  {
         int len = length();
         StringBuffer sb = new StringBuffer();
 
@@ -647,8 +678,8 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @return this.
      */
     public JSONArray put(boolean value) {
-        put(value ? Boolean.TRUE : Boolean.FALSE);
-        return this;
+        return _put(length(),value ? Boolean.TRUE : Boolean.FALSE);
+
     }
 
 
@@ -659,8 +690,8 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @return      this.
      */
     public JSONArray put(Collection value) {
-        put(new JSONArray(value));
-        return this;
+        return _put(length(),value);
+
     }
 
 
@@ -672,10 +703,11 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @return this.
      */
     public JSONArray put(double value) throws JSONException {
-        Double d = new Double(value);
+        Double d = Double.valueOf(value);
+
         JSONObject.testValidity(d);
-        put(d);
-        return this;
+        return _put(length(),d);
+
     }
 
 
@@ -686,8 +718,8 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @return this.
      */
     public JSONArray put(int value) {
-        put(new Integer(value));
-        return this;
+        return _put(length(),Integer.valueOf(value));
+
     }
 
 
@@ -698,8 +730,8 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @return this.
      */
     public JSONArray put(long value) {
-        put(new Long(value));
-        return this;
+        return _put(length(),Long.valueOf(value));
+
     }
 
 
@@ -710,8 +742,8 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @return      this.
      */
     public JSONArray put(Map value) {
-        put(new JSONObject(value));
-        return this;
+        return _put(length(),JSONObject.wrap(value));
+
     }
 
 
@@ -723,8 +755,8 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @return this.
      */
     public JSONArray put(Object value) {
-        this.myArrayList.add(value);
-        return this;
+        return _put(length(),value);
+
     }
 
 
@@ -737,9 +769,9 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @return this.
      * @throws JSONException If the index is negative.
      */
-    public JSONArray put(int index, boolean value) throws JSONException {
-        put(index, value ? Boolean.TRUE : Boolean.FALSE);
-        return this;
+    public JSONArray put(int index, boolean value)  {
+        return _put(index, value ? Boolean.TRUE : Boolean.FALSE);
+
     }
 
 
@@ -752,9 +784,9 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @throws JSONException If the index is negative or if the value is
      * not finite.
      */
-    public JSONArray put(int index, Collection value) throws JSONException {
-        put(index, new JSONArray(value));
-        return this;
+    public JSONArray put(int index, Collection value)  {
+        return _put(index, value);
+
     }
 
 
@@ -768,9 +800,10 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @throws JSONException If the index is negative or if the value is
      * not finite.
      */
-    public JSONArray put(int index, double value) throws JSONException {
-        put(index, new Double(value));
-        return this;
+
+    public JSONArray put(int index, double value)  {
+        return _put(index, new Double(value));
+
     }
 
 
@@ -783,9 +816,10 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @return this.
      * @throws JSONException If the index is negative.
      */
-    public JSONArray put(int index, int value) throws JSONException {
-        put(index, new Integer(value));
-        return this;
+
+    public JSONArray put(int index, int value)  {
+        return _put(index, new Integer(value));
+
     }
 
 
@@ -798,9 +832,10 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @return this.
      * @throws JSONException If the index is negative.
      */
-    public JSONArray put(int index, long value) throws JSONException {
-        put(index, new Long(value));
-        return this;
+
+    public JSONArray put(int index, long value)  {
+        return _put(index, new Long(value));
+
     }
 
 
@@ -813,12 +848,17 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @throws JSONException If the index is negative or if the the value is
      *  an invalid number.
      */
-    public JSONArray put(int index, Map value) throws JSONException {
-        put(index, new JSONObject(value));
-        return this;
+    public JSONArray put(int index, Map value)  {
+        return _put(index, JSONObject.wrap(value));
     }
 
-
+    public JSONArray put(int index, Object value)  {
+        return _put(index, value);
+    }
+    
+    
+    
+    
     /**
      * Put or replace an object value in the JSONArray. If the index is greater
      *  than the length of the JSONArray, then null elements will be added as
@@ -831,18 +871,18 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @throws JSONException If the index is negative or if the the value is
      *  an invalid number.
      */
-    public JSONArray put(int index, Object value) throws JSONException {
+    JSONArray _put(int index, Object value)  {
         JSONObject.testValidity(value);
         if (index < 0) {
             throw new JSONException("JSONArray[" + index + "] not found.");
         }
         if (index < length()) {
-            this.myArrayList.set(index, value);
+            this.myArrayList.set(index, JSONObject.wrap(value));
         } else {
             while (index != length()) {
-                put(JSONObject.NULL);
+                this.myArrayList.add(JSONObject.NULL);
             }
-            put(value);
+            this.myArrayList.add(JSONObject.wrap(value));
         }
         return this;
     }
@@ -870,7 +910,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * has no values.
      * @throws JSONException If any of the names are null.
      */
-    public JSONObject toJSONObject(JSONArray names) throws JSONException {
+    public JSONObject toJSONObject(JSONArray names)  {
         if (names == null || names.length() == 0 || length() == 0) {
             return null;
         }
@@ -913,7 +953,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      *  with <code>]</code>&nbsp;<small>(right bracket)</small>.
      * @throws JSONException
      */
-    public String toString(int indentFactor) throws JSONException {
+    public String toString(int indentFactor)  {
         return toString(indentFactor, 0);
     }
 
@@ -928,7 +968,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      *  representation of the array.
      * @throws JSONException
      */
-    String toString(int indentFactor, int indent) throws JSONException {
+    String toString(int indentFactor, int indent)  {
         int len = length();
         if (len == 0) {
             return "[]";
@@ -970,7 +1010,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @return The writer.
      * @throws JSONException
      */
-    public Writer write(Writer writer) throws JSONException {
+    public Writer write(Writer writer)  {
         try {
             boolean b = false;
             int     len = length();
@@ -996,5 +1036,9 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
         } catch (IOException e) {
            throw new JSONException(e);
         }
+    }
+
+    public Object[] toArray() {
+        return myArrayList.toArray();
     }
 }

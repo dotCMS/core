@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "fc99e9b3-8d44-4b9a-b0bc-8a757291bd27",
+		"_postman_id": "0d1bb7c9-5bfb-4875-8b4a-ab4e84c0eff2",
 		"name": "Template Resource",
 		"description": "Make the test for the template resource crud",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -5730,9 +5730,11 @@
 									"",
 									"var jsonData = pm.response.json();",
 									"",
-									"pm.test(\"Check that the response is just empty\", function () {",
+									"pm.test(\"body check\", function () {",
 									"    pm.expect(jsonData.entity.fails[0]).to.eql(undefined);",
 									"});",
+									"",
+									"",
 									""
 								],
 								"type": "text/javascript"
@@ -5777,8 +5779,7 @@
 								"templates",
 								"_publish"
 							]
-						},
-						"description": "Makes sure that dotCMS does not try to publish the System Template. Doing this should just (1) log an INFO message saying that the System Template cannot be published, and (2) return an empty response."
+						}
 					},
 					"response": []
 				},

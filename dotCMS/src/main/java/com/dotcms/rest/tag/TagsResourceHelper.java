@@ -1,6 +1,6 @@
 package com.dotcms.rest.tag;
 
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
+import com.dotmarketing.util.json.JSONException;
 import com.dotcms.rest.TagResource;
 import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.exception.BadRequestException;
