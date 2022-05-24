@@ -1,5 +1,6 @@
 package org.apache.felix.framework;
 
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.util.Config;
@@ -7,6 +8,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableList;
+import com.liferay.util.StringPool;
 import org.apache.felix.framework.util.FelixConstants;
 import org.apache.felix.main.AutoProcessor;
 import org.apache.felix.main.Main;
@@ -29,6 +31,8 @@ import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This OSGI framework only encapsulates the system osgi bundles (not the plugin, for them @see @{@link org.apache.felix.framework.OSGIUtil})
@@ -45,6 +49,7 @@ public class OSGISystem {
     private static final String FELIX_FILEINSTALL_DIR = "felix.fileinstall.dir";
     private static final String FELIX_UNDEPLOYED_DIR = "felix.undeployed.dir";
     private static final String UTF_8 = "utf-8";
+    private static final String PROPERTY_OSGI_PACKAGES_EXTRA = "org.osgi.framework.system.packages.extra";
     public String felixExtraPackagesFile;
 
     private Framework felixFramework;
@@ -139,11 +144,27 @@ public class OSGISystem {
                 }
             }
 
+            // Set all OSGI Packages
+            String extraPackages;
+            try {
+                extraPackages = getExtraOSGIPackages();
+            } catch (IOException e) {
+                Logger.error(this, "Error loading the OSGI framework properties: " + e);
+                throw new RuntimeException(e);
+            }
+
+            // Setting the OSGI extra packages property
+            felixProps.setProperty(PROPERTY_OSGI_PACKAGES_EXTRA, extraPackages);
+
+
             // before init we have to check if any new bundle has been upload
             // Create an instance and initialize the framework.
             final FrameworkFactory factory = this.getFrameworkFactory();
             felixFramework = factory.newFramework(felixProps);
             felixFramework.init();
+
+            AutoProcessor.process(felixProps, felixFramework.getBundleContext());
+
             felixFramework.start();
             Logger.info(this, () -> "Osgi Felix System Framework started");
         } catch (Exception ex) {
@@ -155,6 +176,31 @@ public class OSGISystem {
         System.setProperty("system"+WebKeys.OSGI_ENABLED, "true");
 
         return felixFramework;
+    }
+
+    /**
+     * Returns the packages inside the <strong>osgi-extra.conf</strong> and the
+     * osgi-extra-generate.conf files If neither of those files are there, it will generate the
+     * osgi-extra-generate.conf based off the classpath for the OSGI configuration property
+     * <strong>org.osgi.framework.system.packages.extra</strong>. <br/><br/> The property
+     * <strong>org.osgi.framework.system.packages.extra</strong> is use to set the list of packages
+     * the dotCMS context in going to expose to the OSGI context.
+     *
+     * @return String
+     * @throws IOException Any IOException
+     */
+    public String getExtraOSGIPackages() throws IOException {
+
+        final File extraPackagesFile = new File(this.felixExtraPackagesFile);
+
+        final StringWriter writer = new StringWriter();
+        try (InputStream inputStream = Files.newInputStream(extraPackagesFile.toPath())) {
+            writer.append(IOUtils.toString(inputStream));
+        }
+
+        //Clean up the properties, it is better to keep it simple and in a standard format
+        return writer.toString().replaceAll("\\\n", "").
+                replaceAll("\\\r", "").replaceAll("\\\\", "");
     }
 
     private String getOsgiExtraConfigPath () {
