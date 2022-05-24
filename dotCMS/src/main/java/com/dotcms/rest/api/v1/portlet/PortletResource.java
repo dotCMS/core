@@ -7,6 +7,7 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.ContentTypeUtil;
@@ -307,16 +308,22 @@ public class PortletResource implements Serializable {
     public final Response findPortlet(@Context final HttpServletRequest request,
             @PathParam("portletId") final String portletId) {
 
-        new WebResource.InitBuilder(webResource)
+        final User user = new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
                 .rejectWhenNoUser(true)
                 .requiredPortlet(portletId)
-                .init();
+                .init().getUser();
 
+        final Portlet portlet = APILocator.getPortletAPI().findPortlet(portletId);
+        if(null == portlet){
+            return ResponseUtil.INSTANCE.getErrorResponse(request, Status.NOT_FOUND, user.getLocale(),
+                    user.getUserId(),
+                    "Unable to find portlet");
+        }
         return Response.ok(new ResponseEntityView(
-                map("response", APILocator.getPortletAPI().findPortlet(portletId)))).build();
+                map("response", portlet))).build();
 
     }
 
