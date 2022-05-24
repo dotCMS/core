@@ -45,7 +45,7 @@
         "dep-graph": "nx dep-graph",
         "help": "nx help",
         "pretty-quick": "pretty-quick",
-        "prepare": "is-ci || cd .. && husky install core-web/.husky"
+        "prepare": "is-ci || echo hola && cd .. && husky install core-web/.husky"
     },
     "private": false,
     "dependencies": {
