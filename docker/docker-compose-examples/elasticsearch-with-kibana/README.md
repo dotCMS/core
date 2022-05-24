@@ -7,12 +7,14 @@ Elasticsearch runs on port 9200 and Kibana on 5601
 #### Run an example:
 
 ```bash
-docker-compose up```
+docker-compose up
+```
 
 #### Shut down instances:
 
 ```bash
-docker-compose down```
+docker-compose down
+```
 
 **Important note:** `ctrl+c` does not destroy instances
 
