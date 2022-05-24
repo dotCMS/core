@@ -129,7 +129,7 @@ const moduleMatches = () => __awaiter(void 0, void 0, void 0, function* () {
     core.info(`Commits found: ${commits.length}`);
     if (commits.length >= 100) {
         // Probably not found bu the amount of commits definitively calls for returning true
-        core.info('Commits reached max capacity, probably I good idea to allow workflows to run');
+        core.info('Commits reached max capacity, probably it\'s a good idea to allow ALL workflows to run');
         return true;
     }
     const found = searchInCommits(currentModule, commits);
