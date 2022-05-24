@@ -1,6 +1,6 @@
-# Dotcms Single Node With Demo Content
+# Dotcms Single Node (MSSQL Database)
 
-A single instance of dotcms running on port 8080 that will download and install the demo site on initialization. Database: postgres
+A single instance of dotcms running on port 8080. Database: MSSQL
 
 ## Usage
 
