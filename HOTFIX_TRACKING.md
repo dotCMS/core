@@ -13,3 +13,5 @@ This maintenance release includes the following code fixes:
 8. https://github.com/dotCMS/core/issues/22055 : OSGI: Read exports from uploaded fragment, then discard fragment #22055
 
 **Release-22.03.2**
+
+9. https://github.com/dotCMS/core/issues/22288 : DotParse not respecting config property #22288

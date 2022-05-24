@@ -135,8 +135,7 @@ public class DotParse extends DotDirective {
             }
 
             final boolean respectFrontEndRolesForVTL =
-                            params.mode.respectAnonPerms ? Config.getBooleanProperty("RESPECT_FRONTEND_ROLES_FOR_DOTPARSE", true)
-                                            : params.mode.respectAnonPerms;
+                    Config.getBooleanProperty("RESPECT_FRONTEND_ROLES_FOR_DOTPARSE", params.mode.respectAnonPerms);
             final Contentlet contentlet = APILocator.getContentletAPI().find(inode, APILocator.getUserAPI().getSystemUser(),
                             respectFrontEndRolesForVTL);
             final File fileToServe = contentlet.getBinary(idAndField._2);
