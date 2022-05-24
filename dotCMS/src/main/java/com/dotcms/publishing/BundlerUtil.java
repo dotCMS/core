@@ -13,6 +13,7 @@ import com.dotcms.publishing.manifest.ManifestUtil;
 import com.dotcms.publishing.output.BundleOutput;
 import com.dotcms.publishing.output.TarGzipBundleOutput;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.util.XStreamFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -263,7 +264,7 @@ public class BundlerUtil {
 
     public static void objectToXML(final Object obj, final OutputStream outputStream) {
         HierarchicalStreamWriter xmlWriter = new DotPrettyPrintWriter(new OutputStreamWriter(outputStream));
-        XMLSerializerUtil.getInstance().marshal(obj, xmlWriter);
+        XStreamFactory.INSTANCE.getInstance().marshal(obj, xmlWriter);
     }
 
     /**

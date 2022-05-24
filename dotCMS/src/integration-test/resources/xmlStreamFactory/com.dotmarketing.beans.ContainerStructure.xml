@@ -1,0 +1,30 @@
+<list>
+  <com.dotmarketing.beans.ContainerStructure>
+    <id>11ee8430-ca4e-44f5-895a-28a9fdbca087</id>
+    <structureId>2a3e91e4-fbbf-4876-8c5b-2233c1739b05</structureId>
+    <containerInode>1dd3d033-b0e4-4ea1-b3ad-c79ab8ff838e</containerInode>
+    <containerId>d71d56b4-0a8b-4bb2-be15-ffa5a23366ea</containerId>
+    <code>$!{body}</code>
+  </com.dotmarketing.beans.ContainerStructure>
+  <com.dotmarketing.beans.ContainerStructure>
+    <id>48a73b57-cd65-4ef7-9234-2fe6a40286f9</id>
+    <structureId>f6259cc9-5d78-453e-8167-efd7b72b2e96</structureId>
+    <containerInode>e58e92b3-7135-461b-b56b-04ff143a389b</containerInode>
+    <containerId>56bd55ea-b04b-480d-9e37-5d6f9217dcc3</containerId>
+    <code>Any code</code>
+  </com.dotmarketing.beans.ContainerStructure>
+  <com.dotmarketing.beans.ContainerStructure>
+    <id>a3df5a77-acb7-466f-b18d-739469cd1666</id>
+    <structureId>2a3e91e4-fbbf-4876-8c5b-2233c1739b05</structureId>
+    <containerInode>e58e92b3-7135-461b-b56b-04ff143a389b</containerInode>
+    <containerId>56bd55ea-b04b-480d-9e37-5d6f9217dcc3</containerId>
+    <code>#dotedit($CONTENT_INODE, $body)</code>
+  </com.dotmarketing.beans.ContainerStructure>
+  <com.dotmarketing.beans.ContainerStructure>
+    <id>d1ae9b2c-c57f-44b6-bd38-b6e30875be1b</id>
+    <structureId>3d4a8854-7696-40c2-b0f3-28c8ff1121f9</structureId>
+    <containerInode>4b737156-d8c0-4cd8-ab1b-674cf58d22d9</containerInode>
+    <containerId>eba434c6-e67a-4a64-9c88-1faffcafb40d</containerId>
+    <code>&lt;h1&gt;Title&lt;/h1&gt;</code>
+  </com.dotmarketing.beans.ContainerStructure>
+</list>

@@ -547,7 +547,8 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentDispositionFileNameParserTest.class,
         SecureFileValidatorTest.class,
         BoundedBufferedReaderTest.class,
-        AWSS3PublisherTest.class
+        AWSS3PublisherTest.class,
+        XStreamFactoryTest.class
 })
 public class MainSuite {
 
