@@ -1,4 +1,4 @@
-# Dotcms Single Node
+# Dotcms Single Node (Debug Mode)
 
 A single instance of dotcms running on port 8080. Database: postgres. Debug mode enabled on port 8000
 
