@@ -1,8 +1,9 @@
 {
 	"info": {
-		"_postman_id": "b1f6877c-4c97-4335-9e94-27785b6c5b18",
+		"_postman_id": "bc0cf41b-78ee-4803-a2c9-d02441e239bf",
 		"name": "Browser Resource",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "5403727"
 	},
 	"item": [
 		{
@@ -392,7 +393,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{ \"path\":\"//default/application/containers/system/\" }",
+					"raw": "{ \"path\":\"//default/application/containers/\" }",
 					"options": {
 						"raw": {
 							"language": "json"

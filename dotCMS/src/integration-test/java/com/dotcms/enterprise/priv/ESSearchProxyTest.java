@@ -79,7 +79,7 @@ public class ESSearchProxyTest extends IntegrationTestBase {
         }
         final String query = "{\"query\":{\"query_string\":{\"query\":\"+contenttype:" + blogContentType.variable()
                 + " +conhost:"+ newHost.getIdentifier()
-                +" +" + blogContentType.variable() + ".sysPublishDate:[2021-01-01t00\\:00\\:00 TO 2121-12-01t00\\:00\\:00]\""
+                +" +" + blogContentType.variable() + ".sysPublishDate:[2021-01-01t00:00:00 TO 2121-12-01t00:00:00]\""
                 +"}}}";
         final List<ESSearchResults> resultsList = getEsSearchResults(query, false);
         Assert.assertFalse(resultsList.isEmpty());

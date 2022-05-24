@@ -19,9 +19,9 @@ import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.EmptyHttpResponse;
@@ -2432,12 +2432,16 @@ public class WorkflowResource {
         }
     } // fireAction.
 
-    private LinkedHashSet<String> getBinaryFields(final Map<String,Object> mapContent) {
+    private LinkedHashSet<String> getBinaryFields(final Map<String, Object> mapContent) {
 
-        return mapContent.containsKey(BINARY_FIELDS)?
-                ConversionUtils.INSTANCE.convert((JSONArray)mapContent.get(BINARY_FIELDS),
-                        new JsonArrayToLinkedSetConverter<>(Object::toString)):
-                JsonArrayToLinkedSetConverter.EMPTY_LINKED_SET;
+        List array = (List) mapContent.getOrDefault(BINARY_FIELDS, Collections.EMPTY_LIST);
+
+
+        final LinkedHashSet<String> hashSet = new LinkedHashSet<>();
+        array.forEach(a -> hashSet.add(a.toString()));
+
+        return hashSet;
+
     }
 
     private FireActionByNameForm processForm(final FormDataMultiPart multipart, final User user)

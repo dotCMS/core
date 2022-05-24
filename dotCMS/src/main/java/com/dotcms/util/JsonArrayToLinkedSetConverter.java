@@ -1,7 +1,7 @@
 package com.dotcms.util;
 
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONException;
 
 import java.util.LinkedHashSet;
 
