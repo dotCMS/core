@@ -27,7 +27,6 @@ import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +44,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import org.glassfish.jersey.server.JSONP;
 
 /**
@@ -123,7 +123,8 @@ public class PortletResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response addContentPortletToLayout(@Context final HttpServletRequest request,
             @PathParam("portletId") final String portletId,
-            @PathParam("layoutId") final String layoutId) throws DotDataException {
+            @PathParam("layoutId") final String layoutId)
+            throws DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -146,19 +147,18 @@ public class PortletResource implements Serializable {
 
         final Portlet portlet = portletAPI.findPortlet(portletId);
         if (null == portlet) {
-
-           final String errorMessage = Try.of(()->LanguageUtil.get( user.getLocale(), "custom.content.portlet.not.found", portletId ))
-                    .getOrElse(String.format("Portlet with id %s wasn't found.", portletId)); //fallback message
-
-            throw new DoesNotExistException(errorMessage);
+            return ResponseUtil.INSTANCE
+                    .getErrorResponse(request, Status.NOT_FOUND, user.getLocale(),
+                            user.getUserId(),
+                            "custom.content.portlet.not.found",user.getUserId(), portletId);
         }
 
         final Layout layout = layoutAPI.loadLayout(layoutId);
         if (null == layout) {
-            final String errorMessage = Try.of(()->LanguageUtil.get( user.getLocale(), "custom.content.portlet.layout.not.found", layoutId ))
-                    .getOrElse(String.format("Layout with id %s wasn't found.", portletId)); //fallback message
-
-            throw new DoesNotExistException(errorMessage);
+            return ResponseUtil.INSTANCE
+                    .getErrorResponse(request, Status.NOT_FOUND, user.getLocale(),
+                            user.getUserId(),
+                            "custom.content.portlet.layout.not.found",user.getUserId(), layoutId);
         }
 
         final List<Layout> userLayouts = layoutAPI.loadLayoutsForUser(user);
@@ -170,7 +170,16 @@ public class PortletResource implements Serializable {
         }
 
         final List<String> portletIds = new ArrayList<>(layout.getPortletIds());
-        portletIds.add(portlet.getPortletId());
+
+        if(!portletIds.contains(portletId)){
+            portletIds.add(portletId);
+        } else {
+            return ResponseUtil.INSTANCE
+                    .getErrorResponse(request, Status.BAD_REQUEST, user.getLocale(),
+                            user.getUserId(),
+                            "custom.content.portlet.layout.contains.portletId",layout.getId(),portletId);
+        }
+
         layoutAPI.setPortletIdsToLayout(layout, portletIds);
 
         return Response.ok(new ResponseEntityView(
