@@ -42,7 +42,7 @@ docker-compose down
 
 4) Configure your IDE enabling remote debugging:
 
-![Remote Debugging](Intellij Debug Mode.png)
+![Remote Debugging](https://github.com/dotCMS/core/blob/new-docker-compose-examples/docker/docker-compose-examples/single-node-debug-mode/Intellij%20Debug%20Mode.png?raw=true)
 
 
 
