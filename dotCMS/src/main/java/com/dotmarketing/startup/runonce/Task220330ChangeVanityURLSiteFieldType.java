@@ -63,7 +63,10 @@ public class Task220330ChangeVanityURLSiteFieldType implements StartupTask {
         try {
             final List<ContentletHost> contentlets = getContentlets();
 
-            updateHost(contentlets);
+            if (UtilMethods.isSet(contentlets)) {
+                updateHost(contentlets);
+            }
+            
             updateFieldType();
 
             CacheLocator.getContentTypeCache2().clearCache();
