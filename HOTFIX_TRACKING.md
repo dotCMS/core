@@ -11,3 +11,5 @@ This maintenance release includes the following code fixes:
 6. https://github.com/dotCMS/core/issues/21613 : URL Mapped content is not showing up in site search when using the include functionality #21613
 7. https://github.com/dotCMS/core/issues/22078 : Missing DB_MIN_IDLE parameter #22078
 8. https://github.com/dotCMS/core/issues/22055 : OSGI: Read exports from uploaded fragment, then discard fragment #22055
+
+**Release-22.03.2**
