@@ -66,6 +66,7 @@ import com.dotcms.rest.api.v1.vtl.VTLResource;
 import com.dotcms.rest.personas.PersonasResourcePortlet;
 import com.dotcms.rest.servlet.ReloadableServletContainer;
 import com.google.common.collect.ImmutableSet;
+import com.liferay.portal.util.ReleaseInfo;
 import io.swagger.v3.jaxrs2.integration.resources.AcceptHeaderOpenApiResource;
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
@@ -77,6 +78,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.servers.Server;
+import io.swagger.v3.oas.annotations.servers.ServerVariable;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 
 import java.util.Map;
@@ -106,13 +108,23 @@ import java.util.concurrent.ConcurrentHashMap;
 		servers = {
 				@Server(
 						description = "dotCMS Server",
-						url = "http://localhost:8080/api")
+						url = "{URIScheme}://{host}:{port}/api",
+						variables = {
+								@ServerVariable(name = "URIScheme", description = "URI Scheme", defaultValue = "https", allowableValues = {
+										"http", "https"}),
+								@ServerVariable(name = "host", description = "dotCMS Host", defaultValue = "localhost", allowableValues = {
+										"localhost"}),
+								@ServerVariable(name = "port", description = "dotCMS Host", defaultValue = "8080", allowableValues = {
+										"80", "8080", "443"})
 						})
+		}
+)
 
 @SecurityScheme(name = "API Token", description = "API Token Authentication", type = SecuritySchemeType.APIKEY, scheme = "Bearer", in = SecuritySchemeIn.HEADER)
 @SecurityScheme(name = "Basic Auth", type = SecuritySchemeType.HTTP, scheme = "Basic")
 public class DotRestApplication extends javax.ws.rs.core.Application {
 
+	private static final String RELEASE_VERSION = ReleaseInfo.getVersion();
 	/**
 	 * these are system resources and should never change
 	 */
@@ -135,7 +147,6 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 			.add(com.dotcms.rest.api.v1.notification.NotificationResource.class)
 			.add(com.dotcms.rest.IntegrityResource.class)
 			.add(com.dotcms.rest.LicenseResource.class)
-			.add(com.dotcms.rest.WorkflowResource.class)
 			.add(com.dotcms.rest.RestExamplePortlet.class)
 			.add(com.dotcms.rest.elasticsearch.ESContentResourcePortlet.class)
 			.add(PersonaResource.class)
