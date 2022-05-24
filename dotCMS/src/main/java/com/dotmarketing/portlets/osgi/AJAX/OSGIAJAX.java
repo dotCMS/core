@@ -145,7 +145,7 @@ public class OSGIAJAX extends OSGIBaseAJAX {
                         break;
                     }
 
-                    String felixDeployFolder = OSGIUtil.getInstance().getFelixDeployPath();
+                    String felixDeployFolder = OSGIUtil.getInstance().getFelixUploadPath();
 
                     File felixFolder = new File(felixDeployFolder);
                     File osgiJar = new File(felixDeployFolder + File.separator + fname);
