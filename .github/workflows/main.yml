@@ -78,7 +78,7 @@ jobs:
           SLACK_FOOTER: ${{ env.PULL_REQUEST_URL }}
   build:
     needs: [ module-matcher-job, lint ]
-    if: needs.module-matcher-job.outputs.module_found == true && github.event.pull_request.draft == false
+    if: needs.module-matcher-job.outputs.module_found == 'true' && github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
