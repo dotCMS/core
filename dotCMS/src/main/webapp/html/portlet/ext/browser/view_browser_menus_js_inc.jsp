@@ -436,12 +436,6 @@
 			}
 		}
 
-		if(file?.mimeType?.includes('image')) {
-			strHTML += '<span class="context-menu__item" onClick="copyToClipboard(\'' + 'text' + '\', \'' + objId + '\')">';
-			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy-relative-path")) %>';
-			strHTML += '</span>';
-		}
-
 		// If archived, only display the "Remove" option in the Push Dialog
 		if (archived) {
 			if (enterprise) {
@@ -478,6 +472,14 @@
 		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cut")) %>';
 			strHTML += '</a>';
 
+		}
+
+		if(file?.mimeType?.includes('image')) {
+			const versionPath = getVersionPath(file);
+			strHTML += '<div class="pop_divider" ></div>';
+			strHTML += '<span class="context-menu__item" onClick="copyToClipboard(\'' + versionPath + '\', \'' + objId + '\')">';
+			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy-relative-path")) %>';
+			strHTML += '</span>';
 		}
 
 		strHTML += '<div class="pop_divider" ></div>';
@@ -1034,6 +1036,13 @@
 	}
 
     var contentAdmin ;
+
+	function getVersionPath(file) {
+		const name = file.name;
+		const type = file?.titleName || 'fileAsset'
+		const inode = file.inode;
+		return `/dA/${inode}/${type}/${name}`;
+	}
 
 	function copyToClipboard(relativePath, objId) {
 		navigator.clipboard.writeText(relativePath)
