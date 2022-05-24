@@ -15,3 +15,4 @@ This maintenance release includes the following code fixes:
 **Release-22.03.2**
 
 9. https://github.com/dotCMS/core/issues/22288 : DotParse not respecting config property #22288
+10. https://github.com/dotCMS/core/issues/22094 : No HTML RegEx Invalidates Period (.) When Used #22094
