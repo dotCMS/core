@@ -1,6 +1,6 @@
 # Dotcms Single Node
 
-A single instance of dotcms running on port 8080. Database: postgres
+A single instance of dotcms running on port 8080. Database: postgres. Debug mode enabled on port 8000
 
 ## Usage
 
@@ -38,3 +38,13 @@ docker-compose down
 ```
 
 **Important note:** `ctrl+c` does not destroy instances
+
+
+4) Configure your IDE enabling remote debugging:
+
+![Remote Debugging](Intellij Debug Mode.png)
+
+
+
+
+
