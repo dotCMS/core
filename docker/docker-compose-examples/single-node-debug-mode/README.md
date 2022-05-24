@@ -1,8 +1,6 @@
-# Dotcms Push Publish
+# Dotcms Single Node (Debug Mode)
 
-Push publish environment where the sender runs on port 8080 and the receiver on 8081. Database: postgres.
-
-**Important note:**  For the endpoint configuration, the local IP address must be used instead of `localhost` or `127.0.0.1`
+A single instance of dotcms running on port 8080. Database: postgres. Debug mode enabled on port 8000
 
 ## Usage
 
@@ -14,9 +12,6 @@ Push publish environment where the sender runs on port 8080 and the receiver on 
 ```
 - {license_local_path}/license.zip:/data/shared/assets/license.zip
 ```
-
-The license pack must contain at least two licenses (one for each node in the cluster)
-
 
 2) A local path to access data in the instance can be set uncommenting this line: 
 
@@ -30,19 +25,26 @@ The license pack must contain at least two licenses (one for each node in the cl
 #"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20210920/starter-20210920.zip'
 ```
 
-#### Deploying nodes:
+#### Run an example:
 
 ```bash
-docker-compose -f docker-compose-sender.yml up
-docker-compose -f docker-compose-receiver.yml up
-
+docker-compose up
 ```
 
-#### Undeploying nodes:
+#### Shut down instances:
 
 ```bash
-docker-compose -f docker-compose-sender.yml down
-docker-compose -f docker-compose-receiver.yml down
+docker-compose down
 ```
 
 **Important note:** `ctrl+c` does not destroy instances
+
+
+4) Configure your IDE enabling remote debugging:
+
+![Remote Debugging](https://github.com/dotCMS/core/blob/new-docker-compose-examples/docker/docker-compose-examples/single-node-debug-mode/Intellij%20Debug%20Mode.png?raw=true)
+
+
+
+
+

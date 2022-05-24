@@ -29,14 +29,14 @@ services:
   dotcms:
     image: dotcms/dotcms:latest
     environment:
-        "CATALINA_OPTS": '-Xmx1g '
+        "CMS_JAVA_OPTS": '-Xmx1g -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=*:8000 '
         "DB_BASE_URL": "jdbc:postgresql://db/dotcms"
         "DB_USERNAME": 'dotcmsdbuser'
         "DB_PASSWORD": 'password'
         "DOT_ES_AUTH_BASIC_PASSWORD": 'admin'
         "DOT_ES_ENDPOINTS": 'http://elasticsearch:9200'
         "DOT_INITIAL_ADMIN_PASSWORD": 'admin'
-        "CUSTOM_STARTER_URL": "https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20220504/starter-20220504.zip"
+        #"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20211201/starter-20211201.zip'
     depends_on:
       - elasticsearch
       - db
@@ -48,6 +48,7 @@ services:
       - es_net
     ports:
       - "8080:8080"
+      - "8000:8000"
       - "8443:8443"
 
   db:
