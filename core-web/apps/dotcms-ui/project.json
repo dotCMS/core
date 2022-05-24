@@ -1,0 +1,159 @@
+{
+    "projectType": "application",
+    "root": "apps/dotcms-ui",
+    "sourceRoot": "apps/dotcms-ui/src",
+    "prefix": "dot",
+    "targets": {
+        "build": {
+            "executor": "@angular-devkit/build-angular:browser",
+            "options": {
+                "baseHref": "./",
+                "outputPath": "dist/apps/dotcms-ui",
+                "index": "apps/dotcms-ui/src/index.html",
+                "main": "apps/dotcms-ui/src/main.ts",
+                "polyfills": "apps/dotcms-ui/src/polyfills.ts",
+                "tsConfig": "apps/dotcms-ui/tsconfig.app.json",
+                "allowedCommonJsDependencies": ["lodash", "dragula", "md5", "dom-autoscroller"],
+                "assets": [
+                    "apps/dotcms-ui/src/favicon.ico",
+                    "apps/dotcms-ui/src/assets",
+                    {
+                        "glob": "**/*",
+                        "input": "./node_modules/ngx-monaco-editor/assets/monaco",
+                        "output": "./assets/monaco/"
+                    },
+                    {
+                        "glob": "index.jsp",
+                        "input": "apps/dotcms-ui/src/tomcat",
+                        "output": "./"
+                    },
+                    {
+                        "glob": "**/*",
+                        "input": "./libs/block-editor/src/lib/assets",
+                        "output": "./assets/block-editor"
+                    }
+                ],
+                "styles": [
+                    "libs/dot-primeng-theme-styles/src/scss/styles.scss",
+                    "node_modules/primeicons/primeicons.css",
+                    "node_modules/primeflex/primeflex.css",
+                    "node_modules/primeng/resources/primeng.min.css"
+                ],
+                "scripts": ["node_modules/marked/lib/marked.js"],
+                "stylePreprocessorOptions": {
+                    "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
+                },
+                "vendorChunk": true,
+                "extractLicenses": false,
+                "buildOptimizer": false,
+                "sourceMap": true,
+                "optimization": false,
+                "namedChunks": true
+            },
+            "configurations": {
+                "production": {
+                    "fileReplacements": [
+                        {
+                            "replace": "apps/dotcms-ui/src/environments/environment.ts",
+                            "with": "apps/dotcms-ui/src/environments/environment.prod.ts"
+                        }
+                    ],
+                    "optimization": true,
+                    "outputHashing": "all",
+                    "sourceMap": false,
+                    "namedChunks": false,
+                    "extractLicenses": true,
+                    "vendorChunk": false,
+                    "buildOptimizer": true,
+                    "budgets": [
+                        {
+                            "type": "initial",
+                            "maximumWarning": "2mb",
+                            "maximumError": "5mb"
+                        },
+                        {
+                            "type": "anyComponentStyle",
+                            "maximumWarning": "6kb",
+                            "maximumError": "150kb"
+                        }
+                    ]
+                }
+            },
+            "defaultConfiguration": ""
+        },
+        "serve": {
+            "executor": "@angular-devkit/build-angular:dev-server",
+            "options": {
+                "browserTarget": "dotcms-ui:build",
+                "proxyConfig": "apps/dotcms-ui/proxy.conf.json"
+            },
+            "configurations": {
+                "production": {
+                    "browserTarget": "dotcms-ui:build:production"
+                }
+            }
+        },
+        "extract-i18n": {
+            "executor": "@angular-devkit/build-angular:extract-i18n",
+            "options": {
+                "browserTarget": "dotcms-ui:build"
+            }
+        },
+        "lint": {
+            "executor": "@nrwl/linter:eslint",
+            "options": {
+                "lintFilePatterns": ["apps/dotcms-ui/src/**/*.ts", "apps/dotcms-ui/src/**/*.html"]
+            },
+            "outputs": ["{options.outputFile}"]
+        },
+        "test": {
+            "executor": "@angular-devkit/build-angular:karma",
+            "options": {
+                "main": "apps/dotcms-ui/src/test.ts",
+                "tsConfig": "apps/dotcms-ui/tsconfig.spec.json",
+                "karmaConfig": "apps/dotcms-ui/karma.conf.js",
+                "polyfills": "apps/dotcms-ui/src/polyfills.ts",
+                "styles": ["libs/dot-primeng-theme-styles/src/scss/styles.scss"],
+                "scripts": [],
+                "stylePreprocessorOptions": {
+                    "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
+                }
+            }
+        },
+        "storybook": {
+            "executor": "@nrwl/storybook:storybook",
+            "options": {
+                "uiFramework": "@storybook/angular",
+                "port": 4400,
+                "config": {
+                    "configFolder": "apps/dotcms-ui/.storybook"
+                },
+                "projectBuildConfig": "dotcms-ui"
+            },
+            "configurations": {
+                "ci": {
+                    "quiet": true
+                }
+            }
+        },
+        "build-storybook": {
+            "executor": "@nrwl/storybook:build",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "uiFramework": "@storybook/angular",
+                "outputPath": "dist-docs",
+                "deleteOutputPath": false,
+                "config": {
+                    "configFolder": "apps/dotcms-ui/.storybook"
+                },
+                "projectBuildConfig": "dotcms-ui"
+            },
+            "configurations": {
+                "ci": {
+                    "quiet": true
+                }
+            }
+        }
+    },
+    "tags": []
+}

@@ -1,0 +1,56 @@
+@use "variables" as *;
+
+:host {
+    background: $gray-bg;
+    box-shadow: $md-shadow-4;
+    display: flex;
+    height: 100%;
+    min-width: 75.25rem;
+    padding: $spacing-4;
+}
+
+.dot-apps-configuration__body {
+    align-content: flex-start;
+    flex-wrap: wrap;
+    padding: $spacing-3;
+}
+
+.dot-apps-configuration__action_header {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+
+    input {
+        width: 31.5rem;
+    }
+
+    button {
+        &:first-child {
+            margin-right: $spacing-1;
+        }
+    }
+}
+
+.dot-apps-configuration__add-configurations {
+    margin-top: 10rem;
+    text-align: center;
+    width: 100%;
+}
+
+.dot-apps-configuration__add-configurations-title {
+    font-size: $font-size-xx-large;
+    font-weight: bold;
+}
+
+.dot-apps-configuration__add-configurations-description {
+    font-size: $font-size-large;
+    margin-bottom: $spacing-9;
+    margin-top: $spacing-4;
+}
+
+.dot-apps-configuration__container {
+    background-color: $white;
+    box-shadow: $md-shadow-4;
+    overflow-y: auto;
+    width: 100%;
+}

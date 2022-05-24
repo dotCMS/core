@@ -1,0 +1,112 @@
+{
+    "projectType": "application",
+    "root": "apps/dotcdn",
+    "sourceRoot": "apps/dotcdn/src",
+    "prefix": "dotcms",
+    "targets": {
+        "build": {
+            "executor": "@angular-devkit/build-angular:browser",
+            "options": {
+                "outputPath": "dist/apps/dotcdn",
+                "index": "apps/dotcdn/src/index.html",
+                "main": "apps/dotcdn/src/main.ts",
+                "polyfills": "apps/dotcdn/src/polyfills.ts",
+                "tsConfig": "apps/dotcdn/tsconfig.app.json",
+                "assets": ["apps/dotcdn/src/favicon.ico", "apps/dotcdn/src/assets"],
+                "styles": [
+                    "libs/dot-primeng-theme-styles/src/scss/styles.scss",
+                    "node_modules/primeicons/primeicons.css",
+                    "node_modules/primeflex/primeflex.css",
+                    "node_modules/primeng/resources/primeng.min.css",
+                    "apps/dotcdn/src/styles.scss"
+                ],
+                "stylePreprocessorOptions": {
+                    "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
+                },
+                "scripts": ["node_modules/chart.js/dist/Chart.js"],
+                "vendorChunk": true,
+                "extractLicenses": false,
+                "buildOptimizer": false,
+                "sourceMap": true,
+                "optimization": false,
+                "namedChunks": true
+            },
+            "configurations": {
+                "production": {
+                    "fileReplacements": [
+                        {
+                            "replace": "apps/dotcdn/src/environments/environment.ts",
+                            "with": "apps/dotcdn/src/environments/environment.prod.ts"
+                        }
+                    ],
+                    "optimization": true,
+                    "outputHashing": "all",
+                    "sourceMap": false,
+                    "namedChunks": false,
+                    "extractLicenses": true,
+                    "vendorChunk": false,
+                    "buildOptimizer": true,
+                    "budgets": [
+                        {
+                            "type": "initial",
+                            "maximumWarning": "2mb",
+                            "maximumError": "5mb"
+                        },
+                        {
+                            "type": "anyComponentStyle",
+                            "maximumWarning": "6kb",
+                            "maximumError": "10kb"
+                        }
+                    ]
+                }
+            },
+            "defaultConfiguration": ""
+        },
+        "serve": {
+            "executor": "@angular-devkit/build-angular:dev-server",
+            "options": {
+                "browserTarget": "dotcdn:build",
+                "proxyConfig": "apps/dotcms-ui/proxy.conf.json"
+            },
+            "configurations": {
+                "production": {
+                    "browserTarget": "dotcdn:build:production"
+                }
+            }
+        },
+        "extract-i18n": {
+            "executor": "@angular-devkit/build-angular:extract-i18n",
+            "options": {
+                "browserTarget": "dotcdn:build"
+            }
+        },
+        "lint": {
+            "executor": "@nrwl/linter:eslint",
+            "options": {
+                "lintFilePatterns": ["apps/dotcdn/src/**/*.ts", "apps/dotcdn/src/**/*.html"]
+            },
+            "outputs": ["{options.outputFile}"]
+        },
+        "test": {
+            "executor": "@nrwl/jest:jest",
+            "outputs": ["coverage/apps/dotcdn"],
+            "options": {
+                "jestConfig": "apps/dotcdn/jest.config.js",
+                "passWithNoTests": true,
+                "styles": [
+                    "libs/dot-primeng-theme-styles/src/scss/styles.scss",
+                    "node_modules/primeicons/primeicons.css",
+                    "node_modules/primeflex/primeflex.css",
+                    "node_modules/primeng/resources/primeng.min.css",
+                    "apps/dotcdn/src/styles.scss"
+                ],
+                "assets": ["apps/dotcdn/src/favicon.ico", "apps/dotcdn/src/assets"],
+                "stylePreprocessorOptions": {
+                    "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
+                },
+                "scripts": ["node_modules/chart.js/dist/Chart.js"]
+            }
+        }
+    },
+    "tags": []
+}
