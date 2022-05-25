@@ -51,7 +51,7 @@ public class Task220330ChangeVanityURLSiteFieldType implements StartupTask {
    final String GET_FIELD_CONTENTLET = "SELECT structure_inode,field_contentlet FROM field "
             + "WHERE velocity_var_name ='site' AND field_contentlet <> 'system_field' AND structure_inode in (SELECT inode FROM structure WHERE structuretype = 7)";
 
-   final String UPDATE_HOST_INODE = "UPDATE identifier SET host_inode = ? WHERE id = ?";
+   final String UPDATE_HOST_INODE = "UPDATE identifier SET host_inode = '%s' WHERE id = '%s'";
 
     @Override
     public boolean forceRun() {
@@ -66,7 +66,7 @@ public class Task220330ChangeVanityURLSiteFieldType implements StartupTask {
             if (UtilMethods.isSet(contentlets)) {
                 updateHost(contentlets);
             }
-            
+
             updateFieldType();
 
             CacheLocator.getContentTypeCache2().clearCache();
@@ -130,11 +130,10 @@ public class Task220330ChangeVanityURLSiteFieldType implements StartupTask {
     private void updateHost(final List<ContentletHost> contentlets) throws DotDataException {
         final DotConnect dotConnect = new DotConnect();
 
-        final List<Params> batchParams = contentlets.stream()
-                .map(contentletHost -> new Params(contentletHost.hostInode, contentletHost.contentletIdentifier))
-                .collect(Collectors.toList());
-
-        dotConnect.executeBatch(UPDATE_HOST_INODE, batchParams);
+        for (ContentletHost contentlet : contentlets) {
+            dotConnect.setSQL(String.format(UPDATE_HOST_INODE, contentlet.hostInode, contentlet.contentletIdentifier));
+            dotConnect.loadResult();
+        }
     }
 
     private List<Map<String, Object>> getFromQuery(final  String contentletQuery)
