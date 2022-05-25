@@ -100,7 +100,7 @@ jobs:
           ## Build dotcms-webcomponents because dotcms-ui doesn't have the lib as a direct dep
           ## so Nx can't be identified and build it.
         run: |
-          cd 
+          cd ui
           npm run nx build dotcms-webcomponents && npm run nx build dotcms-ui -- --prod
       - name: Running tests
         id: test_run
