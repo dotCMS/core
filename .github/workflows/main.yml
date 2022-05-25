@@ -43,7 +43,7 @@ jobs:
         with:
           path: |
             ./ui/node_modules
-          key: ${{ runner.os }}-modules-${{ hashFiles('./core-web/**/package-lock.json') }}
+          key: ${{ runner.os }}-modules-${{ hashFiles('./ui/**/package-lock.json') }}
       - name: Configuring Node.js
         uses: actions/setup-node@v2-beta
         with:
@@ -85,27 +85,27 @@ jobs:
       - uses: actions/cache@v2
         with:
           path: |
-            ./core-web/node_modules
-          key: ${{ runner.os }}-modules-${{ hashFiles('./core-web/**/package-lock.json') }}
+            ./ui/node_modules
+          key: ${{ runner.os }}-modules-${{ hashFiles('./ui/**/package-lock.json') }}
       - name: Configuring Node.js
         uses: actions/setup-node@v2-beta
         with:
           node-version: "16.13.2"
       - name: Installing dependencies
         run: |
-          cd core-web
+          cd ui
           npm install
       - name:
           Building for production
           ## Build dotcms-webcomponents because dotcms-ui doesn't have the lib as a direct dep
           ## so Nx can't be identified and build it.
         run: |
-          cd core-web
+          cd 
           npm run nx build dotcms-webcomponents && npm run nx build dotcms-ui -- --prod
       - name: Running tests
         id: test_run
         run: |
-          cd core-web
+          cd ui
           if ! (npm run nx test --target=dotcms-ui --prod) then
             echo "::set-output name=status::failure";
             echo "::set-output name=color::#ff2400";
