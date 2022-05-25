@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "b8bd7bc5-f633-4ec7-8712-0976e902fe98",
+		"_postman_id": "fe163e1a-f16c-4c84-bd75-8b8f0e06ecb5",
 		"name": "PortletResource",
 		"description": "Contains test for portlet resources",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -509,6 +509,56 @@
 			"response": []
 		},
 		{
+			"name": "getPortlet Expect 404",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/portlet/nonExisingPortlet",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"portlet",
+						"nonExisingPortlet"
+					]
+				},
+				"description": "Retrieves portlet's details given its id"
+			},
+			"response": []
+		},
+		{
 			"name": "getLayouts",
 			"event": [
 				{
@@ -602,7 +652,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"portletId\": \"myCustom\",\n    \"portletName\": \"myCustom\",\n    \"baseTypes\": \"CONTENT\",\n    \"dataViewMode\": \"card\"\n}",
+					"raw": "",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -622,6 +672,130 @@
 						"c_myCustom",
 						"_addtolayout",
 						"{{firstReturnedLayout}}"
+					]
+				},
+				"description": "This test creates a custom content portlet for CONTENT base type"
+			},
+			"response": []
+		},
+		{
+			"name": "addCustomContentPortletToLayout Invalid Custom  Expect 404",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 404\", function () {",
+							"    pm.response.to.have.status(404);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"portletId\": \"myCustom\",\n    \"portletName\": \"myCustom\",\n    \"baseTypes\": \"CONTENT\",\n    \"dataViewMode\": \"card\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/portlet/custom/nonValidId/_addtolayout/{{firstReturnedLayout}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"portlet",
+						"custom",
+						"nonValidId",
+						"_addtolayout",
+						"{{firstReturnedLayout}}"
+					]
+				},
+				"description": "This test creates a custom content portlet for CONTENT base type"
+			},
+			"response": []
+		},
+		{
+			"name": "addCustomContentPortletToLayout Invalid Layout  Expect 404",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 404\", function () {",
+							"    pm.response.to.have.status(404);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"portletId\": \"myCustom\",\n    \"portletName\": \"myCustom\",\n    \"baseTypes\": \"CONTENT\",\n    \"dataViewMode\": \"card\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/portlet/custom/c_myCustom/_addtolayout/nonValidLayout",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"portlet",
+						"custom",
+						"c_myCustom",
+						"_addtolayout",
+						"nonValidLayout"
 					]
 				},
 				"description": "This test creates a custom content portlet for CONTENT base type"
