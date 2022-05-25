@@ -1,0 +1,64 @@
+@use "variables" as *;
+
+dot-material-icon-picker {
+    border: solid 1px $gray-light;
+    border-radius: $border-radius;
+    transition: border-color $basic-speed ease-in;
+
+    &.is-open {
+        box-shadow: inset 0 0 0 1px $brand-primary;
+        border-color: $brand-primary;
+    }
+
+    &:hover {
+        border-color: $brand-primary;
+    }
+
+    &::ng-deep {
+        .dot-material-icon__input, .dot-material-icon__button, .dot-material-icon__preview {
+            border: 0;
+            background: none;
+        }
+
+        .dot-material-icon__input {
+            padding: $spacing-2;
+
+            &:focus {
+                outline: none;
+            }
+        }
+
+        .dot-material-icon__preview {
+            font-size: $font-size-x-large;
+            margin-left: $spacing-2;
+        }
+
+        .dot-material-icon__button mwc-icon {
+            font-size: 2rem; // we don't have 2rem var this is for this icon only
+        }
+
+        .dot-material-icon__list {
+            border: 0;
+            box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2), 0 8px 10px 1px rgba(0, 0, 0, 0.14),
+        0 3px 14px 2px rgba(0, 0, 0, 0.12);
+            color: $black;
+
+            li:hover {
+                background: rgba($brand-secondary_rgb, 0.12);
+                color: $black;
+            }
+
+            label {
+                align-items: center;
+                cursor: pointer;
+                display: flex;
+                padding: $spacing-2;
+            }
+
+            mwc-icon {
+                font-size: $font-size-large;
+            }
+        }
+    }
+}
+
