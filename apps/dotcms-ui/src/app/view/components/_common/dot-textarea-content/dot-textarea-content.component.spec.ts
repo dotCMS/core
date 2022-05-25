@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { By } from '@angular/platform-browser';
 import { Component, DebugElement, forwardRef, Input } from '@angular/core';
 import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
@@ -9,7 +8,7 @@ import { DotTextareaContentComponent } from './dot-textarea-content.component';
 import { FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { InputTextareaModule } from 'primeng/inputtextarea';
-import { EditorComponent } from 'ngx-monaco-editor';
+import { MonacoEditorComponent } from '@materia-ui/ngx-monaco-editor';
 
 function cleanOptionText(option) {
     return option.replace(/\r?\n|\r/g, '');
@@ -197,14 +196,16 @@ describe('DotTextareaContentComponent', () => {
             component.show = ['code'];
             fixture.detectChanges();
 
-            const editor: EditorComponent = de.query(By.css('ngx-monaco-editor')).componentInstance;
+            const editor: MonacoEditorComponent = de.query(
+                By.css('ngx-monaco-editor')
+            ).componentInstance;
             expect(editor.options).toEqual({
                 theme: 'vs-light',
                 minimap: Object({ enabled: false }),
                 cursorBlinking: 'solid',
                 overviewRulerBorder: false,
                 mouseWheelZoom: false,
-                LineNumbersType: 'on',
+                lineNumbers: 'on',
                 selectionHighlight: false,
                 roundedSelection: false,
                 selectOnLineNumbers: false,
@@ -218,14 +219,16 @@ describe('DotTextareaContentComponent', () => {
             component.language = 'javascript';
             fixture.detectChanges();
 
-            const editor: EditorComponent = de.query(By.css('ngx-monaco-editor')).componentInstance;
+            const editor: MonacoEditorComponent = de.query(
+                By.css('ngx-monaco-editor')
+            ).componentInstance;
             expect(editor.options).toEqual({
                 theme: 'vs-light',
                 minimap: Object({ enabled: false }),
                 cursorBlinking: 'solid',
                 overviewRulerBorder: false,
                 mouseWheelZoom: false,
-                LineNumbersType: 'on',
+                lineNumbers: 'on',
                 selectionHighlight: false,
                 roundedSelection: false,
                 selectOnLineNumbers: false,

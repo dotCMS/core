@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { DotTextareaContentComponent } from './dot-textarea-content.component';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { FormsModule } from '@angular/forms';
-import { MonacoEditorModule } from 'ngx-monaco-editor';
+import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
 @NgModule({
     imports: [CommonModule, SelectButtonModule, FormsModule, MonacoEditorModule],

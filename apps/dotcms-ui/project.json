@@ -19,8 +19,8 @@
                     "apps/dotcms-ui/src/assets",
                     {
                         "glob": "**/*",
-                        "input": "./node_modules/ngx-monaco-editor/assets/monaco",
-                        "output": "./assets/monaco/"
+                        "input": "node_modules/monaco-editor",
+                        "output": "assets/monaco-editor/"
                     },
                     {
                         "glob": "index.jsp",
@@ -39,7 +39,7 @@
                     "node_modules/primeflex/primeflex.css",
                     "node_modules/primeng/resources/primeng.min.css"
                 ],
-                "scripts": ["node_modules/marked/lib/marked.js"],
+                "scripts": [],
                 "stylePreprocessorOptions": {
                     "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
                 },

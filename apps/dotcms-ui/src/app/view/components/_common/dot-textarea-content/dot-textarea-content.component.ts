@@ -70,7 +70,7 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
         cursorBlinking: 'solid',
         overviewRulerBorder: false,
         mouseWheelZoom: false,
-        LineNumbersType: 'on',
+        linenumbers: 'on',
         selectionHighlight: false,
         roundedSelection: false,
         selectOnLineNumbers: false,

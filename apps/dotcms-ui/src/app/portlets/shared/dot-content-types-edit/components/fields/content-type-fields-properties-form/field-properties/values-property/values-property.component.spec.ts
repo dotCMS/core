@@ -9,7 +9,7 @@ import { DotTextareaContentModule } from '@components/_common/dot-textarea-conte
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { MonacoEditorModule } from 'ngx-monaco-editor';
+import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
 @Component({
     selector: 'dot-field-validation-message',
@@ -37,7 +37,7 @@ describe('ValuesPropertyComponent', () => {
                     DotFieldHelperModule,
                     ReactiveFormsModule,
                     DotPipesModule,
-                    MonacoEditorModule.forRoot()
+                    MonacoEditorModule
                 ],
                 providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
             }).compileComponents();

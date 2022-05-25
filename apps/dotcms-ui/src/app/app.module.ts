@@ -17,7 +17,7 @@ import { SharedModule } from './shared/shared.module';
 
 import { DotDirectivesModule } from './shared/dot-directives.module';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { MonacoEditorModule } from 'ngx-monaco-editor';
+import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 import { MarkdownModule } from 'ngx-markdown';
 
 // `AppModule` is the main entry point into Angular2's bootstraping process
@@ -37,7 +37,7 @@ import { MarkdownModule } from 'ngx-markdown';
         DotDirectivesModule,
         DotPipesModule,
         SharedModule.forRoot(),
-        MonacoEditorModule.forRoot(),
+        MonacoEditorModule,
         MarkdownModule.forRoot()
     ],
     providers: [ENV_PROVIDERS],
