@@ -10,7 +10,7 @@ const run = () => {
   builder
     .build(buildEnv)
     .then(returnCode => {
-      if (returnCode != 0) {
+      if (returnCode !== 0) {
         core.setFailed(`Process executed returned code ${returnCode}`)
         return
       }

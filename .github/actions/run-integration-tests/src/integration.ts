@@ -24,13 +24,28 @@ const resolveCiIndex = (): number => {
   return -1
 }
 
-interface Command {
+export interface Command {
   cmd: string
   args: string[]
   workingDir?: string
   outputDir?: string
   reportDir?: string
   ciIndex?: number
+  env?: {[key: string]: string}
+}
+
+interface DatabaseEnvs {
+  postgres: {[key: string]: string}
+  mssql: {[key: string]: string}
+}
+
+const DEPS_ENV: DatabaseEnvs = {
+  postgres: {
+    POSTGRES_USER: 'postgres',
+    POSTGRES_PASSWORD: 'postgres',
+    POSTGRES_DB: 'dotcms'
+  },
+  mssql: {}
 }
 
 export interface Commands {
@@ -59,14 +74,16 @@ export const COMMANDS: Commands = {
 
 const START_DEPENDENCIES_CMD: Command = {
   cmd: 'docker-compose',
-  args: ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, 'up', '-d'],
-  workingDir: `${projectRoot}/cicd/docker`
+  args: ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, 'up', '--abort-on-container-exit'],
+  workingDir: `${projectRoot}/cicd/docker`,
+  env: DEPS_ENV[dbType as keyof DatabaseEnvs]
 }
 
 const STOP_DEPENDENCIES_CMD: Command = {
   cmd: 'docker-compose',
   args: ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, 'down'],
-  workingDir: `${projectRoot}/cicd/docker`
+  workingDir: `${projectRoot}/cicd/docker`,
+  env: DEPS_ENV[dbType as keyof DatabaseEnvs]
 }
 
 /**
@@ -84,16 +101,9 @@ export const runTests = async (cmd: Command): Promise<number> => {
     =======================================
     Starting integration tests dependencies
     =======================================`)
-  core.info(`Executing command: ${START_DEPENDENCIES_CMD.cmd} ${START_DEPENDENCIES_CMD.args.join(' ')}`)
-  await exec.exec(START_DEPENDENCIES_CMD.cmd, START_DEPENDENCIES_CMD.args, {cwd: START_DEPENDENCIES_CMD.workingDir})
+  execCmd(START_DEPENDENCIES_CMD)
 
-  // Wait until DB is ready
-  const wait = 30
-  core.info(`
-    Waiting ${wait} seconds for dependencies: ES and ${dbType}`)
-  await delay(wait)
-  core.info(`
-    Waiting on dependencies (ES and ${dbType}) loading has ended`)
+  await waitFor(30, `ES and ${dbType}`)
 
   // Executes ITs
   resolveParams(cmd)
@@ -101,18 +111,28 @@ export const runTests = async (cmd: Command): Promise<number> => {
     ===========================================
     Running integration tests against ${dbType}
     ===========================================`)
-  core.info(`Executing command: ${cmd.cmd} ${cmd.args.join(' ')}`)
-  const itCode = await exec.exec(cmd.cmd, cmd.args, {cwd: cmd.workingDir})
+  let itCode
+  try {
+    itCode = await execCmd(cmd)
+    core.info(`
+      ===========================================
+      Integration tests have finished to run
+      ===========================================`)
+    stopDeps()
+    return itCode
+  } catch (err) {
+    stopDeps()
+    throw err
+  }
+}
 
-  // Starting dependencies
+const stopDeps = async () => {
+  // Stopping dependencies
   core.info(`
     =======================================
     Stopping integration tests dependencies
     =======================================`)
-  core.info(`Executing command: ${STOP_DEPENDENCIES_CMD.cmd} ${STOP_DEPENDENCIES_CMD.args.join(' ')}`)
-  await exec.exec(STOP_DEPENDENCIES_CMD.cmd, STOP_DEPENDENCIES_CMD.args, {cwd: STOP_DEPENDENCIES_CMD.workingDir})
-
-  return itCode
+  await execCmd(STOP_DEPENDENCIES_CMD)
 }
 
 /**
@@ -148,34 +168,49 @@ const appendToWorkspace = (folder: string): string => path.join(workspaceRoot, f
 const resolveParams = (cmd: Command) => {
   const tests = core.getInput('tests')?.trim()
   if (!tests) {
-    core.info('No specific integration tests found')
+    addFallbackTest(cmd.args)
     return
   }
 
-  core.info(`Found tests to run: "${tests}"`)
+  core.info(`Commit message found: "${tests}"`)
+  const resolved: string[] = []
 
-  tests.split('\n').forEach(l => {
+  for (const l of tests.split('\n')) {
     const line = l.trim()
     if (!line.toLowerCase().startsWith(runtTestsPrefix)) {
-      return
+      continue
     }
 
     const testLine = line.slice(runtTestsPrefix.length).trim()
     if (buildEnv === 'gradle') {
-      testLine.split(',').forEach(test => {
-        cmd.args.push('--tests')
-        cmd.args.push(test.trim())
-      })
+      for (const test of testLine.split(',')) {
+        resolved.push('--tests')
+        resolved.push(test.trim())
+      }
     } else if (buildEnv === 'maven') {
       const normalized = testLine
         .split(',')
         .map(t => t.trim())
         .join(',')
-      cmd.args.push(`-Dit.test=${normalized}`)
+      resolved.push(`-Dit.test=${normalized}`)
     }
-  })
+  }
 
+  if (resolved.length === 0) {
+    addFallbackTest(resolved)
+  }
+
+  cmd.args.push(...resolved)
   core.info(`Resolved params ${cmd.args.join(' ')}`)
+}
+
+const addFallbackTest = (tests: string[]) => {
+  core.info('No specific integration tests found using MainSuite')
+  if (buildEnv === 'gradle') {
+    tests.push('-Dtest.single=com.dotcms.MainSuite')
+  } else if (buildEnv === 'maven') {
+    tests.push('-Dit.test=com.dotcms.MainSuite')
+  }
 }
 
 /**
@@ -185,3 +220,30 @@ const resolveParams = (cmd: Command) => {
  * @returns void promise
  */
 const delay = (seconds: number) => new Promise(resolve => setTimeout(resolve, seconds * 1000))
+
+/**
+ * Waits for specific time with corresponding messages.
+ *
+ * @param wait time to wait
+ * @param startLabel start label
+ * @param endLabel endlabel
+ */
+const waitFor = async (wait: number, startLabel: string, endLabel?: string) => {
+  core.info(`Waiting ${wait} seconds for ${startLabel}`)
+  await delay(wait)
+  const finalLabel = endLabel || startLabel
+  core.info(`Waiting on ${finalLabel} loading has ended`)
+}
+
+const execCmd = async (cmd: Command): Promise<number> => {
+  let message = `Executing cmd: ${cmd.cmd} ${cmd.args.join(' ')}`
+  if (cmd.workingDir) {
+    message += `\ncwd: ${cmd.workingDir}`
+  }
+  if (cmd.env) {
+    message += `env: ${JSON.stringify(cmd.env, null, 2)}`
+  }
+
+  core.info(message)
+  return exec.exec(cmd.cmd, cmd.args, {cwd: cmd.workingDir, env: cmd.env})
+}

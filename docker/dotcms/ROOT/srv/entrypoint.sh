@@ -14,4 +14,6 @@ echo "Starting dotCMS ..."
 echo "-------------------"
 echo ""
 
+[[ -n "${WAIT_FOR_DEPS}" ]] && sleep ${WAIT_FOR_DEPS}
+
 exec -- ${TOMCAT_HOME}/bin/catalina.sh run
