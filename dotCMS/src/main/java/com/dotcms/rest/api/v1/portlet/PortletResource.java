@@ -22,6 +22,7 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
@@ -72,6 +73,12 @@ public class PortletResource implements Serializable {
     this.portletApi = portletApi;
   }
 
+    /**
+     * Creates a Portlet for a given name content-types and Display view
+     * @param request
+     * @param formData
+     * @return
+     */
   @POST
   @Path("/custom")
   @JSONP
@@ -115,6 +122,11 @@ public class PortletResource implements Serializable {
     /**
      * This endpoint links a layout with a portlet Security is considered so the user must have
      * roles on the layout otherwise an unauthorized code is returned.
+     * @param request
+     * @param portletId
+     * @param layoutId
+     * @return
+     * @throws DotDataException
      */
     @PUT
     @Path("/custom/{portletId}/_addtolayout/{layoutId}")
@@ -147,7 +159,7 @@ public class PortletResource implements Serializable {
         }
 
         final Portlet portlet = portletAPI.findPortlet(portletId);
-        if (null == portlet) {
+        if (null == portlet || !UtilMethods.isNotSet(portlet.getPortletId())) {
             return ResponseUtil.INSTANCE
                     .getErrorResponse(request, Status.NOT_FOUND, user.getLocale(),
                             user.getUserId(),
@@ -155,7 +167,7 @@ public class PortletResource implements Serializable {
         }
 
         final Layout layout = layoutAPI.loadLayout(layoutId);
-        if (null == layout) {
+        if (null == layout || UtilMethods.isNotSet(layout.getId())) {
             return ResponseUtil.INSTANCE
                     .getErrorResponse(request, Status.NOT_FOUND, user.getLocale(),
                             user.getUserId(),
@@ -189,7 +201,12 @@ public class PortletResource implements Serializable {
 
     }
 
-
+    /**
+     *  Custom Portlet delete endpoint
+     * @param request
+     * @param portletId
+     * @return
+     */
   @DELETE
   @Path("/custom/{portletId}")
   @JSONP
@@ -219,7 +236,12 @@ public class PortletResource implements Serializable {
 
   }
 
-  
+    /**
+     * Portlet delete
+     * @param request
+     * @param portletId
+     * @return
+     */
     @DELETE
     @Path("/portletId/{portletId}")
     @JSONP
@@ -236,6 +258,13 @@ public class PortletResource implements Serializable {
     }
 
 
+    /**
+     * Delete Portlet For Role
+     * @param request
+     * @param portletId
+     * @param roleId
+     * @return
+     */
     @DELETE
     @Path("/portletId/{portletId}/roleId/{roleId}")
     @JSONP
@@ -327,6 +356,12 @@ public class PortletResource implements Serializable {
 
     }
 
+    /**
+     * portlet access permis2sion check
+     * @param request
+     * @param portletId
+     * @return
+     */
     @GET
     @JSONP
     @Path("/{portletId}/_doesuserhaveaccess")
