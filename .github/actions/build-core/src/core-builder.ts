@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
+import * as path from 'path'
 
 interface Command {
   cmd: string
@@ -7,21 +8,40 @@ interface Command {
   workingDir?: string
 }
 interface Commands {
-  gradle: Command
-  maven: Command
+  gradle: Command[]
+  maven: Command[]
 }
 
+const gradleCmd = './gradlew'
+const mavenCmd = './mvnw'
+const projectRoot = core.getInput('project_root')
+const dotCmsRoot = path.join(projectRoot, 'dotCMS')
+
 const COMMANDS: Commands = {
-  gradle: {
-    cmd: './gradlew',
-    args: ['createDistPrep', 'prepareIntegrationTests'],
-    workingDir: 'dotCMS'
-  },
-  maven: {
-    cmd: './mvnw',
-    args: ['package', '-DskipTests'],
-    workingDir: 'dotCMS'
-  }
+  gradle: [
+    {
+      cmd: gradleCmd,
+      args: ['createDistPrep'],
+      workingDir: dotCmsRoot
+    },
+    {
+      cmd: gradleCmd,
+      args: ['compileIntegrationTestJava'],
+      workingDir: dotCmsRoot
+    },
+    {
+      cmd: gradleCmd,
+      args: ['prepareIntegrationTests'],
+      workingDir: dotCmsRoot
+    }
+  ],
+  maven: [
+    {
+      cmd: mavenCmd,
+      args: ['package', '-DskipTests'],
+      workingDir: dotCmsRoot
+    }
+  ]
 }
 
 /**
@@ -31,12 +51,20 @@ const COMMANDS: Commands = {
  * @returns a number representing the command exit code
  */
 export const build = async (buildEnv: string): Promise<number> => {
-  const cmd = COMMANDS[buildEnv as keyof Commands]
-  if (!cmd) {
+  const cmds = COMMANDS[buildEnv as keyof Commands]
+  if (!cmds || cmds.length === 0) {
     core.error('Cannot resolve build tool, aborting')
     return Promise.resolve(127)
   }
 
-  core.info(`Executing command: ${cmd.cmd} ${cmd.args.join(' ')}`)
-  return await exec.exec(cmd.cmd, cmd.args, {cwd: cmd.workingDir})
+  let rc = 0
+  for (const cmd of cmds) {
+    core.info(`Executing command: ${cmd.cmd} ${cmd.args.join(' ')}`)
+    rc = await exec.exec(cmd.cmd, cmd.args, {cwd: cmd.workingDir})
+    if (rc !== 0) {
+      break
+    }
+  }
+
+  return rc
 }

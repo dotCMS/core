@@ -36,3 +36,5 @@ case "${INPUT_OPERATION}" in
     ;;
 esac
 
+echo "Testmo wrapper ran smoothly, returning 0 as exit code"
+exit 0

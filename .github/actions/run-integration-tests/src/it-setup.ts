@@ -40,7 +40,6 @@ const IT_FOLDERS = [
 ]
 
 const projectRoot = core.getInput('project_root')
-const debug = core.getBooleanInput('debug')
 const worskpaceFolder = path.dirname(projectRoot)
 
 /**
@@ -74,7 +73,7 @@ const getValue = (propertyMap: Map<string, string>, key: string): string => prop
 /**
  * Prepares by creating necessary folders and copying files.
  */
-const prepareTests = () => {
+const prepareTests = async () => {
   core.info('Preparing integration tests')
   IT_FOLDERS.forEach(folder => {
     const itFolder = path.join(worskpaceFolder, folder)
@@ -106,10 +105,11 @@ const overrideProperties = async (propertyMap: Map<string, string>) => {
       await exec.exec('sed', ['-i', `s,${prop.original},${prop.replacement},g`, file.file])
     }
 
-    if (debug) {
-      core.info(`Reviewing changes for ${file.file}`)
-      await exec.exec('cat', [file.file])
-    }
+    core.info(`
+    ##################################
+    Reviewing changes for ${file.file}
+    ##################################`)
+    await exec.exec('cat', [file.file])
   }
 }
 
@@ -184,7 +184,7 @@ const getOverrides = (propertyMap: Map<string, string>): OverrideProperties => {
           },
           {
             original: '^ES_HOSTNAME=.*$',
-            replacement: 'ES_HOSTNAME=127.0.0.1'
+            replacement: 'ES_HOSTNAME=localhost'
           }
         ]
       },
@@ -277,6 +277,5 @@ const prepareLicense = async () => {
   const licenseFile = path.join(licensePath, 'license.dat')
   core.info(`Adding license to ${licenseFile}`)
   fs.writeFileSync(licenseFile, licenseKey, {encoding: 'utf8', flag: 'a+', mode: 0o777})
-  await exec.exec('cat', [licenseFile])
   await exec.exec('ls', ['-las', licenseFile])
 }

@@ -24,13 +24,28 @@ const resolveCiIndex = (): number => {
   return -1
 }
 
-interface Command {
+export interface Command {
   cmd: string
   args: string[]
   workingDir?: string
   outputDir?: string
   reportDir?: string
   ciIndex?: number
+  env?: {[key: string]: string}
+}
+
+interface DatabaseEnvs {
+  postgres: {[key: string]: string}
+  mssql: {[key: string]: string}
+}
+
+const DATABASE_ENVS: DatabaseEnvs = {
+  postgres: {
+    POSTGRES_USER: 'postgres',
+    POSTGRES_PASSWORD: 'postgres',
+    POSTGRES_DB: 'dotcms'
+  },
+  mssql: {}
 }
 
 export interface Commands {
@@ -59,14 +74,16 @@ export const COMMANDS: Commands = {
 
 const START_DEPENDENCIES_CMD: Command = {
   cmd: 'docker-compose',
-  args: ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, 'up', '-d'],
-  workingDir: `${projectRoot}/cicd/docker`
+  args: ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, 'up'],
+  workingDir: `${projectRoot}/cicd/docker`,
+  env: DATABASE_ENVS[dbType as keyof DatabaseEnvs]
 }
 
 const STOP_DEPENDENCIES_CMD: Command = {
   cmd: 'docker-compose',
   args: ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, 'down'],
-  workingDir: `${projectRoot}/cicd/docker`
+  workingDir: `${projectRoot}/cicd/docker`,
+  env: DATABASE_ENVS[dbType as keyof DatabaseEnvs]
 }
 
 /**
@@ -85,15 +102,9 @@ export const runTests = async (cmd: Command): Promise<number> => {
     Starting integration tests dependencies
     =======================================`)
   core.info(`Executing command: ${START_DEPENDENCIES_CMD.cmd} ${START_DEPENDENCIES_CMD.args.join(' ')}`)
-  await exec.exec(START_DEPENDENCIES_CMD.cmd, START_DEPENDENCIES_CMD.args, {cwd: START_DEPENDENCIES_CMD.workingDir})
+  exec.exec(START_DEPENDENCIES_CMD.cmd, START_DEPENDENCIES_CMD.args, {cwd: START_DEPENDENCIES_CMD.workingDir})
 
-  // Wait until DB is ready
-  const wait = 30
-  core.info(`
-    Waiting ${wait} seconds for dependencies: ES and ${dbType}`)
-  await delay(wait)
-  core.info(`
-    Waiting on dependencies (ES and ${dbType}) loading has ended`)
+  await waitFor(30, `ES and ${dbType}`)
 
   // Executes ITs
   resolveParams(cmd)
@@ -185,3 +196,17 @@ const resolveParams = (cmd: Command) => {
  * @returns void promise
  */
 const delay = (seconds: number) => new Promise(resolve => setTimeout(resolve, seconds * 1000))
+
+/**
+ * Waits for specific time with corresponding messages.
+ *
+ * @param wait time to wait
+ * @param startLabel start label
+ * @param endLabel endlabel
+ */
+const waitFor = async (wait: number, startLabel: string, endLabel?: string) => {
+  core.info(`Waiting ${wait} seconds for ${startLabel}`)
+  await delay(wait)
+  const finalLabel = endLabel || startLabel
+  core.info(`Waiting on ${finalLabel} loading has ended`)
+}

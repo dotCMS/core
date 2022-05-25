@@ -131,7 +131,6 @@ const getPullRequest = async (pullRequestUrl: string, creds: string): Promise<Re
     method: 'GET',
     headers: headers(creds)
   })
-  core.info(`Got response:\n${JSON.stringify(response.body, null, 2)}`)
   return response
 }
 
