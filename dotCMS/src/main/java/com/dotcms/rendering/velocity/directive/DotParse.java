@@ -27,7 +27,6 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import io.vavr.Lazy;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 
@@ -73,7 +72,7 @@ public class DotParse extends DotDirective {
                         : defaultLanguageId;
     }
 
-    
+
     @Override
     String resolveTemplatePath(final Context context, final Writer writer, final RenderParams params, final String[] arguments) {
 
@@ -135,8 +134,9 @@ public class DotParse extends DotDirective {
                 throwNotResourceNotFoundException(params, templatePath);
             }
 
-            final boolean respectFrontEndRolesForVTL = Config.getBooleanProperty("RESPECT_FRONTEND_ROLES_FOR_DOTPARSE", params.mode.respectAnonPerms);
-            
+            final boolean respectFrontEndRolesForVTL =
+                            params.mode.respectAnonPerms ? Config.getBooleanProperty("RESPECT_FRONTEND_ROLES_FOR_DOTPARSE", true)
+                                            : params.mode.respectAnonPerms;
             final Contentlet contentlet = APILocator.getContentletAPI().find(inode, APILocator.getUserAPI().getSystemUser(),
                             respectFrontEndRolesForVTL);
             final File fileToServe = contentlet.getBinary(idAndField._2);
