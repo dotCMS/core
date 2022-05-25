@@ -159,7 +159,7 @@ public class PortletResource implements Serializable {
         }
 
         final Portlet portlet = portletAPI.findPortlet(portletId);
-        if (null == portlet || !UtilMethods.isNotSet(portlet.getPortletId())) {
+        if (null == portlet || UtilMethods.isNotSet(portlet.getPortletId())) {
             return ResponseUtil.INSTANCE
                     .getErrorResponse(request, Status.NOT_FOUND, user.getLocale(),
                             user.getUserId(),
