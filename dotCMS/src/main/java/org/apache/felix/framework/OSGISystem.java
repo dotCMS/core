@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * This OSGI framework only encapsulates the system osgi bundles (not the plugin, for them @see @{@link org.apache.felix.framework.OSGIUtil})
+ * This OSGI framework only encapsulates the system osgi bundles (not the plugins, for them @see @{@link org.apache.felix.framework.OSGIUtil})
  * These bundles are: saml, tika, ...
  * @author jsanca
  */
@@ -50,8 +50,7 @@ public class OSGISystem {
     private static final String FELIX_UNDEPLOYED_DIR = "felix.undeployed.dir";
     private static final String UTF_8 = "utf-8";
     private static final String PROPERTY_OSGI_PACKAGES_EXTRA = "org.osgi.framework.system.packages.extra";
-    public String felixExtraPackagesFile;
-
+    private String felixExtraPackagesFile;
     private Framework felixFramework;
 
     public static OSGISystem getInstance() {
@@ -86,11 +85,11 @@ public class OSGISystem {
         felixProps.put(FELIX_UNDEPLOYED_DIR, felixUndeployDirectory);
 
         felixProps.put("felix.auto.deploy.action", "install,start");
-        felixProps.put("felix.fileinstall.start.level", "4");
-        felixProps.put("felix.fileinstall.log.level", "4");
+        felixProps.put("felix.fileinstall.start.level", "1");
+        felixProps.put("felix.fileinstall.log.level", "3");
         felixProps.put("org.osgi.framework.startlevel.beginning", "2");
         felixProps.put("org.osgi.framework.storage.clean", "onFirstInit");
-        felixProps.put("felix.log.level", "4");
+        felixProps.put("felix.log.level", "3");
         felixProps.put("felix.fileinstall.disableNio2", "true");
         felixProps.put("gosh.args", "--noi");
 
@@ -155,7 +154,6 @@ public class OSGISystem {
 
             // Setting the OSGI extra packages property
             felixProps.setProperty(PROPERTY_OSGI_PACKAGES_EXTRA, extraPackages);
-
 
             // before init we have to check if any new bundle has been upload
             // Create an instance and initialize the framework.
