@@ -23,6 +23,7 @@
 .textarea-content__code-field,
 .textarea-content__plain-field {
     border: 1px solid $input-border-color;
+    display: block;
 }
 
 .textarea-content__plain-field {
