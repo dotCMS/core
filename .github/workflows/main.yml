@@ -42,7 +42,7 @@ jobs:
       - uses: actions/cache@v2
         with:
           path: |
-            ./core-web/node_modules
+            ./ui/node_modules
           key: ${{ runner.os }}-modules-${{ hashFiles('./core-web/**/package-lock.json') }}
       - name: Configuring Node.js
         uses: actions/setup-node@v2-beta
@@ -50,12 +50,12 @@ jobs:
           node-version: "16.13.2"
       - name: Installing dependencies
         run: |
-          cd core-web
+          cd ui
           npm install
       - name: Running Lint in dotcms-ui
         id: lint_step
         run: |
-          cd core-web
+          cd ui
           if ! (npm run nx lint -- dotcms-ui) then
             echo "::set-output name=status::failure";
             echo "::set-output name=color::#ff2400";
