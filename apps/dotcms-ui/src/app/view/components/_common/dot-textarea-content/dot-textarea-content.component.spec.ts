@@ -199,6 +199,7 @@ describe('DotTextareaContentComponent', () => {
             const editor: MonacoEditorComponent = de.query(
                 By.css('ngx-monaco-editor')
             ).componentInstance;
+
             expect(editor.options).toEqual({
                 theme: 'vs-light',
                 minimap: Object({ enabled: false }),
