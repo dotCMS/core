@@ -302,6 +302,18 @@ public abstract class Field implements FieldIf, Serializable {
     return Optional.empty();
   }
 
+  public Optional<String> fieldVariableValue(final String fieldVariableName) {
+    final List<FieldVariable> fieldVariables = this.fieldVariables();
+
+    for (final FieldVariable fieldVariable : fieldVariables) {
+      if (fieldVariable.key().equals(fieldVariableName)) {
+        return Optional.of(fieldVariable.value());
+      }
+    }
+
+    return Optional.empty();
+  }
+
   ;
 
 }
