@@ -42,7 +42,7 @@
         "dep-graph": "nx dep-graph",
         "help": "nx help",
         "pretty-quick": "pretty-quick",
-        "prepare": "is-ci || cd .. && husky install ui/.husky && cd ui"
+        "prepare": "is-ci || pwd && pushd .. && husky install ui/.husky && popd"
     },
     "private": false,
     "dependencies": {
