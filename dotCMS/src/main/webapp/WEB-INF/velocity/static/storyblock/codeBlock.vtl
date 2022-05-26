@@ -1,10 +1,3 @@
-<pre data-language="$!item.content.attrs.language">
-<code>#set($start = 0)
-#set($end = $item.content.length())
-#set($end = $end - 1)
-#set($range = [$start..$end])
-#foreach($i in $range)
-#set($content = $item.content.get($i))
-$!content.text
-#end</code>
-</pre>
+#parse( "static/storyblock/render.vtl" )
+
+<pre data-language="$!item.attrs.language"><code>#renderContentBlock($!item.content)</code></pre>

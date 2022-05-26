@@ -20,6 +20,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.PermissionsUtil;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.PaginationUtil;
@@ -56,29 +57,22 @@ import org.glassfish.jersey.server.JSONP;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.liferay.util.StringPool.COMMA;
+
+/**
+ * This REST Endpoint provides information related to Content Types in the current dotCMS repository.
+ *
+ * @author Will Ezell
+ * @since Sep 11th, 2016
+ */
 @Path("/v1/contenttype")
 public class ContentTypeResource implements Serializable {
 	private final WebResource 		webResource;
@@ -598,6 +592,71 @@ public class ContentTypeResource implements Serializable {
 		return response;
 	}
 
+	/**
+	 * Returns the list of Content Type objects that match the specified filter and the optional pagination criteria.
+	 * <p>Example:</p>
+	 * <pre>
+	 * {@code
+	 *     {{serverURL}}/api/v1/contenttype/_filter
+	 * }
+	 * </pre>
+	 * JSON body:
+	 * <pre>
+	 * {@code
+	 *     {
+	 *         "filter" : {
+	 *             "data" : "calendarEvent,Vanityurl,webPageContent,DotAsset,persona",
+	 *             "query": ""
+	 *         },
+	 *         "page": 0,
+	 *         "perPage": 5
+	 *     }
+	 * }
+	 * </pre>
+	 *
+	 * @param req  The current {@link HttpServletRequest} instance.
+	 * @param res  The current {@link HttpServletResponse} instance.
+	 * @param form The {@link FilteredContentTypesForm} containing the required information and optional pagination
+	 *             parameters.
+	 *
+	 * @return The JSON response with the Content Types matching the specified Velocity Variable Names.
+	 */
+	@POST
+	@Path("/_filter")
+	@JSONP
+	@NoCache
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	public final Response filteredContentTypes(@Context final HttpServletRequest req,
+											   @Context final HttpServletResponse res,
+											   final FilteredContentTypesForm form) {
+		if (null == form) {
+			return ExceptionMapperUtil.createResponse(null, "Requests to '_filter' need a POST JSON body");
+		}
+		final InitDataObject initData = this.webResource.init(null, req, res, true, null);
+		final User user = initData.getUser();
+		Response response;
+		final String types = getFilterValue(form, "types", StringPool.BLANK);
+		final List<String> typeVarNames = UtilMethods.isSet(types) ? Arrays.asList(types.split(COMMA)) : null;
+		final String filter = getFilterValue(form, "query", StringPool.BLANK);
+		final Map<String, Object> extraParams = new HashMap<>();
+		if (UtilMethods.isSet(typeVarNames)) {
+			extraParams.put(ContentTypesPaginator.TYPES_PARAMETER_NAME, typeVarNames);
+		}
+		try {
+			final PaginationUtil paginationUtil =
+					new PaginationUtil(new ContentTypesPaginator(APILocator.getContentTypeAPI(user)));
+			response = paginationUtil.getPage(req, user, filter, form.getPage(), form.getPerPage(), form.getOrderBy(),
+					OrderDirection.valueOf(form.getDirection()), extraParams);
+		} catch (final Exception e) {
+			if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
+				throw new ForbiddenException(e);
+			}
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+			Logger.error(this, e.getMessage(), e);
+		}
+		return response;
+	}
 
 	@GET
 	@Path("/basetypes")
@@ -709,6 +768,23 @@ public class ContentTypeResource implements Serializable {
 		} else {
 			return orderbyParam;
 		}
+	}
+
+	/**
+	 * Utility method used to return a specific parameter from the Content Type Filtering Form. If not present, a
+	 * default value will be returned.
+	 *
+	 * @param form         The {@link FilteredContentTypesForm} in the request.
+	 * @param param        The parameter being requested.
+	 * @param defaultValue The default value in case the parameter is not present or set.
+	 *
+	 * @return The form parameter or the specified default value.
+	 */
+	private <T> T getFilterValue(final FilteredContentTypesForm form, final String param, T defaultValue) {
+		if (null == form || null == form.getFilter() || form.getFilter().isEmpty()) {
+			return defaultValue;
+		}
+		return UtilMethods.isSet(form.getFilter().get(param)) ? (T) form.getFilter().get(param) : defaultValue;
 	}
 
 }

@@ -7,11 +7,13 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS_NOT;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.REGEX;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.STARTS_WITH;
-
-import com.dotcms.util.HttpRequestDataUtil;
+import java.util.Map;
+import java.util.regex.Pattern;
+import javax.servlet.RequestDispatcher;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.filters.CMSUrlUtil;
-import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotPresentException;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
@@ -21,14 +23,6 @@ import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
 import com.dotmarketing.portlets.rules.parameter.comparison.RegexComparison;
 import com.dotmarketing.portlets.rules.parameter.display.TextInput;
 import com.dotmarketing.portlets.rules.parameter.type.TextType;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
-import java.io.UnsupportedEncodingException;
-import java.util.Map;
-import java.util.regex.Pattern;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * This conditionlet will allow CMS users to check the current URL in a request.
@@ -62,9 +56,7 @@ public class VisitorsCurrentUrlConditionlet extends Conditionlet<VisitorsCurrent
 
 	@Override
     public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
-        String requestUri = CMSUrlUtil.getInstance().getURIFromRequest(request);
-
-
+        String[] requestUri = getURIsFromRequest(request);
 
 		String index = CMSFilter.CMS_INDEX_PAGE;
 		String pattern = processUrl(instance.patternUrl,index, instance);
@@ -72,19 +64,44 @@ public class VisitorsCurrentUrlConditionlet extends Conditionlet<VisitorsCurrent
 		return evaluate(request, instance, requestUri, pattern);
 	}
 
-	public boolean evaluate(HttpServletRequest request, Instance instance, String requestUri, String pattern) {
-	    
-	    if( instance.comparison.perform(requestUri, pattern)) {
-	        if(instance.comparison.getId().equals(REGEX.getId())){
-	            Pattern regex= RegexComparison.patternsCache.get(pattern, k-> Pattern.compile(k));
-	            request.setAttribute(CURRENT_URL_CONDITIONLET_MATCHER, regex);
-	        }
-		    
-		    return true;
-		}
-		return false;
-	}
+    public boolean evaluate(HttpServletRequest request, Instance instance, String[] requestUris, String pattern) {
 
+        for (String requestUri : requestUris) {
+            if (instance.comparison.perform(requestUri, pattern)) {
+                if (instance.comparison.getId().equals(REGEX.getId())) {
+                    Pattern regex = RegexComparison.patternsCache.get(pattern, k -> Pattern.compile(k));
+                    request.setAttribute(CURRENT_URL_CONDITIONLET_MATCHER, regex);
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+	
+    /**
+     * Get the requestURI from the urlmap and/or vanity url. If the request has been forwarded, both the
+     * origial URI (urlmap) and the new uri (detail page) will be evaluated.
+     * 
+     * @param request
+     * @return
+     */
+    private String[] getURIsFromRequest(HttpServletRequest request) {
+        final String cmsURI = CMSUrlUtil.getInstance().getURIFromRequest(request);
+        final String forwardedFor = (String) request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI);
+        return (forwardedFor == null)
+            ? new String[] {
+                    cmsURI}
+            : new String[] {
+                    forwardedFor,
+                    cmsURI};
+
+    }
+	
+	
+	
+	
+	
 	/**
 	 * Process the baseUrl to comply with:
 	 * <ul><li>Does not include query params</li>

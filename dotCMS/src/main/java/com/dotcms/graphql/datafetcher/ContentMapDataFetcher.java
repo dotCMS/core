@@ -6,7 +6,7 @@ import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformO
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.graphql.DotGraphQLContext;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
+import com.dotmarketing.util.json.JSONObject;
 import com.dotcms.rest.ContentResource;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
