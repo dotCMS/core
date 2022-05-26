@@ -1,15 +1,20 @@
 import { ValuesPropertyComponent } from './index';
 import { ComponentFixture, waitForAsync, TestBed } from '@angular/core/testing';
-import { DebugElement, Component, Input } from '@angular/core';
+import { DebugElement, Component, Input, forwardRef } from '@angular/core';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { FormGroup, FormControl, NgControl, ReactiveFormsModule } from '@angular/forms';
+import {
+    FormGroup,
+    FormControl,
+    NgControl,
+    ReactiveFormsModule,
+    ControlValueAccessor,
+    NG_VALUE_ACCESSOR
+} from '@angular/forms';
 import { By } from '@angular/platform-browser';
-import { DotTextareaContentModule } from '@components/_common/dot-textarea-content/dot-textarea-content.module';
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
 @Component({
     selector: 'dot-field-validation-message',
@@ -18,6 +23,35 @@ import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 class TestFieldValidationMessageComponent {
     @Input() field: NgControl;
     @Input() message: string;
+}
+
+@Component({
+    selector: 'dot-textarea-content',
+    template: '',
+    providers: [
+        {
+            multi: true,
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotTextareaContentMockComponent)
+        }
+    ]
+})
+export class DotTextareaContentMockComponent implements ControlValueAccessor {
+    @Input() show;
+    @Input() height;
+
+    propagateChange = (_: unknown) => {
+        //
+    };
+    registerOnChange(fn): void {
+        this.propagateChange = fn;
+    }
+    registerOnTouched(): void {
+        //
+    }
+    writeValue(): void {
+        // no-op
+    }
 }
 
 describe('ValuesPropertyComponent', () => {
@@ -31,14 +65,12 @@ describe('ValuesPropertyComponent', () => {
     beforeEach(
         waitForAsync(() => {
             TestBed.configureTestingModule({
-                declarations: [TestFieldValidationMessageComponent, ValuesPropertyComponent],
-                imports: [
-                    DotTextareaContentModule,
-                    DotFieldHelperModule,
-                    ReactiveFormsModule,
-                    DotPipesModule,
-                    MonacoEditorModule
+                declarations: [
+                    TestFieldValidationMessageComponent,
+                    ValuesPropertyComponent,
+                    DotTextareaContentMockComponent
                 ],
+                imports: [DotFieldHelperModule, ReactiveFormsModule, DotPipesModule],
                 providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
             }).compileComponents();
 
