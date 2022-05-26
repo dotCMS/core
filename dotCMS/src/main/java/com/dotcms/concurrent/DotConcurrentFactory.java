@@ -25,8 +25,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import com.dotcms.concurrent.lock.DotKeyLockManagerBuilder;
-import com.dotcms.concurrent.lock.IdentifierStripedLock;
+
+import com.dotcms.concurrent.lock.*;
 import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.init.DotInitScheduler;
@@ -85,6 +85,14 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     public static final String BULK_ACTIONS_THREAD_POOL = "bulkActionsPool";
 
     public static final String LOCK_MANAGER = "IdentifierStripedLock";
+
+    // Cluster lock manager
+    private final DotKeyLockManagerFactory clusterLockManagerFactory =
+            new ClusterLockManagerFactory(); // todo: this should be overridable by osgi.
+
+    // Stores the cluster lock manager by name
+    private Map<String, ClusterLockManager<String>> clusterLockManagerMap =
+            new ConcurrentHashMap<>();
 
     /**
      * Used to keep the instance of the submitter
@@ -465,6 +473,16 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         this.submitterMap.put(name, submitter);
 
         return submitter;
+    }
+
+    /**
+     * Gets or creates a cluster wide lock manager lock
+     * @param name {@link String}
+     * @return DotKeyLockManager
+     */
+    public ClusterLockManager<String> getClusterLockManager(final String name) {
+
+        return this.clusterLockManagerMap.computeIfAbsent(name, key-> (ClusterLockManager) this.clusterLockManagerFactory.create(name));
     }
 
     /**
