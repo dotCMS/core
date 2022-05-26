@@ -242,7 +242,7 @@ dependencies {
 
 
     starter group: 'com.dotcms', name: 'starter', version: 'empty_20220407', ext: 'zip'
-    // Uncomment this line if you want to download the starter that comes with data
+    //Uncomment this line if you want to download the starter that comes with data
     // starter group: 'com.dotcms', name: 'starter', version: '20220504', ext: 'zip'
     testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20220407', ext: 'zip'
 
