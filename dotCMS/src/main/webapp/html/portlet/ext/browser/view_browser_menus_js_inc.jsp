@@ -1040,7 +1040,7 @@
 	function getVersionPath(file) {
 		const name = file.name;
 		const type = file?.titleName || 'fileAsset'
-		const inode = file.inode;
+		const inode = file.shortyInode;
 		return `/dA/${inode}/${type}/${name}`;
 	}
 

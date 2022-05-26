@@ -54,6 +54,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     var activeHost = "";
     var lastActiveHost = "";
     var showArchived = false;
+    var showShorties = true;
     var doubleClicked = false;
     var actionLoading = false;
     var markedForCopy = "";
@@ -597,7 +598,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
             Element.show('loadingContentListing');
 
             selectedFolder = folder.inode;
-            BrowserAjax.openFolderContent (folder.inode, '', showArchived, selectedLang, selectFolderContentCallBack);
+            BrowserAjax.openFolderContent (folder.inode, '', showArchived, showShorties, selectedLang, selectFolderContentCallBack);
         }
 
         if(folder.open) {
@@ -656,7 +657,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
             //Showing the loading message
             Element.show('loadingContentListing');
-            BrowserAjax.openFolderContent (selectedFolder, '', showArchived, selectedLang, selectFolderContentCallBack);
+            BrowserAjax.openFolderContent (selectedFolder, '', showArchived, showShorties, selectedLang, selectFolderContentCallBack);
         }
     }
 
@@ -688,7 +689,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         Element.show('loadingContentListing');
 
         //Calling ajax
-        BrowserAjax.openFolderContent (inode, '', showArchived, lang, selectFolderContentCallBack);
+        BrowserAjax.openFolderContent (inode, '', showArchived, showShorties, lang, selectFolderContentCallBack);
 
         //Opening folder at the left side
         if(!openFolders.contains(inode)) {
@@ -1070,7 +1071,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         //Showing the loading message
         Element.show('loadingContentListing');
 
-        BrowserAjax.openFolderContent (selectedFolder, '', showArchived, selectedLang, selectFolderContentCallBack);
+        BrowserAjax.openFolderContent (selectedFolder, '', showArchived, showShorties, selectedLang, selectFolderContentCallBack);
     }
 
     function changeContentSort (sortField) {
@@ -1081,7 +1082,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
             //Showing the loading message
             Element.show('loadingContentListing');
 
-            BrowserAjax.openFolderContent (selectedFolder, sortField, showArchived, selectedLang, selectFolderContentCallBack);
+            BrowserAjax.openFolderContent (selectedFolder, sortField, showArchived, showShorties, selectedLang, selectFolderContentCallBack);
         }
     }
 
