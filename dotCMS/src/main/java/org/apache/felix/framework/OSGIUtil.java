@@ -1,5 +1,44 @@
 package org.apache.felix.framework;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.StringWriter;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
+import javax.servlet.ServletException;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.SuffixFileFilter;
+import org.apache.felix.framework.util.FelixConstants;
+import org.apache.felix.main.AutoProcessor;
+import org.apache.felix.main.Main;
+import org.apache.velocity.tools.view.PrimitiveToolboxManager;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+import org.osgi.framework.launch.Framework;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.message.MessageSeverity;
@@ -13,59 +52,23 @@ import com.dotcms.dotpubsub.DotPubSubProvider;
 import com.dotcms.dotpubsub.DotPubSubProviderLocator;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.osgi.HostActivator;
+import com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.ResourceCollectorUtil;
+import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.util.FileUtil;
 import com.liferay.util.MathUtil;
-import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.SuffixFileFilter;
-import org.apache.felix.framework.util.FelixConstants;
-import org.apache.felix.main.AutoProcessor;
-import org.apache.felix.main.Main;
-import org.apache.velocity.tools.view.PrimitiveToolboxManager;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
-import org.osgi.framework.launch.Framework;
-
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.StringWriter;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Created by Jonathan Gamba
@@ -74,16 +77,13 @@ import java.util.stream.Stream;
 public class OSGIUtil {
 
     private static final String OSGI_EXTRA_CONFIG_FILE_PATH_KEY = "OSGI_EXTRA_CONFIG_FILE_PATH_KEY";
-    private static final String OSGI_USE_FILE_WATCHER = "OSGI_USE_FILE_WATCHER";
     private static final String OSGI_RESTART_LOCK_KEY = "osgi_restart_lock";
     private static final String OSGI_CHECK_UPLOAD_FOLDER_FREQUENCY = "OSGI_CHECK_UPLOAD_FOLDER_FREQUENCY";
     // by default the upload folder checker is 10 seconds
     private static final int OSGI_CHECK_UPLOAD_FOLDER_FREQUENCY_DEFAULT_VAL = 10;
-    // by default the max number of count for upload folder read is 10, after that the cycle reinits.
-    private static final int MAX_UPLOAD_FOLDER_COUNT_VAL = 10;
+
 
     //List of jar prefixes of the jars to be included in the osgi-extra.conf file
-    private List<String> dotCMSJarPrefixes = ImmutableList.of("dotcms", "ee-");
     public final List<String> portletIDsStopped = Collections.synchronizedList(new ArrayList<>());
     public final List<String> actionletsStopped = Collections.synchronizedList(new ArrayList<>());
     public WorkflowAPIOsgiService workflowOsgiService;
@@ -94,8 +94,8 @@ public class OSGIUtil {
     private static final String FELIX_UNDEPLOYED_DIR = "felix.undeployed.dir";
     private static final String FELIX_FRAMEWORK_STORAGE = org.osgi.framework.Constants.FRAMEWORK_STORAGE;
     private static final String AUTO_DEPLOY_DIR_PROPERTY =  AutoProcessor.AUTO_DEPLOY_DIR_PROPERTY;
-    private static final String UTF_8 = "utf-8";
-    private final TreeSet<String> exportedPackagesSet = new TreeSet<>();
+
+
     private final Debouncer debouncer = new Debouncer();
 
     // PUBSUB
@@ -137,6 +137,7 @@ public class OSGIUtil {
     }
 
     private OSGIUtil() {
+
 
         this.pubsub                = DotPubSubProviderLocator.provider.get();
         this.osgiRestartTopic = new OsgiRestartTopic();
@@ -188,7 +189,57 @@ public class OSGIUtil {
     }
 
 
-    private String getOsgiExtraConfigPath () {
+    final long delay = Config.getLongProperty("OSGI_UPLOAD_DEBOUNCE_DELAY_MILLIS", 5000);
+    /**
+     * Overrides the content of the <strong>osgi-extra.conf</strong> file
+     *
+     * @param request
+     * @param response
+     * @throws ServletException
+     * @throws IOException
+     */
+    public void writeOsgiExtras ( final String extraPackages )  {
+
+        if(UtilMethods.isEmpty(extraPackages)) {
+            return ;
+        }
+
+        if("RESET".equals(extraPackages)) {
+            new File(OSGIUtil.getInstance().getOsgiExtraConfigPath()).delete();
+            debouncer.debounce("restartOsgi", this::restartOsgi, delay, TimeUnit.MILLISECONDS);
+            return;
+        }
+
+        //Override the file with the values we just read
+
+        final String osgiExtraFile = OSGIUtil.getInstance().getOsgiExtraConfigPath();
+        final String osgiExtraFileTmp = osgiExtraFile + "_" + UUIDGenerator.shorty();
+
+
+        try(BufferedWriter writer = new BufferedWriter( new FileWriter( osgiExtraFileTmp   ) )){
+            writer.write( extraPackages );
+            Logger.info( OSGIAJAX.class, "OSGI Extra Packages Saved");
+        }
+        catch(Exception e) {
+            Logger.error( OSGIUtil.class, e.getMessage(), e );
+            throw new DotRuntimeException( e.getMessage(), e );
+        }
+        new File(osgiExtraFileTmp).renameTo(new File(osgiExtraFile));
+
+
+        //restart OSGI after delay
+        debouncer.debounce("restartOsgi", this::restartOsgi, delay, TimeUnit.MILLISECONDS);
+
+
+
+
+    }
+
+
+
+
+
+    public String getOsgiExtraConfigPath () {
 
         final Supplier<String> supplier = () -> APILocator.getFileAssetAPI().getRealAssetsRootPath()
                 + File.separator + "server" + File.separator + "osgi" + File.separator +  "osgi-extra.conf";
@@ -231,13 +282,8 @@ public class OSGIUtil {
         verifyBundles(felixProps);
 
         // Set all OSGI Packages
-        String extraPackages;
-        try {
-            extraPackages = getExtraOSGIPackages();
-        } catch (IOException e) {
-            Logger.error(this, "Error loading the OSGI framework properties: " + e);
-            throw new RuntimeException(e);
-        }
+        String extraPackages = getExtraOSGIPackages();
+
 
         // Setting the OSGI extra packages property
         felixProps.setProperty(PROPERTY_OSGI_PACKAGES_EXTRA, extraPackages);
@@ -288,20 +334,9 @@ public class OSGIUtil {
     }
 
     private void startWatchingUploadFolder(final String uploadFolder) {
-
-        final boolean useFileWatcher = Config.getBooleanProperty(OSGI_USE_FILE_WATCHER, false);
-
-        if (useFileWatcher) {
-
-            this.runFileWatcher(uploadFolder);
-        } else if(!this.isStartedOsgiRestartSchedule.get()) {
-
-            this.runUploadFolderCheckerJob(uploadFolder);
-            this.isStartedOsgiRestartSchedule.set(true);
+        if(this.isStartedOsgiRestartSchedule.getAndSet(true)) {
+            return;
         }
-    }
-
-    private void runUploadFolderCheckerJob(final String uploadFolder) {
 
         Logger.debug(this, ()->
                 "Using Schedule fixed job to discover changes on the OSGI upload folder: " + uploadFolder);
@@ -318,41 +353,35 @@ public class OSGIUtil {
                 initialDelay, delay, TimeUnit.SECONDS);
     }
 
-    private void runFileWatcher(final String uploadFolder) {
-        try {
 
-            Logger.debug(this, ()-> "Using file watcher to discover changes on the OSGI upload folder");
-            final File uploadFolderFile = new File(uploadFolder);
-            Logger.debug(APILocator.class, ()-> "Start watching OSGI Upload dir: " + uploadFolder);
-            APILocator.getFileWatcherAPI().watchFile(uploadFolderFile,
-                    () -> this.fireReload(uploadFolderFile));
-        } catch (IOException e) {
-            Logger.error(Config.class, e.getMessage(), e);
-        }
+    public void checkUploadFolder() {
+        final ClusterLockManager<String> lockManager = DotConcurrentFactory.getInstance().getClusterLockManager(OSGI_RESTART_LOCK_KEY);
+        checkUploadFolder(new File(OSGIUtil.getInstance().getFelixUploadPath()),lockManager);
     }
 
-    // fi the job counts is great or equals to the upload folder reads, allow to do a new retry to read the upload folder for jar
-    private boolean allowedToReadUploadFolder () {
 
-        if (this.currentJobRestartIterationsCount.intValue() >= this.uploadFolderReadsCount.intValue()) {
 
-            // if gonna enter then reset the job counts
-            this.currentJobRestartIterationsCount.set(0);
-            return true;
+
+    public void processExports(final String jarFile) {
+        if(!jarFile.equals(StringUtils.sanitizeFileName(jarFile))){
+            throw new DotRuntimeException("Invalid bundle name: " + jarFile);
+        }
+        File jarfile = new File(getFelixDeployPath() + File.separator + jarFile);
+        File newJarfile = new File(getFelixUploadPath() + File.separator + jarFile);
+
+        if(!jarfile.exists() || newJarfile.exists()) {
+            throw new DotRuntimeException("Bundle does not exist or is processing: " + jarFile);
         }
 
-        this.currentJobRestartIterationsCount.incrementAndGet();
-        return false;
+        jarfile.renameTo(newJarfile);
+
+        final ClusterLockManager<String> lockManager = DotConcurrentFactory.getInstance().getClusterLockManager(OSGI_RESTART_LOCK_KEY);
+        checkUploadFolder(new File(OSGIUtil.getInstance().getFelixUploadPath()),lockManager);
     }
 
-    /**
-     * Tries to run the upload folder now
-     */
-    public void tryUploadFolderReload() {
 
-        this.uploadFolderReadsCount.set(0);
-        this.currentJobRestartIterationsCount.set(0);
-    }
+
+
 
     // this method is called by the schedule to see if jars has been added to the framework
     private void checkUploadFolder(final File uploadFolderFile, final ClusterLockManager<String> lockManager) {
@@ -361,50 +390,48 @@ public class OSGIUtil {
                 uploadFolderFile + ", currentJobRestartIterationsCount: " + this.currentJobRestartIterationsCount.intValue() +
                 ", uploadFolderReadsCount: " + this.uploadFolderReadsCount.intValue());
         // we do not want to read every 10 seconds, so we read at 20, 30, 40, etc
-        if (this.allowedToReadUploadFolder()) {
 
-            Logger.debug(this, ()-> "***** Checking the upload folder for jars");
-            if (this.anyJarOnUploadFolder(uploadFolderFile)) {
+        Logger.debug(this, ()-> "***** Checking the upload folder for jars");
+        if (this.anyJarOnUploadFolder(uploadFolderFile)) {
 
-                // if enter here, means there are jars on the upload folder.
-                uploadFolderReadsCount.set(0);
 
-                Logger.debug(this, ()-> "****** Has found jars on upload, folder, acquiring the lock and reloading the OSGI restart *****");
 
-                try {
+            Logger.debug(this, ()-> "****** Has found jars on upload, folder, acquiring the lock and reloading the OSGI restart *****");
 
-                    Logger.debug(this, () -> "Trying to lock to start the reload");
-                    lockManager.tryClusterLock(() -> this.fireReload(uploadFolderFile));
-                    Logger.debug(this, () -> "File Reload Done");
-                } catch (Throwable e) {
+            try {
 
-                    Logger.error(this, "Error try to acquire the lock, uploadFolder: " + uploadFolderFile +
-                            ", msg: " + e.getMessage(), e);
-                }
-            } else {
+                Logger.debug(this, () -> "Trying to lock to start the reload");
+                lockManager.tryClusterLock(() -> this.fireReload(uploadFolderFile));
+                Logger.debug(this, () -> "File Reload Done");
+            } catch (Throwable e) {
 
-                Logger.debug(this, ()-> "Not jars on upload folder");
-                // if not jars we want to wait for the next read of the upload folder
-                this.uploadFolderReadsCount.incrementAndGet();
-                if (this.uploadFolderReadsCount.intValue() >= MAX_UPLOAD_FOLDER_COUNT_VAL) {
-
-                    // no more than 10, if so, reset to zero
-                    uploadFolderReadsCount.set(0);
-                }
+                Logger.error(this, "Error try to acquire the lock, uploadFolder: " + uploadFolderFile +
+                        ", msg: " + e.getMessage(), e);
             }
+        } else {
+
+            Logger.debug(this, ()-> "No jars on upload folder");
+            // if not jars we want to wait for the next read of the upload folder
+
+
         }
+
     }
 
     private boolean anyJarOnUploadFolder(final File uploadFolderFile) {
 
-        Logger.debug(this, ()-> "Check if any jar on the upload folder");
+        Logger.debug(this, ()-> "Check if any jar in the upload folder");
         final String[] pathnames = uploadFolderFile.list(new SuffixFileFilter(".jar"));
         return UtilMethods.isSet(pathnames) && pathnames.length > 0;
     }
 
+
+
+
+
     private void fireReload(final File uploadFolderFile) {
 
-        Logger.debug(this, ()-> "Starting the osgi reload on folder: " + uploadFolderFile);
+        Logger.info(this, ()-> "Starting the osgi reload on folder: " + uploadFolderFile);
 
         APILocator.getLocalSystemEventsAPI().asyncNotify(
                 new OSGIUploadBundleEvent(Instant.now(), uploadFolderFile));
@@ -436,29 +463,17 @@ public class OSGIUtil {
                                      final Set<String> osgiUserPackages) {
         try {
 
-            boolean needManuallyRestartFramework = false;
-            final TreeSet<String> copyExportedPackagesSet = new TreeSet<>(this.exportedPackagesSet);
-            copyExportedPackagesSet.addAll(osgiUserPackages);
-            if (!copyExportedPackagesSet.equals(this.exportedPackagesSet)) {
+            final LinkedHashSet<String> exportedPackagesSet = new LinkedHashSet<>(StringUtils.splitOnCommasWithQuotes(getExtraOSGIPackages()));
 
-                Logger.info(this, "There are a new changes into the exported packages");
-                this.exportedPackagesSet.addAll(copyExportedPackagesSet);
-                this.writeExtraPackagesFiles(FELIX_EXTRA_PACKAGES_FILE, this.exportedPackagesSet);
-                needManuallyRestartFramework = true;
-            }
-
-            if (needManuallyRestartFramework) {
-
-                final long delay = Config.getLongProperty("OSGI_UPLOAD_DEBOUNCE_DELAY_MILLIS", DateUtil.TEN_SECOND_MILLIS);
-
-                if(delay>0) {
-
-                    debouncer.debounce("restartOsgi", this::restartOsgi, delay, TimeUnit.MILLISECONDS);
-                }
-            } else {
-
+            if (exportedPackagesSet.containsAll(osgiUserPackages)) {
                 this.moveNewBundlesToFelixLoadFolder(uploadFolderFile, pathnames);
+                return;
             }
+
+            Logger.info(this, "There are a new changes into the exported packages");
+            exportedPackagesSet.addAll(osgiUserPackages);
+            this.writeExtraPackagesFiles(exportedPackagesSet);
+
         } catch (IOException e) {
             Logger.error(this, e.getMessage(), e);
         }
@@ -466,7 +481,7 @@ public class OSGIUtil {
 
     // move all on upload folder to load, and restarts osgi.
     private void restartOsgi() {
-
+        Logger.info(this, ()-> "Restarting OSGI");
         final File uploadPath    = new File(this.getFelixUploadPath());
         final String[] pathnames = uploadPath.list(new SuffixFileFilter(".jar"));
 
@@ -487,7 +502,7 @@ public class OSGIUtil {
      * Restart the current instance and notify the rest of the nodes in the cluster that restart is needed
      */
     public void restartOsgiClusterWide() {
-
+        Logger.info(this, ()-> "Restarting OSGI Cluster Wide");
         this.restartOsgiOnlyLocal();
         Logger.debug(this, ()-> "Sending a PubSub Osgi Restart event");
 
@@ -504,7 +519,7 @@ public class OSGIUtil {
      * Do the restart only for the current node (locally)
      */
     public void restartOsgiOnlyLocal() {
-
+        Logger.info(this, ()-> "Restarting OSGI Locally");
         //Remove Portlets in the list
         this.portletIDsStopped.stream().forEach(APILocator.getPortletAPI()::deletePortlet);
         Logger.info(this, "Portlets Removed: " + this.portletIDsStopped.toString());
@@ -537,16 +552,23 @@ public class OSGIUtil {
 
     private void moveNewBundlesToFelixLoadFolder(final File uploadFolderFile, final String[] pathnames) {
 
-        final File deployDirectory = new File(this.getFelixDeployPath());
+        final File deployDirectory   = new File(this.getFelixDeployPath());
+        final File undeployDirectory = new File(this.getFelixUndeployPath());
         try {
 
             if (deployDirectory.exists() && deployDirectory.canWrite()) {
 
                 for (final String pathname : pathnames) {
 
-                    final File bundle = new File(uploadFolderFile, pathname);
+                    final File bundle      = new File(uploadFolderFile, pathname);
+                    File bundleDestination = new File(deployDirectory, bundle.getName());
+                    if (ResourceCollectorUtil.isFragmentJar(bundle)) {
+
+                        bundleDestination = new File(undeployDirectory, bundle.getName());
+                    }
+
                     Logger.debug(this, "Moving the bundle: " + bundle + " to " + deployDirectory);
-                    final File bundleDestination = new File(deployDirectory, bundle.getName());
+
                     if (FileUtil.move(bundle, bundleDestination)) {
 
                         Try.run(()->APILocator.getSystemEventsAPI()					    // CLUSTER WIDE
@@ -709,107 +731,69 @@ public class OSGIUtil {
      * @return String
      * @throws IOException Any IOException
      */
-    public String getExtraOSGIPackages() throws IOException {
+    public String getExtraOSGIPackages() {
 
         final File extraPackagesFile = new File(FELIX_EXTRA_PACKAGES_FILE);
 
-        StringWriter stringWriter = null;
-        if (!extraPackagesFile.exists()) {
-
-            if (extraPackagesFile.getParentFile().mkdirs()) {
-                this.createNewExtraPackageFile (extraPackagesFile);
-            }
-        } else {
-
-            mergeInternalAndExternalOsgiExtraPackagesFile(extraPackagesFile);
+        if (!extraPackagesFile.exists() || extraPackagesFile.length()<2) {
+            extraPackagesFile.getParentFile().mkdirs();
+            this.createNewExtraPackageFile (extraPackagesFile);
         }
+
+        String packageString = readExtraPackagesFiles(extraPackagesFile).toString().replace("\n", "");
 
         // and merge with the one on the external directory
-        stringWriter = readExtraPackagesFiles(extraPackagesFile);
-        this.exportedPackagesSet.addAll(Stream.of(stringWriter.toString()
-                .split(StringPool.COMMA)).filter(UtilMethods::isSet).collect(Collectors.toList()));
+        Collection<String> packages= StringUtils.splitOnCommasWithQuotes(packageString);
 
-        //Clean up the properties, it is better to keep it simple and in a standard format
-        return stringWriter.toString().replaceAll("\\\n", "").
-                replaceAll("\\\r", "").replaceAll("\\\\", "");
+
+
+        return packagesToOrderedString(packages);
+
+
     }
 
-    // if the osgi on the classpath has any addition which is not on the file system, we merge it.
-    private void mergeInternalAndExternalOsgiExtraPackagesFile(final File extraPackagesFile) throws IOException {
+    private void createNewExtraPackageFile(final File extraPackagesFile)  {
 
-        // read always the original
-        final TreeSet<String> internalExportedPackagesSet = new TreeSet<>();
-        final TreeSet<String> externalExportedPackagesSet = new TreeSet<>();
-        internalExportedPackagesSet.addAll(Stream.of(this.readInternalOsgiExtraPackageFile().toString()
-                .split(StringPool.COMMA)).filter(UtilMethods::isSet).collect(Collectors.toList()));
-        externalExportedPackagesSet.addAll(Stream.of(readExtraPackagesFiles(extraPackagesFile).toString()
-                .split(StringPool.COMMA)).filter(UtilMethods::isSet).collect(Collectors.toList()));
 
-        if(!externalExportedPackagesSet.containsAll(internalExportedPackagesSet)) {
+        try (OutputStream out = Files.newOutputStream(extraPackagesFile.toPath());
+             InputStream in = OSGIUtil.class.getResourceAsStream("/osgi/osgi-extra.conf")) {
 
-            internalExportedPackagesSet.addAll(externalExportedPackagesSet);
-            this.writeExtraPackagesFiles(FELIX_EXTRA_PACKAGES_FILE, internalExportedPackagesSet);
+            org.apache.commons.io.IOUtils.copy(in, out);
+        }catch(Exception e) {
+            throw new DotRuntimeException(e);
         }
     }
 
-    private void createNewExtraPackageFile(final File extraPackagesFile) throws IOException {
 
 
-        try (BufferedWriter writer = new BufferedWriter(
-                new OutputStreamWriter(Files.newOutputStream(extraPackagesFile.toPath()), UTF_8));
-             InputStream initialStream = OSGIUtil.class.getResourceAsStream("/osgi/osgi-extra.conf")) {
+    private String readExtraPackagesFiles(final File extraPackagesFile) {
 
-            final byte[] buffer = new byte[1024];
-            int bytesRead = -1;
-            while ((bytesRead = initialStream.read(buffer)) != -1) {
-                writer.write(new String(buffer, UTF_8), 0, bytesRead);
-            }
-
-            writer.flush();
-        }
-    }
-
-    private StringWriter readInternalOsgiExtraPackageFile() throws IOException {
-
-        final StringWriter writer = new StringWriter();
-        try (InputStream initialStream = OSGIUtil.class.getResourceAsStream("/osgi/osgi-extra.conf")) {
-
-            final byte[] buffer = new byte[1024];
-            int bytesRead = -1;
-            while ((bytesRead = initialStream.read(buffer)) != -1) {
-                writer.write(new String(buffer, UTF_8), 0, bytesRead);
-            }
-        }
-
-        return writer;
-    }
-
-    private StringWriter readExtraPackagesFiles(final File extraPackagesFile)
-            throws IOException {
 
         final StringWriter writer = new StringWriter();
         try (InputStream inputStream = Files.newInputStream(extraPackagesFile.toPath())) {
             writer.append(IOUtils.toString(inputStream));
+        }catch(Exception e) {
+            throw new DotRuntimeException(e);
         }
 
-        return writer;
+        return writer.toString();
     }
 
-    private void writeExtraPackagesFiles(final String extraPackagesFile, final Set<String> packages)
-            throws IOException {
+    private String packagesToOrderedString(final Collection<String> packages)  {
 
-        int count = 0;
-        try (OutputStream outputStream = Files.newOutputStream(new File(extraPackagesFile).toPath())) {
-            for (final String myPackage : packages) {
+        //List<String> treeSet= new ArrayList<>(packages);
+        TreeSet<String> treeSet= new TreeSet<>(packages);
+        treeSet.removeIf(item -> item == null || "".equals(item.trim()));
 
-                if (count < packages.size()-1) {
-                    outputStream.write((myPackage.trim() + ",\n").getBytes(UTF_8));
-                } else {
-                    outputStream.write((myPackage.trim()).getBytes(UTF_8));
-                }
-                count++;
-            }
-        }
+        return String.join(",\n", treeSet);
+
+
+    }
+
+
+    private void writeExtraPackagesFiles(final Set<String> packages) throws IOException {
+
+        this.writeOsgiExtras(packagesToOrderedString(packages));
     }
 
     /**
@@ -849,32 +833,12 @@ public class OSGIUtil {
                     manualDefaultPath, manualDefaultPath));
             felixPath = "/WEB-INF/felix/" + manualDefaultPath;
         }
+        new File(felixPath).mkdirs();
 
-        createFolder(felixPath);
 
         return felixPath;
     }
 
-    /**
-     * Create the path if it does not exist. Required for felix install and undeploy folder
-     *
-     * @param path The path to create
-     * @return boolean
-     */
-    private boolean createFolder(String path) {
-        boolean created = false;
-        File directory = new File(path);
-        if (!directory.exists()) {
-            Logger.debug(this,
-                    () -> String.format("Felix directory %s does not exist. Trying to create it...",
-                            path));
-            created = directory.mkdirs();
-            if (!created) {
-                Logger.error(this, String.format("Unable to create Felix directory: %s", path));
-            }
-        }
-        return created;
-    }
 
     /**
      * Fetches the Felix Upload path

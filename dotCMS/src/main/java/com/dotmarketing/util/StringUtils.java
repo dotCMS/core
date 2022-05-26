@@ -64,6 +64,37 @@ public class StringUtils {
         return true;
     }
 
+    public static List<String> splitOnCommasWithQuotes(String importPackage){
+
+        if(UtilMethods.isEmpty(importPackage)){
+            return   Collections.emptyList();
+        }
+
+        List<String> tokensList = new ArrayList<String>();
+        boolean inQuotes = false;
+        StringBuilder b = new StringBuilder();
+        for (char c : importPackage.toCharArray()) {
+            switch (c) {
+                case ',':
+                    if (inQuotes) {
+                        b.append(c);
+                    } else {
+                        tokensList.add(b.toString());
+                        b = new StringBuilder();
+                    }
+                    break;
+                case '\"':
+                    inQuotes = !inQuotes;
+                default:
+                    b.append(c);
+                    break;
+            }
+        }
+        tokensList.add(b.toString());
+
+        return tokensList;
+
+    }
 
 
     public static boolean isJson(String jsonString) {

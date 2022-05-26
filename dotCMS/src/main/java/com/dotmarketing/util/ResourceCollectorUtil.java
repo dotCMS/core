@@ -1,5 +1,6 @@
 package com.dotmarketing.util;
 
+import com.google.common.collect.ImmutableList;
 import com.liferay.util.StringPool;
 
 import java.io.File;
@@ -66,9 +67,45 @@ public class ResourceCollectorUtil {
             Logger.error(ResourceCollectorUtil.class, e.getMessage(), e);
         }
 
-        return UtilMethods.isSet(importPackage)?
-                Stream.of(importPackage.split(StringPool.COMMA)).collect(Collectors.toList()):
-                Collections.emptyList();
+        return getPackages(importPackage);
+    }
+
+    public static Collection<String> getPackages(final String importPackage) {
+
+
+        if(UtilMethods.isEmpty(importPackage)) {
+            return  ImmutableList.of();
+        }
+        return removeVersionRange(importPackage);
+
+    }
+
+
+
+
+
+    private static Collection<String> removeVersionRange(String packages){
+
+        final Set<String> finalSet = new LinkedHashSet<>();
+
+        for(final String pkg :StringUtils.splitOnCommasWithQuotes(packages) ) {
+            int brace = pkg.indexOf("\"[");
+            int comma = pkg.indexOf(",");
+            int parans = pkg.indexOf(")\"");
+
+            String version = pkg;
+
+            if(brace> 0 && brace < comma && comma < parans){
+                version = pkg.substring(0,brace) +  pkg.substring(brace+2, parans).split(",")[0] ;
+            }
+            finalSet.add(version);
+
+
+        }
+
+        return finalSet;
+
+
     }
 
     /**
@@ -82,9 +119,7 @@ public class ResourceCollectorUtil {
 
             final Manifest manifest    = jarFile.getManifest();
             final String importPackage = manifest.getMainAttributes().getValue("Import-Package");
-            return UtilMethods.isSet(importPackage)?
-                    Stream.of(importPackage.split(StringPool.COMMA)).collect(Collectors.toList()):
-                    Collections.emptyList();
+            return StringUtils.splitOnCommasWithQuotes(importPackage);
         }  catch (Exception e) {
 
             Logger.error(ResourceCollectorUtil.class, e.getMessage(), e);
@@ -104,9 +139,7 @@ public class ResourceCollectorUtil {
 
             final Manifest manifest    = jarFile.getManifest();
             final String exportPackage = manifest.getMainAttributes().getValue("Export-Package");
-            return UtilMethods.isSet(exportPackage)?
-                    Stream.of(exportPackage.split(StringPool.COMMA)).collect(Collectors.toList()):
-                    Collections.emptyList();
+            return StringUtils.splitOnCommasWithQuotes(exportPackage);
         }  catch (Exception e) {
 
             Logger.error(ResourceCollectorUtil.class, e.getMessage(), e);

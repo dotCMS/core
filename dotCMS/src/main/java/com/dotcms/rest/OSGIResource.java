@@ -36,6 +36,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -68,29 +69,13 @@ public class OSGIResource  {
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .params(params)
+                .requiredPortlet("dynamic-plugins")
                 .rejectWhenNoUser(true)
                 .init();
 
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         StringBuilder responseMessage = new StringBuilder();
-
-        //Verify if the user have access to the OSGI portlet
-        User currentUser = initData.getUser();
-        try {
-            if ( currentUser == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet( "dynamic-plugins", currentUser ) ) {
-                throw new ForbiddenException("User does not have access to the Dynamic Plugins Portlet");
-            }
-        } catch ( DotDataException e ) {
-            Logger.error( this.getClass(), "Error validating User access to the Dynamic Plugins Portlet.", e );
-
-            if ( e.getMessage() != null ) {
-                responseMessage.append( e.getMessage() );
-            } else {
-                responseMessage.append( "Error validating User access to the Dynamic Plugins Portlet." );
-            }
-            return responseResource.responseError( responseMessage.toString() );
-        }
 
         /*
         This method returns a list of all bundles installed in the OSGi environment at the time of the call to this method. However,
@@ -149,6 +134,42 @@ public class OSGIResource  {
         }
 
         return responseResource.response( responseMessage.toString() );
+    }
+
+    /**
+     * This method returns a list of all bundles installed in the OSGi environment at the time of the call to this method.
+     *
+     * @param request
+     * @param params
+     * @return
+     * @throws JSONException
+     */
+    @GET
+    @Path ("/_processExports/{bundle:.*}")
+    @Produces (MediaType.APPLICATION_JSON)
+    public Response processBundle (@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam ("bundle") String bundle ) throws JSONException {
+
+        new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .requiredPortlet("dynamic-plugins")
+                .rejectWhenNoUser(true)
+                .init();
+
+        //Creating an utility response object
+        ResourceResponse responseResource = new ResourceResponse( new HashMap<>() );
+        StringBuilder responseMessage = new StringBuilder();
+
+
+        try {
+            OSGIUtil.getInstance().processExports(bundle);
+            return responseResource.response( responseMessage.toString() );
+        } catch (Exception e) {
+            Logger.warn(this.getClass(), "Error getting installed OSGI bundles.", e);
+            return responseResource.responseError(e.getMessage());
+        }
+
     }
 
     /**
@@ -218,6 +239,10 @@ public class OSGIResource  {
                 IOUtils.copyLarge(in, out);
             }
         }
+
+        // since we already upload jar, we would like to try to run the upload folder when the
+        // refresh strategy is running by schedule job
+        OSGIUtil.getInstance().checkUploadFolder();
 
         return Response.ok(new ResponseEntityView(
                 files.stream().map(File::getName).collect(Collectors.toSet())))
