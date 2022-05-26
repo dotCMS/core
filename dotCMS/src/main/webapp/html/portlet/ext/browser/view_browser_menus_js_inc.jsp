@@ -357,7 +357,6 @@
 
 	// File Popup
 	function showFilePopUp(file, cmsAdminUser, origReferer, e) {
-		console.log("IMAGE:", file);
 
 		var workFlowAssign = false;
 		var fileWfActionAssign = file.wfActionAssign;
@@ -478,7 +477,7 @@
 			const versionPath = getVersionPath(file);
 			strHTML += '<div class="pop_divider" ></div>';
 			strHTML += '<span class="context-menu__item" onClick="copyToClipboard(\'' + versionPath + '\', \'' + objId + '\')">';
-			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy-relative-path")) %>';
+			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy-path")) %>';
 			strHTML += '</span>';
 		}
 

@@ -746,7 +746,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
             var asset = content[i];
             inodes[asset.inode] = asset;
-            console.log(asset);
+
             contentInodes[contentInodes.length] = asset;
 
             var read = hasReadPermissions(asset.permissions);
