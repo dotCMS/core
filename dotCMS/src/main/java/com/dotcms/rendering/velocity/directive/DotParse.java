@@ -211,7 +211,7 @@ public class DotParse extends DotDirective {
                         ? APILocator.getContentletAPI().findContentletByIdentifierOrFallback(shorty.longId, params.mode.showLive,
                                         params.language.getId(), params.user, false)
                         : Optional.ofNullable(
-                                        APILocator.getContentletAPI().find(shorty.longId, params.user, params.mode.respectAnonPerms));
+                                        APILocator.getContentletAPI().find(shorty.longId, params.user, Config.getBooleanProperty("RESPECT_FRONTEND_ROLES_FOR_DOTPARSE", params.mode.respectAnonPerms)));
 
         if (!conOpt.isPresent()) {
             return Optional.empty();
@@ -232,7 +232,7 @@ public class DotParse extends DotDirective {
             templatePath = templatePath.substring(hostIndicator.length(), templatePath.length());
             final String hostName = templatePath.substring(0, templatePath.indexOf('/'));
             templatePath = templatePath.substring(templatePath.indexOf('/'), templatePath.length());
-            host = APILocator.getHostAPI().resolveHostName(hostName, user, params.mode.respectAnonPerms);
+            host = APILocator.getHostAPI().resolveHostName(hostName, user, Config.getBooleanProperty("RESPECT_FRONTEND_ROLES_FOR_DOTPARSE", params.mode.respectAnonPerms));
         }
 
 
