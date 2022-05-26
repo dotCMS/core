@@ -123,7 +123,7 @@ jobs:
                   echo "::set-output name=message::$(logResults)";
             - name: Slack Notification
               if: success() || failure()
-              uses: rtCamp/action-slack-notify@master
+              uses: rtCamp/action-slack-notify@v2
               env:
                   SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
                   SLACK_USERNAME: core-web
