@@ -90,7 +90,7 @@ import org.apache.commons.lang.StringUtils;
 
 public class FieldAPIImpl implements FieldAPI {
 
-  private final List<Class> baseFieldTypes = ImmutableList.of(BinaryField.class, StoryBlockField.class,
+  private final List<Class<? extends Field>> baseFieldTypes = ImmutableList.of(BinaryField.class, StoryBlockField.class,
           CategoryField.class, ConstantField.class, CheckboxField.class, CustomField.class, DateField.class,
       DateTimeField.class, FileField.class, HiddenField.class, HostFolderField.class,
       ImageField.class, KeyValueField.class, LineDividerField.class, MultiSelectField.class,
@@ -777,7 +777,7 @@ public class FieldAPIImpl implements FieldAPI {
   }
 
   @Override
-  public List<Class> fieldTypes() {
+  public List<Class<? extends Field>> fieldTypes() {
     return baseFieldTypes;
   }
 

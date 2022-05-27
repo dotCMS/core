@@ -4,7 +4,7 @@ import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_BASE_
 import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_DEFAULT_TRANSACTION_ISOLATION;
 import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_DRIVER;
 import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_LEAK_DETECTION_THRESHOLD;
-import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_MAX_IDLE;
+import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_MIN_IDLE;
 import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_MAX_TOTAL;
 import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_MAX_WAIT;
 import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_PASSWORD;
@@ -59,7 +59,7 @@ public class SystemEnvDataSourceStrategy implements DotDataSourceStrategy {
 
         config.setJdbcUrl(systemEnvironmentProperties.getVariable(CONNECTION_DB_BASE_URL) != null
                 ? systemEnvironmentProperties.getVariable(CONNECTION_DB_BASE_URL)
-                : "jdbc:postgresql://localhost/dotcms");
+                : "jdbc:postgresql://db.dotcms.site/dotcms");
 
         config.setUsername(systemEnvironmentProperties.getVariable(CONNECTION_DB_USERNAME));
 
@@ -69,11 +69,17 @@ public class SystemEnvDataSourceStrategy implements DotDataSourceStrategy {
                 systemEnvironmentProperties.getVariable(CONNECTION_DB_MAX_TOTAL) != null
                         ? systemEnvironmentProperties.getVariable(CONNECTION_DB_MAX_TOTAL)
                         : "60"));
+        
+        config.setMinimumIdle(Integer.parseInt(
+                        systemEnvironmentProperties.getVariable(CONNECTION_DB_MIN_IDLE) != null
+                                ? systemEnvironmentProperties.getVariable(CONNECTION_DB_MIN_IDLE)
+                                : "10"));
+        
 
         config.setIdleTimeout(
                 Integer.parseInt(
-                        systemEnvironmentProperties.getVariable(CONNECTION_DB_MAX_IDLE) != null
-                                ? systemEnvironmentProperties.getVariable(CONNECTION_DB_MAX_IDLE)
+                        systemEnvironmentProperties.getVariable(CONNECTION_DB_MIN_IDLE) != null
+                                ? systemEnvironmentProperties.getVariable(CONNECTION_DB_MIN_IDLE)
                                 : "10")
                         * 1000);
 
@@ -91,7 +97,7 @@ public class SystemEnvDataSourceStrategy implements DotDataSourceStrategy {
         config.setLeakDetectionThreshold(Integer.parseInt(
                 systemEnvironmentProperties.getVariable(CONNECTION_DB_LEAK_DETECTION_THRESHOLD)
                         != null ? systemEnvironmentProperties
-                        .getVariable(CONNECTION_DB_LEAK_DETECTION_THRESHOLD) : "60000"));
+                        .getVariable(CONNECTION_DB_LEAK_DETECTION_THRESHOLD) : "300000"));
 
         config.setTransactionIsolation(systemEnvironmentProperties
                 .getVariable(CONNECTION_DB_DEFAULT_TRANSACTION_ISOLATION));

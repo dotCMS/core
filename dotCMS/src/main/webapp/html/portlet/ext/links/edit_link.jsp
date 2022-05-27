@@ -212,9 +212,14 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
     }
 	function selectVersion(objId) {
         if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.links.confirm.replace.version")) %>')){
-			window.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/links/edit_link" /></portlet:actionURL>&cmd=getversionback&inode=' + objId + '&inode_version=' + objId + '&referer=' + referer;
+			getVersionBack(objId)
 	    }
 	}
+
+	function getVersionBack(inode) {
+		window.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/links/edit_link" /></portlet:actionURL>&cmd=getversionback&inode=' + inode + '&inode_version=' + inode + '&referer=' + referer;
+	}
+
 	function editVersion(objId) {
 		window.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/links/edit_link" /></portlet:actionURL>&cmd=edit&inode=' + objId + '&referer=' + referer;
 	}
@@ -258,7 +263,7 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 
 	<!-- START TABS -->
 	<div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
-	
+
 	<!-- START Link Properties -->
 		<div id="fileBasicTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Properties") %>" onShow="showEditButtonsRow()">
 			<div class="form-horizontal">
@@ -284,7 +289,7 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 						<% if(!InodeUtils.isSet(contentLink.getParent())) { %>
 							<div id="folder" name="parent" onlySelectFolders="true" dojoType="dotcms.dijit.form.HostFolderFilteringSelect" <%= UtilMethods.isSet(hostId)?"hostId=\"" + hostId + "\"":"" %>></div>
 						<% } else { %>
-							<%= APILocator.getIdentifierAPI().find(folder).getPath() %>
+							<%= APILocator.getIdentifierAPI().find(folder.getIdentifier()).getPath() %>
 							<html:hidden styleClass="form-text" property="parent" styleId="parent" />
 						<% } %>
 					</dd>
@@ -304,7 +309,7 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 							<input dojoType="dijit.form.RadioButton" type="radio" <%= linkForm.getLinkType().equals(LinkType.CODE.toString())?"checked":"" %> id="codeLinkType" name="linkType" value="<%= LinkType.CODE.toString() %>" onclick="hideShowOptions()">
 							<label for="codeLinkType"><%= LanguageUtil.get(pageContext, "Code-Link") %></label>
 						</div>
-						
+
 					</dd>
 				</dl>
 				<!-- If External Link -->
@@ -383,10 +388,10 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 					</dd>
 				</dl>
 			</div>
-	
+
 		</div>
 	<!-- END Link Properties -->
-	
+
 	<!-- Permissions Tab -->
 	<%
 		boolean canEditAsset = perAPI.doesUserHavePermission(contentLink, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
@@ -403,7 +408,7 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 		}
 	%>
 	<!-- /Permissions Tab  -->
-	
+
 	<!-- START Versions Tab -->
 		<%if(contentLink != null && InodeUtils.isSet(contentLink.getInode())){ %>
 			<% request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, contentLink); %>
@@ -412,7 +417,7 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 			</div>
 		<% } %>
 	<!-- END Versions Tab -->
-	
+
 	</div>
 	<!-- END TABS -->
 

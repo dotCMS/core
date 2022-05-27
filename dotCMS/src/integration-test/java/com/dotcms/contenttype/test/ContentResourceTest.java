@@ -40,9 +40,9 @@ import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 import com.dotcms.rest.ContentResource;
 import com.dotcms.rest.RESTParams;
 import com.dotcms.util.CollectionsUtils;
@@ -1288,8 +1288,8 @@ public class ContentResourceTest extends IntegrationTestBase {
             final HttpServletResponse response1 = mock(HttpServletResponse.class);
             final Response endpointResponse1 = contentResource.singlePOST(request1, response1, "/save/1");
             assertEquals(Status.BAD_REQUEST.getStatusCode(), endpointResponse1.getStatus());
-            assertEquals(CollectionsUtils.map("message", "Unable to set string value as a Long"),
-                    endpointResponse1.getEntity());
+            assertEquals("Unable to set string value as a Long",
+                    ((HashMap)endpointResponse1.getEntity()).get("message"));
 
         }finally {
             if(null != contentType){

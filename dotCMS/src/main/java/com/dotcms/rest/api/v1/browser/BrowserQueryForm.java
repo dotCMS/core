@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.browser;
 
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -126,7 +127,7 @@ public class BrowserQueryForm {
     public static final class Builder {
 
         @JsonProperty
-        private String hostFolderId   = Folder.SYSTEM_FOLDER;
+        private String hostFolderId   = FolderAPI.SYSTEM_FOLDER_ID;
 
         @JsonProperty
         private String filter         = null;

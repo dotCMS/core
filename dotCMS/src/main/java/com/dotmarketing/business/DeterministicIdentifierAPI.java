@@ -1,8 +1,10 @@
 package com.dotmarketing.business;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import java.util.function.Supplier;
 
@@ -15,12 +17,21 @@ import java.util.function.Supplier;
 public interface DeterministicIdentifierAPI {
 
     /**
-     * Entry point for (Contentlets, Host, Persona, Templates, Folders, FileAsset)
+     * Entry point for (Contentlets, Host, Persona, Templates, FileAsset)
      * @param asset
      * @param parent
      * @return
      */
     String generateDeterministicIdBestEffort(Versionable asset, Treeable parent);
+
+    /**
+     * Entry point for folders
+     * @param folder
+     * @param parent
+     * @return
+     */
+    String generateDeterministicIdBestEffort(Folder folder,
+            Treeable parent);
 
     /**
      * Entry point for Content-Types

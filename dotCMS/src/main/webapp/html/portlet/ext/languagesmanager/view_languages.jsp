@@ -32,6 +32,10 @@ List<PublishingEndPoint> sendingEndpoints = pepAPI.getReceivingEndPoints();%>
 var sendingEndpoints = <%=UtilMethods.isSet(sendingEndpoints) && !sendingEndpoints.isEmpty()%>;
 
 var pushHandler = new dotcms.dojo.push.PushHandler('Push Publish');
+
+function replaceWithIcon(parentElement, iconName) {
+    parentElement.innerHTML = '<dot-contentlet-icon icon="' + iconName +'" size="16px" />'
+}
 </script>
 
 <liferay:box top="/html/common/box_top.jsp"
@@ -107,7 +111,7 @@ var pushHandler = new dotcms.dojo.push.PushHandler('Push Publish');
 				          title="<%=LanguageUtil.get(pageContext, "default-language")%>"
 						<% } %>
 				>
-					<img src="/html/images/languages/<%= langIcon %>.gif" border="0" />
+					<span><img src="/html/images/languages/<%= langIcon %>.gif" border="0" onError="replaceWithIcon(this.parentElement, 'language')" /></span>
 					<%= strLanguage %>&nbsp;<%= (UtilMethods.isSet(strCountryCode) ? ("(" + strCountryCode + ")&nbsp;") : StringPool.BLANK) %>
 			    </a>
 

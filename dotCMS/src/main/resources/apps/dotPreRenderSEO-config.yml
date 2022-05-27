@@ -1,0 +1,97 @@
+name: "dotCMS prerender App"
+description: "SEO prerender JS"
+iconUrl: "https://static.dotcms.com/assets/icons/apps/prerender.png"
+allowExtraParameters: true
+params:
+  preRenderServiceUrl:
+    label: "Prerender Service Url"
+    value: "http://service.prerender.io/"
+    hidden: false
+    type: "STRING"
+    hint: "Prerender Service Url"
+    required: true
+  prerenderToken:
+    label: "prerenderToken"
+    value: ""
+    hidden: false
+    type: "STRING"
+    hint: "Prerender Token"
+    required: false
+  forwardedURLHeader:
+    label: "forwardedURLHeader"
+    value: ""
+    hidden: false
+    type: "STRING"
+    hint: "Forwarded URL Header"
+    required: false
+  protocol:
+    label: "protocol"
+    value: "https"
+    hidden: false
+    type: "STRING"
+    hint: "protocol"
+    required: false
+  blacklist:
+    label: "blacklist"
+    value: ""
+    hidden: false
+    type: "STRING"
+    hint: "blacklist"
+    required: false
+  whilelist:
+    label: "whilelist"
+    value: ""
+    hidden: false
+    type: "STRING"
+    hint: "whilelist"
+    required: false
+  crawlerUserAgents:
+    label: "Crawler User Agents"
+    value: "baiduspider,facebookexternalhit, twitterbot, rogerbot, linkedinbot, embedly, quora link preview, showyoubo, outbrain, pinterest, developers.google.com/+/web/snippet, slackbot, vkShare,W3C_Validator, redditbot, Applebot"
+    hidden: false
+    type: "STRING"
+    hint: "Crawler User Agents who should be send prerenderd pages"
+    required: false
+  extensionToIgnore:
+    label: "Extension To Ignore"
+    value: ".js,.json,.css,.xml,.less,.png,.jpg,.jpeg,.gif,.pdf,.doc,.txt,.ico,.rss,.zip,.mp3,.rar,.exe,.wmv,.doc,.avi,.ppt,.mpg,.mpeg,.tif,.wav,.mov,.psd,.ai,.xls,.mp4,.m4a,.swf,.dat,.dmg,.iso,.flv,.m4v,.torrent,.woff,.ttf"
+    hidden: false
+    type: "STRING"
+    hint: "Extension To Ignore"
+    required: false
+  preRenderEventHandler:
+    label: "preRenderEventHandler"
+    value: ""
+    hidden: false
+    type: "STRING"
+    hint: "PreRenderEventHandler class name, not normally used"
+    required: false
+  proxy:
+    label: "proxy"
+    value: ""
+    hidden: false
+    type: "STRING"
+    hint: "proxy"
+    required: false
+  proxyPort:
+    label: "proxyPort"
+    value: ""
+    hidden: false
+    type: "STRING"
+    hint: "proxy port"
+    required: false
+  socketTimeout:
+    label: "socketTimeout"
+    value: ""
+    hidden: false
+    type: "STRING"
+    hint: "socket timeout"
+    required: false
+  maxRequestNumber:
+    label: "maxRequestNumber"
+    value: "10"
+    hidden: false
+    type: "STRING"
+    hint: "available slots to handle the mex bot requests, -1 if do not want any limit"
+    required: false
+

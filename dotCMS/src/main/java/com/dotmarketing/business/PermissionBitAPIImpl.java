@@ -357,6 +357,8 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		}
         // front end users cannot read content that is not live
         if(!user.isBackendUser() && isContentlet && !isLiveContentlet(permissionable) && permissionType == PERMISSION_READ) {
+            Logger.warn(this, String.format("User '%s' cannot verify READ permissions on Contentlet '%s' because it " +
+                    "is not live.", user.getUserId(), permissionable.getPermissionId()));
             return false;
         }
 
@@ -966,7 +968,6 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	@Override
 	public int getRoleCount(String inode, int permissionType, String filter) {
 
-		Inode inodeObj = null;
 		List<Role> roleList = null;
 		List<Permission> permissionList = null;
 		int count = 0;
@@ -974,8 +975,10 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		try {
 
 			Logger.debug( PermissionAPI.class, String.format("::getRoleCount -> before loading inode object(%s)", inode) );
-			inodeObj = InodeFactory.getInode(inode, Inode.class);
-			permissionList = getPermissions(inodeObj, true);
+			final Optional<Permissionable> permissionable = getPermissionableFromInode(inode);
+			if (permissionable.isPresent()) {
+				permissionList = getPermissions(permissionable.get(), true);
+			}
 
 			roleList = loadRolesForPermission(permissionList, permissionType, filter);
 
@@ -991,7 +994,6 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	@Override
 	public int getRoleCount(String inode, int permissionType,
 			String filter, boolean hideSystemRoles) {
-		Inode inodeObj = null;
 		List<Role> roleList = null;
 		List<Permission> permissionList = null;
 		int count = 0;
@@ -999,9 +1001,13 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		try {
 
 			Logger.debug( PermissionAPI.class, String.format("::getRoleCount -> before loading inode object(%s)", inode) );
-			inodeObj = InodeFactory.getInode(inode, Inode.class);
-			permissionList = getPermissions(inodeObj, true);
 
+			final Optional<Permissionable> permissionable = getPermissionableFromInode(inode);
+
+			if (permissionable.isPresent()) {
+				permissionList = getPermissions(permissionable.get(), true);
+
+			}
 			roleList = loadRolesForPermission(permissionList, permissionType, filter);
 
 			List<Role> roleListTemp = new ArrayList<Role>(roleList);
@@ -1023,15 +1029,17 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	@Override
 	public List<User> getUsers(String inode, int permissionType, String filter, int start, int limit) {
 
-		Inode inodeObj = null;
 		List<User> userList = null;
 
 		try {
 
 			Logger.debug( PermissionAPI.class, String.format("::getUsers -> before loading inode object(%s)", inode) );
-			inodeObj = InodeFactory.getInode(inode, Inode.class);
 
-			userList = permissionFactory.getUsers(inodeObj, permissionType, filter, start, limit);
+			final Optional<Permissionable> permissionable = getPermissionableFromInode(inode);
+			if (permissionable.isPresent()) {
+				userList = permissionFactory.getUsers(permissionable.get(), permissionType, filter, start,
+						limit);
+			}
 
 		} catch (Exception e) {
 			Logger.error(this,e.getMessage(),e);
@@ -1046,19 +1054,39 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	}
 
+	private Optional<Permissionable> getPermissionableFromInode(final String inode)
+			throws DotDataException, DotSecurityException {
+		final Inode inodeObj = InodeFactory.getInode(inode, Inode.class);
+
+		if (null != inodeObj && UtilMethods.isSet(inodeObj.getInode())) {
+			return Optional.of(inodeObj);
+		} else {
+			//In the case an inode isn't found, we should check if it is a folder and return it
+			final Folder folder = APILocator.getFolderAPI()
+					.find(inode, APILocator.systemUser(), false);
+
+			if (null != folder && null != folder.getInode()) {
+				return Optional.of(folder);
+			}
+		}
+
+		return Optional.empty();
+	}
+
 	@CloseDBIfOpened
 	@Override
 	public int getUserCount(String inode, int permissionType, String filter) {
 
-		Inode inodeObj = null;
 		int count = 0;
 
 		try {
 
 			Logger.debug( PermissionAPI.class, String.format("::getUserCount -> before loading inode object(%s)", inode) );
-			inodeObj = InodeFactory.getInode(inode, Inode.class);
 
-			count = permissionFactory.getUserCount(inodeObj, permissionType, filter);
+			final Optional<Permissionable> permissionable = getPermissionableFromInode(inode);
+			if (permissionable.isPresent()) {
+				count = permissionFactory.getUserCount(permissionable.get(), permissionType, filter);
+			}
 
 		} catch (Exception e) {
 			Logger.error(this,e.getMessage(),e);
@@ -1669,16 +1697,22 @@ public class PermissionBitAPIImpl implements PermissionAPI {
                         inode = InodeUtils.getInode(assetInode);
                         inodeCache.put(inode.getInode(), inode);
                     }
-					if(inode instanceof Folder) {
-						parentPermissionable = (Folder)inode;
-					} else if (inode instanceof Structure) {
+					if (inode instanceof Structure) {
 						parentPermissionable = (Structure)inode;
 					} else if (inode instanceof Category) {
 						parentPermissionable = (Category)inode;
 					} else {
-						Host host = APILocator.getHostAPI().find(assetInode, APILocator.getUserAPI().getSystemUser(), false);
-						if(host != null) {
+						//it can be a host or a folder
+						final Host host = APILocator.getHostAPI()
+								.find(assetInode, APILocator.getUserAPI().getSystemUser(), false);
+						if (host != null) {
 							parentPermissionable = host;
+						}
+
+						final Folder folder = APILocator.getFolderAPI()
+								.find(assetInode, APILocator.getUserAPI().getSystemUser(), false);
+						if (folder != null) {
+							parentPermissionable = folder;
 						}
 					}
     			}

@@ -435,14 +435,6 @@ public class IntegrityResource {
         try {
             final PublishingEndPoint endpoint = APILocator.getPublisherEndPointAPI().findEndPointById(endpointId);
 
-            Logger.info(
-                    IntegrityResource.class,
-                    APILocator.getPublisherEndPointAPI().getAllEndPoints().stream().map(e -> e.getServerName()).collect(Collectors.joining()));
-
-            Logger.info(
-                    IntegrityResource.class,
-                    String.format("Endpoint: %s %s", endpoint.getServerName(), endpoint.getAuthKey()));
-
             //Sending bundle to endpoint
             Response response = generateIntegrityCheckerRequest(endpoint);
 

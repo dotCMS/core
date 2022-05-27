@@ -5,14 +5,17 @@ import static org.junit.Assert.assertTrue;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.LinkDataGen;
+import com.dotcms.datagen.RelationshipDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.Inode.Type;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -50,7 +53,7 @@ public class Task201014UpdateColumnsValuesInIdentifierTableTest {
         }
     }
 
-    private List<Identifier> createIdentifiers() throws DotDataException {
+    private List<Identifier> createIdentifiers() throws DotDataException, SQLException {
         final List<Identifier> identifiers = new ArrayList<>();
 
         final Link link = new LinkDataGen().nextPersisted();
@@ -58,6 +61,10 @@ public class Task201014UpdateColumnsValuesInIdentifierTableTest {
 
         final Folder folder = new FolderDataGen().nextPersisted();
         identifiers.add(identifierAPI.find(folder.getIdentifier()));
+
+        //Populating inode table because folders don't inherit from inode anymore
+        //For testing purpose we force the insertion of folder's inode
+        new DotConnect().executeStatement("INSERT INTO inode SELECT inode, owner, idate, 'folder' FROM folder");
 
         final Template template = new TemplateDataGen().nextPersisted();
         identifiers.add(identifierAPI.find(template.getIdentifier()));
@@ -122,11 +129,17 @@ public class Task201014UpdateColumnsValuesInIdentifierTableTest {
      */
     @Test
     public void test_upgradeTask_success() throws SQLException, DotDataException {
-        final List<Identifier> identifiers = createIdentifiers();
-        cleanUpColumns(identifiers);
-        final Task201014UpdateColumnsValuesInIdentifierTable task = new Task201014UpdateColumnsValuesInIdentifierTable();
-        task.executeUpgrade();
-        assertTrue(areColumnsPopulated(identifiers));
+        try {
+            final List<Identifier> identifiers = createIdentifiers();
+            cleanUpColumns(identifiers);
+            final Task201014UpdateColumnsValuesInIdentifierTable task = new Task201014UpdateColumnsValuesInIdentifierTable();
+            task.executeUpgrade();
+            assertTrue(areColumnsPopulated(identifiers));
+        }finally{
+            //Cleaning up inode table because folders don't inherit from inode anymore
+            //For testing purpose we force the insertion of folder's inode
+            new DotConnect().executeStatement("delete from inode where type='folder'");
+        }
     }
 
 }

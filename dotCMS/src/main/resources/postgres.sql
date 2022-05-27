@@ -513,12 +513,7 @@ INSERT INTO QRTZ_EXCL_locks values('JOB_ACCESS');
 INSERT INTO QRTZ_EXCL_locks values('CALENDAR_ACCESS');
 INSERT INTO QRTZ_EXCL_locks values('STATE_ACCESS');
 INSERT INTO QRTZ_EXCL_locks values('MISFIRE_ACCESS');
-create table calendar_reminder (
-   user_id varchar(255) not null,
-   event_id varchar(36) not null,
-   send_date timestamptz not null,
-   primary key (user_id, event_id, send_date)
-);
+
 create table analytic_summary_pages (
    id int8 not null,
    summary_id int8 not null,
@@ -1352,6 +1347,8 @@ create table folder (
    identifier varchar(36),
    default_file_type varchar(36),
    mod_date timestamptz,
+   owner varchar(255),
+   idate timestamptz,
    primary key (inode)
 );
 create table clickstream_404 (
@@ -1562,7 +1559,6 @@ alter table field add constraint fk5cea0fa5fb51eb foreign key (inode) references
 create index idx_relationship_1 on relationship (parent_structure_inode);
 create index idx_relationship_2 on relationship (child_structure_inode);
 create index idx_folder_1 on folder (name);
-alter table folder add constraint fkb45d1c6e5fb51eb foreign key (inode) references inode;
 create index idx_user_clickstream_404_2 on clickstream_404 (user_id);
 create index idx_user_clickstream_404_3 on clickstream_404 (host_id);
 create index idx_user_clickstream_404_1 on clickstream_404 (request_uri);
@@ -1810,7 +1806,6 @@ alter table import_audit add column warnings text,
 
 alter table structure alter host set default 'SYSTEM_HOST';
 alter table structure alter folder set default 'SYSTEM_FOLDER';
-alter table structure add constraint fk_structure_folder foreign key (folder) references folder(inode);
 alter table structure alter column velocity_var_name set not null;
 alter table structure add constraint unique_struct_vel_var_name unique (velocity_var_name);
 create index idx_structure_host on structure (host);
@@ -2317,7 +2312,7 @@ alter table publishing_bundle_environment add constraint FK_environment_id forei
 
 create table publishing_pushed_assets(
 	bundle_id varchar(36) NOT NULL,
-	asset_id varchar(36) NOT NULL,
+	asset_id varchar(255) NOT NULL,
 	asset_type varchar(255) NOT NULL,
 	push_date timestamptz,
 	environment_id varchar(36) NOT NULL,
@@ -2484,7 +2479,9 @@ create table storage_x_data (
     FOREIGN KEY (data_hash) REFERENCES storage_data (hash_id)
 );
 
-
+-- https://github.com/lukas-krecan/ShedLock
+CREATE TABLE shedlock(name VARCHAR(64) NOT NULL, lock_until timestamptz NOT NULL,
+                      locked_at timestamptz NOT NULL, locked_by VARCHAR(255) NOT NULL, PRIMARY KEY (name));
 
 
 

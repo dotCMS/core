@@ -310,6 +310,14 @@ public class TaskLocatorUtil {
 		.add(Task211020CreateHostIntegrityCheckerResultTables.class)
 		.add(Task211101AddContentletAsJsonColumn.class)
 		.add(Task211103RenameHostNameLabel.class)
+		.add(Task220202RemoveFKStructureFolderConstraint.class)
+		.add(Task220203RemoveFolderInodeConstraint.class)
+		.add(Task220214AddOwnerAndIDateToFolderTable.class)
+		.add(Task220215MigrateDataFromInodeToFolder.class)
+		.add(Task220330ChangeVanityURLSiteFieldType.class)
+		.add(Task220331UpdateDateTimezones.class)
+		.add(Task220413IncreasePublishedPushedAssetIdCol.class)
+		.add(Task220512UpdateNoHTMLRegexValue.class)
 		.build();
         
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());

@@ -2,12 +2,18 @@ package com.dotcms.contenttype.model.field;
 
 import static com.dotcms.util.CollectionsUtils.list;
 
+import com.dotcms.content.model.FieldValueBuilder;
+import com.dotcms.content.model.type.system.TagFieldType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.collect.ImmutableList;
+import com.liferay.util.StringPool;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.immutables.value.Value;
 
 @JsonSerialize(as = ImmutableTagField.class)
@@ -50,5 +56,5 @@ public abstract class TagField extends Field  implements OnePerContentType{
 				ContentTypeFieldProperties.DEFAULT_VALUE, ContentTypeFieldProperties.HINT,
 				ContentTypeFieldProperties.SEARCHABLE, ContentTypeFieldProperties.DATA_TYPE);
 	}
-	
+
 }

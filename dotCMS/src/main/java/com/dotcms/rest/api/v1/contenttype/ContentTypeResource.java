@@ -3,15 +3,12 @@ package com.dotcms.rest.api.v1.contenttype;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.CopyContentTypeBean;
 import com.dotcms.contenttype.business.FieldDiffCommand;
 import com.dotcms.contenttype.business.FieldDiffItemsKey;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.field.ColumnField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
-import com.dotcms.contenttype.model.field.LineDividerField;
-import com.dotcms.contenttype.model.field.RowField;
-import com.dotcms.contenttype.model.field.TabDividerField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
@@ -23,6 +20,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.PermissionsUtil;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.PaginationUtil;
@@ -30,9 +28,9 @@ import com.dotcms.util.diff.DiffItem;
 import com.dotcms.util.diff.DiffResult;
 import com.dotcms.util.pagination.ContentTypesPaginator;
 import com.dotcms.util.pagination.OrderDirection;
-import com.dotcms.util.pagination.TemplatePaginator;
 import com.dotcms.workflow.form.WorkflowSystemActionForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
@@ -40,6 +38,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
@@ -58,30 +57,22 @@ import org.glassfish.jersey.server.JSONP;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.liferay.util.StringPool.COMMA;
+
+/**
+ * This REST Endpoint provides information related to Content Types in the current dotCMS repository.
+ *
+ * @author Will Ezell
+ * @since Sep 11th, 2016
+ */
 @Path("/v1/contenttype")
 public class ContentTypeResource implements Serializable {
 	private final WebResource 		webResource;
@@ -111,6 +102,128 @@ public class ContentTypeResource implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	public static final String SELECTED_STRUCTURE_KEY = "selectedStructure";
+
+	@POST
+	@Path("/{baseVariableName}/_copy")
+	@JSONP
+	@NoCache
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	public final Response copyType(@Context final HttpServletRequest req,
+								   @Context final HttpServletResponse res,
+								   @PathParam("baseVariableName") final String baseVariableName,
+								   final CopyContentTypeForm copyContentTypeForm) {
+
+		final InitDataObject initData = this.webResource.init(null, req, res, true, null);
+		final User user = initData.getUser();
+		Response response = null;
+
+		try {
+
+			if (null == copyContentTypeForm) {
+
+				return ExceptionMapperUtil.createResponse(null, "The Request needs a POST body");
+			}
+
+			Logger.debug(this, ()->String.format("Creating new content type '%s' based from  '%s' ", baseVariableName,  copyContentTypeForm.getName()));
+			final HttpSession session = req.getSession(false);
+
+			// Validate input
+			final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
+			final ContentType type = contentTypeAPI.find(baseVariableName);
+
+			if (null == type || (UtilMethods.isSet(type.id()) && !UUIDUtil.isUUID(type.id()))) {
+
+				return ExceptionMapperUtil.createResponse(null, "ContentType 'id' if set, should be a uuid");
+			}
+
+			final ImmutableMap<Object, Object> responseMap = this.copyContentTypeAndDependencies(contentTypeAPI, type, copyContentTypeForm, user);
+
+			// save the last one to the session to be compliant with #13719
+			if(null != session) {
+				session.removeAttribute(SELECTED_STRUCTURE_KEY);
+			}
+
+			response = Response.ok(new ResponseEntityView(responseMap)).build();
+		} catch (IllegalArgumentException e) {
+			Logger.error(this, e.getMessage(), e);
+			response = ExceptionMapperUtil
+					.createResponse(null, "Content-type is not valid (" + e.getMessage() + ")");
+		}catch (DotStateException | DotDataException e) {
+			Logger.error(this, e.getMessage(), e);
+			response = ExceptionMapperUtil
+					.createResponse(null, "Content-type is not valid (" + e.getMessage() + ")");
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
+
+		} catch (Exception e) {
+			Logger.error(this, e.getMessage(), e);
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+		}
+
+		return response;
+	}
+
+	@VisibleForTesting
+	public static void setHostAndFolderAsIdentifer (final String folderPathOrIdentifier, final String hostOrId, final User user, final CopyContentTypeBean.Builder builder) {
+
+		Host site = APILocator.systemHost();
+		if (null != hostOrId) {
+
+			if (Host.SYSTEM_HOST.equals(hostOrId)) {
+
+				site = APILocator.systemHost();
+			} else {
+
+				site = Try.of(() -> UUIDUtil.isUUID(hostOrId) ? APILocator.getHostAPI().find(hostOrId, user, false) :
+						APILocator.getHostAPI().findByName(hostOrId, user, false)).getOrElse(APILocator.systemHost());
+			}
+
+			builder.host(null == site? APILocator.systemHost().getIdentifier():site.getIdentifier());
+		}
+
+		if (null != folderPathOrIdentifier) {
+
+			final Host finalSite = site;
+			final String folderId =
+					Try.of(() -> APILocator.getFolderAPI().findFolderByPath(folderPathOrIdentifier, finalSite, user, false).getIdentifier()).getOrNull();
+
+			builder.folder(null != folderId ? folderId : folderPathOrIdentifier);
+		}
+	}
+
+	@WrapInTransaction
+	private ImmutableMap<Object, Object> copyContentTypeAndDependencies (final ContentTypeAPI contentTypeAPI, final ContentType type,
+																		 final CopyContentTypeForm copyContentTypeForm, final User user)
+			throws DotDataException, DotSecurityException {
+
+		final CopyContentTypeBean.Builder builder = new CopyContentTypeBean.Builder()
+				.sourceContentType(type).icon(copyContentTypeForm.getIcon()).name(copyContentTypeForm.getName())
+				.newVariable(copyContentTypeForm.getVariable());
+
+		setHostAndFolderAsIdentifer(copyContentTypeForm.getFolder(), copyContentTypeForm.getHost(), user, builder);
+		final ContentType contentTypeSaved = contentTypeAPI.copyFrom(builder.build());
+
+		// saving the workflow information
+		final List<WorkflowScheme> workflowSchemes = this.workflowHelper.findSchemesByContentType(type.id(), user);
+		final List<SystemActionWorkflowActionMapping> systemActionWorkflowActionMappings = this.workflowHelper.findSystemActionsByContentType(type, user);
+
+		this.workflowHelper.saveSchemesByContentType(contentTypeSaved.id(), user, workflowSchemes.stream().map(WorkflowScheme::getId).collect(Collectors.toSet()));
+		for (final SystemActionWorkflowActionMapping systemActionWorkflowActionMapping : systemActionWorkflowActionMappings) {
+
+			this.workflowHelper.mapSystemActionToWorkflowAction(new WorkflowSystemActionForm.Builder()
+					.systemAction(systemActionWorkflowActionMapping.getSystemAction())
+					.actionId(systemActionWorkflowActionMapping.getWorkflowAction().getId())
+					.contentTypeVariable(contentTypeSaved.variable()).build(), user);
+		}
+
+		return ImmutableMap.builder()
+				.putAll(new JsonContentTypeTransformer(contentTypeAPI.find(contentTypeSaved.variable())).mapObject())
+				.put("workflows", this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(), user))
+				.put("systemActionMappings", this.workflowHelper.findSystemActionsByContentType(contentTypeSaved, user).stream()
+						.collect(Collectors.toMap(mapping-> mapping.getSystemAction(), mapping->mapping)))
+				.build();
+	}
 
 	@POST
 	@JSONP
@@ -479,6 +592,71 @@ public class ContentTypeResource implements Serializable {
 		return response;
 	}
 
+	/**
+	 * Returns the list of Content Type objects that match the specified filter and the optional pagination criteria.
+	 * <p>Example:</p>
+	 * <pre>
+	 * {@code
+	 *     {{serverURL}}/api/v1/contenttype/_filter
+	 * }
+	 * </pre>
+	 * JSON body:
+	 * <pre>
+	 * {@code
+	 *     {
+	 *         "filter" : {
+	 *             "data" : "calendarEvent,Vanityurl,webPageContent,DotAsset,persona",
+	 *             "query": ""
+	 *         },
+	 *         "page": 0,
+	 *         "perPage": 5
+	 *     }
+	 * }
+	 * </pre>
+	 *
+	 * @param req  The current {@link HttpServletRequest} instance.
+	 * @param res  The current {@link HttpServletResponse} instance.
+	 * @param form The {@link FilteredContentTypesForm} containing the required information and optional pagination
+	 *             parameters.
+	 *
+	 * @return The JSON response with the Content Types matching the specified Velocity Variable Names.
+	 */
+	@POST
+	@Path("/_filter")
+	@JSONP
+	@NoCache
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	public final Response filteredContentTypes(@Context final HttpServletRequest req,
+											   @Context final HttpServletResponse res,
+											   final FilteredContentTypesForm form) {
+		if (null == form) {
+			return ExceptionMapperUtil.createResponse(null, "Requests to '_filter' need a POST JSON body");
+		}
+		final InitDataObject initData = this.webResource.init(null, req, res, true, null);
+		final User user = initData.getUser();
+		Response response;
+		final String types = getFilterValue(form, "types", StringPool.BLANK);
+		final List<String> typeVarNames = UtilMethods.isSet(types) ? Arrays.asList(types.split(COMMA)) : null;
+		final String filter = getFilterValue(form, "query", StringPool.BLANK);
+		final Map<String, Object> extraParams = new HashMap<>();
+		if (UtilMethods.isSet(typeVarNames)) {
+			extraParams.put(ContentTypesPaginator.TYPES_PARAMETER_NAME, typeVarNames);
+		}
+		try {
+			final PaginationUtil paginationUtil =
+					new PaginationUtil(new ContentTypesPaginator(APILocator.getContentTypeAPI(user)));
+			response = paginationUtil.getPage(req, user, filter, form.getPage(), form.getPerPage(), form.getOrderBy(),
+					OrderDirection.valueOf(form.getDirection()), extraParams);
+		} catch (final Exception e) {
+			if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
+				throw new ForbiddenException(e);
+			}
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+			Logger.error(this, e.getMessage(), e);
+		}
+		return response;
+	}
 
 	@GET
 	@Path("/basetypes")
@@ -590,6 +768,23 @@ public class ContentTypeResource implements Serializable {
 		} else {
 			return orderbyParam;
 		}
+	}
+
+	/**
+	 * Utility method used to return a specific parameter from the Content Type Filtering Form. If not present, a
+	 * default value will be returned.
+	 *
+	 * @param form         The {@link FilteredContentTypesForm} in the request.
+	 * @param param        The parameter being requested.
+	 * @param defaultValue The default value in case the parameter is not present or set.
+	 *
+	 * @return The form parameter or the specified default value.
+	 */
+	private <T> T getFilterValue(final FilteredContentTypesForm form, final String param, T defaultValue) {
+		if (null == form || null == form.getFilter() || form.getFilter().isEmpty()) {
+			return defaultValue;
+		}
+		return UtilMethods.isSet(form.getFilter().get(param)) ? (T) form.getFilter().get(param) : defaultValue;
 	}
 
 }

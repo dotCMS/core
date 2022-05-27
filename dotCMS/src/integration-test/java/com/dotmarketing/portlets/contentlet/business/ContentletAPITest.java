@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import static com.dotcms.content.business.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
+import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 import static com.dotcms.contenttype.model.type.BaseContentType.FILEASSET;
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.business.APILocator.getContentTypeFieldAPI;
@@ -11,13 +11,13 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
-import com.dotcms.content.business.DotMappingException;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.model.field.*;
@@ -29,13 +29,11 @@ import com.dotcms.datagen.*;
 import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.mock.request.MockInternalRequest;
-import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.storage.FileMetadataAPI;
-import com.dotcms.storage.FileMetadataAPIImpl;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.uuid.shorty.ShortyId;
@@ -49,7 +47,6 @@ import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.common.db.DotConnect;
@@ -58,7 +55,6 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.PersonalizedContentlet;
@@ -119,7 +115,6 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import io.vavr.API;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.BufferedReader;
@@ -7453,6 +7448,92 @@ public class ContentletAPITest extends ContentletBaseTest {
             assertTrue(((Map) retrieved.get("keyValueField")).isEmpty());
 
         } finally {
+            Config.setProperty(SAVE_CONTENTLET_AS_JSON, defaultValue);
+        }
+    }
+
+    /**
+     * Method to test {@link ContentletAPI#loadField(String, com.dotcms.contenttype.model.field.Field)}
+     * Basically we're testing this method works on both types of saved contentlets. using json scheme or the columns
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_Load_Field_Works_On_Contentlet_Saved_as_Json_Or_Saved_As_Columns() throws DotDataException, DotSecurityException {
+        //Test when contet is saved as json
+        testLoadFieldWontReturnNull(true);
+        //Test when contet is saved as columns
+        testLoadFieldWontReturnNull(false);
+    }
+
+    private void testLoadFieldWontReturnNull(final boolean saveAsJson) throws DotDataException, DotSecurityException {
+
+        final DotConnect dotConnect = new DotConnect();
+
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        final boolean defaultValue = Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
+        Config.setProperty(SAVE_CONTENTLET_AS_JSON, saveAsJson);
+        try{
+            String contentTypeName = "SavedInColumnsCT" + System.currentTimeMillis();
+
+            final List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
+
+            fields.add(
+                    new FieldDataGen()
+                            .name("title")
+                            .velocityVarName("titleField")
+                            .type(TextField.class)
+                            .next()
+            );
+
+            ContentType contentType = new ContentTypeDataGen()
+                    .baseContentType(BaseContentType.CONTENT)
+                    .name(contentTypeName)
+                    .velocityVarName(contentTypeName)
+                    .fields(fields)
+                    .nextPersisted();
+
+             Contentlet contentlet = new ContentletDataGen(contentType)
+                    .languageId(1)
+                    .setProperty("title", "lol")
+                    .nextPersisted();
+
+             //Verify stuff is getting saved as we suppose it is
+             String contentletAsJson = dotConnect.setSQL("select c.contentlet_as_json as json from contentlet c where c.inode = ?").addParam(contentlet.getInode()).getString("json");
+
+             if(saveAsJson){
+                 assertTrue(UtilMethods.isSet(contentletAsJson));
+             } else {
+                 assertTrue(UtilMethods.isNotSet(contentletAsJson));
+             }
+
+            final Optional<com.dotcms.contenttype.model.field.Field> titleField = contentlet
+                    .getContentType().fields().stream()
+                    .filter(field -> "titleField".equals(field.variable())).findFirst();
+
+            assertTrue(titleField.isPresent());
+            assertNotNull(contentletAPI.loadField(contentlet.getInode(),titleField.get()));
+
+            final Template template = new TemplateDataGen().body("body").nextPersisted();
+            final Folder folder = new FolderDataGen().nextPersisted();
+            final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+
+            //Verify stuff is getting saved as we suppose it is
+            contentletAsJson = dotConnect.setSQL("select c.contentlet_as_json as json from contentlet c where c.inode = ?").addParam(page.getInode()).getString("json");
+            if(saveAsJson){
+                assertTrue(UtilMethods.isSet(contentletAsJson));
+            } else {
+                assertTrue(UtilMethods.isNotSet(contentletAsJson));
+            }
+
+            final Optional<com.dotcms.contenttype.model.field.Field> templateField = page
+                    .getContentType().fields().stream()
+                    .filter(field -> "template".equals(field.variable())).findFirst();
+
+            assertTrue(templateField.isPresent());
+            assertNotNull(contentletAPI.loadField(page.getInode(),templateField.get()));
+
+        }finally {
             Config.setProperty(SAVE_CONTENTLET_AS_JSON, defaultValue);
         }
     }

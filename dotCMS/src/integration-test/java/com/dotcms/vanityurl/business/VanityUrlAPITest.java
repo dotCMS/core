@@ -1,15 +1,18 @@
 package com.dotcms.vanityurl.business;
 
 
-import static com.dotcms.content.business.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
+import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.model.type.VanityUrlContentType;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.VanityUrlDataGen;
 import com.dotcms.util.FiltersUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.vanityurl.cache.VanityUrlCache;
@@ -28,6 +31,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.startup.runonce.Task220330ChangeVanityURLSiteFieldType;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.language.LanguageException;
@@ -105,7 +109,7 @@ public class VanityUrlAPITest {
         for (int i = numberOfTestVanities; i > 0; i--) {
             final String title = "VanityURLOrder" + i;
             final int randomOrder = new Random().nextInt(100);
-            Contentlet vanity = filtersUtil.createVanityUrl(title, site, baseUri, baseUri,
+            Contentlet vanity = filtersUtil.createVanityUrl(title, defaultHost, baseUri, baseUri,
                             action, randomOrder, defaultLanguage.getId());
             filtersUtil.publishVanityUrl(vanity);
         }
@@ -162,7 +166,7 @@ public class VanityUrlAPITest {
         int action = 200;
         int order = 1;
 
-        Contentlet contentlet1 = filtersUtil.createVanityUrl(title, site, uri,
+        Contentlet contentlet1 = filtersUtil.createVanityUrl(title, defaultHost, uri,
                 forwardTo, action, order, defaultLanguage.getId());
 
         VanityUrl vanity1 = vanityUrlAPI.fromContentlet(contentletAPI.find(contentlet1.getInode(), user, false));
@@ -199,7 +203,7 @@ public class VanityUrlAPITest {
         int action = 200;
         int order = 1;
 
-        contentlet1 = filtersUtil.createVanityUrl(title, site, uri,
+        contentlet1 = filtersUtil.createVanityUrl(title, defaultHost, uri,
                 forwardTo, action, order, defaultLanguage.getId());
 
         
@@ -241,7 +245,7 @@ public class VanityUrlAPITest {
         int action = 200;
         int order = 1;
 
-        Contentlet contentlet1 = filtersUtil.createVanityUrl(title, site, uri,
+        Contentlet contentlet1 = filtersUtil.createVanityUrl(title, defaultHost, uri,
                 forwardTo, action, order, defaultLanguage.getId());
 
         
@@ -296,7 +300,7 @@ public class VanityUrlAPITest {
 
        
         // save and publish the vanity
-        filtersUtil.publishVanityUrl(filtersUtil.createVanityUrl(title, site, uri,
+        filtersUtil.publishVanityUrl(filtersUtil.createVanityUrl(title, defaultHost, uri,
                         forwardTo, action, order, defaultLanguage.getId()));
         
 
@@ -311,7 +315,7 @@ public class VanityUrlAPITest {
         String newUrl = uri + ".*";
         
         // save and publish the vanity
-        filtersUtil.publishVanityUrl(filtersUtil.createVanityUrl(title, site, newUrl,
+        filtersUtil.publishVanityUrl(filtersUtil.createVanityUrl(title, defaultHost, newUrl,
                         forwardTo, action, order, defaultLanguage.getId()));
         
         
@@ -351,7 +355,7 @@ public class VanityUrlAPITest {
         int action = 200;
         int order = 1;
 
-        vanityURLContentlet = filtersUtil.createVanityUrl(title, site, uri,
+        vanityURLContentlet = filtersUtil.createVanityUrl(title, defaultHost, uri,
                 forwardTo, action, order, defaultLanguage.getId());
             
         filtersUtil.publishVanityUrl(vanityURLContentlet);
@@ -400,7 +404,7 @@ public class VanityUrlAPITest {
         int action = 200;
         int order = 1;
 
-        vanityURLContentlet = filtersUtil.createVanityUrl(title, site, uri,
+        vanityURLContentlet = filtersUtil.createVanityUrl(title, defaultHost, uri,
                 forwardTo, action, order, defaultLanguage.getId());
             
         filtersUtil.publishVanityUrl(vanityURLContentlet);
@@ -436,7 +440,7 @@ public class VanityUrlAPITest {
         Contentlet vanityURLContentlet = null;
 
         vanityURLContentlet = filtersUtil
-                .createVanityUrl("test Vanity Url " + currentTime, defaultHost.getIdentifier(),
+                .createVanityUrl("test Vanity Url " + currentTime, defaultHost,
                         "/testing" + currentTime, "https://www.google.com", 200, 1,
                         defaultLanguage.getId());
 
@@ -479,7 +483,7 @@ public class VanityUrlAPITest {
         final Language spanish = TestDataUtils.getSpanishLanguage();
 
         vanityURLContentletEnglish = filtersUtil
-                .createVanityUrl("test Vanity Url " + currentTime, defaultHost.getIdentifier(),
+                .createVanityUrl("test Vanity Url " + currentTime, defaultHost,
                         "/testing" + currentTime, "https://www.google.com", 200, 1,
                         defaultLanguage.getId());
         filtersUtil.publishVanityUrl(vanityURLContentletEnglish);
@@ -552,7 +556,7 @@ public class VanityUrlAPITest {
         //------------------------------------
         siteVanity = filtersUtil
                 .createVanityUrl("test Vanity Url " + System.currentTimeMillis(),
-                        defaultHost.getIdentifier(),
+                        defaultHost,
                         uri, "https://www.google.com", 200, 1, defaultLanguage.getId());
         filtersUtil.publishVanityUrl(siteVanity);
         
@@ -588,7 +592,7 @@ public class VanityUrlAPITest {
         //Create the VanityURL for the SYSTEM_HOST
         //------------------------------------
 
-        systemHostVanity = filtersUtil.createVanityUrl("test Vanity Url " + System.currentTimeMillis(), Host.SYSTEM_HOST, uri,
+        systemHostVanity = filtersUtil.createVanityUrl("test Vanity Url " + System.currentTimeMillis(), APILocator.getHostAPI().findSystemHost(), uri,
                         "https://www.google.com", 200, 1, defaultLanguage.getId());
         filtersUtil.publishVanityUrl(systemHostVanity);
 
@@ -690,7 +694,7 @@ public class VanityUrlAPITest {
         //------------------------------------
         systemVanityURL = filtersUtil
                 .createVanityUrl("test Vanity Url " + System.currentTimeMillis(),
-                        Host.SYSTEM_HOST,
+                        APILocator.getHostAPI().findSystemHost(),
                         uri, "https://www.google.com", 200, 1, defaultLanguage.getId());
         systemVanityURL.setIndexPolicy(IndexPolicy.FORCE);
         filtersUtil.publishVanityUrl(systemVanityURL);
@@ -736,7 +740,7 @@ public class VanityUrlAPITest {
             //------------------------------------
             systemHostVanityURL = filtersUtil
                     .createVanityUrl("test Vanity Url " + System.currentTimeMillis(),
-                            Host.SYSTEM_HOST,
+                            APILocator.getHostAPI().findSystemHost(),
                             uri, "https://www.google.com", 200, 1, defaultLanguage.getId());
             systemHostVanityURL.setIndexPolicy(IndexPolicy.FORCE);
             filtersUtil.publishVanityUrl(systemHostVanityURL);
@@ -764,7 +768,7 @@ public class VanityUrlAPITest {
 
             defaultHostVanityURL = filtersUtil
                     .createVanityUrl("test Vanity Url " + System.currentTimeMillis(),
-                            defaultHost.getIdentifier(),
+                            defaultHost,
                             uri, "https://www.google.com", 200, 1, defaultLanguage.getId());
             defaultHostVanityURL.setIndexPolicy(IndexPolicy.FORCE);
             filtersUtil.publishVanityUrl(defaultHostVanityURL);
@@ -857,7 +861,7 @@ public class VanityUrlAPITest {
         //Create the VanityURL
         //------------------------------------
         vanityURL = filtersUtil
-                .createVanityUrl("test Vanity Url " + currentTime, defaultHost.getIdentifier(),
+                .createVanityUrl("test Vanity Url " + currentTime, defaultHost,
                         uri, "https://www.google.com", 200, 1, defaultLanguage.getId());
         filtersUtil.publishVanityUrl(vanityURL);
 
@@ -898,7 +902,7 @@ public class VanityUrlAPITest {
         final int action = 200;
         final int order = 1;
 
-        final Contentlet vanityURL = filtersUtil.createVanityUrl(title, hostIdentifier, uri,
+        final Contentlet vanityURL = filtersUtil.createVanityUrl(title, host, uri,
                 forwardTo, action, order, defaultLanguage.getId());
         Assert.assertNotNull(vanityURL);
         filtersUtil.publishVanityUrl(vanityURL);
@@ -933,18 +937,6 @@ public class VanityUrlAPITest {
          Config.setProperty(SAVE_CONTENTLET_AS_JSON, false);
 
         try {
-            //Load the VanityUrl structure  contentlet fields
-            final DotConnect dotConnect = new DotConnect();
-            dotConnect.setSQL(
-                    "select f.velocity_var_name, f.field_contentlet from structure s join field f on s.inode = f.structure_inode where s.velocity_var_name = ?"
-            ).addParam("Vanityurl");
-            final List<Map<String, Object>> maps = dotConnect.loadObjectResults();
-            final Map<String, Object> fieldsToColumns = new HashMap<>();
-            maps.forEach(map -> {
-                fieldsToColumns.put(map.get("velocity_var_name").toString(),
-                        map.get("field_contentlet").toString());
-            });
-
             final Language altLang = new LanguageDataGen().nextPersisted();
 
             final List<Contentlet> vanityUrls = new ArrayList<>();
@@ -953,6 +945,18 @@ public class VanityUrlAPITest {
             vanityUrls.add(createVanity(new SiteDataGen().nextPersisted(), altLang));
             vanityUrls.add(createVanity(new SiteDataGen().nextPersisted(), altLang));
             vanityUrls.add(createVanity(new SiteDataGen().nextPersisted(), altLang));
+
+            //Load the VanityUrl structure  contentlet fields
+            final DotConnect dotConnect = new DotConnect();
+            dotConnect.setSQL(
+                    "select f.velocity_var_name, f.field_contentlet from structure s join field f on s.inode = f.structure_inode where s.velocity_var_name = ?"
+            ).addParam(vanityUrls.get(0).getContentType().variable());
+            final List<Map<String, Object>> maps = dotConnect.loadObjectResults();
+            final Map<String, Object> fieldsToColumns = new HashMap<>();
+            maps.forEach(map -> {
+                fieldsToColumns.put(map.get("velocity_var_name").toString(),
+                        map.get("field_contentlet").toString());
+            });
 
             final List<Tuple2<String, String>> mandatoryFields = new ArrayList<>();
 
@@ -974,6 +978,8 @@ public class VanityUrlAPITest {
                 dotConnect.setSQL(statement).addParam(vanity.getInode()).loadResult();
                 //Then find it via db. This only works if cache has been cleared.
                 vanityURLCache.remove(vanity);
+                CacheLocator.getContentletCache().remove(vanity);
+
                 final Host site = hostAPI.find(vanity, systemUser, false);
                 List<CachedVanityUrl> inDb = vanityUrlAPI.findInDb(site, altLang);
                 assertTrue(
@@ -1012,11 +1018,17 @@ public class VanityUrlAPITest {
         final int action = 200;
         final int order = 1;
 
-        final Contentlet vanityURL = filtersUtil.createVanityUrl(title, site.getIdentifier(), uri,
-                forwardTo, action, order, lang.getId());
-        Assert.assertNotNull(vanityURL);
-        filtersUtil.publishVanityUrl(vanityURL);
-        return vanityURL;
+        final Contentlet vanityURL = new VanityUrlDataGen()
+                .uri(uri)
+                .title(title)
+                .forwardTo(forwardTo)
+                .action(action)
+                .order(order)
+                .languageId(lang.getId())
+                .host(site)
+                .nextPersisted();
+
+       return  ContentletDataGen.publish(vanityURL);
     }
 
 }

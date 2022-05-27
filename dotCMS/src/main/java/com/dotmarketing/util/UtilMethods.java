@@ -298,6 +298,15 @@ public class UtilMethods {
         return !isSet(string);
     }
 
+    /**
+     *
+     * @param collection
+     * @return
+     */
+    public static boolean isNotSet(final Collection<?> collection) {
+        return null == collection || collection.isEmpty();
+    }
+
     public static final boolean isEmpty(String x) {
         return !isSet(x);
     }

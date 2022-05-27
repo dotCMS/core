@@ -55,7 +55,6 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -421,7 +420,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     }
 
     /**
-     * @see HTMLPageAssetAPI#findPage(inode, User, boolean)
+     * @see HTMLPageAssetAPI#findPage(String, User, boolean)
      */
     @CloseDBIfOpened
     @Override
@@ -481,7 +480,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     @Override
     public boolean move(HTMLPageAsset page, Folder parent, User user) throws DotDataException, DotSecurityException {
-        return move(page,APILocator.getHostAPI().find(identifierAPI.find(parent).getHostId(),user,false), parent, user);
+        return move(page,APILocator.getHostAPI().find(identifierAPI.find(parent.getIdentifier()).getHostId(),user,false), parent, user);
     }
 
     @Override
@@ -493,41 +492,24 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     public boolean move(HTMLPageAsset page, Host host, Folder parent, User user)
             throws DotDataException, DotSecurityException {
         Identifier sourceIdent = identifierAPI.find(page);
-        Identifier targetFolderIdent = identifierAPI.find(parent);
+        Identifier targetFolderIdent = identifierAPI.find(parent.getIdentifier());
         Identifier targetIdent = identifierAPI.find(host,
                 targetFolderIdent.getURI() + sourceIdent.getAssetName());
         if (targetIdent == null || !InodeUtils.isSet(targetIdent.getId())) {
-            Contentlet contentlet = contentletAPI
+            final Contentlet contentlet = contentletAPI
                     .find(page.getInode(), user, false);
 
-            /*
-             * Enable multi-language support when cut a page
-             */
-            Map<String, Boolean> inodesToMove = new HashMap<String, Boolean>();
-            // Getting all working contentlet version languages
-            for(Contentlet workingContentlet : contentletAPI.getAllLanguages(contentlet, false,
-                    user, false)) {
-                inodesToMove.put(workingContentlet.getInode(), false);
-            }
-            // Getting all live contentlet version languages
-            for(Contentlet liveContentlet : contentletAPI.getAllLanguages(contentlet, true,
-                    user, false)) {
-                inodesToMove.put(liveContentlet.getInode(), true);
+            contentletAPI.move(contentlet, user, host, parent, false);
+
+            if ( parent != null ) {
+                CacheLocator.getNavToolCache().removeNav(parent.getHostId(), parent.getInode());
             }
 
-            for (String contentletInode : inodesToMove.keySet()) {
-                Contentlet cont = contentletAPI.checkout(contentletInode, user, false);
+            final Folder oldParent = APILocator.getFolderAPI().findFolderByPath( sourceIdent.getParentPath(), host, user, false);
 
-                cont.setFolder(parent.getInode());
-                cont.setHost(host.getIdentifier());
-                cont = contentletAPI.checkin(cont, user, false);
-                if (inodesToMove.get(contentletInode)) {
-                    // We need to publish those that were live
-                    contentletAPI.publish(cont, user, false);
-                }
-            }
+            CacheLocator.getNavToolCache().removeNav(oldParent.getHostId(), oldParent.getInode());
 
-            systemEventsAPI.pushAsync(SystemEventType.MOVE_PAGE_ASSET, new Payload(page, Visibility.EXCLUDE_OWNER,
+            systemEventsAPI.pushAsync(SystemEventType.MOVE_PAGE_ASSET, new Payload(page.getMap(), Visibility.EXCLUDE_OWNER,
                     new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
             return true;
@@ -860,7 +842,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     /**
      * This returns the proper ihtml page based on id, state and language
      * 
-     * @param id
+     * @param identifier
      * @param tryLang
      * @param live
      * @return

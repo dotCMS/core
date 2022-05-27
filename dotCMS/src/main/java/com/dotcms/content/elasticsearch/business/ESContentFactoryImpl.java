@@ -12,10 +12,13 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_IN_
 import static com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTokens;
 
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.content.business.ContentletJsonAPI;
+import com.dotcms.content.business.json.ContentletJsonAPI;
+import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.notifications.bean.NotificationLevel;
@@ -130,7 +133,6 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.util.NumberUtils;
 
 /**
  * Implementation class for the {@link ContentletFactory} interface. This class
@@ -268,6 +270,47 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	    Map m=(Map)results.get(0);
 	    return m.get(fieldContentlet);
 	}
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected Object loadJsonField(final String inode,
+            final com.dotcms.contenttype.model.field.Field field) throws DotDataException {
+
+        String loadJsonFieldValueSQL = null;
+        if (DbConnectionFactory.isPostgres()) {
+            loadJsonFieldValueSQL = String
+                    .format("SELECT contentlet_as_json->'fields'->'%s'->>'value' as value  FROM contentlet WHERE contentlet_as_json @> '{\"fields\":{\"%s\":{}}}' and inode = ? ",
+                            field.variable(), field.variable());
+        } else {
+            if (DbConnectionFactory.isMsSql()) {
+                loadJsonFieldValueSQL = String
+                        .format("SELECT JSON_VALUE(contentlet_as_json,'$.fields.%s.value') as value FROM contentlet WHERE JSON_VALUE(contentlet_as_json,'$.fields.%s.value') IS NOT null AND inode = ? ",
+                                field.variable(), field.variable());
+            }
+        }
+        //if we were able to set the query then give it a try executing it.
+        if (UtilMethods.isSet(loadJsonFieldValueSQL)) {
+            //if the attribute is missing for some reason ms-sql might not like it. we better try-catch this.
+            final String finalQuery = loadJsonFieldValueSQL;
+            return Try.of(() -> new DotConnect().setSQL(finalQuery).addParam(inode).getString("value"))
+                    .onFailure(throwable -> {
+                        Logger.warnAndDebug(ESContentFactoryImpl.class, String.format(
+                                "There was an error fetching field variable `%s` from inode `%s` null has been returned.",
+                                field.variable(), inode), throwable);
+                    }).getOrNull();
+        } else {
+            //If the db engine does not provide json support
+            //We can try parsing the fields directly.
+            final String json = new DotConnect()
+                    .setSQL("SELECT contentlet_as_json FROM contentlet WHERE inode=?")
+                    .addParam(inode).getString("contentlet_as_json");
+            final Optional<String> fieldValue = ContentletJsonHelper.INSTANCE.get()
+                    .fieldValue(json, field.variable());
+            return fieldValue.orElse(null);
+        }
+    }
 
 	@Override
 	protected void cleanField(String structureInode, Field field) throws DotDataException, DotStateException, DotSecurityException {
@@ -1589,9 +1632,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
         final String indexToHit;
         try {
             indexToHit = inferIndexToHit(query);
+            if (indexToHit==null)
+                return SearchHits.empty();
         } catch (Exception e) {
-            Logger.fatal(this, "Can't get indices information.", e);
-            return null;
+            Logger.error(this, "Can't get indices information.", e);
+            return SearchHits.empty();
         }
 
         final SearchRequest searchRequest = new SearchRequest();
@@ -1924,12 +1969,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
 	@Override
-    public Contentlet save(Contentlet contentlet) throws DotDataException, DotStateException, DotSecurityException {
+    public Contentlet save(final Contentlet contentlet) throws DotDataException, DotStateException, DotSecurityException {
 	    return save(contentlet,null);
 	}
 
 	@Override
-    protected Contentlet save(Contentlet contentlet, String existingInode)
+    protected Contentlet save(final Contentlet contentlet, final String existingInode)
             throws DotDataException, DotStateException, DotSecurityException {
 
         final String inode = getInode(existingInode, contentlet);
@@ -1947,6 +1992,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
         REMOVABLE_KEY_SET.forEach(key -> toReturn.getMap().remove(key));
         contentlet.getMap().remove(Contentlet.CONTENTLET_AS_JSON);
         contentletCache.remove(inode);
+        final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
+        CacheLocator.getCSSCache().remove(identifier.getHostId(), identifier.getPath(), true);
+        CacheLocator.getCSSCache().remove(identifier.getHostId(), identifier.getPath(), false);
         return toReturn;
     }
 
@@ -1963,7 +2011,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
                     final String asJson = contentletJsonAPI.toJson(new Contentlet(map));
                     Logger.debug(ESContentletAPIImpl.class, asJson);
+                    //attach the json so it can be grabbed by the upsert downstream
                     contentlet.setProperty(Contentlet.CONTENTLET_AS_JSON, asJson);
+
                 } catch (DotDataException | JsonProcessingException e) {
                     final String error = String
                             .format("Error converting from json to contentlet with id: %s and inode: %s ",
@@ -1972,6 +2022,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     throw new DotRuntimeException(error, e);
                 }
         }
+
     }
 
     private void upsertContentlet(final Contentlet contentlet, final String inode) throws DotDataException {
@@ -1999,7 +2050,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
     private String getInode(final String existingInode, final Contentlet contentlet)
-            throws DotDataException, DotSecurityException {
+            throws DotDataException {
 
         final String inode;
         if(UtilMethods.isSet(existingInode)){
@@ -2065,19 +2116,28 @@ public class ESContentFactoryImpl extends ContentletFactory {
         upsertValues.add(contentlet.getLanguageId());
         upsertValues.add(jsonContentlet);
 
-        final Map<String, Object> fieldsMap = getFieldsMap(contentlet);
-
-        try {
-            addDynamicFields(upsertValues, fieldsMap,"date");
-            addDynamicFields(upsertValues, fieldsMap,"text");
-            addDynamicFields(upsertValues, fieldsMap,"text_area");
-            addDynamicFields(upsertValues, fieldsMap,"integer");
-            addDynamicFields(upsertValues, fieldsMap,"float");
-            addDynamicFields(upsertValues, fieldsMap,"bool");
-        } catch (JsonProcessingException e) {
-            throw new DotDataException(e);
+        if (APILocator.getContentletJsonAPI().isPersistContentletInColumns()) {
+            final Map<String, Object> fieldsMap = getFieldsMap(contentlet);
+            try {
+                addDynamicFields(upsertValues, fieldsMap, "date");
+                addDynamicFields(upsertValues, fieldsMap, "text");
+                addDynamicFields(upsertValues, fieldsMap, "text_area");
+                addDynamicFields(upsertValues, fieldsMap, "integer");
+                addDynamicFields(upsertValues, fieldsMap, "float");
+                addDynamicFields(upsertValues, fieldsMap, "bool");
+            } catch (JsonProcessingException e) {
+                throw new DotDataException(e);
+            }
+        } else {
+            // Dynamic columns are emptied out so they don't get to save anything.
+            // We're pretty much relying on the stuff we store as json
+            nullOutDynamicFields(upsertValues, "date");
+            nullOutDynamicFields(upsertValues, "text");
+            nullOutDynamicFields(upsertValues, "text_area");
+            nullOutDynamicFields(upsertValues, "integer");
+            nullOutDynamicFields(upsertValues, "float");
+            nullOutDynamicFields(upsertValues, "bool");
         }
-
         return upsertValues;
     }
 
@@ -2129,6 +2189,27 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 upsertValues.add(defaultValue);
             }
         }
+    }
+
+    /**
+     * Sets default values where
+     * 0 is set where there is supposed to be any numeric val,
+     * false is set where there was supposed to be a bool val and null everywhere else.
+     * @param upsertValues
+     * @param prefix
+     */
+    private void nullOutDynamicFields(final List<Object> upsertValues,  final String prefix){
+        Object defaultValue = null;
+        if ("integer".equals(prefix) || "float".equals(prefix)){
+            defaultValue = 0;
+        } else if ("bool".equals(prefix)){
+            defaultValue = Boolean.FALSE;
+        }
+
+        for (int i = 1; i <= MAX_FIELDS_ALLOWED; i++) {
+            upsertValues.add(defaultValue);
+        }
+
     }
 
     private Map<String, Object> getFieldsMap(final Contentlet contentlet) throws DotDataException {
@@ -2383,60 +2464,16 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	            result.setSortBy(translateQuerySortBy(sortBy, originalQuery));
 	        }
 
-	        //Pad Numbers
-	        List<RegExMatch> numberMatches = RegEX.find(query, "(\\w+)\\.(\\w+):([0-9]+\\.?[0-9]+ |\\.?[0-9]+ |[0-9]+\\.?[0-9]+$|\\.?[0-9]+$)");
-	        if(numberMatches != null && numberMatches.size() > 0){
-	            for (RegExMatch numberMatch : numberMatches) {
-	                List<Field> fields = FieldsCache.getFieldsByStructureVariableName(numberMatch.getGroups().get(0).getMatch());
-	                for (Field field : fields) {
-	                    if(field.getVelocityVarName().equalsIgnoreCase(numberMatch.getGroups().get(1).getMatch())){
-	                        if (field.getFieldContentlet().startsWith("float")) {
-	                            query = query.replace(numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":" + numberMatch.getGroups().get(2).getMatch(),
-	                                    numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":" + NumberUtil.pad(NumberUtils.parseNumber((numberMatch.getGroups().get(2).getMatch()),Float.class)) + " ");
-	                        }else if(field.getFieldContentlet().startsWith("integer")) {
-	                            query = query.replace(numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":" + numberMatch.getGroups().get(2).getMatch(),
-	                                    numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":" + NumberUtil.pad(NumberUtils.parseNumber((numberMatch.getGroups().get(2).getMatch()),Long.class)) + " ");
-	                        }else if(field.getFieldContentlet().startsWith("bool")) {
-	                            String oldSubQuery = numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":" + numberMatch.getGroups().get(2).getMatch();
-	                            String oldFieldBooleanValue = oldSubQuery.substring(oldSubQuery.indexOf(":")+1,oldSubQuery.indexOf(":") + 2);
-	                            String newFieldBooleanValue="";
-	                            if(oldFieldBooleanValue.equals("1") || oldFieldBooleanValue.equals("true"))
-	                                newFieldBooleanValue = "true";
-	                            else if(oldFieldBooleanValue.equals("0") || oldFieldBooleanValue.equals("false"))
-	                                newFieldBooleanValue = "false";
-	                            query = query.replace(numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":" + numberMatch.getGroups().get(2).getMatch(),
-	                                    numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":" + newFieldBooleanValue + " ");
-	                        }
-	                    }
-	                }
-	            }
-	        }
 
-	        if (UtilMethods.isSet(sortBy))
+
+	        if (UtilMethods.isSet(sortBy)) {
 	            result.setSortBy(translateQuerySortBy(sortBy, query));
-
-
+	        }
+	        
 	        // DOTCMS-6247
 	        query = lowercaseStringExceptMatchingTokens(query, LUCENE_RESERVED_KEYWORDS_REGEX);
 
-	        //Pad NumericalRange Numbers
-	        List<RegExMatch> numberRangeMatches = RegEX.find(query, "(\\w+)\\.(\\w+):\\[(([0-9]+\\.?[0-9]+ |\\.?[0-9]+ |[0-9]+\\.?[0-9]+|\\.?[0-9]+) to ([0-9]+\\.?[0-9]+ |\\.?[0-9]+ |[0-9]+\\.?[0-9]+|\\.?[0-9]+))\\]");
-	        if(numberRangeMatches != null && numberRangeMatches.size() > 0){
-	            for (RegExMatch numberMatch : numberRangeMatches) {
-	                List<Field> fields = FieldsCache.getFieldsByStructureVariableName(numberMatch.getGroups().get(0).getMatch());
-	                for (Field field : fields) {
-	                    if(field.getVelocityVarName().equalsIgnoreCase(numberMatch.getGroups().get(1).getMatch())){
-	                        if (field.getFieldContentlet().startsWith("float")) {
-	                            query = query.replace(numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":[" + numberMatch.getGroups().get(3).getMatch() + " to " + numberMatch.getGroups().get(4).getMatch() +"]",
-	                                    numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":[" + NumberUtil.pad(NumberUtils.parseNumber((numberMatch.getGroups().get(3).getMatch()),Float.class)) + " TO " + NumberUtil.pad(NumberUtils.parseNumber((numberMatch.getGroups().get(4).getMatch()),Float.class)) + "]");
-	                        }else if(field.getFieldContentlet().startsWith("integer")) {
-	                            query = query.replace(numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":[" + numberMatch.getGroups().get(3).getMatch() + " to " + numberMatch.getGroups().get(4).getMatch() +"]",
-	                                    numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":[" + NumberUtil.pad(NumberUtils.parseNumber((numberMatch.getGroups().get(3).getMatch()),Long.class)) + " TO " + NumberUtil.pad(NumberUtils.parseNumber((numberMatch.getGroups().get(4).getMatch()),Long.class)) + "]");
-	                        }
-	                    }
-	                }
-	            }
-	        }
+
 	        result.setQuery(query.trim());
 
 	        CacheLocator.getContentletCache().addTranslatedQuery(
@@ -2775,20 +2812,35 @@ public class ESContentFactoryImpl extends ContentletFactory {
      */
     public Queries getJsonFieldQueries(final Field field, final Date maxDate) {
         final ContentletJsonAPI contentletJsonAPI = APILocator.getContentletJsonAPI();
-        if (!contentletJsonAPI.isPersistContentAsJson()) {
-            return new NullQueries();
+        if (contentletJsonAPI.isPersistContentAsJson()) {
+            //If we have got this far it means we are a running postgres instance that obviously supports json.
+            final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            if (DbConnectionFactory.isPostgres()) {
+                final String select = String
+                        .format("SELECT inode FROM contentlet WHERE structure_inode = ? AND mod_date<='%s' AND contentlet_as_json @> '{\"fields\" : {\"%s\":{}}}'",
+                                format.format(maxDate),
+                                field.getVelocityVarName());
+                //This basically removes from the json structure the particular entry for the field
+                final String update = String
+                        .format("UPDATE contentlet SET contentlet_as_json = contentlet_as_json #- '{fields,%s}' WHERE inode = ?",
+                                field.getVelocityVarName());
+                return new Queries().setSelect(select).setUpdate(update);
+            }
+
+            if (DbConnectionFactory.isMsSql()) {
+                final String select = String
+                        .format("SELECT inode FROM contentlet WHERE structure_inode = ? AND mod_date<='%s' AND JSON_VALUE(contentlet_as_json,'$.fields.%s') IS NOT null ",
+                                format.format(maxDate),
+                                field.getVelocityVarName());
+
+                final String update = String
+                        .format("UPDATE contentlet SET contentlet_as_json = JSON_MODIFY(contentlet_as_json,'$.fields.%s',NULL) WHERE inode = ?",
+                                field.getVelocityVarName());
+                return new Queries().setSelect(select).setUpdate(update);
+            }
         }
-        //If we have got this far it means we are a running postgres instance that obviously supports json.
-        final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        final String select = String
-                .format("SELECT inode FROM contentlet WHERE structure_inode = ? AND mod_date<='%s' AND contentlet_as_json @> '{\"fields\" : {\"%s\":{}}}'",
-                        format.format(maxDate),
-                        field.getVelocityVarName());
-        //This basically removes from the json structure the particular entry for the field
-        final String update = String
-                .format("UPDATE contentlet SET contentlet_as_json = contentlet_as_json #- '{fields,%s}' WHERE inode = ?",
-                        field.getVelocityVarName());
-        return new Queries().setSelect(select).setUpdate(update);
+        //When called on non-json supported dbs return a nullified instance
+        return new NullQueries();
     }
 
 
@@ -2824,6 +2876,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
     private static class NullQueries extends Queries {
+
         public String getSelect() {
             throw new UnsupportedOperationException();
         }

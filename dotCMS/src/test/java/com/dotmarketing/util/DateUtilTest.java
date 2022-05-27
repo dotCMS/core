@@ -1,40 +1,40 @@
 package com.dotmarketing.util;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.UnitTestBase;
-import com.dotcms.company.CompanyAPI;
-import com.dotcms.company.CompanyAPIFactory;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.unittest.TestUtil;
 import com.dotmarketing.business.APILocator;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
-import com.liferay.portal.ejb.CompanyPersistence;
-import com.liferay.portal.model.Company;
-import com.liferay.util.InstancePool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-
-import io.vavr.control.Try;
-import org.junit.Ignore;
-import org.junit.Test;
-
-import javax.servlet.ServletContext;
 import java.text.MessageFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.format.DateTimeParseException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.Month;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.*;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TimeZone;
+import javax.servlet.ServletContext;
+import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Unit test for {@link DateUtil}
@@ -79,6 +79,12 @@ public class DateUtilTest extends UnitTestBase {
                 "yyyyMMddHHmmss"));
 
         return TestUtil.toCaseArray(data);
+    }
+
+    @DataProvider
+    public static Object[] timeZones() {
+        return new TimeZone[]{TimeZone.getTimeZone("US/Western"),
+                TimeZone.getTimeZone("US/Eastern"), TimeZone.getTimeZone("UTC")};
     }
 
     @DataProvider
@@ -410,33 +416,21 @@ public class DateUtilTest extends UnitTestBase {
      * ExpectedResult: The date is converted using the desired time zone.
      *
      */
-    @Test()
-    @Ignore("Need to fix failure when running in EST timezone")
-    public void test_time_zone() throws ParseException {
+    @Test
+    @UseDataProvider("timeZones")
+    public void test_time_zone(final TimeZone timeZone) throws ParseException {
 
-        final String   easternUSTimeZone = "US/Eastern";
-        final String   westernUSTimeZone = "US/Western";
-        final TimeZone timeZone      = TimeZone.getTimeZone(easternUSTimeZone);
-        final TimeZone defaultTimeZone =  APILocator.systemTimeZone();
-
-        final Date date1 = DateUtil.convertDate("2015-02-04 11", timeZone, "yyyy-MM-dd HH");
+        Date date1 = DateUtil.convertDate("2015-02-04 11", timeZone, "yyyy-MM-dd HH");
 
         assertNotNull(date1);
-        assertEquals("Year should be 2015", 115,date1.getYear());
-        assertEquals("Month should be Feb", Calendar.FEBRUARY, date1.getMonth());
-        assertEquals("Day should be 4", 4, date1.getDate());
 
-        if (timeZone.getRawOffset() != date1.getTimezoneOffset()) {
-            assertNotEquals("If the date is not in the same time zone, hour should be diff",
-                    11, date1.getHours());
-            assertEquals("If the date is in the same time zone, hour should be the same",
-                    11, date1.toInstant().atZone(timeZone.toZoneId()).getHour());
+        final ZonedDateTime zonedDateTime = date1.toInstant().atZone(timeZone.toZoneId());
+        assertEquals("Year should be 2015", 2015, zonedDateTime.getYear());
+        assertEquals("Month should be Feb", Month.FEBRUARY, zonedDateTime.getMonth());
+        assertEquals("Day should be 4", 4, zonedDateTime.getDayOfMonth());
+        assertEquals("Hour should be 11",
+                11, zonedDateTime.getHour());
 
-            final GregorianCalendar calendar = new GregorianCalendar();
-            calendar.setTime(date1);
-            assertEquals("Default time zone and date time zome should be the same",
-                    defaultTimeZone.getRawOffset(), calendar.getTimeZone().getRawOffset());
-        }
     }
 
     /**

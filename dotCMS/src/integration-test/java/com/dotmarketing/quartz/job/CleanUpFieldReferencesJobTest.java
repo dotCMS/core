@@ -1,6 +1,6 @@
 package com.dotmarketing.quartz.job;
 
-import static com.dotcms.content.business.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
+import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 import static com.dotmarketing.quartz.DotStatefulJob.EXECUTION_DATA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -51,7 +51,9 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
     @BeforeClass
     public static void prepare() throws Exception {
         // Setting web app environment
+        APILocator.getContentletIndexAPI().checkAndInitialiazeIndex();
         IntegrationTestInitService.getInstance().init();
+
     }
 
     public static class TestCase {
@@ -59,10 +61,10 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
         final String name;
         final Object fieldValue;
         final String values;
-        final Class fieldType;
+        final Class<?> fieldType;
         final boolean isJsonFields;
 
-        public TestCase(final String name, final Object fieldValue, final String values, final Class fieldType, final boolean isJsonFields) {
+        public TestCase(final String name, final Object fieldValue, final String values, final Class<?> fieldType, final boolean isJsonFields) {
             this.name = name;
             this.fieldValue = fieldValue;
             this.values = values;
@@ -103,8 +105,7 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
             throws DotDataException, DotSecurityException {
 
         if(!APILocator.getContentletJsonAPI().isPersistContentAsJson() && testCase.isJsonFields){
-            //if we're on a db different from Postgres and this test is marked for jsonFields Skip
-            //Json Fields are only supported on postgres for now.
+            //if we're on a db different from a json supporting db (like Postgres or MS-SQL) and this test is marked for jsonFields. We Skip it.
             return;
         }
 

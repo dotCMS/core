@@ -5,6 +5,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.NoSuchCompanyException;
@@ -191,7 +192,7 @@ public class UserUtilTest {
         companyId = PublicCompanyFactory.getDefaultCompanyId();
 
         userName = "user" + id;
-        user = UserTestUtil.getUser(userName, true, false);
+        user = UserTestUtil.getUser(userName, false, false);
         user.setPassword("1:1:EBk/HSdzfiWh52GO9xxbBJhZgsb2jd9Q:i=4e20:LnjrBImIZ2XRA6woT8lSZmGNrDP8LKgE");
         user.setCompanyId(companyId);
         userAPI.save(user, systemUser, false);
@@ -202,9 +203,9 @@ public class UserUtilTest {
                 .findByC_P(companyId, "1:1:EBk/HSdzfiWh52GO9xxbBJhZgsb2jd9Q:i=4e20:LnjrBImIZ2XRA6woT8lSZmGNrDP8LKgE", 0,
                     5, null);
 
-        assertNotNull(users);
-        assertTrue(users.size() > 0 && users.size() <= 5);
-        assertTrue(!users.contains(user));
+        assertNotNull("The User list cannot be null.", users);
+        assertTrue("The User result list is empty or greater than expected.", users.size() > 0 && users.size() <= 5);
+        assertTrue("The test User is not part of the result set.", users.contains(user));
 
         userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
     }

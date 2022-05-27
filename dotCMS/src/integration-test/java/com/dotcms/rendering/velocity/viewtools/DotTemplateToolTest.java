@@ -1,11 +1,22 @@
 package com.dotcms.rendering.velocity.viewtools;
 
 import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TemplateLayoutDataGen;
+import com.dotcms.datagen.ThemeDataGen;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Theme;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPIImpl;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutColumn;
@@ -133,6 +144,68 @@ public class DotTemplateToolTest {
         check(hostName, templateLayout);
     }
 
+    /**
+     * Method to test: {@link DotTemplateTool#theme(String, String)}
+     * When: Create a theme and look for it
+     * Should: Return the theme path
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void theme() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Contentlet theme = new ThemeDataGen().site(host).nextPersisted();
+
+        final Identifier identifier = APILocator.getIdentifierAPI().find(theme.getIdentifier());
+        final String path = identifier.getPath();
+        final Folder folderByPath = APILocator.getFolderAPI()
+                .findFolderByPath(path, host, APILocator.systemUser(), false);
+
+        final Map<String, Object> themeFromDB = DotTemplateTool.theme(folderByPath.getInode(),
+                host.getIdentifier());
+
+        assertEquals(identifier.getParentPath(), themeFromDB.get("path"));
+    }
+
+    /**
+     * Method to test: {@link DotTemplateTool#theme(String, String)}
+     * When: Call the method with a theme that does not exist
+     * Should: Return the system theme data
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void themeDoesNotExists() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        
+        final Map<String, Object> themeFromDB = DotTemplateTool.theme("not exists",
+                host.getIdentifier());
+
+        assertEquals("system_theme", themeFromDB.get("title"));
+        assertEquals("//System Host/application/themes/system_theme/", themeFromDB.get("path"));
+    }
+
+    /**
+     * Method to test: {@link DotTemplateTool#theme(String, String)}
+     * When: Call the method with null argument
+     * Should: Return the system theme data
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void themeNull() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final Map<String, Object> themeFromDB = DotTemplateTool.theme(null,
+                host.getIdentifier());
+
+        assertEquals("system_theme", themeFromDB.get("title"));
+        assertEquals("//System Host/application/themes/system_theme/", themeFromDB.get("path"));
+    }
+    
     private void check(String hostName, TemplateLayout templateLayout) {
         final List<TemplateLayoutRow> rows = templateLayout.getBody().getRows();
         assertEquals(1, rows.size());

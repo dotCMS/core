@@ -5,6 +5,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 import com.dotcms.browser.BrowserAPI;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -243,13 +244,13 @@ public class BrowserAjax {
 
     /**
      * Action called every time a user opens a folder using the + (left hand side)
-     * @param parentInode Parent folder to be opened
+     * @param parentId Parent folder to be opened
      * @return The subtree structure of folders
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws DotHibernateException
      */
-    public List<Map> openFolderTree (String parentInode) throws DotHibernateException, DotSecurityException, DotDataException {
+    public List<Map> openFolderTree (String parentId) throws DotHibernateException, DotSecurityException, DotDataException {
         WebContext ctx = WebContextFactory.get();
         User usr = getUser(ctx.getHttpServletRequest());
         Role[] roles = new Role[]{};
@@ -264,34 +265,34 @@ public class BrowserAjax {
         }
 
 
-        Folder f = (Folder) APILocator.getFolderAPI().find(parentInode, usr, false);
-        openFolders.add(parentInode);
-        return getFoldersTree (f, roles);
+        final Folder folder = APILocator.getFolderAPI().find(parentId, usr, false);
+        openFolders.add(parentId);
+        return getFoldersTree (folder, roles);
     }
 
 	/**
 	 * Set the logic to select next time the site browser is open to select a folder
-	 * @param parentInode {@link String}
+	 * @param parentId {@link String}
 	 * @param hostId {@link String}
 	 * @param usr {@link User}
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-    public void setCurrentOpenFolder(final String parentInode, final String hostId, final User usr) throws DotDataException, DotSecurityException {
+    public void setCurrentOpenFolder(final String parentId, final String hostId, final User usr) throws DotDataException, DotSecurityException {
 
     	openFolders.clear();
-		final Folder leafFolder = APILocator.getFolderAPI().find(parentInode, usr, false);
+		final Folder leafFolder = APILocator.getFolderAPI().find(parentId, usr, false);
 
 		if (null != leafFolder) {
 
 			activeHostId = hostId;
 			openFolders.clear();
-			openFolders.add(parentInode);
+			openFolders.add(parentId);
 			Permissionable parent = leafFolder.getParentPermissionable();
 			while (parent != null) {
 
 				if (parent instanceof Folder) {
-					openFolders.add(Folder.class.cast(parent).getInode());
+					openFolders.add(Folder.class.cast(parent).getIdentifier());
 				}
 				parent = parent.getParentPermissionable();
 			}
@@ -309,7 +310,7 @@ public class BrowserAjax {
 
 
     @SuppressWarnings("unchecked")
-	public List<Map<String, Object>> openFolderContent (String parentInode, String sortBy, boolean showArchived, long languageId) throws DotHibernateException, DotSecurityException, DotDataException {
+	public List<Map<String, Object>> openFolderContent (String parentId, String sortBy, boolean showArchived, long languageId) throws DotHibernateException, DotSecurityException, DotDataException {
 
 		final WebContext ctx         = WebContextFactory.get();
 		final HttpSession session    = ctx.getSession();
@@ -320,7 +321,7 @@ public class BrowserAjax {
 			session.removeAttribute("siteBrowserActiveFolderInode");
 		}
 
-        activeFolderInode = null != siteBrowserActiveFolderInode?siteBrowserActiveFolderInode:parentInode;
+        activeFolderInode = null != siteBrowserActiveFolderInode?siteBrowserActiveFolderInode:parentId;
 
 		this.lastSortBy = sortBy;
 
@@ -334,8 +335,8 @@ public class BrowserAjax {
 		List<Map<String, Object>> listToReturn;
         try {
         	//Only show folders if the parent is not a host
-        	final boolean showFolders = APILocator.getHostAPI().find(parentInode,APILocator.systemUser(),false)  == null;
-			Map<String, Object> resultsMap = getFolderContent(parentInode, 0, -1, "", null, null, showArchived, !showFolders, false, this.lastSortBy, this.lastSortDirectionDesc, languageId);
+        	final boolean showFolders = APILocator.getHostAPI().find(parentId,APILocator.systemUser(),false)  == null;
+			Map<String, Object> resultsMap = getFolderContent(parentId, 0, -1, "", null, null, showArchived, !showFolders, false, this.lastSortBy, this.lastSortDirectionDesc, languageId);
             listToReturn = (List<Map<String, Object>>) resultsMap.get("list");
 		} catch ( NotFoundInDbException e ){
             Logger.error( this, "Please refresh the screen you opened this Folder from.", e );
@@ -760,41 +761,41 @@ public class BrowserAjax {
     @SuppressWarnings("unchecked")
 	private List<Map> getFoldersTree (Folder parent, Role[] roles) throws DotStateException, DotDataException, DotSecurityException {
         FolderAPI folderAPI = APILocator.getFolderAPI();
-        List<Folder> children = new ArrayList<Folder>();
+        List<Folder> children = new ArrayList<>();
 		try {
 			children = folderAPI.findSubFolders(parent,userAPI.getSystemUser(),false);
 		} catch (Exception e) {
-			Logger.error(this, "Could not load folders : ",e);
+			Logger.error(this, "Could not load subfolders for folder with ID: " + parent.getIdentifier(),e);
 		}
-        return getFoldersTree(parent.getInode(), children, roles);
+        return getFoldersTree(parent.getIdentifier(), children, roles);
     }
 
-	private List<Map> getFoldersTree (String parentInode, List<Folder> children, Role[] roles) throws DotStateException, DotDataException, DotSecurityException {
+	private List<Map> getFoldersTree (String parentId, List<Folder> children, Role[] roles) throws DotStateException, DotDataException, DotSecurityException {
 
         WebContext ctx = WebContextFactory.get();
         User usr = getUser(ctx.getHttpServletRequest());
         ArrayList<Map> folders = new ArrayList<Map> ();
 
-        for (Folder f : children) {
-        	Map<String, Object> folderMap = f.getMap();
-        	if (openFolders.contains(f.getInode())) {
-        		List<Map> childrenMaps = getFoldersTree (f, roles);
+        for (Folder folder : children) {
+        	Map<String, Object> folderMap = folder.getMap();
+        	if (openFolders.contains(folder.getIdentifier())) {
+        		List<Map> childrenMaps = getFoldersTree (folder, roles);
         		folderMap.put("open", true);
         		folderMap.put("childrenFolders", childrenMaps);
         	} else {
         		folderMap.put("open", false);
         	}
-        	if(f.getInode().equalsIgnoreCase(activeFolderInode))
+        	if(folder.getIdentifier().equalsIgnoreCase(activeFolderInode))
         		folderMap.put("selected", true);
         	else
         		folderMap.put("selected", false);
-        	folderMap.put("parent", parentInode);
+        	folderMap.put("parent", parentId);
 
         	List permissions = new ArrayList();
         	try {
-        		permissions = permissionAPI.getPermissionIdsFromRoles(f, roles, usr);
+        		permissions = permissionAPI.getPermissionIdsFromRoles(folder, roles, usr);
         	} catch (DotDataException e) {
-        		Logger.error(this, "Could not load permissions : ",e);
+        		Logger.error(this, "Could not load permissions for folder with ID: " + folder.getIdentifier(),e);
         	}
 
         	folderMap.put("permissions", permissions);
@@ -923,7 +924,7 @@ public class BrowserAjax {
 			return e.getLocalizedMessage();
 		}catch (Exception e) {
         	Logger.error(this, "Error moving folder with id:" + folderId + " into folder with id:"
-					+ newFolderId + ". Error: " + e.getMessage(), e);
+					+ newFolderId + ". Error: " + e.getMessage());
             return e.getLocalizedMessage();
         }
 
@@ -1337,6 +1338,7 @@ public class BrowserAjax {
 
     }
 
+	@CloseDBIfOpened
     public Map<String, Object> renameLink (String inode, String newName) throws Exception {
 
     	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
@@ -1413,6 +1415,7 @@ public class BrowserAjax {
      * @return true if success, false otherwise
      * @throws Exception
      */
+	@CloseDBIfOpened
     public boolean copyLink ( String inode, String newFolder ) throws Exception {
 
         HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
@@ -1460,6 +1463,7 @@ public class BrowserAjax {
      * @return true if success, false otherwise
      * @throws Exception
      */
+	@CloseDBIfOpened
     public boolean moveLink ( String inode, String newFolder ) throws Exception {
 
         HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
@@ -1569,6 +1573,7 @@ public class BrowserAjax {
 		return false;
 	}
 
+	@CloseDBIfOpened
     public boolean unPublishAsset (String inode) throws Exception {
     	HibernateUtil.startTransaction();
     	boolean ret = false;
@@ -1599,6 +1604,7 @@ public class BrowserAjax {
     	return ret;
     }
 
+	@CloseDBIfOpened
     public boolean archiveAsset (String inode) throws Exception {
 
     	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
@@ -1622,6 +1628,7 @@ public class BrowserAjax {
         return WebAssetFactory.archiveAsset(asset, user.getUserId());
     }
 
+	@CloseDBIfOpened
     public boolean unArchiveAsset (String inode) throws Exception {
 
     	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
@@ -1649,7 +1656,7 @@ public class BrowserAjax {
         return true;
     }
 
-
+	@CloseDBIfOpened
     public boolean unlockAsset (String inode) throws Exception {
 
     	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
@@ -1671,6 +1678,7 @@ public class BrowserAjax {
         return true;
     }
 
+	@CloseDBIfOpened
     public boolean deleteAsset(String inode) throws Exception
     {
     	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
@@ -1763,9 +1771,8 @@ public class BrowserAjax {
 		return result;
 	}
 
-
-
-	public Map<String, Object> changeAssetMenuOrder (String inode, int newValue) throws ActionException, DotDataException {
+	@CloseDBIfOpened
+	public Map<String, Object> changeAssetMenuOrder (final String inode, final int newValue) throws ActionException, DotDataException {
     	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
         User user = null;
         try {
@@ -1775,16 +1782,24 @@ public class BrowserAjax {
             throw new DotRuntimeException ("Error trying to obtain the current liferay user from the request.");
         }
 
-    	HashMap<String, Object> result = new HashMap<String, Object> ();
-    	Inode asset = (Inode) InodeFactory.getInode(inode, Inode.class);
-    	if (asset instanceof Folder) {
-    		Folder folder = (Folder) asset;
+    	final Map<String, Object> result = new HashMap<> ();
+		Folder folder = null;
+		try {
+			folder = APILocator.getFolderAPI().find(inode, user, false);
+		} catch (DotSecurityException e) {
+			Logger.error(this, "Error trying to get info for folder with inode: " + inode, e);
+			throw new DotRuntimeException ("Error changing asset menu order.");
+		}
+
+		if (null != folder) {
     		result.put("lastValue", folder.getSortOrder());
-    		WebAssetFactory.changeAssetMenuOrder (asset, newValue, user);
+    		WebAssetFactory.changeAssetMenuOrder (folder, newValue, user);
     	} else {
+			Inode asset = InodeFactory.getInode(inode, Inode.class);
     		result.put("lastValue", ((WebAsset)asset).getSortOrder());
     		WebAssetFactory.changeAssetMenuOrder (asset, newValue, user);
     	}
+
        	result.put("result", 0);
     	return result;
     }
@@ -1857,16 +1872,16 @@ public class BrowserAjax {
 			Logger.error(BrowserAjax.class,e.getMessage(),e);
 		}
 
-        for (Folder f : children) {
+        for (final Folder folder : children) {
             Map<String, Object> folderMap = new HashMap<String, Object>();
             folderMap.put("type", "folder");
-            folderMap.put("name", f.getName());
-            folderMap.put("id", f.getInode());
-            String fullPath = currentFullPath + "/" + f.getName();
-            String absolutePath = currentAbsolutePath + "/" + f.getName();
+            folderMap.put("name", folder.getName());
+            folderMap.put("id", folder.getIdentifier());
+            String fullPath = currentFullPath + "/" + folder.getName();
+            String absolutePath = currentAbsolutePath + "/" + folder.getName();
             folderMap.put("fullPath", fullPath);
             folderMap.put("absolutePath", absolutePath);
-            List<Map<String, Object>> childrenMaps = getFolderMinInfoTree (f, roles, fullPath, absolutePath);
+            List<Map<String, Object>> childrenMaps = getFolderMinInfoTree (folder, roles, fullPath, absolutePath);
             folderMap.put("children", childrenMaps);
             toReturn.add(folderMap);
         }
@@ -1926,24 +1941,24 @@ public class BrowserAjax {
 				List<Map<String, Object>> children = new ArrayList<Map<String,Object>>();
 
 				List<Folder> subFolders = folderAPI.findSubFolders(host,user,false);
-				for (Folder f : subFolders) {
+				for (final Folder folder : subFolders) {
 
 						List permissions = new ArrayList();
 						try {
-							permissions = permissionAPI.getPermissionIdsFromRoles(f, roles, user);
+							permissions = permissionAPI.getPermissionIdsFromRoles(folder, roles, user);
 						} catch (DotDataException e) {
-							Logger.error(this, "Could not load permissions : ",e);
+							Logger.error(this, "Could not load permissions for folder with ID: " + folder.getIdentifier(),e);
 						}
 						if(permissions.contains(PERMISSION_READ)){
 							Map<String, Object> folderMap = new HashMap<String, Object>();
 							folderMap.put("type", "folder");
-							folderMap.put("name", f.getName());
-							folderMap.put("id", f.getInode());
-							String fullPath = currentPath + ":/" + f.getName();
-							String absolutePath = "/" + f.getName();
+							folderMap.put("name", folder.getName());
+							folderMap.put("id", folder.getIdentifier());
+							String fullPath = currentPath + ":/" + folder.getName();
+							String absolutePath = "/" + folder.getName();
 							folderMap.put("fullPath", fullPath);
 							folderMap.put("absolutePath", absolutePath);
-							List<Map<String, Object>> childrenMaps = getFolderMinInfoTree(f, roles, fullPath, absolutePath);
+							List<Map<String, Object>> childrenMaps = getFolderMinInfoTree(folder, roles, fullPath, absolutePath);
 							folderMap.put("children", childrenMaps);
 							children.add(folderMap);
 						}
@@ -1971,18 +1986,18 @@ public class BrowserAjax {
         return hostMap;
 	}
 
-	private Map<String, Object> folderMap(Folder f) throws DotDataException, DotSecurityException {
+	private Map<String, Object> folderMap(Folder folder) throws DotDataException, DotSecurityException {
     	UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
 		HostAPI hostAPI = APILocator.getHostAPI();
 		Map<String, Object> folderMap = new HashMap<String, Object>();
 		folderMap.put("type", "folder");
-		folderMap.put("name", f.getName());
-		folderMap.put("id", f.getInode());
-		folderMap.put("inode", f.getInode());
-		folderMap.put("defaultFileType", f.getDefaultFileType());
-		String currentPath = hostAPI.findParentHost(f, userWebAPI.getSystemUser(), false).getHostname();
-		String fullPath = currentPath + ":/" + f.getName();
-		String absolutePath = "/" + f.getName();
+		folderMap.put("name", folder.getName());
+		folderMap.put("id", folder.getIdentifier());
+		folderMap.put("inode", folder.getInode());
+		folderMap.put("defaultFileType", folder.getDefaultFileType());
+		String currentPath = hostAPI.findParentHost(folder, userWebAPI.getSystemUser(), false).getHostname();
+		String fullPath = currentPath + ":/" + folder.getName();
+		String absolutePath = "/" + folder.getName();
 		folderMap.put("fullPath", fullPath);
 		folderMap.put("absolutePath", absolutePath);
         return folderMap;

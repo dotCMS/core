@@ -166,7 +166,7 @@ public class OSGIResource  {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public final Response updateBundles(@Context final HttpServletRequest request,
                                               @Context final HttpServletResponse response,
-                                              final FormDataMultiPart multipart) throws IOException, com.dotcms.repackage.org.codehaus.jettison.json.JSONException {
+                                              final FormDataMultiPart multipart) throws IOException, com.dotmarketing.util.json.JSONException {
 
         new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -188,7 +188,6 @@ public class OSGIResource  {
                 .filter(file -> file.getName().endsWith(".jar"))
                 .collect(Collectors.toList()));
 
-        // todo: use the second part to would be to take jar from the temp api
         final String felixUploadFolder = OSGIUtil.getInstance().getFelixUploadPath();
         final File felixFolder = new File(felixUploadFolder);
         if (!felixFolder.exists() || !felixFolder.canWrite()) {
@@ -218,6 +217,10 @@ public class OSGIResource  {
                 IOUtils.copyLarge(in, out);
             }
         }
+
+        // since we already upload jar, we would like to try to run the upload folder when the
+        // refresh strategy is running by schedule job
+        OSGIUtil.getInstance().tryUploadFolderReload();
 
         return Response.ok(new ResponseEntityView(
                 files.stream().map(File::getName).collect(Collectors.toSet())))

@@ -25,8 +25,13 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import com.dotcms.concurrent.lock.ClusterLockManager;
+import com.dotcms.concurrent.lock.DotKeyLockManager;
 import com.dotcms.concurrent.lock.DotKeyLockManagerBuilder;
+import com.dotcms.concurrent.lock.DotKeyLockManagerFactory;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
+import com.dotcms.concurrent.lock.ClusterLockManagerFactory;
 import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.init.DotInitScheduler;
@@ -46,7 +51,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     private static final int MAXPOOL_SIZE_VAL = 50;
     private static final int QUEUE_CAPACITY_VAL = Integer.MAX_VALUE;
 
-
+    public static final String DOTCMS_CONCURRENT_CONDITIONAL_EXECUTOR_DEFAULT_SIZE  = "dotcms.concurrent.conditionalexecutor.default.size";
     /**
      * In case you want to override the {@link ThreadFactory}, by default using the {@link Executors}.defaultThreadFactory();
      */
@@ -127,9 +132,16 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
     public static final String SCHEDULER_COREPOOLSIZE = "SCHEDULER_CORE_POOL_SIZE";
 
-
     private final IdentifierStripedLock identifierStripedLock =
            new IdentifierStripedLock(DotKeyLockManagerBuilder.newLockManager(LOCK_MANAGER));
+
+    // Cluster lock manager
+    private final DotKeyLockManagerFactory clusterLockManagerFactory =
+            new ClusterLockManagerFactory(); // todo: this should be overridable by osgi.
+
+    // Stores the cluster lock manager by name
+    private Map<String, ClusterLockManager<String>> clusterLockManagerMap =
+            new ConcurrentHashMap<>();
 
     private static ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = null;
 
@@ -355,6 +367,36 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     }
 
     /**
+     * Creates a default Conditional executor with the default size
+     * @return ConditionalExecutor
+     */
+    public ConditionalSubmitter createConditionalSubmitter() {
+
+        return new ConditionalSubmitterImpl(Config.getIntProperty("DOTCMS_CONCURRENT_CONDITIONAL_EXECUTOR_DEFAULT_SIZE", 10));
+    }
+
+    /**
+     * Creates a default conditional executor with a given size
+     * @param size {@link Integer}
+     * @return ConditionalExecutor
+     */
+    public ConditionalSubmitter createConditionalSubmitter(final int size) {
+
+        return new ConditionalSubmitterImpl(size);
+    }
+
+    /**
+     * Creates a default conditional executor with a given size
+     * @param size {@link Integer}
+     * @return ConditionalExecutor
+     */
+    public ConditionalSubmitter createConditionalSubmitter(final int size, long secondsTimeOut) {
+
+        return new ConditionalSubmitterImpl(size, secondsTimeOut, TimeUnit.SECONDS);
+    }
+
+
+    /**
      * Get the default single thread submitter by name
      * @param name {@link String} name of the {@link DotSubmitter}
      * @return DotSubmitter
@@ -436,7 +478,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         }
 
         return submitter;
-    } // getBean.
+    } // getSubmitter.
 
     private DotConcurrentImpl createDotConcurrent (final String name) {
 
@@ -465,6 +507,16 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         this.submitterMap.put(name, submitter);
 
         return submitter;
+    }
+
+    /**
+     * Gets or creates a cluster wide lock manager lock
+     * @param name {@link String}
+     * @return DotKeyLockManager
+     */
+    public ClusterLockManager<String> getClusterLockManager(final String name) {
+
+        return this.clusterLockManagerMap.computeIfAbsent(name, key-> (ClusterLockManager) this.clusterLockManagerFactory.create(name));
     }
 
     /**

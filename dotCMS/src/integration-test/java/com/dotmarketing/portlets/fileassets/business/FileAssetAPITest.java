@@ -59,7 +59,6 @@ public class FileAssetAPITest extends IntegrationTestBase {
         Contentlet contentlet = APILocator.getContentletAPI()
                 .checkout(fileAssetContentlet.getInode(), user, false);
         contentlet.getMap().put(FileAssetAPI.FILE_NAME_FIELD, newExpectedIdentifierName);
-        contentlet.setInode(null);
 
         contentlet = APILocator.getContentletAPI().checkin(contentlet, user, false);
         final FileAsset fileAsset = fileAssetAPI.fromContentlet(contentlet);

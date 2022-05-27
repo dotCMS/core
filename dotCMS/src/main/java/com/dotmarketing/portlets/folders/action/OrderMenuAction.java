@@ -402,37 +402,43 @@ public class OrderMenuAction extends DotPortletAction {
 		int x = 0;
 		while (i.hasNext()) {
 
-			Inode item = (Inode) i.next();
-			Contentlet c = null;
-			try {
-				c = APILocator.getContentletAPI().find(item.getInode(), user, false);
-			} catch(ClassCastException cce) {
+			Object currentItem = i.next();
+
+			if (currentItem instanceof Folder){
+				Folder item = (Folder) currentItem;
+				if (item.getInode().equalsIgnoreCase( itemInode)) {
+					item.setSortOrder(x + increment);
+				} else{
+					item.setSortOrder(x);
+				}
+			} else{
+
+				final Inode item = (Inode) currentItem;
+				Contentlet contentlet = null;
+				try {
+					contentlet = APILocator.getContentletAPI().find(item.getInode(), user, false);
+				} catch(ClassCastException cce) {
+					Logger.warn(this, cce.getMessage(), cce);
+				}
+
+				if (item.getInode().equalsIgnoreCase( itemInode)) {
+					if(item instanceof WebAsset) {
+						((WebAsset)item).setSortOrder(x + increment);
+					} if (APILocator.getFileAssetAPI().isFileAsset(contentlet))  {
+						contentlet.setSortOrder(x + increment);
+						APILocator.getContentletAPI().refresh(contentlet);
+					}
+				}
+				else {
+					if(item instanceof WebAsset) {
+						((WebAsset)item).setSortOrder(x);
+					}  if (APILocator.getFileAssetAPI().isFileAsset(contentlet))  {
+						contentlet.setSortOrder(x);
+						APILocator.getContentletAPI().refresh(contentlet);
+					}
+				}
 			}
 
-			if (item.getInode().equalsIgnoreCase( itemInode)) {
-				//this is the item to move
-				if (item instanceof Folder) {
-					((Folder)item).setSortOrder(x + increment);
-				}
-				else if(item instanceof WebAsset) {
-					((WebAsset)item).setSortOrder(x + increment);
-				} if (APILocator.getFileAssetAPI().isFileAsset(c))  {
-					c.setSortOrder(x + increment);
-					APILocator.getContentletAPI().refresh(c);
-				}
-			}
-			else {
-				//all other items
-				if (item instanceof Folder) {
-					((Folder)item).setSortOrder(x);
-				}
-				else if(item instanceof WebAsset) {
-					((WebAsset)item).setSortOrder(x);
-				}  if (APILocator.getFileAssetAPI().isFileAsset(c))  {
-					c.setSortOrder(x);
-					APILocator.getContentletAPI().refresh(c);
-				}
-			}
 			x = x + 2;
 		}
 
@@ -643,21 +649,21 @@ public class OrderMenuAction extends DotPortletAction {
 						}
 					}
 				} else {
-					if(item instanceof FileAsset){
-						FileAsset fa =(FileAsset)item;
-						title = fa.getTitle();
+					if(item instanceof Contentlet && ((Contentlet) item).isFileAsset()){
+						final FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(Contentlet.class.cast(item));
+						title = fileAsset.getTitle();
 						title = retrieveTitle(title, user);
-						inode = fa.getInode();
-						if (fa.isShowOnMenu()) {
-							if (!APILocator.getPermissionAPI().doesUserHavePermission(fa, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
+						inode = fileAsset.getInode();
+						if (fileAsset.isShowOnMenu()) {
+							if (!APILocator.getPermissionAPI().doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
 								show = false;
 							}
-							if (APILocator.getPermissionAPI().doesUserHavePermission(fa, PermissionAPI.PERMISSION_READ, user, false)) {
+							if (APILocator.getPermissionAPI().doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_READ, user, false)) {
 								sb.append("<li class=\"" + className + "\" id=\"inode_" + inode + "\" >" + title + "</li>\n");
 							}
 						}
-					}else if(item instanceof IHTMLPage){
-						IHTMLPage asset = ((IHTMLPage) item);
+					}else if(item instanceof Contentlet && ((Contentlet) item).isHTMLPage()){
+						IHTMLPage asset = APILocator.getHTMLPageAssetAPI().fromContentlet(Contentlet.class.cast(item));
 						title = asset.getTitle();
 						title = retrieveTitle(title, user);
 						inode = asset.getInode();
@@ -765,21 +771,21 @@ public class OrderMenuAction extends DotPortletAction {
 					}
 				}
 			} else {
-				if(item instanceof FileAsset){
-					FileAsset fa =(FileAsset)item;
-					title = fa.getTitle();
+				if(item instanceof Contentlet && ((Contentlet) item).isFileAsset()){
+					final FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(Contentlet.class.cast(item));
+					title = fileAsset.getTitle();
 					title = retrieveTitle(title, user);
-					inode = fa.getInode();
-					if (fa.isShowOnMenu()) {
-						if (!APILocator.getPermissionAPI().doesUserHavePermission(fa, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
+					inode = fileAsset.getInode();
+					if (fileAsset.isShowOnMenu()) {
+						if (!APILocator.getPermissionAPI().doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
 							show = false;
 						}
-						if (APILocator.getPermissionAPI().doesUserHavePermission(fa, PermissionAPI.PERMISSION_READ, user, false)) {
+						if (APILocator.getPermissionAPI().doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_READ, user, false)) {
 							sb.append("<li class=\"" + className + "\" id=\"inode_" + inode + "\" >" + title + "</li>\n");
 						}
 					}
-				}else if(item instanceof IHTMLPage){
-					IHTMLPage asset = ((IHTMLPage) item);
+				}else if(item instanceof Contentlet && ((Contentlet) item).isHTMLPage()){
+					final IHTMLPage asset = APILocator.getHTMLPageAssetAPI().fromContentlet(Contentlet.class.cast(item));
 					title = asset.getTitle();
 					title = retrieveTitle(title, user);
 					inode = asset.getInode();

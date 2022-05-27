@@ -3,16 +3,12 @@ package com.dotcms.publisher.util.dependencies;
 import static com.dotcms.util.CollectionsUtils.set;
 
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.exception.ExceptionUtil;
-import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.business.PublishQueueElement;
-import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PublisherUtil;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.DotBundleException;
-import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.publishing.PublisherFilter;
 import com.dotcms.publishing.manifest.CSVManifestBuilder;
 import com.dotcms.publishing.manifest.ManifestReason;
@@ -20,50 +16,34 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotIdentifierStateException;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.PersonalizedContentlet;
+import com.dotmarketing.plugin.model.Plugin;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.containers.model.FileAssetContainer;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.rules.model.Rule;
-import com.dotmarketing.portlets.structure.factories.StructureFactory;
-import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
-import io.vavr.control.Try;
+
+import java.io.File;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
 import org.apache.commons.lang.StringUtils;
+import org.apache.felix.framework.OSGIUtil;
 
 /**
  * The main purpose of this class is to determine all possible content
@@ -312,6 +292,21 @@ public class DependencyManager {
 							: "N/A")
 							+ " is not present in the database, not Pushed.");
 				}
+			} else if (asset.getType().equals(PusheableAsset.OSGI.getType())) {
+				final String felixLoadFolder = OSGIUtil.getInstance().getFelixDeployPath();
+				final File bundleJar = Paths.get(felixLoadFolder, asset.getAsset()).toFile();
+
+				if (bundleJar.exists()) {
+					final Plugin plugin = new Plugin();
+					plugin.setId(asset.getAsset());
+					add(plugin, PusheableAsset.OSGI);
+				} else {
+					Logger.warn(
+							this,
+							String.format(
+									"Plugin id: %s is not present as a jar, not pushed.",
+									asset.getAsset() != null ? asset.getAsset() : "N/A"));
+				}
 			}
 		}
 
@@ -392,7 +387,7 @@ public class DependencyManager {
 			return contentlet.getIdentifier();
 		} else if (Folder.class.isInstance(asset)) {
 			final Folder folder = Folder.class.cast(asset);
-			return folder.getInode();
+			return folder.getIdentifier();
 		} else if (Template.class.isInstance(asset)) {
 			final Template template = Template.class.cast(asset);
 			return template.getIdentifier();
@@ -423,7 +418,10 @@ public class DependencyManager {
 		} else if (Language.class.isInstance(asset)) {
 			final Language languege = Language.class.cast(asset);
 			return String.valueOf(languege.getId());
-		} else {
+		} else if (Plugin.class.isInstance(asset)) {
+			final Plugin plugin = Plugin.class.cast(asset);
+			return plugin.getId();
+		}else {
 			throw new IllegalArgumentException("Not allowed: " + asset.getClass().getName());
 		}
 	}

@@ -28,6 +28,7 @@ public interface FieldBuilder {
 	FieldBuilder sortOrder(int val);
 	FieldBuilder fixed(boolean val);
 	FieldBuilder readOnly(boolean val);
+	FieldBuilder regexCheck(String regexCheck);
 	FieldBuilder indexed(boolean val);
     FieldBuilder listed(boolean listed);
     FieldBuilder values(String values);

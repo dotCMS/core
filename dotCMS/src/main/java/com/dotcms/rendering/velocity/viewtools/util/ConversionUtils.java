@@ -19,10 +19,7 @@ package com.dotcms.rendering.velocity.viewtools.util;
  * under the License.
  */
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import java.io.File;
-import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.net.URL;
 import java.text.DateFormat;
@@ -30,11 +27,10 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
-import java.util.Calendar;
 import java.util.Locale;
-import java.util.Map;
 import java.util.TimeZone;
 
 /**
@@ -60,6 +56,7 @@ public class ConversionUtils
     {
         return INSTANCE;
     }
+
 
 
     /**
@@ -727,15 +724,6 @@ public class ConversionUtils
         }
         catch (Exception e) {}
         return null;
-    }
-
-    /**
-     * Simple method that takes a map and converts it to a json string
-     */
-    private static Gson gson = new GsonBuilder().disableHtmlEscaping().create();
-
-    public static String toString(final Map<String, Serializable> metadata){
-        return gson.toJson(metadata);
     }
 
 }

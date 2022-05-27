@@ -1,5 +1,7 @@
 package com.dotcms.util;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 import java.util.Arrays;
 
@@ -26,7 +28,8 @@ public class I18NMessage implements Serializable {
         this.defaultMessage = defaultMessage;
     }
 
-    public I18NMessage(final String key, final String defaultMessage, final Object... arguments) {
+    @JsonCreator
+    public I18NMessage(@JsonProperty("key") final String key, @JsonProperty("defaultMessage")final String defaultMessage, @JsonProperty("arguments") final Object... arguments) {
         this.key = key;
         this.arguments = arguments;
         this.defaultMessage = defaultMessage;

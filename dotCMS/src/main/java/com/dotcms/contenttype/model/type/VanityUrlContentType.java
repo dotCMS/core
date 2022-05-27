@@ -1,19 +1,17 @@
 package com.dotcms.contenttype.model.type;
 
-import java.util.List;
-
-import com.dotmarketing.util.Config;
-import org.immutables.gson.Gson;
-import org.immutables.value.Value;
-
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.ImmutableCustomField;
+import com.dotcms.contenttype.model.field.ImmutableHostFolderField;
 import com.dotcms.contenttype.model.field.ImmutableSelectField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
-import com.google.common.collect.ImmutableList;
+import com.dotmarketing.util.Config;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.common.collect.ImmutableList;
+import java.util.List;
+import org.immutables.value.Value;
 
 /**
  * Provides the basic outline of a Vanity URL Content Type in dotCMS. Vanity
@@ -28,7 +26,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
  */
 @JsonSerialize(as = ImmutableVanityUrlContentType.class)
 @JsonDeserialize(as = ImmutableVanityUrlContentType.class)
-@Gson.TypeAdapters
 @Value.Immutable
 public abstract class VanityUrlContentType extends ContentType implements Expireable,
 		MultilinguableFallback {
@@ -38,7 +35,7 @@ public abstract class VanityUrlContentType extends ContentType implements Expire
 	private static final String TITLE_FIELD_NAME = "Title";
 	public static final String TITLE_FIELD_VAR = "title";
 	private static final String SITE_FIELD_NAME = "Site";
-	public static final String SITE_FIELD_VAR = "site";
+	private static final String SITE_FIELD_VAR = "site";
 	private static final String URI_FIELD_NAME = "URI";
 	public static final String URI_FIELD_VAR = "uri";
 	private static final String FORWARD_TO_FIELD_NAME = "Forward To";
@@ -65,11 +62,10 @@ public abstract class VanityUrlContentType extends ContentType implements Expire
 				.dataType(DataTypes.TEXT).required(Boolean.TRUE).listed(Boolean.TRUE)
 				.indexed(Boolean.TRUE)
 				.sortOrder(1).fixed(Boolean.TRUE).searchable(Boolean.TRUE).build();
-		Field siteField = ImmutableCustomField.builder().name(SITE_FIELD_NAME)
+		Field siteField = ImmutableHostFolderField.builder().name(SITE_FIELD_NAME)
 				.variable(SITE_FIELD_VAR)
-				.dataType(DataTypes.TEXT).fixed(Boolean.TRUE).indexed(Boolean.TRUE)
-				.values("$velutil.mergeTemplate('/static/content/site_selector_field_render.vtl')")
-				.required(Boolean.TRUE).sortOrder(2).listed(Boolean.FALSE).build();
+				.dataType(DataTypes.SYSTEM).fixed(Boolean.TRUE).indexed(Boolean.TRUE)
+				.sortOrder(2).listed(Boolean.FALSE).build();
 		Field uriField = ImmutableTextField.builder().name(URI_FIELD_NAME).variable(URI_FIELD_VAR)
 				.dataType(DataTypes.TEXT).indexed(Boolean.TRUE).searchable(Boolean.TRUE)
 				.required(Boolean.TRUE)

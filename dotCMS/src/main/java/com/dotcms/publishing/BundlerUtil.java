@@ -24,9 +24,14 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
-import com.thoughtworks.xstream.io.xml.DomDriver;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.util.Calendar;
 import java.util.Date;
@@ -34,7 +39,9 @@ import java.util.List;
 
 public class BundlerUtil {
 
-    static XStream xmlSerializer = null;
+    private static ObjectMapper objectMapper;
+    private static ObjectMapper customMapper;
+
     public static final List<Status> STATUS_TO_RETRY = list(
             Status.FAILED_TO_PUBLISH, Status.SUCCESS, Status.SUCCESS_WITH_WARNINGS,
             Status.FAILED_TO_SEND_TO_ALL_GROUPS, Status.FAILED_TO_SEND_TO_SOME_GROUPS, Status.FAILED_TO_SENT
@@ -232,10 +239,6 @@ public class BundlerUtil {
      */
     public static void objectToXML ( Object obj, File f, boolean removeFirst ) {
 
-        if (xmlSerializer == null) {
-            xmlSerializer = new XStream(new DomDriver("UTF-8"));
-        }
-
         if ( removeFirst && f.exists() )
             f.delete();
 
@@ -254,8 +257,6 @@ public class BundlerUtil {
                 objectToXML(obj, outputStream);
             }
 
-        } catch ( FileNotFoundException e ) {
-            Logger.error( PublisherUtil.class, e.getMessage(), e );
         } catch ( IOException e ) {
             Logger.error( PublisherUtil.class, e.getMessage(), e );
         }
@@ -287,7 +288,7 @@ public class BundlerUtil {
         if ( removeFirst && f.exists() )
             f.delete();
 
-        ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+        final ObjectMapper mapper = getCustomMapper();
 
         try {
             if ( !f.exists() ){
@@ -307,9 +308,23 @@ public class BundlerUtil {
         }
     }
 
+    private static ObjectMapper getObjectMapper() {
+        if (objectMapper == null) {
+            objectMapper = new ObjectMapper();
+        }
+        return objectMapper;
+    }
+
+    private static ObjectMapper getCustomMapper() {
+        if (customMapper == null) {
+            customMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+        }
+        return customMapper;
+    }
+
 
     public static void objectToJSON( final Object obj, final OutputStream outputStream) {
-        ObjectMapper mapper = new ObjectMapper();
+        final ObjectMapper mapper = getObjectMapper();
 
         try {
             mapper.writeValue(outputStream, obj);
@@ -334,7 +349,7 @@ public class BundlerUtil {
 	}
 
     public static Object xmlToObject(final InputStream inputStream) throws IOException {
-        XStream xstream = new XStream(new DomDriver("UTF-8"));
+        final XStream xstream = XMLSerializerUtil.getInstance().getXmlSerializer();
 
         try (InputStream input = new BufferedInputStream(inputStream)) {
             return xstream.fromXML(input);
@@ -347,7 +362,7 @@ public class BundlerUtil {
      * @return
      */
     private static Object xmlToObjectWithPrologue(File file) {
-        XStream xstream = new XStream(new DomDriver("UTF-8"));
+        final XStream xstream = XMLSerializerUtil.getInstance().getXmlSerializer();
         XMLUtils.addPrologueIfNeeded(file);
         try (InputStream input = new BufferedInputStream(Files.newInputStream(file.toPath()))) {
             return xstream.fromXML(input);
@@ -369,7 +384,7 @@ public class BundlerUtil {
      * @return A deserialized object
      */
     public static <T> T jsonToObject(File f, Class<T> clazz){
-    	ObjectMapper mapper = new ObjectMapper();
+    	final ObjectMapper mapper = getObjectMapper();
 
     	BufferedInputStream input = null;
 		try {

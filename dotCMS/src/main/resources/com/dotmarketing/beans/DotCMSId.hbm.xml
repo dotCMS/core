@@ -40,20 +40,6 @@
 			<property column="identifier" length="36" name="identifier" type="string" />
 		</joined-subclass>
 
-		<joined-subclass name="com.dotmarketing.portlets.folders.model.Folder" table="folder">
-			<key column="inode" />
-			<property length="255" name="name" not-null="true" type="string">
-				<column name="name" index="idx_folder_1" />
-			</property>
-			<property column="title" length="255" name="title" not-null="true" type="string" />
-			<property column="show_on_menu" length="1" name="showOnMenu" type="boolean" />
-			<property column="sort_order" length="4" name="sortOrder" type="integer" />
-			<property column="files_masks" length="255" name="filesMasks" type="string" />
-			<property column="identifier" length="36" name="identifier" type="string" />
-			<property column="default_file_type" length="36" name="defaultFileType" type="string" />
-			<property column="mod_date" length="23" name="modDate" type="java.util.Date" />
-		</joined-subclass>
-
 		<joined-subclass name="com.dotmarketing.portlets.links.model.Link" table="links">
 			<key column="inode" />
 			<!-- Web Asset properties -->
@@ -380,14 +366,6 @@
 		</id>
 		<property name="userId" column="user_id" type="string" />
 	</class>
-	<class name="com.dotmarketing.portlets.calendar.model.CalendarReminder" table="calendar_reminder">
-    	<composite-id>
-        	<key-property name="userId" column="user_id" type="string"/>
-        	<key-property name="eventId" column="event_id" type="string" length="36" />
-        	<key-property name="sendDate" column="send_date" type="java.util.Date"/>
-    	</composite-id>
-	</class>
-
 	<!-- Mapping for Plugin Tables -->
 
 	<class name="com.dotmarketing.plugin.model.Plugin" table="plugin">

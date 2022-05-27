@@ -1,7 +1,5 @@
 package com.dotmarketing.portlets.containers.model;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotmarketing.beans.*;
@@ -25,9 +23,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Containers encapsulate the formatting for specific content types so it can be reused in multiple templates and feed for content (contentlets)
+ * Containers in dotCMS allow you to specify both what types of Content can be added to a Page and how content of each
+ * of those Content Types is displayed. Specifically, Containers allow you to perform the following important
+ * functions:
+ * <ul>
+ *     <li>Determine which Content Types a user can add to a Page.</li>
+ *     <li>Create blocks of code which are re-usable on multiple Templates.</li>
+ *     <li>Specify different and re-usable formatting and styling for each different Content Type that can be displayed
+ *     in the Container.</li>
+ * </ul>
+ *
+ * @author root
  */
 public class Container extends WebAsset implements Serializable, ManifestItem {
+
+	public static final String SYSTEM_CONTAINER = "SYSTEM_CONTAINER";
 
     /*
      * Convenience access 
@@ -58,7 +68,7 @@ public class Container extends WebAsset implements Serializable, ManifestItem {
 	public String getURI(Folder folder) {
 		String folderPath = "";
 		try {
-			folderPath = APILocator.getIdentifierAPI().find(folder).getPath();
+			folderPath = APILocator.getIdentifierAPI().find(folder.getIdentifier()).getPath();
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage());
 			throw new DotRuntimeException(e.getMessage(), e);

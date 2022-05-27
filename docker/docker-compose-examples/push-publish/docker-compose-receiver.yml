@@ -1,0 +1,61 @@
+version: '3.5'
+
+networks:
+  db_net_receiver:
+  es_net_receiver:
+
+volumes:
+  dbdata_receiver:
+  esdata_receiver:
+
+services:
+  elasticsearch-receiver:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.1
+    environment:
+      - cluster.name=elastic-cluster
+      - discovery.type=single-node
+      - data
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xmx1G "
+    ports:
+      - 9201:9200
+      - 9601:9600
+    volumes:
+      - esdata_receiver:/usr/share/elasticsearch/data
+    networks:
+      - es_net_receiver
+
+  dotcms-receiver:
+    image: dotcms/dotcms:latest
+    environment:
+        "DB_BASE_URL": "jdbc:postgresql://db-receiver/dotcms"
+        "DB_USERNAME": 'dotcmsdbuser'
+        "DB_PASSWORD": 'password'
+        "DOT_ES_AUTH_BASIC_PASSWORD": 'admin'
+        "DOT_ES_ENDPOINTS": 'http://elasticsearch-receiver:9200'
+        "DOT_INITIAL_ADMIN_PASSWORD": 'admin'
+        #"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20211201/starter-20211201.zip'
+    depends_on:
+      - elasticsearch-receiver
+      - db-receiver
+    volumes:
+      #- {local_data_path}:/data/shared
+      - {license_local_path}/license.zip:/data/shared/assets/license.zip
+    networks:
+      - db_net_receiver
+      - es_net_receiver
+    ports:
+      - "8081:8080"
+      - "8444:8443"
+
+  db-receiver:
+    image: postgres:11
+    command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
+    environment:
+        "POSTGRES_USER": 'dotcmsdbuser'
+        "POSTGRES_PASSWORD": 'password'
+        "POSTGRES_DB": 'dotcms'
+    volumes:
+      - dbdata_receiver:/var/lib/postgresql/data
+    networks:
+      - db_net_receiver

@@ -89,5 +89,5 @@ public abstract class VanityUrlCache implements Cachable {
     public abstract Optional<CachedVanityUrl> getDirectMapping(String url, Host host, Language lang) ;
 
 
-
+    public abstract void remove(String oldHostId, long languageId);
 }

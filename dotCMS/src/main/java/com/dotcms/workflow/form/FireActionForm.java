@@ -21,6 +21,7 @@ public class FireActionForm extends Validated {
     private final String iWantTo;
     private final String query;
     private final String pathToMove;
+    private final String timezoneId;
 
     private final Map<String, Object> contentletFormData;
 
@@ -76,6 +77,10 @@ public class FireActionForm extends Validated {
         return pathToMove;
     }
 
+    public String getTimezoneId() {
+        return timezoneId;
+    }
+
     public FireActionForm(final Builder builder) {
 
         this.comments    = builder.comments;
@@ -92,6 +97,7 @@ public class FireActionForm extends Validated {
         this.pathToMove  = builder.pathToMove;
         this.contentletFormData =
                 builder.contentlet;
+        this.timezoneId = builder.timezoneId;
     }
 
     public static class Builder {
@@ -120,6 +126,8 @@ public class FireActionForm extends Validated {
         private String query;
         @JsonProperty()
         private String pathToMove;
+        @JsonProperty()
+        private String timezoneId;
         @JsonProperty("contentlet")
         private Map<String, Object> contentlet;
 
@@ -180,6 +188,11 @@ public class FireActionForm extends Validated {
 
         public Builder iWantTo(final String iWantTo) {
             this.iWantTo = iWantTo;
+            return this;
+        }
+
+        public Builder timezoneId(final String timezoneId){
+            this.timezoneId = timezoneId;
             return this;
         }
 

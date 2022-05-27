@@ -113,7 +113,10 @@ public class DotInitializationService implements Serializable {
                 (DotInitializer)APILocator.getPersonaAPI(),
                 new ExceptionHandlersInitializer(),
                 new PushPublishFiltersInitializer(),
-                (DotInitializer)APILocator.getThemeAPI());
+                (DotInitializer)APILocator.getContainerAPI(),
+                (DotInitializer)APILocator.getThemeAPI(),
+                (DotInitializer)APILocator.getTemplateAPI()
+        );
     } // getInternalInitializers.
 
     private Set<DotInitializer> getServiceLoaderInitializers() {

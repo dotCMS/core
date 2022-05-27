@@ -241,7 +241,7 @@
         }
 
 		//Function used to render language id
-		function <%= relationJsName %>_lang(o) {
+		function <%= relationJsName %>_lang(o, preId) {
 			if (o !== null && dijit.byId("langcombo")) {
 			    var contentletLangCode = '<%= langAPI.getLanguageCodeAndCountry(contentlet.getLanguageId(),null)%>';
                 var currentLanguageIndex = getCurrentLanguageIndex(o);
@@ -250,7 +250,7 @@
                 var anchorValue = "";
                 var imgLangName = '';
 
-                result = '<div class="relationLanguageFlag" id="' + o.id + '"><div value="' + currentLanguageIndex + '" data-dojo-type="dijit/form/Select">';
+                result = '<div class="relationLanguageFlag" data-id="' + preId + '_' + o.id +'" id="' + o.id + '"><div value="' + currentLanguageIndex + '" data-dojo-type="dijit/form/Select">';
 
 				for(var sibIndex = 0; sibIndex < o['siblings'].length ; sibIndex++){
 					langImg = o['siblings'][sibIndex]['langCode'];
@@ -311,13 +311,16 @@
 			}
 			return value;
 	    }
-		
+
+	    function <%= relationJsName%>EditRelatedContentWrap(o, content) {
+	    var siblingInode = o['siblingInode'] || '';
+            return o != null
+                ? "<a href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "', '"+ siblingInode +"', '"+ o['langId'] +"');\"" + ">" + content + "</a>"
+                : ""
+        }
+
         function <%= relationJsName%>WriteLinkTitle (o) {
-            var value = "";
-            if (o != null){
-                value = "<a href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "', '"+ o['siblingInode'] +"', '"+ o['langId'] +"');\"" + ">" + o['title'] + "</a>";
-            }
-            return value;
+            return <%= relationJsName%>EditRelatedContentWrap(o, o['title']);
         }
 		
         function numberOfRows<%= relationJsName%> () {
@@ -543,7 +546,7 @@
 
 		}
 
-        function createLangTd(row, item) {
+        function createLangTd(row, item, preId) {
             var langTD = document.createElement("td");
             row.appendChild(langTD);
             // displays the publish/unpublish/archive status of the content and language flag, if multiple languages exists.
@@ -551,8 +554,9 @@
                 if(dijit.byId("langcombo")){
                     langTD.style.whiteSpace="nowrap";
                     langTD.style.textAlign = 'right';
-                    langTD.innerHTML = <%= relationJsName %>_lang(item);
-                    setTimeout(function () { dojo.parser.parse(item.id); }, 0);
+                    langTD.innerHTML = <%= relationJsName %>_lang(item, preId);
+                    setTimeout(function () { dojo.parser.parse(document.querySelector('[data-id="' + preId + '_'+ item.id +'"]')
+); }, 0);
                 }
             <%}%>
         }
@@ -562,15 +566,11 @@
             imgCell.style.whiteSpace="nowrap";
             imgCell.style.textAlign = 'center';
             var imageValue;
-            if (typeof item === 'object') {
-                imgCell.innerHTML = (item.hasTitleImage === 'true')
-                    ? '<img class="listingTitleImg" src="/dA/' + item.inode + '/titleImage/64w"  >'
-                    : '<span class="'+item.iconClass+'" style="font-size:24px;width:auto;"></span>';
-            } else {
-                imgCell.innerHTML = item
-                    ? '<img class="listingTitleImg" src="/dA/' + item + '/titleImage/64w"  >'
-                    : '<span style="font-size:24px;width:auto;"></span>';
-            }
+			imageValue = item.hasTitleImage === 'true'
+				? '<img class="listingTitleImg" src="/dA/' + item.inode + '/titleImage/64w">'
+				: '<span class="'+item.iconClass+'" style="font-size:24px;width:auto;"></span>';
+
+            imgCell.innerHTML = <%= relationJsName%>EditRelatedContentWrap(item, imageValue);
         }
 
         function CreateRow<%= relationJsName %>(item, hint) {
@@ -589,18 +589,19 @@
                 var titleCell = row.insertCell (row.cells.length);
                 titleCell.innerHTML = <%= relationJsName%>WriteLinkTitle (item);
 
-                createLangTd(row, item);
+                createLangTd(row, item, '<%= relationJsName %>');
             } else {
                 <%= relationJsName %>_showFields.forEach(function(fieldName) {
                     var fieldValue = '';
                     if (fieldName === 'languageId') {
-                        createLangTd(row, item);
+                        createLangTd(row, item, '<%= relationJsName %>');
                     } else if (fieldName === 'titleImage') {
-                        createImageCell(row, <%= relationJsName %>_specialFields[fieldName]);
+                        createImageCell(row, item);
                     } else {
-                        fieldValue = <%= relationJsName %>_specialFields[fieldName] || item[fieldName] || '';
                         var fieldCell = row.insertCell(row.cells.length);
-                        fieldCell.innerHTML = '<span>' + fieldValue + '</span>'
+                        fieldCell.innerHTML = <%= relationJsName%>EditRelatedContentWrap(
+                            item,
+                            <%= relationJsName %>_specialFields[fieldName] || item[fieldName] || "");
                     }
                 });
             }
@@ -608,7 +609,7 @@
 			// displays the publish/unpublish/archive status of the content only.
 			var statusTD = document.createElement("td");
 			statusTD.style.whiteSpace="nowrap";
-			statusTD.innerHTML = item.statusIcons;
+			statusTD.innerHTML = <%= relationJsName%>EditRelatedContentWrap(item, item.statusIcons);
 			row.appendChild(statusTD);
 
 			// to hold contentInode to reorder

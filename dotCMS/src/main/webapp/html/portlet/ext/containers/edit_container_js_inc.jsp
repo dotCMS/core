@@ -154,6 +154,12 @@
 		dijit.byId('variablesDialog').hide();
 	}
 
+	function addBlockEditor(velocityVarName){
+		var insert = `$dotContentMap.get('${velocityVarName}').toHtml()`;
+		insertAtCursor(insert, "codeMaskMulti");
+		dijit.byId('variablesDialog').hide();
+	}
+
 	function addImage(velocityVarName){
 		var insert = "#if ($UtilMethods.isSet($" + "{" + velocityVarName+"ImageURI})) \n   <img src=\"$!{"+velocityVarName+"ImageURI}\" alt=\"$!{"+velocityVarName+"ImageTitle}\"  /> \n#end \n";
 		insertAtCursor(insert, "codeMaskMulti");
@@ -481,9 +487,14 @@
 	}
 	function selectVersion(objId) {
 		if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.containers.confirm.replace.version")) %>')){
-			window.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/containers/edit_container" /></portlet:actionURL>&cmd=getversionback&inode=' + objId + '&inode_version=' + objId + '&referer=' + referer;
+			getVersionBack(objId)
 		}
 	}
+
+	function getVersionBack(inode) {
+		window.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/containers/edit_container" /></portlet:actionURL>&cmd=getversionback&inode=' + inode + '&inode_version=' + inode + '&referer=' + referer;
+	}
+
 	function editVersion(objId) {
 		window.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/containers/edit_container" /></portlet:actionURL>&cmd=edit&inode=' + objId + '&referer=' + referer;
 	}

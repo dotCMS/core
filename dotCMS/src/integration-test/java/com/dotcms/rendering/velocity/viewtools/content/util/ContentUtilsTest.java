@@ -1,5 +1,8 @@
 package com.dotcms.rendering.velocity.viewtools.content.util;
 
+import static com.dotcms.datagen.TestDataUtils.getCommentsLikeContentType;
+import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
+import static com.dotcms.datagen.TestDataUtils.relateContentTypes;
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
@@ -44,6 +47,7 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -978,5 +982,106 @@ public class ContentUtilsTest {
         assertEquals(contentlet.getInode(),contentletFound.getInode());
         assertEquals(contentlet.getLanguageId(),contentletFound.getLanguageId());
 
+    }
+
+
+    /**
+     * Method to test: {@link ContentUtils#pullRelatedField(Relationship, String, String, int, int, String, User, String, boolean, long, Boolean)}
+     * Given Scenario: Pulling related content should consider the order defined in the relationship if the sort criteria is empty or not set
+     * ExpectedResult: The relationship order is used when a sort criteria is not set
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testPullRelatedFieldShouldRespectDefaultOrder()
+            throws DotDataException, DotSecurityException {
+
+        final long languageId = languageAPI.getDefaultLanguage().getId();
+        final ContentType news = getNewsLikeContentType("News");
+        final ContentType comments = getCommentsLikeContentType("Comments");
+        relateContentTypes(news, comments);
+
+        final ContentType newsContentType = contentTypeAPI.find("News");
+        final ContentType commentsContentType = contentTypeAPI.find("Comments");
+
+        Contentlet newsContentlet = null;
+        Contentlet commentsContentlet;
+        final List<Contentlet> relatedComments = new ArrayList<>();
+
+        try {
+            //creates parent contentlet
+            ContentletDataGen dataGen = new ContentletDataGen(newsContentType.id());
+
+            //English version
+            newsContentlet = dataGen.languageId(languageId)
+                    .setProperty("title", "News Test")
+                    .setProperty("urlTitle", "news-test").setProperty("byline", "news-test")
+                    .setProperty("sysPublishDate", new Date()).setProperty("story", "news-test")
+                    .next();
+
+            //creates child contentlet
+            dataGen = new ContentletDataGen(commentsContentType.id());
+
+            for (int i=1; i<5 ;i++){
+                commentsContentlet = dataGen
+                        .languageId(languageId)
+                        .setProperty("title", "Comment for News " + i)
+                        .setProperty("email", "testing@dotcms.com")
+                        .setProperty("comment", "Comment for News " + i)
+                        .setPolicy(IndexPolicy.FORCE).nextPersisted();
+                relatedComments.add(commentsContentlet);
+
+            }
+
+            //Saving relationship
+            final Relationship relationship = relationshipAPI.byTypeValue("News-Comments");
+
+            newsContentlet.setIndexPolicy(IndexPolicy.FORCE);
+
+            newsContentlet = contentletAPI.checkin(newsContentlet,
+                    map(relationship, relatedComments),
+                    null, user, false);
+
+            //Pull related content from comment child
+            List<Contentlet> result = ContentUtils.
+                    pullRelatedField(relationship, newsContentlet.getIdentifier(), "+languageId:1",
+                            3, 0, "", user, null, false, languageId, false);
+
+            assertNotNull(result);
+            assertEquals(3,result.size());
+
+            //related content should be returned in the default order
+            assertEquals(relatedComments.get(0).getIdentifier(),result.get(0).getIdentifier());
+            assertEquals(relatedComments.get(1).getIdentifier(),result.get(1).getIdentifier());
+            assertEquals(relatedComments.get(2).getIdentifier(),result.get(2).getIdentifier());
+
+            //let's reorder the related content and pull them again
+            newsContentlet = contentletAPI.checkin(newsContentlet,
+                    map(relationship, list(relatedComments.get(3), relatedComments.get(1), relatedComments.get(0), relatedComments.get(2))),
+                    null, user, false);
+
+            //now, we pull the related content again. Limit and offset were set to invalid values to make sure that it keeps working as expected
+            result = ContentUtils.
+                    pullRelatedField(relationship, newsContentlet.getIdentifier(), "+languageId:1",
+                            5, -1000, "", user, null, false, languageId, false);
+
+            assertNotNull(result);
+            assertEquals(relatedComments.size(),result.size());
+
+            //the new order should be preserved
+            assertEquals(relatedComments.get(3).getIdentifier(), result.get(0).getIdentifier());
+            assertEquals(relatedComments.get(1).getIdentifier(), result.get(1).getIdentifier());
+            assertEquals(relatedComments.get(0).getIdentifier(), result.get(2).getIdentifier());
+            assertEquals(relatedComments.get(2).getIdentifier(), result.get(3).getIdentifier());
+
+        } finally {
+            if (null != newsContentlet && UtilMethods.isSet(newsContentlet.getInode())) {
+                ContentletDataGen.remove(newsContentlet);
+            }
+
+            for (final Contentlet contentlet: relatedComments){
+                ContentletDataGen.remove(contentlet);
+            }
+        }
     }
 }

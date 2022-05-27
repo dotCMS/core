@@ -515,12 +515,7 @@ create index idx_qrtz_excl_ft_jobname on qrtz_excl_fired_triggers(JOB_NAME);
 create index idx_qrtz_excl_ft_jobgroup on qrtz_excl_fired_triggers(JOB_GROUP);
 create index idx_qrtz_excl_ft_jobstateful on qrtz_excl_fired_triggers(IS_STATEFUL);
 create index idx_qrtzexclftjobreqrec on qrtz_excl_fired_triggers(REQUESTS_RECOVERY);
-create table calendar_reminder (
-   user_id varchar2(255) not null,
-   event_id varchar2(36) not null,
-   send_date date not null,
-   primary key (user_id, event_id, send_date)
-);
+
 create table analytic_summary_pages (
    id number(19,0) not null,
    summary_id number(19,0) not null,
@@ -1354,6 +1349,8 @@ create table folder (
    identifier varchar2(36),
    default_file_type varchar2(36),
    mod_date date,
+   owner varchar2(255),
+   idate date,
    primary key (inode)
 );
 create table clickstream_404 (
@@ -1564,7 +1561,6 @@ alter table field add constraint fk5cea0fa5fb51eb foreign key (inode) references
 create index idx_relationship_1 on relationship (parent_structure_inode);
 create index idx_relationship_2 on relationship (child_structure_inode);
 create index idx_folder_1 on folder (name);
-alter table folder add constraint fkb45d1c6e5fb51eb foreign key (inode) references inode;
 create index idx_user_clickstream_404_2 on clickstream_404 (user_id);
 create index idx_user_clickstream_404_3 on clickstream_404 (host_id);
 create index idx_user_clickstream_404_1 on clickstream_404 (request_uri);
@@ -1774,7 +1770,6 @@ alter table import_audit add( warnings nclob,
 
 alter table structure modify host default 'SYSTEM_HOST';
 alter table structure modify folder default 'SYSTEM_FOLDER';
-alter table structure add constraint fk_structure_folder foreign key (folder) references folder(inode);
 alter table structure modify (velocity_var_name varchar2(255) not null);
 alter table structure add constraint unique_struct_vel_var_name unique (velocity_var_name);
 

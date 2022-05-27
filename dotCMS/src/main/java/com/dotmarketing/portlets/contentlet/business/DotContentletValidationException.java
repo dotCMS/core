@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -233,52 +235,63 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 	}
 
 	@Override
-	public String toString()
-	{
-		boolean parentException = true;
-		return toString(parentException);
+	public String toString() {
+		return toString(true);
 	}
 
-	public String toString(boolean parentException)
-	{
-		StringBuffer sb = new StringBuffer();
-		if(parentException)
-		{
-			sb.append(super.toString() + "\n");
+	public String toString(boolean parentException) {
+		final StringBuilder builder = new StringBuilder();
+		if (parentException) {
+			builder.append(super.toString()).append("\n");
 		}
 		//Print the Field errors
 		Set<String> keys = notValidFields.keySet();
-		if(keys.size() > 0)
-		{
-			sb.append("List of non valid fields\n");
-			for(String key : keys)
-			{
-				sb.append(key.toUpperCase() + ": ");
+		if (keys.size() > 0) {
+			builder.append("List of non valid fields\n");
+			for (String key : keys) {
+				builder.append(key.toUpperCase()).append(": ");
 				List<Field> fields = notValidFields.get(key);
-				for(Field field : fields)
-				{
-					sb.append(field.getVelocityVarName() + "/" + field.getFieldName() + ", ");
+
+				for (int i = 0; i < fields.size(); i++) {
+					Field field = fields.get(i);
+
+					if (i > 0) {
+						builder.append(", ");
+					}
+
+					builder.append(field.getVelocityVarName()).append("/")
+							.append(field.getFieldName());
 				}
-				sb.append("\n");
+				builder.append("\n");
 			}
 		}
 		//Print the Relationship errors
 		keys = notValidRelationships.keySet();
-		if(keys.size() > 0)
-		{
-			sb.append("List of non valid relationships\n");
-			for(String key : keys)
-			{
-				sb.append(key.toUpperCase() + ": ");
-				Map<Relationship,List<Contentlet>> relationshipContentlets = notValidRelationships.get(key);
-				for(Entry<Relationship,List<Contentlet>> relationship : relationshipContentlets.entrySet())
-				{
-					sb.append(relationship.getKey().getRelationTypeValue() + ", ");
+		if (keys.size() > 0) {
+			builder.append("List of non valid relationships\n");
+			for (String key : keys) {
+				builder.append(key.toUpperCase()).append(": ");
+				Map<Relationship, List<Contentlet>> relationshipContentlets = notValidRelationships
+						.get(key);
+				for (Entry<Relationship, List<Contentlet>> relationship : relationshipContentlets
+						.entrySet()) {
+					builder.append(relationship.getKey().getRelationTypeValue()).append(", ");
 				}
-				sb.append("\n");
+				builder.append("\n");
 			}
 		}
-		sb.append("\n");
-		return sb.toString();
+		builder.append("\n");
+		return builder.toString();
+	}
+
+	@Override
+	public String getMessage() {
+		final String toString = toString(false);
+
+		if (UtilMethods.isSet(toString)) {
+			return super.getMessage() + "\n" + toString;
+		} else {
+			return super.getMessage();
+		}
 	}
 }

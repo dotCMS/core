@@ -4,14 +4,75 @@
 	${UtilMethods.fixBreaks($stringToFix)}
 #end
 
+#macro(renderMarks $content)
+
+    #if($content.marks)
+        #set($start = 0)
+        #set($end = $content.marks.length())
+        #set($end = $end - 1)
+        #set($range = [$start..$end])
+
+        #foreach($i in $range)
+            #set($mark = $content.marks.get($i))
+            #if ($mark.type == "bold")
+            <strong>
+            #end
+            #if ($mark.type == "italic")
+            <em>
+            #end
+            #if ($mark.type == "strike")
+            <s>
+            #end
+            #if ($mark.type == "underline")
+            <u>
+            #end
+            #if ($mark.type == "link")
+            <a href="$mark.attrs.href" target="$mark.attrs.target">
+            #end
+        #end
+    #end
+
+    $!content.text
+
+    #if($content.marks)
+        #set($range = [$end..$start])
+        #foreach($i in $range)
+            #set($mark = $content.marks.get($i))
+            #if ($mark.type == "bold")
+            </strong>
+            #end
+            #if ($mark.type == "italic")
+            </em>
+            #end
+            #if ($mark.type == "strike")
+            </s>
+            #end
+            #if ($mark.type == "underline")
+            </u>
+            #end
+            #if($mark.type == "link")
+            </a>
+            #end
+        #end
+    #end
+
+#end
+
+
 
 
 #macro(editContentlet $CONTENT_INODE)
-    ## No container inode is passed because a contentlet is edited no added to the container
-    #set($_containerInode = "")
-    #if($EDIT_MODE)
-        #set($_hasPermission = $contents.doesUserHasPermission($CONTENT_INODE, 2, $EDIT_MODE))
-    <div data-dot-object='edit-content' data-dot-inode='$CONTENT_INODE'  data-dot-can-edit='$_hasPermission'></div>
+    #set($_hasPermission = $contents.doesUserHasPermission($CONTENT_INODE, 2, $EDIT_MODE))
+    #if($EDIT_MODE && $_hasPermission)
+    	#set($localContent = $dotcontent.find($!{CONTENT_INODE}))
+        <button
+            data-dot-identifier="$!{localContent.identifier}"
+            data-dot-inode="$!{CONTENT_INODE}"
+            data-dot-object="edit-content"
+            style="box-shadow: 0 1px 3px rgb(0 0 0 / 12%), 0 1px 2px rgb(0 0 0 / 24%) !important; border: none !important; border-radius: 16px !important; cursor: pointer !important; font-size: 0 !important; height: 32px !important; outline: none !important; position: relative !important; width: 32px !important; z-index: 2147483646 !important;
+            background: #fff url(data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjNDQ0NDQ0IiBoZWlnaHQ9IjE4IiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIxOCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4gICAgPHBhdGggZD0iTTMgMTcuMjVWMjFoMy43NUwxNy44MSA5Ljk0bC0zLjc1LTMuNzVMMyAxNy4yNXpNMjAuNzEgNy4wNGMuMzktLjM5LjM5LTEuMDIgMC0xLjQxbC0yLjM0LTIuMzRjLS4zOS0uMzktMS4wMi0uMzktMS40MSAwbC0xLjgzIDEuODMgMy43NSAzLjc1IDEuODMtMS44M3oiLz4gICAgPHBhdGggZD0iTTAgMGgyNHYyNEgweiIgZmlsbD0ibm9uZSIvPjwvc3ZnPg==) no-repeat center center !important;">
+            Edit
+        </button>
     #end
 #end
 

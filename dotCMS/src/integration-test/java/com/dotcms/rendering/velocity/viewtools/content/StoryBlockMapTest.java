@@ -1,11 +1,46 @@
 package com.dotcms.rendering.velocity.viewtools.content;
 
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
+
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.FileAssetContentType;
+import com.dotcms.mock.request.FakeHttpRequest;
+import com.dotcms.mock.response.BaseResponse;
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotmarketing.util.json.JSONException;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.VelocityUtil;
+import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
+import io.vavr.control.Try;
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.context.Context;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
+
+import static junit.framework.TestCase.assertEquals;
 
 public class StoryBlockMapTest extends IntegrationTestBase {
 
@@ -23,10 +58,79 @@ public class StoryBlockMapTest extends IntegrationTestBase {
 
     private static final String JSON_ULIST =
             "{\"type\":\"doc\",\"content\":[{\"type\":\"bulletList\",\"content\":[{\"type\":\"listItem\",\"attrs\":{\"textAlign\":\"left\"},\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"1\"}]}]},{\"type\":\"listItem\",\"attrs\":{\"textAlign\":\"left\"},\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"2\"}]}]},{\"type\":\"listItem\",\"attrs\":{\"textAlign\":\"left\"},\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"3\"}]}]}]}]}";
+
+    private static final String MACRO = "#macro(renderMarks $content)\n" +
+            "\n" +
+            "    #if($content.marks)\n" +
+            "        #set($start = 0)\n" +
+            "        #set($end = $content.marks.length())\n" +
+            "        #set($end = $end - 1)\n" +
+            "        #set($range = [$start..$end])\n" +
+            "\n" +
+            "        #foreach($i in $range)\n" +
+            "            #set($mark = $content.marks.get($i))\n" +
+            "            #if ($mark.type == \"bold\")\n" +
+            "            <strong>\n" +
+            "            #end\n" +
+            "            #if ($mark.type == \"italic\")\n" +
+            "            <em>\n" +
+            "            #end\n" +
+            "            #if ($mark.type == \"strike\")\n" +
+            "            <s>\n" +
+            "            #end\n" +
+            "            #if ($mark.type == \"underline\")\n" +
+            "            <u>\n" +
+            "            #end\n" +
+            "            #if ($mark.type == \"link\")\n" +
+            "            <a href=\"$mark.attrs.href\" target=\"$mark.attrs.target\">\n" +
+            "            #end\n" +
+            "        #end\n" +
+            "    #end\n" +
+            "\n" +
+            "    $!content.text\n" +
+            "\n" +
+            "    #if($content.marks)\n" +
+            "        #set($range = [$end..$start])\n" +
+            "        #foreach($i in $range)\n" +
+            "            #set($mark = $content.marks.get($i))\n" +
+            "            #if ($mark.type == \"bold\")\n" +
+            "            </strong>\n" +
+            "            #end\n" +
+            "            #if ($mark.type == \"italic\")\n" +
+            "            </em>\n" +
+            "            #end\n" +
+            "            #if ($mark.type == \"strike\")\n" +
+            "            </s>\n" +
+            "            #end\n" +
+            "            #if ($mark.type == \"underline\")\n" +
+            "            </u>\n" +
+            "            #end\n" +
+            "            #if($mark.type == \"link\")\n" +
+            "            </a>\n" +
+            "            #end\n" +
+            "        #end\n" +
+            "    #end\n" +
+            "\n" +
+            "#end";
+
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
+    }
+
+    @Before
+    public void before () {
+
+        final Host   host     = Try.of(()->APILocator.getHostAPI().findDefaultHost(
+                APILocator.systemUser(), false)).getOrNull();
+        final String hostname = null == host? host.getHostname():"dotcms.com"; // fake host
+        final HttpServletRequest requestProxy = new FakeHttpRequest(hostname, null).request();
+        final HttpServletResponse responseProxy = new BaseResponse().response();
+        final Context context = VelocityUtil.getInstance().getContext(requestProxy, responseProxy);
+        final Reader reader   = new StringReader(MACRO);
+        final StringWriter evalResult = new StringWriter();
+        com.dotcms.rendering.velocity.util.VelocityUtil.getEngine().evaluate(context, evalResult, StringPool.BLANK, reader);
     }
 
     /**
@@ -35,7 +139,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
      * ExpectedResult: Expected a JSONException
      *
      */
-    @Test(expected = JSONException.class)
+    @Test(expected = com.dotmarketing.util.json.JSONException.class)
     public void test_empty_json_to_html() throws  JSONException {
 
         new StoryBlockMap("");
@@ -50,38 +154,19 @@ public class StoryBlockMapTest extends IntegrationTestBase {
     @Test
     public void test_default_olist_render_to_html() throws  JSONException {
 
+        final String velocityRoot   = Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
+        final File velocityRootFile = new File(velocityRoot);
+
+        Assert.assertTrue("the " + velocityRoot + "/static/storyblock/bulletList.vtl" + " should exists",
+                new File(velocityRootFile, "static/storyblock/bulletList.vtl").exists());
+
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON_OLIST);
         final String html = storyBlockMap.toHtml();
-        Assert.assertTrue(html.contains("<ol>\n" +
-                "\n" +
-                "                            <li>\n" +
-                "\n" +
-                "                                                                    \n" +
-                "    \n" +
-                "    one\n" +
-                "\n" +
-                "    \n" +
-                "                                        </li>\n" +
-                "        \n" +
-                "                        <li>\n" +
-                "\n" +
-                "                                                                    \n" +
-                "    \n" +
-                "    two\n" +
-                "\n" +
-                "    \n" +
-                "                                        </li>\n" +
-                "        \n" +
-                "                        <li>\n" +
-                "\n" +
-                "                                                                    \n" +
-                "    \n" +
-                "    tree\n" +
-                "\n" +
-                "    \n" +
-                "                                        </li>\n" +
-                "        \n" +
-                "    </ol>"));
+        Assert.assertTrue(html.contains("<ol style=\"text-align: \">"));
+        Assert.assertTrue(html + ": <li style=\"text-align: left", html.contains("<li style=\"text-align: left"));
+        Assert.assertTrue(html.contains("one"));
+        Assert.assertTrue(html.contains("two"));
+        Assert.assertTrue(html.contains("tree"));
     }
 
     /**
@@ -93,38 +178,21 @@ public class StoryBlockMapTest extends IntegrationTestBase {
     @Test
     public void test_default_ulist_render_to_html() throws  JSONException {
 
+        final String velocityRoot   = Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
+        final File velocityRootFile = new File(velocityRoot);
+
+        Assert.assertTrue("the " + velocityRoot + "/static/storyblock/orderedList.vtl" + " should exists",
+                new File(velocityRootFile, "static/storyblock/orderedList.vtl").exists());
+
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON_ULIST);
         final String html = storyBlockMap.toHtml();
-        Assert.assertTrue(html.contains("<ul>\n" +
-                "\n" +
-                "                            <li>\n" +
-                "\n" +
-                "                                                                            \n" +
-                "    \n" +
-                "    1\n" +
-                "\n" +
-                "    \n" +
-                "                                                 </li>\n" +
-                "        \n" +
-                "                        <li>\n" +
-                "\n" +
-                "                                                                            \n" +
-                "    \n" +
-                "    2\n" +
-                "\n" +
-                "    \n" +
-                "                                                 </li>\n" +
-                "        \n" +
-                "                        <li>\n" +
-                "\n" +
-                "                                                                            \n" +
-                "    \n" +
-                "    3\n" +
-                "\n" +
-                "    \n" +
-                "                                                 </li>\n" +
-                "        \n" +
-                "    </ul>"));
+        Assert.assertTrue(html.contains("<ul>"));
+        Assert.assertTrue(html + ": does not contains <li style=\"text-align: left", html.contains("<li style=\"text-align: left"));
+        Assert.assertTrue(html.contains("1"));
+        Assert.assertTrue(html.contains("2"));
+        Assert.assertTrue(html.contains("3"));
+        Assert.assertTrue(html.contains("</li>"));
+        Assert.assertTrue(html.contains("</ul>"));
     }
 
     /**
@@ -136,15 +204,17 @@ public class StoryBlockMapTest extends IntegrationTestBase {
     @Test
     public void test_default_paragraph_render_to_html() throws  JSONException {
 
+        final String velocityRoot   = Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
+        final File velocityRootFile = new File(velocityRoot);
+
+        Assert.assertTrue("the " + velocityRoot + "/static/storyblock/paragraph.vtl" + " should exists",
+                new File(velocityRootFile, "static/storyblock/paragraph.vtl").exists());
+
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON_PARAGRAPH);
         final String html = storyBlockMap.toHtml();
-        Assert.assertTrue(html.contains("<p>\n" +
-                "                \n" +
-                "    \n" +
-                "    this is paragraph\n" +
-                "\n" +
-                "    \n" +
-                "    </p>\n"));
+        Assert.assertTrue(html.contains("<p style=\"text-align: left\">"));
+        Assert.assertTrue(html + ": does not contains this is paragraph", html.contains("this is paragraph"));
+        Assert.assertTrue(html.contains("</p>"));
     }
 
     /**
@@ -158,7 +228,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
 
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON_CONTENTLET);
         final String html = storyBlockMap.toHtml();
-        Assert.assertTrue(html.contains("<h2>test2</h2>"));
+        Assert.assertTrue(html.contains("test2</h2>"));
     }
 
     /**
@@ -170,92 +240,81 @@ public class StoryBlockMapTest extends IntegrationTestBase {
     @Test
     public void test_default_render_to_html() throws  JSONException {
 
+        final String velocityRoot   = Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
+        final File velocityRootFile = new File(velocityRoot);
+
+        Assert.assertTrue("the " + velocityRoot + "/static/storyblock/default.vtl" + " should exists",
+                new File(velocityRootFile, "static/storyblock/default.vtl").exists());
+
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON);
         final String html = storyBlockMap.toHtml();
-        Assert.assertTrue(html.contains("<h2>test2</h2>"));
-        Assert.assertTrue(html.contains("<h2>test2</h2>"));
-        Assert.assertTrue(html.contains("<h2>test1</h2>"));
-        Assert.assertTrue(html.contains("<strong>\n" +
-                "                                                \n" +
-                "    heading 1\n" +
-                "\n" +
-                "                                    </strong>"));
-        Assert.assertTrue(html.contains("<h2>\n" +
-                "\n" +
-                "                \n" +
-                "    \n" +
-                "                                <strong>\n" +
-                "                                                                                            <u>\n" +
-                "                        \n" +
-                "    heading 2\n" +
-                "\n" +
-                "                                                            </u>\n" +
-                "                                            </strong>\n" +
-                "                                                \n" +
-                "    </h2>"));
-        Assert.assertTrue(html.contains("<ol>\n" +
-                "\n" +
-                "                            <li>\n" +
-                "\n" +
-                "                                                                    \n" +
-                "    \n" +
-                "    one\n" +
-                "\n" +
-                "    \n" +
-                "                                        </li>\n" +
-                "        \n" +
-                "                        <li>\n" +
-                "\n" +
-                "                                                                    \n" +
-                "    \n" +
-                "                                <strong>\n" +
-                "                                                \n" +
-                "    two\n" +
-                "\n" +
-                "                                    </strong>\n" +
-                "                                                \n" +
-                "                                        </li>\n" +
-                "        \n" +
-                "                        <li>\n" +
-                "\n" +
-                "                                                                    \n" +
-                "    \n" +
-                "    tree\n" +
-                "\n" +
-                "    \n" +
-                "                                        </li>\n" +
-                "        \n" +
-                "    </ol>"));
-        Assert.assertTrue(html.contains("<ul>\n" +
-                "\n" +
-                "                            <li>\n" +
-                "\n" +
-                "                                                                            \n" +
-                "    \n" +
-                "    1\n" +
-                "\n" +
-                "    \n" +
-                "                                                 </li>\n" +
-                "        \n" +
-                "                        <li>\n" +
-                "\n" +
-                "                                                                            \n" +
-                "    \n" +
-                "    2\n" +
-                "\n" +
-                "    \n" +
-                "                                                 </li>\n" +
-                "        \n" +
-                "                        <li>\n" +
-                "\n" +
-                "                                                                            \n" +
-                "    \n" +
-                "    3\n" +
-                "\n" +
-                "    \n" +
-                "                                                 </li>\n" +
-                "        \n" +
-                "    </ul>"));
+        Assert.assertTrue(html.contains("<h2 style=\"text-align: \" >test2</h2>"));
+        Assert.assertTrue(html.contains("<h2 style=\"text-align: \" >test1</h2>"));
+        Assert.assertTrue(html + ": does not contains <strong>", html.contains("<strong>"));
+        Assert.assertTrue(html.contains("heading 1"));
+        Assert.assertTrue(html.contains("<h2 style=\"text-align: left\">"));
+        Assert.assertTrue(html.contains("heading 2"));
+        Assert.assertTrue(html.contains("</h2>"));
+
+    }
+
+    /**
+     * Method to test: {@link StoryBlockMap#toHtml()}
+     * Given Scenario: Will parse the json paragraph and render the custom html
+     * ExpectedResult: The html rendered is the custom one
+     *
+     */
+    @Test
+    public void test_overridden_render_to_html() throws JSONException, DotDataException, DotSecurityException, IOException {
+
+        final String fileName = "paragraph.vtl";
+        final String storyBlockPath = "/application/storytest/blocks"+System.currentTimeMillis()+"/";
+        final User user = APILocator.systemUser();
+        final Host host = APILocator.getHostAPI().findDefaultHost(user, false);
+        final Folder folder = APILocator.getFolderAPI().createFolders(storyBlockPath,
+                host, user, false);
+
+        if(!APILocator.getFileAssetAPI().fileNameExists(host, folder, fileName)) {
+
+            final File tempTestFile = File
+                    .createTempFile("paragraph" , ".vtl");
+            FileUtils.writeStringToFile(tempTestFile,
+                    "#foreach($element in $!item.content)" +
+                            "<p> $element.text </p>" +
+                          "#end");
+
+            final String variable = "testFileAsset" + System.currentTimeMillis();
+            final ContentType fileAssetContentType = APILocator.getContentTypeAPI(user).save(ContentTypeBuilder
+                    .builder(FileAssetContentType.class).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name(variable)
+                    .owner(user.getUserId()).build());
+
+            assertEquals(fileAssetContentType.baseType(), BaseContentType.FILEASSET);
+            assertEquals(fileAssetContentType.variable().toLowerCase(), variable.toLowerCase());
+
+            final Contentlet paragraphFileAsset = new Contentlet();
+            paragraphFileAsset.setContentType(fileAssetContentType);
+            paragraphFileAsset.setBinary(FileAssetContentType.FILEASSET_FILEASSET_FIELD_VAR, tempTestFile);
+            paragraphFileAsset.setProperty(FileAssetContentType.FILEASSET_FILE_NAME_FIELD_VAR, fileName);
+            paragraphFileAsset.setProperty(Contentlet.TITTLE_KEY, fileName);
+            paragraphFileAsset.setProperty(Contentlet.HOST_KEY, host.getIdentifier());
+            paragraphFileAsset.setProperty(Contentlet.FOLDER_KEY, folder.getIdentifier());
+            paragraphFileAsset.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
+
+            final Contentlet checkinContentlet = APILocator.getContentletAPI().checkin(paragraphFileAsset,
+                    new ContentletDependencies.Builder()
+                            .modUser(user).indexPolicy(IndexPolicy.FORCE).build());
+
+            APILocator.getContentletAPI().publish(checkinContentlet, user, false);
+        }
+
+
+        final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON_PARAGRAPH);
+        final String html = storyBlockMap.toHtml(storyBlockPath);
+        // expecting diff html here (not the default)
+        Assert. assertTrue(html.contains("<p>"));
+        Assert.assertTrue(html.contains("this is paragraph"));
+        Assert.assertTrue(html.contains("</p>"));
+
     }
 
 

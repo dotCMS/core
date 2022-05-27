@@ -5,7 +5,7 @@ import static com.dotcms.util.DotPreconditions.checkNotEmpty;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
+import com.dotmarketing.util.json.JSONException;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;

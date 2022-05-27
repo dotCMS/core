@@ -1,6 +1,7 @@
 package com.dotcms.rendering.velocity.servlet;
 
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
+import static com.dotmarketing.util.WebKeys.LOGIN_MODE_PARAMETER;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.anyObject;
@@ -8,6 +9,7 @@ import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -17,6 +19,7 @@ import com.dotcms.datagen.*;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
+import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
 import com.dotcms.util.FiltersUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.vanityurl.filters.VanityURLFilter;
@@ -24,6 +27,7 @@ import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 
@@ -34,10 +38,14 @@ import com.dotmarketing.portlets.containers.model.Container;
 
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
+import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl;
+import com.dotmarketing.portlets.htmlpageasset.business.render.PageContext;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.LoginMode;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.WebKeys;
 import java.io.IOException;
@@ -182,7 +190,7 @@ public class VelocityServletIntegrationTest {
     private void createAndPublishVanityURL(final String forwardURL, final String VANITY_URI)
             throws DotDataException, DotSecurityException {
         final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
-        final Contentlet vanityUrl = FiltersUtil.getInstance().createVanityUrl("test", host.getIdentifier(), VANITY_URI,
+        final Contentlet vanityUrl = FiltersUtil.getInstance().createVanityUrl("test", host, VANITY_URI,
                 forwardURL, 200, 0, defaultLanguage.getId());
 
         FiltersUtil.getInstance().publishVanityUrl(vanityUrl);
@@ -357,4 +365,66 @@ public class VelocityServletIntegrationTest {
             Config.setProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", defaultPageToDefaultLanguage);
         }
     }
+
+    /**
+     * Here were testing that a logged in user with FE and BE roles will But login in the Front end will get the Page Per SE and not the Edit Mode
+     * More context here: https://github.com/dotcms/core/issues/22124
+     * @throws Exception
+     */
+    @Test
+    public void Test_Frontend_Login_Overrides_BackendLogin_When_Page_Requested() throws Exception {
+
+        final User loginUser = mock(User.class);
+        when(loginUser.hasConsoleAccess()).thenReturn(true);
+        when(loginUser.isAnonymousUser()).thenReturn(false);
+        when(loginUser.isBackendUser()).thenReturn(true);
+        when(loginUser.isFrontendUser()).thenReturn(true);
+        when(loginUser.isActive()).thenReturn(true);
+
+        testServerPageFor(loginUser, LoginMode.FE);
+        testServerPageFor(loginUser, LoginMode.BE);
+        testServerPageFor(loginUser, LoginMode.UNKNOWN);
+
+    }
+
+    /**
+     * This is the actual test body
+     * @param user
+     * @param mode
+     * @throws IOException
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws ServletException
+     */
+    private void testServerPageFor(final User user, final LoginMode mode)
+            throws IOException, DotSecurityException, DotDataException, ServletException {
+        final String pageContent = "<html>lol</html>";
+
+        VelocityRequestWrapper velocityRequest = mock(VelocityRequestWrapper.class);
+        when(velocityRequest.getRequestURI()).thenReturn("/lol");
+        when(velocityRequest.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
+        final HttpSession session = mock(HttpSession.class);
+        when(session.getAttribute(LOGIN_MODE_PARAMETER)).thenReturn(mode);
+        when(velocityRequest.getSession(Mockito.anyBoolean())).thenReturn(session);
+        when(velocityRequest.getSession()).thenReturn(session);
+
+        final ServletOutputStream outputStream = mock(ServletOutputStream.class);
+        when(response.getOutputStream()).thenReturn(outputStream);
+
+        final HTMLPageAssetRenderedAPI pageAssetRenderedAPI = mock(HTMLPageAssetRenderedAPIImpl.class);
+        when(pageAssetRenderedAPI.getPageHtml(Mockito.any(PageContext.class),Mockito.any(HttpServletRequest.class), Mockito.any(HttpServletResponse.class))).thenReturn(
+                pageContent);
+
+        final VelocityServlet velocityServlet = new VelocityServlet(WebAPILocator.getUserWebAPI(), pageAssetRenderedAPI);
+        velocityServlet.service(velocityRequest, response);
+        if(LoginMode.FE == mode){
+            //Here we verify the page was served normally
+            verify(outputStream, times(1)).write(pageContent.getBytes());
+        } else {
+            //Here the page never got served and a redirect occurred taking the user to EditMode
+            verify(outputStream, never()).write(pageContent.getBytes());
+        }
+    }
+
+
 }

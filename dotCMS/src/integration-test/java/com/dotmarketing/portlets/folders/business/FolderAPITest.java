@@ -1,7 +1,12 @@
 package com.dotmarketing.portlets.folders.business;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -12,6 +17,7 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.junit.CustomDataProviderRunner;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -69,7 +75,7 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
-public class FolderAPITest {//24 contentlets
+public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 
 	private final static String LOGO_GIF_1 = "logo.gif";
 	private final static String LOGO_GIF_2 = "logo2.gif";
@@ -127,6 +133,8 @@ public class FolderAPITest {//24 contentlets
 	@Test
 	public void renameFolder() throws Exception {
 
+		final String[] folderNames = new String[]{"ff1", "ff2", "ff3"};
+
 		final Folder ftest = folderAPI
 				.createFolders("/folderTest"+System.currentTimeMillis(), host, user, false);
 		final Folder ftest1 = folderAPI
@@ -136,20 +144,37 @@ public class FolderAPITest {//24 contentlets
 		final Folder ftest3 = folderAPI
 				.createFolders(ftest.getPath()+"/ff1/ff2/ff3", host, user, false);
 
+		final String newFolderName = "folderTestXX" + System.currentTimeMillis();
 		Assert.assertTrue(folderAPI
-				.renameFolder(ftest, "folderTestXX"+System.currentTimeMillis(), user, false));
+				.renameFolder(ftest, newFolderName, user, false));
 
-		// make sure the rename is properly propagated on children (that's done in a db trigger)
+		//we verify the old identifiers don't exist anymore
+		final Identifier ident = identifierAPI.loadFromDb(ftest.getIdentifier());
+		final Identifier ident1 = identifierAPI.loadFromDb(ftest1.getIdentifier());
+		final Identifier ident2 = identifierAPI.loadFromDb(ftest2.getIdentifier());
+		final Identifier ident3 = identifierAPI.loadFromDb(ftest3.getIdentifier());
 
-		final Identifier ident = identifierAPI.loadFromDb(ftest.getVersionId());
-		final Identifier ident1 = identifierAPI.loadFromDb(ftest1.getVersionId());
-		final Identifier ident2 = identifierAPI.loadFromDb(ftest2.getVersionId());
-		final Identifier ident3 = identifierAPI.loadFromDb(ftest3.getVersionId());
+		assertNull(ident);
+		assertNull(ident1);
+		assertNull(ident2);
+		assertNull(ident3);
 
-		Assert.assertTrue(ident.getAssetName().startsWith("folderTestXX"));
-		Assert.assertEquals(ident.getPath(),ident1.getParentPath());
-		Assert.assertEquals(ident1.getPath(),ident2.getParentPath());
-		Assert.assertEquals(ident2.getPath(),ident3.getParentPath());
+		//Now, we verify that the folder contains a new identifier because the path changed
+		final Folder newFolder = folderAPI.findFolderByPath(StringPool.SLASH + newFolderName, host, user, false);
+		assertNotNull(newFolder);
+		assertNotEquals(ftest.getIdentifier(), newFolder.getIdentifier());
+
+		//Finally, we make sure the children folders were created
+		List<Folder> subFolders = folderAPI.findSubFolders(newFolder, false);;
+		Folder currentChild;
+		int i = 0;
+		do {
+			assertEquals(1, subFolders.size());
+			currentChild = subFolders.get(0);
+			assertEquals(folderNames[i], currentChild.getName());
+			subFolders = folderAPI.findSubFolders(currentChild, false);
+			i++;
+		} while (i < 3);
 	}
 
 	/**
@@ -231,10 +256,6 @@ public class FolderAPITest {//24 contentlets
 		final List<IHTMLPage> pages = htmlPageAssetAPI.getLiveHTMLPages(newftest1,user, false);
 		Assert.assertEquals(3, pages.size());
 		Assert.assertTrue(pages.stream().anyMatch(page -> page.getName().equals(page0Name)));
-
-		contentletAPI.destroy(contentAsset1, user, false);
-		contentletAPI.destroy(contentAsset2, user, false);
-		contentletAPI.destroy(contentAsset4, user, false);
 	}
 
 	/**
@@ -1064,7 +1085,7 @@ public class FolderAPITest {//24 contentlets
 
 	@DataProvider
 	public static Object[] reservedFolderNames() {
-		return FolderFactoryImpl.reservedFolderNames.toArray();
+		return FolderAPIImpl.reservedFolderNames.toArray();
 	}
 
 	@Test(expected = InvalidFolderNameException.class)
@@ -1078,7 +1099,8 @@ public class FolderAPITest {//24 contentlets
 			invalidFolder.setIdentifier(newIdentifier.getId());
 			folderAPI.save(invalidFolder, APILocator.systemUser(), false);
 		} finally {
-			identifierAPI.delete(newIdentifier);
+			if (newIdentifier!=null)
+				identifierAPI.delete(newIdentifier);
 		}
 	}
 
@@ -1097,7 +1119,8 @@ public class FolderAPITest {//24 contentlets
 
 			folderAPI.copy(invalidFolder, newFolder, APILocator.systemUser(), false);
 		} finally {
-			identifierAPI.delete(newIdentifier);
+			if (newIdentifier!=null)
+				identifierAPI.delete(newIdentifier);
 		}
 	}
 
@@ -1105,11 +1128,17 @@ public class FolderAPITest {//24 contentlets
 	@UseDataProvider("reservedFolderNames")
 	public void testCopyToHost_BlacklistedName_ShouldFail(final String reservedName)
 			throws DotDataException, DotSecurityException, IOException {
-		final Folder invalidFolder = new FolderDataGen().name(reservedName).next();
-		final Identifier newIdentifier = identifierAPI.createNew(invalidFolder, host);
-		invalidFolder.setIdentifier(newIdentifier.getId());
-		final Host newHost = new SiteDataGen().nextPersisted();
-		folderAPI.copy(invalidFolder, newHost, APILocator.systemUser(), false);
+		Identifier newIdentifier=null;
+		try {
+			final Folder invalidFolder = new FolderDataGen().name(reservedName).next();
+			newIdentifier = identifierAPI.createNew(invalidFolder, host);
+			invalidFolder.setIdentifier(newIdentifier.getId());
+			final Host newHost = new SiteDataGen().nextPersisted();
+			folderAPI.copy(invalidFolder, newHost, APILocator.systemUser(), false);
+		} finally {
+			if (newIdentifier!=null)
+				identifierAPI.delete(newIdentifier);
+		}
 	}
 
 	@Test(expected = InvalidFolderNameException.class)
@@ -1128,9 +1157,8 @@ public class FolderAPITest {//24 contentlets
 
 			folderAPI.renameFolder(folder, reservedName, user, false);
 		} finally {
-			if(newIdentifier!=null) {
+			if(newIdentifier!=null)
 				identifierAPI.delete(newIdentifier);
-			}
 		}
 	}
 
@@ -1156,7 +1184,8 @@ public class FolderAPITest {//24 contentlets
 			invalidFolder.setIdentifier(newIdentifier.getId());
 			folderAPI.save(invalidFolder, APILocator.systemUser(), false);
 		} finally {
-			identifierAPI.delete(newIdentifier);
+			if (newIdentifier!=null)
+				identifierAPI.delete(newIdentifier);
 		}
 	}
 
@@ -1176,7 +1205,8 @@ public class FolderAPITest {//24 contentlets
 
 			folderAPI.renameFolder(folder,reservedName,user,false);
 		} finally {
-			identifierAPI.delete(newIdentifier);
+			if (newIdentifier!=null)
+				identifierAPI.delete(newIdentifier);
 		}
 	}
 
@@ -1210,7 +1240,7 @@ public class FolderAPITest {//24 contentlets
 
 		folderAPI.save(folder, user, false);
 
-		fc.removeFolder(folder, identifierAPI.find(folder));
+		fc.removeFolder(folder, identifierAPI.find(folder.getIdentifier()));
 		final Folder folderByPath = folderAPI.findFolderByPath(folderPath, newHost, user,false);
 
 		Assert.assertNotNull(folderByPath);
@@ -1229,7 +1259,7 @@ public class FolderAPITest {//24 contentlets
 
 		final Folder folderByPath = folderAPI.findFolderByPath("/", (String) null, user,false);
 
-		Assert.assertNull(folderByPath);
+		assertNull(folderByPath);
 	}
 
 	/**
@@ -1243,7 +1273,7 @@ public class FolderAPITest {//24 contentlets
 
 		final Folder folderByPath = folderAPI.findFolderByPath(null, host, user,false);
 
-		Assert.assertNull(folderByPath);
+		assertNull(folderByPath);
 	}
 
 	/**
@@ -1263,7 +1293,7 @@ public class FolderAPITest {//24 contentlets
 		folder.setOwner("folder's owner");
 
 		folderAPI.save(folder, user, false);
-		fc.removeFolder(folder, identifierAPI.find(folder));
+		fc.removeFolder(folder, identifierAPI.find(folder.getIdentifier()));
 
 		final User limitedUser = new UserDataGen().nextPersisted();
 
@@ -1287,7 +1317,7 @@ public class FolderAPITest {//24 contentlets
 		folder.setOwner("folder's owner");
 
 		folderAPI.save(folder, user, false);
-		fc.removeFolder(folder, identifierAPI.find(folder));
+		fc.removeFolder(folder, identifierAPI.find(folder.getIdentifier()));
 
 		final User limitedUser = new UserDataGen().nextPersisted();
 
@@ -1318,7 +1348,7 @@ public class FolderAPITest {//24 contentlets
 		folder.setOwner("folder's owner");
 
 		folderAPI.save(folder, user, false);
-		fc.removeFolder(folder, identifierAPI.find(folder));
+		fc.removeFolder(folder, identifierAPI.find(folder.getIdentifier()));
 
 		final User limitedUser = new UserDataGen().nextPersisted();
 
@@ -1395,8 +1425,24 @@ public class FolderAPITest {//24 contentlets
         assert(folder3!=null);
         assertEquals(folder3.getDefaultFileType(), newFileAssetType.id());        
     }
-	
-	
+
+	/**
+	 * Method to test: {@link FolderAPI#exists(String)}
+	 * Given Scenario: Given an existing folder, invoking {@link FolderAPI#exists(String)} using
+	 * folder's inode or folder's identifier should return true
+	 * ExpectedResult: {@link FolderAPI#exists(String)} must return true
+	 *
+	 */
+	@Test
+	public void testExists() throws DotDataException, DotSecurityException {
+		final Host newHost = new SiteDataGen().nextPersisted();
+		final long currentTime = System.currentTimeMillis();
+		final String folderPath = "/folder" + currentTime;
+
+		final Folder folder = folderAPI.createFolders(folderPath, newHost, user, false);
+		assertTrue(folderAPI.exists(folder.getInode()));
+		assertTrue(folderAPI.exists(folder.getIdentifier()));
+	}
 	
 	
 }

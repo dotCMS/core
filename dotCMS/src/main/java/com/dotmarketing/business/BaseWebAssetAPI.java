@@ -77,7 +77,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		APILocator.getVersionableAPI().setWorking(webasset);
 	}
 
-	protected void createAsset(WebAsset webasset, String userId, Inode parent) throws DotDataException, DotSecurityException {
+	protected void createAsset(WebAsset webasset, String userId, Folder parent) throws DotDataException, DotSecurityException {
 		webasset.setModDate(new java.util.Date());
 		webasset.setModUser(userId);
 
@@ -85,7 +85,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		if(!UtilMethods.isSet(webasset.getInode()))
             HibernateUtil.save(webasset);
 
-		Identifier id = APILocator.getIdentifierAPI().createNew(webasset, (Folder) parent);
+		Identifier id = APILocator.getIdentifierAPI().createNew(webasset, parent);
 		id.setOwner(userId);
 		// set the identifier on the inode for future reference.
 		// and for when we get rid of identifiers all together
@@ -94,10 +94,6 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		webasset.setIdentifier(id.getId());
 		// persists the webasset
 		save(webasset);
-
-		// adds the webasset as child of the folder or parent inode
-		if(!parent.getType().equalsIgnoreCase("folder"))
-		  parent.addChild(webasset);
 
 		// create new identifier, with the URI
 		APILocator.getVersionableAPI().setWorking(webasset);

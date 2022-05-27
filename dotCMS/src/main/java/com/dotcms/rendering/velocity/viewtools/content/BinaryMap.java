@@ -1,16 +1,18 @@
 package com.dotcms.rendering.velocity.viewtools.content;
 
+import java.io.File;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.image.filter.ImageFilterAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.util.ImageUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.util.FileUtil;
-import java.awt.Dimension;
-import java.io.File;
-import java.io.IOException;
-import org.apache.commons.lang.builder.ToStringBuilder;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.Lazy;
 
 /**
  * A helper class to provide an object to return to the dotCMS when a content has a binary field
@@ -20,22 +22,35 @@ import org.apache.commons.lang.builder.ToStringBuilder;
  */
 public class BinaryMap {
 
-	private String rawUri;
-	private String resizeUri;
-	private Contentlet content;
-	private Field field;
-	private File file;
-	private Dimension fileDimension = new Dimension();
+	private final Contentlet content;
+	private final Field field;
+
 	
 	public BinaryMap(Contentlet content, Field field) {
 		this.content = content;
 		this.field = field;
-		try {
-			file = content.getBinary(field.getVelocityVarName());
-		} catch (IOException e) {
-			Logger.error(this, "Unable to retrive binary file for content id " + content.getIdentifier() + " field " + field.getVelocityVarName(), e);
-		}
+
 	}
+	
+    public BinaryMap(Contentlet content, com.dotmarketing.portlets.structure.model.Field field) {
+        this(content, new LegacyFieldTransformer(field).from() );
+    }
+    
+    Lazy<Metadata> meta = Lazy.of(this::getMetadata);
+    
+    
+    private Metadata getMetadata() {
+        try {
+            return content.getBinaryMetadata(field.variable());
+        } catch (Exception e) {
+            Logger.warnAndDebug(this.getClass(), "Unable to retrive binary file for content id " + content.getIdentifier()
+                            + " field " + field.variable(), e);
+            throw new DotRuntimeException(e);
+        }
+
+    }
+	
+	
 	
 	@Override
 	public String toString() {
@@ -54,8 +69,8 @@ public class BinaryMap {
 	 * @return the size of the file
 	 */
 	public String getSize() {
-		if(file != null) {
-			return FileUtil.getsize(file);
+		if(meta.get() != null) {
+			return UtilMethods.prettyByteify(meta.get().getLength());
 		}
 		return null;
 	}
@@ -65,8 +80,8 @@ public class BinaryMap {
 	 * @return the name
 	 */
 	public String getName() {
-		if(file != null) {
-			return file.getName();
+	    if(meta.get() != null) {
+			return meta.get().getName();
 		}
 		return "";
 	}
@@ -76,15 +91,14 @@ public class BinaryMap {
 	 * @return the rawUri
 	 */
 	public String getRawUri() {
-		rawUri = getName().length()>0? UtilMethods.espaceForVelocity("/contentAsset/raw-data/"+content.getIdentifier()+"/"+ field.getVelocityVarName()):"";
-		return rawUri;
+		return getName().length()>0? UtilMethods.espaceForVelocity("/contentAsset/raw-data/"+content.getIdentifier()+"/"+ field.variable()):"";
 	}
 
     public String getShortyUrl() {
 
-        if (file != null && file.exists()) {
+        if(meta.get() != null) {
             String shorty = APILocator.getShortyAPI().shortify(content.getIdentifier());
-            return "/dA/"+shorty+"/"+field.getVelocityVarName()+"/" + file.getName();
+            return "/dA/"+shorty+"/"+field.variable()+"/" + getName();
         } else {
 	        return null;
         }
@@ -97,9 +111,9 @@ public class BinaryMap {
 	
     public String getShortyUrlInode() {
 
-        if (file != null && file.exists()) {
+        if(meta.get() != null) {
             String shorty = APILocator.getShortyAPI().shortify(content.getInode());
-            return "/dA/"+shorty+"/"+field.getVelocityVarName()+"/" + file.getName();
+            return "/dA/"+shorty+"/"+field.variable()+"/" + getName();
         } else {
             return null;
         }
@@ -115,10 +129,9 @@ public class BinaryMap {
 	 */
 	public String getResizeUri() {
 	    if(getName().length()==0) return "";
-
 	    final String imageId =  UtilMethods.isSet(content.getIdentifier()) ? content.getIdentifier() : content.getInode();
-		resizeUri = "/contentAsset/image/"+imageId+"/"+field.getVelocityVarName()+"/filter/Resize"; 
-		return resizeUri;
+		return "/contentAsset/image/"+imageId+"/"+field.variable()+"/filter/Resize"; 
+
 	}
 	
 	/**
@@ -149,8 +162,8 @@ public class BinaryMap {
 	    if(getName().length()==0) return "";
 	    
 	    final String imageId =  UtilMethods.isSet(content.getIdentifier()) ? content.getIdentifier() : content.getInode();
-        resizeUri = "/contentAsset/image/"+imageId+"/"+field.getVelocityVarName()+"/filter/Thumbnail"; 
-        return resizeUri;
+        return "/contentAsset/image/"+imageId+"/"+field.variable()+"/filter/Thumbnail"; 
+
 	}
 
 	/**
@@ -185,35 +198,33 @@ public class BinaryMap {
 	 * @return the file
 	 */
 	public File getFile() {
-		return file;
+		return Sneaky.sneak(()->content.getBinary(field.variable()));
 	}
 
     public int getHeight() {
-        try {
-            if (fileDimension.height == 0) {
-                // File dimension is not loaded and we need to load it
-                fileDimension = ImageUtil.getInstance().getDimension(getFile());
-            }
-        } catch (Exception e) {
-            String contentId = (content == null ? null : content.getIdentifier());
-            Logger.debug(this, "Error getting height for binary map, id: " + contentId, e);
+        if(meta.get() ==null || !meta.get().isImage()) {
+            return 0;
+        }
+        if (meta.get().getHeight() > 0) {
+            return meta.get().getHeight();
         }
 
-        return fileDimension.height;
+        return ImageFilterAPI.apiInstance.apply().getWidthHeight(getFile()).height;
+        
+
     }
 
     public int getWidth() {
-        try {
-            if (fileDimension.width == 0) {
-                // File dimension is not loaded and we need to load it
-                fileDimension = ImageUtil.getInstance().getDimension(getFile());
-            }
-        } catch (Exception e) {
-            String contentId = (content == null ? null : content.getIdentifier());
-            Logger.debug(this, "Error getting width for binary map, id: " + contentId, e);
+        if(meta.get() ==null || !meta.get().isImage()) {
+            return 0;
+        }
+        if (meta.get().getWidth() > 0) {
+            return meta.get().getWidth();
         }
 
-        return fileDimension.width;
+        return ImageFilterAPI.apiInstance.apply().getWidthHeight(getFile()).width;
+        
+
     }
 
 }

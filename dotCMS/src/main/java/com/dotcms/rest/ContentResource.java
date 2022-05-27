@@ -2,6 +2,8 @@ package com.dotcms.rest;
 
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.StoryBlockField;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
@@ -9,12 +11,13 @@ import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.util.XStreamFactory;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.workflow.form.FireActionForm;
@@ -40,6 +43,8 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -772,7 +777,7 @@ public class ContentResource {
             final boolean allCategoriesInfo){
 
         final StringBuilder sb = new StringBuilder();
-        final XStream xstream = new XStream(new DomDriver());
+        final XStream xstream = XStreamFactory.INSTANCE.getInstance();
         xstream.alias("content", Map.class);
         xstream.registerConverter(new MapEntryConverter());
         sb.append("<?xml version=\"1.0\" encoding='UTF-8'?>");
@@ -1015,7 +1020,7 @@ public class ContentResource {
 
 
     private String getXMLContentIds(Contentlet con) {
-        XStream xstream = new XStream(new DomDriver());
+        XStream xstream = XStreamFactory.INSTANCE.getInstance();
         xstream.alias("content", Map.class);
         xstream.registerConverter(new MapEntryConverter());
         StringBuilder sb = new StringBuilder();
@@ -1344,12 +1349,47 @@ public class ContentResource {
         return jsonFields;
     }
 
-    public static JSONObject contentletToJSON(Contentlet con, HttpServletRequest request,
-            HttpServletResponse response, String render, User user, final boolean allCategoriesInfo)
+    /**
+     * Transforms the specified Contentlet object into its JSON representation.
+     *
+     * @param con               The {@link Contentlet} object that will be transformed.
+     * @param request           The current {@link HttpServletRequest} instance.
+     * @param response          The current {@link HttpServletResponse} instance.
+     * @param render            If the rendered HTML version must be included in the response, set to {@code true}.
+     * @param user              The {@link User} performing this action.
+     * @param allCategoriesInfo If information about Categories must be included, set to {@code true}.
+     *
+     * @return The representation of the Contentlet as a {@link JSONObject}.
+     *
+     * @throws JSONException        An error occurred when generating the JSON object.
+     * @throws IOException          An error occurred when generating the printable Contentlet map.
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The specified User does not have the required permissions to perform this action.
+     */
+    public static JSONObject contentletToJSON(final Contentlet con, final HttpServletRequest request,
+            final HttpServletResponse response, final String render, final User user, final boolean allCategoriesInfo)
             throws JSONException, IOException, DotDataException, DotSecurityException {
         return contentletToJSON(con, request, response, render, user, allCategoriesInfo, false);
     }
 
+    /**
+     * Transforms the specified Contentlet object into its JSON representation.
+     *
+     * @param contentlet        The {@link Contentlet} object that will be transformed.
+     * @param request           The current {@link HttpServletRequest} instance.
+     * @param response          The current {@link HttpServletResponse} instance.
+     * @param render            If the rendered HTML version must be included in the response, set to {@code true}.
+     * @param user              The {@link User} performing this action.
+     * @param allCategoriesInfo If information about Categories must be included, set to {@code true}.
+     * @param hydrateRelated
+     *
+     * @return The representation of the Contentlet as a {@link JSONObject}.
+     *
+     * @throws JSONException        An error occurred when generating the JSON object.
+     * @throws IOException          An error occurred when generating the printable Contentlet map.
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The specified User does not have the required permissions to perform this action.
+     */
     public static JSONObject contentletToJSON(Contentlet contentlet, final HttpServletRequest request,
             final HttpServletResponse response, final String render, final User user,
             final boolean allCategoriesInfo, final boolean hydrateRelated)
@@ -1376,9 +1416,14 @@ public class ContentResource {
                 } else if (isCategoryField(type, key) && map.get(key) instanceof Collection) {
                     final Collection<?> categoryList = (Collection<?>) map.get(key);
                     jsonObject.put(key, new JSONArray(categoryList.stream()
-                            .map(value -> new JSONObject((Map<?,?>) value))
+                            .map(value -> new JSONObject((Map<?, ?>) value))
                             .collect(Collectors.toList())));
-                  // this might be coming from transformers views, so let's try to make them JSONObjects
+                }else if (isTagField(type, key) && map.get(key) instanceof Collection) {
+                        final Collection<?> tags = (Collection<?>) map.get(key);
+                        jsonObject.put(key, new JSONArray(tags));
+                        // this might be coming from transformers views, so let's try to make them JSONObjects
+                } else if (isStoryBlockField(type, key)) {
+                    jsonObject.put(key, new JSONObject(String.class.cast(map.get(key))));
                 } else if(hydrateRelated) {
                     if(map.get(key) instanceof Map) {
                         jsonObject.put(key, new JSONObject((Map) map.get(key)));
@@ -1416,6 +1461,38 @@ public class ContentResource {
             Logger.error(ContentResource.class, "Error getting field " + key, e);
         }
         return false;
+    }
+
+    private static boolean isTagField(final ContentType type, final String key) {
+        try {
+            Optional<com.dotcms.contenttype.model.field.Field> optionalField =
+                    type.fields().stream().filter(f -> UtilMethods.equal(key, f.variable())).findFirst();
+            if (optionalField.isPresent()) {
+                return optionalField.get() instanceof TagField;
+            }
+        } catch (Exception e) {
+            Logger.error(ContentResource.class, "Error getting field " + key, e);
+        }
+        return false;
+    }
+
+    /**
+     * Verifies if the specified field in a Content Type is of type {@link StoryBlockField}.
+     *
+     * @param type         The {@link ContentType} containing such a field.
+     * @param fieldVarName The Velocity Variable Name of the field that must be checked.
+     *
+     * @return If the field is of type {@link StoryBlockField}, returns {@code true}.
+     */
+    private static boolean isStoryBlockField(final ContentType type, final String fieldVarName) {
+        try {
+            final com.dotcms.contenttype.model.field.Field field = type.fieldMap().get(fieldVarName);
+            return field != null && field instanceof StoryBlockField;
+        } catch (final Exception e) {
+            Logger.error(ContentResource.class,
+                    String.format("Error checking StoryBlock type on field '%s': %s", fieldVarName, e.getMessage()), e);
+        }
+        return Boolean.FALSE;
     }
 
     public class MapEntryConverter implements Converter {
@@ -1551,7 +1628,15 @@ public class ContentResource {
         for (final BodyPart part : multipart.getBodyParts()) {
 
             final ContentDisposition contentDisposition = part.getContentDisposition();
-            final String name = contentDisposition != null && contentDisposition.getParameters().containsKey("name") ? contentDisposition.getParameters().get("name") : "";
+            final String unsanitizedName = contentDisposition != null && contentDisposition.getParameters().containsKey("name") ? contentDisposition.getParameters().get("name") : "";
+
+            final String name = FileUtil.sanitizeFileName(unsanitizedName);
+            if(!unsanitizedName.equals(name)) {
+                SecurityLogger.logInfo(getClass(), "Invalid filename uploaded, possible RCE.  Supplied filename: '" + unsanitizedName + "'");
+            }
+            
+            
+            
             final MediaType mediaType = part.getMediaType();
 
             if (mediaType.equals(MediaType.APPLICATION_JSON_TYPE) || name.equals("json")) {
@@ -1654,35 +1739,44 @@ public class ContentResource {
                              final List<String> binaryFields,
                              final BodyPart part) throws IOException, DotSecurityException, DotDataException {
 
-        final InputStream input = part.getEntityAs(InputStream.class);
-        final String filename = part.getContentDisposition().getFileName();
-        final File tmpFolder = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + UUIDUtil.uuid());
-
-        if(!tmpFolder.mkdirs()) {
-            throw new IOException("Unable to create temp folder to save binaries");
-        }
-
-        final File tempFile = new File(
-                tmpFolder.getAbsolutePath() + File.separator + filename);
-        Files.deleteIfExists(tempFile.toPath());
-
-        FileUtils.copyInputStreamToFile(input, tempFile);
-        final List<Field> fields = new LegacyFieldTransformer(
-                APILocator.getContentTypeAPI(APILocator.systemUser()).
-                        find(contentlet.getContentType().inode()).fields())
-                .asOldFieldList();
-        for (final Field field : fields) {
-            // filling binaries in order. as they come / as field order says
-            final String fieldName = field.getFieldContentlet();
-            if (fieldName.startsWith("binary") && !usedBinaryFields.contains(fieldName)) {
-
-                String fieldVarName = field.getVelocityVarName();
-                if (binaryFields.size() > 0) {
-                    fieldVarName = binaryFields.remove(0);
+        try(final InputStream input = part.getEntityAs(InputStream.class)){
+            final String badFileName = part.getContentDisposition().getFileName();
+            final String filename = FileUtil.sanitizeFileName(badFileName);
+            if(!badFileName.equals(filename)) {
+                SecurityLogger.logInfo(getClass(), "Invalid filename uploaded, possible exploit attempt: " + badFileName);
+                if(Config.getBooleanProperty("THROW_ON_BAD_FILENAMES", true)) {
+                    throw new IllegalArgumentException("Invalid filename uploaded : " + badFileName);
                 }
-                contentlet.setBinary(fieldVarName, tempFile);
-                usedBinaryFields.add(fieldName);
-                break;
+            }
+            
+            final File tmpFolder = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + UUIDUtil.uuid());
+    
+            if(!tmpFolder.mkdirs()) {
+                throw new IOException("Unable to create temp folder to save binaries");
+            }
+    
+            final File tempFile = new File(
+                    tmpFolder.getAbsolutePath() + File.separator + filename);
+            Files.deleteIfExists(tempFile.toPath());
+    
+            FileUtils.copyInputStreamToFile(input, tempFile);
+            final List<Field> fields = new LegacyFieldTransformer(
+                    APILocator.getContentTypeAPI(APILocator.systemUser()).
+                            find(contentlet.getContentType().inode()).fields())
+                    .asOldFieldList();
+            for (final Field field : fields) {
+                // filling binaries in order. as they come / as field order says
+                final String fieldName = field.getFieldContentlet();
+                if (fieldName.startsWith("binary") && !usedBinaryFields.contains(fieldName)) {
+    
+                    String fieldVarName = field.getVelocityVarName();
+                    if (binaryFields.size() > 0) {
+                        fieldVarName = binaryFields.remove(0);
+                    }
+                    contentlet.setBinary(fieldVarName, tempFile);
+                    usedBinaryFields.add(fieldName);
+                    break;
+                }
             }
         }
     }
@@ -2037,7 +2131,7 @@ public class ContentResource {
                 .startsWith("<?XML")) {
             throw new DotSecurityException("Invalid XML");
         }
-        XStream xstream = new XStream(new DomDriver());
+        XStream xstream = XStreamFactory.INSTANCE.getInstance();
         xstream.alias("content", Map.class);
         xstream.registerConverter(new MapEntryConverter());
         Map<String, Object> root = (Map<String, Object>) xstream.fromXML(input);
@@ -2167,4 +2261,5 @@ public class ContentResource {
 
 
     }
+
 }

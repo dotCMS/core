@@ -1,6 +1,7 @@
 package com.dotmarketing.fixtask.tasks;
 
 import com.dotcms.util.CloseUtils;
+import com.dotcms.util.XStreamFactory;
 import com.dotmarketing.beans.FixAudit;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
@@ -118,7 +119,7 @@ public class FixTask00080DeleteOrphanedContentTypeFields implements FixTask {
 	@Override
 	public List<Map<String, String>> getModifiedData() {
 		if (modifiedData.size() > 0) {
-			XStream _xstream = new XStream(new DomDriver());
+			XStream _xstream = XStreamFactory.INSTANCE.getInstance();
 			Date date = new Date();
 			SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
 			String lastmoddate = sdf.format(date);

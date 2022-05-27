@@ -23,6 +23,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
+import io.vavr.control.Try;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -135,6 +136,13 @@ public class DotTemplateTool implements ViewTool {
     }
 
     private static DrawedBody getDrawedBody(String templateInodeOrId, User user) throws DotDataException, DotSecurityException {
+
+        if (Template.SYSTEM_TEMPLATE.equals(templateInodeOrId)) {
+
+            final Template workingTemplate = APILocator.getTemplateAPI().systemTemplate();
+            return new DrawedBody(workingTemplate.getTitle(), workingTemplate.getDrawedBody());
+        }
+
         final boolean isIdentifier = APILocator.getIdentifierAPI().isIdentifier(templateInodeOrId);
         String identifier = templateInodeOrId;
         if(!isIdentifier && !FileAssetTemplateUtil.getInstance().isFolderAssetTemplateId(templateInodeOrId)){
@@ -248,7 +256,10 @@ public class DotTemplateTool implements ViewTool {
             throws DotDataException, DotSecurityException {
 
         //Get the theme folder
-        final Folder themeFolder = APILocator.getThemeAPI().findThemeById(themeFolderInode, APILocator.systemUser(),false);
+        final Folder themeFolder = Try.of(
+                () -> APILocator.getThemeAPI().findThemeById(themeFolderInode, APILocator.systemUser(),false))
+                .getOrElseGet((throwable) -> APILocator.getThemeAPI().systemTheme());
+
         return setThemeData( themeFolder, hostId );
     }
 

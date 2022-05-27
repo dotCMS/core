@@ -7,7 +7,6 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.model.User;
@@ -24,21 +23,19 @@ import java.util.TimeZone;
 public abstract class FolderFactory {
 
 
-	abstract void delete(Folder f) throws DotDataException;
-
-	/*
-	 * abstract boolean existsFolder(long folderInode) { return
-	 * existsFolder(Long.toString(folderInode)); }
+	/**
+	 * Deletes a folder.
+	 * The folder reference is not explicitly deleted from the identifier table because there is
+	 * a db trigger that executes the delete operation once the folder table is cleaned up.
+	 * Only the Identifier Cache is flushed.
+	 * @param folder
+	 * @throws DotDataException
 	 */
+	abstract void delete(final Folder folder) throws DotDataException;
 
 	abstract Folder find(String folderInode) throws  DotDataException;
 
-	abstract void save(Folder folderInode) throws DotDataException;
-
-
-	abstract void save(Folder folderInode, String existingId) throws DotDataException;
-
-
+	public abstract void save(Folder folderInode) throws DotDataException;
 	
 	abstract boolean exists(String folderInode) throws DotDataException;
 
@@ -54,7 +51,7 @@ public abstract class FolderFactory {
 		return null;
 	}
 
-	protected List<Folder> getSubFoldersTitleSort(Folder folder) throws DotHibernateException, DotStateException, DotDataException {
+	protected List<Folder> getSubFoldersTitleSort(Folder folder) throws DotStateException, DotDataException {
 		return null;
 	}
 	protected Folder findFolderByPath(String path, Host host) throws DotDataException {
@@ -71,7 +68,7 @@ public abstract class FolderFactory {
 	 * @deprecated use {@link #getSubFoldersTitleSort(Folder)}
 	 */
 	@Deprecated
-	protected List<Folder> getSubFolders(Folder folder) throws DotHibernateException, DotStateException, DotDataException {
+	protected List<Folder> getSubFolders(Folder folder) throws DotStateException, DotDataException {
 		return null;
 	}
 
@@ -108,13 +105,13 @@ public abstract class FolderFactory {
 	protected List<Folder> getFoldersByParent(Folder folder, User user, boolean respectFrontendRoles) throws DotDataException{
 		return null;
 	}
-	protected List<Folder> findFoldersByHost(Host host) throws DotHibernateException{
+	protected List<Folder> findFoldersByHost(Host host) {
 		return null;
 	}
-	protected List<Folder> findThemesByHost(Host host) throws DotHibernateException{
+	protected List<Folder> findThemesByHost(Host host) {
 		return null;
 	}
-	protected List<Folder> findSubFolders(final Host host, Boolean showOnMenu)throws DotHibernateException  {
+	protected List<Folder> findSubFolders(final Host host, Boolean showOnMenu) {
 		return null;
 	}
 	protected List<Folder> findSubFolders(final Folder folder, Boolean showOnMenu) throws DotStateException, DotDataException{
@@ -148,9 +145,11 @@ public abstract class FolderFactory {
     }
 
 	/**
-	 * Validates that the folder name is not a reserved word
-	 * @param folder folder whose name will be validated
+	 * Updates folder's owner when a user is replaced by another
+	 * @param userId ID of the user to be replace
+	 * @param replacementUserId ID of the new folder's owner
 	 * @throws DotDataException
 	 */
-	abstract public void validateFolderName(final Folder folder) throws DotDataException;
+    public abstract void updateUserReferences(String userId, String replacementUserId)
+            throws DotDataException;
 }

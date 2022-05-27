@@ -2,6 +2,7 @@ package com.dotmarketing.business.ajax;
 
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -11,7 +12,6 @@ import com.dotmarketing.business.util.HostNameComparator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -24,19 +24,33 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+import org.quartz.SchedulerException;
+
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import org.quartz.SchedulerException;
+import java.util.stream.Collectors;
 
+/**
+ * This class handles the communication between the view and the back-end service that returns information to the user
+ * regarding Sites in dotCMS. The information provided by this service is accessed via DWR.
+ * <p>
+ * For example, the <b>Sites</b> portlet uses this class to display the list of Sites to the users, which can be
+ * filtered by specific search criteria.
+ *
+ * @author root
+ * @version 1.0
+ * @since Mar 22, 2012
+ */
 public class HostAjax {
 
 	private HostAPI hostAPI = APILocator.getHostAPI();
 	private UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
+    private PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
 	public Map<String, Object> findHostsForDataStore(String filter, boolean showArchived, int offset, int count) throws PortalException, SystemException, DotDataException, DotSecurityException {
 		return findHostsForDataStore(filter, showArchived, offset, count, Boolean.FALSE);
@@ -87,98 +101,86 @@ public class HostAjax {
 		return hostMapToReturn;
 	}
 
-	public Map<String, Object> findHostsPaginated(String filter, boolean showArchived, int offset, int count) throws DotDataException, DotSecurityException, PortalException, SystemException {
+    /**
+     * Returns the complete list of Sites that exist in a dotCMS instance based on specific case-insensitive filtering
+     * criteria. When filtering results, only listed text-type fields can be searched, which are basically the two
+     * columns displayed in the UI: {@code Site Key}, and {@code Aliases}.
+     *
+     * @param filter       Search term used to filter results.
+     * @param showArchived If archived Sites must be returned, set to {@code true}. Otherwise, set to {@code false}.
+     * @param offset       Offset value, for pagination purposes.
+     * @param count        Count value, for pagination purposes.
+     *
+     * @return The full or filtered list of Sites in your instance.
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The User requesting this information does not have the required permissions to do
+     *                              so.
+     * @throws PortalException      The User requesting this information does not have the required permissions to
+     *                              access the dotCMS back-end.
+     * @throws SystemException      An application error has occurred.
+     */
+    public Map<String, Object> findHostsPaginated(final String filter, final boolean showArchived, int offset, int count) throws DotDataException, DotSecurityException, PortalException, SystemException {
 
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest req = ctx.getHttpServletRequest();
-		User user = userWebAPI.getLoggedInUser(req);
-		PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+		final User user = this.getLoggedInUser();
+		final boolean respectFrontend = !this.userWebAPI.isLoggedToBackend(this.getHttpRequest());
+		final List<Host> sitesFromDb = this.hostAPI.findAllFromDB(user, respectFrontend);
+		final List<Field> fields = FieldsCache.getFieldsByStructureVariableName(Host.HOST_VELOCITY_VAR_NAME);
+        final List<Field> searchableFields = fields.stream().filter(field -> field.isListed() && field
+                .getFieldType().startsWith("text")).collect(Collectors.toList());
 
-		boolean respectFrontend = !userWebAPI.isLoggedToBackend(req);
-		List<Host> hosts = hostAPI.findAllFromDB(user, respectFrontend);
-
-		long totalResults;
-		List<Map<String, Object>> listOfHosts = new ArrayList<Map<String,Object>>(hosts.size());
-
-		Structure hostStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
-		List<Field> fields = FieldsCache.getFieldsByStructureVariableName("Host");
-
-		List<Field> searchableFields = new ArrayList<Field>(fields.size());
-		for(Field field : fields) {
-			if(field.isListed() && field.getFieldType().startsWith("text"))
-				searchableFields.add(field);
-		}
-
-		Collections.sort(hosts, new HostNameComparator());
-
-		for(Host host : hosts) {
-			if(host.isSystemHost())
-				continue;
-			boolean addToList = false;
-
-			if (showArchived) {
-				if(!UtilMethods.isSet(filter))
-					addToList = true;
-				else {
-					for(Field searchableField : searchableFields) {
-						String value = host.getStringProperty(searchableField.getVelocityVarName());
-						if(value != null && value.toLowerCase().contains(filter.toLowerCase()))
-							addToList = true;
-					}
-				}
-			} else if (!host.isArchived()) {
-				if(!UtilMethods.isSet(filter))
-					addToList = true;
-				else {
-					for(Field searchableField : searchableFields) {
-						String value = host.getStringProperty(searchableField.getVelocityVarName());
-						if(value != null && value.toLowerCase().contains(filter.toLowerCase()))
-							addToList = true;
+        List<Map<String, Object>> siteList = new ArrayList<>(sitesFromDb.size());
+		Collections.sort(sitesFromDb, new HostNameComparator());
+		for (final Host site : sitesFromDb) {
+			boolean addToResultList = false;
+			if (showArchived || !site.isArchived()) {
+				if(!UtilMethods.isSet(filter)) {
+                    addToResultList = true;
+                } else {
+					for (final Field searchableField : searchableFields) {
+						final String value = site.getStringProperty(searchableField.getVelocityVarName());
+						if (UtilMethods.isSet(value) && value.toLowerCase().contains(filter.toLowerCase())) {
+                            addToResultList = true;
+                            break;
+                        }
 					}
 				}
 			}
-
-
-			if(addToList) {
-
-				boolean hostInSetup = false;
+			if (addToResultList) {
+				boolean siteInSetup = false;
 				try {
-					hostInSetup = QuartzUtils.isJobSequentiallyScheduled("setup-host-" + host.getIdentifier(), "setup-host-group");
-				} catch (SchedulerException e) {
-					Logger.error(HostAjax.class, e.getMessage(), e);
-				}
-
-				Map<String, Object> hostMap = host.getMap();
-				hostMap.put("userPermissions", permissionAPI.getPermissionIdsFromUser(host, user));
-				hostMap.put("hostInSetup", hostInSetup);
-				hostMap.put("archived", host.isArchived());
-				hostMap.put("live", host.isLive());
-				listOfHosts.add(hostMap);
+                    siteInSetup = QuartzUtils.isJobScheduled("setup-host-" + site.getIdentifier(), "setup-host-group");
+                } catch (final SchedulerException e) {
+                    Logger.warn(HostAjax.class, String.format("An error occurred when reviewing the creation status for " +
+                            "Site '%s': %s", site.getIdentifier(), e.getMessage()), e);
+                }
+                final Map<String, Object> siteInfoMap = site.getMap();
+				siteInfoMap.putAll(CollectionsUtils.map(
+                        "userPermissions", this.permissionAPI.getPermissionIdsFromUser(site, user),
+                        "hostInSetup", siteInSetup,
+                        "archived", site.isArchived(),
+                        "live", site.isLive()));
+				siteList.add(siteInfoMap);
 			}
 		}
 
-		totalResults = listOfHosts.size();
+        final long totalResults = siteList.size();
+		// Paginate results only if required
+		if (totalResults > count) {
+            if (totalResults > 0 && count > 0) {
+                offset = offset >= siteList.size() ? siteList.size() - 1 : offset;
+                count = offset + count > siteList.size() ? siteList.size() : offset + count;
+                siteList = siteList.subList(offset, count);
+            }
+        }
 
-		if(totalResults > 0 && count > 0) {
-			offset = offset >= listOfHosts.size()?listOfHosts.size() - 1:offset;
-			count = offset + count > listOfHosts.size()?listOfHosts.size():offset + count;
-			listOfHosts = listOfHosts.subList(offset, count);
-		}
-
-		List<Map<String, Object>> fieldMaps = new ArrayList<Map<String,Object>>();
-		for(Field f: fields) {
-			Map<String, Object> fieldMap = f.getMap();
-			fieldMaps.add(fieldMap);
-		}
-
-		Map<String, Object> toReturn = new HashMap<String, Object>();
-		toReturn.put("total", totalResults);
-		toReturn.put("list", listOfHosts);
-		toReturn.put("structure", hostStructure.getMap());
-		toReturn.put("fields", fieldMaps);
-
-		return toReturn;
-
+        final List<Map<String, Object>> fieldMapList = fields.stream().map(field -> field.getMap()).collect(Collectors.toList());
+        final Structure siteContentType = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(Host.HOST_VELOCITY_VAR_NAME);
+        return CollectionsUtils.map(
+                "total", totalResults,
+                "list", siteList,
+                "structure", siteContentType.getMap(),
+                "fields", fieldMapList);
 	}
 
 	public List<Map<String, Object>> findAllHostThumbnails() throws PortalException, SystemException, DotDataException, DotSecurityException {
@@ -213,83 +215,154 @@ public class HostAjax {
 
 	}
 
-	public void publishHost(String id) throws DotDataException, DotSecurityException, PortalException, SystemException {
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest req = ctx.getHttpServletRequest();
-		User user = userWebAPI.getLoggedInUser(req);
-		boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(req);
-		Host host = hostAPI.find(id, user, respectFrontendRoles);
-		hostAPI.publish(host, user, respectFrontendRoles);
+    /**
+     * Starts the specified Site. From a Contentlet standpoint, this means that the Site will be "published".
+     *
+     * @param id The ID of the Site that will be started.
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The User requesting this information does not have the required permissions to do
+     *                              so.
+     * @throws PortalException      The User requesting this information does not have the required permissions to
+     *                              access the dotCMS back-end.
+     * @throws SystemException      An application error has occurred.
+     */
+	public void publishHost(final String id) throws DotDataException, DotSecurityException, PortalException, SystemException {
+        updateSiteStatus(id, true);
 	}
 
-	public void unpublishHost(String id) throws DotDataException, DotSecurityException, PortalException, SystemException {
-
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest req = ctx.getHttpServletRequest();
-		User user = userWebAPI.getLoggedInUser(req);
-		boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(req);
-		Host host = hostAPI.find(id, user, respectFrontendRoles);
-		hostAPI.unpublish(host, user, respectFrontendRoles);
+    /**
+     * Stops the specified Site. From a Contentlet standpoint, this means that the Site will be "unpublished".
+     *
+     * @param id The ID of the Site that will be stopped.
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The User requesting this information does not have the required permissions to do
+     *                              so.
+     * @throws PortalException      The User requesting this information does not have the required permissions to
+     *                              access the dotCMS back-end.
+     * @throws SystemException      An application error has occurred.
+     */
+    public void unpublishHost(final String id) throws DotDataException, DotSecurityException, PortalException, SystemException {
+		updateSiteStatus(id, false);
 	}
 
-	public void archiveHost(String id) throws DotDataException, DotSecurityException, PortalException, SystemException {
+    /**
+     * Starts or stops the specified Site, based on the specified flag. From a Contentlet standpoint, this means that the
+     * Site will be "published" or "unpublished".
+     *
+     * @param id        The ID of the Site that will be stopped.
+     * @param startSite If the Site must be started, set to {@code true}. Otherwise, set to {@code false}.
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The User requesting this information does not have the required permissions to do
+     *                              so.
+     * @throws PortalException      The User requesting this information does not have the required permissions to
+     *                              access the dotCMS back-end.
+     * @throws SystemException      An application error has occurred.
+     */
+    private void updateSiteStatus(final String id, final boolean startSite)  throws DotDataException, DotSecurityException, PortalException, SystemException {
+        final User user = this.getLoggedInUser();
+        final boolean respectFrontendRoles = !this.userWebAPI.isLoggedToBackend(this.getHttpRequest());
+        final Host site = this.hostAPI.find(id, user, respectFrontendRoles);
+        if (startSite) {
+            this.hostAPI.publish(site, user, respectFrontendRoles);
+        } else {
+            this.hostAPI.unpublish(site, user, respectFrontendRoles);
+        }
+    }
 
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest req = ctx.getHttpServletRequest();
-		User user = userWebAPI.getLoggedInUser(req);
-		boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(req);
-		Host host = hostAPI.find(id, user, respectFrontendRoles);
-		if(host.isDefault()) {
-			throw new DotStateException("the default host can't be archived");
+    /**
+     * Archives the specified Site. Notice that the "default" Site cannot be archived, which means that another Site
+     * must be selected as default before doing this.
+     *
+     * @param id The ID of the Site that will be archived.
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The User requesting this information does not have the required permissions to do
+     *                              so.
+     * @throws PortalException      The User requesting this information does not have the required permissions to
+     *                              access the dotCMS back-end.
+     * @throws SystemException      An application error has occurred.
+     */
+    public void archiveHost(final String id) throws DotDataException, DotSecurityException, PortalException, SystemException {
+		final User user = this.userWebAPI.getLoggedInUser(this.getHttpRequest());
+		final boolean respectFrontendRoles = !this.userWebAPI.isLoggedToBackend(this.getHttpRequest());
+		final Host site = this.hostAPI.find(id, user, respectFrontendRoles);
+		if (site.isDefault()) {
+            throw new DotStateException(String.format("The default Site '%s' can't be archived. Set another site as " +
+                    "'default' first.", site));
+        }
+		if (site.isLocked()) {
+			APILocator.getContentletAPI().unlock(site, user, respectFrontendRoles);
 		}
-
-		if(host.isLocked()) {
-			APILocator.getContentletAPI().unlock(host, user, respectFrontendRoles);
-		}
-		hostAPI.archive(host, user, respectFrontendRoles);
+		this.hostAPI.archive(site, user, respectFrontendRoles);
 	}
 
-	public void unarchiveHost(String id) throws DotDataException, DotSecurityException, PortalException, SystemException {
-
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest req = ctx.getHttpServletRequest();
-		User user = userWebAPI.getLoggedInUser(req);
-		boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(req);
-		Host host = hostAPI.find(id, user, respectFrontendRoles);
-		hostAPI.unarchive(host, user, respectFrontendRoles);
+    /**
+     * Archives the selected Site.
+     *
+     * @param id The ID of the Site that will be un-archived.
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The User requesting this information does not have the required permissions to do
+     *                              so.
+     * @throws PortalException      The User requesting this information does not have the required permissions to
+     *                              access the dotCMS back-end.
+     * @throws SystemException      An application error has occurred.
+     */
+	public void unarchiveHost(final String id) throws DotDataException, DotSecurityException, PortalException, SystemException {
+		final User user = this.getLoggedInUser();
+		boolean respectFrontendRoles = !this.userWebAPI.isLoggedToBackend(this.getHttpRequest());
+		final Host site = this.hostAPI.find(id, user, respectFrontendRoles);
+		this.hostAPI.unarchive(site, user, respectFrontendRoles);
 	}
 
-	public void deleteHost(String id) throws DotDataException, DotSecurityException, PortalException, SystemException {
-
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest req = ctx.getHttpServletRequest();
-		User user = userWebAPI.getLoggedInUser(req);
-		boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(req);
-		Host host = hostAPI.find(id, user, respectFrontendRoles);
-		if(host.isDefault())
-			throw new DotStateException("the default host can't be deleted");
-		hostAPI.delete(host, user, respectFrontendRoles, true);
+    /**
+     * Deletes the specified archived Site. Notice that the "default" Site cannot be deleted, which means that another
+     * Site must be selected as default before doing this.
+     * <p>
+     * Additionally, it's very important to point out that this operation can take an important amount of time depending
+     * on how many objects belong to the Site that will be deleted.
+     * </p>
+     *
+     * @param id The ID of the Site that will be un-archived.
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The User requesting this information does not have the required permissions to do
+     *                              so.
+     * @throws PortalException      The User requesting this information does not have the required permissions to
+     *                              access the dotCMS back-end.
+     * @throws SystemException      An application error has occurred.
+     */
+    public void deleteHost(final String id) throws DotDataException, DotSecurityException, PortalException, SystemException {
+		final User user = this.getLoggedInUser();
+		boolean respectFrontendRoles = !this.userWebAPI.isLoggedToBackend(this.getHttpRequest());
+		final Host site = this.hostAPI.find(id, user, respectFrontendRoles);
+		if (site.isDefault()) {
+            throw new DotStateException(String.format("The default Site '%s' can't be deleted. Set another site as " +
+                    "'default' first.", site));
+        }
+		this.hostAPI.delete(site, user, respectFrontendRoles, true);
 	}
 
-
-	public void makeDefault(String id) throws DotDataException, DotSecurityException, PortalException, SystemException {
-
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest req = ctx.getHttpServletRequest();
-		User user = userWebAPI.getLoggedInUser(req);
-		boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(req);
-		Host host = hostAPI.find(id, user, respectFrontendRoles);
-		HibernateUtil.startTransaction();
-		try{
-			hostAPI.makeDefault(host, user, respectFrontendRoles);
-		}catch (Exception e) {
-			Logger.error(this, e.getMessage(), e);
-		}
-		try{
-			HibernateUtil.closeAndCommitTransaction();
-		}catch (Exception e) {
-			Logger.error(this, e.getMessage(), e);
-		}
+    /**
+     * Marks the specified Site as "default".
+     *
+     * @param id The ID of the Site that will be set as default.
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The User requesting this information does not have the required permissions to do
+     *                              so.
+     * @throws PortalException      The User requesting this information does not have the required permissions to
+     *                              access the dotCMS back-end.
+     * @throws SystemException      An application error has occurred.
+     */
+	public void makeDefault(final String id) throws DotDataException, DotSecurityException, PortalException, SystemException {
+		final User user = this.getLoggedInUser();
+		final boolean respectFrontendRoles = !this.userWebAPI.isLoggedToBackend(this.getHttpRequest());
+		final Host site = this.hostAPI.find(id, user, respectFrontendRoles);
+        this.hostAPI.makeDefault(site, user, respectFrontendRoles);
 	}
 
 	public int getHostSetupProgress(String hostId) {
@@ -300,4 +373,26 @@ public class HostAjax {
 		Host host = hostAPI.find(id, userWebAPI.getSystemUser(), false);
 		return host.getMap();
 	}
+
+    /**
+     * Returns the {@link User} that is currently logged into the dotCMS back-end.
+     *
+     * @return The currently logged-in {@link User}.
+     */
+	protected User getLoggedInUser() {
+        final WebContext ctx = WebContextFactory.get();
+        final HttpServletRequest req = ctx.getHttpServletRequest();
+        return this.userWebAPI.getLoggedInUser(req);
+    }
+
+    /**
+     * Returns the current {@link HttpServletRequest} instance.
+     *
+     * @return The {@link HttpServletRequest} instance.
+     */
+    protected HttpServletRequest getHttpRequest() {
+        final WebContext ctx = WebContextFactory.get();
+        return ctx.getHttpServletRequest();
+    }
+
 }
