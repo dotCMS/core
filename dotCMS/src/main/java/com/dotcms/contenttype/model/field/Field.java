@@ -313,7 +313,4 @@ public abstract class Field implements FieldIf, Serializable {
 
     return Optional.empty();
   }
-
-  ;
-
 }
