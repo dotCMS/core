@@ -7,7 +7,7 @@
         <meta name="robots" content="noindex" />
         <meta name="referrer" content="origin" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>DotCMS GraphQL Playground</title>
+        <title>DotCMS API Playground</title>
         <link rel="stylesheet" type="text/css" href="swagger-ui.css">
     </head>
     <body>
