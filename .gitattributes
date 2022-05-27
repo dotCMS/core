@@ -1,0 +1,2 @@
+# exclude package-lock from github diffs
+package-lock.json -diff

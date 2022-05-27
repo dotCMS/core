@@ -1,0 +1,25 @@
+{
+    "projectType": "library",
+    "root": "libs/dot-rules",
+    "sourceRoot": "libs/dot-rules/src",
+    "prefix": "",
+    "targets": {
+        "lint": {
+            "executor": "@nrwl/linter:eslint",
+            "options": {
+                "lintFilePatterns": ["libs/dot-rules/src/**/*.ts", "libs/dot-rules/src/**/*.html"]
+            },
+            "outputs": ["{options.outputFile}"]
+        },
+        "test": {
+            "executor": "@angular-devkit/build-angular:karma",
+            "outputs": ["coverage/libs/dot-rules"],
+            "options": {
+                "main": "libs/dot-rules/src/test.ts",
+                "karmaConfig": "libs/dot-rules/karma.conf.js",
+                "tsConfig": "libs/dot-rules/tsconfig.spec.json"
+            }
+        }
+    },
+    "tags": []
+}
