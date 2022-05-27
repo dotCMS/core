@@ -7329,6 +7329,24 @@ select[multiple]:hover {
   text-align: center;
 }
 
+tr.alternate_1.disabled, tr.alternate_2.disabled {
+  cursor: default;
+}
+
+tr.alternate_1.disabled td,
+tr.alternate_2.disabled td,
+tr.disabled .liveIcon {
+  color: #C5C5C5;
+}
+
+tr.alternate_1.disabled:hover {
+  background: #ffffff !important;
+}
+
+tr.alternate_2.disabled:hover {
+  background: #f3f3f3 !important;
+}
+
 tr.alternate_1 {
   background: #ffffff;
   cursor: pointer;

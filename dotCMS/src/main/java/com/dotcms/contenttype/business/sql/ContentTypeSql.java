@@ -2,6 +2,15 @@ package com.dotcms.contenttype.business.sql;
 
 import com.dotmarketing.db.DbConnectionFactory;
 
+/**
+ * Utility class which provides the different SQL queries that can be used by the {@link
+ * com.dotcms.contenttype.business.ContentTypeFactory} to return information about Content Types in dotCMS. This class
+ * serves as the main access point to add and reuse different SQL queries that return specific information required by
+ * the Content Type API.
+ *
+ * @author Will Ezell
+ * @since Jun 29th, 2016
+ */
 public abstract class ContentTypeSql {
 
 	private static ContentTypeSql instance;
@@ -21,12 +30,12 @@ public abstract class ContentTypeSql {
         + "url_map_pattern , host, folder, expire_date_var , publish_date_var , mod_date, icon, sort_order "
         + "from inode, structure  where inode.type='structure' and inode.inode = structure.inode  ";
     
-    
     public static String SELECT_ONLY_INODE_FIELD = "select  inode.inode as inode from inode, structure  where inode.type='structure' and inode.inode = structure.inode  ";
-    
 
 	public static String SELECT_BY_INODE = SELECT_ALL_STRUCTURE_FIELDS + " and inode.inode = ?";
     public static String SELECT_BY_VAR = SELECT_ALL_STRUCTURE_FIELDS + " and lower(structure.velocity_var_name) like ?";
+	public static String SELECT_BY_VAR_NAMES = SELECT_ALL_STRUCTURE_FIELDS + " AND LOWER(structure.velocity_var_name) IN (%s)";
+	public static String SELECT_BY_VAR_NAMES_FILTERED = SELECT_BY_VAR_NAMES + " AND (LOWER(name) LIKE ? OR LOWER(structure.velocity_var_name) LIKE ?)";
 	public static String SELECT_ALL = SELECT_ALL_STRUCTURE_FIELDS + " order by %s  ";
 	public static String SELECT_BY_TYPE = SELECT_ALL_STRUCTURE_FIELDS + " and structuretype= ? order by %s ";
 	public static String SELECT_DEFAULT_TYPE = SELECT_ALL_STRUCTURE_FIELDS + " and default_structure = " + DbConnectionFactory.getDBTrue();
@@ -84,9 +93,9 @@ public abstract class ContentTypeSql {
 	public static String DELETE_INODE_BY_INODE = "delete from inode where inode = ? and type='structure'";
 
 	public static String DELETE_TYPE_BY_INODE = "delete from structure where inode =?";
-
-	public static String SELECT_CONTENTLET_IDS_BY_TYPE = "select distinct(identifier) from contentlet where structure_inode = ?";
 	
 	public static String UPDATE_TYPE_MOD_DATE_BY_INODE = "update structure set mod_date = ? where inode = ?";
+
+	public static String ORDER_BY = " ORDER BY %s";
 
 }

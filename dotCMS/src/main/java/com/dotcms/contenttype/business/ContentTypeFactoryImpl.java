@@ -1,32 +1,14 @@
 package com.dotcms.contenttype.business;
 
-import static com.dotcms.contenttype.business.ContentTypeAPIImpl.TYPES_AND_FIELDS_VALID_VARIABLE_REGEX;
-
 import com.dotcms.contenttype.business.sql.ContentTypeSql;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.FieldVariable;
-import com.dotcms.contenttype.model.field.HostFolderField;
-import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
-import com.dotcms.contenttype.model.field.RelationshipField;
-import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.contenttype.model.type.Expireable;
-import com.dotcms.contenttype.model.type.FileAssetContentType;
-import com.dotcms.contenttype.model.type.UrlMapable;
+import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.type.*;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DeterministicIdentifierAPI;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.DotValidationException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -36,32 +18,30 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDUtil;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.commons.lang.time.DateUtils;
 
+import java.util.Calendar;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static com.dotcms.contenttype.business.ContentTypeAPIImpl.TYPES_AND_FIELDS_VALID_VARIABLE_REGEX;
+import static com.liferay.util.StringPool.COMMA;
+
+/**
+ *
+ * @author Will Ezell
+ * @since Jun 29th, 2016
+ */
 public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
     private static final String LOAD_CONTENTTYPE_DETAILS_FROM_CACHE = "LOAD_CONTENTTYPE_DETAILS_FROM_CACHE";
     final ContentTypeSql contentTypeSql;
   final ContentTypeCache2 cache;
-
 
   public static final Set<String> reservedContentTypeVars = ImmutableSet.<String>builder()
                   .add("basetype")
@@ -147,7 +127,37 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
         return type;
     }
 
-  @Override
+    @Override
+    public List<ContentType> find(final Collection<String> varNames, final String filter, final int offset, final int limit,
+                                  final String orderBy) throws DotDataException {
+      if (UtilMethods.isNotSet(varNames)) {
+          return null;
+      }
+      final DotConnect dc = new DotConnect();
+      String sql = UtilMethods.isSet(filter) ? ContentTypeSql.SELECT_BY_VAR_NAMES_FILTERED : ContentTypeSql.SELECT_BY_VAR_NAMES;
+      sql = String.format(sql, String.join(COMMA, Collections.nCopies(varNames.size(), "?")));
+      if (UtilMethods.isSet(orderBy)) {
+          sql = UtilMethods.isSet(orderBy) ? sql + ContentTypeSql.ORDER_BY : sql;
+          final String sanitizedOrderBy = SQLUtil.sanitizeSortBy(orderBy);
+          sql = String.format(sql, sanitizedOrderBy);
+      }
+      dc.setSQL(sql);
+      varNames.forEach(varName -> dc.addParam(varName));
+      if (UtilMethods.isSet(filter)) {
+        dc.addParam("%" + filter + "%");
+        dc.addParam("%" + filter + "%");
+      }
+      if (offset > 0) {
+        dc.setStartRow(offset);
+      }
+      if (limit > 0) {
+        dc.setMaxRows(limit);
+      }
+      final List<Map<String, Object>> results = dc.loadObjectResults();
+      return new DbContentTypeTransformer(results).asList();
+    }
+
+    @Override
   public List<ContentType> findAll() throws DotDataException {
       return dbAll("structuretype,upper(name)");
   }

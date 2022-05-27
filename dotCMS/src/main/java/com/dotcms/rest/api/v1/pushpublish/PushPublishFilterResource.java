@@ -24,25 +24,28 @@ import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * This Resource is for the push publishing filters
+ * This REST Endpoint provides developers useful methods to interact with Push Publishing Filters in dotCMS.
+ * <p>You may create Push Publishing filters to control which content is pushed from your sending server to your
+ * receiving server. The filters allow you to have fine-grained control over what content does and does not get pushed,
+ * whether intentionally (when specifically selected) or by dependency.</p>
+ * <p>You may create as many filters as you wish. You can specify permissions for the filters, allowing you to control
+ * what content and objects different users and Roles may push. For example, you can allow users with a specific Role to
+ * only push content of a specific Content Type, or only push content in a specific location.</p>
+ *
+ * @author Erick Gonzalez
+ * @since Mar 6th, 2020
  */
 @Path("/v1/pushpublish/filters")
 public class PushPublishFilterResource {
@@ -61,7 +64,19 @@ public class PushPublishFilterResource {
     }
 
     /**
-     * Lists all filters descriptors that the user role has access to.
+     * Lists all Push Publishing filter descriptors that the User calling this method has access to, sorted
+     * alphabetically.
+     * <p>Example:</p>
+     * <pre>
+     * GET: {{serverURL}}/api/v1/pushpublish/filters
+     * </pre>
+     *
+     * @param request  The current instance of the {@link HttpServletRequest} object.
+     * @param response The current instance of the {@link HttpServletResponse} object.
+     *
+     * @return The list of Push Publishing Filters.
+     *
+     * @throws DotDataException An error occurred when interacting with the data source.
      */
     @GET
     @JSONP
@@ -69,22 +84,37 @@ public class PushPublishFilterResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response getFilters(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response) throws DotDataException {
-            final InitDataObject initData =
-                    new WebResource.InitBuilder(webResource)
-                            .requiredBackendUser(true)
-                            .requiredFrontendUser(false)
-                            .requestAndResponse(request, response)
-                            .rejectWhenNoUser(true)
-                            .init();
-            final User user = initData.getUser();
-
-            final List<FilterDescriptor> list = APILocator.getPublisherAPI().getFiltersDescriptorsByRole(user);
-
+        final InitDataObject initData =
+                new WebResource.InitBuilder(webResource)
+                        .requiredBackendUser(true)
+                        .requiredFrontendUser(false)
+                        .requestAndResponse(request, response)
+                        .rejectWhenNoUser(true)
+                        .init();
+        final User user = initData.getUser();
+        final List<FilterDescriptor> list = APILocator.getPublisherAPI().getFiltersDescriptorsByRole(user);
+        if (UtilMethods.isSet(list)) {
+            Collections.sort(list);
+        }
         return Response.ok(new ResponseEntityView(list)).build();
     }
 
     /**
-     * Get a filter descriptors by filter key (if the user has access to it)
+     * Returns a specific Push Publishing filter descriptor by its key (if the User has access to it).
+     * <p>Example:</p>
+     * <pre>
+     * GET: {{serverURL}}/api/v1/pushpublish/filters/ForcePush.yml
+     * </pre>
+     *
+     * @param request   The current instance of the {@link HttpServletRequest} object.
+     * @param response  The current instance of the {@link HttpServletResponse} object.
+     * @param filterKey The Push Publishing Filter key.
+     *
+     * @return The Push Publishing Filter.
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The {@link User} calling this method does not have the required permission to
+     *                              perform this action.
      */
     @GET
     @Path("/{filterKey}")
@@ -114,19 +144,51 @@ public class PushPublishFilterResource {
                 Logger.debug(this, ()-> "File: " + filterDescriptor.getKey() + " Roles: " + filterRoles);
                 final boolean allowed = roles.stream().anyMatch(role -> UtilMethods.isSet(role.getRoleKey()) && filterRoles.contains(role.getRoleKey()));
                 if (!allowed) {
-
-                    throw new DotSecurityException("Has not access to the fitler: " + filterKey);
+                    throw new DotSecurityException(
+                            String.format("User '%s' does not have access to filter '%s'", user.getUserId(),
+                                    filterKey));
                 }
             }
             return Response.ok(new ResponseEntityView(filterDescriptor)).build();
         }
-
-        Logger.debug(this, ()-> "The filter: " + filterKey + " does not exists");
-        throw new DoesNotExistException("The Filter: " + filterKey + " does not exists");
+        final String errorMsg = String.format("Filter '%s' does not exist", filterKey);
+        Logger.debug(this, ()-> errorMsg);
+        throw new DoesNotExistException(errorMsg);
     }
 
     /**
-     * Creates a new Filter based on a bean form
+     * Creates a new Push Publishing Filter based on a bean form.
+     * <p>Example:</p>
+     * <pre>
+     * POST: {{serverURL}}/api/v1/pushpublish/filters
+     * </pre>
+     * Body:
+     * <pre>
+     * {
+     *     "key":"NoWorkflow.yml",
+     *     "title":"Push without Wofklows",
+     *     "defaultFilter":"false",
+     *     "roles":"DOTCMS_BACK_END_USER",
+     *     "filters": {
+     *         "excludeQuery": "",
+     *         "excludeClasses": ["Host", "Workflow", "OSGI"],
+     *         "dependencies": true,
+     *         "excludeDependencyQuery": "",
+     *         "excludeDependencyClasses": ["Host", "Workflow"],
+     *         "forcePush": false,
+     *         "relationships": false
+     *     }
+     * }
+     * </pre>
+     *
+     * @param request              The current instance of the {@link HttpServletRequest} object.
+     * @param response             The current instance of the {@link HttpServletResponse} object.
+     * @param filterDescriptorForm An instance of the {@link FilterDescriptorForm} containing all the required
+     *                             information to create a Push Publishing Filter.
+     *
+     * @return The complete list of Push Publishing Filters in the system.
+     *
+     * @throws DotDataException An error occurred when interacting with the data source.
      */
     @POST
     @JSONP
@@ -149,11 +211,10 @@ public class PushPublishFilterResource {
         Logger.debug(this, ()-> "Adding PP filter: " + filterDescriptorForm);
 
         if (APILocator.getPublisherAPI().existsFilterDescriptor(filterDescriptorForm.getKey())) {
-
-            Logger.debug(this, ()-> "The filter: " + filterDescriptorForm.getKey() +
-                    " can not be added, because it already exists");
-            throw new IllegalArgumentException("The Filter: " + filterDescriptorForm.getKey()
-                    + " can not be added, because it already exists");
+            final String errorMsg = String.format("Filter '%s' cannot be added because it already exists",
+                    filterDescriptorForm.getKey());
+            Logger.debug(this, () -> errorMsg);
+            throw new IllegalArgumentException(errorMsg);
         }
 
         final FilterDescriptor filterDescriptor = new FilterDescriptor(filterDescriptorForm.getKey(), filterDescriptorForm.getTitle(),
@@ -168,7 +229,25 @@ public class PushPublishFilterResource {
     }
 
     /**
-     * Creates a new Filter based on a file
+     * Creates a new Push Publishing Filter based on a YML file.
+     * <p>Example:</p>
+     * <pre>
+     * POST: {{serverURL}}/api/v1/pushpublish/filters
+     * </pre>
+     * Body:
+     * <pre>
+     * --form 'file=@"resources/TestPPFilter.yml"'
+     * </pre>
+     *
+     * @param request   The current instance of the {@link HttpServletRequest} object.
+     * @param response  The current instance of the {@link HttpServletResponse} object.
+     * @param multipart An instance of the {@link FilterDescriptorForm} containing all the required information to
+     *                  create a Push Publishing Filter.
+     *
+     * @return The complete list of Push Publishing Filters in the system.
+     *
+     * @throws DotDataException An error occurred when interacting with the data source.
+     * @throws IOException      An error occurred when reading the incoming binary file.
      */
     @POST
     @JSONP
@@ -195,11 +274,10 @@ public class PushPublishFilterResource {
 
         for (final File file : filterFiles) {
             if (APILocator.getPublisherAPI().existsFilterDescriptor(file.getName())) {
-
-                Logger.debug(this, () -> "The filter: " + file.getName() +
-                        " can not be added, because it already exists");
-                throw new IllegalArgumentException("The Filter: " + file.getName() +
-                        " can not be added, because it already exists");
+                final String errorMsg =
+                        String.format("Filter '%s' cannot be added because it already exists", file.getName());
+                Logger.debug(this, () -> errorMsg);
+                throw new IllegalArgumentException(errorMsg);
             }
         }
 
@@ -216,7 +294,38 @@ public class PushPublishFilterResource {
     }
 
     /**
-     * Updates an existing Filter based on a bean form
+     * Updates a Push Publishing Filter based on a bean form.
+     * <p>Example:</p>
+     * <pre>
+     * PUT: {{serverURL}}/api/v1/pushpublish/filters
+     * </pre>
+     * Body:
+     * <pre>
+     * {
+     *     "key":"NoWorkflow.yml",
+     *     "title":"Push without Wofklows",
+     *     "defaultFilter":"false",
+     *     "roles":"DOTCMS_BACK_END_USER",
+     *     "filters": {
+     *         "excludeQuery": "",
+     *         "excludeClasses": ["Host", "Workflow", "OSGI"],
+     *         "dependencies": true,
+     *         "excludeDependencyQuery": "",
+     *         "excludeDependencyClasses": ["Host", "Workflow"],
+     *         "forcePush": false,
+     *         "relationships": false
+     *     }
+     * }
+     * </pre>
+     *
+     * @param request              The current instance of the {@link HttpServletRequest} object.
+     * @param response             The current instance of the {@link HttpServletResponse} object.
+     * @param filterDescriptorForm An instance of the {@link FilterDescriptorForm} containing all the required
+     *                             information to create a Push Publishing Filter.
+     *
+     * @return The complete list of Push Publishing Filters in the system.
+     *
+     * @throws DotDataException An error occurred when interacting with the data source.
      */
     @PUT
     @JSONP
@@ -239,9 +348,9 @@ public class PushPublishFilterResource {
         Logger.debug(this, ()-> "Updating PP filter: " + filterDescriptorForm);
 
         if (!APILocator.getPublisherAPI().existsFilterDescriptor(filterDescriptorForm.getKey())) {
-
-            Logger.debug(this, ()-> "The filter: " + filterDescriptorForm.getKey() + " does not exists");
-            throw new DoesNotExistException("The Filter: " + filterDescriptorForm.getKey() + " does not exists");
+            final String errorMsg = String.format("Filter '%s' does not exist", filterDescriptorForm.getKey());
+            Logger.debug(this, ()-> errorMsg);
+            throw new DoesNotExistException(errorMsg);
         }
 
         final FilterDescriptor filterDescriptor = new FilterDescriptor(filterDescriptorForm.getKey(), filterDescriptorForm.getTitle(),
@@ -256,7 +365,25 @@ public class PushPublishFilterResource {
     }
 
     /**
-     * Updates an existing Filter based on a file
+     * Updates a Push Publishing Filter based on a YML file.
+     * <p>Example:</p>
+     * <pre>
+     * POST: {{serverURL}}/api/v1/pushpublish/filters
+     * </pre>
+     * Body:
+     * <pre>
+     * --form 'file=@"resources/TestPPFilter.yml"'
+     * </pre>
+     *
+     * @param request   The current instance of the {@link HttpServletRequest} object.
+     * @param response  The current instance of the {@link HttpServletResponse} object.
+     * @param multipart An instance of the {@link FilterDescriptorForm} containing all the required information to
+     *                  create a Push Publishing Filter.
+     *
+     * @return The complete list of Push Publishing Filters in the system.
+     *
+     * @throws DotDataException An error occurred when interacting with the data source.
+     * @throws IOException      An error occurred when reading the incoming binary file.
      */
     @PUT
     @JSONP
@@ -283,9 +410,9 @@ public class PushPublishFilterResource {
 
         for (final File file : filterFiles) {
             if (!APILocator.getPublisherAPI().existsFilterDescriptor(file.getName())) {
-
-                Logger.debug(this, ()-> "The filter: " + file.getName() + " does not exists");
-                throw new IllegalArgumentException("The Filter: " + file.getName() + " does not exists");
+                final String errorMsg = String.format("Filter '%s' does not exist", file.getName());
+                Logger.debug(this, ()-> errorMsg);
+                throw new IllegalArgumentException(errorMsg);
             }
         }
 
@@ -302,7 +429,21 @@ public class PushPublishFilterResource {
     }
 
     /**
-     * Deletes a filter by filter key
+     * Deletes a Push Publishing Filter by its filter key.
+     * <p>Example:</p>
+     * <pre>
+     * DELETE: {{serverURL}}/api/v1/pushpublish/filters/NoWorkflow.yml
+     * </pre>
+     *
+     * @param request   The current instance of the {@link HttpServletRequest} object.
+     * @param response  The current instance of the {@link HttpServletResponse} object.
+     * @param filterKey The unique filter key.
+     *
+     * @return The complete list of Push Publishing Filters in the system.
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The {@link User} calling this method does not have the required permission to
+     *                              perform this action.
      */
     @DELETE
     @Path("/{filterKey}")
@@ -324,9 +465,9 @@ public class PushPublishFilterResource {
         final User user = initData.getUser();
 
         if (!APILocator.getPublisherAPI().existsFilterDescriptor(filterKey)) {
-
-            Logger.debug(this, ()-> "The filter: " + filterKey + " does not exists");
-            throw new DoesNotExistException("The Filter: " + filterKey + " does not exists");
+            final String errorMsg = String.format("Filter '%s' does not exist", filterKey);
+            Logger.debug(this, ()-> errorMsg);
+            throw new DoesNotExistException(errorMsg);
         }
 
         final File filterPathFile = new File(new File(APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "server"
@@ -343,9 +484,10 @@ public class PushPublishFilterResource {
                 entity(new ResponseEntityView(Arrays.asList(
                         new ErrorEntity(
                                 new Integer(Response.Status.EXPECTATION_FAILED.getStatusCode()).toString(),
-                                "The filter:  " + filterKey + "can not be deleted")
+                                String.format("Filter '%s' cannot be deleted", filterKey))
                         )
                     )
                 ).build();
     }
+
 }
