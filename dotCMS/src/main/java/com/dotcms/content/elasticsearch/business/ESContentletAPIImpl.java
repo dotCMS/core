@@ -6895,9 +6895,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private boolean getUniquePerSiteConfig(final com.dotcms.contenttype.model.field.Field field) {
-        final Optional<String> fieldVariableValueOptional = field.fieldVariableValue(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME);
-        return fieldVariableValueOptional.isPresent() ?
-                Boolean.valueOf(fieldVariableValueOptional.get()) : false;
+        return field.fieldVariableValue(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME).map(value ->  Boolean.valueOf(value)).orElse(false);
     }
 
     private void validateBinary(final File binary, final String fieldName, final Field legacyField, final ContentType contentType) {
