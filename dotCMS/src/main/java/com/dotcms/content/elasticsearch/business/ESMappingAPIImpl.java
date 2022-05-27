@@ -822,7 +822,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				else if(field.getFieldType().equals(ESMappingConstants.FIELD_TYPE_TIME)) {
 					try{
 						String timeStr=timeFormat.format(valueObj);
-						contentletMap.put(keyName, formatDate(valueObj));
+						contentletMap.put(keyName, elasticSearchDateTimeFormat.format(valueObj));
 						contentletMap.put(keyNameText, timeStr);
 					}
 					catch(Exception e){
@@ -833,7 +833,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				else if (field.getFieldType().equals(ESMappingConstants.FIELD_ELASTIC_TYPE_DATE)) {
 					try {
 						String dateString = dateFormat.format(valueObj);
-						contentletMap.put(keyName, formatDate(valueObj));
+						contentletMap.put(keyName, elasticSearchDateTimeFormat.format((valueObj)));
 						contentletMap.put(keyNameText, dateString);
 					}
 					catch(Exception ex) {
@@ -843,7 +843,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				} else if(field.getFieldType().equals(ESMappingConstants.FIELD_TYPE_DATE_TIME)) {
 					try {
 						String datetimeString = datetimeFormat.format(valueObj);
-						contentletMap.put(keyName, formatDate(valueObj));
+						contentletMap.put(keyName, elasticSearchDateTimeFormat.format((valueObj)));
 						contentletMap.put(keyNameText, datetimeString);
 					}
 					catch(Exception ex) {
@@ -895,7 +895,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					    if (valueObj instanceof Date){
                             try {
                                 String datetimeString = datetimeFormat.format(valueObj);
-                                contentletMap.put(keyName, formatDate(valueObj));
+                                contentletMap.put(keyName, elasticSearchDateTimeFormat.format((valueObj)));
                                 contentletMap.put(keyNameText, datetimeString);
                             } catch(Exception ex) {
                                 contentletMap.put(keyName, valueObj);
