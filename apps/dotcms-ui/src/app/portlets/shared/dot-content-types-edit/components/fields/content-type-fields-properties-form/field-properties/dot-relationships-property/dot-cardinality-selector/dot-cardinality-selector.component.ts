@@ -1,14 +1,7 @@
-import {
-    Component,
-    Input,
-    EventEmitter,
-    Output,
-    OnInit,
-    SimpleChanges,
-    OnChanges
-} from '@angular/core';
+import { Component, Input, EventEmitter, Output, OnInit } from '@angular/core';
 import { DotRelationshipCardinality } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
 import { DotRelationshipService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
+import { Observable } from 'rxjs';
 
 /**
  *Selector for relationships cardinalities
@@ -24,7 +17,7 @@ import { DotRelationshipService } from '@portlets/shared/dot-content-types-edit/
     templateUrl: './dot-cardinality-selector.component.html',
     styleUrls: ['./dot-cardinality-selector.component.scss']
 })
-export class DotCardinalitySelectorComponent implements OnInit, OnChanges {
+export class DotCardinalitySelectorComponent implements OnInit {
     @Input()
     value: number;
 
@@ -34,39 +27,11 @@ export class DotCardinalitySelectorComponent implements OnInit, OnChanges {
     @Output()
     switch: EventEmitter<number> = new EventEmitter();
 
-    options: DotRelationshipCardinality[];
-
-    cardinality: DotRelationshipCardinality;
+    options: Observable<DotRelationshipCardinality[]>;
 
     constructor(private dotRelationshipService: DotRelationshipService) {}
 
     ngOnInit() {
-        this.dotRelationshipService
-            .loadCardinalities()
-            .subscribe((cardinalities: DotRelationshipCardinality[]) => {
-                this.options = cardinalities;
-
-                if (this.value) {
-                    this.cardinality = this.options[this.value];
-                }
-            });
-    }
-
-    ngOnChanges(changes: SimpleChanges): void {
-        if (changes.value.currentValue) {
-            if (this.options) {
-                this.cardinality = this.options[changes.value.currentValue];
-            }
-        }
-    }
-
-    /**
-     *Trigger a change event
-     *
-     * @param {DotRelationshipCardinality} cardinality
-     * @memberof DotCardinalitySelectorComponent
-     */
-    tiggerChanged(cardinality: DotRelationshipCardinality): void {
-        this.switch.next(cardinality.id);
+        this.options = this.dotRelationshipService.loadCardinalities();
     }
 }

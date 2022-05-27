@@ -55,12 +55,12 @@ export class DotMenuService {
 
     /**
      * Load and set menu from endpoint
-     *
+     * @param boolean force
      * @returns Observable<DotMenu[]>
      * @memberof DotMenuService
      */
-    loadMenu(): Observable<DotMenu[]> {
-        if (!this.menu$) {
+    loadMenu(force = false): Observable<DotMenu[]> {
+        if (!this.menu$ || force) {
             this.menu$ = this.coreWebService
                 .requestView({
                     url: this.urlMenus

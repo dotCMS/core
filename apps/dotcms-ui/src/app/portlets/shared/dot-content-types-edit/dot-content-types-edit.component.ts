@@ -132,6 +132,9 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
      */
     editContentTypeName(name: string): void {
         const updatedContentType = { ...this.data, name };
+        delete updatedContentType.layout;
+        delete updatedContentType.fields;
+
         this.updateContentType(updatedContentType);
     }
 

@@ -1,10 +1,11 @@
 <p-dropdown
-    (onChange)="tiggerChanged($event.value)"
-    [(ngModel)]="cardinality"
+    (onChange)="switch.emit($event.value)"
+    data-testId="dropdown"
+    [ngModel]="value"
     [disabled]="disabled"
-    [options]="options"
+    optionValue="id"
+    [options]="options | async"
     [style]="{ width: '100%' }"
     appendTo="body"
-    optionLabel="label"
 >
 </p-dropdown>

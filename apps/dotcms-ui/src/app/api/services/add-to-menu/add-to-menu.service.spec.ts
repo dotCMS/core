@@ -67,7 +67,10 @@ describe('DotAddToMenuService', () => {
 
         const req = httpMock.expectOne(url);
         expect(req.request.method).toBe('POST');
-        expect(req.request.body).toEqual({ ...customToolData, portletId: 'test' });
+        expect(req.request.body).toEqual({
+            ...customToolData,
+            portletId: `${customToolData.portletName}_${customToolData.dataViewMode}`
+        });
         req.flush({
             entity: 'ok'
         });
@@ -96,10 +99,14 @@ describe('DotAddToMenuService', () => {
     });
 
     it('should add to layout a custom tool portlet', () => {
-        const url = `v1/portlet/custom/c_${customToolData.portletName}/_addtolayout/123`;
+        const url = `v1/portlet/custom/c_${customToolData.portletName}_${customToolData.dataViewMode}/_addtolayout/123`;
 
         dotAddToMenuService
-            .addToLayout(customToolData.portletName, '123')
+            .addToLayout({
+                portletName: customToolData.portletName,
+                dataViewMode: customToolData.dataViewMode,
+                layoutId: '123'
+            })
             .subscribe((response: string) => {
                 expect(response).toEqual('ok');
             });
@@ -117,7 +124,11 @@ describe('DotAddToMenuService', () => {
         spyOn(coreWebService, 'requestView').and.returnValue(throwError(error404));
 
         dotAddToMenuService
-            .addToLayout(customToolData.portletName, '123')
+            .addToLayout({
+                portletName: customToolData.portletName,
+                dataViewMode: customToolData.dataViewMode,
+                layoutId: '123'
+            })
             .subscribe((response: string) => {
                 expect(response).toEqual(null);
             });

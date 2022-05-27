@@ -13,6 +13,12 @@ export interface DotCreateCustomTool {
     portletName: string;
 }
 
+export interface DotCustomToolToLayout {
+    dataViewMode: string;
+    layoutId: string;
+    portletName: string;
+}
+
 /**
  * Provides methods to create and assign custom tools portlet to layout menu.
  * @export
@@ -27,6 +33,7 @@ export class DotAddToMenuService {
 
     /**
      * Cleans the portletId string from special chars and replaces then with a dash
+     *
      * @param {string} name
      * @returns string
      * @memberof DotAddToMenuService
@@ -37,6 +44,7 @@ export class DotAddToMenuService {
 
     /**
      * Creates a Custom tool portlet and returns the name of the portlet created
+     *
      * @param {DotCreateCustomTool} params
      * @returns Observable<string>
      * @memberof DotAddToMenuService
@@ -46,7 +54,7 @@ export class DotAddToMenuService {
             .requestView({
                 body: {
                     ...params,
-                    portletId: this.cleanUpPorletId(params.portletName)
+                    portletId: `${this.cleanUpPorletId(params.portletName)}_${params.dataViewMode}`
                 },
                 method: 'POST',
                 url: `${addToMenuUrl}/custom`
@@ -68,17 +76,17 @@ export class DotAddToMenuService {
 
     /**
      * Assigns a Custom tool portlet to a layout Id (menu)
-     * @param {string} layoutId
-     * @param {string} portletName
+     *
+     * @param {DotCustomToolToLayout} params
      * @returns Observable<string>
      * @memberof DotAddToMenuService
      */
-    addToLayout(portletName: string, layoutId: string): Observable<string> {
-        const portletId = this.cleanUpPorletId(portletName);
+    addToLayout(params: DotCustomToolToLayout): Observable<string> {
+        const portletId = `${this.cleanUpPorletId(params.portletName)}_${params.dataViewMode}`;
         return this.coreWebService
             .requestView({
                 method: 'PUT',
-                url: `${addToMenuUrl}/custom/c_${portletId}/_addtolayout/${layoutId}`
+                url: `${addToMenuUrl}/custom/c_${portletId}/_addtolayout/${params.layoutId}`
             })
             .pipe(
                 pluck('entity'),

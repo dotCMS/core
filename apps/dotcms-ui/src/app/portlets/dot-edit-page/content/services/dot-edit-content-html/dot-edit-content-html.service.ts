@@ -661,7 +661,10 @@ export class DotEditContentHtmlService {
                     if (this.updateContentletInode) {
                         this.currentContentlet.inode = contentlet.inode;
                     }
-                    this.renderEditedContentlet(this.currentContentlet);
+                    // because: https://github.com/dotCMS/core/issues/21818
+                    setTimeout(() => {
+                        this.renderEditedContentlet(this.currentContentlet);
+                    }, 1800);
                 }
             },
             inlineEdit: (contentlet: DotInlineEditContent) => {

@@ -20,7 +20,7 @@ import { CommonModule } from '@angular/common';
 import { DebugElement } from '@angular/core';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { By } from '@angular/platform-browser';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { PasswordModule } from 'primeng/password';
 import { InputTextModule } from 'primeng/inputtext';
 import { CheckboxModule } from 'primeng/checkbox';
@@ -31,10 +31,15 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { DotMenuService } from '@services/dot-menu.service';
 import { DotAccountService } from '@services/dot-account-service';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { ConfirmationService } from 'primeng/api';
 
 class DotAccountServiceMock {
     addStarterPage() {}
+
     removeStarterPage() {}
+
     updateUser() {}
 }
 
@@ -46,6 +51,7 @@ describe('DotMyAccountComponent', () => {
     let loginService: LoginService;
     let dotRouterService: DotRouterService;
     let dotMenuService: DotMenuService;
+    let httpErrorManagerService: DotHttpErrorManagerService;
 
     const messageServiceMock = new MockDotMessageService({
         'my-account': 'My Account',
@@ -94,7 +100,10 @@ describe('DotMyAccountComponent', () => {
                     LoggerService,
                     StringUtils,
                     DotMenuService,
-                    UserModel
+                    UserModel,
+                    DotHttpErrorManagerService,
+                    DotAlertConfirmService,
+                    ConfirmationService
                 ]
             });
 
@@ -105,6 +114,7 @@ describe('DotMyAccountComponent', () => {
             loginService = TestBed.inject(LoginService);
             dotRouterService = TestBed.inject(DotRouterService);
             dotMenuService = TestBed.inject(DotMenuService);
+            httpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
 
             comp.visible = true;
         })
@@ -128,10 +138,12 @@ describe('DotMyAccountComponent', () => {
         });
 
         fixture.detectChanges();
-        const firstName = de.nativeElement.querySelector('#dot-my-account-first-name-input')
-            .parentNode;
-        const lasttName = de.nativeElement.querySelector('#dot-my-account-last-name-input')
-            .parentNode;
+        const firstName = de.nativeElement.querySelector(
+            '#dot-my-account-first-name-input'
+        ).parentNode;
+        const lasttName = de.nativeElement.querySelector(
+            '#dot-my-account-last-name-input'
+        ).parentNode;
         const email = de.nativeElement.querySelector('#dot-my-account-email-input').parentNode;
         const currentPassword = de.nativeElement.querySelector(
             '#dot-my-account-current-password-input'
@@ -139,8 +151,9 @@ describe('DotMyAccountComponent', () => {
         const changePassword = de.nativeElement.querySelector(
             '#dot-my-account-change-password-option'
         );
-        const newPassword = de.nativeElement.querySelector('#dot-my-account-new-password-input')
-            .parentNode;
+        const newPassword = de.nativeElement.querySelector(
+            '#dot-my-account-new-password-input'
+        ).parentNode;
         const confirmPassword = de.nativeElement.querySelector(
             '#dot-my-account-confirm-new-password-input'
         ).parentNode;
@@ -357,5 +370,87 @@ describe('DotMyAccountComponent', () => {
         expect(comp.shutdown.emit).toHaveBeenCalledTimes(1);
         expect(dotAccountService.updateUser).toHaveBeenCalledWith(comp.dotAccountUser);
         expect(dotRouterService.doLogOut).toHaveBeenCalledTimes(1);
+    });
+
+    it(`should show password input error message when the new password not meet the system security requirements`, async () => {
+        const errorResponse = {
+            status: 400,
+            error: {
+                errors: [
+                    {
+                        errorCode: 'User-Info-Save-Password-Failed',
+                        fieldName: null,
+                        message: 'amazing message from backend'
+                    }
+                ]
+            }
+        };
+        spyOn(dotAccountService, 'updateUser').and.returnValue(throwError(errorResponse));
+
+        fixture.detectChanges();
+        await fixture.whenStable();
+
+        comp.form.setValue({
+            givenName: 'Admin2',
+            surname: 'Admi2',
+            email: 'admin@dotcms.com',
+            password: 'test',
+            newPassword: 'admin',
+            confirmPassword: 'admin'
+        });
+
+        const changePassword = de.query(By.css('#dot-my-account-change-password-option'));
+        changePassword.triggerEventHandler('onChange', {});
+        fixture.detectChanges();
+
+        const save = de.query(By.css('.dialog__button-accept'));
+        save.triggerEventHandler('click', {});
+        fixture.detectChanges();
+
+        const passwordFailMsg: DebugElement = de.query(
+            By.css('[data-testId="dotSavePasswordFailedMsg"]')
+        );
+
+        expect(passwordFailMsg.nativeElement.innerText).toEqual(
+            errorResponse.error.errors[0].message.trim()
+        );
+    });
+
+    it(`should call to HttpErrorManagerServices to show a generic dialog error message `, async () => {
+        const errorResponse = {
+            status: 400,
+            error: {
+                errors: [
+                    {
+                        errorCode: 'Any-Other-ErrorCode-From-Backend',
+                        message: 'unknown message from backend'
+                    }
+                ]
+            }
+        };
+        spyOn(dotAccountService, 'updateUser').and.returnValue(throwError(errorResponse));
+        spyOn(httpErrorManagerService, 'handle').and.returnValue(of(null));
+
+        fixture.detectChanges();
+        await fixture.whenStable();
+
+        comp.form.setValue({
+            givenName: 'abc',
+            surname: 'abc',
+            email: 'admin@dotcms.com',
+            password: 'test',
+            newPassword: 'admin',
+            confirmPassword: 'admin'
+        });
+
+        const changePassword = de.query(By.css('#dot-my-account-change-password-option'));
+        changePassword.triggerEventHandler('onChange', {});
+        fixture.detectChanges();
+
+        const save = de.query(By.css('.dialog__button-accept'));
+        save.triggerEventHandler('click', {});
+        fixture.detectChanges();
+
+        expect(httpErrorManagerService.handle).toHaveBeenCalledTimes(1);
     });
 });

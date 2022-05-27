@@ -1,26 +1,28 @@
 import {
     Component,
     EventEmitter,
-    Output,
     Input,
+    OnDestroy,
     OnInit,
-    ViewChild,
-    OnDestroy
+    Output,
+    ViewChild
 } from '@angular/core';
 import { NgForm } from '@angular/forms';
-import { take, takeUntil } from 'rxjs/operators';
-import { Subject } from 'rxjs';
+import { map, take, takeUntil } from 'rxjs/operators';
+import { BehaviorSubject, Subject } from 'rxjs';
 
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotcmsConfigService, LoginService, User, Auth } from '@dotcms/dotcms-js';
+import { Auth, DotcmsConfigService, LoginService, User } from '@dotcms/dotcms-js';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotMenuService } from '@services/dot-menu.service';
-import { DotAccountUser, DotAccountService } from '@services/dot-account-service';
+import { DotAccountService, DotAccountUser } from '@services/dot-account-service';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 interface AccountUserForm extends DotAccountUser {
     confirmPassword?: string;
 }
+
 @Component({
     selector: 'dot-my-account',
     styleUrls: ['./dot-my-account.component.scss'],
@@ -45,11 +47,13 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
     };
 
     passwordConfirm: string;
-    message = null;
+
     changePasswordOption = false;
     dialogActions: DotDialogActions;
     showStarter: boolean;
 
+    passwordFailedMsg = '';
+    isSaving$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
@@ -58,7 +62,8 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
         private dotcmsConfigService: DotcmsConfigService,
         private loginService: LoginService,
         private dotRouterService: DotRouterService,
-        private dotMenuService: DotMenuService
+        private dotMenuService: DotMenuService,
+        private httpErrorManagerService: DotHttpErrorManagerService
     ) {
         this.passwordMatch = false;
         this.changePasswordOption = false;
@@ -111,9 +116,8 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
     }
 
     checkPasswords(): void {
-        if (this.message) {
-            this.message = null;
-        }
+        this.passwordFailedMsg = '';
+
         this.passwordMatch =
             this.dotAccountUser.newPassword !== '' &&
             this.passwordConfirm !== '' &&
@@ -142,27 +146,46 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
     }
 
     save(): void {
-        this.dotAccountService.updateUser(this.dotAccountUser).subscribe(
-            (response) => {
-                // TODO: replace the alert with a Angular components
-                alert(this.dotMessageService.get('message.createaccount.success'));
-                this.setShowStarter();
-                this.shutdown.emit();
+        this.isSaving$.next(true);
+        this.dotAccountService
+            .updateUser(this.dotAccountUser)
+            .pipe(take(1))
+            .subscribe(
+                (response) => {
+                    // TODO: replace the alert with a Angular components
+                    alert(this.dotMessageService.get('message.createaccount.success'));
+                    this.setShowStarter();
+                    this.shutdown.emit();
 
-                if (response.entity.reauthenticate) {
-                    this.dotRouterService.doLogOut();
-                } else {
-                    this.loginService.setAuth({
-                        loginAsUser: null,
-                        user: response.entity.user
-                    });
+                    if (response.entity.reauthenticate) {
+                        this.dotRouterService.doLogOut();
+                    } else {
+                        this.loginService.setAuth({
+                            loginAsUser: null,
+                            user: response.entity.user
+                        });
+                    }
+                },
+                (response) => {
+                    this.isSaving$.next(false);
+                    const { errorCode, message } = response.error.errors[0];
+
+                    switch (errorCode) {
+                        case 'User-Info-Save-Password-Failed':
+                            this.passwordFailedMsg = message;
+                            break;
+                        default:
+                            this.httpErrorManagerService
+                                .handle(response)
+                                .pipe(
+                                    take(1),
+                                    map(() => null)
+                                )
+                                .subscribe();
+                            break;
+                    }
                 }
-            },
-            (response) => {
-                // TODO: We have to define how must be the user feedback in case of error
-                this.message = response.errorsMessages;
-            }
-        );
+            );
     }
 
     private loadUser(auth: Auth): void {

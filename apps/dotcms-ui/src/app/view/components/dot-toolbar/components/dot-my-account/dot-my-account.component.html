@@ -3,14 +3,8 @@
     [(visible)]="visible"
     [actions]="dialogActions"
     (hide)="shutdown.emit()"
+    [isSaving]="isSaving$ | async"
 >
-    <div
-        class="error-message"
-        [innerHTML]="message"
-        *ngIf="message"
-        id="dot-my-account-general-error-message"
-    ></div>
-
     <form #myAccountForm="ngForm" class="my-account p-fluid">
         <div class="field">
             <label for="dot-my-account-first-name-input">{{ 'First-Name' | dm }}</label>
@@ -20,7 +14,6 @@
                 #firstNameInput="ngModel"
                 name="givenName"
                 [(ngModel)]="dotAccountUser.givenName"
-                (keyup)="message = ''"
                 required
             />
             <small class="p-invalid" [hidden]="firstNameInput.valid || firstNameInput.pristine">
@@ -36,7 +29,6 @@
                 #lastNameInput="ngModel"
                 name="surname"
                 [(ngModel)]="dotAccountUser.surname"
-                (keyup)="message = ''"
                 required
             />
             <small class="p-invalid" [hidden]="lastNameInput.valid || lastNameInput.pristine">
@@ -54,7 +46,6 @@
                 [(ngModel)]="dotAccountUser.email"
                 type="email"
                 required
-                (keyup)="message = ''"
                 [pattern]="emailRegex"
             />
             <small class="p-invalid" [hidden]="emailInput.valid || emailInput.pristine">
@@ -89,7 +80,6 @@
                 [feedback]="false"
                 [(ngModel)]="dotAccountUser.currentPassword"
                 type="password"
-                (keyup)="message = ''"
                 required
             />
         </div>
@@ -114,6 +104,13 @@
                 type="password"
                 [disabled]="!changePasswordOption"
             />
+
+            <small
+                *ngIf="passwordFailedMsg"
+                data-testId="dotSavePasswordFailedMsg"
+                class="p-invalid"
+                >{{ passwordFailedMsg }}</small
+            >
         </div>
         <div class="field">
             <label for="dot-my-account-confirm-new-password-input">{{

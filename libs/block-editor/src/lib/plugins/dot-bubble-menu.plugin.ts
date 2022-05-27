@@ -75,6 +75,8 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
     private shouldShowProp = false;
 
     private selection$FromPos;
+    private selectionRange;
+    private selectionNodesCount;
     private selectionNode;
 
     /* @Overrrider */
@@ -130,8 +132,18 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
         // support for CellSelections
         const { ranges } = selection;
+        this.selectionRange = ranges[0];
+        this.selectionNodesCount = 0;
 
-        this.selection$FromPos = ranges[0].$from;
+        doc.nodesBetween(
+            this.selectionRange.$from.pos,
+            this.selectionRange.$to.pos,
+            (node, pos) => {
+                if (node.isBlock) {
+                    this.selectionNodesCount++;
+                }
+            }
+        );
 
         const from = Math.min(...ranges.map((range) => range.$from.pos));
         const to = Math.max(...ranges.map((range) => range.$to.pos));
@@ -273,7 +285,11 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                 this.editor.commands.toogleLinkForm();
                 break;
             case 'deleteNode':
-                this.deleteNode();
+                if (this.selectionNodesCount > 1) {
+                    this.deleteByRange();
+                } else {
+                    this.deleteByNode();
+                }
 
                 break;
             case 'clearAll':
@@ -390,7 +406,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         }
     }
 
-    private deleteNode() {
+    private deleteByNode() {
         if (CustomNodeTypes.includes(this.selectionNode.type.name)) {
             this.deleteSelectedCustomNodeType();
         } else {
@@ -398,8 +414,14 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         }
     }
 
+    private deleteByRange() {
+        const from = this.selectionRange.$from.pos;
+        const to = this.selectionRange.$to.pos + 1;
+        this.editor.chain().deleteRange({ from, to }).blur().run();
+    }
+
     private deleteSelectedCustomNodeType() {
-        const from = this.selection$FromPos.pos;
+        const from = this.selectionRange.$from.pos;
         const to = from + 1;
 
         // TODO: Try to make the `deleteNode` command works with custom nodes.
@@ -407,13 +429,13 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
     }
 
     private deleteSelectionNode() {
-        const selectionParentNode = findParentNode(this.selection$FromPos);
+        const selectionParentNode = findParentNode(this.selectionRange.$from);
         const nodeSelectionNodeType: NodeTypes = selectionParentNode.type.name;
 
         switch (nodeSelectionNodeType) {
             case NodeTypes.ORDERED_LIST:
             case NodeTypes.BULLET_LIST:
-                const closestOrderedOrBulletNode = findParentNode(this.selection$FromPos, [
+                const closestOrderedOrBulletNode = findParentNode(this.selectionRange.$from, [
                     NodeTypes.ORDERED_LIST,
                     NodeTypes.BULLET_LIST
                 ]);

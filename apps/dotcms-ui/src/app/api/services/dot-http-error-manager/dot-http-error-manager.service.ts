@@ -3,7 +3,7 @@ import { DotRouterService } from '../dot-router/dot-router.service';
 import { DotMessageService } from '../dot-message/dot-messages.service';
 import { Injectable } from '@angular/core';
 
-import { LoginService, HttpCode } from '@dotcms/dotcms-js';
+import { HttpCode, LoginService } from '@dotcms/dotcms-js';
 
 import { DotAlertConfirmService } from '../dot-alert-confirm';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -53,13 +53,12 @@ export class DotHttpErrorManagerService {
             status: err.status
         };
 
-        if (
-            err['error'] &&
-            !Array.isArray(err['error']) &&
-            this.contentletIsForbidden(err['error'].message)
-        ) {
+        const error = err.error?.errors ? err.error.errors[0] : err.error;
+
+        if (error && this.contentletIsForbidden(this.getErrorMessage(err))) {
             result.status = HttpCode.FORBIDDEN;
         }
+
         return of(result);
     }
 
@@ -75,8 +74,8 @@ export class DotHttpErrorManagerService {
 
     private contentletIsForbidden(error: string): boolean {
         return (
-            error.indexOf('does not have permissions READ') > -1 ||
-            error.indexOf('User cannot edit') > -1
+            error?.indexOf('does not have permissions READ') > -1 ||
+            error?.indexOf('User cannot edit') > -1
         );
     }
 
@@ -114,7 +113,7 @@ export class DotHttpErrorManagerService {
     private handleServerError(response: HttpErrorResponse): boolean {
         this.dotDialogService.alert({
             message:
-                response.error?.message ||
+                this.getErrorMessage(response) ||
                 this.dotMessageService.get('dot.common.http.error.500.message'),
             header: this.dotMessageService.get('dot.common.http.error.500.header')
         });
@@ -122,11 +121,10 @@ export class DotHttpErrorManagerService {
     }
 
     private handleBadRequestError(response: HttpErrorResponse): boolean {
-        const msg =
-            this.getErrorMessage(response) ||
-            this.dotMessageService.get('dot.common.http.error.400.message');
         this.dotDialogService.alert({
-            message: msg,
+            message:
+                this.getErrorMessage(response) ||
+                this.dotMessageService.get('dot.common.http.error.400.message'),
             header: this.dotMessageService.get('dot.common.http.error.400.header')
         });
         return false;
@@ -152,8 +150,8 @@ export class DotHttpErrorManagerService {
 
     private getErrorMessage(response: HttpErrorResponse): string {
         let msg: string;
-        if (Array.isArray(response['error'])) {
-            msg = response.error[0].message;
+        if (Array.isArray(response['error']) || Array.isArray(response.error?.errors)) {
+            msg = response.error[0]?.message || response.error?.errors[0]?.message;
         } else {
             msg = response['error'] ? response['error']['message'] : null;
         }

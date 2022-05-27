@@ -771,6 +771,8 @@ describe('DotContentTypesEditComponent', () => {
                 (workflow) => workflow.id
             );
             delete replacedWorkflowsPropContentType.workflows;
+            delete replacedWorkflowsPropContentType.fields;
+            delete replacedWorkflowsPropContentType.layout;
 
             expect(crudService.putData).toHaveBeenCalledWith(
                 'v1/contenttype/id/1234567890',

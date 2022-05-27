@@ -468,6 +468,14 @@ describe('DotContentTypesPortletComponent', () => {
         expect(shouldShow).toBeFalsy();
     });
 
+    it('should not show Add To Menu option if content type is HOST', () => {
+        fixture.detectChanges();
+        const shouldShow = comp.rowActions[ADD_TO_MENU_INDEX].shouldShow({
+            variable: 'Host'
+        });
+        expect(shouldShow).toBeFalsy();
+    });
+
     it('should show Add to Menu option', () => {
         fixture.detectChanges();
         expect(comp.rowActions[ADD_TO_MENU_INDEX].menuItem.label).toBe('Add to Menu');
