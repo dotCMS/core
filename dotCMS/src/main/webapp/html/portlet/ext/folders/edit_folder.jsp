@@ -39,9 +39,7 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 
 	var formName;
 	function save(formName) {
-        dijit.byId('processingDialog').show();
 		this.formName = formName;
-
 		var form = document.getElementById(this.formName);
 		form.cmd.value = '<%=com.liferay.portal.util.Constants.ADD%>';
 		val = form.title.value.replace(" ", "");
@@ -49,20 +47,32 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 			alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.folder.menu.items")) %>');
 			return false;
 		}
-		if (document.getElementById("titleField")) {
-			var name = document.getElementById("titleField").value;
-			if(typeof String.prototype.trim !== 'function')
-				document.getElementById("titleField").value = name.replace(/^\s+|\s+$/g, '');
-			else
-				document.getElementById("titleField").value = name.trim();
 
-			if (document.getElementById("titleField").value == ""){
-				alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.folder.name.required.url")) %>');
-				return false;
-			}
+		// validate friendlyNameField
+		if (isFieldEmpty("friendlyNameField")) {
+			alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.folder.name.required.title")) %>');
+			return;
 		}
+		// validate titleField
+		if (isFieldEmpty("titleField")){
+			alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.folder.name.required.url")) %>');
+			return;
+		}
+
+		// Remove white spaces from url
+		var name = document.getElementById("titleField").value;
+		if(typeof String.prototype.trim !== 'function') {
+			document.getElementById("titleField").value = name.replace(/^\s+|\s+$/g, '');
+		} else {
+			document.getElementById("titleField").value = name.trim();
+		}
+		dijit.byId('processingDialog').show();
 		form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/folders/edit_folder" /></portlet:actionURL>';
 		submitForm(form);
+	}
+
+	function isFieldEmpty(fieldId) {
+		return !document.getElementById(fieldId) || document.getElementById(fieldId).value == "";
 	}
 
 	function goBack() {
@@ -181,7 +191,7 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 					<%}%>
 				</dl>
 				<dl>
-					<dt><%= LanguageUtil.get(pageContext, "Title") %>:</dt>
+					<dt><span class="required"></span><%= LanguageUtil.get(pageContext, "Title") %>:</dt>
 					<dd><input type="text" dojoType="dijit.form.TextBox"  onchange="beLazy();" style="width:250px" name="title"  id="friendlyNameField" value="<%= UtilMethods.isSet(folder.getTitle()) ? UtilMethods.escapeDoubleQuotes(folder.getTitle()) : "" %>" /></dd>
 				</dl>
 				<dl>
