@@ -1,0 +1,101 @@
+@use "variables" as *;
+
+@mixin md-icon {
+    -webkit-font-feature-settings: "liga";
+    -webkit-font-smoothing: antialiased;
+    direction: ltr;
+    display: inline-block;
+    font-family: "Material Icons";
+    font-size: $md-icon-size-normal;
+    font-style: normal;
+    font-weight: normal;
+    letter-spacing: normal;
+    line-height: 1;
+    text-transform: none;
+    white-space: nowrap;
+    word-wrap: normal;
+}
+
+@mixin dot-icon_inverted {
+    color: $white;
+}
+
+@mixin box_shadow($level) {
+    @if $level == 1 {
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+    } @else if $level == 2 {
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+    } @else if $level == 3 {
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+    } @else if $level == 4 {
+        box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+    } @else if $level == 5 {
+        box-shadow: 0 19px 38px rgba(0, 0, 0, 0.3), 0 15px 12px rgba(0, 0, 0, 0.22);
+    }
+}
+
+@mixin css-triangle($triangle-size, $triangle-color, $triangle-direction) {
+    content: "";
+    display: block;
+    width: 0;
+    height: 0;
+    border: inset $triangle-size;
+
+    @if ($triangle-direction == down) {
+        border-color: $triangle-color transparent transparent;
+        border-top-style: solid;
+        border-bottom-width: 0;
+    }
+    @if ($triangle-direction == up) {
+        border-color: transparent transparent $triangle-color;
+        border-bottom-style: solid;
+        border-top-width: 0;
+    }
+    @if ($triangle-direction == right) {
+        border-color: transparent transparent transparent $triangle-color;
+        border-left-style: solid;
+        border-right-width: 0;
+    }
+    @if ($triangle-direction == left) {
+        border-color: transparent $triangle-color transparent transparent;
+        border-right-style: solid;
+        border-left-width: 0;
+    }
+}
+
+@mixin naked-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+@mixin login-container {
+    max-width: 360px;
+    width: 80%;
+}
+
+@mixin dot-field-helper-on-input {
+    position: absolute;
+    top: $spacing-4;
+    right: 0;
+    z-index: 1;
+}
+
+@mixin form-field-secondary {
+    border: 1px solid $gray-light;
+    border-radius: $border-radius;
+    box-shadow: none;
+}
+
+@mixin truncate-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@mixin paginator-bottom-absolute {
+    bottom: 0;
+    padding-bottom: $spacing-3;
+    position: absolute;
+    width: 100%;
+}

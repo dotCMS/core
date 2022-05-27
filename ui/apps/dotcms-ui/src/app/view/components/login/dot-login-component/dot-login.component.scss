@@ -1,0 +1,52 @@
+@use "variables" as *;
+@import "mixins";
+@import "dotcms-theme/utils/theme-variables";
+
+:host {
+    @include login-container;
+}
+
+.login__header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.login__logo {
+    margin: $spacing-1 0 $spacing-1;
+
+    img {
+        width: 102px;
+    }
+}
+
+.login__title {
+    margin: 4rem 0 $spacing-4 0;
+}
+
+.login__password-settings {
+    display: flex;
+
+    p-checkbox {
+        flex-grow: 1;
+    }
+
+    a {
+        align-self: center;
+    }
+}
+
+.login__footer {
+    color: $gray-light;
+    text-align: center;
+    text-transform: uppercase;
+    font-size: $font-size-x-small;
+}
+
+.login__button {
+    margin-right: $spacing-1;
+}
+
+.login__message.success {
+    color: $brand-primary;
+}

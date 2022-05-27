@@ -1,0 +1,52 @@
+<p-confirmDialog
+    #cd
+    *ngIf="dotAlertConfirmService.confirmModel"
+    [closable]="false"
+    [style]="{width: '400px'}"
+>
+    <p-footer>
+        <button
+            type="button"
+            pButton
+            class="p-button-secondary"
+            tabindex="-1"
+            [label]="dotAlertConfirmService.confirmModel.footerLabel.reject"
+            (click)="onClickConfirm('reject')"
+        ></button>
+        <button
+            type="button"
+            pButton
+            #confirmBtn
+            [label]="dotAlertConfirmService.confirmModel.footerLabel.accept"
+            (click)="onClickConfirm('accept')"
+        ></button>
+    </p-footer>
+</p-confirmDialog>
+
+<p-dialog
+    *ngIf="dotAlertConfirmService.alertModel"
+    [closable]="false"
+    [draggable]="false"
+    [header]="dotAlertConfirmService.alertModel.header"
+    [visible]="true"
+    modal="modal"
+    [style]="{width: '400px'}"
+>
+    <div [innerHTML]="dotAlertConfirmService.alertModel.message"></div>
+    <p-footer>
+        <button
+            *ngIf="dotAlertConfirmService.alertModel.footerLabel.reject"
+            type="button"
+            pButton
+            class="p-button-secondary"
+            (click)="dotAlertConfirmService.alertReject($event)"
+            [label]="dotAlertConfirmService.alertModel.footerLabel.reject"
+        ></button>
+        <button
+            type="button"
+            pButton
+            (click)="dotAlertConfirmService.alertAccept($event)"
+            [label]="dotAlertConfirmService.alertModel.footerLabel.accept"
+        ></button>
+    </p-footer>
+</p-dialog>

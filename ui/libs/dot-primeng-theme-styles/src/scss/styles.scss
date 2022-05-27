@@ -1,0 +1,152 @@
+@use "variables" as *;
+@import "forms";
+@import "mixins";
+@import "typography";
+@import "dotcms-theme/utils/theme-variables"; /* temporary */
+@import "dotcms-theme/theme"; /* prime-ng */
+
+// CSS VARIABLEs
+:root {
+    --color-background: #3a3847;
+    --color-main: #6b4de2;
+    --color-main_mod: #8674c0;
+    --color-main_rgb: 107, 77, 226;
+    --color-sec: #6f5fa3;
+    --color-sec_rgb: 111, 95, 163;
+    --color-white: #fff;
+    --color-white_rgb: 255, 255, 255;
+    --empty-message: "";
+}
+
+/*
+    FONT AWESOME
+    Legacy code, this is to support font awesome icons in the main navigation
+*/
+// @import "../node_modules/font-awesome/css/font-awesome.css";
+
+// Fonts
+// MATERIAL DESIGN ICONS
+/* fallback */
+@font-face {
+    font-family: 'Material Icons';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('/dotAdmin/assets/MaterialIcons-Regular.ttf') format('truetype');
+}
+
+.material-icons {
+    font-family: 'Material Icons';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+}
+
+
+// GOOGLE FONTS
+/* roboto-regular - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
+@font-face {
+    font-family: 'Roboto';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: local(''),
+    url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+    url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.woff') format('woff'), /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+/* roboto-500 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
+@font-face {
+    font-family: 'Roboto';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: local(''),
+    url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-500.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+    url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-500.woff') format('woff'), /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+/* roboto-700 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
+@font-face {
+    font-family: 'Roboto';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: local(''),
+    url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-700.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+    url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-700.woff') format('woff'), /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+
+*,
+*:before,
+*:after {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    color: $black;
+    font-family: $body-text;
+    font-size: 14px;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    -ms-overflow-style: -ms-autohiding-scrollbar; // Hiding scrollbars in IE11 and Edge by default
+}
+
+// For the login component user photo background
+body {
+    background-position: top center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+a {
+    color: $brand-primary;
+
+    &:hover {
+        text-decoration: none;
+    }
+
+    &.link-secondary {
+        color: $brand-secondary;
+    }
+
+    &[actionlink] {
+        color: $brand-secondary;
+        font-size: $button-tiny-text-size;
+        text-transform: uppercase;
+        cursor: pointer;
+    }
+}
+
+/*
+
+Dragula clone and append dragged element to the body we need to have their styles globally.
+However this is for the dragula we use in the angular components the one in the edit page have their own place because we inject it to the page iframe
+
+*/
+
+.gu-mirror {
+    position: fixed !important;
+    margin: 0 !important;
+    z-index: 9999 !important;
+    opacity: 1;
+    transform-origin: right top;
+}
+.gu-hide {
+    display: none !important;
+}
+.gu-unselectable {
+    user-select: none !important;
+}
