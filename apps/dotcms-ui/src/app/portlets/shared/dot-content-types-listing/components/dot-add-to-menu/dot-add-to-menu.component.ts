@@ -49,8 +49,7 @@ export class DotAddToMenuComponent implements OnInit, OnDestroy {
     ngOnInit() {
         this.initForm();
         this.setDialogConfig(this.form);
-
-        this.menu$ = this.dotMenuService.loadMenu().pipe(
+        this.menu$ = this.dotMenuService.loadMenu(true).pipe(
             take(1),
             tap((menu: DotMenu[]) => {
                 this.form.patchValue({
@@ -91,7 +90,11 @@ export class DotAddToMenuComponent implements OnInit, OnDestroy {
                     take(1),
                     switchMap(() => {
                         return this.dotAddToMenuService
-                            .addToLayout(params.portletName, this.form.get('menuOption').value)
+                            .addToLayout({
+                                portletName: params.portletName,
+                                dataViewMode: this.form.get('defaultView').value,
+                                layoutId: this.form.get('menuOption').value
+                            })
                             .pipe(take(1));
                     })
                 )

@@ -213,7 +213,10 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
     handleBackButton(event: MouseEvent): void {
         event.preventDefault();
         event.stopPropagation();
-        this.loadContentTypes();
+        // Set the previous load Time to make the right search.
+        this.itemsLoaded =
+            this.itemsLoaded === ItemsType.CONTENT ? ItemsType.CONTENTTYPE : ItemsType.BLOCK;
+        this.filterItems();
     }
 
     /**
@@ -260,9 +263,17 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
                 take(1)
             )
             .subscribe((items) => {
-                this.title = 'Select a content type';
                 this.items = items;
                 this.itemsLoaded = ItemsType.CONTENTTYPE;
+                if (this.items.length) {
+                    this.title = 'Select a content type';
+                    this.cd.detectChanges();
+                    this.resetKeyManager();
+                } else {
+                    this.title = `No results`;
+                    this.cd.detectChanges();
+                }
+
                 this.cd.detectChanges();
                 this.resetKeyManager();
             });

@@ -54,7 +54,7 @@ class RouterMock {
     }
 }
 export class DotMenuServiceMock {
-    loadMenu(): Observable<DotMenu[]> {
+    loadMenu(_force?: boolean): Observable<DotMenu[]> {
         return of([
             {
                 ...dotMenuMock(),

@@ -68,6 +68,7 @@ describe('DotAddToMenuComponent', () => {
     let de: DebugElement;
     let dotdialog: DebugElement;
     let dotAddToMenuService: DotAddToMenuService;
+    let dotMenuService: DotMenuService;
 
     const messageServiceMock = new MockDotMessageService({
         'contenttypes.content.add_to_menu.header': 'Add to Menu',
@@ -106,8 +107,10 @@ describe('DotAddToMenuComponent', () => {
         de = fixture.debugElement.query(By.css('dot-add-to-menu'));
         component = de.componentInstance;
         dotAddToMenuService = TestBed.inject(DotAddToMenuService);
+        dotMenuService = TestBed.inject(DotMenuService);
 
         dotdialog = de.query(By.css('dot-dialog'));
+        spyOn(dotMenuService, 'loadMenu').and.callThrough();
 
         fixture.detectChanges();
     });
@@ -159,6 +162,7 @@ describe('DotAddToMenuComponent', () => {
         expect(component.form.get('menuOption').value).toEqual('123');
         expect(component.form.get('title').value).toEqual(contentTypeVar.name);
         expect(component.form.valid).toEqual(true);
+        expect(dotMenuService.loadMenu).toHaveBeenCalledWith(true);
     });
 
     it('should invalidate form and set Add button disabled, when name empty', () => {
@@ -188,10 +192,11 @@ describe('DotAddToMenuComponent', () => {
             contentTypes: contentTypeVar.variable,
             dataViewMode: 'list'
         });
-        expect(dotAddToMenuService.addToLayout).toHaveBeenCalledWith(
-            'Nuevo',
-            component.form.get('menuOption').value
-        );
+        expect(dotAddToMenuService.addToLayout).toHaveBeenCalledWith({
+            portletName: 'Nuevo',
+            dataViewMode: 'list',
+            layoutId: component.form.get('menuOption').value
+        });
         expect(component.cancel.emit).toHaveBeenCalledTimes(1);
     });
 

@@ -220,6 +220,9 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.content.add_to_menu'),
                     command: (item: DotCMSContentType) => this.addToBundleMenu(item)
+                },
+                shouldShow: (item: Record<string, unknown>) => {
+                    return item.variable !== 'Host';
                 }
             });
         }
