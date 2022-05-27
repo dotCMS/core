@@ -373,7 +373,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			contentletMap.put(ESMappingConstants.BASE_TYPE + TEXT, Integer.toString(contentType.baseType().getType()));
 			contentletMap.put(ESMappingConstants.TYPE, ESMappingConstants.CONTENT);
 			contentletMap.put(ESMappingConstants.INODE, contentlet.getInode());
-			contentletMap.put(ESMappingConstants.MOD_DATE, formatDate(contentlet.getModDate()));
+			contentletMap.put(ESMappingConstants.MOD_DATE, elasticSearchDateTimeFormat.format(contentlet.getModDate()));
 			contentletMap.put(ESMappingConstants.MOD_DATE + TEXT, datetimeFormat.format(contentlet.getModDate()));
 			contentletMap.put(ESMappingConstants.OWNER, contentlet.getOwner()==null ? "0" : contentlet.getOwner());
 			contentletMap.put(ESMappingConstants.MOD_USER, contentlet.getModUser());
@@ -402,27 +402,27 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 			final String publishDateVar = contentType.publishDateVar();
 			if(UtilMethods.isSet(publishDateVar) && UtilMethods.isSet(contentlet.getDateProperty(publishDateVar))) {
-						contentletMap.put(ESMappingConstants.PUBLISH_DATE, formatDate(contentlet.getDateProperty(publishDateVar)));
+						contentletMap.put(ESMappingConstants.PUBLISH_DATE, publishExpireESDateTimeFormat.get().format(contentlet.getDateProperty(publishDateVar)));
 				contentletMap.put(ESMappingConstants.PUBLISH_DATE + TEXT,
 						datetimeFormat.format(contentlet.getDateProperty(publishDateVar)));
 			}else {
 				contentletMap.put(ESMappingConstants.PUBLISH_DATE,
-						formatDate(versionInfo.get().getVersionTs()));
+						publishExpireESDateTimeFormat.get().format(versionInfo.get().getVersionTs()));
 				contentletMap.put(ESMappingConstants.PUBLISH_DATE + TEXT,
 						datetimeFormat.format(versionInfo.get().getVersionTs()));
 			}
 
 			final String expireDateVar = contentType.expireDateVar();
 			if(UtilMethods.isSet(expireDateVar) &&  UtilMethods.isSet(contentlet.getDateProperty(expireDateVar))) {
-				contentletMap.put(ESMappingConstants.EXPIRE_DATE, formatDate(contentlet.getDateProperty(expireDateVar)));
+				contentletMap.put(ESMappingConstants.EXPIRE_DATE, publishExpireESDateTimeFormat.get().format(contentlet.getDateProperty(expireDateVar)));
 				contentletMap.put(ESMappingConstants.EXPIRE_DATE + TEXT,
 						datetimeFormat.format(contentlet.getDateProperty(expireDateVar)));
 			}else {
-				contentletMap.put(ESMappingConstants.EXPIRE_DATE, formatDate(29990101000000L));
+				contentletMap.put(ESMappingConstants.EXPIRE_DATE, publishExpireESDateTimeFormat.get().format(29990101000000L));
 				contentletMap.put(ESMappingConstants.EXPIRE_DATE + TEXT, "29990101000000");
 			}
 
-			contentletMap.put(ESMappingConstants.VERSION_TS, formatDate(versionInfo.get().getVersionTs()));
+			contentletMap.put(ESMappingConstants.VERSION_TS, elasticSearchDateTimeFormat.format(versionInfo.get().getVersionTs()));
 			contentletMap.put(ESMappingConstants.VERSION_TS + TEXT, datetimeFormat.format(versionInfo.get().getVersionTs()));
 
 			try{
@@ -648,7 +648,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				workflowMap.put(ESMappingConstants.WORKFLOW_CURRENT_STEP, step.getName());
                 workflowMap.put(ESMappingConstants.WORKFLOW_CREATED_BY, task.getCreatedBy());
                 workflowMap.put(ESMappingConstants.WORKFLOW_ASSIGN, task.getAssignedTo());
-                workflowMap.put(ESMappingConstants.WORKFLOW_MOD_DATE, formatDate(task.getModDate()));
+                workflowMap.put(ESMappingConstants.WORKFLOW_MOD_DATE, elasticSearchDateTimeFormat.format(task.getModDate()));
                 workflowMap.put(ESMappingConstants.WORKFLOW_MOD_DATE + TEXT, datetimeFormat.format(task.getModDate()));
             }
 
@@ -751,29 +751,16 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	public static final FastDateFormat dateFormat = FastDateFormat.getInstance("yyyyMMdd");
 	public static final FastDateFormat datetimeFormat = FastDateFormat.getInstance("yyyyMMddHHmmss");
 
-	public static final String elasticSearchDateTimeFormatPattern="yyyy-MM-dd't'HH:mm:ssZ";
-	public static final Lazy<FastDateFormat> elasticSearchDateTimeFormat = Lazy.of(() -> {
+	public static final String elasticSearchDateTimeFormatPattern="yyyy-MM-dd'T'HH:mm:ss";
+	public static final FastDateFormat elasticSearchDateTimeFormat = FastDateFormat.getInstance(elasticSearchDateTimeFormatPattern);
+
+	public static final Lazy<FastDateFormat> publishExpireESDateTimeFormat = Lazy.of(() -> {
 		final TimeZone timeZone = APILocator.systemTimeZone();
-		return FastDateFormat.getInstance(elasticSearchDateTimeFormatPattern, timeZone);
+		return FastDateFormat.getInstance("yyyy-MM-dd't'HH:mm:ssZ", timeZone);
 	});
 
 	public static final FastDateFormat timeFormat = FastDateFormat.getInstance("HH:mm:ss");
 
-	public static String formatDate(final Date date){
-		return elasticSearchDateTimeFormat.get().format(date);
-	}
-
-	public static String formatDate(final Object obj){
-
-		if (obj instanceof Date) {
-			return formatDate((Date) obj);
-		} else if (obj instanceof Long) {
-			return formatDate(new Date((Long) obj));
-		} else {
-			throw new IllegalArgumentException("Unknown class: " +
-					(obj == null ? "<null>" : obj.getClass().getName()));
-		}
-	}
 
 	protected void loadFields(final Contentlet contentlet, final Map<String, Object> contentletMap) throws DotDataException {
 
