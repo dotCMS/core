@@ -108,15 +108,7 @@ import java.util.concurrent.ConcurrentHashMap;
 		servers = {
 				@Server(
 						description = "dotCMS Server",
-						url = "{URIScheme}://{host}:{port}/api",
-						variables = {
-								@ServerVariable(name = "URIScheme", description = "URI Scheme", defaultValue = "https", allowableValues = {
-										"http", "https"}),
-								@ServerVariable(name = "host", description = "dotCMS Host", defaultValue = "localhost", allowableValues = {
-										"localhost"}),
-								@ServerVariable(name = "port", description = "dotCMS Host", defaultValue = "8080", allowableValues = {
-										"80", "8080", "443"})
-						})
+						url = "/api")
 		}
 )
 
