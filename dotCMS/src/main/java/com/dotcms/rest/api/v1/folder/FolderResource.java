@@ -22,7 +22,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import javax.servlet.http.HttpSession;
-import javax.ws.rs.DELETE;
 import javax.ws.rs.PUT;
 import org.glassfish.jersey.server.JSONP;
 
@@ -39,7 +38,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -63,64 +61,6 @@ public class FolderResource implements Serializable {
 
         this.webResource = webResource;
         this.folderHelper = folderHelper;
-    }
-
-    /**
-     * Delete one or more path for a site
-     * @param httpServletRequest
-     * @param httpServletResponse
-     * @param paths
-     * @param siteName
-     * @return List of folders deleted
-     * @throws DotSecurityException
-     * @throws DotDataException
-     */
-    @DELETE
-    @Path("/{siteName}")
-    @JSONP
-    @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response deleteFolders(@Context final HttpServletRequest httpServletRequest,
-                                        @Context final HttpServletResponse httpServletResponse,
-                                        final List<String> paths,
-                                        @PathParam("siteName") final String siteName)
-            throws DotSecurityException, DotDataException {
-
-        final InitDataObject initData =
-                new WebResource.InitBuilder(webResource)
-                        .requiredBackendUser(true)
-                        .requiredFrontendUser(false)
-                        .requestAndResponse(httpServletRequest, httpServletResponse)
-                        .init();
-
-        final User user = initData.getUser();
-        final List<String> deletedFolders = new ArrayList<>();
-
-        final Host host = APILocator.getHostAPI().findByName(siteName, user, true);
-        if(!UtilMethods.isSet(host)) {
-
-            throw new IllegalArgumentException(String.format(" Couldn't find any host with name `%s` ",siteName));
-        }
-
-        Logger.debug(this, ()-> "Deleting the folders: " + paths);
-
-        for (final String path : paths) {
-
-            final Folder folder = folderHelper.loadFolderByURI(host.getIdentifier(), user, path);
-            if (null != folder) {
-
-                Logger.debug(this, ()-> "Deleting the folder: " + path);
-                folderHelper.deleteFolder (folder, user);
-                deletedFolders.add(path);
-            } else {
-
-                Logger.error(this, "The folder does not exists: " + path);
-                throw new DoesNotExistException("The folder does not exists: " + path);
-            }
-        }
-
-        return Response.ok(new ResponseEntityView(deletedFolders)).build(); // 200
     }
 
     @POST

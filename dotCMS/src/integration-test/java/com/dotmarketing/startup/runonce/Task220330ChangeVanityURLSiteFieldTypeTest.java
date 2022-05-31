@@ -134,21 +134,6 @@ public class Task220330ChangeVanityURLSiteFieldTypeTest {
         }
     }
 
-    /**
-     * Method to test: {@link Task220330ChangeVanityURLSiteFieldType#executeUpgrade()}
-     * When: The {@link Task220330ChangeVanityURLSiteFieldType} is ru twice the second time is fail because the
-     * {@link Task220330ChangeVanityURLSiteFieldType#GET_CONTENTLET_NOT_JSON} has a wrong sintax
-     * Should: Should not fail and not execute the SQL query
-     *
-     * @throws DotDataException
-     */
-    @Test
-    public void runTUTwice() throws DotDataException {
-        final Task220330ChangeVanityURLSiteFieldType task = new Task220330ChangeVanityURLSiteFieldType();
-        task.executeUpgrade();
-        task.executeUpgrade();
-    }
-
     private void assertContentlet(Host host, Contentlet vanityURL_1) {
         final Optional<Contentlet> inDb = APILocator.getContentletAPI()
                 .findInDb(vanityURL_1.getInode());

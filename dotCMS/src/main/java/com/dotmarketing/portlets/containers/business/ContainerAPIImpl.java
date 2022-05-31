@@ -9,7 +9,6 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
-import com.dotcms.rendering.velocity.services.TemplateLoader;
 import com.dotcms.system.event.local.model.Subscriber;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.transform.TransformerLocator;
@@ -21,16 +20,10 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.WebAssetException;
-import com.dotmarketing.factories.InodeFactory;
-import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.TreeFactory;
-import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.containers.model.SystemContainer;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.ApplicationContainerFolderListener;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -50,11 +43,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.net.URL;
 import java.util.*;
 import java.util.function.Supplier;
-
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_EDIT;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
 import java.util.stream.Collectors;
 
 /**
@@ -408,15 +396,6 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 	    return this.containerFactory.getWorkingContainerByFolderPath(path, host, user, respectFrontEndPermissions);
     }
 
-
-	@CloseDBIfOpened
-	@Override
-	public Container getWorkingArchiveContainerByFolderPath(final String path, final Host host, final User user,
-													 final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
-
-		return this.containerFactory.getWorkingArchiveContainerByFolderPath(path, host, user, respectFrontEndPermissions);
-	}
-
 	@CloseDBIfOpened
     @Override
     public Container getContainerByFolder(final Folder folder, final User user, final boolean showLive) throws DotSecurityException, DotDataException {
@@ -705,15 +684,6 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 			Logger.debug(this, "System Container cannot be saved/updated.");
 			throw new IllegalArgumentException("System Container and its associated data cannot be saved.");
 		}
-
-		if(!APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles)
-				|| !APILocator.getPermissionAPI().doesUserHavePermissions(PermissionAPI.PermissionableType.CONTAINERS, PermissionAPI.PERMISSION_EDIT, user)) {
-
-			Logger.info(this, "The user: " + user.getUserId() + ", does not have ADD children permissions to the host: " + host.getHostname()
-					+ " or add containers");
-			throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
-		}
-
 		Container currentContainer = null;
 		List<Template> currentTemplates = null;
 		Identifier identifier = null;
@@ -919,185 +889,8 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
     public List<Container> findContainersForStructure(final String structureInode) throws DotDataException {
         return containerFactory.findContainersForStructure(structureInode);
     }
-
-	@WrapInTransaction
-	@Override
-	public void publish(final Container container, final User user, final boolean respectAnonPerms) throws DotDataException, DotSecurityException {
-
-		Logger.debug(this, ()-> "Doing publish of container: " + container.getIdentifier());
-
-		//Check write Permissions over container
-		if(!this.permissionAPI.doesUserHavePermission(container, PERMISSION_PUBLISH, user)) {
-
-			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to publish the container");
-			throw new DotSecurityException("User does not have Permissions to publish the Container");
-		}
-
-		if(container instanceof FileAssetContainer) {
-
-			final FileAssetContainer fileAssetContainer = (FileAssetContainer) container;
-			final Host containerHost = fileAssetContainer.getHost();
-			final Identifier idPropertiesVTL = APILocator.getIdentifierAPI().find(containerHost, fileAssetContainer.getPath() + "container.vtl");
-			final Contentlet contentletVTL   = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(idPropertiesVTL.getId());
-			APILocator.getContentletAPI().publish(contentletVTL, user, respectAnonPerms);
-		} else {
-
-			final Container containerWorkingVersion = this.getWorkingContainerById(
-					container.getIdentifier(), user, respectAnonPerms);
-
-			try {
-
-				PublishFactory.publishAsset(container, user, respectAnonPerms);
-			} catch (WebAssetException e) {
-
-				Logger.error(this, e.getMessage(), e);
-				throw new DotDataException(e);
-			}
-
-			//Remove live version from version_info
-			containerWorkingVersion.setModDate(new Date());
-			containerWorkingVersion.setModUser(user.getUserId());
-			containerFactory.save(containerWorkingVersion);
-		}
-
-		//Clean-up the cache for this template
-		CacheLocator.getContainerCache().remove(container);
-		//remove template from the live directory
-		new ContainerLoader().invalidate(container);
-	}
-
-	@WrapInTransaction
-	@Override
-	public void unpublish(final Container container, final User user, final boolean respectAnonPerms) throws DotDataException, DotSecurityException {
-
-		Logger.debug(this, ()-> "Doing unpublish of container: " + container.getIdentifier());
-
-		//Check write Permissions over container
-		if(!this.permissionAPI.doesUserHavePermission(container, PERMISSION_WRITE, user)) {
-
-			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to write the container");
-			throw new DotSecurityException("User does not have Permissions to write the Container");
-		}
-
-		if(container instanceof FileAssetContainer) {
-
-			final FileAssetContainer fileAssetContainer = (FileAssetContainer) container;
-			final Host containerHost = fileAssetContainer.getHost();
-			final Identifier idPropertiesVTL = APILocator.getIdentifierAPI().find(containerHost, fileAssetContainer.getPath() + "container.vtl");
-			final Contentlet contentletVTL   = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(idPropertiesVTL.getId());
-			APILocator.getContentletAPI().unpublish(contentletVTL, user, respectAnonPerms);
-		} else {
-
-			final Container containerWorkingVersion = getWorkingContainerById(container.getIdentifier(), user,false);
-			//Remove live version from version_info
-			final String containerIdentifier = container.getIdentifier();
-			APILocator.getVersionableAPI().removeLive(containerIdentifier);
-			containerWorkingVersion.setModDate(new java.util.Date());
-			containerWorkingVersion.setModUser(user.getUserId());
-			containerFactory.save(containerWorkingVersion);
-		}
-
-		//Clean-up the cache for this template
-		CacheLocator.getContainerCache().remove(container);
-		//remove template from the live directory
-		new ContainerLoader().invalidate(container);
-	}
-
-	@WrapInTransaction
-	@Override
-	public void archive(final Container container,
-						final User user, final boolean respectAnonPerms) throws DotDataException, DotSecurityException {
-
-		Logger.debug(this, ()-> "Doing archive of container: " + container.getIdentifier());
-
-		//Check write Permissions over container
-		if(!this.permissionAPI.doesUserHavePermission(container, PERMISSION_WRITE, user)){
-			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to write the container");
-			throw new DotSecurityException("User does not have Permissions to write the Container");
-		}
-
-		//Check that the template is Unpublished
-		if (container.isLive()) {
-			Logger.error(this, "The Container: " + container.getName() + " can not be archive. "
-					+ "Because it is live.");
-			throw new DotStateException("Container must be unpublished before it can be archived");
-		}
-
-		if(container instanceof FileAssetContainer) {
-
-			final FileAssetContainer fileAssetContainer = (FileAssetContainer) container;
-			final Host containerHost = fileAssetContainer.getHost();
-			final Identifier idPropertiesVTL = APILocator.getIdentifierAPI().find(containerHost, fileAssetContainer.getPath() + "container.vtl");
-			final Contentlet contentletVTL   = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(idPropertiesVTL.getId());
-			APILocator.getContentletAPI().archive(contentletVTL, user, respectAnonPerms);
-		} else {
-			archive(container, user);
-		}
-	}
-
-	/**
-	 * This method was extracted from {@link WebAssetFactory#archiveAsset(WebAsset, String)} }
-	 * @param container
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-	private void archive(final Container container, final User user) throws DotSecurityException, DotDataException {
-		final Container containerLiveVersion    = getLiveContainerById(container.getIdentifier(),APILocator.systemUser(),false);
-		final Container containerWorkingVersion = getWorkingContainerById(container.getIdentifier(),APILocator.systemUser(),false);
-		if(containerLiveVersion!=null) {
-			
-			APILocator.getVersionableAPI().removeLive(container.getIdentifier());
-		}
-		containerWorkingVersion.setModDate(new java.util.Date());
-		containerWorkingVersion.setModUser(user.getUserId());
-		// sets deleted to true
-		APILocator.getVersionableAPI().setDeleted(containerWorkingVersion, true);
-		this.containerFactory.save(containerWorkingVersion);
-	}
-
-	@WrapInTransaction
-	@Override
-	public void unarchive(final Container container,
-						final User user, final boolean respectAnonPerms) throws DotDataException, DotSecurityException {
-
-		Logger.debug(this, ()-> "Doing unarchive of container: " + container.getIdentifier());
-
-		//Check write Permissions over container
-		if(!this.permissionAPI.doesUserHavePermission(container, PERMISSION_WRITE, user)){
-			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to write the container");
-			throw new DotSecurityException("User does not have Permissions to write the Container");
-		}
-
-		//Check that the template is Unpublished
-		if (!container.isArchived()) {
-			Logger.error(this, "The Container: " + container.getName() + " can not be unarchive. "
-					+ "Because it is not archived.");
-			throw new DotStateException("Container must be archived before it can be unarchived");
-		}
-
-		if(container instanceof FileAssetContainer) {
-
-			final FileAssetContainer fileAssetContainer = (FileAssetContainer) container;
-			final Host containerHost = fileAssetContainer.getHost();
-			final Identifier idPropertiesVTL = APILocator.getIdentifierAPI().find(containerHost, fileAssetContainer.getPath() + "container.vtl");
-			// todo: find here archived
-			final Contentlet contentletVTL   = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(idPropertiesVTL.getId(), true);
-			APILocator.getContentletAPI().unarchive(contentletVTL, user, respectAnonPerms);
-		} else {
-			unarchive(container, user);
-		}
-	}
-
-	private void unarchive(final Container container, final User user) throws DotSecurityException, DotDataException {
-		final Container containerWorkingVersion = getWorkingContainerById(container.getIdentifier(),APILocator.systemUser(),false);
-		containerWorkingVersion.setModDate(new java.util.Date());
-		containerWorkingVersion.setModUser(user.getUserId());
-		// sets deleted to false
-		APILocator.getVersionableAPI().setDeleted(containerWorkingVersion, false);
-		this.containerFactory.save(containerWorkingVersion);
-	}
-
-	@WrapInTransaction
+    
+    @WrapInTransaction
 	@Override
 	public void deleteContainerStructuresByContainer(final Container container)
 			throws DotStateException, DotDataException, DotSecurityException {
