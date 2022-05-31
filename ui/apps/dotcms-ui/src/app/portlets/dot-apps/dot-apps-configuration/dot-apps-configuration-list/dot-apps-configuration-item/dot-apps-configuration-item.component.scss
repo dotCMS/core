@@ -1,0 +1,45 @@
+@use "variables" as *;
+
+:host {
+    border: 1px solid $gray-lighter;
+    cursor: pointer;
+    display: flex;
+    margin-right: $spacing-3;
+    margin-top: $spacing-3;
+    padding: $spacing-1 0;
+    transition: box-shadow $basic-speed ease-in;
+    width: 100%;
+
+    &:hover {
+        box-shadow: $md-shadow-5;
+    }
+
+    dot-icon {
+        align-self: center;
+        margin-right: $spacing-3;
+        text-align: end;
+        width: 100%;
+        color: $brand-primary;
+    }
+
+    dot-icon {
+    }
+}
+
+.dot-apps-configuration-list__host-configured {
+    display: flex;
+}
+
+.dot-apps-configuration-list__name {
+    align-self: center;
+    margin-left: $spacing-3;
+    white-space: nowrap;
+}
+
+.dot-apps-configuration-list__host-key {
+    color: $gray;
+    display: flex;
+    flex-grow: 1;
+    align-items: center;
+    margin-left: $spacing-2;
+}

@@ -1,0 +1,25 @@
+key-value-table {
+    table {
+        width: 100%;
+        td {
+            line-height: 3rem;
+        }
+    }
+
+    .key-value-table-wc__key {
+        width: 45%;
+    }
+
+    .key-value-table-wc__value {
+        width: 45%;
+    }
+
+    .key-value-table-wc__action {
+        text-align: right;
+        width: 10%;
+    }
+
+    .key-value-table-wc__placeholder-transit {
+        border-bottom: 1px solid;
+    }
+}

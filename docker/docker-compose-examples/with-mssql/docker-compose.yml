@@ -1,0 +1,64 @@
+version: '3.5'
+
+networks:
+  db_net:
+  es_net:
+
+volumes:
+  db-data-dev:
+  esdata:
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.1
+    environment:
+      - cluster.name=elastic-cluster
+      - discovery.type=single-node
+      - data
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xmx1G"
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    networks:
+      - es_net
+
+  dotcms-dev:
+    image: dotcms/dotcms:latest
+    environment:
+        "CATALINA_OPTS": ' -Xms1g -Xmx1g '
+        "DB_BASE_URL": "jdbc:sqlserver://db-dev:1433;databaseName=dotcms"
+        "DB_USERNAME": 'SA'
+        "DB_PASSWORD": 'Test1234'
+        "DOT_ES_AUTH_BASIC_PASSWORD": 'admin'
+        "DOT_ES_ENDPOINTS": 'http://elasticsearch:9200'
+        "DB_DRIVER": 'com.microsoft.sqlserver.jdbc.SQLServerDriver'
+        "ES_ADMIN_PASSWORD": 'admin'
+        "DOT_INITIAL_ADMIN_PASSWORD": 'admin'
+        #"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20220504/starter-20220504.zip'
+    depends_on:
+      - elasticsearch
+      - db-dev
+    volumes:
+      #- {license_local_path}/license.zip:/data/shared/assets/license.zip
+    networks:
+      - db_net
+      - es_net
+    ports:
+      - "8080:8080"
+      - "8000:8000"
+
+  db-dev:
+     image: mcr.microsoft.com/mssql/server:2019-latest
+     environment:
+        "ACCEPT_EULA": 'Y'
+        "SA_PASSWORD": 'Test1234'
+        "MSSQL_PID": 'Developer'
+     volumes:
+       - db-data-dev:/var/opt/mssql
+       - ./mssql-init/entrypoint.sh:/srv/entrypoint.sh
+       - ./mssql-init/mssql-dotcms-init.sql:/srv/mssql-dotcms-init.sql
+       - ./mssql-init/run-initialization.sh:/srv/run-initialization.sh
+     command:
+       - /srv/entrypoint.sh
+     networks:
+       - db_net

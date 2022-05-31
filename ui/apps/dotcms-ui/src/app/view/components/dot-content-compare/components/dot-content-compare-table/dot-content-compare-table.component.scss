@@ -1,0 +1,55 @@
+@use "variables" as *;
+
+.dot-content-compare-table__controls{
+    display: flex;
+    align-items: center;
+
+    p-dropdown {
+        margin-right: $spacing-3;
+    }
+
+    button {
+        margin-left: auto;
+    }
+}
+
+.dot-content-compare-table__title {
+    color: $black;
+    font-size: $font-size-large;
+}
+
+:host ::ng-deep .p-datatable {
+
+    table {
+        border-collapse: separate;
+        border-spacing: 0;
+
+        th {
+            border-top: 1px solid $gray-lighter;
+            border-bottom: 1px solid $gray-lighter;
+            border-right: 1px solid $gray-lighter;
+        }
+
+        td {
+            border-bottom: 1px solid $gray-lighter;
+            border-right: 1px solid $gray-lighter;
+
+            img {
+                max-width: 100%;
+                height: auto;
+            }
+        }
+
+        th:first-child,
+        td:first-child {
+            border-left: 1px solid $gray-lighter;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+
+        }
+    }
+}

@@ -1,0 +1,9 @@
+<div [formGroup]="group" class="field-checkbox">
+    <p-checkbox
+        [label]="setCheckboxLabel(property.name) | dm"
+        [value]="property.value"
+        [formControlName]="property.name"
+        binary="true"
+    >
+    </p-checkbox>
+</div>
