@@ -1,0 +1,158 @@
+@use "variables" as *;
+@import "mixins";
+@import "dotcms-theme/utils/theme-variables";
+
+$top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-main-height);
+
+:host {
+    ::ng-deep {
+        .p-tabview-nav {
+            position: relative;
+            z-index: 1;
+        }
+
+        > p-tabview > .p-tabview > .p-tabview-nav {
+            background-color: $gray-bg;
+        }
+
+        .content-type__fields-sidebar {
+            background-color: $white;
+
+            .p-splitbutton {
+                border-bottom: solid 1px $gray-lighter;
+                display: flex;
+
+                &:hover {
+                    background-color: $bg-hover;
+                }
+
+                .p-splitbutton-defaultbutton,
+                .p-splitbutton-menubutton {
+                    padding: $spacing-2 $spacing-3;
+                    background: none;
+                    color: $body-font-color;
+                }
+
+                .p-splitbutton-defaultbutton {
+                    .p-button-label {
+                        text-align: left;
+                        text-transform: none;
+                        font-weight: normal;
+                    }
+                }
+
+                .p-button-icon-left {
+                    color: $gray;
+                    width: 18px;
+                    margin-right: $spacing-3;
+                }
+            }
+        }
+    }
+
+    dot-iframe {
+        padding: $spacing-3 0;
+        height: calc(100vh - #{$top-height});
+    }
+
+    .content-type__fields-main {
+        background-color: $gray-bg;
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        overflow: auto;
+        padding: $spacing-3;
+    }
+
+    .content-type__fields-layout {
+        display: flex;
+        height: calc(100vh - #{$top-height});
+        overflow-y: hidden;
+    }
+
+    .content-type__fields-sidebar {
+        border-left: solid 1px $gray-bg;
+        width: 200px;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+
+        dot-content-types-fields-list {
+            overflow: auto;
+        }
+
+        dot-content-type-fields-row-list {
+            height: 200px;
+        }
+    }
+
+    .content-type-fields-row {
+        background-color: $white;
+    }
+
+    dot-api-link {
+        margin-left: $spacing-3;
+    }
+
+    .content-type__title {
+        font-size: $font-size-large;
+        display: flex;
+        flex-flow: column wrap;
+
+        header {
+            display: flex;
+            align-items: center;
+
+            dot-icon {
+                align-items: center;
+                margin-right: $spacing-2;
+            }
+
+            ::ng-deep {
+                p-inplace {
+                    h4,
+                    input {
+                        min-width: 50px;
+                    }
+
+                    .p-inplace-display {
+                        display: flex;
+                        padding: 0;
+                    }
+
+                    .p-inplace-content input {
+                        height: 36px;
+                    }
+
+                    button {
+                        margin-left: $spacing-2;
+                    }
+                }
+            }
+        }
+
+        h4 {
+            margin: 0;
+            color: $black;
+            font-weight: normal;
+        }
+    }
+
+    .content-type__dot-separator {
+        font-size: $font-size-x-large;
+        margin: 0 4px;
+        vertical-align: middle;
+    }
+
+    .content-type__info {
+        align-items: center;
+        color: $gray;
+        display: flex;
+        font-size: $font-size-small;
+        margin-left: $spacing-4;
+
+        dot-copy-link {
+            margin-left: 0.25rem;
+        }
+    }
+}

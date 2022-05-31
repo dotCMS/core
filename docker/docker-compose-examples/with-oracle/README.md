@@ -4,7 +4,7 @@ A single instance of dotcms running on port 8080. Database: oracle
 
 ## Usage
 
-####Environment setup
+#### Environment setup
 
 1) Start the Oracle database using the example provided on this repo (view directory ***oracle-database***)
 
@@ -34,15 +34,17 @@ A single instance of dotcms running on port 8080. Database: oracle
 ```
 
 
-####Run an example:
+#### Run an example:
 
 ```bash
-docker-compose up```
+docker-compose up
+```
 
-####Shut down instances:
+#### Shut down instances:
 
 ```bash
-docker-compose down```
+docker-compose down
+```
 
 **Important note:** `ctrl+c` does not destroy instances
 

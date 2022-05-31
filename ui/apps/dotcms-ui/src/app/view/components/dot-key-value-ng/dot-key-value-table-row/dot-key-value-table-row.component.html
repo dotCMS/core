@@ -1,0 +1,75 @@
+<tr class="dot-key-value-table-row">
+    <td>
+        {{ variableCopy.key }}
+    </td>
+    <ng-template [ngIf]="isHiddenField" [ngIfElse]="editableValue">
+        <td>
+            {{ variableCopy.value }}
+        </td>
+    </ng-template>
+    <ng-template #editableValue>
+        <td #valueCell [pEditableColumn]="variableCopy.value" pEditableColumnField="value">
+            <p-cellEditor>
+                <ng-template pTemplate="input">
+                    <input
+                        pInputText
+                        class="field-value-input"
+                        autocomplete="false"
+                        [type]="variableCopy.hidden ? 'password' : 'text'"
+                        [placeholder]="'keyValue.value_input.placeholder' | dm"
+                        (focus)="editFieldInit()"
+                        (keyup)="editFieldInit()"
+                        (keydown.escape)="onCancel($event)"
+                        (keydown.enter)="onPressEnter()"
+                        [(ngModel)]="variableCopy.value"
+                    />
+                </ng-template>
+                <ng-template pTemplate="output">
+                    <span *ngIf="variableCopy.value && !variableCopy.hidden">
+                        {{ variableCopy.value }}
+                    </span>
+                    <span *ngIf="variableCopy.hidden"> ******** </span>
+                    <span class="empty-placeholder" *ngIf="!variableCopy.value">
+                        {{ 'keyValue.value_input.placeholder' | dm }}
+                    </span>
+                </ng-template>
+            </p-cellEditor>
+        </td>
+    </ng-template>
+    <td *ngIf="showHiddenField" class="dot-key-value-table-row__variables-hidden">
+        <p-inputSwitch
+            [(ngModel)]="variableCopy.hidden"
+            (onChange)="showEditMenu = true"
+            [disabled]="isHiddenField"
+        ></p-inputSwitch>
+    </td>
+    <td class="dot-key-value-table-row__variables-actions">
+        <ng-template [ngIf]="showEditMenu" [ngIfElse]="formButtons">
+            <button
+                pButton
+                class="dot-key-value-table-row__variables-actions-edit-cancel p-button-secondary p-button-sm"
+                [label]="'Cancel' | dm"
+                (click)="onCancel($event)"
+            ></button>
+            <button
+                #saveButton
+                pButton
+                class="dot-key-value-table-row__variables-actions-edit-save p-button-sm"
+                [label]="'Save' | dm"
+                [disabled]="saveDisabled"
+                (click)="saveVariable()"
+            ></button>
+        </ng-template>
+        <ng-template #formButtons>
+            <dot-icon-button
+                icon="delete_outline"
+                (click)="delete.emit(variableCopy)"
+            ></dot-icon-button>
+            <dot-icon-button
+                icon="edit"
+                [attr.disabled]="isHiddenField || null"
+                (click)="focusKeyInput($event)"
+            ></dot-icon-button>
+        </ng-template>
+    </td>
+</tr>

@@ -1,0 +1,22 @@
+@use "variables" as *;
+
+:host {
+    display: block;
+    height: 100%;
+
+    & ::ng-deep dot-portlet-box {
+        display: flex;
+        flex-direction: column;
+    }
+}
+
+form {
+    margin: $spacing-3;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+dot-container-selector {
+    margin-bottom: $spacing-2;
+}

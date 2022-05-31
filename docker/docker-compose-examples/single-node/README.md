@@ -4,7 +4,7 @@ A single instance of dotcms running on port 8080. Database: postgres
 
 ## Usage
 
-####Environment setup
+#### Environment setup
 
 
 1) A local path to license pack must be set here:
@@ -25,16 +25,16 @@ A single instance of dotcms running on port 8080. Database: postgres
 #"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20210920/starter-20210920.zip'
 ```
 
-####Run an example:
+#### Run an example:
 
 ```bash
-docker-compose up```
+docker-compose up
+```
 
-####Shut down instances:
+#### Shut down instances:
 
 ```bash
-docker-compose down```
+docker-compose down
+```
 
 **Important note:** `ctrl+c` does not destroy instances
-
-
