@@ -46,7 +46,7 @@ public class Task220402UpdateDateTimezonesTest {
     /**
      * <b>Method to Test:</b> {@link Task220402UpdateDateTimezones#executeUpgrade()} <p>
      * <b>Given Scenario:</b> When ms-sql is used, the upgrade task should be executed <p>
-     * <b>Expected Result:</b> When using postgres, dates should be declared as timestamps with
+     * <b>Expected Result:</b> When using ms-sql, dates should be declared as timestamps with
      * timezone
      */
     @Test
