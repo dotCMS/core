@@ -318,6 +318,7 @@ public class TaskLocatorUtil {
 		.add(Task220331UpdateDateTimezones.class)
 		.add(Task220413IncreasePublishedPushedAssetIdCol.class)
 		.add(Task220512UpdateNoHTMLRegexValue.class)
+				.add(Task220401CreateClusterLockTable.class)
 		.build();
         
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
