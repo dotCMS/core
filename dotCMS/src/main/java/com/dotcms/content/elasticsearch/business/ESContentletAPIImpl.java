@@ -56,6 +56,7 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.ThreadContextUtil;
+import com.dotcms.util.XStreamFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -2477,7 +2478,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         if (contentlets.size() > 0) {
 
-            final XStream xstream = new XStream(new DomDriver());
+            final XStream xstream = XStreamFactory.INSTANCE.getInstance();
             final File backupFolder = new File(backupPath);
             if (!backupFolder.exists()) {
 
@@ -2790,7 +2791,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         if (contentlets.size() > 0) {
-            XStream _xstream = new XStream(new DomDriver());
+            XStream _xstream = XStreamFactory.INSTANCE.getInstance();
             Date date = new Date();
             SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
             String lastmoddate = sdf.format(date);

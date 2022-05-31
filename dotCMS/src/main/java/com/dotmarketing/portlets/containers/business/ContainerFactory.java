@@ -121,6 +121,22 @@ public interface ContainerFactory {
 	Container getContainerByFolder(final Host host, final Folder folder, final User user, final boolean showLive, final boolean includeHostOnPath) throws DotSecurityException, DotDataException;
 
 	/**
+	 * Get a container based on a folder (non-db) [including archive]
+	 * A Folder could be consider as a container if:
+	 * 1) is inside the /application/containers
+	 * 2) has a file asset called container.vtl
+	 * @param host {@link Host}
+	 * @param folder {@link Folder}
+	 * @param user   {@link User}
+	 * @param showLive {@link Boolean}
+	 * @param includeHostOnPath {@link Boolean} true if wants to include the host on the container path
+	 * @return Container
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	Container getContainerArchiveByFolder(final Host host, final Folder folder, final User user, final boolean showLive, final boolean includeHostOnPath) throws DotSecurityException, DotDataException;
+
+	/**
 	 * Get working container by folder path
 	 * @param path {@link String} p
 	 * @param host {@link Host}
@@ -133,6 +149,18 @@ public interface ContainerFactory {
 	Container getWorkingContainerByFolderPath(final String path, final Host host, final User user,
 													 final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException;
 
+	/**
+	 * Get working container by folder path (including archive)
+	 * @param path {@link String} p
+	 * 	 * @param host {@link Host}
+	 * 	 * @param user {@link User}
+	 * 	 * @param respectFrontEndPermissions {@link Boolean}
+	 * 	 * @return Container
+	 * 	 * @throws DotSecurityException
+	 * 	 * @throws DotDataException
+	 */
+	Container getWorkingArchiveContainerByFolderPath(String path, Host host, User user,
+													 boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException;
 
 	/**
 	 * Get live container by folder path
