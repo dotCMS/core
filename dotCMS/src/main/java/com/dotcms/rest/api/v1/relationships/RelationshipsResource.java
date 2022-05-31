@@ -5,6 +5,8 @@ import static com.dotcms.util.CollectionsUtils.toImmutableList;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
+import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -12,13 +14,21 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.RelationshipPaginator;
+import com.dotcms.util.pagination.TemplatePaginator;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -31,6 +41,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.server.JSONP;
+
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 /**
  * This resource provides all the different end-points associated to information and actions that
@@ -124,4 +136,58 @@ public class RelationshipsResource {
         }
     }
 
+    /**
+     * Will return a ContentMap object which can be used on dotCMS front end. This method is better
+     * then the old #pullRelatedContent macro because it doesn't have to parse all the velocity
+     * content object that are returned.  If you are building large pulls and depending on the types
+     * of fields on the content this can get expensive especially with large data sets.<br />
+     * EXAMPLE:<br /> #foreach($con in $dotcontent.pullRelated('myRelationship','asbd-asd-asda-asd','+myField:someValue',false,5,'modDate
+     * desc'))<br /> $con.title<br /> #end<br /> The method will figure out language, working and
+     * live for you if not passed in with the condition Returns empty List if no results are found
+     *
+     * @param relationshipFieldVariable - Name of the relationship as defined in the structure.
+     * @param contentletIdentifier - Identifier of the contentlet
+     * @param luceneCondition - Extra conditions to add to the query. like +title:Some Title.  Can be
+     * Null
+     * @param pullParents Should the related pull be based on Parents or Children
+     * @param limit 0 is the dotCMS max limit which is 10000. Be careful when searching for
+     * unlimited amount as all content will load into memory
+     * @param orderby - Velocity variable name to sort by.  This is a string and can contain multiple
+     * values "sort1 acs, sort2 desc". Can be Null
+     * @return Returns empty List if no results are found
+     */
+    public Response pullRelated(@Context final HttpServletRequest request,
+                                @Context final HttpServletResponse response,
+                                @QueryParam("relationshipfieldvariable")   final String relationshipFieldVariable,
+                                @QueryParam("identifier")   final String contentletIdentifier,
+                                @QueryParam(PaginationUtil.FILTER)                             final String luceneCondition,
+                                @DefaultValue("40") @QueryParam(PaginationUtil.PER_PAGE)       final int limit,
+                                @QueryParam(PaginationUtil.PAGE)                               final int offset,
+                                @DefaultValue("mod_date") @QueryParam(PaginationUtil.ORDER_BY) final String orderby,
+                                @DefaultValue("DESC") @QueryParam(PaginationUtil.DIRECTION)    final String direction) {
+
+            final InitDataObject initData = this.webResource.init(null, request, response, true, null);
+
+            Logger.debug(this, ()-> "Requesting pull related parents for the contentletIdentifier: " + contentletIdentifier +
+                                ", relationshipFieldVariable: " + relationshipFieldVariable + ", luceneCondition: " + luceneCondition +
+                                ", limit: " + limit + ", offset: " + offset + ", orderby: " + orderby + ", direction: " + direction);
+
+            final User user = initData.getUser();
+            final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
+            final long langId = UtilMethods.isSet(luceneCondition)
+                    && luceneCondition.contains("languageId") ? -1 : language.getId();
+            final String tmDate = request.getSession (false) != null?
+                    (String) request.getSession (false).getAttribute("tm_date"):null;
+            final PageMode mode = PageMode.get(request);
+            final boolean editOrPreviewMode = !mode.showLive;
+            final List<Contentlet> retrievedContentlets = ContentUtils
+                    .pullRelated(relationshipFieldVariable, contentletIdentifier,
+                            luceneCondition == null ? luceneCondition : ContentUtils.addDefaultsToQuery(luceneCondition, editOrPreviewMode, request),
+                            true,
+                            limit, orderby + " " +  direction,
+                            user, tmDate, langId,
+                            editOrPreviewMode? null : true);
+
+            return Response.ok(new ResponseEntityView(retrievedContentlets)).build();
+    }
 }
