@@ -12,8 +12,7 @@
                         #contentTypeNameInput
                         type="text"
                         [value]="contentType.name"
-                        (keydown.enter)="fireChangeName()"
-                        (keydown.escape)="dotEditInline.hideContent()"
+                        (keyup)="inputValueHandler($event)"
                         pInputText
                         dotAutofocus
                     />
