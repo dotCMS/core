@@ -655,7 +655,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	                                                });
 	
 	
-	@CloseDBIfOpened
+	@WrapInTransaction
 	public Folder findSystemFolder()  {
 		return loadSystemFolder.get();
 	}
