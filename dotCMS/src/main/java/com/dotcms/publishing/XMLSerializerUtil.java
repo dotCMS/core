@@ -1,6 +1,7 @@
 package com.dotcms.publishing;
 
 
+import com.dotcms.util.XStreamFactory;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.XStreamException;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
@@ -28,7 +29,7 @@ public class XMLSerializerUtil {
     }
 
     private XMLSerializerUtil(){
-        xmlSerializer = new XStream(new DomDriver(StandardCharsets.UTF_8.name()));
+        xmlSerializer = XStreamFactory.INSTANCE.getInstance(StandardCharsets.UTF_8);
     }
 
     public XStream getXmlSerializer() {
