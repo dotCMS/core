@@ -1,0 +1,27 @@
+<dot-avatar
+    [label]="persona.name"
+    [showDot]="persona.personalized"
+    [size]="32"
+    [url]="persona.photo"
+></dot-avatar>
+
+<!-- Inline CSS code added to allow ellipsis on 2nd line, if this is moved to the SCCS file the pre-compiler cries -->
+<span
+    class="dot-persona-selector-option__label"
+    style="-webkit-box-orient: vertical; -moz-box-orient: vertical"
+    [ngClass]="{
+        'dot-persona-selector-option__personalized': persona.personalized,
+        'dot-persona-selector-option__selected': selected
+    }"
+    >{{ persona.name }}
+</span>
+
+<button
+    (click)="deletePersonalized($event)"
+    *ngIf="canDespersonalize && persona.personalized"
+    icon="fa fa-times"
+    iconPos="right"
+    label="{{ 'modes.persona.personalized' | dm }}"
+    pButton
+    class="p-button-secondary p-button-sm"
+></button>

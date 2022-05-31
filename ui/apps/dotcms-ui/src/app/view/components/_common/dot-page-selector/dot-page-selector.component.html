@@ -1,0 +1,40 @@
+<div class="field">
+    <label class="form__label">{{ label }}</label>
+    <p-autoComplete
+        #autoComplete
+        appendTo="body"
+        data-testId="p-autoComplete"
+        (completeMethod)="search($event)"
+        (keydown.enter)="onKeyEnter($event)"
+        (keydown.tab)="$event.preventDefault()"
+        (onClear)="onClear()"
+        (onSelect)="onSelect($event)"
+        [minLength]="2"
+        field="label"
+        [ngModel]="val"
+        [suggestions]="suggestions$ | async"
+        [placeholder]="'page.selector.placeholder' | dm"
+    >
+        <ng-template let-item pTemplate="item">
+            <div class="dot-page-selector__item">
+                <span *ngIf="searchType === 'site'; else notSite">{{ item.label }}</span>
+                <ng-template #notSite>
+                    <span class="dot-page-selector__item-url">
+                        {{ item.payload.path }}
+                    </span>
+                    <span class="dot-page-selector__item-host">
+                        {{ item.payload.hostName }}
+                    </span>
+                </ng-template>
+            </div>
+        </ng-template>
+    </p-autoComplete>
+    <small
+        data-testId="message"
+        [class]="isError ? 'p-invalid' : 'p-info'"
+        [textContent]="message"
+    ></small>
+    <dot-field-helper
+        [message]="(folderSearch ? 'page.selector.folder.hint' : 'page.selector.hint') | dm"
+    ></dot-field-helper>
+</div>

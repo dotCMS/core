@@ -194,7 +194,7 @@
         function performMark(callback) {
             var keyword = keywordLogInput.value;
 
-            if (keyword && keyword.length > 1) {
+            if (keyword && keyword.length > 2) {
                 new HR(".logViewerPrinted", {
                     highlight: [keyword]
                 }).hr();

@@ -217,6 +217,11 @@
             initialWidth : '100%',
             autoHeight : true,
             escapeHTMLInData : false,
+            onClick: function(event) {
+                if (event.dispatch !== 'doclick') {
+                    grid.selection.clear();
+                }
+            },
             structure : layout,
             plugins : {
                 pagination : {
