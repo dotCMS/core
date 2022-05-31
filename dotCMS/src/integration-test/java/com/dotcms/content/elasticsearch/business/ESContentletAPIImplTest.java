@@ -1215,7 +1215,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
         new FieldVariableDataGen()
                 .key(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)
-                .value("false")
+                .value("true")
                 .field(uniqueTextField)
                 .nextPersisted();
 
@@ -1325,23 +1325,18 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      */
     @Test
     public void savingFieldWithUniqueFieldInDifferentHostUsingContentTypeHost() throws DotDataException, DotSecurityException {
-        final ContentType contentType = new ContentTypeDataGen()
-                .nextPersisted();
-
         final Field uniqueTextField = new FieldDataGen()
-                .contentTypeId(contentType.id())
                 .unique(true)
                 .type(TextField.class)
-                .nextPersisted();
-
-        new FieldVariableDataGen()
-                .key(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)
-                .value("true")
-                .field(uniqueTextField)
-                .nextPersisted();
+                .next();
 
         final Host host1 = new SiteDataGen().nextPersisted();
         final Host host2 = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .host(host2)
+                .field(uniqueTextField)
+                .nextPersisted();
 
         final Contentlet contentlet_1 = new ContentletDataGen(contentType)
                 .host(host1)
