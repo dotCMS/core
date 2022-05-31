@@ -328,12 +328,13 @@ function setBrowserFolder(path) {
 			java.util.List permissions = permAsset.getPermissions();
 			//gets template
 			com.dotmarketing.portlets.containers.model.Container container = (com.dotmarketing.portlets.containers.model.Container) permAsset.getAsset();
-			String str_style = "";
+			boolean isSystemContainer = (container.getIdentifier() == "SYSTEM_CONTAINER");
+			String str_style = isSystemContainer ? "class=\" disabled alternate_" : "class=\" alternate_" ;
 			if ((k%2)==0) {
-				str_style = "class=\"alternate_1\"";
+				str_style += "1\"";
 			}
 			else{
-				str_style = "class=\"alternate_2\"";
+				str_style += "2\"";
             }
 
 			//container properties and permissions
@@ -357,7 +358,20 @@ function setBrowserFolder(path) {
 
 		%>
 		<tr <%=str_style%> id="tr<%=k%>">
-			<% if (isDBSource) { %>
+		    <% if (isSystemContainer) { %>
+                 <td nowrap style="text-align:center;">
+                    </td>
+                    <td nowrap>
+                        <%=container.getTitle()%>
+                    </td>
+                    <td nowrap>
+                        <%= com.dotmarketing.util.UtilHTML.getStatusIcons(container) %>
+                    </td>
+                    <td><%=container.getFriendlyName()%></td>
+                    <td nowrap>
+                        <%=modDateFormat.format(container.getModDate())%>
+                    </td>
+			<% } else if (isDBSource) { %>
 			<td nowrap style="text-align:center;">
 
 				<% if (permissions.contains(PermissionAPI.PERMISSION_PUBLISH)) { %>

@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 
 import javax.servlet.ServletContext;
 
+import com.liferay.util.FileUtil;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
@@ -46,6 +47,8 @@ public class ConfigTestHelper extends Config {
             Mockito.when(context.getAttribute(Globals.MESSAGES_KEY)).thenReturn(messages);
 
             final String topPath = Files.createTempDir().getCanonicalPath();
+            final String velocityPath = Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
+            copyVelocityFolder(topPath, velocityPath);
             Mockito.when(context.getRealPath(Matchers.anyString())).thenAnswer(new Answer<String>() {
             //Mockito.when(context.getRealPath(Matchers.matches("^(?!/WEB-INF/felix)(?:[\\S\\s](?!/WEB-INF/felix))*+$"))).thenAnswer(new Answer<String>() {
                 @Override
@@ -93,6 +96,29 @@ public class ConfigTestHelper extends Config {
         dotmarketingPropertiesUrl = getUrlToTestResource("it-dotmarketing-config.properties");
         clusterPropertiesUrl = getUrlToTestResource("it-dotcms-config-cluster.properties");
         setToolboxPath();
+    }
+
+    /*
+    * Copy the velocity code to the temporal directory
+     */
+    private static void copyVelocityFolder(final String topPath, final String velocityPath) throws IOException {
+
+        final File topPathDirectory = new File(topPath);
+        final File velocityDirectory = new File(velocityPath);
+        if (velocityDirectory.exists() && velocityDirectory.canRead()) {
+
+            FileUtil.copyDirectory(velocityDirectory, new File(topPathDirectory, "/WEB-INF/velocity"));
+        } else {
+
+            final String userDirPath = System.getProperty("user.dir");
+            final String userDirPathComplete = userDirPath + "/src/main/webapp/WEB-INF/velocity";
+            final File velocityDirectory2 = new File(userDirPathComplete);
+            if (velocityDirectory2.exists() && velocityDirectory2.canRead()) {
+
+                FileUtil.copyDirectory(velocityDirectory2, new File(topPathDirectory, "/WEB-INF/velocity"));
+            }
+        }
+
     }
 
     private static void setToolboxPath() throws IOException {

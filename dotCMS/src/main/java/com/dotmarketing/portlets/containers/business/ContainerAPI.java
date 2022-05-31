@@ -14,7 +14,11 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -123,6 +127,18 @@ public interface ContainerAPI {
 	 */
 	Container getWorkingContainerByFolderPath(final String path, final Host host, final User user, final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException;
 
+	/**
+	 * Returns the working (including archive) container by path and host; this method is mostly used when the container is file asset based.
+	 * @param path
+	 * @param host
+	 * @param user
+	 * @param respectFrontEndPermissions
+	 * @return Container
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	Container getWorkingArchiveContainerByFolderPath(final String path, final Host host, final User user, final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException;
+
 	/***
 	 * Similar to the {@link #getWorkingContainerByFolderPath(String, Host, User, boolean)} but the host will be figured out from the path, it is particular useful when you
 	 * have the  full path such as //demo.dotcms.com/application/containers/large-column/
@@ -176,21 +192,19 @@ public interface ContainerAPI {
 	 */
 	Container getLiveContainerById(String identifier, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
+
 	/**
-	 * Returns the list of Content Types that are associated to a given Container. Every Container has the ability to be
-	 * related to one or more Content Types depending on how it has been configured. This determines what types of
-	 * Contentlets can be displayed inside a given Container.
 	 *
-	 * @param container The {@link Container} whose related Content Types will be returned.
+	 * Retrieves a list of container-structure relationships by container
 	 *
-	 * @return List of {@link ContainerStructure} objects representing the association between the specified Container
-	 * and one or more Content Types.
-	 *
+	 * @param container
+	 * @return List of ContainerStructure
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 * @throws DotStateException
+	 *
 	 */
-	List<ContainerStructure> getContainerStructures(final Container container) throws DotStateException, DotDataException, DotSecurityException;
+	List<ContainerStructure> getContainerStructures(Container container) throws DotStateException, DotDataException, DotSecurityException;
 
 	/**
 	 * Returns the list of associated Container-to-Content-Type relationships for a given Container. This list
@@ -349,40 +363,6 @@ public interface ContainerAPI {
 	@Deprecated
 	List<Container> findContainers(User user, boolean includeArchived, Map<String,Object> params, String hostId, String inode, String identifier, String parent, int offset, int limit, String orderBy) throws DotSecurityException, DotDataException;
 
-	/**
-	 * Returns a list of Containers in the system, based on the specified search criteria.
-	 *
-	 * @param user        The {@link User} executing this action.
-	 * @param queryParams The {@link SearchParams} object containing the different combinations of search terms.
-	 *
-	 * @return The list of {@link Container} objects that match the search criteria.
-	 *
-	 * @throws DotSecurityException The specified user cannot perform this action.
-	 * @throws DotDataException     An error occurred when interacting with the data source.
-	 */
-	List<Container> findContainers(final User user, final SearchParams queryParams) throws DotSecurityException, DotDataException;
-
-	/**
-	 * Retrieves containers using the specified structure
-	 *
-	 * @param structureInode
-	 * @return
-	 * @throws DotDataException
-	 */
-    List<Container> findContainersForStructure(String structureInode)
-            throws DotDataException;
-
-	/**
-	 * Retrieves containers using the specified structure
-	 *
-	 * @param structureInode
-	 * @param workingOrLiveOnly
-	 * @return
-	 * @throws DotDataException
-	 */
-	List<Container> findContainersForStructure(String structureInode, boolean workingOrLiveOnly)
-			throws DotDataException;
-
     /**
      * 
      * @param assetsOlderThan
@@ -411,6 +391,79 @@ public interface ContainerAPI {
 
     List<ContentType> getContentTypesInContainer(Container container)
             throws DotStateException, DotDataException, DotSecurityException;
+
+	/**
+	 * Publish a container
+	 * @param container {@link Container}
+	 * @param user {@link User}
+	 * @param respectAnonPerms {@link Boolean}
+	 */
+	void publish(Container container, User user, boolean respectAnonPerms) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Unpublish a container
+	 * @param container {@link Container}
+	 * @param user {@link User}
+	 * @param respectAnonPerms {@link Boolean}
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	 void unpublish(final Container container, final User user, final boolean respectAnonPerms) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Archive a container
+	 * @param container {@link Container}
+	 * @param user {@link User}
+	 * @param respectAnonPerms {@link Boolean}
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+    void archive(Container container, User user, boolean respectAnonPerms) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Unarchive a container
+	 * @param container {@link Container}
+	 * @param user {@link User}
+	 * @param respectAnonPerms  {@link Boolean}
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	void unarchive(Container container, User user, boolean respectAnonPerms) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Returns a list of Containers in the system, based on the specified search criteria.
+	 *
+	 * @param user        The {@link User} executing this action.
+	 * @param queryParams The {@link SearchParams} object containing the different combinations of search terms.
+	 *
+	 * @return The list of {@link Container} objects that match the search criteria.
+	 *
+	 * @throws DotSecurityException The specified user cannot perform this action.
+	 * @throws DotDataException     An error occurred when interacting with the data source.
+	 */
+	List<Container> findContainers(final User user, final SearchParams queryParams) throws DotSecurityException, DotDataException;
+
+	/**
+	 * Retrieves containers using the specified structure
+	 *
+	 * @param structureInode
+	 * @return
+	 * @throws DotDataException
+	 */
+	List<Container> findContainersForStructure(String structureInode)
+			throws DotDataException;
+
+	/**
+	 * Retrieves containers using the specified structure
+	 *
+	 * @param structureInode
+	 * @param workingOrLiveOnly
+	 * @return
+	 * @throws DotDataException
+	 */
+	List<Container> findContainersForStructure(String structureInode, boolean workingOrLiveOnly)
+			throws DotDataException;
+
 
 	/**
 	 * Return the {@link ContentType} into a {@link Container} for a specific {@link User}, return a empty List if the
@@ -537,7 +590,7 @@ public interface ContainerAPI {
 		/**
 		 * Finds information for Containers that are related to a specific Content Type.
 		 *
-		 * @return The ID of Velocity Variable Name of the Content Type that must be associated to the Containers that
+		 * @return The ID or Velocity Variable Name of the Content Type that must be associated to the Containers that
 		 * will be returned.
 		 */
 		public String contentTypeIdOrVar() {
@@ -707,7 +760,7 @@ public interface ContainerAPI {
 			/**
 			 * Finds information for Containers that are related to a specific Content Type.
 			 *
-			 * @param contentTypeIdOrVar The ID of Velocity Variable Name of the Content Type that must be associated to
+			 * @param contentTypeIdOrVar The ID or Velocity Variable Name of the Content Type that must be associated to
 			 *                           the Containers that will be returned.
 			 *
 			 * @return The {@link SearchParams.Builder} object.
@@ -757,5 +810,5 @@ public interface ContainerAPI {
 		}
 
 	}
-
+	//
 }
