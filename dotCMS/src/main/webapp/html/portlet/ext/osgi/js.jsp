@@ -237,7 +237,6 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
                         console.error(dataOrError);
                     } else {
                         var packages = dataOrError.replace("SUCCESS:", "");
-                        packages = packages.replace(/,/g, ",\n");
                         dijit.byId('packages').set("value", packages);
                     }
                 } else {
@@ -248,7 +247,70 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
         dijit.byId('packagesOSGIDialog').show();
         dojo.xhrGet(xhrArgs);
     },
+    
+    resetExtraPackages : function(){
 
+        var canContinue = confirm('<%=LanguageUtil.get(pageContext, "OSGI-modify-packages-confirmation") %>');
+        if(canContinue) {
+
+            var fm = dojo.byId("modifyPackagesForm");
+
+            require(["dojo/io/iframe"], function(ioIframe){
+     
+                ioIframe.send({
+                    // The form node, which contains the
+                    // data. We also pull the URL and METHOD from it:
+                    form: fm,
+                    url : "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=modifyExtraPackages&packages=RESET",
+                    method : "get",
+                    // The used data format:
+                    handleAs: "json",
+
+                    // Callback on successful call:
+                    load: function(response, ioArgs) {
+                        // return the response for succeeding callbacks
+                        //setTimeout(function() {mainAdmin.refresh();},7000);
+                        return response;
+                    }
+                });
+            });
+            dijit.byId('packagesOSGIDialog').hide();
+            dijit.byId('savingOSGIDialog').show();
+            setTimeout(function() {bundles.reboot(false);dijit.byId('savingOSGIDialog').hide();},4000);
+        }
+    },
+    
+    processBundle : function(bundleName){
+
+        if(!confirm('<%=LanguageUtil.get(pageContext, "OSGI-process-bundle-confirmation") %>')){
+
+            return;
+        }
+
+
+
+        require(["dojo/io/iframe"], function(ioIframe){
+ 
+            ioIframe.send({
+                url : "/api/osgi/_processExports/" + bundleName,
+                method : "get",
+                // The used data format:
+                handleAs: "json",
+
+                // Callback on successful call:
+                load: function(response, ioArgs) {
+                    // return the response for succeeding callbacks
+                    //setTimeout(function() {mainAdmin.refresh();},7000);
+                    return response;
+                }
+            });
+        });
+        dijit.byId('packagesOSGIDialog').hide();
+        dijit.byId('savingOSGIDialog').show();
+        setTimeout(function() {bundles.reboot(false);dijit.byId('savingOSGIDialog').hide();},4000);
+        
+    },
+    
     modifyExtraPackages : function(){
 
         var canContinue = confirm('<%=LanguageUtil.get(pageContext, "OSGI-modify-packages-confirmation") %>');

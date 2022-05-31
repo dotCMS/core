@@ -1,0 +1,103 @@
+@use "variables" as *;
+
+:host {
+    position: relative;
+    display: block;
+}
+
+.dot-empty-container__notice {
+    .material-icons {
+        color: $brand-primary;
+        font-size: 4rem;
+    }
+
+    position: absolute;
+    padding: $spacing-3 $spacing-5;
+    top: 50%;
+    left: 50%;
+    z-index: 1;
+    transform: translateY(-50%) translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    h3,
+    p {
+        padding: 0;
+        margin: 0;
+    }
+
+    h3 {
+        font-size: $font-size-x-large;
+        margin: $spacing-3 $spacing-0 $spacing-2 $spacing-0;
+        font-weight: $font-weight-semi-bold;
+    }
+
+    p {
+        margin-bottom: $spacing-4;
+    }
+}
+
+.checkbox-dummy {
+    border: 2px solid $gray-bg;
+    background: $white;
+    width: 1.3rem;
+    height: 1.3rem;
+    border-radius: $border-radius;
+    position: relative;
+}
+
+.dot-empty-state {
+    position: relative;
+    border-collapse: collapse;
+    width: 100%;
+    background: $white;
+
+    tbody {
+        tr {
+            border-top: 1px solid $gray-bg;
+            outline: 0 none;
+            background: $white;
+            transition: none;
+            outline-color: transparent;
+
+            td:first-child {
+                width: 5%;
+            }
+
+            td {
+                &:first-child {
+                    padding-left: $spacing-5;
+                }
+                text-align: left;
+                border: 1px solid $gray-bg;
+                border-width: 0 0 1px 0;
+                padding: 1.25rem $spacing-2;
+                width: 3.5%;
+                position: relative;
+
+                .dot-dummy-text {
+                    display: inline-block;
+                    color: transparent;
+                    position: relative;
+                    pointer-events: none;
+                    user-select: none;
+                    height: 0.71rem;
+                }
+
+                .dot-dummy-text::before {
+                    content: "";
+                    position: absolute;
+                    left: 0;
+                    right: 0;
+                    top: 50%;
+                    bottom: 50%;
+                    background-color: $gray-bg;
+                    height: 0.71rem;
+                    transform: translateY(-50%);
+                    border-radius: 1.7rem;
+                }
+            }
+        }
+    }
+}
