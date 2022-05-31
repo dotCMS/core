@@ -2,6 +2,8 @@ package com.dotmarketing.startup.runonce;
 
 import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -92,21 +94,21 @@ public class Task220402UpdateDateTimezones extends Task210901UpdateDateTimezones
     boolean updateTable(final String tableName) throws SQLException {
         boolean tableUpdated = false;
 
-        try (Connection conn = DbConnectionFactory.getConnection()) {
-            final List<String> columNames = getColumnNamesRequiredToMigrate(conn, tableName);
-            if (!columNames.isEmpty()) {
+        final Connection conn = DbConnectionFactory.getConnection();
+        final List<String> columNames = getColumnNamesRequiredToMigrate(conn, tableName);
+        if (!columNames.isEmpty()) {
+            Logger.info(Task220402UpdateDateTimezones.class,
+                    String.format("Updating table %s. ", tableName));
+            final List<String> droppedConstraints = dropConstraintsOrIndicesIfRequired(conn,
+                    tableName);
+            for (final String columnName : columNames) {
                 Logger.info(Task220402UpdateDateTimezones.class,
-                        String.format("Updating table %s. ", tableName));
-                final List<String> droppedConstraints = dropConstraintsOrIndicesIfRequired(conn,
-                        tableName);
-                for (final String columnName : columNames) {
-                    Logger.info(Task220402UpdateDateTimezones.class,
-                            "updating " + tableName + "." + columnName + " to " + DATE_TIME_OFFSET);
-                    final String statementString = String.format(
-                            ALTER_TABLE_ALTER_COLUMN, tableName, columnName);
-                    conn.prepareStatement(statementString).execute();
-                    tableUpdated = true;
-                }
+                        "updating " + tableName + "." + columnName + " to " + DATE_TIME_OFFSET);
+                final String statementString = String.format(
+                        ALTER_TABLE_ALTER_COLUMN, tableName, columnName);
+                conn.prepareStatement(statementString).execute();
+                tableUpdated = true;
+            }
 
                 final int count = droppedConstraints.isEmpty() ? 0
                         : restoreDroppedObjectsIfAny(conn, tableName);
@@ -114,7 +116,7 @@ public class Task220402UpdateDateTimezones extends Task210901UpdateDateTimezones
                         String.format("Table %s successfully updated. %d restore scripts applied.",
                                 tableName, count));
             }
-        }
+
         return tableUpdated;
     }
 
