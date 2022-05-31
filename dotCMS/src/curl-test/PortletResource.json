@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "fe163e1a-f16c-4c84-bd75-8b8f0e06ecb5",
+		"_postman_id": "2ad74bba-9cfc-445d-8a3d-c4a9de134169",
 		"name": "PortletResource",
 		"description": "Contains test for portlet resources",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -69,7 +69,8 @@
 								"_actionurl",
 								"calendarEvent"
 							]
-						}
+						},
+						"description": "Test get portlet operation for calendar-Event"
 					},
 					"response": []
 				},
@@ -256,7 +257,8 @@
 								"_actionurl",
 								"contentTypeNotExist"
 							]
-						}
+						},
+						"description": "Test that when we hit a non existing cotnent-type we get the appropriate 404"
 					},
 					"response": []
 				},
@@ -390,6 +392,70 @@
 			"response": []
 		},
 		{
+			"name": "Create Custom Content Portlet restricted Content-type",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"",
+							"    var jsonData = pm.response.json();",
+							"    ",
+							"",
+							"    pm.expect(jsonData.message).to.eql(\"Invalid attempt to save Portlet for restricted Content Type Host. \");",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"portletId\": \"myCustom\",\n    \"portletName\": \"myCustom\",\n    \"baseTypes\": \"CONTENT\",\n    \"contentTypes\": \"Host\",\n    \"dataViewMode\": \"card\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/portlet/custom",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"portlet",
+						"custom"
+					]
+				},
+				"description": "This test  attempts to create a custom content portlet for The Restricted Content type Host"
+			},
+			"response": []
+		},
+		{
 			"name": "createCustomContentPortlet",
 			"event": [
 				{
@@ -504,7 +570,7 @@
 						"c_myCustom"
 					]
 				},
-				"description": "Retrieves portlet's details given its id"
+				"description": "Retrieves portlet details given its id"
 			},
 			"response": []
 		},
@@ -554,7 +620,7 @@
 						"nonExisingPortlet"
 					]
 				},
-				"description": "Retrieves portlet's details given its id"
+				"description": "expect a 404 out of a non valid portlet identifier"
 			},
 			"response": []
 		},
@@ -607,7 +673,7 @@
 						"menu"
 					]
 				},
-				"description": "Retrieves portlet's details given its id"
+				"description": "Retrieves menu structure"
 			},
 			"response": []
 		},
@@ -736,7 +802,7 @@
 						"{{firstReturnedLayout}}"
 					]
 				},
-				"description": "This test creates a custom content portlet for CONTENT base type"
+				"description": "add a Custom Content portlet To a layout Invalid Custom Expect 404. Because of one of the params is inexistent"
 			},
 			"response": []
 		},
@@ -798,7 +864,7 @@
 						"nonValidLayout"
 					]
 				},
-				"description": "This test creates a custom content portlet for CONTENT base type"
+				"description": "add Custom Content portlet To Layout an Invalid Layout is passed Expect 404"
 			},
 			"response": []
 		},
