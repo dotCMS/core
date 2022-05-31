@@ -8,15 +8,17 @@ oracle 11g express edition running on port 1521
 
 ## Usage
 
-####Run an example:
+#### Run an example:
 
 ```bash
-docker-compose up```
+docker-compose up
+```
 
-####Shut down instances:
+#### Shut down instances:
 
 ```bash
-docker-compose down```
+docker-compose down
+```
 
 **Important note:** `ctrl+c` does not destroy instances
 

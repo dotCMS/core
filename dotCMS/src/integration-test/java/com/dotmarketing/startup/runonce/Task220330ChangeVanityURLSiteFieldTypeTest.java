@@ -45,8 +45,8 @@ public class Task220330ChangeVanityURLSiteFieldTypeTest {
 
     /**
      * Method to test: {@link Task220330ChangeVanityURLSiteFieldType#executeUpgrade}
-     * When: you hace a Vanity URl COntent Type with the site field as a {@link CustomField}
-     * Should: CHange the field type to {@link HostFolderField}
+     * When: you have a Vanity URl Content Type with the site field as a {@link CustomField}
+     * Should: Change the field type to {@link HostFolderField}
      *
      * @throws DotDataException
      * @throws DotSecurityException
@@ -90,6 +90,7 @@ public class Task220330ChangeVanityURLSiteFieldTypeTest {
                     .setProperty(ACTION_FIELD_VAR, 301)
                     .setProperty(ORDER_FIELD_VAR, 0)
                     .setProperty("site", host.getIdentifier())
+                    .host(host)
                     .nextPersistedAndPublish();
 
             Config.setProperty(SAVE_CONTENTLET_AS_JSON, true);
@@ -100,6 +101,7 @@ public class Task220330ChangeVanityURLSiteFieldTypeTest {
                     .setProperty(ACTION_FIELD_VAR, 301)
                     .setProperty(ORDER_FIELD_VAR, 0)
                     .setProperty("site", host.getIdentifier())
+                    .host(host)
                     .nextPersistedAndPublish();
 
             final Task220330ChangeVanityURLSiteFieldType task = new Task220330ChangeVanityURLSiteFieldType();

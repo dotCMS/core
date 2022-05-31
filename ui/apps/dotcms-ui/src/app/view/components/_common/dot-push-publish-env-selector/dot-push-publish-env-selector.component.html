@@ -1,0 +1,21 @@
+<!--
+     TODO: labels for defaultLabel and selectedItemsLabel in p-multiselect need to be changed after refactor of Message Service. https://github.com/primefaces/primeng/issues/2857
+
+     Also there is a problem here, when the field is invalid this multiselect should have the invalid class
+-->
+<p-multiSelect
+    (onChange)="valueChange($event, selectedEnvironments)"
+    [(ngModel)]="selectedEnvironments"
+    [options]="pushEnvironments"
+    appendTo="body"
+    [defaultLabel]="'contenttypes.content.push_publish.select_environment' | dm"
+    optionLabel="name"
+>
+</p-multiSelect>
+
+<ul class="environment-selector__list" *ngIf="showList">
+    <li *ngFor="let environment of selectedEnvironments" class="environment-selector__list-item">
+        <button pButton icon="fa fa-trash" (click)="removeEnvironmentItem(environment)"></button>
+        {{ environment.name }}
+    </li>
+</ul>

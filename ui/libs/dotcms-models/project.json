@@ -1,0 +1,31 @@
+{
+    "projectType": "library",
+    "root": "libs/dotcms-models",
+    "sourceRoot": "libs/dotcms-models/src",
+    "prefix": "dotcms",
+    "targets": {
+        "build": {
+            "executor": "@nrwl/angular:ng-packagr-lite",
+            "options": {
+                "tsConfig": "libs/dotcms-models/tsconfig.lib.json",
+                "project": "libs/dotcms-models/ng-package.json"
+            },
+            "configurations": {
+                "production": {
+                    "tsConfig": "libs/dotcms-models/tsconfig.lib.prod.json"
+                }
+            }
+        },
+        "lint": {
+            "executor": "@nrwl/linter:eslint",
+            "options": {
+                "lintFilePatterns": [
+                    "libs/dotcms-models/src/**/*.ts",
+                    "libs/dotcms-models/src/**/*.html"
+                ]
+            },
+            "outputs": ["{options.outputFile}"]
+        }
+    },
+    "tags": []
+}
