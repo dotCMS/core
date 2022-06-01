@@ -18,10 +18,10 @@ jobs:
         with:
           base: ${{ github.ref }}
           list-files: "json"
-          working-directory: "core"
+          working-directory: "core/ui"
           filters: |
             dotcms-webcomponents:
-              - 'ui/libs/dotcms-webcomponents/**'
+              - 'libs/dotcms-webcomponents/**'
       - name: Changes found
         if: steps.filter.outputs.dotcms-webcomponents == 'true'
         run: |
@@ -101,7 +101,7 @@ jobs:
 
           git add package.json
           git commit -m "CI: bumps version to $pkgVersion [skip ci]"
-          git push https://victoralfaro-dotcms:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/dotcms/core-web
+          git push https://victoralfaro-dotcms:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/dotcms/core
 
       - name: Build dotcms-webcomponents with deps
         run: |
