@@ -31,13 +31,14 @@ public class Task220413IncreasePublishedPushedAssetIdColTest {
      */
     @Test(expected = DotDataException.class)
     public void test_upgradeTask_noCapacity() throws DotDataException, SQLException {
-        final Connection conn = DbConnectionFactory.getConnection();
+        Connection conn = DbConnectionFactory.getConnection();
         try {
             conn.setAutoCommit(true);
             rollbackToOriginal();
 
             insertPublishedAsset(ASSET_ID);
         } finally {
+            conn = DbConnectionFactory.getConnection();
             conn.setAutoCommit(false);
             conn.close();
         }
@@ -49,7 +50,6 @@ public class Task220413IncreasePublishedPushedAssetIdColTest {
      */
     @Test
     public void test_upgradeTask() throws DotDataException, SQLException {
-        final Connection conn = DbConnectionFactory.getConnection();
         try {
             rollbackToOriginal();
 
@@ -64,6 +64,7 @@ public class Task220413IncreasePublishedPushedAssetIdColTest {
                 Assert.fail();
             }
         } finally {
+            final Connection conn = DbConnectionFactory.getConnection();
             conn.setAutoCommit(false);
             conn.close();
         }
