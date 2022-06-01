@@ -606,4 +606,3 @@ dependencies {
     compileOnly fileTree("../libs/buildlibs").include('mail.jar')
 
 }
-s
