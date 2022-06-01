@@ -182,7 +182,7 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
 
     function onExit() {
         myTippy?.destroy();
-        suggestionsComponent.destroy();
+        suggestionsComponent = null;
         destroy$.next(true);
         destroy$.complete();
     }
