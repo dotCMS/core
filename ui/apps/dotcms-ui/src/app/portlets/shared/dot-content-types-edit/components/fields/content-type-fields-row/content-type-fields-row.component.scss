@@ -1,0 +1,109 @@
+@use "variables" as *;
+
+:host {
+    display: block;
+    margin-bottom: $spacing-3;
+    padding: 0 $spacing-3 $spacing-3;
+    position: relative;
+    transition: box-shadow $basic-speed;
+    background: $white;
+
+    &:last-child {
+        margin-bottom: 0;
+    }
+}
+
+.row-columns {
+    display: flex;
+    background: $gray-bg;
+    padding: $spacing-1;
+}
+
+.row-columns__item {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    margin: 0 $spacing-1;
+    padding-bottom: 0;
+    position: relative;
+
+    &:after {
+        border: dashed 1px $gray;
+        bottom: 0;
+        color: $gray;
+        content: var(--empty-message);
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        font-size: $font-size-small;
+        justify-content: center;
+        min-height: $content-type-field-height;
+        pointer-events: none;
+        text-align: center;
+    }
+
+    &::ng-deep {
+        li {
+            background-color: $white;
+            height: $content-type-field-height;
+            margin: 0;
+        }
+    }
+
+    &:first-child {
+        margin-left: 0;
+    }
+
+    &:last-of-type {
+        margin-right: 0;
+    }
+
+    &.empty {
+        background: $gray-bg;
+        min-height: $content-type-field-height * 2;
+
+        dot-content-type-field-dragabble-item {
+            margin-bottom: 0;
+        }
+
+        &:after {
+            min-height: 100%;
+            margin-top: 0;
+        }
+    }
+
+    &--over {
+        &:after {
+            display: none;
+        }
+
+        dot-content-type-field-dragabble-item:last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    dot-content-type-field-dragabble-item {
+        margin-bottom: $spacing-1;
+    }
+}
+
+.row-header {
+    opacity: 0.25;
+    text-align: center;
+    transition: opacity $basic-speed;
+    margin: 0 -#{$spacing-3};
+}
+
+.row-header__drag {
+    cursor: move;
+    display: block;
+    height: $spacing-3;
+    width: 100%;
+}
+
+.row-header__remove {
+    cursor: pointer;
+    position: absolute;
+    right: $spacing-1;
+    top: $spacing-1;
+}

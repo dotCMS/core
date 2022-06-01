@@ -1,0 +1,48 @@
+@use "variables" as *;
+
+:host ::ng-deep .p-button {
+    // TODO: move this to an extend
+    font-size: $font-size-small;
+    padding: $spacing-1 $spacing-2;
+}
+
+h3 {
+    margin: 0 $spacing-2 0 0;
+    font-size: $font-size-xx-large;
+    line-height: 1.6; // Default 39px height
+}
+
+.dot-portlet-toolbar__actions {
+    display: flex;
+    margin-left: $spacing-1;
+    align-items: center;
+
+    & > * {
+        margin-left: $spacing-1;
+    }
+}
+
+.dot-portlet-toolbar__extra-left,
+.dot-portlet-toolbar__extra-right {
+    display: flex;
+    align-items: center;
+}
+
+.dot-portlet-toolbar__extra-left ::ng-deep {
+    & > * {
+        margin-right: $spacing-3;
+
+        &:last-child {
+            margin-right: 0;
+        }
+    }
+}
+.dot-portlet-toolbar__extra-right ::ng-deep {
+    & > * {
+        margin-left: $spacing-3;
+
+        &:first-child {
+            margin-left: 0;
+        }
+    }
+}

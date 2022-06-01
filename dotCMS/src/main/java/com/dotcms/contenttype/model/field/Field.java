@@ -302,6 +302,10 @@ public abstract class Field implements FieldIf, Serializable {
     return Optional.empty();
   }
 
-  ;
-
+  public Optional<String> fieldVariableValue(final String fieldVariableName) {
+    return this.fieldVariables().stream()
+            .filter(fieldVariable -> fieldVariable.key().equals(fieldVariableName))
+            .map(fieldVariable -> fieldVariable.value())
+            .findFirst();
+  }
 }

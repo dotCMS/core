@@ -6,15 +6,33 @@ on:
       - master
       - release-*
 jobs:
+  module-matcher-job:
+    name: Module Matcher
+    runs-on: ubuntu-latest
+    outputs:
+      module_found: ${{ steps.module-matcher.outputs.module_found }}
+    steps:
+      - id: fetch-core
+        name: Fetch Core repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - id: module-matcher
+        name: Module Matcher
+        uses: ./.github/actions/module-matcher
+        with:
+          current: core
   run-unit-tests-job:
     name: Unit Tests
     runs-on: ubuntu-latest
+    needs: module-matcher-job
     env:
       DOT_CICD_BRANCH: master
       EXPORT_REPORTS: true
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
+    if: needs.module-matcher-job.outputs.module_found == 'true'
     steps:
       - name: GITHUB CONTEXT
         env:
@@ -56,6 +74,8 @@ jobs:
   run-curl-tests-job:
     name: Curl Tests
     runs-on: ubuntu-latest
+    needs: module-matcher-job
+    if: needs.module-matcher-job.outputs.module_found == 'true'
     env:
       DOT_CICD_BRANCH: master
       EXPORT_REPORTS: true
@@ -71,7 +91,7 @@ jobs:
       - name: Get commit message
         id: get-commit-message
         uses: dotcms/get-commit-message@master
-        
+
         with:
           accessToken: ${{ secrets.GITHUB_TOKEN }}
       - name: Set Common Vars
@@ -117,11 +137,13 @@ jobs:
   run-integration-tests-job:
     name: Integration Tests
     runs-on: ubuntu-latest
+    needs: module-matcher-job
+    if: needs.module-matcher-job.outputs.module_found == 'true'
     continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
-        databaseType: [ postgres, mssql ]
+        databaseType: [postgres, mssql]
     env:
       DOT_CICD_BRANCH: master
       EXPORT_REPORTS: true
@@ -205,8 +227,14 @@ jobs:
       GITHUB_USER: victoralfaro-dotcms
       GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
-    if: success() || failure()
-    needs: [run-unit-tests-job, run-curl-tests-job, run-integration-tests-job]
+    needs:
+      [
+        module-matcher-job,
+        run-unit-tests-job,
+        run-curl-tests-job,
+        run-integration-tests-job,
+      ]
+    if: (success() || failure()) && needs.module-matcher-job.outputs.module_found == 'true'
     steps:
       - name: GITHUB CONTEXT
         env:
