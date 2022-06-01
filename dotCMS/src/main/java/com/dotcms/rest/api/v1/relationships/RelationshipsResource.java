@@ -157,7 +157,7 @@ public class RelationshipsResource {
     @Path("parents")
     public Response pullRelatedParents(@Context final HttpServletRequest request,
                                 @Context final HttpServletResponse response,
-                                @QueryParam("relationshipfieldvariable")   final String relationshipFieldVariable,
+                                @QueryParam("fieldvariable")   final String relationshipFieldVariable,
                                 @QueryParam("identifier")   final String contentletIdentifier,
                                 @QueryParam(PaginationUtil.FILTER)                             final String luceneCondition,
                                 @DefaultValue("40") @QueryParam(PaginationUtil.PER_PAGE)       final int limit,
