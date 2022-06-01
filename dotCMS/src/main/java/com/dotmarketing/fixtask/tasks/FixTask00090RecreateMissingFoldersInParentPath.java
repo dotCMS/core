@@ -6,6 +6,7 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.util.CloseUtils;
+import com.dotcms.util.XStreamFactory;
 import com.dotmarketing.beans.FixAudit;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -205,7 +206,7 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
 	@Override
 	public List<Map<String, String>> getModifiedData() {
 		if (modifiedData.size() > 0) {
-			XStream _xstream = new XStream(new DomDriver());
+			XStream _xstream = XStreamFactory.INSTANCE.getInstance();
 			Date date = new Date();
 			SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
 			String lastmoddate = sdf.format(date);
