@@ -17,15 +17,26 @@
         <script src="swagger-ui-standalone-preset.js"></script>
 
         <script>
+            const HideSchemes = function() {
+                return {
+                    components: {
+                        schemes: function() {
+                            return null
+                        }
+                    }
+                }
+            }
+
             window.onload = function() {
                 const ui = SwaggerUIBundle({
                     url: "../../../../api/openapi.json",
-                    // deepLinking: true,
                     dom_id: '#swagger-ui',
                     presets: [
                         SwaggerUIBundle.presets.apis,
                         SwaggerUIStandalonePreset
-                    ]
+                    ],
+                    plugins: [HideSchemes],
+                    layout: "BaseLayout",
                 })
 
                 window.ui = ui

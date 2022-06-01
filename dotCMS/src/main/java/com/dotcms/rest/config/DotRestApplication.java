@@ -79,6 +79,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.servers.Server;
 import io.swagger.v3.oas.annotations.servers.ServerVariable;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 
 import java.util.Map;
@@ -96,24 +97,22 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 
 @OpenAPIDefinition(
-		info =
-		@Info(
+		info = @Info(
 				title = "dotCMS REST API",
-				version = "3",
-				description = "dotCMS REST API"),
-		security = {
-				@SecurityRequirement(name = "API Token"),
-				@SecurityRequirement(name = "Basic Auth")
-		},
-		servers = {
-				@Server(
+				version = "3"),
+		servers = @Server(
 						description = "dotCMS Server",
-						url = "/api")
+						url = "/api"),
+		tags = {
+				@Tag(name = "Workflow"),
+				@Tag(name = "Page"),
+				@Tag(name = "Content Type"),
+				@Tag(name = "Content Delivery"),
+				@Tag(name = "Bundle"),
+				@Tag(name = "Navigation")
 		}
 )
 
-@SecurityScheme(name = "API Token", description = "API Token Authentication", type = SecuritySchemeType.APIKEY, scheme = "Bearer", in = SecuritySchemeIn.HEADER)
-@SecurityScheme(name = "Basic Auth", type = SecuritySchemeType.HTTP, scheme = "Basic")
 public class DotRestApplication extends javax.ws.rs.core.Application {
 
 	private static final String RELEASE_VERSION = ReleaseInfo.getVersion();

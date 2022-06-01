@@ -105,6 +105,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Tuple2;
 import java.io.File;
 import java.io.IOException;
@@ -169,6 +170,7 @@ import org.glassfish.jersey.server.JSONP;
  */
 @SuppressWarnings("serial")
 @Path("/v1/workflow")
+@Tag(name = "Workflow")
 public class WorkflowResource {
 
     public  final static String VERSION       = "1.0";
