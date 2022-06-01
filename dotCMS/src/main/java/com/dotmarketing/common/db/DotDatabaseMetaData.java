@@ -546,9 +546,7 @@ public class DotDatabaseMetaData {
     }
 
     public void dropIndex(final String tableName, final String indexName) throws SQLException {
-        try (Connection conn = DbConnectionFactory.getConnection()) {
-            dropIndex(conn, tableName, indexName);
-        }
+        dropIndex(DbConnectionFactory.getConnection(), tableName, indexName);
     }
 
     public void dropIndex(final Connection connection,
