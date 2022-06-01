@@ -333,7 +333,7 @@ public class ESMappingUtilHelperTest {
                     .setProperty("myDateField", new Date())
                     .setProperty("myDateTimeField", new Date()).nextPersisted();
 
-            final String formatExpected = "yyyy-MM-dd't'HH:mm:ssZ||yyyy-MM-dd't'HH:mm:ss||MMM d, yyyy h:mm:ss a||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd HH:mm:ss.SSS||yyyy-MM-dd";
+            final String formatExpected = "yyyy-MM-dd't'HH:mm:ssZ||yyyy-MM-dd't'HH:mm:ss||MMM d, yyyy h:mm:ss a||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd HH:mm:ss.SSS||yyyy-MM-dd||epoch_millis";
 
             //verifies mapping type for common text fields
             Map<String, String> mapping = (Map<String, String>) esMappingAPI
