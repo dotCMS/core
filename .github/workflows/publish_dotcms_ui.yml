@@ -18,7 +18,7 @@ jobs:
         with:
           base: ${{ github.ref }}
           list-files: "json"
-          working-directory: "core/ui"
+          working-directory: "ui"
           filters: |
             dotcms-ui:
               - 'apps/dotcms-ui/src/**'
