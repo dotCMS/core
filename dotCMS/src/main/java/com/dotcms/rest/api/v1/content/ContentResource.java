@@ -39,6 +39,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -242,7 +243,7 @@ public class ContentResource {
      * @param pullRelatedForm {@link PullRelatedForm}
      * @return Returns empty List if no results are found
      */
-    @GET
+    @POST
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -268,10 +269,11 @@ public class ContentResource {
         final boolean editOrPreviewMode = !mode.showLive;
         final Contentlet contentlet = APILocator.getContentletAPI().
                 findContentletByIdentifier(pullRelatedForm.getIdentifier(), mode.showLive, langId, user, mode.respectAnonPerms);
+
         if (null ==  contentlet || !InodeUtils.isSet(contentlet.getIdentifier())) {
 
-            Logger.debug(this, ()-> "The identifier:" + contentlet.getIdentifier() + " does not exists");
-            throw new DoesNotExistException("The identifier:" + contentlet.getIdentifier() + " does not exists");
+            Logger.debug(this, ()-> "The identifier:" + pullRelatedForm.getIdentifier() + " does not exists");
+            throw new DoesNotExistException("The identifier:" + pullRelatedForm.getIdentifier() + " does not exists");
         }
 
         final Field field = contentlet.getContentType().fieldMap().get(pullRelatedForm.getFieldVariable());
