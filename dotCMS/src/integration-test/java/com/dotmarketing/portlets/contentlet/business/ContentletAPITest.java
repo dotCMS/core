@@ -5,6 +5,7 @@ import static com.dotcms.contenttype.model.type.BaseContentType.FILEASSET;
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.business.APILocator.getContentTypeFieldAPI;
 import static java.io.File.separator;
+import static java.util.Collections.list;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -18,6 +19,7 @@ import static org.junit.Assert.fail;
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
+import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.model.field.*;
@@ -66,6 +68,7 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.contentlet.transform.ContentletTransformer;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -3816,10 +3819,8 @@ public class ContentletAPITest extends ContentletBaseTest {
      */
     @Test
     public void testUpdatePublishExpireDatesFromIdentifier() throws Exception {
-
+        ESContentletAPIImpl.setUniquePublishExpireDatePerLanguages(true);
         final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-        List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
 
         com.dotcms.contenttype.model.field.Field publishField = new FieldDataGen()
                 .name("Pub Date")
@@ -3827,7 +3828,6 @@ public class ContentletAPITest extends ContentletBaseTest {
                 .defaultValue(null)
                 .type(DateField.class)
                 .next();
-        fields.add(publishField);
 
         com.dotcms.contenttype.model.field.Field expireField = new FieldDataGen()
                 .name("Exp Date")
@@ -3835,17 +3835,15 @@ public class ContentletAPITest extends ContentletBaseTest {
                 .defaultValue(null)
                 .type(DateField.class)
                 .next();
-        fields.add(expireField);
 
         com.dotcms.contenttype.model.field.Field textField = new FieldDataGen()
                 .name("JUnit Test Text")
                 .velocityVarName("title")
                 .next();
-        fields.add(textField);
 
         // Creating the test content type
         final ContentType testContentType = new ContentTypeDataGen()
-                .fields(fields)
+                .fields(CollectionsUtils.list(textField, expireField, publishField))
                 .publishDateFieldVarName(publishField.variable())
                 .expireDateFieldVarName(expireField.variable())
                 .nextPersisted();
@@ -3860,14 +3858,11 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         // get default lang and one alternate to play with sibblings
         long deflang=APILocator.getLanguageAPI().getDefaultLanguage().getId();
-        long altlang=-1;
-        for(Language ll : APILocator.getLanguageAPI().getLanguages())
-            if(ll.getId()!=deflang)
-                altlang=ll.getId();
+        final Language altlang = new LanguageDataGen().nextPersisted();
 
         // if we save using d1 & d1 then the identifier should
         // have those values after save
-        Contentlet c1=new Contentlet();
+        Contentlet c1 = new Contentlet();
         c1.setStructureInode(testContentType.inode());
         c1.setStringProperty(textField.variable(), "c1");
         c1.setDateProperty(publishField.variable(), d1);
@@ -3895,11 +3890,11 @@ public class ContentletAPITest extends ContentletBaseTest {
         c2.setIdentifier(c1.getIdentifier());
         c2.setDateProperty(publishField.variable(), d3);
         c2.setDateProperty(expireField.variable(), d4);
-        c2.setLanguageId(altlang);
+        c2.setLanguageId(altlang.getId());
         c2.setIndexPolicy(IndexPolicy.FORCE);
         c2=APILocator.getContentletAPI().checkin(c2, user, false);
 
-        Identifier ident2=APILocator.getIdentifierAPI().find(c2);
+        Identifier ident2 = APILocator.getIdentifierAPI().find(c2);
         assertNotNull(ident2.getSysPublishDate());
         assertNotNull(ident2.getSysExpireDate());
 
@@ -3907,26 +3902,31 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals(dateFormat.format(d4), dateFormat.format(ident2.getSysExpireDate()));
 
         // the other contentlet should have the same dates if we read it again
-        Contentlet c11=APILocator.getContentletAPI().find(c1.getInode(), user, false);
+        Contentlet c11 = APILocator.getContentletAPI().find(c1.getInode(), user, false);
         assertEquals(dateFormat.format(d3),
                 dateFormat.format(c11.getDateProperty(publishField.variable())));
         assertEquals(dateFormat.format(d4),
                 dateFormat.format(c11.getDateProperty(expireField.variable())));
 
-        Thread.sleep(2000); // wait a bit for the index
-        
+        Contentlet c21 = APILocator.getContentletAPI().find(c2.getInode(), user, false);
+        assertEquals(dateFormat.format(d3),
+                dateFormat.format(c21.getDateProperty(publishField.variable())));
+        assertEquals(dateFormat.format(d4),
+                dateFormat.format(c21.getDateProperty(expireField.variable())));
+
         // also it should be in the index update with the new dates
         String q = "+structureName:" + testContentType.variable() +
-                " +inode:"+c11.getInode()+
+                " +inode:"+c11.getInode() +
                 " +" + testContentType.variable() + "." + publishField.variable() + ":" + DateUtil
                 .toLuceneDateTime(d3) +
                 " +" + testContentType.variable() + "." + expireField.variable() + ":" + DateUtil
                 .toLuceneDateTime(d4);
+
         final long count = APILocator.getContentletAPI().indexCount(q, user, false);
         assertEquals(1, count);
     }
 
-    @Test
+    ////@Test
     public void rangeQuery() throws Exception {
         // https://github.com/dotCMS/dotCMS/issues/2630
         Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ) + "zzzvv", "junit_test_structure_" + String.valueOf( new Date().getTime() ) + "zzzvv" );

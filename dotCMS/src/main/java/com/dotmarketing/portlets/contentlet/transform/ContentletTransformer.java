@@ -1,5 +1,8 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
+import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.isUniquePublishExpireDatePerLanguages;
+import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.setPublishExpireDateFromIdentifier;
+
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -151,8 +154,8 @@ public class ContentletTransformer implements DBTransformer {
             contentlet.setHost(identifier.getHostId());
             contentlet.setFolder(folder.getInode());
 
-            if (isUniquePublishExpireDate()) {
-                setPublishExpireDateFromIdentifier(contentlet, contentTypeId, identifier);
+            if (isUniquePublishExpireDatePerLanguages()) {
+                setPublishExpireDateFromIdentifier(contentlet);
             }
 
         } else {
@@ -178,8 +181,11 @@ public class ContentletTransformer implements DBTransformer {
         return IS_UNIQUE_PUBLISH_EXPIRE_DATE.get();
     }
 
-    private static void setPublishExpireDateFromIdentifier(Contentlet contentlet, String contentTypeId,
-            Identifier identifier) throws DotSecurityException, DotDataException {
+    private static void setPublishExpireDateFromIdentifier(final Contentlet contentlet) throws DotSecurityException, DotDataException {
+
+        final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
+        final String contentTypeId = contentlet.getContentTypeId();
+
         final ContentType contentType = APILocator.getContentTypeAPI(
                         APILocator.systemUser())
                 .find(contentTypeId);
