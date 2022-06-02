@@ -3819,111 +3819,119 @@ public class ContentletAPITest extends ContentletBaseTest {
      */
     @Test
     public void testUpdatePublishExpireDatesFromIdentifier() throws Exception {
+        final boolean uniquePublishExpireDatePerLanguages = ContentletTransformer.isUniquePublishExpireDatePerLanguages();
         ContentletTransformer.setUniquePublishExpireDatePerLanguages(true);
-        final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        
+        try {
+            final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-        com.dotcms.contenttype.model.field.Field publishField = new FieldDataGen()
-                .name("Pub Date")
-                .velocityVarName("sysPublishDate")
-                .defaultValue(null)
-                .type(DateField.class)
-                .next();
+            com.dotcms.contenttype.model.field.Field publishField = new FieldDataGen()
+                    .name("Pub Date")
+                    .velocityVarName("sysPublishDate")
+                    .defaultValue(null)
+                    .type(DateField.class)
+                    .next();
 
-        com.dotcms.contenttype.model.field.Field expireField = new FieldDataGen()
-                .name("Exp Date")
-                .velocityVarName("sysExpireDate")
-                .defaultValue(null)
-                .type(DateField.class)
-                .next();
+            com.dotcms.contenttype.model.field.Field expireField = new FieldDataGen()
+                    .name("Exp Date")
+                    .velocityVarName("sysExpireDate")
+                    .defaultValue(null)
+                    .type(DateField.class)
+                    .next();
 
-        com.dotcms.contenttype.model.field.Field textField = new FieldDataGen()
-                .name("JUnit Test Text")
-                .velocityVarName("title")
-                .next();
+            com.dotcms.contenttype.model.field.Field textField = new FieldDataGen()
+                    .name("JUnit Test Text")
+                    .velocityVarName("title")
+                    .next();
 
-        // Creating the test content type
-        final ContentType testContentType = new ContentTypeDataGen()
-                .fields(CollectionsUtils.list(textField, expireField, publishField))
-                .publishDateFieldVarName(publishField.variable())
-                .expireDateFieldVarName(expireField.variable())
-                .nextPersisted();
+            // Creating the test content type
+            final ContentType testContentType = new ContentTypeDataGen()
+                    .fields(CollectionsUtils.list(textField, expireField, publishField))
+                    .publishDateFieldVarName(publishField.variable())
+                    .expireDateFieldVarName(expireField.variable())
+                    .nextPersisted();
 
-        // some dates to play with
+            // some dates to play with
 
-        String date = "2222-08-11 10:20:56";
-        Date d1= dateFormat.parse(date);
-        Date d2=new Date(d1.getTime()+60000L);
-        Date d3=new Date(d2.getTime()+60000L);
-        Date d4=new Date(d3.getTime()+60000L);
+            String date = "2222-08-11 10:20:56";
+            Date d1 = dateFormat.parse(date);
+            Date d2 = new Date(d1.getTime() + 60000L);
+            Date d3 = new Date(d2.getTime() + 60000L);
+            Date d4 = new Date(d3.getTime() + 60000L);
 
-        // get default lang and one alternate to play with sibblings
-        long deflang=APILocator.getLanguageAPI().getDefaultLanguage().getId();
-        final Language altlang = new LanguageDataGen().nextPersisted();
+            // get default lang and one alternate to play with sibblings
+            long deflang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+            final Language altlang = new LanguageDataGen().nextPersisted();
 
-        // if we save using d1 & d1 then the identifier should
-        // have those values after save
-        Contentlet c1 = new Contentlet();
-        c1.setStructureInode(testContentType.inode());
-        c1.setStringProperty(textField.variable(), "c1");
-        c1.setDateProperty(publishField.variable(), d1);
-        c1.setDateProperty(expireField.variable(), d2);
-        c1.setLanguageId(deflang);
-        c1.setIndexPolicy(IndexPolicy.FORCE);
-        c1=APILocator.getContentletAPI().checkin(c1, user, false);
+            // if we save using d1 & d1 then the identifier should
+            // have those values after save
+            Contentlet c1 = new Contentlet();
+            c1.setStructureInode(testContentType.inode());
+            c1.setStringProperty(textField.variable(), "c1");
+            c1.setDateProperty(publishField.variable(), d1);
+            c1.setDateProperty(expireField.variable(), d2);
+            c1.setLanguageId(deflang);
+            c1.setIndexPolicy(IndexPolicy.FORCE);
+            c1 = APILocator.getContentletAPI().checkin(c1, user, false);
 
-        Identifier idenFromCache = APILocator.getIdentifierAPI().loadFromCache(c1.getIdentifier());
-        Logger.info(this, "IdentifierFromCache:" + idenFromCache);
+            Identifier idenFromCache = APILocator.getIdentifierAPI()
+                    .loadFromCache(c1.getIdentifier());
+            Logger.info(this, "IdentifierFromCache:" + idenFromCache);
 
-        Identifier ident=APILocator.getIdentifierAPI().find(c1);
-        assertNotNull(ident.getSysPublishDate());
-        assertNotNull(ident.getSysExpireDate());
+            Identifier ident = APILocator.getIdentifierAPI().find(c1);
+            assertNotNull(ident.getSysPublishDate());
+            assertNotNull(ident.getSysExpireDate());
 
-        assertEquals(dateFormat.format(d1), dateFormat.format(ident.getSysPublishDate()));
-        assertEquals(dateFormat.format(d2), dateFormat.format(ident.getSysExpireDate()));
+            assertEquals(dateFormat.format(d1), dateFormat.format(ident.getSysPublishDate()));
+            assertEquals(dateFormat.format(d2), dateFormat.format(ident.getSysExpireDate()));
 
+            // if we save another language version for the same identifier
+            // then the identifier should be updated with those dates d3&d4
+            Contentlet c2 = new Contentlet();
+            c2.setStructureInode(testContentType.inode());
+            c2.setStringProperty(textField.variable(), "c2");
+            c2.setIdentifier(c1.getIdentifier());
+            c2.setDateProperty(publishField.variable(), d3);
+            c2.setDateProperty(expireField.variable(), d4);
+            c2.setLanguageId(altlang.getId());
+            c2.setIndexPolicy(IndexPolicy.FORCE);
+            c2 = APILocator.getContentletAPI().checkin(c2, user, false);
 
-        // if we save another language version for the same identifier
-        // then the identifier should be updated with those dates d3&d4
-        Contentlet c2=new Contentlet();
-        c2.setStructureInode(testContentType.inode());
-        c2.setStringProperty(textField.variable(), "c2");
-        c2.setIdentifier(c1.getIdentifier());
-        c2.setDateProperty(publishField.variable(), d3);
-        c2.setDateProperty(expireField.variable(), d4);
-        c2.setLanguageId(altlang.getId());
-        c2.setIndexPolicy(IndexPolicy.FORCE);
-        c2=APILocator.getContentletAPI().checkin(c2, user, false);
+            Identifier ident2 = APILocator.getIdentifierAPI().find(c2);
+            assertNotNull(ident2.getSysPublishDate());
+            assertNotNull(ident2.getSysExpireDate());
 
-        Identifier ident2 = APILocator.getIdentifierAPI().find(c2);
-        assertNotNull(ident2.getSysPublishDate());
-        assertNotNull(ident2.getSysExpireDate());
+            assertEquals(dateFormat.format(d3), dateFormat.format(ident2.getSysPublishDate()));
+            assertEquals(dateFormat.format(d4), dateFormat.format(ident2.getSysExpireDate()));
 
-        assertEquals(dateFormat.format(d3), dateFormat.format(ident2.getSysPublishDate()));
-        assertEquals(dateFormat.format(d4), dateFormat.format(ident2.getSysExpireDate()));
+            // the other contentlet should have the same dates if we read it again
+            Contentlet c11 = APILocator.getContentletAPI().find(c1.getInode(), user, false);
+            assertEquals(dateFormat.format(d3),
+                    dateFormat.format(c11.getDateProperty(publishField.variable())));
+            assertEquals(dateFormat.format(d4),
+                    dateFormat.format(c11.getDateProperty(expireField.variable())));
 
-        // the other contentlet should have the same dates if we read it again
-        Contentlet c11 = APILocator.getContentletAPI().find(c1.getInode(), user, false);
-        assertEquals(dateFormat.format(d3),
-                dateFormat.format(c11.getDateProperty(publishField.variable())));
-        assertEquals(dateFormat.format(d4),
-                dateFormat.format(c11.getDateProperty(expireField.variable())));
+            Contentlet c21 = APILocator.getContentletAPI().find(c2.getInode(), user, false);
+            assertEquals(dateFormat.format(d3),
+                    dateFormat.format(c21.getDateProperty(publishField.variable())));
+            assertEquals(dateFormat.format(d4),
+                    dateFormat.format(c21.getDateProperty(expireField.variable())));
 
-        Contentlet c21 = APILocator.getContentletAPI().find(c2.getInode(), user, false);
-        assertEquals(dateFormat.format(d3),
-                dateFormat.format(c21.getDateProperty(publishField.variable())));
-        assertEquals(dateFormat.format(d4),
-                dateFormat.format(c21.getDateProperty(expireField.variable())));
+            // also it should be in the index update with the new dates
+            String q = "+structureName:" + testContentType.variable() +
+                    " +inode:" + c11.getInode() +
+                    " +" + testContentType.variable() + "." + publishField.variable() + ":"
+                    + DateUtil
+                    .toLuceneDateTime(d3) +
+                    " +" + testContentType.variable() + "." + expireField.variable() + ":"
+                    + DateUtil
+                    .toLuceneDateTime(d4);
 
-        // also it should be in the index update with the new dates
-        String q = "+structureName:" + testContentType.variable() +
-                " +inode:"+c11.getInode() +
-                " +" + testContentType.variable() + "." + publishField.variable() + ":" + DateUtil
-                .toLuceneDateTime(d3) +
-                " +" + testContentType.variable() + "." + expireField.variable() + ":" + DateUtil
-                .toLuceneDateTime(d4);
-
-        final long count = APILocator.getContentletAPI().indexCount(q, user, false);
-        assertEquals(1, count);
+            final long count = APILocator.getContentletAPI().indexCount(q, user, false);
+            assertEquals(1, count);
+        } finally {
+            ContentletTransformer.setUniquePublishExpireDatePerLanguages(uniquePublishExpireDatePerLanguages);
+        }
     }
 
     ////@Test
