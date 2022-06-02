@@ -19,6 +19,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +38,7 @@ import org.apache.velocity.tools.view.context.ChainedContext;
 import org.apache.velocity.tools.view.context.ViewContext;
 
 @Path("/v1/nav")
+@Tag(name = "Navigation")
 public class NavResource {
 
 

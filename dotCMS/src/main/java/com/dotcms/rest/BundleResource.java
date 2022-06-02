@@ -51,6 +51,7 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.LocaleUtil;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
@@ -111,6 +112,7 @@ import static com.dotcms.publisher.business.PublishAuditStatus.Status.SUCCESS;
 import static com.dotcms.publisher.business.PublishAuditStatus.Status.SUCCESS_WITH_WARNINGS;
 
 @Path("/bundle")
+@Tag(name = "Bundle")
 public class BundleResource {
 
     public  static final String BUNDLE_THREAD_POOL_SUBMITTER_NAME = "bundlepolling";
