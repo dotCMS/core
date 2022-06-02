@@ -172,7 +172,6 @@ describe('DotEditPageMainComponent', () => {
                     DotIframeService,
                     LoginService,
                     DotLicenseService,
-                    DotLicenseService,
                     Title
                 ]
             });
@@ -194,6 +193,7 @@ describe('DotEditPageMainComponent', () => {
         editContentlet = fixture.debugElement.query(
             By.css('dot-edit-contentlet')
         ).componentInstance;
+        titleService = fixture.debugElement.injector.get(Title);
         fixture.detectChanges();
     });
 
