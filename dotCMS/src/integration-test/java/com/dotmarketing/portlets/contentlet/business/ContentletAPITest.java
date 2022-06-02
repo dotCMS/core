@@ -3819,7 +3819,7 @@ public class ContentletAPITest extends ContentletBaseTest {
      */
     @Test
     public void testUpdatePublishExpireDatesFromIdentifier() throws Exception {
-        ESContentletAPIImpl.setUniquePublishExpireDatePerLanguages(true);
+        ContentletTransformer.setUniquePublishExpireDatePerLanguages(true);
         final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
         com.dotcms.contenttype.model.field.Field publishField = new FieldDataGen()

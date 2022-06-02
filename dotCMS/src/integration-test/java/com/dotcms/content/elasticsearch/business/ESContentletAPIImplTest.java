@@ -58,7 +58,6 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.io.Files;
@@ -1337,8 +1336,8 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      */
     @Test
     public void differentVersionWithDifferentPublishDateAndUniquePublishExpireDate() throws DotDataException, DotSecurityException {
-        final boolean uniquePublishExpireDate = ContentletTransformer.isUniquePublishExpireDate();
-        ContentletTransformer.setUniquePublishExpireDate(true);
+        final boolean uniquePublishExpireDate = ContentletTransformer.isUniquePublishExpireDatePerLanguages();
+        ContentletTransformer.setUniquePublishExpireDatePerLanguages(true);
 
         try {
             final Language language1 = new LanguageDataGen().nextPersisted();
@@ -1372,7 +1371,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             checkFromElasticSearch(publishField, afterTomorrow, afterTomorrow, contentlet1);
             checkFromDataBase(publishField, afterTomorrow, afterTomorrow, contentlet1);
         }finally {
-            ContentletTransformer.setUniquePublishExpireDate(uniquePublishExpireDate);
+            ContentletTransformer.setUniquePublishExpireDatePerLanguages(uniquePublishExpireDate);
         }
     }
 
@@ -1426,8 +1425,8 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     @Test
     public void differentVersionWithDifferentExpireDateAndUniquePublishExpireDat() throws DotDataException, DotSecurityException {
 
-        final boolean uniquePublishExpireDate = ContentletTransformer.isUniquePublishExpireDate();
-        ContentletTransformer.setUniquePublishExpireDate(true);
+        final boolean uniquePublishExpireDate = ContentletTransformer.isUniquePublishExpireDatePerLanguages();
+        ContentletTransformer.setUniquePublishExpireDatePerLanguages(true);
 
         try {
             final Language language1 = new LanguageDataGen().nextPersisted();
@@ -1460,7 +1459,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             checkFromElasticSearch(expireField, afterTomorrow, afterTomorrow, contentlet1);
             checkFromDataBase(expireField, afterTomorrow, afterTomorrow, contentlet1);
         }finally {
-            ContentletTransformer.setUniquePublishExpireDate(uniquePublishExpireDate);
+            ContentletTransformer.setUniquePublishExpireDatePerLanguages(uniquePublishExpireDate);
         }
     }
 

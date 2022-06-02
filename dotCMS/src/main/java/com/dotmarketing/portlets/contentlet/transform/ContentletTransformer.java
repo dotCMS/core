@@ -1,8 +1,5 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
-import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.isUniquePublishExpireDatePerLanguages;
-import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.setPublishExpireDateFromIdentifier;
-
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -173,11 +170,11 @@ public class ContentletTransformer implements DBTransformer {
     }
 
     @VisibleForTesting
-    public static void setUniquePublishExpireDate(final boolean newUniquePublishExpireDate) {
+    public static void setUniquePublishExpireDatePerLanguages(final boolean newUniquePublishExpireDate) {
         IS_UNIQUE_PUBLISH_EXPIRE_DATE = Lazy.of(() -> newUniquePublishExpireDate);
     }
 
-    public static boolean isUniquePublishExpireDate() {
+    public static boolean isUniquePublishExpireDatePerLanguages() {
         return IS_UNIQUE_PUBLISH_EXPIRE_DATE.get();
     }
 
