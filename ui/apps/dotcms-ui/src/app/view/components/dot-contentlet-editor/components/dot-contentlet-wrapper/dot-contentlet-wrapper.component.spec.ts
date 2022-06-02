@@ -118,7 +118,7 @@ describe('DotContentletWrapperComponent', () => {
         titleService = de.injector.get(Title);
         dotIframeService = de.injector.get(DotIframeService);
 
-        spyOn(titleService, 'setTitle');
+        spyOn(titleService, 'setTitle').and.callThrough();
         spyOn(dotIframeService, 'reload');
         spyOn(dotAddContentletService, 'clear');
         spyOn(dotAddContentletService, 'load');
@@ -204,6 +204,32 @@ describe('DotContentletWrapperComponent', () => {
                     language_id: '1',
                     host_id: '123'
                 });
+            });
+
+            it('should set last Page title on close', () => {
+                spyOn(titleService, 'getTitle').and.callThrough();
+                titleService.setTitle('TESTHOME  - dotCMS platform');
+
+                const params = {
+                    detail: {
+                        name: 'edit-contentlet-loaded',
+                        data: {
+                            pageTitle: 'test'
+                        }
+                    }
+                };
+
+                dotIframeDialog.triggerEventHandler('custom', params);
+                expect(titleService.setTitle).toHaveBeenCalledWith('test -  dotCMS platform');
+
+                dotIframeDialog.triggerEventHandler('custom', {
+                    detail: {
+                        name: 'close'
+                    }
+                });
+
+                expect(dotRouterService.goToEditPage).not.toHaveBeenCalled();
+                expect(titleService.setTitle).toHaveBeenCalledWith('TESTHOME  - dotCMS platform');
             });
 
             describe('beforeClose', () => {

@@ -8,7 +8,7 @@ import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotEditPageMainComponent } from './dot-edit-page-main.component';
 import { DotEditPageNavModule } from '../dot-edit-page-nav/dot-edit-page-nav.module';
 import { RouterTestingModule } from '@angular/router/testing';
-import { By } from '@angular/platform-browser';
+import { By, Title } from '@angular/platform-browser';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { ActivatedRoute } from '@angular/router';
@@ -90,6 +90,7 @@ describe('DotEditPageMainComponent', () => {
     let dotRouterService: DotRouterService;
     let dotCustomEventHandlerService: DotCustomEventHandlerService;
     let editContentlet: MockDotEditContentletComponent;
+    let titleService: Title;
 
     const messageServiceMock = new MockDotMessageService({
         'editpage.toolbar.nav.content': 'Content',
@@ -122,6 +123,9 @@ describe('DotEditPageMainComponent', () => {
                     {
                         provide: ActivatedRoute,
                         useValue: {
+                            data: observableOf({
+                                content: new DotPageRender(mockDotRenderedPage())
+                            }),
                             snapshot: {
                                 queryParams: {
                                     url: '/about-us/index'
@@ -167,7 +171,9 @@ describe('DotEditPageMainComponent', () => {
                     DotEventsService,
                     DotIframeService,
                     LoginService,
-                    DotLicenseService
+                    DotLicenseService,
+                    DotLicenseService,
+                    Title
                 ]
             });
         })
@@ -251,6 +257,14 @@ describe('DotEditPageMainComponent', () => {
             url: '/about-us/index',
             viewAs: { language: 1 }
         });
+    });
+
+    it('should set the page title correctly', () => {
+        const res: DotPageRender = new DotPageRender(mockDotRenderedPage());
+
+        spyOn(titleService, 'getTitle').and.callThrough();
+
+        expect(titleService.getTitle()).toBe(res.page.title);
     });
 
     describe('handle custom events from contentlet editor', () => {
