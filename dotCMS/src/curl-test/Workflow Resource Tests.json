@@ -14079,7 +14079,7 @@
 			"name": "fire",
 			"item": [
 				{
-					"name": "issue-21482",
+					"name": "Broken-Binary-Field-Update",
 					"item": [
 						{
 							"name": "create-content-type-with-binaries",

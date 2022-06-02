@@ -1,24 +1,15 @@
 package com.dotcms.rest;
 
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.api.MultiPartUtils;
-import com.dotcms.rest.exception.ForbiddenException;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PortletID;
-import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.json.JSONArray;
-import com.dotmarketing.util.json.JSONException;
-import com.dotmarketing.util.json.JSONObject;
-import com.liferay.portal.model.User;
-import io.vavr.Tuple2;
-import org.apache.felix.framework.OSGIUtil;
-import org.glassfish.jersey.media.multipart.FormDataMultiPart;
-import org.glassfish.jersey.server.JSONP;
-import org.osgi.framework.Bundle;
-
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -30,15 +21,20 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import org.apache.felix.framework.OSGIUtil;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.glassfish.jersey.server.JSONP;
+import org.osgi.framework.Bundle;
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.MultiPartUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
+import io.vavr.Tuple2;
 
 /**
  * @author Jonathan Gamba
@@ -68,6 +64,7 @@ public class OSGIResource  {
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .params(params)
+                .requiredPortlet("dynamic-plugins")
                 .rejectWhenNoUser(true)
                 .init();
 
@@ -75,22 +72,6 @@ public class OSGIResource  {
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         StringBuilder responseMessage = new StringBuilder();
 
-        //Verify if the user have access to the OSGI portlet
-        User currentUser = initData.getUser();
-        try {
-            if ( currentUser == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet( "dynamic-plugins", currentUser ) ) {
-                throw new ForbiddenException("User does not have access to the Dynamic Plugins Portlet");
-            }
-        } catch ( DotDataException e ) {
-            Logger.error( this.getClass(), "Error validating User access to the Dynamic Plugins Portlet.", e );
-
-            if ( e.getMessage() != null ) {
-                responseMessage.append( e.getMessage() );
-            } else {
-                responseMessage.append( "Error validating User access to the Dynamic Plugins Portlet." );
-            }
-            return responseResource.responseError( responseMessage.toString() );
-        }
 
         /*
         This method returns a list of all bundles installed in the OSGi environment at the time of the call to this method. However,
@@ -151,6 +132,45 @@ public class OSGIResource  {
         return responseResource.response( responseMessage.toString() );
     }
 
+    /**
+     * This method returns a list of all bundles installed in the OSGi environment at the time of the call to this method.
+     *
+     * @param request
+     * @param params
+     * @return
+     * @throws JSONException
+     */
+    @GET
+    @Path ("/_processExports/{bundle:.*}")
+    @Produces (MediaType.APPLICATION_JSON)
+    public Response processBundle (@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam ("bundle") String bundle ) throws JSONException {
+
+        new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .requiredPortlet("dynamic-plugins")
+                .rejectWhenNoUser(true)
+                .init();
+
+        //Creating an utility response object
+        ResourceResponse responseResource = new ResourceResponse( new HashMap<>() );
+        StringBuilder responseMessage = new StringBuilder();
+        
+        
+        try {
+            OSGIUtil.getInstance().processExports(bundle);
+            return responseResource.response( responseMessage.toString() );
+        } catch (Exception e) {
+            Logger.warn(this.getClass(), "Error getting installed OSGI bundles.", e);
+            return responseResource.responseError(e.getMessage());
+        }
+        
+    }
+    
+    
+    
+    
     /**
      * This endpoint receives multiples jar files in order to upload to the osgi.
      *
@@ -220,7 +240,7 @@ public class OSGIResource  {
 
         // since we already upload jar, we would like to try to run the upload folder when the
         // refresh strategy is running by schedule job
-        OSGIUtil.getInstance().tryUploadFolderReload();
+        OSGIUtil.getInstance().checkUploadFolder();
 
         return Response.ok(new ResponseEntityView(
                 files.stream().map(File::getName).collect(Collectors.toSet())))

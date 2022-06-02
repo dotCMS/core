@@ -1,21 +1,26 @@
 package com.dotmarketing.util;
 
-import com.liferay.util.StringPool;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
+import com.google.common.collect.ImmutableList;
 
 /**
  * list resources available from the classpath @ *
@@ -50,8 +55,8 @@ public class ResourceCollectorUtil {
      * @param file File
      * @return Collection string
      */
+    
     public static Collection<String> getPackages(final File file) {
-
         String importPackage = null;
         try (final JarFile jarFile     = new JarFile(file)){
 
@@ -65,12 +70,55 @@ public class ResourceCollectorUtil {
 
             Logger.error(ResourceCollectorUtil.class, e.getMessage(), e);
         }
-
-        return UtilMethods.isSet(importPackage)?
-                Stream.of(importPackage.split(StringPool.COMMA)).collect(Collectors.toList()):
-                Collections.emptyList();
+        
+        
+        return getPackages(importPackage);
+        
+        
     }
 
+    public static Collection<String> getPackages(final String importPackage) {
+
+        
+        if(UtilMethods.isEmpty(importPackage)) {
+            return  ImmutableList.of();
+        }
+        return removeVersionRange(importPackage);
+        
+    }
+    
+    
+    
+    
+
+    private static Collection<String> removeVersionRange(String packages){
+        
+        final Set<String> finalSet = new LinkedHashSet<>();
+        
+        for(final String pkg :StringUtils.splitOnCommasWithQuotes(packages) ) {
+            int brace = pkg.indexOf("\"[");
+            int comma = pkg.indexOf(",");
+            int parans = pkg.indexOf(")\"");
+            
+            String version = pkg;
+            
+            if(brace> 0 && brace < comma && comma < parans){
+                version = pkg.substring(0,brace) +  pkg.substring(brace+2, parans).split(",")[0] ;
+            }
+            finalSet.add(version);
+            
+            
+        }
+        
+        return finalSet;
+        
+        
+    }
+    
+    
+    
+    
+    
     /**
      * Get the Import-Package from the jar file
      * @param file File
@@ -82,9 +130,9 @@ public class ResourceCollectorUtil {
 
             final Manifest manifest    = jarFile.getManifest();
             final String importPackage = manifest.getMainAttributes().getValue("Import-Package");
-            return UtilMethods.isSet(importPackage)?
-                    Stream.of(importPackage.split(StringPool.COMMA)).collect(Collectors.toList()):
-                    Collections.emptyList();
+            
+            return StringUtils.splitOnCommasWithQuotes(importPackage);
+
         }  catch (Exception e) {
 
             Logger.error(ResourceCollectorUtil.class, e.getMessage(), e);
@@ -104,9 +152,7 @@ public class ResourceCollectorUtil {
 
             final Manifest manifest    = jarFile.getManifest();
             final String exportPackage = manifest.getMainAttributes().getValue("Export-Package");
-            return UtilMethods.isSet(exportPackage)?
-                    Stream.of(exportPackage.split(StringPool.COMMA)).collect(Collectors.toList()):
-                    Collections.emptyList();
+            return StringUtils.splitOnCommasWithQuotes(exportPackage);
         }  catch (Exception e) {
 
             Logger.error(ResourceCollectorUtil.class, e.getMessage(), e);

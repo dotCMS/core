@@ -1,0 +1,48 @@
+@use "variables" as *;
+@import "mixins";
+@import "dotcms-theme/utils/theme-variables";
+
+:host {
+    display: block;
+}
+
+ul {
+    @include naked-list;
+}
+
+a {
+    color: $white;
+    text-decoration: none;
+}
+
+.dot-nav-sub__link {
+    display: block;
+    padding: $spacing-1 $spacing-1 $spacing-1 56px;
+    transition: background-color $basic-speed ease;
+    width: $navigation-width;
+
+    &:hover {
+        background-color: rgba($white_rgb, 0.1);
+    }
+
+    &--active,
+    &--active:hover {
+        background-color: $brand-primary;
+    }
+}
+
+.dot-nav-sub__item {
+    width: $navigation-width;
+    overflow: hidden;
+    transition: width $basic-speed ease;
+}
+
+.dot-nav-sub__collapsed {
+    background-color: rgba($white_rgb, 0.1);
+    padding: $spacing-1 0;
+    min-width: $navigation-width;
+
+    .dot-nav-sub__link {
+        padding: $spacing-1 $spacing-4;
+    }
+}
