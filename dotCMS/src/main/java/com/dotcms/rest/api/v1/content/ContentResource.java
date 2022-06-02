@@ -295,6 +295,6 @@ public class ContentResource {
         }
 
         Logger.debug(this, ()-> "The field:" + pullRelatedForm.getFieldVariable() + " is not a relationship");
-        throw new DoesNotExistException("The field:" + pullRelatedForm.getFieldVariable() + " is not a relationship");
+        throw new IllegalArgumentException("The field:" + pullRelatedForm.getFieldVariable() + " is not a relationship");
     }
 }
