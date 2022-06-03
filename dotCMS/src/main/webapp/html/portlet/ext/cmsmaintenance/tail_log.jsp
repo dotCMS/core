@@ -212,11 +212,11 @@
         }
 
         function filterLog(event) {
+            dataLogPrintedElem.innerHTML = dataLogSourceElem.innerHTML;
             if (event.key === 'Enter') {
-                performMark(excludeNoMatchingRows);
                 excludeLogRowsActive = true;
+                performMark(excludeNoMatchingRows);
             } else {
-                dataLogPrintedElem.innerHTML = dataLogSourceElem.innerHTML;
                 excludeLogRowsActive = false;
                 performMark();
             }

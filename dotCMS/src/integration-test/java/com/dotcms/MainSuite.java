@@ -154,7 +154,7 @@ import com.dotmarketing.startup.runonce.Task220203RemoveFolderInodeConstraintTes
 import com.dotmarketing.startup.runonce.Task220214AddOwnerAndIDateToFolderTableTest;
 import com.dotmarketing.startup.runonce.Task220215MigrateDataFromInodeToFolderTest;
 import com.dotmarketing.startup.runonce.Task220330ChangeVanityURLSiteFieldTypeTest;
-import com.dotmarketing.startup.runonce.Task220331UpdateDateTimezonesTest;
+import com.dotmarketing.startup.runonce.Task220402UpdateDateTimezonesTest;
 import com.dotmarketing.startup.runonce.Task220413IncreasePublishedPushedAssetIdColTest;
 import com.dotmarketing.startup.runonce.Task220512UpdateNoHTMLRegexValueTest;
 import com.dotmarketing.util.ConfigTest;
@@ -537,7 +537,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task220214AddOwnerAndIDateToFolderTableTest.class,
         Task220215MigrateDataFromInodeToFolderTest.class,
         Task220330ChangeVanityURLSiteFieldTypeTest.class,
-        Task220331UpdateDateTimezonesTest.class,
+        Task220402UpdateDateTimezonesTest.class,
         Task220413IncreasePublishedPushedAssetIdColTest.class,
         com.dotcms.util.pagination.ContainerPaginatorTest.class,
         ContentDispositionFileNameParserTest.class,

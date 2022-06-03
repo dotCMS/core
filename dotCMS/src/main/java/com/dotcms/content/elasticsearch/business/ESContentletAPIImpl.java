@@ -38,6 +38,7 @@ import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.contenttype.transform.field.FieldTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -250,10 +251,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private static final String backupPath = ConfigUtils.getBackupPath() + File.separator + "contentlets";
 
-    private static final Lazy<Boolean> UNIQUE_PER_SITE_CONFIG = Lazy.of(()->Config
-            .getBooleanProperty("uniquePerSite", true));
+    public final static String  UNIQUE_PER_SITE_FIELD_VARIABLE_NAME = "uniquePerSite";
 
-    private static Boolean uniquePerSite;
 
     /**
      * Property to fetch related content from database (only applies for relationship fields)
@@ -6753,7 +6752,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                     buffy.append(" +languageId:" + contentlet.getLanguageId());
 
-                    if (getUniquePerSiteConfig()) {
+                    if (getUniquePerSiteConfig(field)) {
                         if (!UtilMethods.isSet(contentlet.getHost())) {
                             populateHost(contentlet);
                         }
@@ -6885,25 +6884,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
-    @NotNull
     private String getUniqueFieldErrorMessage(final Field field, final Object fieldValue, final ContentletSearch contentletSearch) {
 
         return String.format("Value of Field [%s] must be unique. Contents having the same value (%s): %s",
                 field.getVelocityVarName(), fieldValue, contentletSearch.getIdentifier());
     }
 
-    @VisibleForTesting
-    public static void setUniquePerSite(final Boolean uniquePerSite){
-        ESContentletAPIImpl.uniquePerSite = uniquePerSite;
+    private boolean getUniquePerSiteConfig(final Field field) {
+     return getUniquePerSiteConfig(LegacyFieldTransformer.from(field));
     }
 
-    @VisibleForTesting
-    public static Boolean getUniquePerSite(){
-        return uniquePerSite;
-    }
-
-    private boolean getUniquePerSiteConfig() {
-        return UtilMethods.isSet(uniquePerSite) ? uniquePerSite : UNIQUE_PER_SITE_CONFIG.get();
+    private boolean getUniquePerSiteConfig(final com.dotcms.contenttype.model.field.Field field) {
+        return field.fieldVariableValue(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME).map(value ->  Boolean.valueOf(value)).orElse(false);
     }
 
     private void validateBinary(final File binary, final String fieldName, final Field legacyField, final ContentType contentType) {
