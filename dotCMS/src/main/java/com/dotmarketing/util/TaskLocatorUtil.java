@@ -315,10 +315,11 @@ public class TaskLocatorUtil {
 		.add(Task220214AddOwnerAndIDateToFolderTable.class)
 		.add(Task220215MigrateDataFromInodeToFolder.class)
 		.add(Task220330ChangeVanityURLSiteFieldType.class)
+		.add(Task220401CreateClusterLockTable.class)
 		.add(Task220402UpdateDateTimezones.class)
 		.add(Task220413IncreasePublishedPushedAssetIdCol.class)
 		.add(Task220512UpdateNoHTMLRegexValue.class)
-				.add(Task220401CreateClusterLockTable.class)
+
 		.build();
         
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
