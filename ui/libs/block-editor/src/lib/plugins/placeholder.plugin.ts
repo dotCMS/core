@@ -12,8 +12,9 @@ export const PlaceholderPlugin = new Plugin({
             // See if the transaction adds or removes any placeholders
             const action = tr.getMeta(this);
             if (action && action.add) {
+                const id = action.add.id;
                 const deco = Decoration.widget(action.add.pos, action.add.element, {
-                    id: action.add.id
+                    key: id
                 });
                 set = set.add(tr.doc, [deco]);
             } else if (action && action.remove) {
