@@ -323,8 +323,6 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 		identifier.setId(existingId!=null?existingId:UUIDGenerator.generateUuid());
 
-		final Identifier parentId = APILocator.getIdentifierAPI().find(folder.getIdentifier());
-
 		String uri = versionable.getVersionType() + "." + versionable.getInode();
 		if(versionable instanceof Contentlet){
 			final Contentlet contentlet = (Contentlet)versionable;
@@ -352,7 +350,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 				uri = contentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD) ;
 			}
 			identifier.setAssetType(Identifier.ASSET_TYPE_CONTENTLET);
-			identifier.setParentPath(parentId.getPath());
+			identifier.setParentPath(folder.getPath());
 			identifier.setAssetName(uri);
 			identifier.setAssetSubType(contentlet.getContentType().variable());
 		} else if (versionable instanceof WebAsset) {
@@ -368,8 +366,8 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		identifier.setOwner((versionable instanceof WebAsset)
 				? ((WebAsset) versionable).getOwner() : versionable.getModUser());
 
-		identifier.setHostId(parentId.getHostId());
-		identifier.setParentPath(parentId.getPath());
+		identifier.setHostId(folder.getHostId());
+		identifier.setParentPath(folder.getPath());
 
         final Inode inode;
         try {
