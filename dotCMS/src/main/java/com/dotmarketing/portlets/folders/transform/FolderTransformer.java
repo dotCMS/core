@@ -2,7 +2,10 @@ package com.dotmarketing.portlets.folders.transform;
 
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.transform.DBTransformer;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.folders.model.Folder;
+import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -47,6 +50,14 @@ public class FolderTransformer implements DBTransformer {
         folder.setIdentifier((String) map.get("identifier"));
         folder.setDefaultFileType((String) map.get("default_file_type"));
         folder.setModDate((Date) map.get("mod_date"));
+
+        final Identifier identifier = Try.of(
+                        () -> APILocator.getIdentifierAPI().find(folder.getIdentifier()))
+                .getOrNull();
+
+        if (null != identifier){
+            folder.setHostId(identifier.getHostId());
+        }
         return folder;
     }
 }

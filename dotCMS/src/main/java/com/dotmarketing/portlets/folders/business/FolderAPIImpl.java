@@ -700,7 +700,6 @@ public class FolderAPIImpl implements FolderAPI  {
 						APILocator.getIdentifierAPI().createNew(folder, host):
 						APILocator.getIdentifierAPI().createNew(folder, parent);
 
-				folder.setIdentifier(newIdentifier.getId());
 				folder.setPath(newIdentifier.getPath());
 				save(folder,  user,  respectFrontEndPermissions);
 			}
