@@ -243,9 +243,10 @@ describe('ContentTypesLayoutComponent', () => {
             de.query(By.css('.main-toolbar-left header p-inplace input')).nativeElement.value =
                 'changedName';
             de.query(By.css('.main-toolbar-left header p-inplace input')).triggerEventHandler(
-                'keydown.enter',
+                'keyup',
                 {
-                    stopPropagation: jasmine.createSpy('stopPropagation')
+                    stopPropagation: jasmine.createSpy('stopPropagation'),
+                    key: 'Enter'
                 }
             );
             expect(de.componentInstance.changeContentTypeName.emit).toHaveBeenCalledWith(
