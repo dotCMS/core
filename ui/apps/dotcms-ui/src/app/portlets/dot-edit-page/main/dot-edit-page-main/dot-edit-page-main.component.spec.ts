@@ -260,11 +260,12 @@ describe('DotEditPageMainComponent', () => {
     });
 
     it('should set the page title correctly', () => {
-        const res: DotPageRender = new DotPageRender(mockDotRenderedPage());
-
         spyOn(titleService, 'getTitle').and.callThrough();
+        const res: DotPageRender = new DotPageRender(mockDotRenderedPage());
+        const initialTitle = titleService.getTitle().split(' - ');
+        const title = initialTitle[initialTitle.length - 1];
 
-        expect(titleService.getTitle()).toBe(res.page.title);
+        expect(titleService.getTitle()).toBe(`${res.page.title}${title ? ` - ${title}` : ''}`);
     });
 
     describe('handle custom events from contentlet editor', () => {

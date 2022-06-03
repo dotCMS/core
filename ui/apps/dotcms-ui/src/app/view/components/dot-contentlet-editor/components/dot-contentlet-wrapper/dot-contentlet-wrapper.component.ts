@@ -90,8 +90,8 @@ export class DotContentletWrapperComponent {
                     this.titleService.setTitle(
                         `${
                             e.detail.data.pageTitle
-                                ? e.detail.data.pageTitle + ' - '
-                                : `${this.dotMessageService.get('New')} ${this.header} - `
+                                ? e.detail.data.pageTitle + ' -'
+                                : `${this.dotMessageService.get('New')} ${this.header} -`
                         } ${this.titleService.getTitle().split(' - ')[1]}`
                     );
                 }

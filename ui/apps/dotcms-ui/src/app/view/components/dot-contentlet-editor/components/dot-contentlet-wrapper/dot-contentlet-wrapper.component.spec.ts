@@ -208,8 +208,8 @@ describe('DotContentletWrapperComponent', () => {
 
             it('should set last Page title on close', () => {
                 spyOn(titleService, 'getTitle').and.callThrough();
-                titleService.setTitle('TESTHOME  - dotCMS platform');
-
+                titleService.setTitle('TESTHOME - dotCMS platform');
+                console.log('?????');
                 const params = {
                     detail: {
                         name: 'edit-contentlet-loaded',
@@ -220,7 +220,7 @@ describe('DotContentletWrapperComponent', () => {
                 };
 
                 dotIframeDialog.triggerEventHandler('custom', params);
-                expect(titleService.setTitle).toHaveBeenCalledWith('test -  dotCMS platform');
+                expect(titleService.setTitle).toHaveBeenCalledWith('test - dotCMS platform');
 
                 dotIframeDialog.triggerEventHandler('custom', {
                     detail: {
@@ -229,7 +229,7 @@ describe('DotContentletWrapperComponent', () => {
                 });
 
                 expect(dotRouterService.goToEditPage).not.toHaveBeenCalled();
-                expect(titleService.setTitle).toHaveBeenCalledWith('TESTHOME  - dotCMS platform');
+                expect(titleService.setTitle).toHaveBeenCalledWith('TESTHOME - dotCMS platform');
             });
 
             describe('beforeClose', () => {
@@ -354,7 +354,7 @@ describe('DotContentletWrapperComponent', () => {
                     dotIframeDialog.triggerEventHandler('custom', params);
 
                     expect(component.header).toBe('Blog');
-                    expect(titleService.setTitle).toHaveBeenCalledWith('test -  dotCMS platform');
+                    expect(titleService.setTitle).toHaveBeenCalledWith('test - dotCMS platform');
                 });
 
                 it('should set Page title when a new contentlet will be created', () => {
@@ -372,7 +372,7 @@ describe('DotContentletWrapperComponent', () => {
 
                     expect(component.header).toBe('Blog');
                     expect(titleService.setTitle).toHaveBeenCalledWith(
-                        'New Blog -  dotCMS platform'
+                        'New Blog - dotCMS platform'
                     );
                 });
             });
