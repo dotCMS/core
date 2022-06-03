@@ -39,7 +39,7 @@ export class SuggestionsService {
     }: ContentletFilters): Observable<DotCMSContentlet[]> {
         return this.http
             .post('/api/content/_search', {
-                query: `+contentType:${contentType} +languageId:${currentLanguage} +deleted:false +working:true +catchall:${filter}* title:'${filter}'^15`,
+                query: `+contentType:${contentType} +languageId:${currentLanguage} +deleted:false +working:true +catchall:*${filter}* `,
                 sort: 'modDate desc',
                 offset: 0,
                 limit: 40
