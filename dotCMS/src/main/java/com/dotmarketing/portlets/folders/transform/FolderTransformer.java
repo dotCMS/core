@@ -57,6 +57,7 @@ public class FolderTransformer implements DBTransformer {
 
         if (null != identifier){
             folder.setHostId(identifier.getHostId());
+            folder.setPath(identifier.getPath());
         }
         return folder;
     }
