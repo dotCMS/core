@@ -129,7 +129,7 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                                 });
                                 return false;
                             },
-                            mousemove(view, event) {
+                            mousemove(view, event: MouseEvent) {
                                 const coords = {
                                     left: event.clientX + HANDLER_GAP,
                                     top: event.clientY
