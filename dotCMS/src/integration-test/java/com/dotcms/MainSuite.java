@@ -154,6 +154,7 @@ import com.dotmarketing.startup.runonce.Task220203RemoveFolderInodeConstraintTes
 import com.dotmarketing.startup.runonce.Task220214AddOwnerAndIDateToFolderTableTest;
 import com.dotmarketing.startup.runonce.Task220215MigrateDataFromInodeToFolderTest;
 import com.dotmarketing.startup.runonce.Task220330ChangeVanityURLSiteFieldTypeTest;
+import com.dotmarketing.startup.runonce.Task220401CreateClusterLockTableTest;
 import com.dotmarketing.startup.runonce.Task220402UpdateDateTimezonesTest;
 import com.dotmarketing.startup.runonce.Task220413IncreasePublishedPushedAssetIdColTest;
 import com.dotmarketing.startup.runonce.Task220512UpdateNoHTMLRegexValueTest;
@@ -544,7 +545,8 @@ import org.junit.runners.Suite.SuiteClasses;
         SecureFileValidatorTest.class,
         BoundedBufferedReaderTest.class,
         ContentWorkflowHandlerTest.class,
-        Task220512UpdateNoHTMLRegexValueTest.class
+        Task220512UpdateNoHTMLRegexValueTest.class,
+        Task220401CreateClusterLockTableTest.class
 })
 public class MainSuite {
 
