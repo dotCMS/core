@@ -209,7 +209,7 @@ describe('DotContentletWrapperComponent', () => {
             it('should set last Page title on close', () => {
                 spyOn(titleService, 'getTitle').and.callThrough();
                 titleService.setTitle('TESTHOME - dotCMS platform');
-                console.log('?????');
+
                 const params = {
                     detail: {
                         name: 'edit-contentlet-loaded',
