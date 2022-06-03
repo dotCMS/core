@@ -21,7 +21,7 @@
         "publish:docs": "gh-pages --dist ./docs --dest ./",
         "build:dev": "nx build dotcms-webcomponents --with-deps;nx build dotcms-ui",
         "build:prod": "nx build dotcms-webcomponents --with-deps;nx build dotcms-ui --configuration production",
-        "build:dotcms-block-editor": "ng build dotcms-block-editor --configuration production --output-hashing=none && cat dist/apps/dotcms-block-editor/{generator-runtime,runtime,polyfills,main}.js > dotcms-block-editor.js",
+        "build:dotcms-block-editor": "nx run dotcms-block-editor:build --configuration production --output-hashing none && cat dist/apps/dotcms-block-editor/{generator-runtime,runtime,polyfills,main}.js > dotcms-block-editor.js",
         "docker:test": "npm run docker:build;IMAGE_BASE_NAME=core-web docker-compose -f docker-compose-running-test.yml up",
         "docker:build": "docker build -t core-web .",
         "analyze": "ng build --stats-json;webpack-bundle-analyzer dist/stats.json",
