@@ -34,7 +34,7 @@ export class ContentTypesLayoutComponent implements OnChanges, OnInit {
     permissionURL: string;
     pushHistoryURL: string;
     relationshipURL: string;
-    contentTypeNameInputSize: string;
+    contentTypeNameInputSize: number;
     showPermissionsTab: Observable<boolean>;
 
     actions: MenuItem[];
@@ -91,10 +91,28 @@ export class ContentTypesLayoutComponent implements OnChanges, OnInit {
     /**
      * Sets the size of the H4 display to set it in the content textbox to eliminate UI jumps
      *
+     * @param {MouseEvent} event
      * @memberof ContentTypesLayoutComponent
      */
-    editInlineActivate(event): void {
-        this.contentTypeNameInputSize = event.target.offsetWidth;
+    editInlineActivate(event: MouseEvent): void {
+        this.contentTypeNameInputSize = event.target['offsetWidth'];
+    }
+
+    /**
+     * Based on keyboard input executes an action to Change Name/Hide Input/Change Input's size
+     *
+     * @param {KeyboardEvent} event
+     * @memberof ContentTypesLayoutComponent
+     */
+    inputValueHandler(event: KeyboardEvent): void {
+        if (event.key === 'Enter') {
+            this.fireChangeName();
+        } else if (event.key === 'Escape') {
+            this.dotEditInline.hideContent();
+        } else {
+            const newInputSize = event.target['value'].length * 8 + 22;
+            this.contentTypeNameInputSize = newInputSize > 485 ? 485 : newInputSize;
+        }
     }
 
     private loadActions(): void {

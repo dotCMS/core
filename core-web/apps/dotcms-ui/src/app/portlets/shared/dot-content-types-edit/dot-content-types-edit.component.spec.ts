@@ -763,16 +763,14 @@ describe('DotContentTypesEditComponent', () => {
             const contentTypeLayout = de.query(By.css('dot-content-type-layout'));
             contentTypeLayout.triggerEventHandler('changeContentTypeName', 'CT changed');
 
-            const replacedWorkflowsPropContentType = {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { layout, fields, workflows, ...replacedWorkflowsPropContentType } = {
                 ...responseContentType
             };
 
             replacedWorkflowsPropContentType['workflow'] = fakeContentType.workflows.map(
                 (workflow) => workflow.id
             );
-            delete replacedWorkflowsPropContentType.workflows;
-            delete replacedWorkflowsPropContentType.fields;
-            delete replacedWorkflowsPropContentType.layout;
 
             expect(crudService.putData).toHaveBeenCalledWith(
                 'v1/contenttype/id/1234567890',

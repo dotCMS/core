@@ -131,11 +131,10 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
      * @memberof DotContentTypesEditComponent
      */
     editContentTypeName(name: string): void {
-        const updatedContentType = { ...this.data, name };
-        delete updatedContentType.layout;
-        delete updatedContentType.fields;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { layout, fields, ...updatedContentType } = { ...this.data, name };
 
-        this.updateContentType(updatedContentType);
+        this.updateContentType(updatedContentType as DotCMSContentType);
     }
 
     /**
