@@ -291,6 +291,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		identifier.setCreateDate(folder.getIDate()!=null? folder.getIDate():new Date());
 		saveIdentifier(identifier);
 		folder.setIdentifier(identifier.getId());
+		folder.setPath(identifier.getPath());
 		return identifier;
 	}
 
@@ -313,7 +314,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		saveIdentifier( identifier );
 
 		folder.setIdentifier(identifier.getId());
-
+		folder.setPath(identifier.getPath());
 		return identifier;
 	}
 
