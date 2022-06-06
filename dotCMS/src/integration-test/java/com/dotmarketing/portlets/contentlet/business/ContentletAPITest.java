@@ -3934,7 +3934,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
     }
 
-    ////@Test
+    @Test
     public void rangeQuery() throws Exception {
         // https://github.com/dotCMS/dotCMS/issues/2630
         Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ) + "zzzvv", "junit_test_structure_" + String.valueOf( new Date().getTime() ) + "zzzvv" );

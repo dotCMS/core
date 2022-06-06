@@ -379,6 +379,7 @@ public class ESMappingUtilHelper {
                     mappingForField += String.format("\"format\": \"%s\"\n}",
                             ((List) jsonFileContent.get("dynamic_date_formats")).get(0));
                 } catch (IOException e) {
+                    Logger.error("Error getting es-content-mapping.json file: " + e.getMessage(), e);
                     throw new JSONException(e);
                 }
             } else if (field instanceof TextField || field instanceof TextAreaField
