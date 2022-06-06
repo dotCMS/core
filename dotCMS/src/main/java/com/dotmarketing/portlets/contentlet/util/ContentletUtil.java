@@ -18,10 +18,17 @@ import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * This Utility Class provides useful methods to retrieve and transform specific Contentlet data.
+ *
+ * @author root
+ * @since Mar 22nd, 2012
+ */
 public class ContentletUtil {
 
 	private static final ImmutableSet<String> fieldTypesToExcludeFromImportExport = ImmutableSet.of(
@@ -137,25 +144,25 @@ public class ContentletUtil {
 	public static Map<String, Object> getContentPrintableMap(
 			final User user, final Contentlet sourceContentlet, final boolean allCategoriesInfo)
 			throws DotDataException, IOException {
-//		sourceContentlet.setTags();
 		return new DotTransformerBuilder().contentResourceOptions(allCategoriesInfo)
 				.siteToMapTransformer(false)
 				.content(sourceContentlet).build().toMaps().get(0);
 	}
 
 	/**
-	 * Utility method to improve the info in our logs
-	 * @param contentlet
-	 * @return
+	 * Generates a String with the most important or basic information in a Contentlet for it to be printed in our
+	 * logs.
+	 *
+	 * @param contentlet The {@link Contentlet} that will be logged.
+	 *
+	 * @return The String containing the Contentlet's most important information.
 	 */
 	public static String toShortString(final Contentlet contentlet) {
 		if (null == contentlet) {
 			return null;
 		}
-
 		final String contentType = contentlet.getContentType() != null ? contentlet.getContentType().name() : "Unknown";
-
-		return String.format("Contentlet[name: %s, type: %s, lang: %s ,identifier: %s, inode: %s]",
+		return String.format("Contentlet [name: %s, type: %s, lang: %s, identifier: %s, inode: %s]",
 				contentlet.getName(),
 				contentType,
 				contentlet.getLanguageId(),
