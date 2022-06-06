@@ -1,0 +1,14 @@
+{
+    "lang": "en",
+    "background_color": "#ffffff",
+    "name": "dotCMS Content Management Platform",
+    "short_name": "dotCMS",
+    "display": "browser",
+    "icons": [
+        {
+            "src": "./assets/icon/apple-icon-144x144.png",
+            "sizes": "144x144",
+            "type": "image/png"
+        }
+    ]
+}

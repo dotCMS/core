@@ -1,0 +1,56 @@
+@use "variables" as *;
+
+$notification-padding: $spacing-3;
+
+:host {
+    position: relative;
+
+    .badge {
+        background-color: $brand-primary;
+        border-radius: 2px;
+        color: $white;
+        font-size: $font-size-small;
+        line-height: $font-size-small;
+        padding: 2px 5px;
+        position: absolute;
+        left: 16px;
+        top: -3px;
+    }
+
+    .toolbar-notifications {
+        padding: $notification-padding 0 $notification-padding $notification-padding;
+        width: 350px;
+
+        &:before {
+            background: $white;
+            content: "";
+            height: 10px;
+            position: absolute;
+            right: 15px;
+            top: -5px;
+            transform: rotate(45deg);
+            width: 10px;
+        }
+    }
+
+    .toolbar-notifications__heading {
+        display: flex;
+        margin-bottom: $font-size-x-small;
+        justify-content: space-between;
+        padding-right: $notification-padding;
+    }
+
+    .toolbar-notifications__title {
+        align-self: center;
+        font-size: $font-size-large;
+        margin: 0;
+    }
+
+    .toolbar-notifications__footer {
+        text-align: center;
+    }
+
+    .toolbar-notifications__footer button {
+        margin: auto;
+    }
+}

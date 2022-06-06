@@ -1,0 +1,59 @@
+@use "variables" as *;
+@import "mixins";
+
+$nav-size: 80px;
+
+:host {
+    background-color: $gray-bg;
+    border-left: solid 1px  $gray-lighter;
+    display: flex;
+    flex-shrink: 0;
+    order: 2;
+    width: $nav-size;
+}
+
+.edit-page-nav {
+    @include naked-list;
+    width: 100%;
+}
+
+.edit-page-nav__item {
+    align-items: center;
+    color: $gray-dark;
+    display: flex;
+    flex-direction: column;
+    font-size: 11px;
+    height: $nav-size;
+    justify-content: center;
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: background-color $basic-speed ease-in;
+
+    dot-icon {
+        margin-bottom: $spacing-1;
+    }
+
+    &:hover {
+        background-color: $gray-bg;
+    }
+
+    & > .fa {
+        font-size: 1.25em;
+        margin-bottom: 8px;
+    }
+
+    &--disabled,
+    &--disabled:hover {
+        background-color: transparent;
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+}
+
+.edit-page-nav__item--active {
+    background-color: $white;
+    color: $black;
+    pointer-events: none;
+    border-bottom: 1px solid $gray-lighter;
+    border-top: 1px solid $gray-lighter;
+}

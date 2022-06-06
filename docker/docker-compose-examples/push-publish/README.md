@@ -6,7 +6,7 @@ Push publish environment where the sender runs on port 8080 and the receiver on 
 
 ## Usage
 
-####Environment setup
+#### Environment setup
 
 
 1) A local path to license pack must be set here:
@@ -30,7 +30,7 @@ The license pack must contain at least two licenses (one for each node in the cl
 #"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20210920/starter-20210920.zip'
 ```
 
-####Deploying nodes:
+#### Deploying nodes:
 
 ```bash
 docker-compose -f docker-compose-sender.yml up
@@ -38,7 +38,7 @@ docker-compose -f docker-compose-receiver.yml up
 
 ```
 
-####Undeploying nodes:
+#### Undeploying nodes:
 
 ```bash
 docker-compose -f docker-compose-sender.yml down

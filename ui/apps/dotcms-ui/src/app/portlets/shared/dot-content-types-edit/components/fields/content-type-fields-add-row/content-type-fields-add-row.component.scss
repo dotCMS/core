@@ -1,0 +1,98 @@
+@use "variables" as *;
+@import "mixins";
+
+$row-height: 70px;
+
+:host {
+    display: flex;
+    flex-grow: 1;
+    flex-direction: column;
+    margin-bottom: $spacing-1;
+}
+
+.dot-add-rows__container {
+    align-items: center;
+    display: flex;
+}
+
+.dot-add-rows-button__container,
+.dot-add-rows-columns-list,
+.dot-add-rows-columns-list__container {
+    display: flex;
+    width: 100%;
+}
+
+.dot-add-rows-columns-list {
+    padding: 0;
+}
+
+.dot-add-rows-button__container {
+    align-items: baseline;
+    height: 198px;
+    justify-content: center;
+}
+
+.dot-add-rows-columns-list__container {
+    background-color: $white;
+    display: block;
+    height: 198px;
+    padding: $spacing-3;
+    position: relative;
+
+    .dot-add-rows-columns-list__title {
+        font-size: $font-size-large;
+    }
+
+    dot-icon-button {
+        position: absolute;
+        right: $spacing-1;
+        top: $spacing-1;
+    }
+}
+
+.dot-add-rows-columns-list__item {
+    background-color: $gray-bg;
+    cursor: pointer;
+    display: block;
+    flex-grow: 1;
+    margin-right: $spacing-3;
+    outline: none;
+    padding: $spacing-3;
+
+    &:last-child {
+        border-right: none;
+        margin-right: 0;
+    }
+
+    &.active {
+        background-color: rgba($brand-secondary_rgb, 0.25);
+
+        .dot-add-rows-columns-list__item-col {
+            background-color: $gray-bg;
+        }
+    }
+
+    .dot-add-rows-columns-list__item-title {
+        color: $gray;
+        font-size: $font-size-small;
+    }
+
+    .dot-add-rows-columns-list__item-container {
+        display: flex;
+
+        .dot-add-rows-columns-list__item-col {
+            background-color: $gray-dark;
+            flex-grow: 1;
+            height: 60px;
+            margin: 0 $spacing-1;
+
+            &:first-child {
+                margin-left: 0;
+            }
+
+            &:last-child {
+                margin-right: 0;
+            }
+        }
+    }
+}

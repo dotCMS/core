@@ -1,0 +1,34 @@
+<ul class="edit-page-nav">
+    <li *ngFor="let item of model | async">
+        <div *ngIf="!item.needsEntepriseLicense; then basic; else enterprise"></div>
+        <ng-template #basic>
+            <a
+                class="edit-page-nav__item"
+                pTooltip="{{ item.tooltip }}"
+                [ngClass]="{
+                    'edit-page-nav__item--disabled': item.disabled,
+                    'edit-page-nav__item--active': item.link
+                        ? item.link.startsWith(this.route.snapshot.firstChild.url[0].path)
+                        : null
+                }"
+                [routerLink]="!item.disabled && item.link ? ['./' + item.link] : null"
+                (click)="item.action ? item.action(pageState.page.inode) : ''"
+                [queryParams]="route.queryParams | async"
+            >
+                <dot-icon size='32' [name]="item.icon"></dot-icon>
+                <span class="edit-page-nav__item-text">{{ item.label }}</span>
+            </a>
+        </ng-template>
+        <ng-template #enterprise>
+            <span
+                [pTooltip]="'editpage.toolbar.nav.license.enterprise.only' | dm"
+                tooltipPosition="left"
+                class="edit-page-nav__item edit-page-nav__item--disabled"
+            >
+                <dot-icon size='32' [name]="item.icon"></dot-icon>
+                <span class="edit-page-nav__item-text">{{ item.label }}</span>
+            </span>
+        </ng-template>
+    </li>
+</ul>
+
