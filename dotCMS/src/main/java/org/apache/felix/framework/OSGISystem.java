@@ -99,22 +99,6 @@ public class OSGISystem {
         return felixProps;
     }
 
-    private void createNewExtraPackageFile(final File extraPackagesFile) throws IOException {
-
-        try (BufferedWriter writer = new BufferedWriter(
-                new OutputStreamWriter(Files.newOutputStream(extraPackagesFile.toPath()), UTF_8));
-             InputStream initialStream = OSGIUtil.class.getResourceAsStream("/osgi/osgi-extra.conf")) {
-
-            final byte[] buffer = new byte[1024];
-            int bytesRead = -1;
-            while ((bytesRead = initialStream.read(buffer)) != -1) {
-                writer.write(new String(buffer, UTF_8), 0, bytesRead);
-            }
-
-            writer.flush();
-        }
-    }
-
     /**
      * Initializes the System framework OSGi using the servlet context
      *
@@ -194,14 +178,6 @@ public class OSGISystem {
         //Clean up the properties, it is better to keep it simple and in a standard format
         return writer.toString().replaceAll("\\\n", "").
                 replaceAll("\\\r", "").replaceAll("\\\\", "");
-    }
-
-    private String getOsgiExtraConfigPath () {
-
-        final Supplier<String> supplier = () -> APILocator.getFileAssetAPI().getRealAssetsRootPath()
-                + File.separator + "server" + File.separator + "osgi" + File.separator +  "osgi-extra.conf";
-        final String dirPath = Config.getStringProperty(OSGI_EXTRA_CONFIG_FILE_PATH_KEY, supplier.get());
-        return Paths.get(dirPath).normalize().toString();
     }
 
     /**
