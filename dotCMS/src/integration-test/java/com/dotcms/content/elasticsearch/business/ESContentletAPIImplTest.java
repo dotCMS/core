@@ -1324,7 +1324,6 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             ContentletDataGen.checkin(contentlet2);
 
             checkFromElasticSearch(publishField, tomorrow, afterTomorrow, contentlet1);
-
             checkFromDataBase(publishField, tomorrow, afterTomorrow, contentlet1);
         }finally {
             LanguageDataGen.remove(language1);
@@ -1392,7 +1391,14 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         }
     }
 
-    private void checkFromDataBase(Field publishField, Date tomorrow, Date afterTomorrow,
+    /**
+     * This method check the contentlet versions from the Data Base, step by step it does the follow:
+     *
+     * - Get all the version to the contentlet from DataBase
+     * - Throw an {@link AssertionError} if the contenlet has not two versions
+     * - Check the value for  <code>field</code>, if the value is different to date1 or date2 throw a {@link AssertionError}
+     */
+    private void checkFromDataBase(Field field, Date date1, Date date2,
             Contentlet contentlet1) throws DotDataException, DotSecurityException {
         final List<Versionable> allVersions = APILocator.getVersionableAPI()
                 .findAllVersions(contentlet1.getIdentifier());
@@ -1400,15 +1406,22 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         assertEquals(2, allVersions.size());
         for (Versionable versionable : allVersions) {
             if (versionable.getInode().equals(contentlet1.getInode())) {
-                assertEquals(tomorrow,
-                        ((Contentlet) versionable).getDateProperty(publishField.variable()));
+                assertEquals(date1,
+                        ((Contentlet) versionable).getDateProperty(field.variable()));
             } else {
-                assertEquals(afterTomorrow,
-                        ((Contentlet) versionable).getDateProperty(publishField.variable()));
+                assertEquals(date2,
+                        ((Contentlet) versionable).getDateProperty(field.variable()));
             }
         }
     }
 
+    /**
+     * This method check the contentlet versions from the Elasticsearch, step by step it does the follow:
+     *
+     * - Get all the version to the contentlet from DataBase
+     * - Throw an {@link AssertionError} if the contenlet has not two versions
+     * - Check the value for  <code>field</code>, if the value is different to date1 or date2 throw a {@link AssertionError}
+     */
     private void checkFromElasticSearch(final Field field, final Date date1, final Date date2,
             final Contentlet contentletToCheck) throws DotDataException, DotSecurityException {
 
