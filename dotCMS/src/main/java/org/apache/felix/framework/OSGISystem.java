@@ -50,7 +50,6 @@ public class OSGISystem {
     private static final String FELIX_UNDEPLOYED_DIR = "felix.undeployed.dir";
     private static final String UTF_8 = "utf-8";
     private static final String PROPERTY_OSGI_PACKAGES_EXTRA = "org.osgi.framework.system.packages.extra";
-    private String felixExtraPackagesFile;
     private Framework felixFramework;
 
     public static OSGISystem getInstance() {
@@ -133,16 +132,6 @@ public class OSGISystem {
 
         try {
 
-            felixExtraPackagesFile = this.getOsgiExtraConfigPath();
-            final File extraPackagesFile = new File(felixExtraPackagesFile);
-
-            if (!extraPackagesFile.exists()) {
-
-                if (extraPackagesFile.getParentFile().mkdirs()) {
-                    this.createNewExtraPackageFile (extraPackagesFile);
-                }
-            }
-
             // Set all OSGI Packages
             String extraPackages;
             try {
@@ -189,11 +178,17 @@ public class OSGISystem {
      */
     public String getExtraOSGIPackages() throws IOException {
 
-        final File extraPackagesFile = new File(this.felixExtraPackagesFile);
-
         final StringWriter writer = new StringWriter();
-        try (InputStream inputStream = Files.newInputStream(extraPackagesFile.toPath())) {
-            writer.append(IOUtils.toString(inputStream));
+
+        try (InputStream initialStream = OSGIUtil.class.getResourceAsStream("/osgi/system/osgi-extra.conf")) {
+
+            final byte[] buffer = new byte[1024];
+            int bytesRead = -1;
+            while ((bytesRead = initialStream.read(buffer)) != -1) {
+                writer.write(new String(buffer, UTF_8), 0, bytesRead);
+            }
+
+            writer.flush();
         }
 
         //Clean up the properties, it is better to keep it simple and in a standard format
