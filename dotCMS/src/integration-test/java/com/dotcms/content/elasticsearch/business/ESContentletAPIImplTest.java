@@ -1292,33 +1292,50 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         final Language language1 = new LanguageDataGen().nextPersisted();
         final Language language2 = new LanguageDataGen().nextPersisted();
 
-        final Field publishField = new FieldDataGen().defaultValue(null).type(DateTimeField.class).next();
+
+        final Field publishField = new FieldDataGen().defaultValue(null)
+                .type(DateTimeField.class).next();
 
         final ContentType contentType = new ContentTypeDataGen()
                 .field(publishField)
                 .publishDateFieldVarName(publishField.variable())
                 .nextPersisted();
 
-        final Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.DATE, 1);
-        final Date tomorrow = calendar.getTime();
+        Contentlet contentlet1 = null;
+        Contentlet contentlet2 = null;
 
-        calendar.add(Calendar.DATE, 1);
-        final Date afterTomorrow = calendar.getTime();
+        try {
 
-        final Contentlet contentlet1 = new ContentletDataGen(contentType)
-                .setProperty(publishField.variable(), tomorrow)
-                .languageId(language1.getId())
-                .nextPersisted();
+            final Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.DATE, 1);
+            final Date tomorrow = calendar.getTime();
 
-        final Contentlet contentlet2 = ContentletDataGen.checkout(contentlet1);
-        contentlet2.setLanguageId(language2.getId());
-        contentlet2.setProperty(publishField.variable(), afterTomorrow);
-        ContentletDataGen.checkin(contentlet2);
+            calendar.add(Calendar.DATE, 1);
+            final Date afterTomorrow = calendar.getTime();
 
-        checkFromElasticSearch(publishField, tomorrow, afterTomorrow, contentlet1);
+            contentlet1 = new ContentletDataGen(contentType)
+                    .setProperty(publishField.variable(), tomorrow)
+                    .languageId(language1.getId())
+                    .nextPersisted();
 
-        checkFromDataBase(publishField, tomorrow, afterTomorrow, contentlet1);
+            contentlet2 = ContentletDataGen.checkout(contentlet1);
+            contentlet2.setLanguageId(language2.getId());
+            contentlet2.setProperty(publishField.variable(), afterTomorrow);
+            ContentletDataGen.checkin(contentlet2);
+
+            checkFromElasticSearch(publishField, tomorrow, afterTomorrow, contentlet1);
+
+            checkFromDataBase(publishField, tomorrow, afterTomorrow, contentlet1);
+        }finally {
+            LanguageDataGen.remove(language1);
+            LanguageDataGen.remove(language2);
+
+            FieldDataGen.remove(publishField);
+            ContentTypeDataGen.remove(contentType);
+
+            ContentletDataGen.remove(contentlet1);
+            ContentletDataGen.remove(contentlet2);
+        }
     }
 
     /**
