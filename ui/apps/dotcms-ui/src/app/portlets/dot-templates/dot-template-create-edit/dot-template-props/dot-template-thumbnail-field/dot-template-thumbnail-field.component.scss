@@ -1,0 +1,33 @@
+@use "variables" as *;
+@import "dotcms-theme/extends/inputtext.extends";
+
+dot-binary-file {
+    display: block;
+
+    & ::ng-deep {
+        .dot-binary__container {
+            display: flex;
+
+            input {
+                @extend #p-inputtext-extend;
+                border-top-left-radius: $border-radius;
+                border-bottom-left-radius: $border-radius;
+                padding: 1.07rem;
+                width: 100%;
+            }
+        }
+
+        dot-binary-text-field {
+            flex-grow: 1;
+        }
+
+        button {
+            border-top-right-radius: $border-radius;
+            border-bottom-right-radius: $border-radius;
+        }
+
+        .dot-file-preview__info {
+            border-radius: $border-radius;
+        }
+    }
+}

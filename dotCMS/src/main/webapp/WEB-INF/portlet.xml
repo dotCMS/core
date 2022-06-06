@@ -513,5 +513,11 @@
         <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
     </portlet>
 
+    <portlet>
+        <portlet-name>api_playground</portlet-name>
+        <display-name>API Playground</display-name>
+        <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
+    </portlet>
+
 
 </portlet-app>

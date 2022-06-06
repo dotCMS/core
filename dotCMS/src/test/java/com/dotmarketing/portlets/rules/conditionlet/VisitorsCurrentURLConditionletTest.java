@@ -161,7 +161,7 @@ public class VisitorsCurrentURLConditionletTest extends UnitTestBase {
     }
 
     private boolean runCase(TestCase aCase) {
-        return aCase.conditionlet.evaluate(aCase.request, aCase.conditionlet.instanceFrom(aCase.params), aCase.uri,aCase.pattern);
+        return aCase.conditionlet.evaluate(aCase.request, aCase.conditionlet.instanceFrom(aCase.params), new String[] {aCase.uri},aCase.pattern);
     }
 
     @Test(expected = IllegalStateException.class)

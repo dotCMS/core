@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -249,9 +251,16 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 			for (String key : keys) {
 				builder.append(key.toUpperCase()).append(": ");
 				List<Field> fields = notValidFields.get(key);
-				for (Field field : fields) {
+
+				for (int i = 0; i < fields.size(); i++) {
+					Field field = fields.get(i);
+
+					if (i > 0) {
+						builder.append(", ");
+					}
+
 					builder.append(field.getVelocityVarName()).append("/")
-							.append(field.getFieldName()).append(", ");
+							.append(field.getFieldName());
 				}
 				builder.append("\n");
 			}
@@ -277,6 +286,12 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 
 	@Override
 	public String getMessage() {
-		return super.getMessage() + "\n" + toString(false);
+		final String toString = toString(false);
+
+		if (UtilMethods.isSet(toString)) {
+			return super.getMessage() + "\n" + toString;
+		} else {
+			return super.getMessage();
+		}
 	}
 }

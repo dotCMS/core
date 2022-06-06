@@ -1,0 +1,62 @@
+@use "variables" as *;
+@import "dotcms-theme/utils/theme-variables";
+@import "dotcms-theme/utils/extends";
+
+:host {
+    display: flex;
+    align-items: center;
+
+    &::ng-deep {
+        .p-dropdown {
+            border: 0;
+            background: none;
+            width: 120px !important;
+        }
+
+        .p-dropdown-sm .p-dropdown .p-dropdown-label {
+            padding-left: 0;
+        }
+
+        .p-dropdown:not(.p-disabled).p-focus {
+            box-shadow: none;
+        }
+    }
+
+    &.disabled {
+        &::ng-deep dot-icon i,
+        label {
+            color: $field-disabled-color;
+        }
+    }
+
+    @media only screen and (max-width: $screen-device-container-max) {
+        ::ng-deep {
+            p-dropdown .p-dropdown {
+                width: 10px !important;
+
+                .p-dropdown-label {
+                    display: none;
+                }
+
+                .p-dropdown-trigger {
+                    width: auto;
+                }
+            }
+            label {
+                display: none;
+            }
+        }
+    }
+}
+
+dot-icon {
+    margin-right: $spacing-1;
+}
+
+label {
+    @extend #edit-page-selector-label;
+}
+
+.device-selector__field {
+    @extend #edit-page-selector-field;
+}

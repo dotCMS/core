@@ -1,0 +1,63 @@
+<div class="content-type-fields-drop-zone">
+    <div
+        [dragulaModel]="fieldRows"
+        class="content-type-fields-drop-zone__container"
+        dragula="fields-row-bag"
+        [attr.disabled]="loading"
+    >
+        <ng-template ngFor let-row let-i="index" [ngForOf]="fieldRows">
+            <dot-content-type-fields-row
+                *ngIf="row.columns && row.columns.length; else tab_container"
+                [fieldRow]="row"
+                (editField)="editFieldHandler($event)"
+                (removeField)="removeField($event)"
+                (removeRow)="removeFieldRow($event, i)"
+            >
+            </dot-content-type-fields-row>
+
+            <ng-template #tab_container>
+                <dot-content-type-fields-tab
+                    class="row-header__drag"
+                    [fieldTab]="row"
+                    (editTab)="saveFieldsHandler($event)"
+                    (removeTab)="removeTab($event, i)"
+                >
+                </dot-content-type-fields-tab>
+            </ng-template>
+        </ng-template>
+        <dot-add-rows (selectColums)="addRow($event)"></dot-add-rows>
+    </div>
+
+    <dot-loading-indicator [fullscreen]="true"></dot-loading-indicator>
+</div>
+
+<dot-dialog
+    [(visible)]="displayDialog"
+    [actions]="dialogActions"
+    [hideButtons]="hideButtons"
+    (hide)="removeFieldsWithoutId()"
+    [header]="currentFieldType?.label"
+>
+    <p-tabView [(activeIndex)]="activeTab" (onChange)="handleTabChange($event.index)">
+        <p-tabPanel [header]="'contenttypes.dropzone.tab.overview' | dm">
+            <dot-content-type-fields-properties-form
+                [formFieldData]="currentField"
+                (saveField)="saveFieldsHandler($event)"
+                (valid)="setDialogOkButtonState($event)"
+                [contentType]="contentType"
+                #fieldPropertiesForm
+            >
+            </dot-content-type-fields-properties-form>
+        </p-tabPanel>
+        <p-tabPanel
+            [header]="'contenttypes.dropzone.tab.variables' | dm"
+            [disabled]="!currentField?.id"
+        >
+            <ng-template pTemplate="content">
+                <dot-content-type-fields-variables
+                    [field]="currentField"
+                ></dot-content-type-fields-variables>
+            </ng-template>
+        </p-tabPanel>
+    </p-tabView>
+</dot-dialog>

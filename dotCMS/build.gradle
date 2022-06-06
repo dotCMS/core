@@ -241,10 +241,10 @@ dependencies {
 
 
 
-    starter group: 'com.dotcms', name: 'starter', version: 'empty_20220407', ext: 'zip'
+    starter group: 'com.dotcms', name: 'starter', version: 'empty_20220518', ext: 'zip'
     //Uncomment this line if you want to download the starter that comes with data
     // starter group: 'com.dotcms', name: 'starter', version: '20220504', ext: 'zip'
-    testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20220407', ext: 'zip'
+    testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20220518', ext: 'zip'
 
     profiler group: 'glowroot-custom', name: 'glowroot-agent', version: '0.13.1'
     profilerDependencies group: 'glowroot-custom', name: 'collector-https-linux', version: '0.13.1'
@@ -566,6 +566,8 @@ task cleanDotCmsWebComponents {
     delete './src/main/webapp/dotcms-webcomponents/package'
     delete './src/main/webapp/dotcms-webcomponents/dotcms-webcomponents.js'
     delete './src/main/webapp/dotcms-webcomponents/dotcms-webcomponents.esm.js'
+    //Cleanup for issue #22255 can be removed when no longer required
+    delete './src/main/webapp/dotcms-webcomponents/dotcms-webcomponents'
 }
 
 
@@ -580,7 +582,8 @@ task extractDotCmsWebComponents(type: NpmArtifactExtractTask) {
 
 task copyDotCmsWebComponents(type: Copy) {
     from (extractDotCmsWebComponents.outputDir.dir('package/dist'))
-    into "./src/main/webapp/dotcms-webcomponents"
+    into "./src/main/webapp"
+    include 'dotcms-webcomponents/*'
     dependsOn cleanDotCmsWebComponents
 }
 

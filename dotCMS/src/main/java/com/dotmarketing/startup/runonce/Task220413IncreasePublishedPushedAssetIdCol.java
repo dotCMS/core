@@ -2,8 +2,10 @@ package com.dotmarketing.startup.runonce;
 
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.startup.StartupTask;
+import com.dotmarketing.util.Logger;
 
 /**
  * Increase the PUBLISHING_PUSHED_ASSETS.ASSET_ID column capacity to 255 since after pushing plugins we can have long
@@ -23,9 +25,19 @@ public class Task220413IncreasePublishedPushedAssetIdCol implements StartupTask 
 
     @Override
     public void executeUpgrade() throws DotDataException {
-        new DotConnect()
-                .setSQL(resolveAlterCommand(255))
-                .loadResult();
+        DotConnect dc = new DotConnect();
+        HibernateUtil.startTransaction();
+        try {
+            if (DbConnectionFactory.isMsSql() && !DbConnectionFactory.getAutoCommit()) {
+                DbConnectionFactory.getConnection().setAutoCommit(true);
+            }
+            dc.setSQL(resolveAlterCommand(255)).loadResult();
+        } catch (Exception e) {
+            HibernateUtil.rollbackTransaction();
+            Logger.error(this, e.getMessage(),e);
+        }
+
+        HibernateUtil.closeAndCommitTransaction();
     }
 
     static String resolveAlterCommand(int capacity) {

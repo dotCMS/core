@@ -4,7 +4,7 @@ Cluster with 2 dotCMS instances running on ports 8080 and 8081 respectively. Dat
 
 ## Usage
 
-####Environment setup
+#### Environment setup
 
 
 1) A local path to license pack must be set here:
@@ -28,7 +28,7 @@ The license pack must contain at least two licenses (one for each node in the cl
 #"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20210920/starter-20210920.zip'
 ```
 
-####Deploying nodes:
+#### Deploying nodes:
 
 ```bash
 docker-compose -f docker-compose-node-1.yml up
@@ -42,7 +42,7 @@ docker-compose -f docker-compose-node-2.yml up
 ```
 
 
-####Undeploying nodes:
+#### Undeploying nodes:
 
 ```bash
 docker-compose -f docker-compose-node-2.yml down
