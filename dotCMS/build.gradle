@@ -181,6 +181,7 @@ configurations {
     buildlibs
 
     felix
+    felixsystem
     starter
     testsStarter
     profiler
@@ -226,20 +227,25 @@ dependencies {
     felix(group: 'org.osgi', name: 'org.osgi.compendium', version: '4.3.1') {
         transitive = false
     }
-   /* felix(group: 'org.apache.tika', name: 'tika-core', version: '1.19') {
-        transitive = false
-    }
-    felix(group: 'org.apache.tika', name: 'tika-bundle', version: '1.19') {
-        transitive = false
-    }*/
 
     felix group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.25'
     felix group: 'org.slf4j', name: 'jcl-over-slf4j', version: '1.7.25'
-    //felix group: 'com.dotcms.tika', name: 'com.dotcms.tika', version: '0.2'
 
-    //felix group: 'com.dotcms.samlbundle', name: 'com.dotcms.samlbundle', version: '22.03'
+    //// Felix system configuration
+    felixsystem group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.25'
+    felixsystem group: 'org.slf4j', name: 'jcl-over-slf4j', version: '1.7.25'
 
+    felixsystem(group: 'org.apache.tika', name: 'tika-core', version: '1.19') {
+        transitive = false
+    }
+    felixsystem(group: 'org.apache.tika', name: 'tika-bundle', version: '1.19') {
+        transitive = false
+    }
+    felixsystem group: 'com.dotcms.tika', name: 'com.dotcms.tika', version: '0.2'
 
+    felixsystem group: 'com.dotcms.samlbundle', name: 'com.dotcms.samlbundle', version: '22.03'
+
+    //// starter config
 
     starter group: 'com.dotcms', name: 'starter', version: 'empty_20220518', ext: 'zip'
     //Uncomment this line if you want to download the starter that comes with data
@@ -701,6 +707,16 @@ war {
             exclude 'WEB-INF/felix'
         }
     }
+    // verify system-felix {
+        from(configurations.felixsystem) {
+            into felixSystemFolder.concat("/bundle")
+        }
+
+        from(configurations.runtimeClasspath) {
+            into felixSystemFolder.concat("/bundle")
+            include '**/org.apache.felix.http.api*.jar'
+        }
+    //}
 
     from (configurations.starter) {
         into dotcmsFolder
