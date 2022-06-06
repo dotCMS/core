@@ -1,8 +1,9 @@
 {
 	"info": {
-		"_postman_id": "e50562bb-76d4-492a-89b7-c741f7fcd065",
+		"_postman_id": "34e0845d-ae70-4f9a-9bed-bb7990c3518f",
 		"name": "Page API - [api/v1/page]",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "4500400"
 	},
 	"item": [
 		{
@@ -92,94 +93,9 @@
 						"description": "Imports a Bundle that includes:\n* HTMLPage /blog/index\n* HTMLPage /blog/destinations/costa-rica\n* Contentlet [Blog] Ecotourism in Costa Rica\n* Blog Detail Page /blog/blog-detail"
 					},
 					"response": []
-				},
-				{
-					"name": "pre - Import test Story Block page",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Bundle uploaded sucessfully\", function () {",
-									"    pm.response.to.have.status(200);",
-									"",
-									"    var jsonData = pm.response.json();",
-									"    console.log(jsonData);",
-									"",
-									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"test-story-block-page.tar.gz\");",
-									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"type": "text",
-								"value": "application/octet-stream"
-							},
-							{
-								"key": "Content-Disposition",
-								"type": "text",
-								"value": "attachment"
-							}
-						],
-						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "file",
-									"type": "file",
-									"src": "resources/StoryBlock/test-story-block-page.tar.gz"
-								}
-							]
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/bundle?sync=true",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"bundle"
-							],
-							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
-								{
-									"key": "AUTH_TOKEN",
-									"value": "",
-									"disabled": true
-								}
-							]
-						},
-						"description": "Imports a Bundle used for testing that the Story Block field must be sent as a JSON object instead of a String. This bundle contains:\n\n*   Content Type: Story Block Type\n*   Container: Story Block Container\n*   Template: Story Block Template\n*   Contentlet: My Story Block Content\n*   HTML Page: /story-block-page"
-					},
-					"response": []
 				}
 			],
-			"description": "Imports the required test data structures used by this Test Collection. For more information, please refer to each specific test.",
+			"description": "Imports a Bundle that includes:\n* HTMLPage /blog/index\n* HTMLPage /blog/destinations/costa-rica\n* Contentlet [Blog] Ecotourism in Costa Rica\n* Blog Detail Page /blog/blog-detail",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -204,70 +120,6 @@
 		{
 			"name": "JSON [api/v1/page/json]",
 			"item": [
-				{
-					"name": "Validate Story Block field as JSON value",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"",
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test(\"Story Block field must NOT be a JSON string\", function () {",
-									"    var jsonData = pm.response.json();",
-									"    var container = jsonData[\"entity\"][\"containers\"][\"800366f8a524510cfdadaa8f0776c71b\"][\"contentlets\"][\"uuid-dotParser_1651521946853\"];",
-									"    pm.expect(container[0].storyBlock).to.not.be.a('string');",
-									"});",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/page/json/story-block-page?host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"page",
-								"json",
-								"story-block-page"
-							],
-							"query": [
-								{
-									"key": "host_id",
-									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
-								}
-							]
-						},
-						"description": "Verifies that the JSON response for the specified test HTML Page returns its Story Block field as a JSON object, and not as a String.\n\n[http://localhost:8080/api/v1/page/json/{page-url}](http://localhost:8080/api/v1/page/json/{page-url})"
-					},
-					"response": []
-				},
 				{
 					"name": "invalidateSession",
 					"event": [
@@ -344,6 +196,81 @@
 							]
 						},
 						"description": "Given no user, should return 401 and \"Invalid User\" message"
+					},
+					"response": []
+				},
+				{
+					"name": "Switch site to 'demo.dotcms.com'",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    var jsonData = pm.response.json();",
+									"",
+									"    pm.expect(jsonData.entity.hostSwitched).equal(true);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site/switch/48190c8c-42c4-46af-8d1a-0cd5db894797",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"switch",
+								"48190c8c-42c4-46af-8d1a-0cd5db894797"
+							]
+						}
 					},
 					"response": []
 				},
@@ -2939,7 +2866,7 @@
 					}
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NEW",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -2950,7 +2877,7 @@
 						"actions",
 						"default",
 						"fire",
-						"PUBLISH"
+						"NEW"
 					]
 				}
 			},
@@ -2975,18 +2902,12 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/pageassetsystemtemplate?host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
+					"raw": "{{serverURL}}/pageassetsystemtemplate",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"pageassetsystemtemplate"
-					],
-					"query": [
-						{
-							"key": "host_id",
-							"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
-						}
 					]
 				}
 			},
