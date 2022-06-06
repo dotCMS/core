@@ -21,16 +21,25 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import io.vavr.control.Try;
 import java.io.File;
 import java.io.Serializable;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -56,7 +65,7 @@ public class MetadataDelegate implements HydrationDelegate {
     }
 
     /**
-     * This must be solid we dont want a NPE here since it could break the entire start-up process
+     * This must be solid we don't want a NPE here since it could break the entire start-up process
      * @param field
      * @param contentlet
      * @return
@@ -87,6 +96,59 @@ public class MetadataDelegate implements HydrationDelegate {
     }
 
     /**
+     * This method takes a file (that oftentimes comes from the starter with an invalid path) and verifies it exists
+     * If the file does not exist it will try to drop the absolute route piece and keep the relative path
+     * The new file path is tested against the real asset path location trying to match the file with the new current location
+     * If the new location point to an existing file that file is returned otherwise the old file passed by parameter is returned.
+     * @param in incoming file
+     * @return
+     */
+    @VisibleForTesting
+    File normalize(final File in) {
+        //If the file exists no normalization should be attempted
+        if (in.exists()) {
+            return in;
+        }
+
+        //Now extract the relative bits ot the incoming file.
+        try {
+            // Something like this is what we're aiming for
+            // /0/1/0134ab84-e618-42ae-8be8-58c9c33e8901/fileAsset/lg.ttf
+            final String path = in.getPath().toLowerCase();
+
+            final String[] parts = path.split(Pattern.quote(File.separator));
+            final int fileIndex = parts.length - 1;
+            final int folderIndex = fileIndex - 1;
+            final int inodeIndex = folderIndex - 1;
+            final int char2Index = inodeIndex - 1;
+            final int char1Index = char2Index - 1;
+
+            final String file = parts[fileIndex];
+            final String folder = parts[folderIndex];
+            final String inode = parts[inodeIndex];
+            final String char2 = parts[char2Index];
+            final String char1 = parts[char1Index];
+
+            final String assetsRootPath = ConfigUtils.getAbsoluteAssetsRootPath();
+            //Rebuild the path and prepend the new local assets real-path
+            final String rebuiltPath = String.join(File.separator, assetsRootPath, char1, char2,
+                    inode,
+                    folder, file);
+            //get rid of any repetitive separator
+            final File normalizedFile = Path.of(rebuiltPath).normalize().toFile();
+            if (normalizedFile.exists()) {
+                //if we succeed then return
+                Logger.debug(MetadataDelegate.class,()->String.format("Incoming invalid file fixed %s",normalizedFile.getPath()));
+                return normalizedFile;
+            }
+        } catch (Exception e) {
+            Logger.debug(MetadataDelegate.class, e, () -> "Error normalizing file path.");
+        }
+        //If we failed normalizing the incoming file we return the incoming file and let the metadata delegate fail
+        return in;
+    }
+
+    /**
      *
      * @param file
      * @return
@@ -97,7 +159,8 @@ public class MetadataDelegate implements HydrationDelegate {
         final StorageType storageType = StoragePersistenceProvider.getStorageType();
         final FileStorageAPI fileStorageAPI = APILocator.getFileStorageAPI();
         final Predicate<String> filterBasicMetadataKey = metadataKey -> true;
-         return fileStorageAPI.generateMetaData(file,
+        final File normalized = normalize(file);
+         return fileStorageAPI.generateMetaData(normalized,
                 new GenerateMetadataConfig.Builder()
                         //if there's metadata already generated this should find it for us (all that if we have an inode)
                         //otherwise it'll give us the basic md. Nothing gets stored/saved here.
