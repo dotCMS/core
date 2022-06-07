@@ -158,6 +158,7 @@ import com.dotmarketing.startup.runonce.Task220401CreateClusterLockTableTest;
 import com.dotmarketing.startup.runonce.Task220402UpdateDateTimezonesTest;
 import com.dotmarketing.startup.runonce.Task220413IncreasePublishedPushedAssetIdColTest;
 import com.dotmarketing.startup.runonce.Task220512UpdateNoHTMLRegexValueTest;
+import com.dotmarketing.startup.runonce.Task220606UpdatePushNowActionletNameTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -546,7 +547,8 @@ import org.junit.runners.Suite.SuiteClasses;
         BoundedBufferedReaderTest.class,
         ContentWorkflowHandlerTest.class,
         Task220512UpdateNoHTMLRegexValueTest.class,
-        Task220401CreateClusterLockTableTest.class
+        Task220401CreateClusterLockTableTest.class,
+        Task220606UpdatePushNowActionletNameTest.class
 })
 public class MainSuite {
 
