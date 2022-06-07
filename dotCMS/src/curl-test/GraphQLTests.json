@@ -4328,7 +4328,7 @@
 									"",
 									"    var fileAsset = myFile.fileAsset;",
 									"",
-									"    pm.expect(fileAsset.path).contains(\"/e/a/eab7c291-88d8-4baa-80b4-dc9a035221da/asset/Brave.pdf\");",
+									"    pm.expect(fileAsset.path).contains(\"e/a/eab7c291-88d8-4baa-80b4-dc9a035221da/asset/Brave.pdf\");",
 									"    pm.expect(fileAsset.height).to.eql(0);",
 									"    pm.expect(fileAsset.focalPoint).to.eql('0.0');",
 									"    pm.expect(fileAsset.idPath).contains('/dA/5df50887a0/asset/Brave.pdf');",
@@ -5869,6 +5869,8 @@
 									"",
 									"    pm.expect(map.body, 'FAILED:[map.body]').contains(\"Curabitur egestas mi eget massa maximus\");",
 									"",
+									"    // related author",
+									"    pm.expect(map.author[0], 'FAILED:[map.body]').equal(\"f851e34a-d128-408e-a75a-4fa1c33201b8\");",
 									"",
 									"    // assertions for File field",
 									"    var file = map.myFile;",
@@ -8692,7 +8694,7 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"pm.test(\"Contentlet StoryBlock has value\", function() {",
-									"    pm.expect(jsonData.entity.block).contains(\"Wow, this editor instance exports its content as JSON\");",
+									"    pm.expect(jsonData.entity.block.content[0].content[0].text).contains(\"Wow, this editor instance exports its content as JSON\");",
 									"});"
 								],
 								"type": "text/javascript"

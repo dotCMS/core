@@ -718,6 +718,81 @@
 					"response": []
 				},
 				{
+					"name": "Switch site to 'demo.dotcms.com' Copy",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    var jsonData = pm.response.json();",
+									"",
+									"    pm.expect(jsonData.entity.hostSwitched).equal(true);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site/switch/48190c8c-42c4-46af-8d1a-0cd5db894797",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"switch",
+								"48190c8c-42c4-46af-8d1a-0cd5db894797"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "GivenValidPageURL_ShouldReturnPageInfoAndRenderHTML",
 					"event": [
 						{
@@ -853,7 +928,8 @@
 									"",
 									"",
 									"pm.test(\"Response body contains\", function () {",
-									"    pm.expect(pm.response.text()).to.eq(\"{\\\"message\\\":\\\"Page \\'about-us/index2\\' not found\\\"}\");",
+									"   ",
+									"    pm.expect( pm.response.json().message).to.eq(\"Page 'about-us/index2' not found\");",
 									"});",
 									"",
 									""
@@ -2581,7 +2657,7 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"{\\\"message\\\":\\\"Page 'about-us/our-team/index2' not found\\\"}\");",
+									"    pm.expect(pm.response.text()).to.include(\"Page \\'about-us/our-team/index2\\' not found\");",
 									"});",
 									"",
 									"",
@@ -2655,6 +2731,81 @@
 		{
 			"name": "Whats Changed",
 			"item": [
+				{
+					"name": "Switch site to 'default'",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    var jsonData = pm.response.json();",
+									"",
+									"    pm.expect(jsonData.entity.hostSwitched).equal(true);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site/switch/8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"switch",
+								"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+							]
+						}
+					},
+					"response": []
+				},
 				{
 					"name": "pre_ImportBundle",
 					"event": [
@@ -2809,7 +2960,7 @@
 			]
 		},
 		{
-			"name": "Put Create Page With CacheTTL 55",
+			"name": "Put Create Page With CacheTTL 100",
 			"event": [
 				{
 					"listen": "test",
@@ -2822,7 +2973,7 @@
 							"var jsonData = pm.response.json();",
 							"",
 							"pm.test(\"Identifier must contains path\", function () {",
-							"    pm.expect(jsonData.entity.template).contains(\"//default/application/templates/system/\");",
+							"    pm.expect(jsonData.entity.template).eq(\"SYSTEM_TEMPLATE\");",
 							"});"
 						],
 						"type": "text/javascript"
@@ -2858,7 +3009,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"contentlet\":{\n\t\t\"stName\": \"htmlpageasset\",\n\t\t\"title\": \"PageAsset SystemTemplate\",\n        \"url\": \"pageassetsystemtemplate\",\n        \"friendlyName\":\"pageassetsystemtemplate\",\n        \"template\": \"//default/application/templates/system/\",\n        \"sortOrder\": \"0\",\n        \"cachettl\": \"100\",\n        \"hostFolder\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\"\n\t}\n}",
+					"raw": "{\n\t\"contentlet\":{\n\t\t\"stName\": \"htmlpageasset\",\n\t\t\"title\": \"PageAsset SystemTemplate\",\n        \"url\": \"pageassetsystemtemplate\",\n        \"friendlyName\":\"pageassetsystemtemplate\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"sortOrder\": \"0\",\n        \"cachettl\": \"100\",\n        \"hostFolder\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\"\n\t}\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -2866,7 +3017,7 @@
 					}
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NEW",
+					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -2877,7 +3028,39 @@
 						"actions",
 						"default",
 						"fire",
-						"NEW"
+						"PUBLISH"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "invalidateSession",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/logout",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"logout"
 					]
 				}
 			},
@@ -2891,7 +3074,7 @@
 					"script": {
 						"exec": [
 							"pm.test(\"Cache-Control is correct\", function () {",
-							"    pm.response.to.be.header('Cache-Control','max-age=55');",
+							"    pm.response.to.be.header('Cache-Control','max-age=100');",
 							"});"
 						],
 						"type": "text/javascript"
