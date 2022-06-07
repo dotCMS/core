@@ -136,9 +136,10 @@ public class MetadataDelegate implements HydrationDelegate {
                     folder, file);
             //get rid of any repetitive separator
             final File normalizedFile = Path.of(rebuiltPath).normalize().toFile();
-            if (normalizedFile.exists()) {
+            if (!normalizedFile.exists()) {
+                Logger.warn(MetadataDelegate.class,()->String.format(":::Unable to re-build a matching file path %s ",normalizedFile.getPath()));
+            } else {
                 //if we succeed then return
-                Logger.warn(MetadataDelegate.class,()->String.format(":::Incoming invalid file fixed %s",normalizedFile.getPath()));
                 return normalizedFile;
             }
         } catch (Exception e) {
