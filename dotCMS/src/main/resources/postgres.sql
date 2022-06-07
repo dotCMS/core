@@ -1142,7 +1142,7 @@ create table clickstream_request (
    request_order int4,
    query_string text,
    language_id int8,
-   timestamptzper timestamptz,
+   timestampper timestamptz,
    host_id varchar(36),
    associated_identifier varchar(36),
    primary key (clickstream_request_id)
@@ -1358,7 +1358,7 @@ create table clickstream_404 (
    request_uri varchar(255),
    user_id varchar(255),
    host_id varchar(36),
-   timestamptzper timestamptz,
+   timestampper timestamptz,
    primary key (clickstream_404_id)
 );
 create table cms_layout (
@@ -1538,7 +1538,7 @@ create index idx_click_1 on click (link);
 alter table click add constraint fk5a5c5885fb51eb foreign key (inode) references inode;
 create index idx_user_clickstream_request_2 on clickstream_request (request_uri);
 create index idx_user_clickstream_request_1 on clickstream_request (clickstream_id);
-create index idx_user_clickstream_request_4 on clickstream_request (timestamptzper);
+create index idx_user_clickstream_request_4 on clickstream_request (timestampper);
 create index idx_user_clickstream_request_3 on clickstream_request (associated_identifier);
 create index idx_dashboard_workstream_2 on analytic_summary_workstream (host_id);
 create index idx_dashboard_workstream_1 on analytic_summary_workstream (mod_user_id);
