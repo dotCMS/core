@@ -14,6 +14,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.FileUtil;
+import com.dotmarketing.util.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -56,6 +57,7 @@ public class MetadataDelegateTest {
         final File binary = (File)contentlet.get(FileAssetAPI.BINARY_FIELD);
         final String rootPath = ConfigUtils.getRelativeAssetPath();
         final String path = binary.getPath();
+        Logger.info(MetadataDelegateTest.class, "Binary path ::: " +  path);
         final int index = path.indexOf(rootPath);
         //Drop the relative part and prepend a route like the one that typically has a file packed in the starter
         final String assetPath = path.substring(index + rootPath.length() );

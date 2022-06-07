@@ -138,11 +138,11 @@ public class MetadataDelegate implements HydrationDelegate {
             final File normalizedFile = Path.of(rebuiltPath).normalize().toFile();
             if (normalizedFile.exists()) {
                 //if we succeed then return
-                Logger.warn(MetadataDelegate.class,()->String.format("Incoming invalid file fixed %s",normalizedFile.getPath()));
+                Logger.warn(MetadataDelegate.class,()->String.format(":::Incoming invalid file fixed %s",normalizedFile.getPath()));
                 return normalizedFile;
             }
         } catch (Exception e) {
-            Logger.warn(MetadataDelegate.class, () -> "Error normalizing file path.", e);
+            Logger.warn(MetadataDelegate.class, () -> ":::Error normalizing file path.", e);
         }
         //If we failed normalizing the incoming file we return the incoming file and let the metadata delegate fail
         return in;
