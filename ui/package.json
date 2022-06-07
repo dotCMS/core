@@ -19,9 +19,7 @@
         "build:docs:dotcms": "typedoc --options libs/dotcms/typedoc.json;",
         "build:docs:dotcms-models": "typedoc --options libs/dotcms-models/typedoc.json",
         "publish:docs": "gh-pages --dist ./docs --dest ./",
-        "build:dev": "nx build dotcms-webcomponents --with-deps;nx build dotcms-ui",
-        "build:prod": "nx build dotcms-webcomponents --with-deps;nx build dotcms-ui --configuration production",
-        "build:dotcms-block-editor": "ng build dotcms-block-editor --configuration production --output-hashing=none && cat dist/apps/dotcms-block-editor/{generator-runtime,runtime,polyfills,main}.js > dotcms-block-editor.js",
+
         "docker:test": "npm run docker:build;IMAGE_BASE_NAME=core-web docker-compose -f docker-compose-running-test.yml up",
         "docker:build": "docker build -t core-web .",
         "analyze": "ng build --stats-json;webpack-bundle-analyzer dist/stats.json",
@@ -42,7 +40,15 @@
         "dep-graph": "nx dep-graph",
         "help": "nx help",
         "pretty-quick": "pretty-quick",
-        "prepare": "is-ci || pwd && cd ../ && pwd && husky install ui/.husky && cd ./ui"
+        "prepare": "is-ci || pwd && cd ../ && pwd && husky install ui/.husky && cd ./ui",
+
+        "build:dev": "npm run build:dotcms-webcomponents;nx build dotcms-ui",
+        "build:prod": "npm run build:dotcms-webcomponents;nx run dotcms-ui:build:production",
+        "build:dotcms-webcomponents": "nx build dotcms-webcomponents --with-deps",
+        "build:dotcms-block-editor": "nx run dotcms-block-editor:build:production && cat dist/apps/dotcms-block-editor/{generator-runtime,runtime,polyfills,main}.js > dotcms-block-editor.js",
+        "storybook:dotcms-webcomponents": "npx nx run dotcms-webcomponents:storybook",
+        "storybook:dotcms-ui": "npx nx run dotcms-ui:storybook",
+        "storybook:dotcms-block-editor": "npx nx run dotcms-block-editor:storybook"
     },
     "private": false,
     "dependencies": {

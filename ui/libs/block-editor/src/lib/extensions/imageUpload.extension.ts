@@ -109,7 +109,7 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                     key: new PluginKey('imageUpload'),
                     props: {
                         handleDOMEvents: {
-                            paste(view, event) {
+                            paste(view, event: ClipboardEvent) {
                                 if (areImageFiles(event)) {
                                     if (event.clipboardData.files.length !== 1) {
                                         alert('Can paste just one image at a time');
@@ -123,7 +123,7 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                                 return false;
                             },
 
-                            drop(view, event) {
+                            drop(view, event: DragEvent) {
                                 if (areImageFiles(event)) {
                                     event.preventDefault();
                                     if (event.dataTransfer.files.length !== 1) {
