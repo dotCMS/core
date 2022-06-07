@@ -1329,7 +1329,8 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             LanguageDataGen.remove(language1);
             LanguageDataGen.remove(language2);
 
-            FieldDataGen.remove(publishField);
+            final Field field = APILocator.getContentTypeFieldAPI().find(publishField.id());
+            FieldDataGen.remove(field);
             ContentTypeDataGen.remove(contentType);
 
             ContentletDataGen.remove(contentlet1);
