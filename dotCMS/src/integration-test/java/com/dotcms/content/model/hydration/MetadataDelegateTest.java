@@ -65,7 +65,7 @@ public class MetadataDelegateTest {
         Assert.assertFalse(absoluteNoneExistingPath.toFile().exists());
         //Moment of truth the file should be fixed and converted into the local equivalent file
         final File normalizedExistingPath = delegate.normalize(absoluteNoneExistingPath.toFile());
-        Assert.assertTrue(normalizedExistingPath.exists());
+        Assert.assertTrue(String.format("Path %s is expected to exist.",normalizedExistingPath.getPath()) ,normalizedExistingPath.exists());
     }
 
 
