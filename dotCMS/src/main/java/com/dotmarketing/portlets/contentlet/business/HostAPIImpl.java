@@ -481,7 +481,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     }
 
     @Override
-    @CloseDBIfOpened
+    @WrapInTransaction
     public Host findSystemHost(final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         if (null != this.systemHost) {
             return this.systemHost;

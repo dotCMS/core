@@ -652,6 +652,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		newFolder.setDefaultFileType(initialFolder.getDefaultFileType());
 		newFolder.setOwner(initialFolder.getOwner());
 		newFolder.setIDate(initialFolder.getIDate());
+		newFolder.setHostId(newParentHostId);
 
 		final Identifier newIdentifier = !UtilMethods.isSet(newParentFolder) || newParentFolder.isSystemFolder()?
 				APILocator.getIdentifierAPI().createNew(newFolder, newHost):
@@ -659,6 +660,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
 		newFolder.setIdentifier(newIdentifier.getId());
 		newFolder.setModDate(new Date());
+
 		save(newFolder);
 		return newFolder;
 	}
