@@ -9,11 +9,15 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.CompanyDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.publisher.pusher.wrapper.HostWrapper;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileUpload.model.FileUpload;
@@ -653,5 +657,16 @@ public class XStreamFactoryTest {
         assertEquals(false, folder.isShowOnMenu());
         assertEquals("48190c8c-42c4-46af-8d1a-0cd5db894797", folder.getHostId());
         assertEquals("33888b6f-7a8e-4069-b1b6-5c1aa9d0a48d", folder.getDefaultFileType());
+    }
+
+    @Test
+    public void aaa() throws DotDataException, DotSecurityException {
+
+        final File binary = new File(Thread.currentThread().getContextClassLoader().getResource("images/test.jpg").getFile());
+        final Host site = new SiteDataGen().nextPersisted();
+        final Contentlet contentlet = new FileAssetDataGen(site, binary).nextPersisted();
+
+        final String s = XStreamFactory.INSTANCE.getInstance().toXML(contentlet);
+        System.out.println("s = " + s);
     }
 }

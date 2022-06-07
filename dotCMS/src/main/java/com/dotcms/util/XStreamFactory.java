@@ -43,7 +43,8 @@ public enum XStreamFactory {
             "com.dotmarketing.tag.model.TagInode",
             "com.dotcms.publisher.business.EndpointDetail",
             "com.dotcms.publisher.pusher.wrapper.**",
-            "com.dotcms.storage.model.Metadata"
+            "com.dotcms.storage.model.Metadata",
+            "com.dotmarketing.portlets.fileassets.business.FileAsset"
     };
 
     private Map<Charset, XStream> xstreams;
@@ -64,7 +65,7 @@ public enum XStreamFactory {
             final String encodingAsString = UtilMethods.isSet(encoding) ? encoding.toString() : null;
             xstream = new XStream(new DomDriver(encodingAsString));
             xstream.allowTypesByWildcard(WHITE_LIST);
-            xstream.registerConverter(new JavaBeanConverter(xstream.getMapper(), ContainerStructure.class), JAVA_BEAN_CONVERTER_PRIORITY);
+            //xstream.registerConverter(new JavaBeanConverter(xstream.getMapper(), ContainerStructure.class), JAVA_BEAN_CONVERTER_PRIORITY);
             xstreams.put(encoding, xstream);
         }
 
