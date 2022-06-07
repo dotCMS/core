@@ -518,7 +518,7 @@ public class ContentUtils {
     /**
      * Logic used for `pullRelated` and `pullRelatedField` methods
      */
-    private static List<Contentlet> getPullResults(final Relationship relationship,
+    public static List<Contentlet> getPullResults(final Relationship relationship,
             String contentletIdentifier, final String condition, final int limit, final int offset,
             String sort, final User user, final String tmDate, final boolean pullParents,
             final long language, final Boolean live) {

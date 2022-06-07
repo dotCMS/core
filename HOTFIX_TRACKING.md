@@ -16,3 +16,5 @@ This maintenance release includes the following code fixes:
 
 9. https://github.com/dotCMS/core/issues/22288 : DotParse not respecting config property #22288
 10. https://github.com/dotCMS/core/issues/22094 : No HTML RegEx Invalidates Period (.) When Used #22094
+11. https://github.com/dotCMS/core/issues/22287 : Reading osgi import packages fails when osgi version specifies a range #22287
+12. https://github.com/dotCMS/core/issues/22319 : Rest API: Pulling Relationships from child #22319
