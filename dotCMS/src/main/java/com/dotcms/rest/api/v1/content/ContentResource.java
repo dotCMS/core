@@ -264,7 +264,7 @@ public class ContentResource {
                                 final PullRelatedForm pullRelatedForm) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+                .requestAndResponse(request, response).requiredAnonAccess(AnonymousAccess.READ).init();
 
         Logger.debug(this, ()-> "Requesting pull related parents for the contentletIdentifier: " + pullRelatedForm.getIdentifier() +
                 ", relationshipFieldVariable: " + pullRelatedForm.getFieldVariable() + ", luceneCondition: " + pullRelatedForm.getCondition() +
