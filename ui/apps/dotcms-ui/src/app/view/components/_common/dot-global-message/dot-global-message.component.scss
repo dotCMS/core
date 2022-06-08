@@ -1,0 +1,49 @@
+@use "variables" as *;
+@import "dotcms-theme/utils/theme-variables";
+
+:host {
+    align-items: center;
+    border-right: solid 1px $gray-bg;
+    display: flex;
+    opacity: 0;
+    padding-right: $spacing-4;
+    transition: $basic-speed * 2;
+
+    dot-icon,
+    dot-spinner {
+        margin-right: $spacing-1;
+        align-self: center;
+    }
+
+    &.loading {
+        .dot-global-message__text {
+            color: $brand-primary;
+        }
+    }
+
+    &.check_circle {
+        dot-icon {
+            color: $success;
+        }
+    }
+
+    &.warning {
+        dot-icon {
+            color: $warn;
+        }
+    }
+
+    &.error {
+        dot-icon {
+            color: $error;
+        }
+    }
+}
+
+:host(.dot-global-message--visible) {
+    opacity: 1;
+}
+
+.dot-global-message__text {
+    color: $gray;
+}

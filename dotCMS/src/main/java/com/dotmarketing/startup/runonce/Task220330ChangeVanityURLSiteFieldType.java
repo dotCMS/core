@@ -51,8 +51,6 @@ public class Task220330ChangeVanityURLSiteFieldType implements StartupTask {
    final String GET_FIELD_CONTENTLET = "SELECT structure_inode,field_contentlet FROM field "
             + "WHERE velocity_var_name ='site' AND field_contentlet <> 'system_field' AND structure_inode in (SELECT inode FROM structure WHERE structuretype = 7)";
 
-   final String UPDATE_HOST_INODE = "UPDATE identifier SET host_inode = ? WHERE id = ?";
-
     @Override
     public boolean forceRun() {
         return true;
@@ -60,27 +58,9 @@ public class Task220330ChangeVanityURLSiteFieldType implements StartupTask {
 
     @Override
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
-        try {
-            final List<ContentletHost> contentlets = getContentlets();
+        updateFieldType();
 
-            updateHost(contentlets);
-            updateFieldType();
-
-            CacheLocator.getContentTypeCache2().clearCache();
-        } catch (JsonProcessingException | DotSecurityException e) {
-            Logger.error(Task220330ChangeVanityURLSiteFieldType.class, e.getMessage());
-        }
-    }
-
-    private List<ContentletHost> getContentlets()
-            throws DotDataException, DotSecurityException, JsonProcessingException {
-
-        final List<ContentletHost> result = new ArrayList<>();
-
-        addNotJsonContentlet(result);
-        addJsonContentlet(result);
-
-        return result;
+        CacheLocator.getContentTypeCache2().clearCache();
     }
 
     private void addJsonContentlet(final List<ContentletHost> result)
@@ -122,16 +102,6 @@ public class Task220330ChangeVanityURLSiteFieldType implements StartupTask {
         final DotConnect dotConnect = new DotConnect();
         dotConnect.setSQL(UPDATE_FIELD_TYPE);
         dotConnect.loadResult();
-    }
-
-    private void updateHost(final List<ContentletHost> contentlets) throws DotDataException {
-        final DotConnect dotConnect = new DotConnect();
-
-        final List<Params> batchParams = contentlets.stream()
-                .map(contentletHost -> new Params(contentletHost.hostInode, contentletHost.contentletIdentifier))
-                .collect(Collectors.toList());
-
-        dotConnect.executeBatch(UPDATE_HOST_INODE, batchParams);
     }
 
     private List<Map<String, Object>> getFromQuery(final  String contentletQuery)

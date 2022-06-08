@@ -60,6 +60,7 @@ import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.DomDriver;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
@@ -108,6 +109,7 @@ import static com.dotmarketing.util.NumberUtil.toInt;
 import static com.dotmarketing.util.NumberUtil.toLong;
 
 @Path("/content")
+@Tag(name = "Content Delivery")
 public class ContentResource {
 
     // set this only from an environmental variable so it cannot be overrriden in our Config class

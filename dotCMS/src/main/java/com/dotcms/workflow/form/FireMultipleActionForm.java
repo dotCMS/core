@@ -26,6 +26,7 @@ public class FireMultipleActionForm extends Validated {
     private final String iWantTo;
     private final String timezoneId;
 
+    @JsonProperty("contentlet")
     private final List<Map<String, Object>> contentletsFormData;
 
     public String getComments() {

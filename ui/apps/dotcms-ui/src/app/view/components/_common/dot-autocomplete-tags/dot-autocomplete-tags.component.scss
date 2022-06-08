@@ -1,0 +1,102 @@
+@use "variables" as *;
+@import "dotcms-theme/extends/inputtext.extends";
+
+:host {
+    min-height: 6.85rem;
+    display: flex;
+    position: relative;
+
+    .autocomplete-helper {
+        font-size: $font-size-small;
+        text-transform: uppercase;
+        position: absolute;
+        top: 15px;
+        right: $spacing-1;
+        color: $gray;
+        display: flex;
+        align-items: baseline;
+
+        dot-icon {
+            border: 1px solid;
+            padding: 2px;
+            margin-left: $spacing-1;
+            vertical-align: middle;
+        }
+    }
+
+    ::ng-deep {
+        p-autocomplete {
+            width: 100%;
+        }
+
+        .p-autocomplete {
+            display: flex;
+
+            &.p-autocomplete-multiple {
+                .p-autocomplete-multiple-container {
+                    position: absolute;
+                    top: 40px;
+                    left: 0;
+                    right: $spacing-9;
+                    overflow: visible;
+                    height: 0;
+                    padding: 0;
+                    width: 100%;
+                    border: 0;
+                    box-shadow: none;
+                    display: block;
+
+                    .p-autocomplete-input-token {
+                        display: flex;
+                        left: 0;
+                        position: absolute;
+                        right: 0;
+                        top: -5.5rem;
+
+                        input {
+                            width: 100%;
+                            text-overflow: ellipsis;
+                            @extend #p-inputtext-extend;
+                        }
+                    }
+                }
+
+                .p-autocomplete-token {
+                    border-radius: $border-radius;
+                    border: solid 1px $gray-light;
+                    margin: $spacing-1 $spacing-1 0 0;
+                    padding: $spacing-1 $spacing-1;
+                    max-width: 100%;
+                    background: none;
+                    color: $black;
+
+                    span {
+                        display: block;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
+
+                    span:last-child {
+                        margin-right: $spacing-1;
+                    }
+                }
+            }
+        }
+
+        .p-autocomplete-dropdown {
+            margin-left: auto;
+            width: $spacing-3;
+            border: 0;
+
+            .p-button-icon-left {
+                right: 0;
+                left: auto;
+                width: 12px;
+            }
+        }
+
+        .p-autocomplete-loader {
+            display: none;
+        }
+    }
+}

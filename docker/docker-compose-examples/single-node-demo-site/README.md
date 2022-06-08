@@ -4,7 +4,7 @@ A single instance of dotcms running on port 8080 that will download and install 
 
 ## Usage
 
-####Environment setup
+#### Environment setup
 
 
 1) A local path to license pack can be set here:
@@ -18,13 +18,13 @@ You can specifiy a custom starter that will be included:
 "CUSTOM_STARTER_URL": "https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/xxxxxxxxxx.zip"
 ```
 
-####Run an example:
+#### Run an example:
 
 ```bash
 docker-compose up
 ```
 
-####Shut down instances:
+#### Shut down instances:
 
 ```bash
 docker-compose down

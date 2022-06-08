@@ -211,6 +211,11 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
         final String assetType = folder.getClass().getSimpleName();
         final String assetName = folder.getName();
 
+        if (null == parentHost || null == parentHost.getHostname()){
+            throw new DotRuntimeException(
+                    String.format(" Error finding host with ID: %s. Folder Name: %s", ((Folder)parent).getHostId(), folder.getName()));
+        }
+
         final String deterministicId = (assetType + StringPool.COLON + parentHost.getHostname()
                 + parentFolder.getPath() + assetName).toLowerCase();
 
