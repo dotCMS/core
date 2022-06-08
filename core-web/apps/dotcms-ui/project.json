@@ -13,7 +13,7 @@
                 "main": "apps/dotcms-ui/src/main.ts",
                 "polyfills": "apps/dotcms-ui/src/polyfills.ts",
                 "tsConfig": "apps/dotcms-ui/tsconfig.app.json",
-                "allowedCommonJsDependencies": ["lodash", "dragula", "md5", "dom-autoscroller"],
+                "allowedCommonJsDependencies": ["lodash", "dragula", "md5", "dom-autoscroller", "date-fns-tz"],
                 "assets": [
                     "apps/dotcms-ui/src/favicon.ico",
                     "apps/dotcms-ui/src/assets",
@@ -73,7 +73,7 @@
                         },
                         {
                             "type": "anyComponentStyle",
-                            "maximumWarning": "6kb",
+                            "maximumWarning": "20kb",
                             "maximumError": "150kb"
                         }
                     ]
