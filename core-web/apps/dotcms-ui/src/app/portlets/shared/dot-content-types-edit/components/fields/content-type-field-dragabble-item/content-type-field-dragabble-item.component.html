@@ -1,0 +1,35 @@
+<div class="field__properties">
+    <div class="field__name-wrapper">
+        <dot-icon name="{{ fieldService.getIcon(field.clazz) }}"></dot-icon>
+        <div class="field__name-inner">
+            <span class="field__name">{{ field.name }}</span>
+            <ng-container *ngIf="field.variable">
+                <span class="field__variable">
+                    <dot-copy-link [copy]="field.variable" [label]="'(' + field.variable + ')'">
+                    </dot-copy-link>
+                </span>
+            </ng-container>
+        </div>
+    </div>
+    <div class="field__attribute" innerHTML="{{ fieldAttributes }}" *ngIf="fieldAttributes"></div>
+</div>
+
+<div class="field__actions">
+    <dot-icon-button-tooltip
+        tiny
+        *ngIf="!field.fixed"
+        class="field__actions-delete"
+        icon="delete"
+        [tooltipText]="'contenttypes.action.delete' | dm"
+        (click)="removeItem($event)"
+    >
+    </dot-icon-button-tooltip>
+    <dot-icon-button-tooltip
+        tiny
+        class="field__actions-edit"
+        icon="edit"
+        [tooltipText]="'contenttypes.action.edit' | dm"
+        (click)="this.onClick($event)"
+    >
+    </dot-icon-button-tooltip>
+</div>

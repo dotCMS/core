@@ -1,0 +1,33 @@
+<div class="field">
+    <label for="" class="form__label"
+        >{{ 'contenttypes.field.properties.relationships.contentType.label' | dm }}*</label
+    >
+    <dot-searchable-dropdown
+        (switch)="triggerChanged()"
+        (filterChange)="getContentTypeList($event)"
+        (pageChange)="getContentTypeList($event.filter, $event.first)"
+        [(ngModel)]="contentType"
+        [data]="contentTypeCurrentPage | async"
+        [disabled]="editing"
+        [pageLinkSize]="paginatorService.maxLinksPage"
+        [placeholder]="
+            'contenttypes.field.properties.relationship.new.content_type.placeholder' | dm
+        "
+        [rows]="paginatorService.paginationPerPage"
+        [totalRecords]="paginatorService.totalRecords"
+        labelPropertyName="name"
+        width="100%"
+    >
+    </dot-searchable-dropdown>
+</div>
+<div class="field">
+    <label for="" class="form__label">{{
+        'contenttypes.field.properties.relationships.label' | dm
+    }}</label>
+    <dot-cardinality-selector
+        [value]="cardinality"
+        [disabled]="editing"
+        (switch)="cardinalityChanged($event)"
+    >
+    </dot-cardinality-selector>
+</div>

@@ -18,7 +18,7 @@ jobs:
         with:
           base: ${{ github.ref }}
           list-files: "json"
-          working-directory: "core/ui"
+          working-directory: "core/core-web"
           filters: |
             dotcms-webcomponents:
               - 'libs/dotcms-webcomponents/**'
@@ -52,7 +52,7 @@ jobs:
             branchName=$(basename "${{ github.ref }}")
           fi
 
-          cd core/ui
+          cd core/core-web
           if [[ "$branchName" != 'master' ]]; then
             git checkout -b $branchName --track origin/$branchName
           fi
@@ -75,7 +75,7 @@ jobs:
             preReleaseTag=rc
           fi
 
-          cd core/ui
+          cd core/core-web
 
           # Get version from package.json
           cd libs/dotcms-webcomponents
@@ -102,11 +102,11 @@ jobs:
 
       - name: Build dotcms-webcomponents with deps
         run: |
-          cd core/ui
+          cd core/core-web
           npm run nx build dotcms-webcomponents && npm run nx build dotcms-ui -- --prod
       - name: "publish to npm"
         run: |
-          cd core/ui
+          cd core/core-web
           npm set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
           cd dist/libs/dotcms-webcomponents
           if [[ $(basename "${{ github.ref }}") =~ ^release-.* ]]; then
