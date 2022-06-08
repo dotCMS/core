@@ -441,8 +441,6 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         //Now we make sure the page is Not part of Site-search search results.
         final SiteSearchResults search4 = siteSearchAPI.search(siteSearchAudit4.getIndexName(), pageName,0, 10);
         Assert.assertEquals(0, search4.getTotalResults());
-        //Ta da!!!
-
     }
 
     static class TestCaseSiteSearch {
