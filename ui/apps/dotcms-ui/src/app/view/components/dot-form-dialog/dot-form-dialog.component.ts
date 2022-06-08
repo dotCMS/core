@@ -53,7 +53,7 @@ export class DotFormDialogComponent implements OnInit, OnDestroy {
     }
 
     ngOnDestroy(): void {
-        this.destroy.next();
+        this.destroy.next(null);
     }
 
     /**

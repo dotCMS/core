@@ -30,7 +30,7 @@ export class LongPollingProtocol extends Protocol {
         this.loggerService.info('destroying long polling');
         this.isClosed = true;
         this.isAlreadyOpen = false;
-        this._close.next();
+        this._close.next(null);
     }
 
     private getLastCallback(data): number {

@@ -58,6 +58,7 @@ export class DotCrudService {
      * @memberof DotCrudService
      */
     getDataById<T>(baseUrl: string, id: string, pick = 'entity'): Observable<T> {
+        // @ts-ignore
         return this.coreWebService
             .requestView<T>({
                 url: `${baseUrl}/id/${id}`

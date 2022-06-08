@@ -149,6 +149,7 @@ export class LoginService {
     getLoginFormInfo(language: string, i18nKeys: Array<string>): Observable<DotLoginInformation> {
         this.setLanguage(language);
 
+        // @ts-ignore
         return this.coreWebService
             .requestView<DotLoginInformation>({
                 body: { messagesKey: i18nKeys, language: this.lang, country: this.country },
@@ -317,7 +318,7 @@ export class LoginService {
 
         // When not logged user we need to fire the observable chain
         if (!auth.user) {
-            this._logout$.next();
+            this._logout$.next(null);
         } else {
             this.dotcmsEventsService.start();
         }
