@@ -16,6 +16,7 @@ export class DotContentletLockerService {
      * @memberof PageViewService
      */
     lock(inode: string): Observable<DotContentletLockResponse> {
+        // @ts-ignore
         return this.coreWebService
             .requestView({
                 method: 'PUT',
@@ -32,6 +33,7 @@ export class DotContentletLockerService {
      * @memberof PageViewService
      */
     unlock(inode: string): Observable<DotContentletLockResponse> {
+        // @ts-ignore
         return this.coreWebService
             .requestView({
                 method: 'PUT',
