@@ -24,8 +24,8 @@ jobs:
           working-directory: "ui"
           filters: |
             dotcms-ui:
-              - 'apps/dotcms-ui/src/**'
-              - 'libs/!(dotcms-webcomponents/**)/**'
+              - 'ui/apps/dotcms-ui/src/**'
+              - 'ui/libs/!(dotcms-webcomponents/**)/**'
 
       - name: Changes found
         if: steps.filter.outputs.dotcms-ui == 'true'
