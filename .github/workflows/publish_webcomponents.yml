@@ -39,9 +39,6 @@ jobs:
       - name: Checkout core
         run: |
           git clone https://victoralfaro-dotcms:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/dotCMS/core
-          cd core
-          git pull
-          cd ..
       - name: Configuring Node.js
         uses: actions/setup-node@v2-beta
         with:
