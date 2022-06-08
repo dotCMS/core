@@ -51,7 +51,7 @@ public class OSGISystem {
 
 
     public void initializeFramework() {
-        Logger.info(getClass(), "OSGi System Framework OK");
+        Logger.debug(getClass(), ()->"OSGi System Framework OK");
     }
 
 
@@ -106,7 +106,7 @@ public class OSGISystem {
      */
     private Framework buildFramework() {
 
-
+        Logger.info(getClass(), "Starting: OSGi System Framework");
         // load all properties and set base directory
         final Properties felixProps = defaultProperties();
 
@@ -124,7 +124,7 @@ public class OSGISystem {
             AutoProcessor.process(felixProps, myFelixFrameWork.getBundleContext());
 
             myFelixFrameWork.start();
-            Logger.info(this, () -> "Osgi Felix System Framework started");
+            Logger.info(this, () -> "Started : OSGi System Framework");
 
 
             return myFelixFrameWork;

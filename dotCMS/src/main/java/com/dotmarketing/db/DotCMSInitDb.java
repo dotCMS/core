@@ -100,11 +100,6 @@ public class DotCMSInitDb {
         removeAnyOldMetadata();
         MaintenanceUtil.flushCache();
         
-        
-        
-        // Initializing felix
-        OSGISystem.getInstance().initializeFramework();
-        
         ReindexThread.startThread();
 
         ContentletAPI conAPI = APILocator.getContentletAPI();
