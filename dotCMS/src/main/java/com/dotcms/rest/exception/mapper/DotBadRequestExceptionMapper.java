@@ -16,6 +16,10 @@ import javax.ws.rs.core.Response;
  */
 public class DotBadRequestExceptionMapper<T extends Throwable> extends DotExceptionMapper<T> {
 
+    public DotBadRequestExceptionMapper() {
+        super();
+    }
+
     @Override
     public Response toResponse(final T exception) {
         SecurityLogger.logInfo(DotBadRequestExceptionMapper.class, exception.getMessage());

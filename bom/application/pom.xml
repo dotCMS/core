@@ -24,7 +24,7 @@
         <shedlock.version>4.33.0</shedlock.version>
         <glowroot.version>0.14.1</glowroot.version>
         <jackson.version>2.17.2</jackson.version>
-        <jersey.version>2.22.1</jersey.version>
+        <jersey.version>2.28</jersey.version>
         <graalvm.version>22.3.3</graalvm.version>
     </properties>
     <dependencyManagement>
@@ -1137,7 +1137,7 @@
             <dependency>
                 <groupId>javax.ws.rs</groupId>
                 <artifactId>javax.ws.rs-api</artifactId>
-                <version>2.0.1</version>
+                <version>2.1.1</version>
             </dependency>
 
             <!-- Rest API Documentation -->
@@ -1447,6 +1447,52 @@
                 <version>${tomcat.version}</version>
             </dependency>
 
+
+            <!-- CDI Support -->
+
+            <dependency>
+                <groupId>org.jboss.weld.servlet</groupId>
+                <artifactId>weld-servlet-shaded</artifactId>
+                <version>3.1.9.Final</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.glassfish.hk2.external</groupId>
+                <artifactId>bean-validator</artifactId>
+                <version>2.5.0-b06</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.glassfish.hk2</groupId>
+                <artifactId>hk2-locator</artifactId>
+                <version>2.5.0</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.jboss.weld</groupId>
+                <artifactId>weld-junit5</artifactId>
+                <version>2.0.2.Final</version>
+                <scope>test</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.jboss.weld.se</groupId>
+                        <artifactId>weld-se-core</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.jboss.weld.se</groupId>
+                <artifactId>weld-se-shaded</artifactId>
+                <version>3.1.9.Final</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>io.smallrye</groupId>
+                <artifactId>jandex</artifactId>
+                <version>3.0.5</version>
+            </dependency>
 
 
             <dependency>

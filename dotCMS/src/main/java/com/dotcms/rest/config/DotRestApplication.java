@@ -112,11 +112,15 @@ import com.dotcms.rest.exception.mapper.ResourceNotFoundExceptionMapper;
 import com.dotcms.rest.exception.mapper.RuntimeExceptionMapper;
 import com.dotcms.rest.exception.mapper.UnrecognizedPropertyExceptionMapper;
 import com.dotcms.rest.exception.mapper.WorkflowPortletAccessExceptionMapper;
+import com.dotcms.rest.exception.mapper.badrequest.DotStateExceptionMapper;
+import com.dotcms.rest.exception.mapper.badrequest.IllegalArgumentExceptionMapper;
+import com.dotcms.rest.exception.mapper.badrequest.InvalidFolderNameExceptionMapper;
+import com.dotcms.rest.exception.mapper.badrequest.JsonProcessingExceptionMapper;
+import com.dotcms.rest.exception.mapper.badrequest.NumberFormatExceptionMapper;
 import com.dotcms.rest.personas.PersonasResourcePortlet;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.portlets.folders.exception.InvalidFolderNameException;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import com.google.common.collect.ImmutableSet;
 import io.swagger.v3.jaxrs2.integration.resources.AcceptHeaderOpenApiResource;
@@ -292,16 +296,16 @@ public class DotRestApplication extends Application {
 			.add(WorkflowPortletAccessExceptionMapper.class)
 			.add(NotFoundInDbExceptionMapper.class)
 			.add(DoesNotExistExceptionMapper.class)
-			.add((new DotBadRequestExceptionMapper<AlreadyExistException>(){}).getClass())
-			.add((new DotBadRequestExceptionMapper<IllegalArgumentException>(){}).getClass())
-			.add((new DotBadRequestExceptionMapper<DotStateException>(){}).getClass())
+			.add(AlreadyExistException.class)
+			.add(IllegalArgumentExceptionMapper.class)
+			.add(DotStateExceptionMapper.class)
 			.add(DefaultDotBadRequestExceptionMapper.class)
-			.add((new DotBadRequestExceptionMapper<JsonProcessingException>(){}).getClass())
-			.add((new DotBadRequestExceptionMapper<NumberFormatException>(){}).getClass())
+			.add(JsonProcessingExceptionMapper.class)
+			.add(NumberFormatExceptionMapper.class)
 			.add(DotSecurityExceptionMapper.class)
 			.add(DotDataExceptionMapper.class)
 			.add(ElasticsearchStatusExceptionMapper.class)
-			.add((new DotBadRequestExceptionMapper<InvalidFolderNameException>(){}).getClass())
+			.add(InvalidFolderNameExceptionMapper.class)
 			.add(NotAllowedExceptionMapper.class)
 			.add(RuntimeExceptionMapper.class)
 			.build();
