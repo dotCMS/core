@@ -5924,7 +5924,6 @@
 									"",
 									"    // scalar values",
 									"    pm.expect(map.identifier, 'FAILED:[map.identifier]').equal(\"0edfee78-2a75-4f3d-bf20-813aae15d4e9\");",
-									"    pm.expect(map.inode, 'FAILED:[map.inode]').equal(\"b21fc778-39a6-4d86-a842-f7c2cd7e4fa9\");",
 									"    pm.expect(map.locked, 'FAILED:[map.locked]').equal(false);",
 									"    pm.expect(map.stInode, 'FAILED:[map.stInode]').equal(\"799f176a-d32e-4844-a07c-1b5fcd107578\");",
 									"    pm.expect(map.contentType, 'FAILED:[map.contentType]').equal(\"Blog\");",
