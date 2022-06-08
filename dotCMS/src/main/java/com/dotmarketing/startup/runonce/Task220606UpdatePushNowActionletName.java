@@ -7,6 +7,9 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.workflows.actionlet.PushNowActionlet;
 import com.dotmarketing.startup.StartupTask;
 
+/**
+ * Startup tas that renames any exising entry on workflow_action_class associated with `PushNowActionlet` Class and changes display name
+ */
 public class Task220606UpdatePushNowActionletName implements StartupTask {
 
     private final DotConnect dotConnect = new DotConnect();
