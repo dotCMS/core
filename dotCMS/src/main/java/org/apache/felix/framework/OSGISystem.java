@@ -51,6 +51,9 @@ public class OSGISystem {
 
 
     public void initializeFramework() {
+        if(this.felixFramework==null) {
+            throw new RuntimeException("OSGi System Framework not initied");
+        }
         Logger.debug(getClass(), ()->"OSGi System Framework OK");
     }
 
