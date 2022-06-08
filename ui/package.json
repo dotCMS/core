@@ -1,6 +1,6 @@
 {
     "name": "dotcms-ui",
-    "version": "22.6.0-rc.14",
+    "version": "22.7.0-next.12",
     "license": "MIT",
     "engines": {
         "node": ">=16.13.2"
@@ -21,7 +21,7 @@
         "publish:docs": "gh-pages --dist ./docs --dest ./",
         "build:dev": "nx build dotcms-webcomponents --with-deps;nx build dotcms-ui",
         "build:prod": "nx build dotcms-webcomponents --with-deps;nx build dotcms-ui --configuration production",
-        "build:dotcms-block-editor": "ng build dotcms-block-editor --configuration production --optimization --output-hashing=none && cat dist/apps/dotcms-block-editor/{generator-runtime,runtime,polyfills,main}.js > ../dotCMS/src/main/webapp/html/dotcms-block-editor.js",
+        "build:dotcms-block-editor": "ng build dotcms-block-editor --configuration production --output-hashing=none && cat dist/apps/dotcms-block-editor/{generator-runtime,runtime,polyfills,main}.js > dotcms-block-editor.js",
         "docker:test": "npm run docker:build;IMAGE_BASE_NAME=core-web docker-compose -f docker-compose-running-test.yml up",
         "docker:build": "docker build -t core-web .",
         "analyze": "ng build --stats-json;webpack-bundle-analyzer dist/stats.json",
@@ -42,7 +42,7 @@
         "dep-graph": "nx dep-graph",
         "help": "nx help",
         "pretty-quick": "pretty-quick",
-        "prepare": "is-ci || pwd && cd ../ && pwd && husky install ui/.husky && cd ./ui"
+        "prepare": "is-ci || (pwd && cd ../ && pwd && husky install ui/.husky && cd ./ui)"
     },
     "private": false,
     "dependencies": {
