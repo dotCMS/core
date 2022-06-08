@@ -48,6 +48,7 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 1
+          ref: ${{ github.ref_name }}
       - name: Configuring Node.js
         uses: actions/setup-node@v2-beta
         with:
@@ -109,8 +110,8 @@ jobs:
           npm set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
           cd dist/apps/dotcms-ui
           if [[ $(basename "${{ github.ref }}") =~ ^release-.* ]]; then
-            npm publish --tag rc
+            npm publish --dry-run --tag rc
           fi
           if [[ $(basename "${{ github.ref }}") =~ ^master ]]; then
-            npm publish --tag next
+            npm publish --dry-run --tag next
           fi
