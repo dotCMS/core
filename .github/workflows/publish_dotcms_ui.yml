@@ -1,5 +1,7 @@
 name: Publish to Dotcms UI
 on:
+pull_request:
+    types: [synchronize, opened, reopened, ready_for_review]
   push:
     branches:
       - release-*
