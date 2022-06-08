@@ -62,7 +62,7 @@ public class MetadataDelegateTest {
         //Drop the relative part and prepend a route like the one that typically has a file packed in the starter
         final String assetPath = path.substring(index + rootPath.length() );
         //The route is slightly different, so we don't get an unwanted match when running tests in cloud
-        final Path absoluteNoneExistingPath = Path.of("/data/shared2/" + assetPath).normalize();
+        final Path absoluteNoneExistingPath = Path.of("/data/shared2/" + assetPath);
         //Since we're mimicking an invalid file scenario. The file must not exist.
         Assert.assertFalse(absoluteNoneExistingPath.toFile().exists());
         //Moment of truth the file should be fixed and converted into the local equivalent file
