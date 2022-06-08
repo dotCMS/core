@@ -54,20 +54,7 @@ jobs:
           node-version: "16.13.2"
       - name: Installing dependencies
         run: |
-          # Get Branch Name
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            branchName="${{ github.head_ref }}"
-          else
-            branchName=$(basename "${{ github.ref }}")
-          fi
-
-          echo "******brach name: " $branchName
-
-          if [[ "$branchName" != 'master' ]]; then
-            git checkout -b $branchName --track origin/$branchName
-          fi
-
-          cd core/ui
+          cd ui
           npm install
       - name: Version Bump - dotcms-ui - if it's Master/Release Branch
         run: |
@@ -89,7 +76,7 @@ jobs:
           echo "******tag brach name: " $preReleaseTag
 
           # Get version from package.json
-          cd core/ui
+          cd ui
 
           pkgVersion=`awk -F'"' '/"version": ".+"/{ print $4; exit; }' package.json`
           arrIN=(${pkgVersion//./ })
@@ -113,12 +100,12 @@ jobs:
 
       - name: Build dotcms-ui with deps
         run: |
-          cd core/ui
+          cd ui
           npm run nx build dotcms-webcomponents && npm run nx build dotcms-ui -- --prod
           cp package.json ./dist/apps/dotcms-ui/package.json
       - name: "publish to npm"
         run: |
-          cd core/ui
+          cd ui
           npm set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
           cd dist/apps/dotcms-ui
           if [[ $(basename "${{ github.ref }}") =~ ^release-.* ]]; then
