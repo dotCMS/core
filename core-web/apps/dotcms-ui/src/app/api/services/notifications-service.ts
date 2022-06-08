@@ -26,6 +26,7 @@ export class NotificationsService {
     }
 
     getLastNotifications(): Observable<DotCMSResponse<DotNotificationResponse>> {
+        // @ts-ignore
         return this.coreWebService
             .requestView({
                 url: this.urls.getLastNotificationsUrl
@@ -34,6 +35,7 @@ export class NotificationsService {
     }
 
     getAllNotifications(): Observable<DotCMSResponse<DotNotificationResponse>> {
+        // @ts-ignore
         return this.coreWebService
             .requestView({
                 url: this.urls.getNotificationsUrl
@@ -44,6 +46,7 @@ export class NotificationsService {
     dismissNotifications(
         items: Record<string, unknown>
     ): Observable<DotCMSResponse<DotNotificationResponse>> {
+        // @ts-ignore
         return this.coreWebService
             .requestView({
                 body: items,
@@ -54,6 +57,7 @@ export class NotificationsService {
     }
 
     markAllAsRead(): Observable<DotCMSResponse<DotNotificationResponse>> {
+        // @ts-ignore
         return this.coreWebService
             .request({
                 method: 'PUT',
