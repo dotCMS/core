@@ -43,9 +43,11 @@ jobs:
     if: ${{ needs.changes.outputs.dotcms-ui == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout core
-        run: |
-          git clone https://victoralfaro-dotcms:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/dotCMS/core
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+          fetch-depth: 1
       - name: Configuring Node.js
         uses: actions/setup-node@v2-beta
         with:
