@@ -1,7 +1,5 @@
 name: Publish to Dotcms UI
 on:
-  pull_request:
-    types: [synchronize, opened, reopened, ready_for_review]
   push:
     branches:
       - release-*
@@ -110,8 +108,8 @@ jobs:
           npm set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
           cd dist/apps/dotcms-ui
           if [[ $(basename "${{ github.ref }}") =~ ^release-.* ]]; then
-            npm publish --ignore-scripts --dry-run --tag rc
+            npm publish --tag rc
           fi
           if [[ $(basename "${{ github.ref }}") =~ ^master ]]; then
-            npm publish --ignore-scripts --dry-run --tag next
+            npm publish --tag next
           fi
