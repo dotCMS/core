@@ -14,23 +14,26 @@ jobs:
     steps:
       - name: Checkout core
         uses: actions/checkout@v3
+
       - name: Get specific changed files
         uses: dorny/paths-filter@v2
         id: filter
         with:
           base: ${{ github.ref }}
           list-files: "json"
-          working-directory: "ui"
+          working-directory: "core/core/ui"
           filters: |
             dotcms-ui:
               - 'apps/dotcms-ui/src/**'
               - 'libs/!(dotcms-webcomponents/**)/**'
+
       - name: Changes found
         if: steps.filter.outputs.dotcms-ui == 'true'
         run: |
           cd ui
           echo "Found Dotcms-UI files changed."
           echo ${{ steps.filter.outputs.dotcms-ui }}
+
       - name: No changes found
         if: steps.filter.outputs.dotcms-ui == 'false'
         run: |
