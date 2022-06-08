@@ -1,6 +1,11 @@
 <Context path="${catalina.home}/webapps/ROOT" docBase="${catalina.home}/webapps/ROOT" reloadable="false" crossContext="true">
 <Resources allowLinking="true" />
 
+    <Resource name="BeanManager"
+              auth="Container"
+              type="jakarta.enterprise.inject.spi.BeanManager"
+              factory="org.jboss.weld.resources.ManagerObjectFactory" />
+
     <!-- http://tomcat.apache.org/tomcat-8.0-doc/config/jar-scanner.html -->
     <!-- http://tomcat.apache.org/tomcat-8.0-doc/config/jar-scan-filter.html -->
     <JarScanner>
@@ -23,5 +28,10 @@
     <Loader delegate="true"/><!--https://issues.apache.org/bugzilla/show_bug.cgi?id=55943#c13-->
 
     <!--<Resource name="mail/MailSession" auth="Container" type="javax.mail.Session" mail.smtp.host="localhost" />-->
+
+    <Resource name="BeanManager"
+        auth="Container"
+        type="javax.enterprise.inject.spi.BeanManager"
+        factory="org.jboss.weld.resources.ManagerObjectFactory" />
 
 </Context>

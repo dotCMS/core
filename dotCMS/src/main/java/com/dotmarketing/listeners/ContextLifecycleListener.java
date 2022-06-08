@@ -10,15 +10,18 @@ import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.loggers.Log4jUtil;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import io.vavr.control.Try;
 
+import java.io.Serializable;
+import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.inject.spi.CDI;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.websocket.server.ServerContainer;
 import java.io.File;
+import org.apache.logging.log4j.core.async.BasicAsyncLoggerContextSelector;
 
 /**
  *
@@ -60,6 +63,15 @@ public class ContextLifecycleListener implements ServletContextListener {
 
         ByteBuddyFactory.init();
 
+        BeanManager beanManager = CDI.current().getBeanManager();
+        if (beanManager != null) {
+            beanManager.fireEvent(new StartupEvent());
+            Logger.info(this,"beanManager fired StartupEvent.");
+        } else {
+            Logger.error(this,"beanManager is null.  Cannot fire startup event.");
+        }
+
+
 		Config.setMyApp(arg0.getServletContext());
 
 
@@ -77,8 +89,12 @@ public class ContextLifecycleListener implements ServletContextListener {
 			Logger.error(this,e.getMessage(),e);
 		}
 
-		//Initialises/reconfigures log4j based on a given log4j configuration file
-		Log4jUtil.initializeFromPath(path);
+		// Do not reconfigure if using global configuration.  Remove this if we move
+        // a full global configuration
+        if (System.getProperty("Log4jContextSelector").equals(BasicAsyncLoggerContextSelector.class.getName()))
+            Log4jUtil.initializeFromPath(path);
+        else
+            Logger.debug(this, "Reinitializing configuration from "+path);
 
 
         installWebSocket(arg0.getServletContext());
@@ -98,4 +114,7 @@ public class ContextLifecycleListener implements ServletContextListener {
         }
     }
 
+
+    public static class StartupEvent implements Serializable {
+    }
 }
