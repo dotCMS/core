@@ -18,7 +18,7 @@ jobs:
         with:
           base: ${{ github.ref }}
           list-files: "json"
-          working-directory: "ui"
+          working-directory: "core/ui"
           filters: |
             dotcms-ui:
               - 'apps/dotcms-ui/src/**'
@@ -41,9 +41,6 @@ jobs:
       - name: Checkout core
         run: |
           git clone https://victoralfaro-dotcms:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/dotCMS/core
-          cd core
-          git pull
-          cd ..
       - name: Configuring Node.js
         uses: actions/setup-node@v2-beta
         with:
@@ -58,15 +55,13 @@ jobs:
           fi
 
           echo "******brach name: " $branchName
-          cd core
 
           if [[ "$branchName" != 'master' ]]; then
             git checkout -b $branchName --track origin/$branchName
           fi
 
-          cd ui
+          cd core/ui
           npm install
-          cd ..
       - name: Version Bump - dotcms-ui - if it's Master/Release Branch
         run: |
           # Get Branch Name
