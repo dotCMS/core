@@ -104,14 +104,14 @@ jobs:
           cd ui
           npm run nx build dotcms-webcomponents && npm run nx build dotcms-ui -- --prod
           cp package.json ./dist/apps/dotcms-ui/package.json
-      - name: "publish to npm"
+      - name: "Publish to npm"
         run: |
           cd ui
           npm set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
           cd dist/apps/dotcms-ui
           if [[ $(basename "${{ github.ref }}") =~ ^release-.* ]]; then
-            npm publish --dry-run --tag rc
+            npm publish --ignore-scripts --dry-run --tag rc
           fi
           if [[ $(basename "${{ github.ref }}") =~ ^master ]]; then
-            npm publish --dry-run --tag next
+            npm publish --ignore-scripts --dry-run --tag next
           fi
