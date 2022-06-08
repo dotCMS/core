@@ -213,10 +213,12 @@
 
         function filterLog(event) {
             dataLogPrintedElem.innerHTML = dataLogSourceElem.innerHTML;
+            const ignoredKeys = ["ArrowLeft", "ArrowUp", "ArrowDown", "ArrowRight"];
+
             if (event.key === 'Enter') {
                 excludeLogRowsActive = true;
                 performMark(excludeNoMatchingRows);
-            } else {
+            } else if (!ignoredKeys.includes(event.key)) {
                 excludeLogRowsActive = false;
                 performMark();
             }
