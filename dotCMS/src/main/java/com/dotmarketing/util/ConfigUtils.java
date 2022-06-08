@@ -138,18 +138,16 @@ public class ConfigUtils {
             realPath = realPath + File.separator;
         }
         if (!UtilMethods.isSet(realPath)) {
-            final String path = getRelativeAssetPath();
+            final String path = Try
+                    .of(() -> Config.getStringProperty("ASSET_PATH", DEFAULT_RELATIVE_ASSET_PATH))
+                    .getOrElse(DEFAULT_RELATIVE_ASSET_PATH);
             return FileUtil.getRealPath(path);
         } else {
             return realPath;
         }
     }
     
-    public static String getRelativeAssetPath(){
-		return Try
-				.of(() -> Config.getStringProperty("ASSET_PATH", DEFAULT_RELATIVE_ASSET_PATH))
-				.getOrElse(DEFAULT_RELATIVE_ASSET_PATH);
-	}
+
 
     private static final String LOCAL = "LOCAL";
     public static String getDotGeneratedPath() {
