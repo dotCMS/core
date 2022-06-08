@@ -5664,88 +5664,6 @@
 			"name": "PageAPI_TestMapSpecialField",
 			"item": [
 				{
-					"name": "Publish archived content",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200 \", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Correct identifier\", function () {",
-									"    pm.expect(pm.response.json().entity.identifier).equal(\"0edfee78-2a75-4f3d-bf20-813aae15d4e9\");",
-									"});",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/8968555814/fire?identifier=0edfee78-2a75-4f3d-bf20-813aae15d4e9",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"actions",
-								"8968555814",
-								"fire"
-							],
-							"query": [
-								{
-									"key": "identifier",
-									"value": "0edfee78-2a75-4f3d-bf20-813aae15d4e9"
-								}
-							]
-						},
-						"description": "The /sports page in the bundle below needs this content to be published. At this point of the tests it is archived somehow. Publishing it via workflow"
-					},
-					"response": []
-				},
-				{
 					"name": "pre_ImportBundleWithSportsPage",
 					"event": [
 						{
@@ -5827,6 +5745,88 @@
 							]
 						},
 						"description": "Imports a Bundle that includes:\n* Sports page with Blog contentlet \"10 New Snow Sports to Try This Winter\""
+					},
+					"response": []
+				},
+				{
+					"name": "Publish archived content",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Correct identifier\", function () {",
+									"    pm.expect(pm.response.json().entity.identifier).equal(\"0edfee78-2a75-4f3d-bf20-813aae15d4e9\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/8968555814/fire?identifier=0edfee78-2a75-4f3d-bf20-813aae15d4e9",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"8968555814",
+								"fire"
+							],
+							"query": [
+								{
+									"key": "identifier",
+									"value": "0edfee78-2a75-4f3d-bf20-813aae15d4e9"
+								}
+							]
+						},
+						"description": "The /sports page in the bundle below needs this content to be published. At this point of the tests it is archived somehow. Publishing it via workflow"
 					},
 					"response": []
 				},
@@ -5924,7 +5924,7 @@
 									"",
 									"    // scalar values",
 									"    pm.expect(map.identifier, 'FAILED:[map.identifier]').equal(\"0edfee78-2a75-4f3d-bf20-813aae15d4e9\");",
-									"    pm.expect(map.inode, 'FAILED:[map.inode]').equal(\"1f4db79c-7ec6-4efe-9369-1ae2193a2d7f\");",
+									"    pm.expect(map.inode, 'FAILED:[map.inode]').equal(\"b21fc778-39a6-4d86-a842-f7c2cd7e4fa9\");",
 									"    pm.expect(map.locked, 'FAILED:[map.locked]').equal(false);",
 									"    pm.expect(map.stInode, 'FAILED:[map.stInode]').equal(\"799f176a-d32e-4844-a07c-1b5fcd107578\");",
 									"    pm.expect(map.contentType, 'FAILED:[map.contentType]').equal(\"Blog\");",
