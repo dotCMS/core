@@ -162,6 +162,7 @@ dependencies {
     implementation group: 'org.jvnet', name: 'mimepull', version: '1.6'
 
     implementation group: 'com.dotcms.lib', name: 'dot.msnm', version:'ukv_2'
+
     implementation group: 'com.dotcms.lib', name: 'dot.myspell', version:'ukv_2'
     implementation group: 'com.dotcms.lib', name: 'dot.odmg', version:'ukv_3'
     implementation group: 'com.dotcms.lib', name: 'dot.org.eclipse.mylyn.wikitext.confluence.core', version:'1.8.0.I20120918-1109_2'
@@ -576,9 +577,18 @@ dependencies {
     implementation fileTree("src/main/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
 
 
-    compileOnly "javax.servlet:javax.servlet-api:3.1.0"
-    compileOnly group: 'javax.servlet.jsp', name: 'javax.servlet.jsp-api', version: '2.2.1'
 
+    compileOnly group: 'javax.servlet', name: 'javax.servlet-api', version: '4.0.1'
+    compileOnly group: 'javax.servlet.jsp', name: 'javax.servlet.jsp-api', version: '2.3.0'
+
+    // https://mvnrepository.com/artifact/org.jboss.weld.servlet/weld-servlet-core
+    // See https://docs.jboss.org/weld/reference/latest/en-US/html/environments.html#tomcat
+
+    implementation group: 'com.dotcms.lib', name: 'dot.myspell', version:'ukv_2'
+
+    implementation group: 'org.jboss.weld.servlet', name: 'weld-servlet-core', version: '3.1.9.Final'
+    implementation 'javax.inject:javax.inject:1'
+    implementation group: 'javax.annotation', name: 'javax.annotation-api', version: '1.3.2'
 
     compileOnly fileTree("../libs/buildlibs").include('**/*.jar')
     compileOnly fileTree("../libs/buildlibs").include('mail.jar')

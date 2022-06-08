@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
-<web-app xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		 xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
-                      http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
-		 version="3.0" metadata-complete="true">
-    <display-name>dotCMS</display-name>
+<web-app version="3.1" xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+   http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd" metadata-complete="false">
+	<display-name>dotCMS</display-name>
 
 	<!-- Don't ever delete the following comment tags, it will break the build -->
 	<!-- BEGIN JSPS --> <!-- END JSPS -->
@@ -51,19 +51,19 @@
 		<filter-class>com.dotmarketing.filters.CookiesFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
-	
+
 	<filter>
 		<filter-name>ThreadNameFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.ThreadNameFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
-	
+
 	<filter>
 		<filter-name>CharsetEncodingFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.CharsetEncodingFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
-	
+
 	<filter>
 	    <filter-name>TimeMachineFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.TimeMachineFilter</filter-class>
@@ -89,7 +89,7 @@
 		<filter-class>com.dotmarketing.filters.AutoLoginFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
-	
+
 	<filter>
 		<filter-name>LoginRequiredFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.LoginRequiredFilter</filter-class>
@@ -103,22 +103,22 @@
 			<param-value>main.servlet.</param-value>
 		</init-param>
 	</filter>
-	
+
     <filter>
         <filter-name>UrlRewriteFilter</filter-name>
         <filter-class>com.dotmarketing.filters.DotUrlRewriteFilter</filter-class>
 		<async-supported>true</async-supported>
     </filter>
 	<!--END DOTMARKETING FILTERS-->
-	
-	
+
+
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN FILTERS -->
  	<!-- END FILTERS -->
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN FILTER-MAPPINGS -->
  	<!-- END FILTER-MAPPINGS -->
- 	
+
 	<!--DOTMARKETING FILTER-MAPPINGS-->
 	<filter-mapping>
 		<filter-name>NormalizationFilter</filter-name>
@@ -132,32 +132,32 @@
 		<filter-name>InterceptorFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-    
+
 	<filter-mapping>
 		<filter-name>CharsetEncodingFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-	
+
 	<filter-mapping>
 		<filter-name>CookiesFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-	
+
 	<filter-mapping>
 		<filter-name>ThreadNameFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-	
+
 	<filter-mapping>
 		<filter-name>TimeMachineFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-	
+
     <filter-mapping>
         <filter-name>UrlRewriteFilter</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
-    
+
     <filter-mapping>
         <filter-name>VanityURLFilter</filter-name>
         <url-pattern>/*</url-pattern>
@@ -183,14 +183,20 @@
 		<url-pattern>/c/*</url-pattern>
 	</filter-mapping>
 	<!--END DOTMARKETING FILTER-MAPPINGS-->
-	
-	
+
+
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN LISTENERS -->
     <!-- END LISTENERS -->
-    
-    
+
+
 	<!-- DOTMARKETING LISTENERS -->
+	<listener>
+		<listener-class>com.dotmarketing.listeners.ByteBuddyContextListener</listener-class>
+	</listener>
+	<listener>
+		<listener-class>org.jboss.weld.environment.servlet.Listener</listener-class>
+	</listener>
 	<listener>
 		<listener-class>com.dotmarketing.listeners.ContextLifecycleListener</listener-class>
 	</listener>
@@ -221,8 +227,8 @@
 	  <listener-class>com.dotmarketing.listeners.HibernateSessionsListener</listener-class>
 	</listener>
 	<!-- END DOTMARKETING LISTENERS -->
-	
-	
+
+
 	<!-- DOTMARKETING SERVLETS -->
 	<servlet>
 		<servlet-name>
@@ -235,13 +241,13 @@
 			98
 		</load-on-startup>
 	</servlet>
-	
+
 	<servlet>
 		<servlet-name>Init</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.InitServlet</servlet-class>
 		<load-on-startup>8</load-on-startup>
 	</servlet>
-	
+
 	<servlet>
 		<servlet-name>VelocityServlet</servlet-name>
 		<servlet-class>com.dotcms.rendering.velocity.servlet.VelocityServlet</servlet-class>
@@ -253,22 +259,22 @@
 	<servlet>
 		<servlet-name>ShortyServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.ShortyServlet</servlet-class>
-	</servlet>    
+	</servlet>
 	<servlet>
 		<servlet-name>CategoriesServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.JSONCategoriesServlet</servlet-class>
 	</servlet>
-    
+
     <servlet>
         <servlet-name>login_edit_mode</servlet-name>
         <servlet-class>com.dotmarketing.servlets.LoginEditModeServlet</servlet-class>
     </servlet>
-	
+
 	<servlet>
 		<servlet-name>TailLogServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.taillog.TailLogServlet</servlet-class>
 	</servlet>
-	
+
 	<servlet>
 	  <servlet-name>dwr-invoker</servlet-name>
 	  <servlet-class>com.dotmarketing.servlets.DwrWrapperServlet</servlet-class>
@@ -289,7 +295,7 @@
 	      <param-value>false</param-value>
 	   </init-param>
 	</servlet>
-	
+
 	<servlet>
 		<servlet-name>InitServlet</servlet-name>
 		<servlet-class>com.liferay.portal.servlet.InitServlet</servlet-class>
@@ -333,23 +339,23 @@
 				<param-value>com.dotmarketing.webdav.ResourceFactorytImpl</param-value>
 		</init-param>
 	</servlet>
-	
+
 	<servlet>
 		<servlet-name>BinaryExporterServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.BinaryExporterServlet</servlet-class>
 	    <load-on-startup>100</load-on-startup>
 	</servlet>
-	
+
 	<servlet>
 		<servlet-name>AjaxDirector</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.ajax.AjaxDirectorServlet</servlet-class>
 	</servlet>
-	
+
 	 <servlet>
 		<servlet-name>JSONTagsServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.JSONTagsServlet</servlet-class>
 	</servlet>
-    
+
     <servlet>
     	<servlet-name>CSSPreProcessServlet</servlet-name>
     	<servlet-class>com.dotcms.csspreproc.CSSPreProcessServlet</servlet-class>
@@ -371,49 +377,49 @@
 		<load-on-startup>1</load-on-startup>
 		<async-supported>true</async-supported>
 	</servlet>
-	
+
 	<servlet>
 		<servlet-name>DotGraphQLHttpServlet</servlet-name>
 		<servlet-class>com.dotcms.graphql.DotGraphQLHttpServlet</servlet-class>
 	</servlet>
-    
+
 	<!--END DOTMARKETING SERVLETS-->
-	
-	
+
+
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN SERVLETS -->
  	<!-- END SERVLETS -->
- 	
- 	
+
+
     <!-- TEST FRAMEWORK SERVLETS
        <servlet>
          <servlet-name>ServletTestRunner</servlet-name>
          <servlet-class>com.dotmarketing.servlets.test.ServletTestRunner</servlet-class>
        </servlet>
-       
+
        <servlet-mapping>
          <servlet-name>ServletTestRunner</servlet-name>
          <url-pattern>/dotTest</url-pattern>
       </servlet-mapping>
 	END OF TEST FRAMEWORK SERVLETS -->
-	
+
     <!-- DOTCMS SERVLET-MAPPINGS -->
 
     <servlet-mapping>
       <servlet-name>CSSPreProcessServlet</servlet-name>
       <url-pattern>/DOTLESS/*</url-pattern>
     </servlet-mapping>
-    
+
     <servlet-mapping>
       <servlet-name>SassPreProcessServlet</servlet-name>
       <url-pattern>*.dotsass</url-pattern>
     </servlet-mapping>
-    
+
     <servlet-mapping>
       <servlet-name>CSSPreProcessServlet</servlet-name>
       <url-pattern>/DOTSASS/*</url-pattern>
     </servlet-mapping>
-    
+
     <servlet-mapping>
         <servlet-name>AjaxDirector</servlet-name>
         <url-pattern>/DotAjaxDirector/*</url-pattern>
@@ -430,17 +436,17 @@
         <servlet-name>login_edit_mode</servlet-name>
         <url-pattern>/admin/*</url-pattern>
     </servlet-mapping>
-    
+
     <servlet-mapping>
         <servlet-name>login_edit_mode</servlet-name>
         <url-pattern>/edit</url-pattern>
     </servlet-mapping>
-    
+
 	<servlet-mapping>
         <servlet-name>login_edit_mode</servlet-name>
         <url-pattern>/admin</url-pattern>
     </servlet-mapping>
-	
+
 	<servlet-mapping>
 		<servlet-name>TailLogServlet</servlet-name>
 		<url-pattern>/dotTailLogServlet/*</url-pattern>
@@ -473,12 +479,12 @@
 		<servlet-name>ShortyServlet</servlet-name>
 		<url-pattern>/dA/*</url-pattern>
 	</servlet-mapping>
-	
+
 	<servlet-mapping>
 	  <servlet-name>dwr-invoker</servlet-name>
 	  <url-pattern>/dwr/*</url-pattern>
 	</servlet-mapping>
-	
+
 	<servlet-mapping>
 		<servlet-name>MainServlet</servlet-name>
 		<url-pattern>/c/*</url-pattern>
@@ -492,12 +498,12 @@
 	    <servlet-name>BinaryExporterServlet</servlet-name>
 	    <url-pattern>/contentAsset/*</url-pattern>
 	</servlet-mapping>
-	
+
 	<servlet-mapping>
 		<servlet-name>CategoriesServlet</servlet-name>
 		<url-pattern>/categoriesServlet</url-pattern>
 	</servlet-mapping>
-	
+
 	<servlet-mapping>
 		<servlet-name>JSONTagsServlet</servlet-name>
 		<url-pattern>/JSONTags/*</url-pattern>
@@ -510,22 +516,22 @@
 		<servlet-name>RESTAPI</servlet-name>
 		<url-pattern>/api/*</url-pattern>
 	</servlet-mapping>
-	
+
 	<!--END DOTMARKETING SERVLET-MAPPING-->
-	
+
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN SERVLET-MAPPINGS -->
  	<!-- END SERVLET-MAPPINGS -->
-	
+
 	<session-config>
 		<session-timeout>30</session-timeout>
 	</session-config>
-	
+
 	<mime-mapping>
 		<extension>vtl</extension>
 		<mime-type>text/velocity</mime-type>
 	</mime-mapping>
-	
+
 	<mime-mapping>
 		<extension>xsl</extension>
 		<mime-type>application/xml</mime-type>
@@ -534,59 +540,64 @@
 		<extension>dotsass</extension>
 		<mime-type>text/css</mime-type>
 	</mime-mapping>
-	
+
 	<mime-mapping>
 		<extension>sass</extension>
 		<mime-type>text/css</mime-type>
 	</mime-mapping>
-	
+
 	<mime-mapping>
         <extension>scss</extension>
         <mime-type>text/css</mime-type>
     </mime-mapping>
-    
+
 	<mime-mapping>
 		<extension>less</extension>
 		<mime-type>text/css</mime-type>
 	</mime-mapping>
-	
+
 	<welcome-file-list>
 		<welcome-file>index.jsp</welcome-file>
 		<welcome-file>index.html</welcome-file>
 	</welcome-file-list>
-	
+
 	<error-page>
 	   <error-code>404</error-code>
 	   <location>/html/error/custom-error-page.jsp</location>
 	</error-page>
-	
+
 	<error-page>
 	   <error-code>401</error-code>
 	   <location>/html/error/custom-error-page.jsp</location>
 	</error-page>
-	
+
 	<error-page>
 	   <error-code>403</error-code>
 	   <location>/html/error/custom-error-page.jsp</location>
 	</error-page>
-	
+
 	<error-page>
 	   <error-code>500</error-code>
 	   <location>/html/error/custom-error-page.jsp</location>
 	</error-page>
-	
+
 	<error-page>
 	   <error-code>503</error-code>
 	   <location>/html/error/custom-error-page.jsp</location>
 	</error-page>
-	
+
 	<jsp-config>
 		<jsp-property-group>
 			<url-pattern>*.jsp</url-pattern>
 			<el-ignored>true</el-ignored>
 		</jsp-property-group>
 	</jsp-config>
-	
+
+	<resource-env-ref>
+		<resource-env-ref-name>BeanManager</resource-env-ref-name>
+		<resource-env-ref-type>javax.enterprise.inject.spi.BeanManager</resource-env-ref-type>
+	</resource-env-ref>
+
 	<!-- Prevent access to /dot_secure area.  Here we place files that are too numerous to be stored in WEB-INF, since Tomcat will scan all files in WEB-INF at startup -->
 	<security-constraint>
 		<display-name>Secure area</display-name>
@@ -606,9 +617,9 @@
 		<auth-constraint>
 		</auth-constraint>
 	</security-constraint>
-	
+
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN SECURITY-CONSTRAINTS -->
     <!-- END SECURITY-CONSTRAINTS -->
-    
+
 </web-app>

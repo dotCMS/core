@@ -1,5 +1,6 @@
 package com.dotmarketing.util;
 
+import com.dotcms.business.bytebuddy.ByteBuddyFactory;
 import com.google.common.collect.ImmutableList;
 import java.io.File;
 import java.io.IOException;
@@ -296,6 +297,7 @@ public class Config {
 						(!useWatcherMode.get()) && // if we are using watcher mode, do not need to check this
 						(System.currentTimeMillis() > lastRefreshTime.getTime() + (refreshInterval * 60 * 1000))
 				)) {
+			ByteBuddyFactory.init();
 			_loadProperties();
 		}
 	}
