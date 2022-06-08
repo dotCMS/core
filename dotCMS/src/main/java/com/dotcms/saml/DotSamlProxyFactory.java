@@ -132,7 +132,7 @@ public class DotSamlProxyFactory implements EventSubscriber<AppSecretSavedEvent>
                 if (null == this.samlServiceBuilder) {
 
 
-                   OSGISystem.getInstance().init();
+                   OSGISystem.getInstance().initializeFramework();
                        try {
                             this.samlServiceBuilder = OSGISystem.getInstance().getService(SamlServiceBuilder.class,
                                     OSGIConstants.BUNDLE_NAME_DOTCMS_SAML);

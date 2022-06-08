@@ -246,7 +246,7 @@ public class InitServlet extends HttpServlet {
 
         //Initializing System felix
         Logger.info(InitServlet.class,"Starting System OSGi Framework");
-        OSGISystem.getInstance().init();
+        OSGISystem.getInstance().initializeFramework();
         
         //Initializing Client Felix
         final Runnable task = () -> {

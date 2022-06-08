@@ -46,12 +46,12 @@ public class OSGISystem {
     }
 
     private OSGISystem() {
-        this.felixFramework = initializeFramework();
+        this.felixFramework = buildFramework();
     }
 
 
-    public void init() {
-        Logger.info(getClass(), "OSGi System Framework Inited");
+    public void initializeFramework() {
+        Logger.info(getClass(), "OSGi System Framework OK");
     }
 
 
@@ -104,7 +104,7 @@ public class OSGISystem {
      *
      * @return Framework
      */
-    private Framework initializeFramework() {
+    private Framework buildFramework() {
 
 
         // load all properties and set base directory

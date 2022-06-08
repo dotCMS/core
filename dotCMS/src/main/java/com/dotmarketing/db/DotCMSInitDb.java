@@ -93,11 +93,6 @@ public class DotCMSInitDb {
     @CloseDBIfOpened
 	private static void loadStarterSite() throws Exception{
 		
-    
-        OSGISystem.getInstance().init();
-        
-        
-        
 	    loadStarterSiteData() ;
 
         DbConnectionFactory.closeAndCommit();
@@ -105,8 +100,10 @@ public class DotCMSInitDb {
         removeAnyOldMetadata();
         MaintenanceUtil.flushCache();
         
+        
+        
         // Initializing felix
-
+        OSGISystem.getInstance().initializeFramework();
         
         ReindexThread.startThread();
 
