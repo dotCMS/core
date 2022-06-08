@@ -55,12 +55,13 @@ public class MetadataDelegateTest {
         final Folder folder = new FolderDataGen().name("testFolder").site(host).nextPersisted();
         final Contentlet contentlet = new FileAssetDataGen(file).host(host).folder(folder).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
         final File binary = (File)contentlet.get(FileAssetAPI.BINARY_FIELD);
+        Assert.assertTrue(String.format("binary %s should exist. ",binary.getPath()),delegate.normalize(binary).exists());
         final String rootPath = ConfigUtils.getAbsoluteAssetsRootPath();
         final String path = binary.getPath();
         final int index = path.indexOf(rootPath);
         //Drop the relative part and prepend a route like the one that typically has a file packed in the starter
         final String assetPath = path.substring(index + rootPath.length() );
-        //The route is slightly different so we don't get an unwanted match when running tests in cloud
+        //The route is slightly different, so we don't get an unwanted match when running tests in cloud
         final Path absoluteNoneExistingPath = Path.of("/data/shared2/" + assetPath).normalize();
         //Since we're mimicking an invalid file scenario. The file must not exist.
         Assert.assertFalse(absoluteNoneExistingPath.toFile().exists());
