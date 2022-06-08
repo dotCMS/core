@@ -1,0 +1,24 @@
+{
+    "projectType": "library",
+    "root": "libs/ui",
+    "sourceRoot": "libs/ui/src",
+    "prefix": "dotcms",
+    "targets": {
+        "lint": {
+            "executor": "@nrwl/linter:eslint",
+            "options": {
+                "lintFilePatterns": ["libs/ui/src/**/*.ts", "libs/ui/src/**/*.html"]
+            },
+            "outputs": ["{options.outputFile}"]
+        },
+        "test": {
+            "executor": "@angular-devkit/build-angular:karma",
+            "options": {
+                "main": "libs/ui/src/test.ts",
+                "tsConfig": "libs/ui/tsconfig.spec.json",
+                "karmaConfig": "libs/ui/karma.conf.js"
+            }
+        }
+    },
+    "tags": []
+}
