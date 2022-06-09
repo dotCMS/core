@@ -1,0 +1,72 @@
+<ng-template let-item="item" pTemplate="listItem" #externalItemListTemplate>
+    <span
+        class="theme-selector__data-list-item"
+        [class.selected]="value && value.identifier === item.identifier"
+        (click)="onChange(item)"
+    >
+        <img
+            *ngIf="item?.themeThumbnail; else imageFallback"
+            class="dot-theme-item__image"
+            [src]="
+                item.identifier === 'SYSTEM_THEME'
+                    ? item.themeThumbnail
+                    : '/dA/' + item.themeThumbnail + '/48w/48h/thumbnail.png'
+            "
+        />
+
+        <ng-template #imageFallback>
+            <div class="dot-theme-item__image--fallback">
+                <span> {{ item.label.charAt(0) }}</span>
+            </div>
+        </ng-template>
+        <span class="dot-theme-item__meta">
+            <span class="dot-theme-item__label">{{ item.label }}</span>
+            <span class="dot-theme-item__date">
+                {{ 'Last-Updated' | dm }}: {{ item.modDate | date: 'MM/dd/yy' }}
+            </span>
+        </span>
+    </span>
+</ng-template>
+
+<ng-template #externalFilterTemplate>
+    <div class="theme-selector__filters">
+        <dot-site-selector
+            #siteSelector
+            width="12.8rem"
+            [system]="true"
+            (switch)="siteChange($event)"
+            data-testId="siteSelector"
+        ></dot-site-selector>
+        <div class="searchable-dropdown__search-section">
+            <dot-icon class="searchable-dropdown__search-icon" name="search"></dot-icon>
+            <input
+                data-testId="searchInput"
+                #searchInput
+                pInputText
+                [placeholder]="'search' | dm"
+                type="text"
+                class="searchable-dropdown__search-inputfield"
+                (click)="$event.stopPropagation()"
+            />
+        </div>
+    </div>
+</ng-template>
+
+<dot-searchable-dropdown
+    #searchableDropdown
+    (hide)="onHide()"
+    (display)="onShow()"
+    [(ngModel)]="value"
+    (switch)="onChange($event)"
+    [placeholder]="'dot.common.select.themes' | dm"
+    [data]="themes"
+    [totalRecords]="totalRecords"
+    (pageChange)="handlePageChange($event)"
+    [rows]="paginatorService.paginationPerPage"
+    labelPropertyName="name"
+    overlayWidth="490px"
+    valuePropertyName="name"
+    [externalItemListTemplate]="externalItemListTemplate"
+    [externalFilterTemplate]="externalFilterTemplate"
+>
+</dot-searchable-dropdown>

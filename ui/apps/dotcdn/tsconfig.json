@@ -1,0 +1,19 @@
+{
+    "extends": "../../tsconfig.base.json",
+    "files": [],
+    "include": [],
+    "compilerOptions": {
+        "types": ["jest", "node"]
+    },
+    "references": [
+        {
+            "path": "./tsconfig.app.json"
+        },
+        {
+            "path": "./tsconfig.spec.json"
+        },
+        {
+            "path": "./tsconfig.editor.json"
+        }
+    ]
+}
