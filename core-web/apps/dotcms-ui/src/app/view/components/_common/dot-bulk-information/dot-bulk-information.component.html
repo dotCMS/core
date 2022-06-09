@@ -1,0 +1,14 @@
+<p data-testId="successful" class="bulk-information__success-message">
+    {{ data.action }}: {{ data.successCount }}
+</p>
+
+<div class="bulk-information__fail-container">
+    <p class="bulk-information__fail-message">
+        <span class="material-icons">error_outline</span>
+        <span data-testId="fails">{{ data.fails?.length }} {{ 'failed' | dm }}</span>
+    </p>
+    <div class="bulk-information__fail-item" *ngFor="let item of data.fails">
+        <h5>{{ item.description }}</h5>
+        <p>{{ item.errorMessage }}</p>
+    </div>
+</div>

@@ -1,0 +1,25 @@
+{
+    "projectType": "library",
+    "root": "libs/dotcms-js",
+    "sourceRoot": "libs/dotcms-js/src",
+    "prefix": "",
+    "targets": {
+        "lint": {
+            "executor": "@nrwl/linter:eslint",
+            "options": {
+                "lintFilePatterns": ["libs/dotcms-js/src/**/*.ts", "libs/dotcms-js/src/**/*.html"]
+            },
+            "outputs": ["{options.outputFile}"]
+        },
+        "test": {
+            "executor": "@angular-devkit/build-angular:karma",
+            "outputs": ["coverage/libs/dotcms-js"],
+            "options": {
+                "main": "libs/dotcms-js/src/test.ts",
+                "karmaConfig": "libs/dotcms-js/karma.conf.js",
+                "tsConfig": "libs/dotcms-js/tsconfig.spec.json"
+            }
+        }
+    },
+    "tags": []
+}
