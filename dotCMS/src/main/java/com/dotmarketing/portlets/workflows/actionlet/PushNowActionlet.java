@@ -52,7 +52,7 @@ public class PushNowActionlet extends WorkFlowActionlet {
     private static final long serialVersionUID = 1L;
 
     private static final String ENVIRONMENT_DELIMITER = ",";
-    private static final String ACTIONLET_NAME = "Push Now";
+    private static final String ACTIONLET_NAME = "Push/Remove Now";
     private static final String ACTIONLET_DESCRIPTION = "This actionlet will automatically publish or unpublish the the content " +
             "object to the specified environment(s). Multiple environments can be separated by a comma (',')";
     private static final String PARAM_ENVIRONMENT = "environment";

@@ -319,6 +319,7 @@ public class TaskLocatorUtil {
 		.add(Task220402UpdateDateTimezones.class)
 		.add(Task220413IncreasePublishedPushedAssetIdCol.class)
 		.add(Task220512UpdateNoHTMLRegexValue.class)
+		.add(Task220606UpdatePushNowActionletName.class)
 
 		.build();
         
