@@ -1,33 +1,27 @@
 {
 	"info": {
-		"_postman_id": "5fcabadc-ae05-4432-944e-29622c28c226",
+		"_postman_id": "612879db-0eab-4376-bea8-9c2600c28fed",
 		"name": "Containers",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "4500400"
 	},
 	"item": [
 		{
-			"name": "Deletes Container Test Folder",
+			"name": "pre_ImportBundleWithApplicationContainerFolder",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"  pm.response.to.have.status(200);",
-							"});",
+							"pm.test(\"Bundle uploaded sucessfully\", function () {",
+							"    pm.response.to.have.status(200);",
 							"",
-							"pm.test(\"No errors\", function () {",
-							"    ",
 							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.errors.length).to.eql(0);",
-							"});",
+							"    console.log(jsonData);",
 							"",
-							"",
-							"",
-							"",
-							"",
-							"",
-							""
+							"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"application_containers_folder.tar.gz\");",
+							"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+							"});"
 						],
 						"type": "text/javascript"
 					}
@@ -38,40 +32,62 @@
 					"type": "basic",
 					"basic": [
 						{
-							"key": "password",
-							"value": "admin",
+							"key": "username",
+							"value": "admin@dotcms.com",
 							"type": "string"
 						},
 						{
-							"key": "username",
-							"value": "admin@dotcms.com",
+							"key": "password",
+							"value": "admin",
 							"type": "string"
 						}
 					]
 				},
-				"method": "DELETE",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "[\n    \"/application/containers/test\"\n]",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"type": "text",
+						"value": "application/octet-stream"
+					},
+					{
+						"key": "Content-Disposition",
+						"type": "text",
+						"value": "attachment"
 					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "resources/ContainerResource/application_containers_folder.tar.gz"
+						}
+					]
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/folder/default",
+					"raw": "{{serverURL}}/api/bundle?sync=true",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
-						"v1",
-						"folder",
-						"default"
+						"bundle"
+					],
+					"query": [
+						{
+							"key": "sync",
+							"value": "true"
+						},
+						{
+							"key": "AUTH_TOKEN",
+							"value": "",
+							"disabled": true
+						}
 					]
-				}
+				},
+				"description": "Imports a Bundle that includes:\n* A piece of content with a tag field without any tags selected"
 			},
 			"response": []
 		},
