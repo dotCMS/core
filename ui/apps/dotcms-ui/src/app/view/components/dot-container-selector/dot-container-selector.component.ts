@@ -32,6 +32,7 @@ export class DotContainerSelectorComponent implements OnInit {
     ngOnInit(): void {
         this.paginationService.url = 'v1/containers';
         this.paginationService.paginationPerPage = 5;
+        this.paginationService.setExtraParams('system', true);
     }
 
     /**

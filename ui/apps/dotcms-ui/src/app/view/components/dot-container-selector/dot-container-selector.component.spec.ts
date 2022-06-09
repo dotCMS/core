@@ -6,7 +6,6 @@ import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.s
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
-import { DOTTestBed } from '../../../test/dot-test-bed';
 import { ComponentFixture, fakeAsync, tick, TestBed } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
 import { DotContainerSelectorComponent } from './dot-container-selector.component';
@@ -31,11 +30,13 @@ import {
     SearchableDropdownComponent
 } from '@components/_common/searchable-dropdown/component';
 
-describe('ContainerSelectorComponent', () => {
+fdescribe('ContainerSelectorComponent', () => {
     let fixture: ComponentFixture<DotContainerSelectorComponent>;
+    let comp: DotContainerSelectorComponent;
     let de: DebugElement;
     let searchableDropdownComponent;
     let containers: DotContainer[];
+    let paginatorService: PaginatorService;
 
     beforeEach(() => {
         const messageServiceMock = new MockDotMessageService({
@@ -63,14 +64,10 @@ describe('ContainerSelectorComponent', () => {
                 ApiRoot,
                 UserModel,
                 LoggerService,
-                StringUtils
+                StringUtils,
+                PaginatorService
             ]
         }).compileComponents();
-
-        fixture = DOTTestBed.createComponent(DotContainerSelectorComponent);
-        de = fixture.debugElement;
-
-        searchableDropdownComponent = de.query(By.css('dot-searchable-dropdown')).componentInstance;
 
         containers = [
             {
@@ -99,6 +96,18 @@ describe('ContainerSelectorComponent', () => {
                 }
             }
         ];
+
+        fixture = TestBed.createComponent(DotContainerSelectorComponent);
+        de = fixture.debugElement;
+        comp = fixture.componentInstance;
+        paginatorService = de.injector.get(PaginatorService);
+        searchableDropdownComponent = de.query(By.css('dot-searchable-dropdown')).componentInstance;
+    });
+
+    it('should set onInit Pagination Service with right values', () => {
+        spyOn(paginatorService, 'setExtraParams');
+        comp.ngOnInit();
+        expect(paginatorService.setExtraParams).toHaveBeenCalled();
     });
 
     it('should pass all the right attr', () => {
@@ -127,7 +136,6 @@ describe('ContainerSelectorComponent', () => {
 
         fixture.detectChanges();
 
-        const paginatorService: PaginatorService = de.injector.get(PaginatorService);
         paginatorService.totalRecords = 2;
         spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([]));
 
@@ -150,7 +158,6 @@ describe('ContainerSelectorComponent', () => {
 
         fixture.detectChanges();
 
-        const paginatorService: PaginatorService = de.injector.get(PaginatorService);
         paginatorService.totalRecords = 2;
         spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([]));
 
@@ -165,7 +172,6 @@ describe('ContainerSelectorComponent', () => {
 
     it('should set container list replacing the identifier for the path, if needed', () => {
         fixture.detectChanges();
-        const paginatorService: PaginatorService = de.injector.get(PaginatorService);
         spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(containers));
         const searchable: SearchableDropdownComponent = de.query(
             By.css('[data-testId="searchableDropdown"]')
