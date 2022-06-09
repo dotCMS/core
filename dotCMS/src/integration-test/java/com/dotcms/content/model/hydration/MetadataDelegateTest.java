@@ -18,6 +18,7 @@ import com.dotmarketing.util.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import javax.validation.constraints.AssertTrue;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -67,6 +68,10 @@ public class MetadataDelegateTest {
         Assert.assertFalse(absoluteNoneExistingPath.toFile().exists());
         //Moment of truth the file should be fixed and converted into the local equivalent file
         final File normalizedExistingPath = delegate.normalize(absoluteNoneExistingPath.toFile());
+
+        Assert.assertEquals("We expect the normalized path to be the same as the binary",
+                binary.getPath(), normalizedExistingPath.getPath());
+
         Assert.assertTrue(
                 String.format("Path %s is expected to exist. binary path is %s. Root path %s. ",
                         normalizedExistingPath.getPath(), path, rootPath),

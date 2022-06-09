@@ -114,7 +114,7 @@ public class MetadataDelegate implements HydrationDelegate {
         try {
             // Something like this is what we're aiming for
             // /0/1/0134ab84-e618-42ae-8be8-58c9c33e8901/fileAsset/lg.ttf
-            final String path = in.getPath().toLowerCase();
+            final String path = in.getPath();
 
             final String[] parts = path.split(Pattern.quote(File.separator));
             final int fileIndex = parts.length - 1;
@@ -134,11 +134,11 @@ public class MetadataDelegate implements HydrationDelegate {
             final String rebuiltPath = String.join(File.separator, assetsRootPath, char1, char2,
                     inode,
                     folder, file);
-            Logger.info(MetadataDelegate.class,"::: Rebuilt path "+rebuiltPath);
+            Logger.debug(MetadataDelegate.class,"::: Rebuilt path "+rebuiltPath);
             //get rid of any repetitive separator
             final File normalizedFile = Path.of(rebuiltPath).toFile();
             if (!normalizedFile.exists()) {
-                Logger.warn(MetadataDelegate.class,()->String.format("::: Unable to re-build a matching file path %s ",normalizedFile.getPath()));
+                Logger.debug(MetadataDelegate.class,()->String.format("::: Unable to re-build a matching file path %s ",normalizedFile.getPath()));
             } else {
                 //if we succeed then return
                 return normalizedFile;
