@@ -6,20 +6,10 @@ bin/*.sh
 .settings/*
 .project
 .idea/
+.vscode
 *.iml
 *.ipr
 *.iws
-*.launch
-.settings/
-*.sublime-workspace
-
-# IDE - VSCode
-.vscode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
 
 # none enterprise stuff should make it here #
 #######################################
@@ -66,14 +56,14 @@ dotCMS/classes
 
 # Changes after gradle migration #
 ###############################
-/dist/
+dist/
 dist-output/
 dotCMS/build/
 dotCMS/.gradle/
 dotCMS/.settings/
 dotCMS/src/main/webapp/WEB-INF/classes/
 dotCMS/src/main/webapp/WEB-INF/lib/
-dotCMS/src/main/webapp/WEB-INF/velocity/static/plugiga ns/
+dotCMS/src/main/webapp/WEB-INF/velocity/static/plugins/
 dotCMS/src/main/webapp/html/plugins/
 
 # immutables.github.io generated folder#
@@ -88,34 +78,3 @@ docker/tests/integration/backup
 
 dot-cicd/
 tmp/
-
-/node_modules
-/**/node_modules
-
-# compiled output
-/ui/dist
-/ui/dist-lib
-/ui/docs
-/ui/tmp
-/ui/out-tsc
-/ui/karma_html
-
-# misc
-/ui/.angular/cache
-/ui/.sass-cache
-/ui/connect.lock
-/ui/coverage
-/ui/libpeerconnection.log
-npm-debug.log
-yarn-error.log
-testem.log
-/ui/typings
-karma_html/
-
-# e2e
-/ui/e2e/*.js
-/ui/e2e/*.map
-
-/ui/storybook
-/ui/out*/
-dist-docs/
