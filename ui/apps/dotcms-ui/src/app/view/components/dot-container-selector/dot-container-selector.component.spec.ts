@@ -30,7 +30,7 @@ import {
     SearchableDropdownComponent
 } from '@components/_common/searchable-dropdown/component';
 
-fdescribe('ContainerSelectorComponent', () => {
+describe('ContainerSelectorComponent', () => {
     let fixture: ComponentFixture<DotContainerSelectorComponent>;
     let comp: DotContainerSelectorComponent;
     let de: DebugElement;
