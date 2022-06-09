@@ -10,43 +10,38 @@ jobs:
         outputs:
             dotcms-ui: ${{ steps.filter.outputs.dotcms-ui }}
         steps:
-            - name: Checkout core-web
+            - name: Checkout core
               uses: actions/checkout@v3
-              with:
-                  path: 'core-web'
-
             - name: Get specific changed files
               uses: dorny/paths-filter@v2
               id: filter
               with:
                   base: ${{ github.ref }}
                   list-files: 'json'
-                  working-directory: 'core-web'
+                  working-directory: 'core'
                   filters: |
                       dotcms-ui:
-                        - 'apps/dotcms-ui/src/**'
-                        - 'libs/!(dotcms-webcomponents/**)/**'
-
+                        - 'ui/apps/dotcms-ui/src/**'
+                        - 'ui/libs/!(dotcms-webcomponents/**)/**'
             - name: Changes found
               if: steps.filter.outputs.dotcms-ui == 'true'
               run: |
+                  cd ui
                   echo "Found Dotcms-UI files changed."
                   echo ${{ steps.filter.outputs.dotcms-ui }}
-
             - name: No changes found
               if: steps.filter.outputs.dotcms-ui == 'false'
               run: |
                   echo "No changes found in Dotcms-UI"
-
     publish:
         needs: changes
         if: ${{ needs.changes.outputs.dotcms-ui == 'true' }}
         runs-on: ubuntu-latest
         steps:
-            - name: Checkout core-web
+            - name: Checkout core
               run: |
-                  git clone https://victoralfaro-dotcms:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/dotcms/core-web
-                  cd core-web
+                  git clone https://victoralfaro-dotcms:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/dotCMS/core
+                  cd core
                   git pull
                   cd ..
             - name: Configuring Node.js
@@ -63,16 +58,17 @@ jobs:
                   fi
 
                   echo "******brach name: " $branchName
-                  cd core-web
+                  cd core
 
                   if [[ "$branchName" != 'master' ]]; then
                     git checkout -b $branchName --track origin/$branchName
                   fi
 
+                  cd ui
                   npm install
+                  cd ..
             - name: Version Bump - dotcms-ui - if it's Master/Release Branch
               run: |
-
                   # Get Branch Name
                   if [[ "${{ github.event_name }}" == "pull_request" ]]; then
                     branchName="${{ github.head_ref }}"
@@ -91,7 +87,7 @@ jobs:
                   echo "******tag brach name: " $preReleaseTag
 
                   # Get version from package.json
-                  cd core-web
+                  cd core/ui
 
                   pkgVersion=`awk -F'"' '/"version": ".+"/{ print $4; exit; }' package.json`
                   arrIN=(${pkgVersion//./ })
@@ -115,12 +111,12 @@ jobs:
 
             - name: Build dotcms-ui with deps
               run: |
-                  cd core-web
+                  cd core/ui
                   npm run nx build dotcms-webcomponents && npm run nx build dotcms-ui -- --prod
                   cp package.json ./dist/apps/dotcms-ui/package.json
             - name: 'publish to npm'
               run: |
-                  cd core-web
+                  cd core/ui
                   npm set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
                   cd dist/apps/dotcms-ui
                   if [[ $(basename "${{ github.ref }}") =~ ^release-.* ]]; then
