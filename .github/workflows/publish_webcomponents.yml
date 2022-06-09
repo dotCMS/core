@@ -18,10 +18,10 @@ jobs:
         with:
           base: ${{ github.ref }}
           list-files: "json"
-          working-directory: "core/ui"
+          working-directory: "ui"
           filters: |
             dotcms-webcomponents:
-              - 'libs/dotcms-webcomponents/**'
+              - 'ui/libs/dotcms-webcomponents/**'
       - name: Changes found
         if: steps.filter.outputs.dotcms-webcomponents == 'true'
         run: |
@@ -36,27 +36,19 @@ jobs:
     if: ${{ needs.changes.outputs.dotcms-webcomponents == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout core
-        run: |
-          git clone https://victoralfaro-dotcms:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/dotCMS/core
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+          ref: ${{ github.ref_name }}
       - name: Configuring Node.js
         uses: actions/setup-node@v2-beta
         with:
           node-version: "16.13.2"
       - name: Installing dependencies
         run: |
-          # Get Branch Name
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            branchName="${{ github.head_ref }}"
-          else
-            branchName=$(basename "${{ github.ref }}")
-          fi
-
-          cd core/ui
-          if [[ "$branchName" != 'master' ]]; then
-            git checkout -b $branchName --track origin/$branchName
-          fi
-
+          cd ui
           npm install
       - name: Version Bump - dotcms-webcomponents - if it's Master/Release Branch
         run: |
@@ -75,7 +67,7 @@ jobs:
             preReleaseTag=rc
           fi
 
-          cd core/ui
+          cd ui
 
           # Get version from package.json
           cd libs/dotcms-webcomponents
@@ -102,11 +94,11 @@ jobs:
 
       - name: Build dotcms-webcomponents with deps
         run: |
-          cd core/ui
+          cd ui
           npm run nx build dotcms-webcomponents && npm run nx build dotcms-ui -- --prod
-      - name: "publish to npm"
+      - name: "Publish to npm"
         run: |
-          cd core/ui
+          cd ui
           npm set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
           cd dist/libs/dotcms-webcomponents
           if [[ $(basename "${{ github.ref }}") =~ ^release-.* ]]; then
