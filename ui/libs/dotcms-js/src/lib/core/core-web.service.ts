@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Subject, Observable, throwError } from 'rxjs';
-import { map, catchError, filter } from 'rxjs/operators';
+import { map, catchError, filter, tap } from 'rxjs/operators';
 
 import {
     CwError,
@@ -184,6 +184,7 @@ export class CoreWebService {
                     return new ResponseView<T>(resp);
                 }
             }),
+            tap((resp) => console.log(resp)),
             catchError((err: HttpErrorResponse) => {
                 this.emitHttpError(err.status);
                 return throwError(this.handleResponseHttpErrors(err));
