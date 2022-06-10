@@ -1,7 +1,6 @@
 package com.dotmarketing.util.json;
 
 import com.dotmarketing.util.UtilMethods;
-import io.vavr.control.Try;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.Writer;
