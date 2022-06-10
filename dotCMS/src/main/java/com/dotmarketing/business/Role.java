@@ -1,6 +1,6 @@
 package com.dotmarketing.business;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
@@ -9,6 +9,7 @@ import java.util.Map;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Role implements Serializable,Comparable<Role> {
 
 	/**
@@ -153,7 +154,6 @@ public class Role implements Serializable,Comparable<Role> {
 		return locked;
 	}
 
-	@JsonIgnore
 	public boolean isUser() {
 		return (this.getFQN() != null && this.getFQN().startsWith("User"));
 	}

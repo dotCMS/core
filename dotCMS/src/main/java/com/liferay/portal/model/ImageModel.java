@@ -22,7 +22,6 @@
 
 package com.liferay.portal.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.GetterUtil;
 import com.liferay.util.Xss;
@@ -34,6 +33,7 @@ import com.liferay.util.Xss;
  * @version $Revision: 1.89 $
  *
  */
+
 public class ImageModel extends BaseModel {
 	public static boolean CACHEABLE = GetterUtil.get(PropsUtil.get(
 				"value.object.cacheable.com.liferay.portal.model.Image"),
@@ -65,7 +65,6 @@ public class ImageModel extends BaseModel {
 		_text = text;
 	}
 
-	@JsonIgnore
 	public String getPrimaryKey() {
 		return _imageId;
 	}

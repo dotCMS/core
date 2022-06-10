@@ -33,6 +33,7 @@ import com.dotmarketing.portlets.user.ajax.UserAjax;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.Recipient;
 import com.liferay.util.LocaleUtil;
@@ -56,6 +57,7 @@ import java.util.TimeZone;
  * @version $Revision: 1.34 $
  *
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class User extends UserModel implements Recipient, ManifestItem, DotCloneable {
 
 	public static final String DEFAULT = "default";
@@ -103,7 +105,7 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 				Date createDate, Date loginDate, String loginIP,
 				Date lastLoginDate, String lastLoginIP, int failedLoginAttempts,
 				boolean agreedToTermsOfUse, boolean active, boolean deleteInProgress, Date deleteDate,
-                final Map<String, String> additionalInfo) {
+                final Map<String, Object> additionalInfo) {
 
 		super(userId, companyId, password, passwordEncrypted,
 			  passwordExpirationDate, passwordReset, firstName, middleName,
@@ -123,7 +125,6 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 		setAdditionalInfo(additionalInfo);
 	}
 
-	@JsonIgnore
 	public boolean isDefaultUser() {
 		return _defaultUser;
 	}
@@ -139,7 +140,6 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 		super.setCompanyId(companyId);
 	}
 
-	@JsonIgnore
 	public String getActualCompanyId() {
 		if (isDefaultUser()) {
 			return getUserId().substring(
@@ -150,7 +150,6 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 		}
 	}
 
-	@JsonIgnore
 	public boolean isPasswordExpired() {
 		if (getPasswordExpirationDate() != null &&
 			getPasswordExpirationDate().before(new Date())) {
@@ -162,7 +161,6 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 		}
 	}
 
-	@JsonIgnore
 	public String getFullName() {
 		String firstName = getFirstName();
 		firstName = (UtilMethods.isSet(firstName) ? firstName : "");
@@ -173,7 +171,6 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 		return getFullName(firstName,middleName,lastName);
 	}
 
-	@JsonIgnore
 	public boolean getFemale() {
 		return !getMale();
 	}
@@ -201,7 +198,6 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 		super.setLanguageId(_locale.getLanguage() + "_" + _locale.getCountry());
 	}
 
-	@JsonIgnore
 	public TimeZone getTimeZone() {
 		return _timeZone;
 	}
@@ -224,7 +220,7 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 			return false;
 		}
 	}
-	@JsonIgnore
+
 	public void setResolution(String resolution) {
 		if (Validator.isNull(resolution)) {
 			resolution = PropsUtil.get(
@@ -233,7 +229,7 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 
 		super.setResolution(resolution);
 	}
-	@JsonIgnore
+
 	public void setRefreshRate(String refreshRate) {
 		if (Validator.isNull(refreshRate)) {
 			refreshRate = PropsUtil.get(
@@ -267,12 +263,10 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 		_user.setActive(false);
 	}
 
-	@JsonIgnore
 	public String getRecipientId() {
 		return getUserId();
 	}
 
-	@JsonIgnore
 	public String getRecipientName() {
 		return StringUtil.replace(
 			getFullName(),
@@ -284,17 +278,14 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 			});
 	}
 
-	@JsonIgnore
 	public String getRecipientAddress() {
 		return getEmailAddress();
 	}
 
-	@JsonIgnore
 	public String getRecipientInternetAddress() {
 		return getRecipientName() + " <" + getEmailAddress() + ">";
 	}
 
-	@JsonIgnore
 	public boolean isMultipleRecipients() {
 		return false;
 	}
@@ -317,7 +308,6 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
         setModified(true);
     }
 
-	@JsonIgnore
     public boolean isAnonymousUser(){
       return UserAPI.CMS_ANON_USER_ID.equals(this.getUserId());
   }
@@ -364,7 +354,6 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 	}
 
 
-  @JsonIgnore
   public Role getUserRole() {
 
       return Try.of(() -> APILocator.getRoleAPI().loadRoleByKey(this.getUserId())).getOrElseThrow(e->new DotStateException("Unable to find user role for user:" + this.getUserId()));
@@ -436,7 +425,6 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 	private User _user;
 	private Date modificationDate;
 
-	@JsonIgnore
 	@Override
 	public ManifestInfo getManifestInfo(){
 		return new ManifestInfoBuilder()

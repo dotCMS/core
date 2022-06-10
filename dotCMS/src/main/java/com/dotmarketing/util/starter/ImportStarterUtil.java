@@ -22,7 +22,6 @@ import com.dotmarketing.business.DuplicateUserException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.LayoutsRoles;
-import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.PortletsLayouts;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UsersRoles;
@@ -754,7 +753,7 @@ public class ImportStarterUtil {
             if (Relationship.class.equals(_importClass) || Template.class.equals(_importClass)
                     || Contentlet.class.equals(_importClass) || Category.class.equals(_importClass)) {
                 id = "inode";
-            } else if(_importClass.equals(ContentletVersionInfo.class)) {
+            } else if(_importClass.equals(ContentletVersionInfo.class) || _importClass.equals(Folder.class)) {
                 id = "identifier";
             } else {
                 _dh = new HibernateUtil(_importClass);
@@ -813,6 +812,9 @@ public class ImportStarterUtil {
                             } else if (obj instanceof Template) {
                                 final Template template = Template.class.cast(obj);
                                 FactoryLocator.getTemplateFactory().save(template, template.getInode());
+                            } else if (obj instanceof Folder) {
+                                final Folder folder = Folder.class.cast(obj);
+                                FactoryLocator.getFolderFactory().save(folder);
                             } else{
                                 Logger.debug(this, "Saving the object: " + obj.getClass() + ", with the id: " + prop);
                                 HibernateUtil.saveWithPrimaryKey(obj, prop);

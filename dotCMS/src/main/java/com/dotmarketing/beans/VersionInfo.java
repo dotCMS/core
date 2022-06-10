@@ -1,9 +1,10 @@
 package com.dotmarketing.beans;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.io.Serializable;
 import java.util.Date;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class VersionInfo implements Serializable {
 	private static final long serialVersionUID = 241933896664122728L;
 	private String identifier;
@@ -51,7 +52,6 @@ public class VersionInfo implements Serializable {
         this.lockedOn = lockedOn;
     }
 
-	@JsonIgnore
     public boolean isLocked() {
         return lockedBy!=null;
     }

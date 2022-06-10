@@ -53,6 +53,7 @@ import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
@@ -84,6 +85,7 @@ import org.apache.commons.lang3.BooleanUtils;
  * @author David Tores
  *
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Contentlet implements Serializable, Permissionable, Categorizable, Versionable, Treeable, Ruleable,
 		ManifestItem {
 

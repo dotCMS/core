@@ -27,6 +27,7 @@ import static com.dotmarketing.util.UtilMethods.isSet;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.hash.Hashing;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.Base64;
@@ -41,6 +42,8 @@ import java.util.TimeZone;
  * @version $Revision: 1.16 $
  * 
  */
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Company extends CompanyModel {
 
 	public static final String[] TYPES = PropsUtil
@@ -118,7 +121,6 @@ public class Company extends CompanyModel {
 		return null;
 	}
 
-	@JsonIgnore
 	public User getDefaultUser() {
 		User defaultUser = null;
 
@@ -131,17 +133,14 @@ public class Company extends CompanyModel {
 		return defaultUser;
 	}
 
-	@JsonIgnore
 	public Locale getLocale() {
 		return getDefaultUser().getLocale();
 	}
 
-	@JsonIgnore
 	public TimeZone getTimeZone() {
 		return getDefaultUser().getTimeZone();
 	}
 
-	@JsonIgnore
 	public String getAdminName() {
 		return getShortName() + " Administrator";
 	}

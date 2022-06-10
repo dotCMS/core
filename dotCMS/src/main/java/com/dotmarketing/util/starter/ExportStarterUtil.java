@@ -1,5 +1,7 @@
 package com.dotmarketing.util.starter;
 
+import static java.io.File.separator;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
 import com.dotcms.publishing.BundlerUtil;
@@ -18,11 +20,11 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.portlets.calendar.model.CalendarReminder;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.cmsmaintenance.util.AssetFileNameFilter;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -35,17 +37,28 @@ import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.TrashUtils;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.ZipUtil;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.ejb.ImageLocalManagerUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.zip.ZipOutputStream;
 import javax.servlet.ServletException;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.output.TeeOutputStream;
 
 public class ExportStarterUtil {
 
@@ -87,6 +100,7 @@ public class ExportStarterUtil {
         _tablesToDump.add(Category.class);
         _tablesToDump.add(Tree.class);
         _tablesToDump.add(MultiTree.class);
+        _tablesToDump.add(Folder.class);
 
         //end classes no longer mapped with Hibernate
         _tablesToDump.addAll(HibernateUtil.getSession().getSessionFactory().getAllClassMetadata().keySet());
@@ -150,20 +164,15 @@ public class ExportStarterUtil {
                         dc = new DotConnect();
                         dc.setSQL("SELECT * FROM tree order by parent, child, relation_type")
                                 .setStartRow(i).setMaxRows(step);
-                        //_dh.setQuery("from " + clazz.getName() + " order by parent, child, relation_type");
                     } else if (MultiTree.class.equals(clazz)) {
                         dc = new DotConnect();
                         dc.setSQL(
                                         "SELECT * FROM multi_tree order by parent1, parent2, child, relation_type")
                                 .setStartRow(i).setMaxRows(step);
-                        //_dh.setQuery("from " + clazz.getName() + " order by parent1, parent2, child, relation_type");
                     } else if (TagInode.class.equals(clazz)) {
                         _dh.setQuery("from " + clazz.getName() + " order by inode, tag_id");
                     } else if (Tag.class.equals(clazz)) {
                         _dh.setQuery("from " + clazz.getName() + " order by tag_id, tagname");
-                    } else if (CalendarReminder.class.equals(clazz)) {
-                        _dh.setQuery("from " + clazz.getName()
-                                + " order by user_id, event_id, send_date");
                     } else if (Identifier.class.equals(clazz)) {
                         dc = new DotConnect();
                         dc.setSQL("select * from identifier order by parent_path, id")
@@ -194,6 +203,10 @@ public class ExportStarterUtil {
                         dc = new DotConnect();
                         dc.setSQL("SELECT * FROM category ORDER BY inode")
                                 .setStartRow(i).setMaxRows(step);
+                    } else if (Folder.class.equals(clazz)) {
+                        dc = new DotConnect();
+                        dc.setSQL("SELECT * FROM folder ORDER BY inode")
+                                .setStartRow(i).setMaxRows(step);
                     } else {
                         _dh.setQuery("from " + clazz.getName() + " order by 1");
                     }
@@ -222,6 +235,10 @@ public class ExportStarterUtil {
                     } else if (Category.class.equals(clazz)) {
                         _list = TransformerLocator
                                 .createCategoryTransformer(dc.loadObjectResults())
+                                .asList();
+                    } else if(Folder.class.equals(clazz)) {
+                        _list = TransformerLocator
+                                .createFolderTransformer(dc.loadObjectResults())
                                 .asList();
                     } else if (Tree.class.equals(clazz)){
                         _list = TransformerLocator.createTreeTransformer(dc.loadObjectResults()).asList();
@@ -328,5 +345,47 @@ public class ExportStarterUtil {
         Logger.info(this, "Moving assets to back up directory: " + outputDirectory);
 
         FileUtil.copyDirectory(assetDir, outputDirectory + File.separator + "assets", new AssetFileNameFilter());
+    }
+
+    /**
+     * Manipulates contents of a directory and put them through a given output stream not without first compressing them
+     * to a generated zip file.
+     *
+     * @param output given output stream
+     * @param withAssets flag telling to include assets or not
+     * @param download flag telling to download as a file or as a stream
+     * @return file zip file
+     * @throws IOException
+     */
+    public Optional<File> zipStarter(final OutputStream output, final boolean withAssets, final boolean download)
+            throws IOException {
+        final File outputDir = withAssets
+                ? new ExportStarterUtil().createStarterWithAssets()
+                : new ExportStarterUtil().createStarterData();
+        final File zipFile = new File(
+                outputDir + UtilMethods
+                        .dateToJDBC(new Date())
+                        .replace(':', '-')
+                        .replace(' ', '_') + ".zip");
+        Logger.info(this, "Zipping up to file:" + zipFile.getAbsolutePath());
+
+        try (final OutputStream outStream = download
+                ? new TeeOutputStream(new BufferedOutputStream(Files.newOutputStream(zipFile.toPath())), output)
+                : new BufferedOutputStream(Files.newOutputStream(zipFile.toPath()));
+                final ZipOutputStream zipOutput = new ZipOutputStream(outStream)) {
+            ZipUtil.zipDirectory(outputDir.getAbsolutePath(), zipOutput);
+        }
+
+        Logger.info(this, "Wrote starter to : " + zipFile.toPath());
+        new TrashUtils().moveFileToTrash(outputDir, "starter");
+
+        final File newLocation = new File(ConfigUtils.getAbsoluteAssetsRootPath()
+                + separator
+                + "bundles"
+                + separator
+                + zipFile.getName());
+        FileUtils.moveFile(zipFile, newLocation);
+
+        return Optional.of(newLocation);
     }
 }

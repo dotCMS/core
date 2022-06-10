@@ -11,21 +11,17 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.categories.business.Categorizable;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -40,6 +36,7 @@ import java.util.UUID;
  * @author rocco
  * @author David H Torres (2009)
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Inode implements Serializable, Comparable, Permissionable,Versionable,
 		Categorizable, UUIDable {
 
@@ -95,12 +92,10 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 		return Calendar.getInstance().getTime();
 	}
 
-	@JsonIgnore
 	public String getModUser() {
 		return "";
 	}
 
-	@JsonIgnore
 	public String getCategoryId() {
 		return getInode();
 	}
@@ -472,7 +467,7 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 	/**
 	 * Wipe out the old parents and associate a new parents set to the inode
 	 * 
-	 * @param newChildren
+	 * @param newParents
 	 *            New children set
 	 * @deprecated Association between inodes should be called through their
 	 *             respective API, calling the API ensures the consistency of
@@ -543,7 +538,6 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 		return inode.hashCode();
 	}
 
-	@JsonIgnore
 	public java.util.Date getiDate() {
 		return iDate;
 	}
@@ -552,7 +546,6 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 		this.iDate = iDate;
 	}
 
-	@JsonIgnore
 	public boolean isNew() {
 		return (!InodeUtils.isSet(this.inode));
 	}
@@ -579,7 +572,6 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 		return (inode.getiDate().compareTo(this.getiDate()));
 	}
 
-	@JsonIgnore
 	public String getPermissionId() {
 		return getInode();
 	}
@@ -597,7 +589,6 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 		return null;
 	}
 
-	@JsonIgnore
 	public String getPermissionType() {
 		return this.getClass().getCanonicalName();
 	}
@@ -606,37 +597,30 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 		return false;
 	}
 
-	@JsonIgnore
 	public String getTitle() {
 		return "";
 	}
 
-	@JsonIgnore
 	public String getVersionId() {
 		return getIdentifier();
 	}
 
-	@JsonIgnore
 	public String getVersionType() {
 		return getType();
 	}
 
-	@JsonIgnore
 	public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException {
 		return false;
 	}
 
-	@JsonIgnore
 	public boolean isLive() throws DotStateException, DotDataException, DotSecurityException {
 		return false;
 	}
 
-	@JsonIgnore
 	public boolean isLocked() throws DotStateException, DotDataException, DotSecurityException {
 		return false;
 	}
 
-	@JsonIgnore
 	public boolean isWorking() throws DotStateException, DotDataException, DotSecurityException {
 		return false;
 	}

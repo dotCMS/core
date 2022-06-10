@@ -1,14 +1,14 @@
 package com.dotmarketing.portlets.workflows.model;
 
 import com.dotmarketing.util.UtilMethods;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
-
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class WorkflowTask  implements Serializable
 {
 	
@@ -45,7 +45,6 @@ public class WorkflowTask  implements Serializable
 		setId(id);
 	}
 
-    @JsonIgnore
 	public String getInode(){
 		return id;
 	}
@@ -159,7 +158,6 @@ public class WorkflowTask  implements Serializable
         return ToStringBuilder.reflectionToString(this);
     }
 
-    @JsonIgnore
     public Map getMap () {
         Map oMap = new HashMap ();
         oMap.put("assignedTo", this.getAssignedTo());
@@ -176,7 +174,6 @@ public class WorkflowTask  implements Serializable
         return oMap;
     }
 
-    @JsonIgnore
 	public boolean isNew(){
 		return !UtilMethods.isSet(id);
 		
