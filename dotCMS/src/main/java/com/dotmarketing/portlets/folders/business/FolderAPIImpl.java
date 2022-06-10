@@ -655,7 +655,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	                                                });
 	
 	
-	@CloseDBIfOpened
+	@WrapInTransaction
 	public Folder findSystemFolder()  {
 		return loadSystemFolder.get();
 	}
@@ -696,12 +696,13 @@ public class FolderAPIImpl implements FolderAPI  {
 				folder.setDefaultFileType((parent!=null && parent.getDefaultFileType() !=null)
 				                ? parent.getDefaultFileType() 
 				                : defaultFileAssetType);
-				final Identifier newIdentifier = !UtilMethods.isSet(parent)?
-						APILocator.getIdentifierAPI().createNew(folder, host):
-						APILocator.getIdentifierAPI().createNew(folder, parent);
 
-				folder.setIdentifier(newIdentifier.getId());
-				folder.setPath(newIdentifier.getPath());
+				if (!UtilMethods.isSet(parent)) {
+					APILocator.getIdentifierAPI().createNew(folder, host);
+				} else {
+					APILocator.getIdentifierAPI().createNew(folder, parent);
+				}
+
 				save(folder,  user,  respectFrontEndPermissions);
 			}
 			parent = folder;

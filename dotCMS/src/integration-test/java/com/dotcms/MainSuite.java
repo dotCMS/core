@@ -11,6 +11,7 @@ import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
+import com.dotcms.content.model.hydration.MetadataDelegateTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.csspreproc.CSSCacheTest;
@@ -202,6 +203,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.util.marshal.MarshalUtilsIntegrationTest.class,
         com.dotcms.util.RelationshipUtilTest.class,
         com.dotcms.util.ImportUtilTest.class,
+        com.dotcms.publisher.business.PublisherAPIImplTest.class,
+        PublishQueueElementTransformerTest.class,
         com.dotmarketing.util.PageModeTest.class,
         com.dotmarketing.business.web.UserWebAPIImplTest.class,
         com.dotcms.auth.providers.jwt.JsonWebTokenUtilsIntegrationTest.class,
@@ -501,7 +504,6 @@ import org.junit.runners.Suite.SuiteClasses;
         Task210816DeInodeRelationshipTest.class,
         WorkflowEmailUtilTest.class,
         ConfigurationHelperTest.class,
-        PublishQueueElementTransformerTest.class,
         CSVManifestReaderTest.class,
         Task210901UpdateDateTimezonesTest.class,
         DotObjectCodecTest.class,
@@ -530,7 +532,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rendering.velocity.viewtools.content.BinaryMapTest.class,
         IntegrityUtilTest.class,
         Task220202RemoveFKStructureFolderConstraintTest.class,
-        com.dotcms.publisher.business.PublisherAPIImplTest.class,
         ContentBundlerTest.class,
         ObjectMapperTest.class,
         URLMapBundlerTest.class,
@@ -548,7 +549,8 @@ import org.junit.runners.Suite.SuiteClasses;
         BoundedBufferedReaderTest.class,
         AWSS3PublisherTest.class,
         ContentWorkflowHandlerTest.class,
-        Task220512UpdateNoHTMLRegexValueTest.class
+        Task220512UpdateNoHTMLRegexValueTest.class,
+        MetadataDelegateTest.class
 
 })
 public class MainSuite {

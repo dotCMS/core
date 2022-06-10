@@ -320,7 +320,6 @@ public class HostFactoryImpl implements HostFactory {
         return systemHost;
     }
 
-    @WrapInTransaction
     @Override
     public synchronized Host createSystemHost() throws DotDataException, DotSecurityException {
         final User systemUser = APILocator.systemUser();

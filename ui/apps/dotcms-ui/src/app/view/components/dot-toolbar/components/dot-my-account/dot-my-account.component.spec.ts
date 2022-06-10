@@ -51,6 +51,7 @@ describe('DotMyAccountComponent', () => {
     let loginService: LoginService;
     let dotRouterService: DotRouterService;
     let dotMenuService: DotMenuService;
+    let dotAlertConfirmService: DotAlertConfirmService;
     let httpErrorManagerService: DotHttpErrorManagerService;
 
     const messageServiceMock = new MockDotMessageService({
@@ -113,6 +114,7 @@ describe('DotMyAccountComponent', () => {
             dotAccountService = TestBed.inject(DotAccountService);
             loginService = TestBed.inject(LoginService);
             dotRouterService = TestBed.inject(DotRouterService);
+            dotAlertConfirmService = TestBed.inject(DotAlertConfirmService);
             dotMenuService = TestBed.inject(DotMenuService);
             httpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
 
@@ -344,6 +346,7 @@ describe('DotMyAccountComponent', () => {
         spyOn<any>(dotAccountService, 'updateUser').and.returnValue(
             of({ entity: { reauthenticate: true } })
         );
+        spyOn(dotAlertConfirmService, 'alert');
         spyOn(comp.shutdown, 'emit');
 
         fixture.detectChanges();
@@ -369,6 +372,10 @@ describe('DotMyAccountComponent', () => {
         fixture.detectChanges();
         expect(comp.shutdown.emit).toHaveBeenCalledTimes(1);
         expect(dotAccountService.updateUser).toHaveBeenCalledWith(comp.dotAccountUser);
+        expect(dotAlertConfirmService.alert).toHaveBeenCalledWith({
+            header: messageServiceMock.get('my-account'),
+            message: messageServiceMock.get('message.createaccount.success')
+        });
         expect(dotRouterService.doLogOut).toHaveBeenCalledTimes(1);
     });
 
