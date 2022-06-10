@@ -1,39 +1,20 @@
 package com.dotcms.util;
 
-import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.CompanyDataGen;
-import com.dotcms.datagen.ContentTypeDataGen;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FileAssetDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TemplateDataGen;
-import com.dotcms.datagen.UserDataGen;
-import com.dotcms.publisher.pusher.wrapper.HostWrapper;
 import com.dotmarketing.beans.ContainerStructure;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileUpload.model.FileUpload;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.FileUtilTest;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import com.sun.xml.bind.v2.util.XmlFactory;
 import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -190,11 +171,10 @@ public class XStreamFactoryTest {
 
         assertEquals("<list>\n"
                 + "  <com.dotmarketing.beans.ContainerStructure>\n"
-                + "    <code>code</code>\n"
-                + "    <containerId>containerId</containerId>\n"
-                + "    <containerInode>containerInode</containerInode>\n"
-                + "    <id class=\"null\"/>\n"
                 + "    <structureId>structureId</structureId>\n"
+                + "    <containerInode>containerInode</containerInode>\n"
+                + "    <containerId>containerId</containerId>\n"
+                + "    <code>code</code>\n"
                 + "  </com.dotmarketing.beans.ContainerStructure>\n"
                 + "</list>", xml);
     }
@@ -657,16 +637,5 @@ public class XStreamFactoryTest {
         assertEquals(false, folder.isShowOnMenu());
         assertEquals("48190c8c-42c4-46af-8d1a-0cd5db894797", folder.getHostId());
         assertEquals("33888b6f-7a8e-4069-b1b6-5c1aa9d0a48d", folder.getDefaultFileType());
-    }
-
-    @Test
-    public void aaa() throws DotDataException, DotSecurityException {
-
-        final File binary = new File(Thread.currentThread().getContextClassLoader().getResource("images/test.jpg").getFile());
-        final Host site = new SiteDataGen().nextPersisted();
-        final Contentlet contentlet = new FileAssetDataGen(site, binary).nextPersisted();
-
-        final String s = XStreamFactory.INSTANCE.getInstance().toXML(contentlet);
-        System.out.println("s = " + s);
     }
 }

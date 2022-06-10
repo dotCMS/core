@@ -30,20 +30,14 @@ public class ContentWorkflowHandlerTest {
      * therefore lacks of any assigned step.
      */
     @Test
-    public void Test_Handle_Push_Content_File_With_No_Step_On_It() {
+    public void Test_Handle_Push_Content_File_With_No_Step_On_It() throws Exception {
 
         final File file = FileTestUtil.getFileInResources(INPUT_FILE_PATH);
         final PublisherConfig config = mock(PublisherConfig.class);
         when(config.getId()).thenReturn(UUIDGenerator.generateUuid());
 
         ContentWorkflowHandler contentWorkflowHandler = new ContentWorkflowHandler(config);
-        try {
-            contentWorkflowHandler.handle(file.getParentFile());
-        }catch (Exception e){
-            Logger.error(ContentWorkflowHandlerTest.class,"Error reading contentworkflow file",e);
-            fail("Error reading contentworkflow file");
-        }
-
+        contentWorkflowHandler.handle(file.getParentFile());
     }
 
 }
