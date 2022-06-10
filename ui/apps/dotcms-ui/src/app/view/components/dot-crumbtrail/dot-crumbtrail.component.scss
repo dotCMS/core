@@ -1,9 +1,0 @@
-@use "variables" as *;
-
-::ng-deep .p-breadcrumb {
-    ul li {
-        &:last-child a {
-            pointer-events: none;
-        }
-    }
-}
