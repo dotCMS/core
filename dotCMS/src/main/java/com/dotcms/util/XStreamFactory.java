@@ -10,14 +10,13 @@ import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 public enum XStreamFactory {
     INSTANCE;
 
     public enum XStreamType {
         DEFAULT((final String encodingAsString) -> new XStream(new DomDriver(encodingAsString))),
-        NOT_BROKEN_UNMAP_PROPERTIES(XStreamFactory::createNotBrokenUnMappedProperties);
+        NOT_BROKEN_UNMAP_PROPERTIES(XStreamFactory::createNoThrowOnUnmappedProperties);
 
         private Function<String, XStream> builder;
 
@@ -72,11 +71,11 @@ public enum XStreamFactory {
         return getInstance(encoding, XStreamType.DEFAULT);
     }
 
-    public synchronized XStream getInstanceNotBrokenUnmappedVersion(){
+    public synchronized XStream getInstanceNoThrowOnUnmappedProperties(){
         return getInstance(null, XStreamType.NOT_BROKEN_UNMAP_PROPERTIES);
     }
 
-    public synchronized XStream getInstanceNotBrokenUnmappedVersion(final Charset encoding){
+    public synchronized XStream getInstanceNoThrowOnUnmappedProperties(final Charset encoding){
         return getInstance(encoding, XStreamType.NOT_BROKEN_UNMAP_PROPERTIES);
     }
 
@@ -98,7 +97,7 @@ public enum XStreamFactory {
      * Custom unmapped properties safe XStream instance factory method
      * @return
      */
-    public static XStream createNotBrokenUnMappedProperties(final String encodingAsString){
+    private static XStream createNoThrowOnUnmappedProperties(final String encodingAsString){
         return new XStream(new DomDriver(encodingAsString)){
             //This is here to prevent unmapped properties from old versions from breaking thr conversion
             //https://stackoverflow.com/questions/5377380/how-to-make-xstream-skip-unmapped-tags-when-parsing-xml

@@ -3,16 +3,10 @@ package com.dotcms.enterprise.publishing.remote.handler;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import com.dotcms.datagen.FileAssetDataGen;
-import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.publisher.pusher.wrapper.ContentWrapper;
-import com.dotcms.security.apps.SecretsStore;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.XStreamFactory;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.thoughtworks.xstream.XStream;
 import java.io.File;
@@ -39,7 +33,7 @@ public class ContentHandlerTest {
      */
     @Test
     public void Test_XStream_Deserializer() throws IOException {
-        final XStream xStream = XStreamFactory.INSTANCE.getInstanceNotBrokenUnmappedVersion();
+        final XStream xStream = XStreamFactory.INSTANCE.getInstanceNoThrowOnUnmappedProperties();
 
         final File file = FileTestUtil.getFileInResources(INPUT_FILE_PATH);
         ContentWrapper wrapper;
