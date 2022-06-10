@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 
 import { Observable } from 'rxjs';
-import { pluck } from 'rxjs/operators';
+import { pluck, tap } from 'rxjs/operators';
 
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 // eslint-disable-next-line max-len
@@ -20,7 +20,7 @@ export class SuggestionsService {
 
     getContentTypes(filter = '', allowedTypes = ''): Observable<DotCMSContentType[]> {
         return this.http
-            .post(`/api/v1/contenttype/_filter`, {
+            .post<{ entity: DotCMSContentType[] }>(`/api/v1/contenttype/_filter`, {
                 filter: {
                     types: allowedTypes,
                     query: filter
@@ -38,12 +38,15 @@ export class SuggestionsService {
         currentLanguage
     }: ContentletFilters): Observable<DotCMSContentlet[]> {
         return this.http
-            .post('/api/content/_search', {
-                query: `+contentType:${contentType} +languageId:${currentLanguage} +deleted:false +working:true +catchall:*${filter}* `,
-                sort: 'modDate desc',
-                offset: 0,
-                limit: 40
-            })
+            .post<{ entity: { jsonObjectView: { contentlets: DotCMSContentlet[] } } }>(
+                '/api/content/_search',
+                {
+                    query: `+contentType:${contentType} +languageId:${currentLanguage} +deleted:false +working:true +catchall:*${filter}* `,
+                    sort: 'modDate desc',
+                    offset: 0,
+                    limit: 40
+                }
+            )
             .pipe(pluck('entity', 'jsonObjectView', 'contentlets'));
     }
 }

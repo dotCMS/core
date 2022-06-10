@@ -80,7 +80,7 @@
     "@tiptap/starter-kit": "^2.0.0-beta.183",
     "@tiptap/suggestion": "^2.0.0-beta.90",
     "@webcomponents/webcomponentsjs": "^2.6.0",
-     "core-js": "^3.9.1",
+    "core-js": "^3.9.1",
     "cross-fetch": "^3.1.4",
     "date-fns": "^2.25.0",
     "date-fns-tz": "^1.1.6",
@@ -170,6 +170,7 @@
     "karma-chrome-launcher": "^3.1.0",
     "karma-coverage": "~2.2.0",
     "karma-coverage-istanbul-reporter": "~3.0.3",
+    "karma-html-reporter": "^0.2.7",
     "karma-jasmine": "^4.0.1",
     "karma-jasmine-html-reporter": "1.7.0",
     "mock-socket": "^9.0.3",
@@ -190,7 +191,13 @@
     "typedoc": "^0.22.11",
     "typescript": "4.6.4",
     "webpack-bundle-analyzer": "^4.5.0"
-
   },
-  "resolutions": { "glob-parent": "^6.0.1", "trim-newlines": "4.0.2", "remark-parse": "^9.0.0", "remark-mdx": "2.1.1", "trim": "1.0.1" }
+  "resolutions": {
+    "glob-parent": "^6.0.1",
+    "trim-newlines": "4.0.2",
+    "remark-parse": "^9.0.0",
+    "remark-mdx": "2.1.1",
+    "trim": "1.0.1",
+    "lodash": "4.17.21"
+  }
 }

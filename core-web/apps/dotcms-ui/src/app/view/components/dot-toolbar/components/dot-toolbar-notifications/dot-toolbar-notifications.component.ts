@@ -6,6 +6,7 @@ import { IframeOverlayService } from '../../../_common/iframe/service/iframe-ove
 import { NotificationsService } from '@services/notifications-service';
 import { DotDropdownComponent } from '@components/_common/dot-dropdown-component/dot-dropdown.component';
 
+// TODO: fix all the missing unsubscribes of this file
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
     selector: 'dot-toolbar-notifications',

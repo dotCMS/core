@@ -13,11 +13,14 @@ import { DotCMSResponse } from '../core-web.service';
  * }
  * </code>
  */
+
+// TODO: Refactor this to an interceptor
 export class ResponseView<T = any> {
     private bodyJsonObject: DotCMSResponse<T>;
     private headers: HttpHeaders;
 
     public constructor(private resp: HttpResponse<DotCMSResponse<T>>) {
+        console.info('ResponseView class', resp);
         try {
             this.bodyJsonObject = resp.body;
             this.headers = resp.headers;
@@ -28,6 +31,10 @@ export class ResponseView<T = any> {
 
     public header(headerName: string): string {
         return this.headers.get(headerName);
+    }
+
+    get body(): DotCMSResponse<T> {
+        return this.bodyJsonObject;
     }
 
     get i18nMessagesMap(): { [key: string]: string } {
