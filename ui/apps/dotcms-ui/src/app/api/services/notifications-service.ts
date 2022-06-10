@@ -26,38 +26,34 @@ export class NotificationsService {
     }
 
     getLastNotifications(): Observable<DotCMSResponse<DotNotificationResponse>> {
-        // @ts-ignore
         return this.coreWebService
-            .requestView({
+            .requestView<DotNotificationResponse>({
                 url: this.urls.getLastNotificationsUrl
             })
-            .pipe(pluck('bodyJsonObject'));
+            .pipe(pluck('body'));
     }
 
     getAllNotifications(): Observable<DotCMSResponse<DotNotificationResponse>> {
-        // @ts-ignore
         return this.coreWebService
-            .requestView({
+            .requestView<DotNotificationResponse>({
                 url: this.urls.getNotificationsUrl
             })
-            .pipe(pluck('bodyJsonObject'));
+            .pipe(pluck('body'));
     }
 
     dismissNotifications(
         items: Record<string, unknown>
     ): Observable<DotCMSResponse<DotNotificationResponse>> {
-        // @ts-ignore
         return this.coreWebService
-            .requestView({
+            .requestView<DotNotificationResponse>({
                 body: items,
                 method: 'PUT',
                 url: this.urls.dismissNotificationsUrl
             })
-            .pipe(pluck('bodyJsonObject'));
+            .pipe(pluck('body'));
     }
 
-    markAllAsRead(): Observable<DotCMSResponse<DotNotificationResponse>> {
-        // @ts-ignore
+    markAllAsRead() {
         return this.coreWebService
             .request({
                 method: 'PUT',

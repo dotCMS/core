@@ -53,17 +53,16 @@ export class DotCrudService {
      *
      * @param {string} baseUrl
      * @param {string} id
-     * @param {string} [pick='entity']
+     * @param {string} [keyToPick='entity']
      * @returns {Observable<any>}
      * @memberof DotCrudService
      */
-    getDataById<T>(baseUrl: string, id: string, pick = 'entity'): Observable<T> {
-        // @ts-ignore
+    getDataById<T>(baseUrl: string, id: string, keyToPick = 'entity'): Observable<T | unknown> {
         return this.coreWebService
             .requestView<T>({
                 url: `${baseUrl}/id/${id}`
             })
-            .pipe(pluck(pick));
+            .pipe(pluck(keyToPick));
     }
 
     /**

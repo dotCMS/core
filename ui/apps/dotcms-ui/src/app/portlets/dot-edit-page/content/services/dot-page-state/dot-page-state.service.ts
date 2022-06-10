@@ -1,6 +1,6 @@
 import { of, Observable, Subject, BehaviorSubject } from 'rxjs';
 
-import { pluck, take, map, catchError, tap } from 'rxjs/operators';
+import { take, map, catchError, tap } from 'rxjs/operators';
 import { LoginService, User, HttpCode } from '@dotcms/dotcms-js';
 import { DotPageRenderState } from '../../../shared/models/dot-rendered-page-state.model';
 import {
@@ -228,11 +228,15 @@ export class DotPageStateService {
         return this.loginService.auth.loginAsUser || this.loginService.auth.user;
     }
 
-    private getLockMode(workingInode: string, lock: boolean): Observable<string> {
+    private getLockMode(workingInode: string, lock: boolean): Observable<string | string[]> {
         if (lock === true) {
-            return this.dotContentletLockerService.lock(workingInode).pipe(pluck('message'));
+            return this.dotContentletLockerService
+                .lock(workingInode)
+                .pipe(map((res) => res.messages));
         } else if (lock === false) {
-            return this.dotContentletLockerService.unlock(workingInode).pipe(pluck('message'));
+            return this.dotContentletLockerService
+                .unlock(workingInode)
+                .pipe(map((res) => res.messages));
         }
 
         return of(null);
