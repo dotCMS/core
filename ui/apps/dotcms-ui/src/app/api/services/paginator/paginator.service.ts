@@ -146,15 +146,17 @@ export class PaginatorService {
      */
     // tslint:disable-next-line:cyclomatic-complexity
     public get<T>(url?: string): Observable<T> {
-        const params = {
+        const params: Map<string, unknown> = {
             ...this.getParams(),
             ...this.getObjectFromMap(this.extraParams)
         };
 
+        const cleanURL = this.sanitizeQueryParams(url, params);
+
         return this.coreWebService
             .requestView({
                 params,
-                url: url || this.url
+                url: cleanURL || this.url
             })
             .pipe(
                 map((response: ResponseView<T>) => {
@@ -300,5 +302,32 @@ export class PaginatorService {
         );
 
         return result as T;
+    }
+
+    /**
+     *
+     * Use to remove repeated query params in the url
+     * @private
+     * @param {string} [url='']
+     * @param {Map<string, unknown>} params
+     * @return {*}  {string}
+     * @memberof PaginatorService
+     */
+    private sanitizeQueryParams(url: string = '', params: Map<string, unknown>): string {
+        const urlArr = url?.split('?');
+        const baseUrl = urlArr[0];
+        const queryParams = urlArr[1];
+
+        if (!queryParams) {
+            return url;
+        }
+
+        const searchParams = new URLSearchParams(queryParams);
+
+        for (const property in params) {
+            searchParams.delete(property);
+        }
+
+        return searchParams.toString() ? `${baseUrl}?${searchParams.toString()}` : baseUrl;
     }
 }
