@@ -100,7 +100,7 @@ jobs:
         ## so Nx can't be identified and build it.
         run: |
           cd core-web
-          npm run nx build dotcms-webcomponents && npm run nx build dotcms-ui -- --prod
+          npm run build:prod
       - name: Running tests
         id: test_run
         run: |
