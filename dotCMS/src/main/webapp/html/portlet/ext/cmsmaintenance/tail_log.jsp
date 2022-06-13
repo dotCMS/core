@@ -192,6 +192,8 @@
         }
 
         function performMark(callback) {
+            dataLogPrintedElem.innerHTML = dataLogSourceElem.innerHTML;
+
             var keyword = keywordLogInput.value;
 
             if (keyword && keyword.length > 2) {
@@ -212,7 +214,6 @@
         }
 
         function filterLog(event) {
-            dataLogPrintedElem.innerHTML = dataLogSourceElem.innerHTML;
             const ignoredKeys = ["ArrowLeft", "ArrowUp", "ArrowDown", "ArrowRight"];
 
             if (event.key === 'Enter') {
