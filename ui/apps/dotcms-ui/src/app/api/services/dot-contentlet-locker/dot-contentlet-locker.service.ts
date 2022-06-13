@@ -1,5 +1,5 @@
 import { pluck } from 'rxjs/operators';
-import { CoreWebService, DotCMSResponse } from '@dotcms/dotcms-js';
+import { CoreWebService } from '@dotcms/dotcms-js';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { DotContentletLockResponse } from '@models/contentlet/contentlet-locker.model';
@@ -15,13 +15,13 @@ export class DotContentletLockerService {
      * @returns Observable<any>
      * @memberof PageViewService
      */
-    lock(inode: string): Observable<DotCMSResponse<DotContentletLockResponse>> {
+    lock(inode: string): Observable<DotContentletLockResponse> {
         return this.coreWebService
-            .requestView({
+            .requestView<DotContentletLockResponse>({
                 method: 'PUT',
                 url: `/api/content/lock/inode/${inode}`
             })
-            .pipe(pluck('body'));
+            .pipe(pluck('entity'));
     }
 
     /**
@@ -31,12 +31,12 @@ export class DotContentletLockerService {
      * @returns Observable<any>
      * @memberof PageViewService
      */
-    unlock(inode: string): Observable<DotCMSResponse<DotContentletLockResponse>> {
+    unlock(inode: string): Observable<DotContentletLockResponse> {
         return this.coreWebService
             .requestView<DotContentletLockResponse>({
                 method: 'PUT',
                 url: `/api/content/unlock/inode/${inode}`
             })
-            .pipe(pluck('body'));
+            .pipe(pluck('entity'));
     }
 }
