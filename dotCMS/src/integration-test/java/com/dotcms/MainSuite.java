@@ -176,6 +176,7 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        DependencyBundlerTest.class,
         PublishAuditAPITest.class,
         FolderCacheImplIntegrationTest.class,
         StaticPublisherIntegrationTest.class,
@@ -467,7 +468,6 @@ import org.junit.runners.Suite.SuiteClasses;
         ResetPasswordTokenUtilTest.class,
         ContainerBundlerTest.class,
         ContentTypeBundlerTest.class,
-        DependencyBundlerTest.class,
         FolderBundlerTest.class,
         HostBundlerTest.class,
         LinkBundlerTest.class,
@@ -550,7 +550,6 @@ import org.junit.runners.Suite.SuiteClasses;
         AWSS3PublisherTest.class,
         XStreamFactoryTest.class,
         ContentWorkflowHandlerTest.class,
-        Task220512UpdateNoHTMLRegexValueTest.class,
         Task220512UpdateNoHTMLRegexValueTest.class,
         MetadataDelegateTest.class
 })
