@@ -81,11 +81,6 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 1
-      - uses: actions/cache@v2
-        with:
-          path: |
-            ./ui/node_modules
-          key: ${{ runner.os }}-modules-${{ hashFiles('./ui/**/package-lock.json') }}
       - name: Configuring Node.js
         uses: actions/setup-node@v2-beta
         with:
