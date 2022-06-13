@@ -19,3 +19,4 @@ This maintenance release includes the following code fixes:
 11. https://github.com/dotCMS/core/issues/22287 : Reading osgi import packages fails when osgi version specifies a range #22287
 12. https://github.com/dotCMS/core/issues/22319 : Rest API: Pulling Relationships from child #22319
 13. https://github.com/dotCMS/core/issues/22390 : Disallow Matrix Parameters in URIs #22390
+14. https://github.com/dotCMS/core/issues/22266 : Issue with static push publishing when pushing with a default language other than English #22266
