@@ -338,9 +338,22 @@ public class DeterministicIdentifierAPITest {
     @UseDataProvider("getLanguageTestCases")
     public void Test_Language_Deterministic_Id(final LanguageTestCase testCase){
 
+        final LanguageAPI languageAPI = APILocator.getLanguageAPI();
         final boolean generateConsistentIdentifiers = Config
                 .getBooleanProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
         try {
+
+            final Language language = languageAPI
+                    .getLanguage(testCase.langCode, testCase.countryCode);
+            if (null != language && language.getId() == languageAPI.getDefaultLanguage().getId()) {
+                //Exclude the default language from our test data set (is not included just in case)
+                return;
+            } else {
+                if (null != language) {
+                    //If the language already exists remove it
+                    languageAPI.deleteLanguage(language);
+                }
+            }
             Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
             final Language lang =  new Language(0, testCase.langCode, testCase.countryCode, "", testCase.country);
             assertEquals(testCase.expectedSeed, defaultGenerator.deterministicIdSeed(lang));
@@ -364,30 +377,6 @@ public class DeterministicIdentifierAPITest {
                     new LanguageTestCase("ru", "RUS", "", "Language:ru:RUS", 5066818),
                     new LanguageTestCase("en", "NZ", "New Zealand", "Language:en:NZ", 5382528))
                 .collect(Collectors.toList());
-
-        final LanguageAPI languageAPI = APILocator.getLanguageAPI();
-        final Language defaultLanguage = languageAPI.getDefaultLanguage();
-        final Iterator<LanguageTestCase> iterator = testCases.iterator();
-        while (iterator.hasNext()) {
-            final LanguageTestCase testCase = iterator.next();
-            final Language language = languageAPI
-                    .getLanguage(testCase.langCode, testCase.countryCode);
-            if (null != language && language.getId() == defaultLanguage.getId()) {
-                //Exclude the default language from our test data set (is not included just in case)
-                iterator.remove();
-            } else {
-                if (null != language) {
-                    try {
-                        //If the language already exists remove it
-                        languageAPI.deleteLanguage(language);
-                    } catch (Exception e) {
-                        Logger.error(DeterministicIdentifierAPIImpl.class,String.format("Failed to remove language `%s-%s` prior to execute test ",language.getLanguageCode(), language.getCountryCode()), e);
-                        //if we fail to remove it from the db. then Exclude it from the test data set.
-                        iterator.remove();
-                    }
-                }
-            }
-        }
 
         return testCases.toArray();
     }
