@@ -200,9 +200,8 @@ export default {
         }
     },
     args: {
-        onThemeSelectorChange: (event) => {
-            console.log(event);
-        },
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
+        onThemeSelectorChange: () => {},
         totalRecords: 8,
         paginationPerPage: 5,
         rows: 5

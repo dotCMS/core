@@ -311,7 +311,6 @@ describe('DotEditLayoutDesignerComponent', () => {
             const themeSelectorBtn = fixture.debugElement.query(
                 By.css('.dot-edit-layout__toolbar-action-themes')
             );
-            console.dir(themeSelectorBtn);
             expect(themeSelectorBtn.nativeElement.disabled).toBe(true);
             expect(themeSelectorBtn.attributes['ng-reflect-text']).toBe('No Read Permission');
         });

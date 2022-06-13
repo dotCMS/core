@@ -98,13 +98,13 @@ export const BasicActions = () => ({
             primary: [
                 {
                     label: 'Save',
-                    command: (e) => {
-                        console.log(e);
+                    command: () => {
+                        //console.log(e);
                     }
                 }
             ],
             cancel: () => {
-                console.log('cancel');
+                //console.log('cancel');
             }
         }
     },
@@ -131,25 +131,25 @@ export const MultipleActions = () => ({
             primary: [
                 {
                     label: 'Publish',
-                    command: (e) => {
-                        console.log(e);
+                    command: () => {
+                        //console.log(e);
                     }
                 },
                 {
                     label: 'Lock',
-                    command: (e) => {
-                        console.log(e);
+                    command: () => {
+                        //console.log(e);
                     }
                 },
                 {
                     label: 'Execute',
-                    command: (e) => {
-                        console.log(e);
+                    command: () => {
+                        //console.log(e);
                     }
                 }
             ],
             cancel: () => {
-                console.log('cancel');
+                //console.log('cancel');
             }
         }
     },
@@ -185,13 +185,13 @@ export const ExtraActions = () => ({
             primary: [
                 {
                     label: 'Action',
-                    command: (e) => {
-                        console.log(e);
+                    command: () => {
+                        //console.log(e);
                     }
                 }
             ],
             cancel: () => {
-                console.log('cancel');
+                //console.log('cancel');
             }
         }
     },
@@ -222,13 +222,13 @@ export const WithTabs = () => ({
             primary: [
                 {
                     label: 'Action',
-                    command: (e) => {
-                        console.log(e);
+                    command: () => {
+                        //console.log(e);
                     }
                 }
             ],
             cancel: () => {
-                console.log('cancel');
+                //console.log('cancel');
             }
         }
     },

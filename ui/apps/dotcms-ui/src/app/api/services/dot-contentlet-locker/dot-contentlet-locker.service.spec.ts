@@ -9,7 +9,7 @@ import { DotContentletLockerService } from './dot-contentlet-locker.service';
 describe('DotContentletLockerService', () => {
     let injector: TestBed;
     let dotContentletLockerService: DotContentletLockerService;
-    let httpMock: HttpTestingController;
+    let httpTestingController: HttpTestingController;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -21,36 +21,42 @@ describe('DotContentletLockerService', () => {
         });
         injector = getTestBed();
         dotContentletLockerService = injector.get(DotContentletLockerService);
-        httpMock = injector.get(HttpTestingController);
+        httpTestingController = injector.get(HttpTestingController);
     });
 
     it('should lock a content asset', () => {
         const inode = '123';
+        const mockLock = {
+            entity: {
+                message: 'locked'
+            }
+        };
         dotContentletLockerService.lock(inode).subscribe((lockInfo: any) => {
             expect(lockInfo).toEqual({ message: 'locked' });
         });
 
-        const req = httpMock.expectOne(`/api/content/lock/inode/${inode}`);
+        const req = httpTestingController.expectOne(`/api/content/lock/inode/${inode}`);
         expect(req.request.method).toBe('PUT');
-        req.flush({
-            message: 'locked'
-        });
+        req.flush(mockLock);
     });
 
     it('should unlock a content asset', () => {
         const inode = '123';
+        const mockLock = {
+            entity: {
+                message: 'locked'
+            }
+        };
         dotContentletLockerService.unlock(inode).subscribe((lockInfo: any) => {
             expect(lockInfo).toEqual({ message: 'locked' });
         });
 
-        const req = httpMock.expectOne(`/api/content/unlock/inode/${inode}`);
+        const req = httpTestingController.expectOne(`/api/content/unlock/inode/${inode}`);
         expect(req.request.method).toBe('PUT');
-        req.flush({
-            message: 'locked'
-        });
+        req.flush(mockLock);
     });
 
     afterEach(() => {
-        httpMock.verify();
+        httpTestingController.verify();
     });
 });
