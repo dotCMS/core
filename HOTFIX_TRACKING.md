@@ -18,3 +18,4 @@ This maintenance release includes the following code fixes:
 10. https://github.com/dotCMS/core/issues/22094 : No HTML RegEx Invalidates Period (.) When Used #22094
 11. https://github.com/dotCMS/core/issues/22287 : Reading osgi import packages fails when osgi version specifies a range #22287
 12. https://github.com/dotCMS/core/issues/22319 : Rest API: Pulling Relationships from child #22319
+13. https://github.com/dotCMS/core/issues/22390 : Disallow Matrix Parameters in URIs #22390
