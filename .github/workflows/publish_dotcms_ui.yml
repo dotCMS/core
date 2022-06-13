@@ -1,5 +1,6 @@
 name: Publish to Dotcms UI
 on:
+<<<<<<< HEAD
   push:
     branches:
       - release-*
@@ -113,3 +114,134 @@ jobs:
           if [[ $(basename "${{ github.ref }}") =~ ^master ]]; then
             npm publish --tag next
           fi
+=======
+    push:
+        branches:
+            - release-*
+            - master
+jobs:
+    changes:
+        runs-on: ubuntu-latest
+        outputs:
+            dotcms-ui: ${{ steps.filter.outputs.dotcms-ui }}
+        steps:
+            - name: Checkout core-web
+              uses: actions/checkout@v3
+              with:
+                  path: 'core-web'
+
+            - name: Get specific changed files
+              uses: dorny/paths-filter@v2
+              id: filter
+              with:
+                  base: ${{ github.ref }}
+                  list-files: 'json'
+                  working-directory: 'core-web'
+                  filters: |
+                      dotcms-ui:
+                        - 'apps/dotcms-ui/src/**'
+                        - 'libs/!(dotcms-webcomponents/**)/**'
+
+            - name: Changes found
+              if: steps.filter.outputs.dotcms-ui == 'true'
+              run: |
+                  echo "Found Dotcms-UI files changed."
+                  echo ${{ steps.filter.outputs.dotcms-ui }}
+
+            - name: No changes found
+              if: steps.filter.outputs.dotcms-ui == 'false'
+              run: |
+                  echo "No changes found in Dotcms-UI"
+
+    publish:
+        needs: changes
+        if: ${{ needs.changes.outputs.dotcms-ui == 'true' }}
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout core-web
+              run: |
+                  git clone https://victoralfaro-dotcms:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/dotcms/core-web
+                  cd core-web
+                  git pull
+                  cd ..
+            - name: Configuring Node.js
+              uses: actions/setup-node@v2-beta
+              with:
+                  node-version: '16.13.2'
+            - name: Installing dependencies
+              run: |
+                  # Get Branch Name
+                  if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+                    branchName="${{ github.head_ref }}"
+                  else
+                    branchName=$(basename "${{ github.ref }}")
+                  fi
+
+                  echo "******brach name: " $branchName
+                  cd core-web
+
+                  if [[ "$branchName" != 'master' ]]; then
+                    git checkout -b $branchName --track origin/$branchName
+                  fi
+
+                  npm install
+            - name: Version Bump - dotcms-ui - if it's Master/Release Branch
+              run: |
+
+                  # Get Branch Name
+                  if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+                    branchName="${{ github.head_ref }}"
+                  else
+                    branchName=$(basename "${{ github.ref }}")
+                  fi
+
+                  echo "******version brach name: " $branchName
+                  # Checks if branch is release or master
+                  if [[ $branchName == *master* ]]; then
+                    preReleaseTag=next
+                  elif [[ $branchName == *release* ]]; then
+                    preReleaseTag=rc
+                  fi
+
+                  echo "******tag brach name: " $preReleaseTag
+
+                  # Get version from package.json
+                  cd core-web
+
+                  pkgVersion=`awk -F'"' '/"version": ".+"/{ print $4; exit; }' package.json`
+                  arrIN=(${pkgVersion//./ })
+
+                  # Bump version
+                  if [[ $pkgVersion == *$preReleaseTag* ]]; then
+                    preReleaseVersion=${arrIN[-1]}
+                    pkgVersion="${arrIN[0]}.${arrIN[1]}.0-$preReleaseTag.$((preReleaseVersion+1))"
+                  else
+                    pkgVersion="${arrIN[0]}.${arrIN[1]}.0-$preReleaseTag.0"
+                  fi
+                  sed -i -E "s/\"version\": \".*\"/\"version\": \"$pkgVersion\"/g" ./package.json
+
+                  # Commits new version
+                  git config --global user.email "victor.alfaro@dotcms.com"
+                  git config --global user.name "victoralfaro-dotcms"
+
+                  git add package.json
+                  git commit -m "CI: bumps version to $pkgVersion [skip ci]"
+                  git push https://victoralfaro-dotcms:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/dotcms/core-web
+
+            - name: Build dotcms-ui with deps
+              run: |
+                  cd core-web
+                  npm run nx build dotcms-webcomponents && npm run nx build dotcms-ui -- --prod
+                  cp package.json ./dist/apps/dotcms-ui/package.json
+            - name: 'publish to npm'
+              run: |
+                  cd core-web
+                  npm set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
+                  cd dist/apps/dotcms-ui
+                  if [[ $(basename "${{ github.ref }}") =~ ^release-.* ]]; then
+                    npm publish --tag rc
+                  fi
+                  if [[ $(basename "${{ github.ref }}") =~ ^master ]]; then
+                    npm publish --tag next
+                  fi
+>>>>>>> core-web/prepare_monorepo
