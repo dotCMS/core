@@ -160,6 +160,24 @@ describe('PaginatorService getting', () => {
         expect(req.request.url).toBe('/baseURL?filter=filter&page=6');
     });
 
+    it('should remove duplicated query params', () => {
+        let headers = new HttpHeaders();
+        paginatorService.url = 'v1/urldemo';
+        headerLink = `/baseURL?filter=filter&page=1&system=true>;rel="first",
+        /baseURL?filter=filter&page=2&system=true>;rel="prev"`;
+
+        headers = headers.set('Link', headerLink);
+        paginatorService.setExtraParams('system', true);
+        paginatorService.get().subscribe();
+
+        // Set new headers
+        req = httpMock.expectOne(() => true);
+        req.flush({}, { headers });
+
+        paginatorService.getPrevPage().subscribe();
+        httpMock.expectOne('/baseURL?filter=filter&page=2&system=true');
+    });
+
     afterEach(() => {
         httpMock.verify();
     });
