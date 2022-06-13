@@ -156,37 +156,34 @@ export const Primary = (_args: Table) => {
             selectedCars: [],
             car: {},
             handleClick: (e) => {
+                // eslint-disable-next-line no-console
                 console.log(e);
             },
             items: [
                 {
                     label: 'Update',
                     icon: 'pi pi-refresh',
-                    command: () => {
-                        console.log('update');
-                    }
+                    // eslint-disable-next-line @typescript-eslint/no-empty-function
+                    command: () => {}
                 },
                 {
                     label: 'Delete',
                     icon: 'pi pi-times',
-                    command: () => {
-                        console.log('delete');
-                    }
+                    // eslint-disable-next-line @typescript-eslint/no-empty-function
+                    command: () => {}
                 },
                 {
                     label: 'Angular.io',
                     icon: 'pi pi-info',
-                    command: () => {
-                        console.log('angular');
-                    }
+                    // eslint-disable-next-line @typescript-eslint/no-empty-function
+                    command: () => {}
                 },
                 { separator: true },
                 {
                     label: 'Setup',
                     icon: 'pi pi-cog',
-                    command: () => {
-                        console.log('setup');
-                    }
+                    // eslint-disable-next-line @typescript-eslint/no-empty-function
+                    command: () => {}
                 }
             ]
         },

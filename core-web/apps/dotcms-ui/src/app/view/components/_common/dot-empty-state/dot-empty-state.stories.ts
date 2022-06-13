@@ -25,7 +25,7 @@ export default {
     },
     args: {
         handleButtonClick: () => {
-            console.log('button click');
+            //console.log('button click');
         }
     }
 } as Meta;

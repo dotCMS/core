@@ -64,9 +64,8 @@ export const Basic: Story = () => {
     return {
         template: OverlayPanelTemplate,
         props: {
-            on: () => {
-                console.log('asas');
-            },
+            // eslint-disable-next-line @typescript-eslint/no-empty-function
+            on: () => {},
             products: [
                 {
                     id: '1000',
