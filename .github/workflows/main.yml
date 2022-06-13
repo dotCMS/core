@@ -6,6 +6,7 @@ on:
     branches:
       - master
       - release-*
+      - issue-22337-update-nx
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   GH_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
@@ -81,11 +82,6 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 1
-      - uses: actions/cache@v2
-        with:
-          path: |
-            ./ui/node_modules
-          key: ${{ runner.os }}-modules-${{ hashFiles('./ui/**/package-lock.json') }}
       - name: Configuring Node.js
         uses: actions/setup-node@v2-beta
         with:
