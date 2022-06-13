@@ -466,19 +466,12 @@ public class PageRenderUtil implements Serializable {
     private Contentlet getContentletOrFallback(final PersonalizedContentlet personalizedContentlet) {
         try {
             final Optional<Contentlet> contentletOpt = contentletAPI.findContentletByIdentifierOrFallback
-                    (personalizedContentlet.getContentletId(), mode.showLive, languageId, user, mode.respectAnonPerms);
+                    (personalizedContentlet.getContentletId(), mode.showLive, languageId, user, true);
             final Contentlet contentlet = contentletOpt.isPresent()
                     ? contentletOpt.get() : contentletAPI.findContentletByIdentifierAnyLanguage(personalizedContentlet.getContentletId());
             return contentlet;
         } catch (final DotContentletStateException e) {
             // Expected behavior, DotContentletState Exception is used for flow control
-            if (e.getCause() instanceof DotSecurityException) {
-                if (this.mode == PageMode.EDIT_MODE || this.mode == PageMode.PREVIEW_MODE) {
-                    // In Edit Mode, allow Users who cannot edit a specific piece of content to be able to edit the HTML
-                    // Page that is holding it without any problems
-                    return this.limitedUserPermissionFallback(personalizedContentlet.getContentletId(), true);
-                }
-            }
             return null;
         } catch (final Exception e) {
             throw new DotStateException(e);
