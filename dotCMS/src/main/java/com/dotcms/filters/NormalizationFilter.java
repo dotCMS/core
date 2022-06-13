@@ -15,6 +15,7 @@ import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import io.vavr.Lazy;
 
@@ -117,7 +118,7 @@ public class NormalizationFilter implements Filter {
             final String originalUri = super.getRequestURI();
 
 
-            if (!forbiddenRegex.get().isEmpty() && forbiddenRegex.get().get().matcher(originalUri).find()) {
+            if (forbiddenRegex.get().isPresent() && forbiddenRegex.get().get().matcher(originalUri).find()) {
                 hasError=true;
                 throw new IllegalArgumentException("Invalid URI passed:" + originalUri);
             }
