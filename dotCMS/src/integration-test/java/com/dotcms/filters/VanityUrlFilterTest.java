@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 import com.dotcms.mock.response.MockHttpStatusAndHeadersResponse;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.mock.request.MockHttpRequest;
@@ -142,6 +143,7 @@ public class VanityUrlFilterTest {
      * this tests that the vanityURL proxies requests that are made to different hosts.
      * In this case, we will request a url from dotcms and check to see that we get the results from dotcms.com
      */
+    @Ignore
     @Test
     public void test_that_vanity_url_filter_handles_proxy_requests() throws Exception {
 

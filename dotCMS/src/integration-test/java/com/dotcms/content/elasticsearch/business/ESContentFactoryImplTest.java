@@ -65,6 +65,7 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.internal.SearchContext;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -348,6 +349,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
      * In this case the title generated is the identifier, and both should be the same (fatty and model)
      */
     @Test
+    @Ignore
     public void test_convertContentletToFatContentlet() throws DotDataException {
 
         final List<Field> fields      = new ArrayList<>();

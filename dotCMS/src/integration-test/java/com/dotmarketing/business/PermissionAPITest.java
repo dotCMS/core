@@ -64,6 +64,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -1184,6 +1185,7 @@ public class PermissionAPITest extends IntegrationTestBase {
      * @throws DotDataException
      */
     @Test
+    @Ignore
     public void Test_Inherited_Permissions() throws DotSecurityException, DotDataException {
 
         final PermissionAPI permissionAPI = APILocator.getPermissionAPI();

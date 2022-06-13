@@ -34,6 +34,7 @@ import com.liferay.util.StringPool;
 import java.io.File;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class URLMapBundlerTest {
@@ -55,6 +56,7 @@ public class URLMapBundlerTest {
      *
      * @throws DotBundleException
      */
+    @Ignore
     @Test
     public void urlMapWithInclude() throws DotBundleException {
         final Host host = new SiteDataGen().nextPersisted();
@@ -125,6 +127,7 @@ public class URLMapBundlerTest {
      *
      * @throws DotBundleException
      */
+    @Ignore
     @Test
     public void urlMapWithIncludeAndBlankSpace() throws DotBundleException {
         final Host host = new SiteDataGen().nextPersisted();
