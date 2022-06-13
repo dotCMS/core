@@ -357,6 +357,7 @@
 
 	// File Popup
 	function showFilePopUp(file, cmsAdminUser, origReferer, e) {
+
 		var workFlowAssign = false;
 		var fileWfActionAssign = file.wfActionAssign;
 		//var wfActions = file.wfActions;
@@ -470,6 +471,14 @@
 		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cut")) %>';
 			strHTML += '</a>';
 
+		}
+
+		if(file?.mimeType?.includes('image')) {
+			const versionPath = getVersionPath(file);
+			strHTML += '<div class="pop_divider" ></div>';
+			strHTML += '<span class="context-menu__item" onClick="copyToClipboard(\'' + versionPath + '\', \'' + objId + '\')">';
+			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy-path")) %>';
+			strHTML += '</span>';
 		}
 
 		strHTML += '<div class="pop_divider" ></div>';
@@ -1028,7 +1037,19 @@
 
     var contentAdmin ;
 
+	function getVersionPath(file) {
+		const name = file.name;
+		const type = file?.titleName || 'fileAsset'
+		const inode = file.shortyInode;
+		return `/dA/${inode}/${type}/${name}`;
+	}
 
+	function copyToClipboard(relativePath, objId) {
+		navigator.clipboard.writeText(relativePath)
+		.then()
+		.catch((error) => alert('Error:', err))
+		.finally(() => hidePopUp('context_menu_popup_'+objId))
+	}
 
 
 --></script>
