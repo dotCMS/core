@@ -481,16 +481,21 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     }
 
     @Override
-    @WrapInTransaction
+    @CloseDBIfOpened
     public Host findSystemHost(final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         if (null != this.systemHost) {
             return this.systemHost;
         }
         this.systemHost = this.getHostFactory().findSystemHost(user, respectFrontendRoles);
         if (null == this.systemHost) {
-            this.systemHost = this.getHostFactory().createSystemHost();
+            this.systemHost = this.createSystemHost();
         }
         return this.systemHost;
+    }
+
+    @WrapInTransaction
+    private synchronized Host createSystemHost() throws DotDataException, DotSecurityException {
+        return this.getHostFactory().createSystemHost();
     }
 
     @Override
