@@ -634,9 +634,11 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 
         // remove folder and parent from navigation cache
-        CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
-        CacheLocator.getNavToolCache().removeNavByPath(existingID.getHostId(), existingID.getParentPath());
-
+		if (!isNew) {
+			CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
+			CacheLocator.getNavToolCache()
+					.removeNavByPath(existingID.getHostId(), existingID.getParentPath());
+		}
         SystemEventType systemEventType = isNew ? SystemEventType.SAVE_FOLDER : SystemEventType.UPDATE_FOLDER;
 		systemEventsAPI.pushAsync(systemEventType, new Payload(folder, Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
@@ -655,7 +657,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	                                                });
 	
 	
-	@WrapInTransaction
+	@CloseDBIfOpened
 	public Folder findSystemFolder()  {
 		return loadSystemFolder.get();
 	}
