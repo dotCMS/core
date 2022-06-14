@@ -316,7 +316,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.workflows.business.WorkflowAPIMultiLanguageTest.class,
         com.dotmarketing.portlets.workflows.business.WorkflowAPITest.class,
         com.dotmarketing.portlets.workflows.model.WorkflowSearcherTest.class,
-        //com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMappingTest.class,
+        com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMappingTest.class,
         com.dotmarketing.portlets.workflows.actionlet.FourEyeApproverActionletTest.class,
         com.dotmarketing.portlets.workflows.actionlet.SaveContentActionletTest.class,
         com.dotmarketing.portlets.workflows.actionlet.SaveContentActionletWithTagsTest.class,
@@ -479,7 +479,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task210319CreateStorageTableTest.class,
         Task210321RemoveOldMetadataFilesTest.class,
         DBTimeZoneCheckTest.class,
-        //ContentHandlerTest.class,
+        ContentHandlerTest.class,
         ESIndexAPITest.class,
         FileAssetTemplateUtilTest.class,
         Task210506UpdateStorageTableTest.class,
@@ -496,7 +496,7 @@ import org.junit.runners.Suite.SuiteClasses;
         HostTest.class,
         FileToolTest.class,
         Task210719CleanUpTitleFieldTest.class,
-        Task210802UpdateStructureTableTest.class,
+        Task210802UpdateStructureTableTest.class/*,
         MaintenanceUtilTest.class,
         BundlePublisherTest.class,
         CategoryFactoryTest.class,
@@ -547,10 +547,10 @@ import org.junit.runners.Suite.SuiteClasses;
         SecureFileValidatorTest.class,
         BoundedBufferedReaderTest.class,
         AWSS3PublisherTest.class,
-        //XStreamFactoryTest.class,
-        //ContentWorkflowHandlerTest.class,
+        XStreamFactoryTest.class,
+        ContentWorkflowHandlerTest.class,
         Task220512UpdateNoHTMLRegexValueTest.class,
-        MetadataDelegateTest.class
+        MetadataDelegateTest.class*/
 })
 public class MainSuite {
 
