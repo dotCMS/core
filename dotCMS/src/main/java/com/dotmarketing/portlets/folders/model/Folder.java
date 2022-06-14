@@ -248,7 +248,6 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
 	}
 	public void setIdentifier(String identifier) {
 	   this.identifier = identifier;
-	   setHostId(this.hostId);
 	}
 
 	public void copy (Folder template) {

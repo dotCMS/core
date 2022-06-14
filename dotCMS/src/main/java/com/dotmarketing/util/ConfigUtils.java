@@ -147,7 +147,7 @@ public class ConfigUtils {
         }
     }
     
-    
+
 
     private static final String LOCAL = "LOCAL";
     public static String getDotGeneratedPath() {

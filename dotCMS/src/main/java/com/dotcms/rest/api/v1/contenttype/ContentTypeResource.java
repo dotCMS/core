@@ -48,6 +48,7 @@ import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
@@ -74,6 +75,7 @@ import static com.liferay.util.StringPool.COMMA;
  * @since Sep 11th, 2016
  */
 @Path("/v1/contenttype")
+@Tag(name = "Content Type")
 public class ContentTypeResource implements Serializable {
 	private final WebResource 		webResource;
 	private final ContentTypeHelper contentTypeHelper;

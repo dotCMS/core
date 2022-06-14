@@ -299,7 +299,8 @@ public class ApiTokenResource implements Serializable {
         } catch (ProcessingException e){
             if (e.getCause().getClass() == UnknownHostException.class ||
                     e.getCause().getClass() == NoRouteToHostException.class ||
-                    e.getCause().getClass() == ConnectException.class) {
+                    e.getCause().getClass() == ConnectException.class ||
+                    e.getCause().getClass() == IllegalStateException.class) {
                 Logger.error(ApiTokenResource.class, String.format("Invalid server URL: %s", remoteURL));
                 return Response.status(Response.Status.NOT_FOUND).build();
             } else {
