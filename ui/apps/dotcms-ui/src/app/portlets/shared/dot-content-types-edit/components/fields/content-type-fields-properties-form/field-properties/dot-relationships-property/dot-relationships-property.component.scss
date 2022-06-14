@@ -1,9 +1,0 @@
-@use "variables" as *;
-
-.relationship__type {
-    display: flex;
-
-    p-radioButton {
-        margin-right: $spacing-3;
-    }
-}
