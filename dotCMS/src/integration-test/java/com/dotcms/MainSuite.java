@@ -350,7 +350,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.filters.FiltersTest.class,
         com.dotmarketing.business.VersionableAPITest.class*/
 
-        /*,
+        ,
         com.dotmarketing.business.UserAPITest.class,
         com.dotmarketing.business.portal.PortletAPIImplTest.class,
         com.dotmarketing.business.cache.provider.guava.CachePerformanceTest.class,
@@ -400,9 +400,9 @@ import org.junit.runners.Suite.SuiteClasses;
         CleanUpFieldReferencesJobTest.class,
         ESContentletAPIImplTest.class,
         CachedParameterDecoratorTest.class,
-        ContainerFactoryImplTest.class*/
+        ContainerFactoryImplTest.class
 
-        /*,
+        ,
         TemplateFactoryImplTest.class,
         TestConfig.class,
         ConfigTest.class,
@@ -452,10 +452,10 @@ import org.junit.runners.Suite.SuiteClasses;
         IntegrityDataGenerationJobTest.class,
         BundleAPITest.class,
         Task05390MakeRoomForLongerJobDetailTest.class,
-        Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest.class*/
+        Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest.class
 
 
-        /*,
+        ,
         JSONToolTest.class,
         BundlePublisherResourceIntegrationTest.class,
         IntegrityResourceIntegrationTest.class,
@@ -505,11 +505,11 @@ import org.junit.runners.Suite.SuiteClasses;
         HostTest.class,
         FileToolTest.class,
         Task210719CleanUpTitleFieldTest.class,
-        Task210802UpdateStructureTableTest.class*/
+        Task210802UpdateStructureTableTest.class
 
 
 
-        /*,
+        ,
         MaintenanceUtilTest.class,
         BundlePublisherTest.class,
         CategoryFactoryTest.class,
@@ -563,7 +563,7 @@ import org.junit.runners.Suite.SuiteClasses;
         XStreamFactoryTest.class,
         ContentWorkflowHandlerTest.class,
         Task220512UpdateNoHTMLRegexValueTest.class,
-        MetadataDelegateTest.class*/
+        MetadataDelegateTest.class
 })
 public class MainSuite {
 
