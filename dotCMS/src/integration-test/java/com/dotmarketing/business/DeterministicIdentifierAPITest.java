@@ -30,20 +30,17 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.liferay.util.FileUtil;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
@@ -338,22 +335,9 @@ public class DeterministicIdentifierAPITest {
     @UseDataProvider("getLanguageTestCases")
     public void Test_Language_Deterministic_Id(final LanguageTestCase testCase){
 
-        final LanguageAPI languageAPI = APILocator.getLanguageAPI();
         final boolean generateConsistentIdentifiers = Config
                 .getBooleanProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
         try {
-
-            final Language language = languageAPI
-                    .getLanguage(testCase.langCode, testCase.countryCode);
-            if (null != language && language.getId() == languageAPI.getDefaultLanguage().getId()) {
-                //Exclude the default language from our test data set (is not included just in case)
-                return;
-            } else {
-                if (null != language) {
-                    //If the language already exists remove it
-                    languageAPI.deleteLanguage(language);
-                }
-            }
             Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
             final Language lang =  new Language(0, testCase.langCode, testCase.countryCode, "", testCase.country);
             assertEquals(testCase.expectedSeed, defaultGenerator.deterministicIdSeed(lang));
@@ -374,7 +358,7 @@ public class DeterministicIdentifierAPITest {
         final List<LanguageTestCase> testCases = Stream
                 .of(new LanguageTestCase("es", "US", "United States", "Language:es:US", 4913155),
                     new LanguageTestCase("ep", "", "", "Language:ep:", 5292269),
-                    new LanguageTestCase("ru", "RUS", "", "Language:ru:RUS", 5066818),
+                    new LanguageTestCase("sg", "SAG", "", "Language:sg:SAG", 4713118),
                     new LanguageTestCase("en", "NZ", "New Zealand", "Language:en:NZ", 5382528))
                 .collect(Collectors.toList());
 
