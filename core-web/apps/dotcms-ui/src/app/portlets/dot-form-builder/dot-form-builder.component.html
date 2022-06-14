@@ -1,0 +1,8 @@
+<dot-unlicensed-porlet
+    *ngIf="unlicensed$ | async as unlicensed; else licensed"
+    [data]="unlicensed"
+></dot-unlicensed-porlet>
+
+<ng-template #licensed>
+    <dot-content-types></dot-content-types>
+</ng-template>

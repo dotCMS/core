@@ -1,0 +1,28 @@
+key-value-form form {
+    label {
+        align-items: center;
+        display: flex;
+        flex-grow: 1;
+    }
+
+    table {
+        width: 100%;
+
+        input {
+            width: 100%;
+        }
+    }
+
+    .key-value-table-form__key {
+        width: 45%;
+    }
+
+    .key-value-table-form__value {
+        width: 45%;
+    }
+
+    .key-value-table-form__action {
+        text-align: right;
+        width: 10%;
+    }
+}
