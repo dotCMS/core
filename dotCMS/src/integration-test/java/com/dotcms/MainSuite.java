@@ -446,7 +446,7 @@ import org.junit.runners.Suite.SuiteClasses;
         IntegrityDataGenerationJobTest.class,
         BundleAPITest.class,
         Task05390MakeRoomForLongerJobDetailTest.class,
-        Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest.class,
+        Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest.class/*,
         JSONToolTest.class,
         BundlePublisherResourceIntegrationTest.class,
         IntegrityResourceIntegrationTest.class,
@@ -496,7 +496,11 @@ import org.junit.runners.Suite.SuiteClasses;
         HostTest.class,
         FileToolTest.class,
         Task210719CleanUpTitleFieldTest.class,
-        Task210802UpdateStructureTableTest.class/*,
+        Task210802UpdateStructureTableTest.class*/
+
+
+
+        /*,
         MaintenanceUtilTest.class,
         BundlePublisherTest.class,
         CategoryFactoryTest.class,
