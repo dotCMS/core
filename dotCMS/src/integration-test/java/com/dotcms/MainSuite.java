@@ -396,7 +396,9 @@ import org.junit.runners.Suite.SuiteClasses;
         CleanUpFieldReferencesJobTest.class,
         ESContentletAPIImplTest.class,
         CachedParameterDecoratorTest.class,
-        ContainerFactoryImplTest.class,
+        ContainerFactoryImplTest.class
+
+        /*,
         TemplateFactoryImplTest.class,
         TestConfig.class,
         ConfigTest.class,
@@ -446,7 +448,10 @@ import org.junit.runners.Suite.SuiteClasses;
         IntegrityDataGenerationJobTest.class,
         BundleAPITest.class,
         Task05390MakeRoomForLongerJobDetailTest.class,
-        Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest.class/*,
+        Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest.class*/
+
+
+        /*,
         JSONToolTest.class,
         BundlePublisherResourceIntegrationTest.class,
         IntegrityResourceIntegrationTest.class,
