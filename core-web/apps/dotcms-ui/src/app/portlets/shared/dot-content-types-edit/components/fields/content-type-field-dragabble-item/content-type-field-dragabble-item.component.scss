@@ -1,0 +1,83 @@
+@use "variables" as *;
+@import "mixins";
+
+:host {
+    background: $white;
+    cursor: move;
+    display: flex;
+    height: $content-type-field-height;
+    padding: $spacing-3;
+    transition: box-shadow $basic-speed;
+
+    &:hover {
+        box-shadow: $md-shadow-5;
+        z-index: 1;
+    }
+
+    &:last-child {
+        margin-bottom: 0;
+    }
+
+    &.gu-transit {
+        opacity: 0.4;
+    }
+}
+
+dot-icon-button-tooltip ::ng-deep .material-icons,
+dot-icon {
+    color: $gray;
+}
+
+dot-icon {
+    margin-right: $spacing-1;
+}
+
+.field__properties,
+.field__icon {
+    display: flex;
+}
+
+.field__properties {
+    justify-content: center;
+    flex-direction: column;
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.field__name {
+    margin-right: $spacing-1;
+    @include truncate-text;
+}
+
+.field__name-inner {
+    align-items: center;
+    display: flex;
+    overflow: hidden;
+}
+
+.field__name-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+.field__attribute,
+.field__variable {
+    color: gray;
+    font-size: $font-size-small;
+    overflow: hidden;
+    display: flex;
+}
+
+.field__attribute {
+    min-height: $font-size-small;
+    margin-left: 26px;
+}
+
+.field__actions {
+    flex-shrink: 0;
+    margin-left: $spacing-1;
+
+    & > * {
+        margin: 0 0.25rem;
+    }
+}

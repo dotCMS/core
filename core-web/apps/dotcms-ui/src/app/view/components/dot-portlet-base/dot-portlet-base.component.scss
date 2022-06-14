@@ -1,0 +1,12 @@
+@use "variables" as *;
+
+:host {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+dot-portlet-box {
+    flex-grow: 1;
+    flex-basis: 0;
+}

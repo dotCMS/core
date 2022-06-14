@@ -1,0 +1,9 @@
+<dot-icon-button
+    icon="more_vert"
+    (click)="menu.toggle($event)"
+    float
+    [attr.disabled]="!actionsAvailable"
+>
+</dot-icon-button>
+
+<p-menu [model]="actions | async" #menu popup="popup" appendTo="body"></p-menu>
