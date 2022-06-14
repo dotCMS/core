@@ -346,7 +346,9 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformerTest.class,
         com.dotmarketing.portlets.categories.business.CategoryAPITest.class,
         com.dotmarketing.filters.FiltersTest.class,
-        com.dotmarketing.business.VersionableAPITest.class,
+        com.dotmarketing.business.VersionableAPITest.class
+
+        /*,
         com.dotmarketing.business.UserAPITest.class,
         com.dotmarketing.business.portal.PortletAPIImplTest.class,
         com.dotmarketing.business.cache.provider.guava.CachePerformanceTest.class,
@@ -396,7 +398,7 @@ import org.junit.runners.Suite.SuiteClasses;
         CleanUpFieldReferencesJobTest.class,
         ESContentletAPIImplTest.class,
         CachedParameterDecoratorTest.class,
-        ContainerFactoryImplTest.class
+        ContainerFactoryImplTest.class*/
 
         /*,
         TemplateFactoryImplTest.class,
