@@ -21,3 +21,4 @@ This maintenance release includes the following code fixes:
 13. https://github.com/dotCMS/core/issues/22390 : Disallow Matrix Parameters in URIs #22390
 14. https://github.com/dotCMS/core/issues/22266 : Issue with static push publishing when pushing with a default language other than English #22266
 15. https://github.com/dotCMS/core/issues/21882 : OSGI restart needs to be cluster aware #21882
+16. https://github.com/dotCMS/core/issues/22410 : Change logo in backoffice UI not working for all logo sizes #22410
