@@ -297,7 +297,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.filters.VanityUrlFilterTest.class,
         com.dotcms.vanityurl.business.VanityUrlAPITest.class,
 
-        com.dotmarketing.portlets.fileassets.business.FileAssetAPITest.class,
+        /*com.dotmarketing.portlets.fileassets.business.FileAssetAPITest.class,
         com.dotmarketing.portlets.languagesmanager.business.LanguageAPITest.class,
         com.dotmarketing.portlets.languagesmanager.business.LanguageFactoryIntegrationTest.class,
         com.dotmarketing.portlets.linkchecker.business.LinkCheckerAPITest.class,
@@ -321,7 +321,9 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.workflows.actionlet.FourEyeApproverActionletTest.class,
         com.dotmarketing.portlets.workflows.actionlet.SaveContentActionletTest.class,
         com.dotmarketing.portlets.workflows.actionlet.SaveContentActionletWithTagsTest.class,
-        com.dotmarketing.portlets.workflows.actionlet.CopyActionletTest.class/*,
+        com.dotmarketing.portlets.workflows.actionlet.CopyActionletTest.class*/
+
+        ,
         com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletTest.class,
         com.dotmarketing.portlets.personas.business.PersonaAPITest.class,
         com.dotmarketing.portlets.personas.business.DeleteMultiTreeUsedPersonaTagJobTest.class,
@@ -347,7 +349,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformerTest.class,
         com.dotmarketing.portlets.categories.business.CategoryAPITest.class,
         com.dotmarketing.filters.FiltersTest.class,
-        com.dotmarketing.business.VersionableAPITest.class*/
+        com.dotmarketing.business.VersionableAPITest.class
 
         ,
         com.dotmarketing.business.UserAPITest.class,
