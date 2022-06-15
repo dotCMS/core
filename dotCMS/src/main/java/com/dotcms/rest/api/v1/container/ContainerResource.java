@@ -954,7 +954,7 @@ public class ContainerResource implements Serializable {
             throw new DoesNotExistException("Container with Id: " + containerId + " does not exist");
         }
 
-        return Response.ok(new ResponseEntityView(new ContainerView(this.getContainerWorking(
+        return Response.ok(new ResponseEntityView(new ContainerView(this.getContainerArchiveWorking(
                 containerId, user, host)))).build();
     }
 
