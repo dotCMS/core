@@ -19,11 +19,11 @@ jobs:
         with:
           base: ${{ github.ref }}
           list-files: "json"
-          working-directory: "core/core-web"
+          working-directory: "core-web"
           filters: |
             dotcms-ui:
-              - 'apps/dotcms-ui/src/**'
-              - 'libs/!(dotcms-webcomponents/**)/**'
+              - 'core-web/apps/dotcms-ui/src/**'
+              - 'core-web/libs/!(dotcms-webcomponents/**)/**'
 
       - name: Changes found
         if: steps.filter.outputs.dotcms-ui == 'true'

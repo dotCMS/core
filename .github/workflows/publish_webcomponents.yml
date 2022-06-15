@@ -18,10 +18,10 @@ jobs:
         with:
           base: ${{ github.ref }}
           list-files: "json"
-          working-directory: "core/core-web"
+          working-directory: "core-web"
           filters: |
             dotcms-webcomponents:
-              - 'libs/dotcms-webcomponents/**'
+              - 'core-web/libs/dotcms-webcomponents/**'
       - name: Changes found
         if: steps.filter.outputs.dotcms-webcomponents == 'true'
         run: |
