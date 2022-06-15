@@ -88,7 +88,7 @@ jobs:
       - name: Installing dependencies
         run: |
           cd ui
-          npm install
+          npm ci
       - name:
           Building for production
           ## Build dotcms-webcomponents because dotcms-ui doesn't have the lib as a direct dep
@@ -100,7 +100,7 @@ jobs:
         id: test_run
         run: |
           cd ui
-          if ! (npm run nx test --target=dotcms-ui --prod) then
+          if ! (npm run test:ci) then
             echo "::set-output name=status::failure";
             echo "::set-output name=color::#ff2400";
             exit 1;

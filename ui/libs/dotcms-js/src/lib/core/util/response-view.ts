@@ -20,7 +20,6 @@ export class ResponseView<T = any> {
     private headers: HttpHeaders;
 
     public constructor(private resp: HttpResponse<DotCMSResponse<T>>) {
-        console.info('ResponseView class', resp);
         try {
             this.bodyJsonObject = resp.body;
             this.headers = resp.headers;

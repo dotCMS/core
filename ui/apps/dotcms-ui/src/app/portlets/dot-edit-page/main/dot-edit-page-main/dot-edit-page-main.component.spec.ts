@@ -102,76 +102,74 @@ describe('DotEditPageMainComponent', () => {
         new DotPageRender(mockDotRenderedPage())
     );
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [
-                    RouterTestingModule.withRoutes([
-                        {
-                            component: DotEditPageMainComponent,
-                            path: ''
-                        }
-                    ]),
-                    DotEditPageNavModule,
-                    DotDownloadBundleDialogModule,
-                    HttpClientTestingModule
-                ],
-                declarations: [DotEditPageMainComponent, MockDotEditContentletComponent],
-                providers: [
-                    { provide: DotMessageService, useValue: messageServiceMock },
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [
+                RouterTestingModule.withRoutes([
                     {
-                        provide: ActivatedRoute,
-                        useValue: {
-                            snapshot: {
-                                queryParams: {
-                                    url: '/about-us/index'
-                                }
+                        component: DotEditPageMainComponent,
+                        path: ''
+                    }
+                ]),
+                DotEditPageNavModule,
+                DotDownloadBundleDialogModule,
+                HttpClientTestingModule
+            ],
+            declarations: [DotEditPageMainComponent, MockDotEditContentletComponent],
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        snapshot: {
+                            queryParams: {
+                                url: '/about-us/index'
                             }
                         }
-                    },
-                    {
-                        provide: DotContentletEditorService,
-                        useClass: MockDotContentletEditorService
-                    },
-                    {
-                        provide: DotPageStateService,
-                        useClass: MockDotPageStateService
-                    },
-                    DotCustomEventHandlerService,
-                    DotLoadingIndicatorService,
-                    DotWorkflowEventHandlerService,
-                    PushPublishService,
-                    { provide: CoreWebService, useClass: CoreWebServiceMock },
-                    { provide: DotRouterService, useClass: MockDotRouterService },
-                    { provide: DotUiColorsService, useClass: MockDotUiColorsService },
-                    PushPublishService,
-                    ApiRoot,
-                    DotFormatDateService,
-                    UserModel,
-                    StringUtils,
-                    DotcmsEventsService,
-                    LoggerService,
-                    DotGenerateSecurePasswordService,
-                    DotEventsSocket,
-                    { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
-                    DotcmsConfigService,
-                    LoggerService,
-                    DotCurrentUserService,
-                    DotMessageDisplayService,
-                    DotWizardService,
-                    DotHttpErrorManagerService,
-                    DotAlertConfirmService,
-                    ConfirmationService,
-                    DotWorkflowActionsFireService,
-                    DotGlobalMessageService,
-                    DotEventsService,
-                    DotIframeService,
-                    LoginService,
-                    DotLicenseService
-                ]
-            });
-        })
-    );
+                    }
+                },
+                {
+                    provide: DotContentletEditorService,
+                    useClass: MockDotContentletEditorService
+                },
+                {
+                    provide: DotPageStateService,
+                    useClass: MockDotPageStateService
+                },
+                DotCustomEventHandlerService,
+                DotLoadingIndicatorService,
+                DotWorkflowEventHandlerService,
+                PushPublishService,
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                { provide: DotRouterService, useClass: MockDotRouterService },
+                { provide: DotUiColorsService, useClass: MockDotUiColorsService },
+                PushPublishService,
+                ApiRoot,
+                DotFormatDateService,
+                UserModel,
+                StringUtils,
+                DotcmsEventsService,
+                LoggerService,
+                DotGenerateSecurePasswordService,
+                DotEventsSocket,
+                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
+                DotcmsConfigService,
+                LoggerService,
+                DotCurrentUserService,
+                DotMessageDisplayService,
+                DotWizardService,
+                DotHttpErrorManagerService,
+                DotAlertConfirmService,
+                ConfirmationService,
+                DotWorkflowActionsFireService,
+                DotGlobalMessageService,
+                DotEventsService,
+                DotIframeService,
+                LoginService,
+                DotLicenseService
+            ]
+        });
+    }));
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotEditPageMainComponent);

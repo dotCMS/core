@@ -60,41 +60,39 @@ describe('SiteSelectorComponent', () => {
     let siteService: SiteService;
     const siteServiceMock = new SiteServiceMock();
 
-    beforeEach(
-        waitForAsync(() => {
-            const messageServiceMock = new MockDotMessageService({
-                search: 'Search'
-            });
-            TestBed.configureTestingModule({
-                declarations: [TestHostComponent, DotSiteSelectorComponent],
-                imports: [
-                    SearchableDropDownModule,
-                    BrowserAnimationsModule,
-                    HttpClientTestingModule,
-                    CommonModule,
-                    FormsModule
-                ],
-                providers: [
-                    { provide: DotMessageService, useValue: messageServiceMock },
-                    { provide: SiteService, useValue: siteServiceMock },
-                    { provide: CoreWebService, useClass: CoreWebServiceMock },
-                    IframeOverlayService,
-                    PaginatorService,
-                    DotEventsService
-                ]
-            }).compileComponents();
+    beforeEach(waitForAsync(() => {
+        const messageServiceMock = new MockDotMessageService({
+            search: 'Search'
+        });
+        TestBed.configureTestingModule({
+            declarations: [TestHostComponent, DotSiteSelectorComponent],
+            imports: [
+                SearchableDropDownModule,
+                BrowserAnimationsModule,
+                HttpClientTestingModule,
+                CommonModule,
+                FormsModule
+            ],
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: SiteService, useValue: siteServiceMock },
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                IframeOverlayService,
+                PaginatorService,
+                DotEventsService
+            ]
+        }).compileComponents();
 
-            fixtureHost = TestBed.createComponent(TestHostComponent);
-            deHost = fixtureHost.debugElement;
-            componentHost = fixtureHost.componentInstance;
+        fixtureHost = TestBed.createComponent(TestHostComponent);
+        deHost = fixtureHost.debugElement;
+        componentHost = fixtureHost.componentInstance;
 
-            de = deHost.query(By.css('dot-site-selector'));
-            comp = de.componentInstance;
+        de = deHost.query(By.css('dot-site-selector'));
+        comp = de.componentInstance;
 
-            paginatorService = de.injector.get(PaginatorService);
-            siteService = de.injector.get(SiteService);
-        })
-    );
+        paginatorService = de.injector.get(PaginatorService);
+        siteService = de.injector.get(SiteService);
+    }));
 
     it('should send notification when login-as/logout-as', fakeAsync(() => {
         const dotEventsService = de.injector.get(DotEventsService);
@@ -148,10 +146,6 @@ describe('SiteSelectorComponent', () => {
         fixtureHost.detectChanges();
 
         expect(comp.handleSitesRefresh).toHaveBeenCalledTimes(1);
-    });
-
-    describe('Pagination', () => {
-        //
     });
 
     it('should change page', () => {
