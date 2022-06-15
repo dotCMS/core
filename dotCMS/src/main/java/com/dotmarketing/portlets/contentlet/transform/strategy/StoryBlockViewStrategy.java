@@ -12,6 +12,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.liferay.portal.model.User;
 
+import io.vavr.control.Try;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +50,8 @@ public class StoryBlockViewStrategy extends AbstractTransformStrategy<Contentlet
                 LinkedHashMap jsonAsMap = null;
                 try {
                     jsonAsMap = new LinkedHashMap(ContentletJsonHelper.INSTANCE.get().objectMapper()
-                            .readValue(source.get(field.variable()).toString(), LinkedHashMap.class));
+                            .readValue(Try.of(()->source.get(field.variable()).toString())
+                                    .getOrElse(""), LinkedHashMap.class));
                 } catch (final JsonProcessingException e) {
                     Logger.warn(StoryBlockField.class, String.format(
                             "An error occurred when transforming Story Block JSON data in field '%s' [%s] into a Map: %s",
