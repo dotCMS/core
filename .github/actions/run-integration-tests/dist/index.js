@@ -245,7 +245,7 @@ const execCmd = (cmd) => __awaiter(void 0, void 0, void 0, function* () {
         message += `\ncwd: ${cmd.workingDir}`;
     }
     if (cmd.env) {
-        message += `env: ${JSON.stringify(cmd.env, null, 2)}`;
+        message += `\nenv: ${JSON.stringify(cmd.env, null, 2)}`;
     }
     core.info(message);
     return exec.exec(cmd.cmd, cmd.args, { cwd: cmd.workingDir, env: cmd.env });
@@ -360,17 +360,17 @@ const prepareTests = () => __awaiter(void 0, void 0, void 0, function* () {
 const overrideProperties = (propertyMap) => __awaiter(void 0, void 0, void 0, function* () {
     core.info('Overriding properties');
     const overrides = getOverrides(propertyMap);
-    core.info(`Detected overrides ${JSON.stringify(overrides, null, 2)}`);
+    //core.info(`Detected overrides ${JSON.stringify(overrides, null, 2)}`)
     for (const file of overrides.files) {
         core.info(`Overriding properties at ${file.file}`);
         for (const prop of file.properties) {
             yield exec.exec('sed', ['-i', `s,${prop.original},${prop.replacement},g`, file.file]);
         }
-        core.info(`
-    ##################################
-    Reviewing changes for ${file.file}
-    ##################################`);
-        yield exec.exec('cat', [file.file]);
+        // core.info(`
+        // ##################################
+        // Reviewing changes for ${file.file}
+        // ##################################`)
+        // await exec.exec('cat', [file.file])
     }
 });
 /**
@@ -381,7 +381,7 @@ const overrideProperties = (propertyMap) => __awaiter(void 0, void 0, void 0, fu
 const appendProperties = (propertyMap) => {
     core.info('Adding properties');
     const appends = getAppends(propertyMap);
-    core.info(`Detected appends ${JSON.stringify(appends, null, 2)}`);
+    //core.info(`Detected appends ${JSON.stringify(appends, null, 2)}`)
     for (const file of appends.files) {
         core.info(`Appending properties to ${file.file}`);
         const line = file.lines.join('\n');

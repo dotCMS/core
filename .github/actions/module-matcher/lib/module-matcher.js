@@ -39,6 +39,7 @@ exports.moduleMatches = void 0;
 const core = __importStar(require("@actions/core"));
 const node_fetch_1 = __importDefault(require("node-fetch"));
 const shelljs = __importStar(require("shelljs"));
+const buildId = core.getInput('build_id');
 const current = core.getInput('current');
 const modulesConf = JSON.parse(core.getInput('modules'));
 const pullRequest = core.getInput('pull_request');
@@ -57,11 +58,15 @@ const moduleMatches = () => __awaiter(void 0, void 0, void 0, function* () {
         core.error(`Module ${current} was not found in configuration`);
         return false;
     }
+    if (/^release-\d{2}\.\d{2}(\.\d{1,2})?$|master/.test(buildId)) {
+        core.info('Master o release branch detected, allowing workflow to run');
+        return true;
+    }
     const commits = yield resolveCommits();
     core.info(`Commits found: ${commits.length}`);
     if (commits.length >= 100) {
         // Probably not found bu the amount of commits definitively calls for returning true
-        core.info("Commits reached max capacity, probably it's a good idea to allow ALL workflows to run");
+        core.info("Commits reached max capacity, allowing workflow to run");
         return true;
     }
     const found = searchInCommits(currentModule, commits);

@@ -40,8 +40,12 @@ export const aggregate = (): OverallTestsStatus => {
       color = '#ff2400'
     }
 
+    let emoji = testsStatus.status === 'SUCCESS' ? ':sunny: ' : ':thunder_cloud_and_rain: '
+    if (!testsStatus.reportUrl) {
+      emoji = ''
+    }
     const reportUrl = testsStatus.reportUrl || 'Could not resolve report URL'
-    messages.push(`${typeLabels[type as keyof TypeLabels]}: ${reportUrl}`)
+    messages.push(`${emoji}${typeLabels[type as keyof TypeLabels]}: ${reportUrl}`)
   }
 
   return {
