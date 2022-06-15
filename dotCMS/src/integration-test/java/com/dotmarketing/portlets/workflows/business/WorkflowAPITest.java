@@ -1346,7 +1346,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
      * Test the find findAvailableActions methods
      */
     @Test
-    public void findAvailableActions() throws DotDataException, DotSecurityException {
+    public void findAvailableActions() throws Exception {
 
         /*
         Need to do the test checking with different user the actions displayed. We need to specify
@@ -1455,6 +1455,17 @@ public class WorkflowAPITest extends IntegrationTestBase {
             assertNotNull(foundActions);
             assertFalse(foundActions.isEmpty());
             assertEquals(foundActions.size(), 5);
+
+            ////
+            final Contentlet testContentleti = testContentlet;
+            runNoLicense(()-> {
+
+                CacheLocator.getWorkFlowCache().clearCache();
+                List<WorkflowAction> foundActions_ = APILocator.getWorkflowAPI()
+                        .findAvailableActions(testContentleti, joeContributor);
+                Assert.assertFalse(foundActions_.isEmpty());
+                Assert.assertEquals(WorkflowAPI.SYSTEM_WORKFLOW_ID, foundActions_.get(0).getSchemeId());
+            });
 
         } finally {
             contentletAPI.destroy(testContentlet, user, false);
