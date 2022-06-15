@@ -16,7 +16,7 @@ inputs:
                 "main": true
               },
               {
-                "module": "ui"
+                "module": "core-web"
               },
               {
                 "module": "enterprise"

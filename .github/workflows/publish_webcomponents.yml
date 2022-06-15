@@ -18,10 +18,10 @@ jobs:
         with:
           base: ${{ github.ref }}
           list-files: "json"
-          working-directory: "ui"
+          working-directory: "core-web"
           filters: |
             dotcms-webcomponents:
-              - 'ui/libs/dotcms-webcomponents/**'
+              - 'core-web/libs/dotcms-webcomponents/**'
       - name: Changes found
         if: steps.filter.outputs.dotcms-webcomponents == 'true'
         run: |
@@ -48,7 +48,7 @@ jobs:
           node-version: "16.13.2"
       - name: Installing dependencies
         run: |
-          cd ui
+          cd core-web
           npm install
       - name: Version Bump - dotcms-webcomponents - if it's Master/Release Branch
         run: |
@@ -67,7 +67,7 @@ jobs:
             preReleaseTag=rc
           fi
 
-          cd ui
+          cd core-web
 
           # Get version from package.json
           cd libs/dotcms-webcomponents
@@ -94,11 +94,11 @@ jobs:
 
       - name: Build dotcms-webcomponents with deps
         run: |
-          cd ui
+          cd core-web
           npm run nx build dotcms-webcomponents && npm run nx build dotcms-ui -- --prod
       - name: "Publish to npm"
         run: |
-          cd ui
+          cd core-web
           npm set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
           cd dist/libs/dotcms-webcomponents
           if [[ $(basename "${{ github.ref }}") =~ ^release-.* ]]; then
