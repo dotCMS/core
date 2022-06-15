@@ -9,12 +9,12 @@ module.exports = () => {
         basePath: '',
         frameworks: ['jasmine', '@angular-devkit/build-angular'],
         plugins: [
-            require('karma-html-reporter'),
             require('karma-jasmine'),
             require('karma-chrome-launcher'),
             require('karma-jasmine-html-reporter'),
-            require('karma-coverage'),
-            require('@angular-devkit/build-angular/plugins/karma')
+            require('@angular-devkit/build-angular/plugins/karma'),
+            require('karma-spec-reporter'),
+            require('karma-htmlfile-reporter')
         ],
         client: {
             clearContext: false // leave Jasmine Spec Runner output visible in browser
@@ -24,7 +24,7 @@ module.exports = () => {
             subdir: '.',
             reporters: [{ type: 'html' }, { type: 'text-summary' }]
         },
-        reporters: ['progress', 'kjhtml', 'html'],
+        reporters: ['progress', 'html'],
         port: 9876,
         colors: true,
         logLevel: constants.LOG_INFO,
@@ -37,10 +37,17 @@ module.exports = () => {
             }
         },
         htmlReporter: {
-            namedFiles: true,
-            reportName: 'report'
+            outputFile: 'karma_html/report.html',
+
+            // Optional
+            pageTitle: 'dotCMS - Test Ui Report',
+            groupSuites: true,
+            useCompactStyle: true,
+            useLegacyStyle: true,
+            showOnlyFailed: false
         },
         singleRun: true,
-        browserDisconnectTimeout: 20000
+        browserDisconnectTimeout: 200000,
+        browserNoActivityTimeout: 60000
     };
 };
