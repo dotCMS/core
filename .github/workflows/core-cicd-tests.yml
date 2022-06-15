@@ -1,4 +1,4 @@
-name: core-tests
+name: Core
 on:
   pull_request:
   push:
@@ -25,6 +25,8 @@ jobs:
   build-core-job:
     name: Build Core
     runs-on: ubuntu-latest
+    needs: module-matcher-job
+    if: needs.module-matcher-job.outputs.module_found == 'true'
     env:
       DEBUG: true
     outputs:
@@ -54,7 +56,7 @@ jobs:
         uses: ./.github/actions/core-cache-locator
         with:
           build_env: ${{ env.BUILD_ENV }}
-          cache_build_output: false
+          cache_build_output: true
         if: success()
       - id: cache-core
         name: Cache Core
@@ -68,6 +70,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-core-job
     if: success()
+    outputs:
+      tests_results_status: ${{ steps.run-unit-tests.outputs.tests_results_status }}
+      tests_results_skip_report: ${{ steps.run-unit-tests.outputs.tests_results_skip_report }}
+      tests_results_report_url: ${{ steps.publish-unit-tests.outputs.tests_report_url }}
     steps:
       - id: fetch-core
         name: Fetch Core Repo
@@ -94,21 +100,20 @@ jobs:
         with:
           files: ${{ steps.run-unit-tests.outputs.tests_results_location }}/*.xml
           check_name: 'Unit Tests Report'
-          tests: ${{ needs.build-core-job.outputs.commit_message }}
-        if: always() && steps.run-unit-tests.outputs.skip_results_report != 'true'
+        if: always() && steps.run-unit-tests.outputs.tests_results_skip_report != 'true'
       - id: publish-unit-tests
-        name: 'Publish unit tests to Testmo'
+        name: Publish unit tests to Testmo
         uses: ./.github/actions/testmo-wrapper
         with:
           operation: submit
           github_sha: ${{ env.BUILD_HASH }}
-          testmo_url: 'https://dotcms.testmo.net' #${{ secrets.TESTMO_URL }}
+          build_id: ${{ env.BUILD_ID }}
           testmo_token: ${{ secrets.TESTMO_TOKEN }}
           testmo_project_id: 1
           test_type: unit
           tests_results_location: ${{ steps.run-unit-tests.outputs.tests_results_location }}/*.xml
           debug: true
-        if: always() && steps.run-unit-tests.outputs.skip_results_report != 'true'
+        if: always() && steps.run-unit-tests.outputs.tests_results_skip_report != 'true'
       - id: github-status
         name: Send Github Status
         uses: ./.github/actions/github-status
@@ -119,7 +124,7 @@ jobs:
           github_user: ${{ env.GITHUB_USER }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
           tests_report_url: ${{ steps.publish-unit-tests.outputs.tests_report_url }}
-        if: always() && steps.run-unit-tests.outputs.skip_results_report != 'true'
+        if: always() && steps.publish-unit-tests.outputs.tests_report_url != ''
   integration-tests-thread-setup-job:
     name: Integration tests thread (matrix) setup
     runs-on: ubuntu-latest
@@ -140,7 +145,7 @@ jobs:
         with:
           operation: thread-resources
           github_sha: ${{ env.BUILD_HASH }}
-          testmo_url: 'https://dotcms.testmo.net' #${{ secrets.TESTMO_URL }}
+          build_id: ${{ env.BUILD_ID }}
           testmo_token: ${{ secrets.TESTMO_TOKEN }}
           testmo_project_id: 1
           test_type: integration
@@ -154,6 +159,13 @@ jobs:
       fail-fast: false
       matrix:
         db_type: [ postgres, mssql ]
+    outputs:
+      postgres_tests_results_status: ${{ steps.run-integration-tests.outputs.postgres_tests_results_status }}
+      postgres_tests_results_skip_report: ${{ steps.run-integration-tests.outputs.postgres_tests_results_skip_report }}
+      postgres_tests_results_report_url: ${{ steps.publish-integration-tests.outputs.postgres_tests_report_url }}
+      mssql_tests_results_status: ${{ steps.run-integration-tests.outputs.mssql_tests_results_status }}
+      mssql_tests_results_skip_report: ${{ steps.run-integration-tests.outputs.mssql_tests_results_skip_report }}
+      mssql_tests_results_report_url: ${{ steps.publish-integration-tests.outputs.mssql_tests_report_url }}
     steps:
       - id: fetch-core
         name: Fetch Core Repo
@@ -183,14 +195,14 @@ jobs:
         with:
           files: ${{ steps.run-integration-tests.outputs.tests_results_location }}/*.xml
           check_name: 'Integration Tests [${{ matrix.db_type }}] Report'
-        if: always() && steps.run-integration-tests.outputs.skip_results_report != 'true'
+        if: always() && steps.run-integration-tests.outputs.tests_results_skip_report != 'true'
       - id: publish-integration-tests
-        name: 'Publish integration tests to Testmo'
+        name: Publish integration tests to Testmo
         uses: ./.github/actions/testmo-wrapper
         with:
           operation: submit-thread
           github_sha: ${{ env.BUILD_HASH }}
-          testmo_url: 'https://dotcms.testmo.net' #${{ secrets.TESTMO_URL }}
+          build_id: ${{ env.BUILD_ID }}
           testmo_token: ${{ secrets.TESTMO_TOKEN }}
           testmo_project_id: 1
           testmo_run_id: ${{ needs.integration-tests-thread-setup-job.outputs.testmo_run_id }}
@@ -200,7 +212,7 @@ jobs:
           ci_total: 2
           ci_label: ${{ matrix.db_type }}
           debug: true
-        if: always() && steps.run-integration-tests.outputs.skip_results_report != 'true'
+        if: always() && steps.run-integration-tests.outputs.tests_results_skip_report != 'true'
       - id: github-status
         name: Send Github Status
         uses: ./.github/actions/github-status
@@ -212,12 +224,12 @@ jobs:
           github_user: ${{ env.GITHUB_USER }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
           tests_report_url: ${{ steps.publish-integration-tests.outputs.tests_report_url }}
-        if: always() && steps.run-integration-tests.outputs.skip_results_report != 'true'
+        if: always() && steps.publish-integration-tests.outputs.tests_report_url != ''
   integration-tests-complete-job:
     name: Integration tests publish complete setup
     runs-on: ubuntu-latest
     needs: [ integration-tests-thread-setup-job, run-integration-tests-job ]
-    if: always() && needs.run-integration-tests-job.outputs.skip_results_report != 'true'
+    if: always() && needs.run-integration-tests-job.outputs.tests_results_skip_report != 'true'
     steps:
       - id: fetch-core
         name: Fetch Core Repo
@@ -232,9 +244,112 @@ jobs:
         with:
           operation: complete
           github_sha: ${{ env.BUILD_HASH }}
-          testmo_url: 'https://dotcms.testmo.net' #${{ secrets.TESTMO_URL }}
           testmo_token: ${{ secrets.TESTMO_TOKEN }}
           testmo_project_id: 1
           testmo_run_id: ${{ needs.integration-tests-thread-setup-job.outputs.testmo_run_id }}
           test_type: integration
           debug: true
+  run-postman-tests-job:
+    name: Run Postman Tests
+    runs-on: ubuntu-latest
+    needs: build-core-job
+    if: success()
+    outputs:
+      tests_results_status: ${{ steps.run-postman-tests.outputs.tests_results_status }}
+      tests_results_skip_report: ${{ steps.run-postman-tests.outputs.tests_results_skip_report }}
+      tests_results_report_url: ${{ steps.publish-postman-tests.outputs.tests_report_url }}
+    steps:
+      - id: fetch-core
+        name: Fetch Core Repo
+        uses: actions/checkout@v3
+      - id: read-cicd-local-env
+        name: Read CICD local library
+        run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
+        if: success()
+      - id: restore-core
+        name: Restore Core Cache
+        uses: ./.github/actions/restore-core
+        with:
+          cache_metadata: ${{ needs.build-core-job.outputs.cache_metadata }}
+        if: success()
+      - id: build-dotcms-image
+        name: Build DotCMS Docker image
+        uses: ./.github/actions/build-docker-image
+        with:
+          build_id: ${{ env.BUILD_ID }}
+          image_name: dotcms:${{ env.BUILD_HASH }}
+      - id: run-postman-tests
+        name: Run Postman Tests
+        uses: ./.github/actions/run-postman-tests
+        with:
+          built_image_name: ${{ steps.build-dotcms-image.outputs.built_image_name }}
+          license_key: ${{ secrets.DOTCMS_LICENSE }}
+          tests: ${{ needs.build-core-job.outputs.commit_message }}
+      - id: postman-tests-comment
+        name: Postman Test Comment
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        with:
+          files: ${{ steps.run-postman-tests.outputs.tests_results_location }}/*.xml
+          check_name: 'Postman Tests Report'
+        if: always() && steps.run-postman-tests.outputs.tests_results_skip_report != 'true'
+      - id: publish-postman-tests
+        name: Publish postman tests to Testmo
+        uses: ./.github/actions/testmo-wrapper
+        with:
+          operation: submit
+          github_sha: ${{ env.BUILD_HASH }}
+          build_id: ${{ env.BUILD_ID }}
+          testmo_token: ${{ secrets.TESTMO_TOKEN }}
+          testmo_project_id: 1
+          test_type: postman
+          tests_results_location: ${{ steps.run-postman-tests.outputs.tests_results_location }}/*.xml
+          debug: true
+        if: always() && steps.run-postman-tests.outputs.tests_results_skip_report != 'true'
+      - id: github-status
+        name: Send Github Status
+        uses: ./.github/actions/github-status
+        with:
+          test_type: postman
+          test_results_status: ${{ steps.run-postman-tests.outputs.tests_results_status }}
+          pull_request: ${{ github.event.number }}
+          github_user: ${{ env.GITHUB_USER }}
+          cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+          tests_report_url: ${{ steps.publish-postman-tests.outputs.tests_report_url }}
+        if: always() && steps.publish-postman-tests.outputs.tests_report_url != ''
+  test-results-handler-job:
+    name: Tests results handler
+    runs-on: ubuntu-latest
+    needs: [run-unit-tests-job, run-integration-tests-job, run-postman-tests-job, integration-tests-complete-job]
+    if: always() && (needs.run-unit-tests-job.outputs.tests_results_report_url != '' || needs.run-integration-tests-job.outputs.postgres_tests_results_report_url != '' || needs.run-integration-tests-job.outputs.mssql_tests_results_report_url != '' || needs.run-postman-tests-job.outputs.tests_results_report_url != '')
+    steps:
+      - id: fetch-core
+        name: Fetch Core Repo
+        uses: actions/checkout@v3
+      - id: tests-status-aggregator
+        name: Tests status aggregator
+        uses: ./.github/actions/tests-status-aggregator
+        with:
+          unit_tests_results_status: ${{ needs.run-unit-tests-job.outputs.tests_results_status }}
+          unit_tests_results_skip_report: ${{ needs.run-unit-tests-job.outputs.tests_results_skip_report }}
+          unit_tests_results_report_url: ${{ needs.run-unit-tests-job.outputs.tests_results_report_url }}
+          integration_postgres_tests_results_status: ${{ needs.run-integration-tests-job.outputs.postgres_tests_results_status }}
+          integration_postgres_tests_results_skip_report: ${{ needs.run-integration-tests-job.outputs.postgres_tests_results_skip_report }}
+          integration_postgres_tests_results_report_url: ${{ needs.run-integration-tests-job.outputs.postgres_tests_results_report_url }}
+          integration_mssql_tests_results_status: ${{ needs.run-integration-tests-job.outputs.mssql_tests_results_status }}
+          integration_mssql_tests_results_skip_report: ${{ needs.run-integration-tests-job.outputs.mssql_tests_results_skip_report }}
+          integration_mssql_tests_results_report_url: ${{ needs.run-integration-tests-job.outputs.mssql_tests_results_report_url }}
+          postman_tests_results_status: ${{ needs.run-postman-tests-job.outputs.tests_results_status }}
+          postman_tests_results_skip_report: ${{ needs.run-postman-tests-job.outputs.tests_results_skip_report }}
+          postman_tests_results_report_url: ${{ needs.run-postman-tests-job.outputs.tests_results_report_url }}
+      - id: tests-results-slack
+        name: Tests results Slack notification
+        if: steps.tests-status-aggregator.outputs.status != ''
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.CORE_SLACK_WEBHOOK }}
+          SLACK_USERNAME: dotBot
+          SLACK_ICON: https://avatars.slack-edge.com/2020-09-21/1362682893351_5b474f175640cf5f5912_72.png
+          SLACK_COLOR: ${{ steps.tests-status-aggregator.outputs.color }}
+          SLACK_TITLE: ${{ steps.tests-status-aggregator.outputs.status }}
+          SLACK_MESSAGE: ${{ steps.tests-status-aggregator.outputs.message }}
+          SLACK_FOOTER: ${{ env.PULL_REQUEST_URL }}

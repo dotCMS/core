@@ -40,7 +40,6 @@ const IT_FOLDERS = [
 ]
 
 const projectRoot = core.getInput('project_root')
-const debug = core.getBooleanInput('debug')
 const worskpaceFolder = path.dirname(projectRoot)
 
 /**
@@ -74,20 +73,20 @@ const getValue = (propertyMap: Map<string, string>, key: string): string => prop
 /**
  * Prepares by creating necessary folders and copying files.
  */
-const prepareTests = () => {
+const prepareTests = async () => {
   core.info('Preparing integration tests')
-  IT_FOLDERS.forEach(folder => {
+  for (const folder of IT_FOLDERS) {
     const itFolder = path.join(worskpaceFolder, folder)
     core.info(`Creating IT folder ${itFolder}`)
     fs.mkdirSync(itFolder, {recursive: true})
-  })
+  }
 
-  TEST_RESOURCES.forEach(res => {
+  for (const res of TEST_RESOURCES) {
     const source = path.join(projectRoot, SOURCE_TEST_RESOURCES_FOLDER, res)
     const dest = path.join(projectRoot, TARGET_TEST_RESOURCES_FOLDER, res)
     core.info(`Copying resource ${source} to ${dest}`)
     fs.copyFileSync(source, dest)
-  })
+  }
 }
 
 /**
@@ -106,10 +105,11 @@ const overrideProperties = async (propertyMap: Map<string, string>) => {
       await exec.exec('sed', ['-i', `s,${prop.original},${prop.replacement},g`, file.file])
     }
 
-    if (debug) {
-      core.info(`Reviewing changes for ${file.file}`)
-      await exec.exec('cat', [file.file])
-    }
+    core.info(`
+    ##################################
+    Reviewing changes for ${file.file}
+    ##################################`)
+    await exec.exec('cat', [file.file])
   }
 }
 
@@ -123,12 +123,12 @@ const appendProperties = (propertyMap: Map<string, string>) => {
   const appends = getAppends(propertyMap)
   core.info(`Detected appends ${JSON.stringify(appends, null, 2)}`)
 
-  appends.files.forEach(file => {
+  for (const file of appends.files) {
     core.info(`Appending properties to ${file.file}`)
     const line = file.lines.join('\n')
     core.info(`Appeding properties:\n ${line}`)
     fs.appendFileSync(file.file, line, {encoding: 'utf8', flag: 'a+', mode: 0o666})
-  })
+  }
 }
 
 /**
@@ -184,7 +184,7 @@ const getOverrides = (propertyMap: Map<string, string>): OverrideProperties => {
           },
           {
             original: '^ES_HOSTNAME=.*$',
-            replacement: 'ES_HOSTNAME=127.0.0.1'
+            replacement: 'ES_HOSTNAME=localhost'
           }
         ]
       },
@@ -259,8 +259,11 @@ const getAppends = (propertyMap: Map<string, string>): AppendProperties => {
           `path.data: ${esDataFolder}`,
           `path.repo: ${esDataFolder}/essnapshot/snapshots`,
           `path.logs: ${logsFolder}`,
+          '# http.port: 9200',
+          '# transport.tcp.port: 9309',
           'http.enabled: false',
           'http.cors.enabled: false',
+          '# http.host: localhost',
           'cluster.routing.allocation.disk.threshold_enabled: false'
         ]
       }
@@ -277,6 +280,5 @@ const prepareLicense = async () => {
   const licenseFile = path.join(licensePath, 'license.dat')
   core.info(`Adding license to ${licenseFile}`)
   fs.writeFileSync(licenseFile, licenseKey, {encoding: 'utf8', flag: 'a+', mode: 0o777})
-  await exec.exec('cat', [licenseFile])
   await exec.exec('ls', ['-las', licenseFile])
 }

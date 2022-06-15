@@ -85,7 +85,7 @@ const resolveParams = (cmd: Command) => {
     return
   }
 
-  core.info(`Found tests to run: "${tests}"`)
+  core.info(`Commit message found: "${tests}"`)
 
   tests.split('\n').forEach(l => {
     const line = l.trim()

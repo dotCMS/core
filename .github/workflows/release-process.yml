@@ -91,7 +91,7 @@ jobs:
           dry_run: ${{ env.DRY_RUN }}
         if: success()
       - name: Slack Notification
-        uses: rtCamp/action-slack-notify@master
+        uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
           SLACK_USERNAME: dotBot

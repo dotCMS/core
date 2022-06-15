@@ -65,7 +65,7 @@ const resolveStastusLabel = (testType: string, dbType: string): string => {
     case 'integration':
       return `[Integration tests results] - [${dbType}]`
     case 'postman':
-      return `[Curl tests results] - [${dbType}]`
+      return '[Postman tests results]'
     default:
       return ''
   }
@@ -131,7 +131,6 @@ const getPullRequest = async (pullRequestUrl: string, creds: string): Promise<Re
     method: 'GET',
     headers: headers(creds)
   })
-  core.info(`Got response:\n${JSON.stringify(response.body, null, 2)}`)
   return response
 }
 

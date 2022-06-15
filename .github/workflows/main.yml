@@ -126,6 +126,7 @@ jobs:
         env:
           SLACK_WEBHOOK: ${{ secrets.UI_SLACK_WEBHOOK }}
           SLACK_USERNAME: dotBot
+          SLACK_ICON: https://avatars.slack-edge.com/2020-09-21/1362682893351_5b474f175640cf5f5912_72.png
           SLACK_COLOR: ${{ steps.test_run.outputs.color }}
           SLACK_TITLE: "Report: (${{ steps.test_run.outputs.status }})"
           SLACK_MESSAGE: ${{ steps.persist_results.outputs.message }}
