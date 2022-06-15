@@ -3,6 +3,10 @@ name: 'Build Core'
 description: 'Builds DotCMS Core project'
 author: 'victoralfaro-dotcms'
 inputs:
+  project_root:
+    description: 'Project root'
+    required: true
+    default: ${{ github.WORKSPACE }}
   build_env:
     description: 'Build environment to use'
     type: choice

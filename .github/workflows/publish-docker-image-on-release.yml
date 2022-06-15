@@ -75,7 +75,7 @@ jobs:
         if: env.jobRun == 'true'
       - name: Slack Notification
         if: success() && env.jobRun == 'true' 
-        uses: rtCamp/action-slack-notify@master
+        uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.DEVELOPERS_SLACK_WEBHOOK }}
           SLACK_USERNAME: dotBot

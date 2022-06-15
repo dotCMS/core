@@ -3,14 +3,12 @@ version: "3.7"
 services:
 
   database:
-    image: "postgres:11-alpine"
+    image: postgres:11-alpine
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: dotcms
+      POSTGRES_USER:
+      POSTGRES_PASSWORD:
+      POSTGRES_DB:
     ports:
       - "5432:5432"
     tmpfs:
       - /var/lib/postgresql/data:rw
-    volumes:
-      - ./setup/db/postgres/init-scripts:/docker-entrypoint-initdb.d/
