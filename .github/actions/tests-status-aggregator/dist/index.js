@@ -97,8 +97,12 @@ const aggregate = () => {
             status = FAILED;
             color = '#ff2400';
         }
+        let emoji = testsStatus.status === 'SUCCESS' ? ':sunny: ' : ':thunder_cloud_and_rain: ';
+        if (!testsStatus.reportUrl) {
+            emoji = '';
+        }
         const reportUrl = testsStatus.reportUrl || 'Could not resolve report URL';
-        messages.push(`${typeLabels[type]}: ${reportUrl}`);
+        messages.push(`${emoji}${typeLabels[type]}: ${reportUrl}`);
     }
     return {
         status: `Tests status: ${status}`,

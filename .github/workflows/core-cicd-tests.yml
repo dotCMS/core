@@ -17,10 +17,14 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - id: read-cicd-local-env
+        name: Read CICD local library
+        run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
       - id: module-matcher
         name: Module Matcher
         uses: ./.github/actions/module-matcher
         with:
+          build_id: ${{ env.BUILD_ID }}
           current: core
   build-core-job:
     name: Build Core

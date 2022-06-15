@@ -20,7 +20,7 @@ const run = () => {
     .then(results => {
       core.info(`Postman test results:\n${JSON.stringify(results)}`)
       core.setOutput('tests_results_status', results.testsResultsStatus)
-      core.setOutput('tests_results_skip_report', results.testsResultsStatus)
+      core.setOutput('tests_results_skip_report', results.skipResultsReport)
       if (results.testsResultsStatus === 'FAILED') {
         core.setFailed('Postman tests failed')
       }

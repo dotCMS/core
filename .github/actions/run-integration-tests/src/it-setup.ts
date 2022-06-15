@@ -97,7 +97,7 @@ const prepareTests = async () => {
 const overrideProperties = async (propertyMap: Map<string, string>) => {
   core.info('Overriding properties')
   const overrides = getOverrides(propertyMap)
-  core.info(`Detected overrides ${JSON.stringify(overrides, null, 2)}`)
+  //core.info(`Detected overrides ${JSON.stringify(overrides, null, 2)}`)
 
   for (const file of overrides.files) {
     core.info(`Overriding properties at ${file.file}`)
@@ -105,11 +105,11 @@ const overrideProperties = async (propertyMap: Map<string, string>) => {
       await exec.exec('sed', ['-i', `s,${prop.original},${prop.replacement},g`, file.file])
     }
 
-    core.info(`
-    ##################################
-    Reviewing changes for ${file.file}
-    ##################################`)
-    await exec.exec('cat', [file.file])
+    // core.info(`
+    // ##################################
+    // Reviewing changes for ${file.file}
+    // ##################################`)
+    // await exec.exec('cat', [file.file])
   }
 }
 
@@ -121,7 +121,7 @@ const overrideProperties = async (propertyMap: Map<string, string>) => {
 const appendProperties = (propertyMap: Map<string, string>) => {
   core.info('Adding properties')
   const appends = getAppends(propertyMap)
-  core.info(`Detected appends ${JSON.stringify(appends, null, 2)}`)
+  //core.info(`Detected appends ${JSON.stringify(appends, null, 2)}`)
 
   for (const file of appends.files) {
     core.info(`Appending properties to ${file.file}`)

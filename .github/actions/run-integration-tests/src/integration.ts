@@ -241,7 +241,7 @@ const execCmd = async (cmd: Command): Promise<number> => {
     message += `\ncwd: ${cmd.workingDir}`
   }
   if (cmd.env) {
-    message += `env: ${JSON.stringify(cmd.env, null, 2)}`
+    message += `\nenv: ${JSON.stringify(cmd.env, null, 2)}`
   }
 
   core.info(message)
