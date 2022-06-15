@@ -79,6 +79,10 @@ dot-toolbar-notifications {
 
 .toolbar__logo--whitelabel {
     @extend #logo;
+    background-size: contain;
+    background-position: center;
+    width: 100%;
+    height: 100%;
 }
 
 .toolbar__logo-bg {
@@ -103,6 +107,10 @@ dot-toolbar-notifications {
     justify-content: center;
     position: relative;
     width: 130px;
+}
+
+.toolbar__logo-wrapper--whitelabel {
+    padding: $spacing-1 $spacing-1 $spacing-1 0;
 }
 
 .toolbar__sep {
