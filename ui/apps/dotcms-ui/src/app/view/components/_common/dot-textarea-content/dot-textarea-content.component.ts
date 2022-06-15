@@ -11,6 +11,7 @@ import {
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 import { SelectItem } from 'primeng/api';
+import { MonacoEditorConstructionOptions } from '@materia-ui/ngx-monaco-editor/lib/interfaces';
 
 @Component({
     selector: 'dot-textarea-content',
@@ -62,7 +63,7 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
     selectOptions: SelectItem[] = [];
     selected: string;
     styles: Record<string, unknown> | string;
-    editorOptions = {
+    editorOptions: MonacoEditorConstructionOptions = {
         theme: 'vs-light',
         minimap: {
             enabled: false
