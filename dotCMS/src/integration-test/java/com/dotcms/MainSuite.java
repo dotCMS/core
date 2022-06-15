@@ -176,7 +176,7 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
-        /*PublishAuditAPITest.class,
+        PublishAuditAPITest.class,
         FolderCacheImplIntegrationTest.class,
         StaticPublisherIntegrationTest.class,
         com.dotcms.publishing.PublisherAPIImplTest.class,
@@ -295,9 +295,9 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.CorsFilterTest.class,
         com.dotcms.rest.elasticsearch.ESContentResourcePortletTest.class,
         com.dotcms.filters.VanityUrlFilterTest.class,
-        com.dotcms.vanityurl.business.VanityUrlAPITest.class,*/
+        com.dotcms.vanityurl.business.VanityUrlAPITest.class,
 
-        com.dotmarketing.portlets.fileassets.business.FileAssetAPITest.class,
+        /*com.dotmarketing.portlets.fileassets.business.FileAssetAPITest.class,
         com.dotmarketing.portlets.languagesmanager.business.LanguageAPITest.class,
         com.dotmarketing.portlets.languagesmanager.business.LanguageFactoryIntegrationTest.class,
         com.dotmarketing.portlets.linkchecker.business.LinkCheckerAPITest.class,
@@ -312,11 +312,11 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.contentlet.transform.ContentletTransformerTest.class,
         com.dotmarketing.portlets.contentlet.ajax.ContentletAjaxTest.class,
         com.dotmarketing.portlets.workflows.business.SaveContentDraftActionletTest.class,
-        com.dotmarketing.portlets.workflows.business.WorkflowFactoryTest.class
+        com.dotmarketing.portlets.workflows.business.WorkflowFactoryTest.class*/
 
 
 
-        /*,
+        ,
         com.dotmarketing.portlets.workflows.business.SaveContentActionletTest.class,
         com.dotmarketing.portlets.workflows.business.WorkflowAPIMultiLanguageTest.class,
         com.dotmarketing.portlets.workflows.business.WorkflowAPITest.class,
@@ -325,10 +325,10 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.workflows.actionlet.FourEyeApproverActionletTest.class,
         com.dotmarketing.portlets.workflows.actionlet.SaveContentActionletTest.class,
         com.dotmarketing.portlets.workflows.actionlet.SaveContentActionletWithTagsTest.class,
-        com.dotmarketing.portlets.workflows.actionlet.CopyActionletTest.class*/,
+        com.dotmarketing.portlets.workflows.actionlet.CopyActionletTest.class,
 
         //DependencyBundle work commented this group
-        /*com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletTest.class,
+        com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletTest.class,
         com.dotmarketing.portlets.personas.business.PersonaAPITest.class,
         com.dotmarketing.portlets.personas.business.DeleteMultiTreeUsedPersonaTagJobTest.class,
         com.dotmarketing.portlets.links.business.MenuLinkAPITest.class,
@@ -568,7 +568,7 @@ import org.junit.runners.Suite.SuiteClasses;
         XStreamFactoryTest.class,
         ContentWorkflowHandlerTest.class,
         Task220512UpdateNoHTMLRegexValueTest.class,
-        MetadataDelegateTest.class*/
+        MetadataDelegateTest.class
 })
 public class MainSuite {
 
