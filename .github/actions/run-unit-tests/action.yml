@@ -14,15 +14,13 @@ inputs:
     description: 'Comma delimited list with the specific prefix: runt-tests:'
     required: false
 outputs:
-  tests_run_exit_code:
-    description: 'Test run exit code'
   tests_results_status:
     description: 'Tests results status'
   tests_results_location:
     description: 'Unit tests results location'
-  tests_report_location:
+  tests_results_report_location:
     description: 'Unit tests report location'
-  skip_results_report:
+  tests_results_skip_report:
     description: 'Flag indicating if results report is skipped'
 runs:
   using: 'node16'

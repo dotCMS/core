@@ -31,10 +31,10 @@ inputs:
     description: 'Core root folder'
     required: true
     default: ${{ github.WORKSPACE }}
-  tests_run_exit_code:
-    description: 'Test run exit code'
+  tests_results_status:
+    description: 'Test results status'
     required: true
-  tests_report_location:
+  tests_results_report_location:
     description: 'Unit tests report location'
     required: true
   cicd_github_token:
