@@ -79,7 +79,7 @@ describe('PushPublishService', () => {
             expect(items).toEqual(response.splice(1));
         });
 
-        const req = httpMock.expectOne('/api/environment/loadenvironments/roleId/1234/name=0');
+        const req = httpMock.expectOne('/api/environment/loadenvironments/roleId/1234');
         expect(req.request.method).toBe('GET');
         req.flush(response);
     });
@@ -95,7 +95,7 @@ describe('PushPublishService', () => {
 
         const req = httpMock.expectOne(() => true);
         const currentDateStr = new Date().toISOString().split('T')[0];
-        const currentTimeStr = format(new Date(), "HH-mm");
+        const currentTimeStr = format(new Date(), 'HH-mm');
 
         expect(
             req.request.url.indexOf(
@@ -112,7 +112,7 @@ describe('PushPublishService', () => {
     it('should do a post request and push publish Remove an asset', () => {
         const formValue: DotPushPublishData = { ...mockFormValue, publishDate: undefined };
         const currentDateStr = new Date().toISOString().split('T')[0];
-        const currentTimeStr = format(new Date(), "HH-mm");
+        const currentTimeStr = format(new Date(), 'HH-mm');
 
         pushPublishService
             .pushPublishContent('1234567890', formValue, false)
@@ -130,7 +130,7 @@ describe('PushPublishService', () => {
     it('should do a post request and push publish an asset with no filter', () => {
         const formValue: DotPushPublishData = { ...mockFormValue, filterKey: null };
         const currentDateStr = new Date().toISOString().split('T')[0];
-        const currentTimeStr = format(new Date(), "HH-mm");
+        const currentTimeStr = format(new Date(), 'HH-mm');
 
         pushPublishService
             .pushPublishContent('1234567890', formValue, false)

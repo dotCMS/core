@@ -39,7 +39,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api//v1/configuration",
+							"raw": "{{serverURL}}/api/v1/configuration",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -149,7 +149,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api//v1/configuration",
+							"raw": "{{serverURL}}/api/v1/configuration",
 							"host": [
 								"{{serverURL}}"
 							],

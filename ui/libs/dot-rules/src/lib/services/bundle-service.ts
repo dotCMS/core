@@ -109,7 +109,7 @@ export class BundleService {
             mergeMap((user: IUser) => {
                 return this.coreWebService
                     .request({
-                        url: `${this._pushEnvironementsUrl}/${user.roleId}/?name=0`
+                        url: `${this._pushEnvironementsUrl}/${user.roleId}/`
                     })
                     .pipe(map(BundleService.fromServerEnvironmentTransformFn));
             })

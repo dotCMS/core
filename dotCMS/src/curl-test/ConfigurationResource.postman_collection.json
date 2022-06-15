@@ -48,7 +48,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api//v1/configuration",
+					"raw": "{{serverURL}}/api/v1/configuration",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -120,7 +120,7 @@
 					"raw": "{ \n\t \"senderAndEmail\":\"broken-email\"\n}\n"
 				},
 				"url": {
-					"raw": "{{serverURL}}/api//v1/configuration/_validateCompanyEmail",
+					"raw": "{{serverURL}}/api/v1/configuration/_validateCompanyEmail",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -190,7 +190,7 @@
 					"raw": "{ \n\t \"senderAndEmail\":\"ok-email@dotcms.com\"\n}\n"
 				},
 				"url": {
-					"raw": "{{serverURL}}/api//v1/configuration/_validateCompanyEmail",
+					"raw": "{{serverURL}}/api/v1/configuration/_validateCompanyEmail",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -260,7 +260,7 @@
 					"raw": "{ \n\t \"senderAndEmail\":\" Sender Name <ok-email@dotcms.com>\"\n}\n"
 				},
 				"url": {
-					"raw": "{{serverURL}}/api//v1/configuration/_validateCompanyEmail",
+					"raw": "{{serverURL}}/api/v1/configuration/_validateCompanyEmail",
 					"host": [
 						"{{serverURL}}"
 					],
