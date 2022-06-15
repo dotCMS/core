@@ -1,4 +1,4 @@
-import { Observable, Subject, fromEvent, merge, of, forkJoin } from 'rxjs';
+import { Observable, Subject, fromEvent, merge, of } from 'rxjs';
 
 import { filter, takeUntil, pluck, take, tap, skip, catchError } from 'rxjs/operators';
 import { ActivatedRoute } from '@angular/router';
@@ -33,7 +33,6 @@ import {
 } from './services/dot-edit-content-html/models';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotContentTypeService } from '@services/dot-content-type';
 import { DotContainerStructure } from '@models/container/dot-container.model';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -66,7 +65,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     reorderMenuUrl = '';
     showOverlay = false;
     dotPageMode = DotPageMode;
-    contentPalletItems: DotCMSContentType[] = [];
+    allowedContent: string[] = null;
     isEditMode = false;
     paletteCollapsed = false;
     isEnterpriseLicense = false;
@@ -88,7 +87,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         private route: ActivatedRoute,
         private siteService: SiteService,
         private dotCustomEventHandlerService: DotCustomEventHandlerService,
-        private dotContentTypeService: DotContentTypeService,
         public dotEditContentHtmlService: DotEditContentHtmlService,
         public dotLoadingIndicatorService: DotLoadingIndicatorService,
         public sanitizer: DomSanitizer,
@@ -260,19 +258,13 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         this.dotEditContentHtmlService.removeContentletPlaceholder();
     }
 
-    private loadContentPallet(pageState: DotPageRenderState): void {
+    private setAllowedContent(pageState: DotPageRenderState): void {
         const CONTENT_HIDDEN_KEY = 'CONTENT_PALETTE_HIDDEN_CONTENT_TYPES';
-        forkJoin([
-            this.dotContentTypeService.getContentTypes(),
-            this.dotConfigurationService.getKeyAsList(CONTENT_HIDDEN_KEY)
-        ])
+        this.dotConfigurationService
+            .getKeyAsList(CONTENT_HIDDEN_KEY)
             .pipe(take(1))
             .subscribe((results) => {
-                this.contentPalletItems = this.getAllowedContentTypes(
-                    results[0],
-                    results[1],
-                    pageState
-                );
+                this.allowedContent = this.filterAllowedContentTypes(results, pageState);
             });
     }
 
@@ -457,7 +449,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
         if (this.shouldEditMode(pageState)) {
             if (this.isEnterpriseLicense) {
-                this.loadContentPallet(pageState);
+                this.setAllowedContent(pageState);
             }
             this.dotEditContentHtmlService.initEditMode(pageState, this.iframe);
             this.isEditMode = true;
@@ -544,11 +536,10 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             });
     }
 
-    private getAllowedContentTypes(
-        contentTypeList: DotCMSContentType[] = [],
+    private filterAllowedContentTypes(
         blackList: string[] = [],
         pageState: DotPageRenderState
-    ): DotCMSContentType[] {
+    ): string[] {
         const allowedContent = new Set();
         Object.values(pageState.containers).forEach((container) => {
             Object.values(container.containerStructures).forEach(
@@ -559,10 +550,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         });
         blackList.forEach((content) => allowedContent.delete(content.toLocaleLowerCase()));
 
-        return contentTypeList.filter(
-            (contentType) =>
-                allowedContent.has(contentType.variable.toLocaleLowerCase()) ||
-                contentType.baseType === 'WIDGET'
-        );
+        return [...allowedContent] as string[];
     }
 }

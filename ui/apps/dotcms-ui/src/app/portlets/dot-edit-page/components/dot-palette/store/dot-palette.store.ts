@@ -5,12 +5,14 @@ import { ESContent } from '@dotcms/app/shared/models/dot-es-content/dot-es-conte
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 import { ComponentStore } from '@ngrx/component-store';
 import { LazyLoadEvent } from 'primeng/api';
-import { Observable } from 'rxjs';
-import { map, take } from 'rxjs/operators';
+import { forkJoin, Observable } from 'rxjs';
+import { map, take, debounceTime } from 'rxjs/operators';
+import { DotContentTypeService } from '@services/dot-content-type';
 
 export interface DotPaletteState {
     contentlets: DotCMSContentlet[] | DotCMSContentType[];
     contentTypes: DotCMSContentType[];
+    allowedContent: string[];
     filter: string;
     languageId: string;
     totalRecords: number;
@@ -75,6 +77,10 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
         };
     });
 
+    readonly setAllowedContent = this.updater((state: DotPaletteState, data: string[]) => {
+        return { ...state, allowedContent: data };
+    });
+
     // EFFECTS
     readonly loadContentTypes = this.effect((data$: Observable<DotCMSContentType[]>) => {
         return data$.pipe(
@@ -98,6 +104,19 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
         );
     });
 
+    readonly filterContentTypes = this.effect((filterValue$: Observable<string>) => {
+        return filterValue$.pipe(
+            debounceTime(400),
+            map((value: string) => {
+                if (value.length >= 1 && value.length < 3) {
+                    return;
+                }
+                this.setFilter(value.trim());
+                this.getContenttypesData();
+            })
+        );
+    });
+
     readonly loadContentlets = this.effect((contentTypeVariable$: Observable<string>) => {
         return contentTypeVariable$.pipe(
             map((contentTypeVariable: string) => {
@@ -117,12 +136,14 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
     });
 
     constructor(
+        private dotContentTypeService: DotContentTypeService,
         public paginatorESService: DotESContentService,
         public paginationService: PaginatorService
     ) {
         super({
             contentlets: null,
             contentTypes: null,
+            allowedContent: null,
             filter: '',
             languageId: '1',
             totalRecords: 0,
@@ -169,6 +190,31 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                         this.setContentlets(response.jsonObjectView.contentlets);
                     });
             }
+        });
+    }
+
+    /**
+     * Request contenttypes data with filter params.
+     *
+     * @memberof DotPaletteStore
+     */
+    getContenttypesData(): void {
+        this.setLoading();
+        this.state$.pipe(take(1)).subscribe(({ filter, allowedContent }) => {
+            forkJoin([
+                this.dotContentTypeService.filterContentTypes(filter, allowedContent.join(',')),
+                this.dotContentTypeService.getContentTypes(filter, 40, 'WIDGET')
+            ])
+                .pipe(take(1))
+                .subscribe((results) => {
+                    // Merge both array and order them by modDate
+                    const contentTypes = [...results[0], ...results[1]].sort(
+                        (a, b) => b.modDate - a.modDate
+                    );
+                    this.setLoaded();
+                    // Set the first 50 items
+                    this.loadContentTypes(contentTypes.slice(0, 40));
+                });
         });
     }
 

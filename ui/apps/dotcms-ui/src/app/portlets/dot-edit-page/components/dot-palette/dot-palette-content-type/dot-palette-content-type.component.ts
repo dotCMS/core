@@ -22,6 +22,7 @@ export class DotPaletteContentTypeComponent implements OnChanges {
     @Input() items: DotCMSContentType[] = [];
 
     @Output() selected = new EventEmitter<string>();
+    @Output() filter = new EventEmitter<string>();
 
     itemsFiltered: DotCMSContentType[];
 
@@ -63,9 +64,7 @@ export class DotPaletteContentTypeComponent implements OnChanges {
      * @memberof DotPaletteContentTypeComponent
      */
     filterContentTypes(value: string): void {
-        this.itemsFiltered = this.items.filter((item) =>
-            item.name?.toLowerCase().includes(value.toLowerCase())
-        );
+        this.filter.emit(value);
     }
 
     /**

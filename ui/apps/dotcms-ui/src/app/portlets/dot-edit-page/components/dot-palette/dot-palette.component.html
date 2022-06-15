@@ -3,6 +3,7 @@
         <dot-palette-content-type
             #contentTypes
             (selected)="switchView($event)"
+            (filter)="filterContentTypes($event)"
             [items]="vm.contentTypes"
         ></dot-palette-content-type>
         <dot-palette-contentlets

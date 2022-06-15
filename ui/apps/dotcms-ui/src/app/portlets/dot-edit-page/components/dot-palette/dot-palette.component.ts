@@ -1,6 +1,5 @@
 import { animate, state, style, transition, trigger, AnimationEvent } from '@angular/animations';
 import { Component, Input, OnInit, ViewChild } from '@angular/core';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { LazyLoadEvent } from 'primeng/api';
 import { Observable } from 'rxjs';
 import { DotPaletteContentTypeComponent } from './dot-palette-content-type/dot-palette-content-type.component';
@@ -31,10 +30,8 @@ import { DotPaletteStore, DotPaletteState } from './store/dot-palette.store';
     ]
 })
 export class DotPaletteComponent implements OnInit {
-    @Input() set items(items: DotCMSContentType[]) {
-        if (items != null && items.length) {
-            this.store.loadContentTypes(items);
-        }
+    @Input() set allowedContent(items: string[]) {
+        this.store.setAllowedContent(items);
     }
     @Input() languageId: string;
     vm$: Observable<DotPaletteState> = this.store.vm$;
@@ -46,6 +43,7 @@ export class DotPaletteComponent implements OnInit {
 
     ngOnInit(): void {
         this.store.setLanguageId(this.languageId);
+        this.store.getContenttypesData();
     }
 
     /**
@@ -66,6 +64,10 @@ export class DotPaletteComponent implements OnInit {
      */
     filterContentlets(value: string): void {
         this.store.filterContentlets(value);
+    }
+
+    filterContentTypes(value: string): void {
+        this.store.filterContentTypes(value);
     }
 
     /**

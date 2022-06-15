@@ -28,10 +28,12 @@ export class DotContentTypeService {
      * @returns {Observable<DotCMSContentType[]>}
      * @memberof DotContentTypeService
      */
-    getContentTypes(filter = '', page = 40): Observable<DotCMSContentType[]> {
+    getContentTypes(filter = '', page = 40, type = ''): Observable<DotCMSContentType[]> {
         return this.coreWebService
             .requestView({
-                url: `/api/v1/contenttype?filter=${filter}&orderby=modDate&direction=DESC&per_page=${page}`
+                url: `/api/v1/contenttype?filter=${filter}&orderby=modDate&direction=DESC&per_page=${page}${
+                    type ? `&type=${type}` : ''
+                }`
             })
             .pipe(pluck('entity'));
     }
@@ -48,6 +50,34 @@ export class DotContentTypeService {
                 filter((structure: StructureTypeView) => !this.isRecentContentType(structure))
             )
             .pipe(toArray());
+    }
+
+    /**
+     *
+     *
+     * @param {string} filter
+     * @return {*}  {Observable<StructureTypeView[]>}
+     * @memberof DotContentTypeService
+     */
+    filterContentTypes(
+        filter: string = '',
+        allowedTypes: string = ''
+    ): Observable<DotCMSContentType[]> {
+        return this.coreWebService
+            .requestView({
+                body: {
+                    filter: {
+                        types: allowedTypes,
+                        query: filter
+                    },
+                    orderBy: 'name',
+                    direction: 'ASC',
+                    perPage: 40
+                },
+                method: 'POST',
+                url: `/api/v1/contenttype/_filter`
+            })
+            .pipe(pluck('entity'));
     }
 
     /**
