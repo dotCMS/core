@@ -98,14 +98,12 @@ export const BasicActions = () => ({
             primary: [
                 {
                     label: 'Save',
-                    command: () => {
-                        //console.log(e);
-                    }
+                    // eslint-disable-next-line @typescript-eslint/no-empty-function
+                    command: () => {}
                 }
             ],
-            cancel: () => {
-                //console.log('cancel');
-            }
+            // eslint-disable-next-line @typescript-eslint/no-empty-function
+            cancel: () => {}
         }
     },
     template: BasicActionsTemplate
@@ -131,26 +129,22 @@ export const MultipleActions = () => ({
             primary: [
                 {
                     label: 'Publish',
-                    command: () => {
-                        //console.log(e);
-                    }
+                    // eslint-disable-next-line @typescript-eslint/no-empty-function
+                    command: () => {}
                 },
                 {
                     label: 'Lock',
-                    command: () => {
-                        //console.log(e);
-                    }
+                    // eslint-disable-next-line @typescript-eslint/no-empty-function
+                    command: () => {}
                 },
                 {
                     label: 'Execute',
-                    command: () => {
-                        //console.log(e);
-                    }
+                    // eslint-disable-next-line @typescript-eslint/no-empty-function
+                    command: () => {}
                 }
             ],
-            cancel: () => {
-                //console.log('cancel');
-            }
+            // eslint-disable-next-line @typescript-eslint/no-empty-function
+            cancel: () => {}
         }
     },
     template: MultipleActionsTemplate
@@ -185,14 +179,12 @@ export const ExtraActions = () => ({
             primary: [
                 {
                     label: 'Action',
-                    command: () => {
-                        //console.log(e);
-                    }
+                    // eslint-disable-next-line @typescript-eslint/no-empty-function
+                    command: () => {}
                 }
             ],
-            cancel: () => {
-                //console.log('cancel');
-            }
+            // eslint-disable-next-line @typescript-eslint/no-empty-function
+            cancel: () => {}
         }
     },
     template: ExtraActionsTemplate
@@ -222,14 +214,12 @@ export const WithTabs = () => ({
             primary: [
                 {
                     label: 'Action',
-                    command: () => {
-                        //console.log(e);
-                    }
+                    // eslint-disable-next-line @typescript-eslint/no-empty-function
+                    command: () => {}
                 }
             ],
-            cancel: () => {
-                //console.log('cancel');
-            }
+            // eslint-disable-next-line @typescript-eslint/no-empty-function
+            cancel: () => {}
         }
     },
     template: WithTabsTemplate
