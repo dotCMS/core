@@ -22,7 +22,7 @@ services:
       - 9200:9200
       - 9600:9600
     volumes:
-      - esdata
+      - esdata:/usr/share/elasticsearch/data
     networks:
       - es_net
 
@@ -41,7 +41,7 @@ services:
       - elasticsearch
       - db
     volumes:
-      - cms-shared
+      - cms-shared:/data/shared
       #- {license_local_path}/license.zip:/data/shared/assets/license.zip
     networks:
       - db_net
@@ -58,6 +58,6 @@ services:
         "POSTGRES_PASSWORD": 'password'
         "POSTGRES_DB": 'dotcms'
     volumes:
-      - dbdata
+      - dbdata:/var/lib/postgresql/data
     networks:
       - db_net
