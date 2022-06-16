@@ -3,6 +3,8 @@ package com.dotmarketing.util.starter;
 import static java.io.File.separator;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.content.business.json.ContentletJsonAPI;
+import com.dotcms.content.business.json.ContentletJsonAPIImpl;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
@@ -40,6 +42,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.TrashUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.ZipUtil;
+import com.dotmarketing.util.json.JSONException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.ejb.ImageLocalManagerUtil;
 import com.liferay.portal.model.Company;
@@ -55,6 +59,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.zip.ZipOutputStream;
 import javax.servlet.ServletException;
 import org.apache.commons.io.FileUtils;
@@ -229,9 +234,13 @@ public class ExportStarterUtil {
                                 .createTemplateTransformer(dc.loadObjectResults())
                                 .asList();
                     } else if (Contentlet.class.equals(clazz)) {
-                        _list = TransformerLocator
+
+                        final ContentletJsonAPI contentletJsonAPI = APILocator.getContentletJsonAPI();
+                        final List<Contentlet> contentlets = TransformerLocator
                                 .createContentletTransformer(dc.loadObjectResults())
                                 .asList();
+                        _list = contentlets.stream().map(contentlet ->
+                                contentletJsonAPI.toImmutable(contentlet)).collect(Collectors.toList());
                     } else if (Category.class.equals(clazz)) {
                         _list = TransformerLocator
                                 .createCategoryTransformer(dc.loadObjectResults())

@@ -2,6 +2,7 @@ package com.dotcms.content.business.json;
 
 import com.dotcms.content.model.Contentlet;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
@@ -10,6 +11,11 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.jonpeterson.jackson.module.versioning.VersioningModule;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -55,6 +61,17 @@ public class ContentletJsonHelper {
      */
     public Contentlet immutableFromJson(final String json) throws JsonProcessingException {
         return objectMapper.get().readValue(json, Contentlet.class);
+    }
+
+    /**
+     * Loads a list of {@link Contentlet} from a json file
+     * @param file
+     * @return {@link List<Contentlet>}
+     * @throws JsonProcessingException
+     */
+    public List<Contentlet> readContentletListFromJsonFile(final File file) throws IOException {
+        final BufferedInputStream input = new BufferedInputStream(Files.newInputStream(file.toPath()));
+        return objectMapper.get().readValue(input, new TypeReference<>(){});
     }
 
     /**

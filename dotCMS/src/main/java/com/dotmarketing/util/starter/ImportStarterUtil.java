@@ -4,6 +4,7 @@ import static com.dotcms.util.ConversionUtils.toLong;
 import static com.dotmarketing.util.ConfigUtils.getDeclaredDefaultLanguage;
 
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -35,16 +36,19 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.ContainerVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.links.model.LinkVersionInfo;
 import com.dotmarketing.portlets.rules.util.RulesImportExportObject;
 import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
 import com.dotmarketing.portlets.workflows.model.WorkFlowTaskFiles;
 import com.dotmarketing.portlets.workflows.model.WorkflowComment;
 import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
@@ -53,6 +57,7 @@ import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
 import com.dotmarketing.startup.runalways.Task00004LoadStarter;
 import com.dotmarketing.tag.model.Tag;
+import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Parameter;
@@ -175,7 +180,7 @@ public class ImportStarterUtil {
         entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(Relationship.class.getCanonicalName() + "_").setType(
                 new TypeReference<List<Relationship>>(){}).build());
         entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(Contentlet.class.getCanonicalName() + "_").setType(
-                new TypeReference<List<Contentlet>>(){}).build());
+                new TypeReference<List<com.dotcms.content.model.Contentlet>>(){}).build());
         entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(Template.class.getCanonicalName() + "_").setType(
                 new TypeReference<List<Template>>(){}).build());
         entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(Link.class.getCanonicalName() + "_").setType(
@@ -201,6 +206,15 @@ public class ImportStarterUtil {
                 ContentletVersionInfo.class.getCanonicalName() + "_").setType(
                 new TypeReference<List<ContentletVersionInfo>>(){}).build());
         entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(
+                LinkVersionInfo.class.getCanonicalName() + "_").setType(
+                new TypeReference<List<LinkVersionInfo>>(){}).build());
+        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(
+                TemplateVersionInfo.class.getCanonicalName() + "_").setType(
+                new TypeReference<List<TemplateVersionInfo>>(){}).build());
+        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(
+                ContainerVersionInfo.class.getCanonicalName() + "_").setType(
+                new TypeReference<List<ContainerVersionInfo>>(){}).build());
+        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(
                 "RuleImportExportObject.json").setType(
                 RulesImportExportObject.class).build());
         entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(
@@ -220,13 +234,19 @@ public class ImportStarterUtil {
                 new TypeReference<List<Tag>>(){}).build());
         entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(
                 "Counter.json").setType(
-                "Counter").build());
+                new TypeReference<List>(){}).build());
         entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(
                 "Image.json").setType(
-                "Image").build());
+                new TypeReference<List<Image>>(){}).build());
         entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(
                 "Portlet.json").setType(
-                "Portlet").build());
+                new TypeReference<List>(){}).build());
+        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(
+                MultiTree.class.getCanonicalName() + "_").setType(
+                new TypeReference<List<MultiTree>>(){}).build());
+        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(
+                TagInode.class.getCanonicalName() + "_").setType(
+                new TypeReference<List<TagInode>>(){}).build());
     }
 
     /**
@@ -340,14 +360,15 @@ public class ImportStarterUtil {
         List<File> identifiers = contains(Identifier.class.getCanonicalName());
         // collecting all folder identifiers
         for (File ff : identifiers) {
-            List<Identifier> idents = BundlerUtil.jsonToObject(ff, new TypeReference<List<Identifier>>(){});
-            for (Identifier ident : idents) {
-                if (ident.getAssetType().equals("folder")) {
-                    folderIdents.add(ident);
-                }else {
-                    otherIdents.add(ident);
-                }
-            }
+            final List<Identifier> idents = BundlerUtil.jsonToObject(ff, new TypeReference<>() {});
+            folderIdents.addAll(
+                    idents.stream().filter(identifier -> identifier.getAssetType().equals("folder"))
+                            .collect(
+                                    Collectors.toList()));
+
+            otherIdents.addAll(idents.stream()
+                    .filter(identifier -> !identifier.getAssetType().equals("folder")).collect(
+                            Collectors.toList()));
         }
 
         // sorting folder identifiers by parent path in order to pass parent check
@@ -506,7 +527,7 @@ public class ImportStarterUtil {
     /**
      * This method takes a JSON file and will try to import it via Jackson and Hibernate.
      *
-     * @param f - File to be parsed and imported.
+     * @param file - File to be parsed and imported.
      * @param filter
      * @throws DotDataException
      * @throws HibernateException
@@ -518,8 +539,8 @@ public class ImportStarterUtil {
      * @throws InvocationTargetException
      * @throws IllegalAccessException
      */
-    private void doJSONFileImport(final File f, final Object type, final ObjectFilter filter) throws Exception {
-        if (f == null) {
+    private void doJSONFileImport(final File file, final Object type, final ObjectFilter filter) throws Exception {
+        if (file == null) {
             return;
         }
 
@@ -532,13 +553,13 @@ public class ImportStarterUtil {
 
 
         Pattern classNamePattern = Pattern.compile("_[0-9]{8}");
-        Logger.info(this, "**** Importing the file: " + f + " *****");
+        Logger.info(this, "**** Importing the file: " + file + " *****");
 
         /* if we have a multipart import file */
 
-        final String _className = classNamePattern.matcher(f.getName()).find()
-                ?  f.getName().substring(0, f.getName().lastIndexOf("_"))
-                :   f.getName().substring(0, f.getName().lastIndexOf("."));
+        final String _className = classNamePattern.matcher(file.getName()).find()
+                ?  file.getName().substring(0, file.getName().lastIndexOf("_"))
+                :   file.getName().substring(0, file.getName().lastIndexOf("."));
 
 
         if (_className.equals("Counter")) {
@@ -562,19 +583,24 @@ public class ImportStarterUtil {
         List l = new ArrayList();
         List all;
 
-        if (type instanceof TypeReference){
-            all = (List) BundlerUtil.jsonToObject(f, (TypeReference)type);
+        if (null != _importClass && _importClass.equals(Contentlet.class)){
+            l = getContentletList(file);
         } else{
-            all = (List) BundlerUtil.jsonToObject(f, (Class)type);
+            if (type instanceof TypeReference){
+                all = (List) BundlerUtil.jsonToObject(file, (TypeReference)type);
+            } else{
+                all = (List) BundlerUtil.jsonToObject(file, (Class)type);
+            }
+            if (filter != null) {
+                for (Object obj : all)
+                    if (filter.includeIt(obj))
+                        l.add(obj);
+            } else {
+                l = all;
+            }
         }
 
-        if (filter != null) {
-            for (Object obj : all)
-                if (filter.includeIt(obj))
-                    l.add(obj);
-        } else {
-            l = all;
-        }
+
 
 
         Logger.info(this, "Found :\t" + l.size() + " " + _className + "(s)");
@@ -897,6 +923,24 @@ public class ImportStarterUtil {
             }
         }
 
+    }
+
+    /**
+     * Populates a list of {@link Contentlet} given a JSON file
+     * @param file
+     * @return {@link List<Contentlet}
+     * @throws IOException
+     */
+    private List<Contentlet> getContentletList(final File file) throws IOException {
+        return ContentletJsonHelper.INSTANCE.get().readContentletListFromJsonFile(file).stream().map(
+                cont -> {
+                    try {
+                        return APILocator.getContentletJsonAPI().toMutableContentlet(cont);
+                    } catch (DotDataException | DotSecurityException e) {
+                        e.printStackTrace();
+                        return new Contentlet();
+                    }
+                }).collect(Collectors.toList());
     }
 
     private User loadUserFromIdOrEmail(final User u) throws DotDataException, DotSecurityException {
