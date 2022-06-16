@@ -264,11 +264,11 @@ describe('DotPaletteStore', () => {
                 filter,
                 allowedContent.join(',')
             );
-            expect(dotContentTypeService.getContentTypes).toHaveBeenCalledWith(
+            expect(dotContentTypeService.getContentTypes).toHaveBeenCalledWith({
                 filter,
-                40,
-                'WIDGET'
-            );
+                page: 40,
+                type: 'WIDGET'
+            });
         }));
 
         it('should not call filterContentTypes is filter values es shoter than 3 caracteres', fakeAsync(() => {

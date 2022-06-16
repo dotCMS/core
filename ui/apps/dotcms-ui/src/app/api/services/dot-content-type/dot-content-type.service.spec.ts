@@ -54,7 +54,7 @@ describe('DotContentletService', () => {
     });
 
     it('should call the BE with correct endpoint url and method for getContentTypes()', () => {
-        dotContentTypeService.getContentTypes().subscribe((contentTypes: DotCMSContentType[]) => {
+        dotContentTypeService.getContentTypes({}).subscribe((contentTypes: DotCMSContentType[]) => {
             expect(contentTypes).toEqual(responseData);
         });
         const req = httpMock.expectOne(

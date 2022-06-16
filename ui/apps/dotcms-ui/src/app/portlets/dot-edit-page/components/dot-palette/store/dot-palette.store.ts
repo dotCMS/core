@@ -204,7 +204,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
         this.state$.pipe(take(1)).subscribe(({ filter, allowedContent }) => {
             forkJoin([
                 this.dotContentTypeService.filterContentTypes(filter, allowedContent.join(',')),
-                this.dotContentTypeService.getContentTypes(filter, 40, 'WIDGET')
+                this.dotContentTypeService.getContentTypes({ filter, page: 40, type: 'WIDGET' })
             ])
                 .pipe(take(1))
                 .subscribe((results) => {
@@ -213,7 +213,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                         (a, b) => b.modDate - a.modDate
                     );
                     this.setLoaded();
-                    // Set the first 50 items
+                    // Set the first 40 items
                     this.setContentTypes(contentTypes.slice(0, 40));
                 });
         });
