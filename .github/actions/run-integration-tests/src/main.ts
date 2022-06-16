@@ -15,11 +15,10 @@ const run = () => {
     return
   }
 
+  const dbType = core.getInput('db_type')
   core.setOutput('tests_results_location', cmd.outputDir)
   core.setOutput('tests_results_report_location', cmd.reportDir)
   core.setOutput('ci_index', cmd.ciIndex)
-
-  const dbType = core.getInput('db_type')
 
   integration
     .runTests(cmd)

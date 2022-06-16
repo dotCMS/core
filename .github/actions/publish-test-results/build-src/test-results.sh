@@ -63,22 +63,14 @@ function persistResults {
   gitClone ${test_results_repo_url} ${branch} ${test_results_path}
   # Create results folder if ir does not exist and switch to it
   local results_folder=${test_results_path}/projects/${INPUT_TARGET_PROJECT}
-  if [[ ! -d ${results_folder} ]]; then
-    [[ "${DEBUG}" == 'true' ]] && echo "Creating ${results_folder}"
-    mkdir -p ${results_folder}
-  fi
+  [[ ! -d ${results_folder} ]] && executeCmd "mkdir -p ${results_folder}"
   cd ${results_folder}
 
   # Prepare who is pushing the changes
   gitConfig ${GITHUB_USER}
 
   # If no remote branch detected create one
-  if [[ ${remote_branch} != 1 ]]; then
-    [[ "${DEBUG}" == 'true' ]] && echo "Git command:
-      git checkout -b ${INPUT_BUILD_ID}
-    "
-    git checkout -b ${INPUT_BUILD_ID}
-  fi
+  [[ ${remote_branch} != 1 ]] && executeCmd "git checkout -b ${INPUT_BUILD_ID}"
 
   # Clean test results folders by removing contents and committing them
   cleanTestFolders
@@ -89,30 +81,23 @@ function persistResults {
   addResults ./current
 
   # Check for something new to commit
-  [[ "${DEBUG}" == 'true' ]] && git branch && git status && echo
-  git status | grep "nothing to commit, working tree clean"
-  git_result=$?
+  [[ "${DEBUG}" == 'true' ]] \
+    && executeCmd "git branch" \
+    && executeCmd "git status"
 
+  executeCmd "git status | grep \"nothing to commit, working tree clean\""
   # If there are changes then start the fun part
-  if [[ ${git_result} != 0 ]]; then
+  if [[ ${cmd_result} != 0 ]]; then
     # Add everything
-    [[ "${DEBUG}" == 'true' ]] && echo "Git command:
-      git add .
-    "
-    git add .
-    git_result=$?
-    if [[ ${git_result} != 0 ]]; then
+    executeCmd "git add ."
+    if [[ ${cmd_result} != 0 ]]; then
       echo "Error adding to git for ${INPUT_BUILD_HASH} at ${INPUT_BUILD_ID}, error code: ${git_result}"
       exit 1
     fi
 
     # Commit the changes
-    [[ "${DEBUG}" == 'true' ]] && echo "Git command:
-      git commit -m \"Adding ${INPUT_TEST_TYPE} tests results for ${INPUT_BUILD_HASH} at ${INPUT_BUILD_ID}\"
-    "
-    git commit -m "Adding ${INPUT_TEST_TYPE} tests results for ${INPUT_BUILD_HASH} at ${INPUT_BUILD_ID}"
-    git_result=$?
-    if [[ ${git_result} != 0 ]]; then
+    executeCmd "git commit -m \"Adding ${INPUT_TEST_TYPE} tests results for ${INPUT_BUILD_HASH} at ${INPUT_BUILD_ID}\""
+    if [[ ${cmd_result} != 0 ]]; then
       echo "Error committing to git for ${INPUT_BUILD_HASH} at ${INPUT_BUILD_ID}, error code: ${git_result}"
       exit 1
     fi
@@ -120,12 +105,8 @@ function persistResults {
     # Do not pull unless branch is remote
     if [[ ${remote_branch} == 1 ]]; then
       # Perform a pull just in case
-      [[ "${DEBUG}" == 'true' ]] && echo "Git command:
-        git pull origin ${INPUT_BUILD_ID}
-      "
-      git pull origin ${INPUT_BUILD_ID}
-      git_result=$?
-      if [[ ${git_result} != 0 ]]; then
+      executeCmd "git pull origin ${INPUT_BUILD_ID}"
+      if [[ ${cmd_result} != 0 ]]; then
         echo "Error pulling from git branch ${INPUT_BUILD_ID}, error code: ${git_result}"
         exit 1
       fi
@@ -134,23 +115,26 @@ function persistResults {
     fi
 
     # Finally push the changes
-    [[ "${DEBUG}" == 'true' ]] && echo "Git command:
-      git push ${test_results_repo_url}
-    "
-    git push ${test_results_repo_url}
-    git_result=$?
-    if [[ ${git_result} != 0 ]]; then
+    executeCmd "git push ${test_results_repo_url}"
+    if [[ ${cmd_result} != 0 ]]; then
       echo "Error pushing to git for ${INPUT_BUILD_HASH} at ${INPUT_BUILD_ID}, error code: ${git_result}"
       exit 1
     fi
 
-    [[ "${DEBUG}" == 'true' ]] && echo "Git command:
-      git status
-    "
-    git status
+    executeCmd "git status"
   else
-    echo "No changes detected, not committing nor pushing"
+    echo 'No changes detected, not committing nor pushing'
   fi
+}
+
+# Set common variables
+function setVars {
+  [[ ${INPUT_MODE} =~ ALL|RESULTS ]] && export INCLUDE_RESULTS=true
+  [[ ${INPUT_MODE} =~ ALL|LOGS ]] && export INCLUDE_LOGS=true
+
+  export COMMIT_TEST_RESULT_URL=${GITHUB_PERSIST_COMMIT_URL}/${REPORTS_LOCATION}/index.html
+  export BRANCH_TEST_RESULT_URL=${GITHUB_PERSIST_BRANCH_URL}/${REPORTS_LOCATION}/index.html
+  export TEST_LOG_URL=${GITHUB_PERSIST_COMMIT_URL}/logs/dotcms.log
 }
 
 # Creates a summary status file for test the specific INPUT_TEST_TYPE, INPUT_DB_TYPE in both commit and branch paths.
@@ -166,52 +150,107 @@ function trackCoreTests {
 
   local result_file=${OUTPUT_FOLDER}/job_results.source
   echo "Tracking job results in ${result_file}"
-  > ${result_file}
   touch ${result_file}
   echo "TEST_TYPE=${INPUT_TEST_TYPE^}" >> ${result_file}
   echo "DB_TYPE=${INPUT_DB_TYPE}" >> ${result_file}
   echo "TEST_TYPE_RESULT=${result_label}" >> ${result_file}
-  echo "COMMIT_TEST_RESULT_URL=${GITHUB_PERSIST_COMMIT_URL}/${REPORTS_LOCATION}/index.html" >> ${result_file}
-  echo "BRANCH_TEST_RESULT_URL=${GITHUB_PERSIST_BRANCH_URL}/${REPORTS_LOCATION}/index.html" >> ${result_file}
+  echo "COMMIT_TEST_RESULT_URL=${COMMIT_TEST_RESULT_URL}" >> ${result_file}
+  echo "BRANCH_TEST_RESULT_URL=${BRANCH_TEST_RESULT_URL}" >> ${result_file}
+  echo "TEST_LOG_URL=${TEST_LOG_URL}" >> ${result_file}
 
   cat ${result_file}
 }
 
 # Prepares and copies test results in HTML format and the corresponding log file.
 function copyResults {
-  mkdir -p ${REPORTS_FOLDER}
-  mkdir -p ${LOGS_FOLDER}
-
-  echo "Copying ${INPUT_TEST_TYPE} tests reports to [${REPORTS_FOLDER}]"
-  executeCmd "cp -R ${INPUT_TESTS_REPORT_LOCATION}/* ${REPORTS_FOLDER}/"
-  executeCmd "cp -R ${INPUT_PROJECT_ROOT}/dotCMS/dotcms.log ${LOGS_FOLDER}/"
+  if [[ "${INCLUDE_RESULTS}" == 'true' ]]; then
+    mkdir -p ${REPORTS_FOLDER}
+    echo "Copying ${INPUT_TEST_TYPE} tests reports to [${REPORTS_FOLDER}]"
+    executeCmd "cp -R ${INPUT_TESTS_RESULTS_REPORT_LOCATION}/* ${REPORTS_FOLDER}/"
+  fi
+  if [[ "${INCLUDE_LOGS}" == 'true' ]]; then
+    mkdir -p ${LOGS_FOLDER}
+    echo "Copying ${INPUT_TEST_TYPE} tests logs to [${LOGS_FOLDER}]"
+    executeCmd "cp -R ${INPUT_PROJECT_ROOT}/dotCMS/dotcms.log ${LOGS_FOLDER}/"
+  fi
 }
 
 # Prints reports locations
 function printReportLocations {
-  echo "::notice::Pushing reports and logs to [${GITHUB_PERSIST_COMMIT_URL}]"
-  echo "::notice::Pushing reports and logs to [${GITHUB_PERSIST_BRANCH_URL}]"
+  echo "::notice::Pushing reports and/or logs to [${GITHUB_PERSIST_COMMIT_URL}]"
+  echo "::notice::Pushing reports and/or logs to [${GITHUB_PERSIST_BRANCH_URL}]"
+}
+
+# Set Github Action outputs to be used by other actions
+function setOutputs {
+  echo "::set-output name=test_results_branch_url::${BRANCH_TEST_RESULT_URL}"
+  echo "::set-output name=test_results_commit_url::${COMMIT_TEST_RESULT_URL}"
+  echo "::set-output name=test_logs_url::${TEST_LOG_URL}"
+  if [[ "${INPUT_TEST_TYPE}" == 'integration' ]]; then
+    echo "::set-output name=${INPUT_DB_TYPE}_test_results_commit_url::${COMMIT_TEST_RESULT_URL}"
+    echo "::set-output name=${INPUT_DB_TYPE}_test_results_branch_url::${BRANCH_TEST_RESULT_URL}"
+    echo "::set-output name=${INPUT_DB_TYPE}_test_logs_url::${TEST_LOG_URL}"
+  fi
 }
 
 # Appends to html file a section for the log file locations
 function appendLogLocation {
   if [[ "${INPUT_TEST_TYPE}" != 'postman' ]]; then
     # Now we want to add the logs link at the end of index.html results report file
-    logs_url="${GITHUB_PERSIST_COMMIT_URL}/logs/dotcms.log"
-    logs_link="<h2 class=\"summaryGroup infoBox\" style=\"margin: 40px; padding: 15px;\"><a href=\"${logs_url}\" target=\"_blank\">dotcms.log</a></h2>"
+    logs_link="<h2 class=\"summaryGroup infoBox\" style=\"margin: 40px; padding: 15px;\"><a href=\"${TEST_LOG_URL}\" target=\"_blank\">dotcms.log</a></h2>"
     echo "
     ${logs_link}
     " >> ${REPORTS_FOLDER}/index.html
   fi
 }
 
+# Prints information about the status of any test type
+function printStatus {
+  local pull_request_url="https://github.com/dotCMS/${INPUT_TARGET_PROJECT}/pull/${INPUT_PULL_REQUEST}"
+
+  echo ""
+  echo -e "\e[36m==========================================================================================================================\e[0m"
+  echo -e "\e[36m==========================================================================================================================\e[0m"
+  echo -e "\e[1;36m                                                REPORTING\e[0m"
+  echo
+  [[ "${INCLUDE_RESULTS}" == 'true' ]] && echo "         ${BRANCH_TEST_RESULT_URL}" && echo
+  [[ "${INCLUDE_RESULTS}" == 'true' ]] && echo "         ${COMMIT_TEST_RESULT_URL}" && echo
+  [[ "${INCLUDE_LOGS}" == 'true' ]] && echo "         ${TEST_LOG_URL}" && echo
+  echo
+  [[ -n "${INPUT_PULL_REQUEST}" && "${INPUT_PULL_REQUEST}" != 'false' ]] \
+    && echo "   GITHUB pull request: [${pull_request_url}]" \
+    && echo
+  if [[ "${INPUT_TESTS_RESULTS_STATUS}" == 'PASSED' ]]; then
+    echo -e "\e[1;32m                                 >>> Tests executed SUCCESSFULLY <<<\e[0m"
+  else
+    echo -e "\e[1;31m                                       >>> Tests FAILED <<<\e[0m"
+  fi
+  echo
+  echo -e "\e[36m==========================================================================================================================\e[0m"
+  echo -e "\e[36m==========================================================================================================================\e[0m"
+  echo ""
+}
+
+# More Env-Vars definition, specifically to results storage
+githack_url=$(resolveRepoPath ${TEST_RESULTS_GITHUB_REPO} | sed -e 's/github.com/raw.githack.com/')
+export BASE_STORAGE_URL="${githack_url}/$(urlEncode ${BUILD_ID})/projects/${INPUT_TARGET_PROJECT}"
+export STORAGE_JOB_COMMIT_FOLDER="$(resolveResultsPath ${BUILD_HASH})"
+export STORAGE_JOB_BRANCH_FOLDER="$(resolveResultsPath current)"
+export GITHUB_PERSIST_COMMIT_URL="${BASE_STORAGE_URL}/${STORAGE_JOB_COMMIT_FOLDER}"
+export GITHUB_PERSIST_BRANCH_URL="${BASE_STORAGE_URL}/${STORAGE_JOB_BRANCH_FOLDER}"
 export OUTPUT_FOLDER="${INPUT_PROJECT_ROOT}/output"
-export REPORTS_LOCATION=reports/html
+export REPORTS_LOCATION='reports/html'
 export REPORTS_FOLDER="${OUTPUT_FOLDER}/${REPORTS_LOCATION}"
 export LOGS_FOLDER="${OUTPUT_FOLDER}/logs"
-echo "#################
-Test Results vars
-#################
+
+echo "############
+Storage vars
+############
+BASE_STORAGE_URL: ${BASE_STORAGE_URL}
+GITHUB_PERSIST_COMMIT_URL: ${GITHUB_PERSIST_COMMIT_URL}
+GITHUB_PERSIST_BRANCH_URL: ${GITHUB_PERSIST_BRANCH_URL}
+STORAGE_JOB_COMMIT_FOLDER: ${STORAGE_JOB_COMMIT_FOLDER}
+STORAGE_JOB_BRANCH_FOLDER: ${STORAGE_JOB_BRANCH_FOLDER}
 OUTPUT_FOLDER: ${OUTPUT_FOLDER}
 REPORTS_FOLDER: ${REPORTS_FOLDER}
 LOGS_FOLDER: ${LOGS_FOLDER}

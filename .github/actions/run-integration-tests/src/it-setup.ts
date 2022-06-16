@@ -26,21 +26,21 @@ interface AppendProperties {
   files: FileAppend[]
 }
 
-const TEST_RESOURCES = ['log4j2.xml']
 const SOURCE_TEST_RESOURCES_FOLDER = 'cicd/resources'
-const TARGET_TEST_RESOURCES_FOLDER = 'dotCMS/src/test/resources'
+const TARGET_TEST_RESOURCES_FOLDER = 'dotCMS/src/integration-test/resources'
 const LICENSE_FOLDER = 'custom/dotsecure/license'
+const projectRoot = core.getInput('project_root')
+const workspaceRoot = path.dirname(projectRoot)
 const IT_FOLDERS = [
   'custom/assets',
   'custom/dotsecure',
   'custom/esdata',
-  'custom/output/log',
+  'custom/output/reports/html',
   'custom/felix',
   LICENSE_FOLDER
 ]
 
-const projectRoot = core.getInput('project_root')
-const worskpaceFolder = path.dirname(projectRoot)
+const TEST_RESOURCES = [path.join(projectRoot, SOURCE_TEST_RESOURCES_FOLDER, 'log4j2.xml')]
 
 /**
  * Setup location folders and files. Override and add properties to config files so ITs can run.
@@ -75,17 +75,17 @@ const getValue = (propertyMap: Map<string, string>, key: string): string => prop
  */
 const prepareTests = async () => {
   core.info('Preparing integration tests')
+
   for (const folder of IT_FOLDERS) {
-    const itFolder = path.join(worskpaceFolder, folder)
+    const itFolder = path.join(workspaceRoot, folder)
     core.info(`Creating IT folder ${itFolder}`)
     fs.mkdirSync(itFolder, {recursive: true})
   }
 
   for (const res of TEST_RESOURCES) {
-    const source = path.join(projectRoot, SOURCE_TEST_RESOURCES_FOLDER, res)
-    const dest = path.join(projectRoot, TARGET_TEST_RESOURCES_FOLDER, res)
-    core.info(`Copying resource ${source} to ${dest}`)
-    fs.copyFileSync(source, dest)
+    const dest = path.join(projectRoot, TARGET_TEST_RESOURCES_FOLDER, path.basename(res))
+    core.info(`Copying resource ${res} to ${dest}`)
+    fs.copyFileSync(res, dest)
   }
 }
 
@@ -97,7 +97,6 @@ const prepareTests = async () => {
 const overrideProperties = async (propertyMap: Map<string, string>) => {
   core.info('Overriding properties')
   const overrides = getOverrides(propertyMap)
-  //core.info(`Detected overrides ${JSON.stringify(overrides, null, 2)}`)
 
   for (const file of overrides.files) {
     core.info(`Overriding properties at ${file.file}`)
@@ -121,7 +120,6 @@ const overrideProperties = async (propertyMap: Map<string, string>) => {
 const appendProperties = (propertyMap: Map<string, string>) => {
   core.info('Adding properties')
   const appends = getAppends(propertyMap)
-  //core.info(`Detected appends ${JSON.stringify(appends, null, 2)}`)
 
   for (const file of appends.files) {
     core.info(`Appending properties to ${file.file}`)
@@ -275,7 +273,7 @@ const getAppends = (propertyMap: Map<string, string>): AppendProperties => {
  * Creates license folder and file with appropiate key.
  */
 const prepareLicense = async () => {
-  const licensePath = path.join(worskpaceFolder, LICENSE_FOLDER)
+  const licensePath = path.join(workspaceRoot, LICENSE_FOLDER)
   const licenseKey = core.getInput('license_key')
   const licenseFile = path.join(licensePath, 'license.dat')
   core.info(`Adding license to ${licenseFile}`)

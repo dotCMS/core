@@ -10,6 +10,8 @@ const testResources = ['log4j2.xml']
 const srcTestResourcesFolder = 'cicd/resources'
 const targetTestResourcesFolder = 'dotCMS/src/test/resources'
 const runtTestsPrefix = 'unit-tests:'
+const outputDir = `${dotCmsRoot}/build/test-results/test`
+const reportDir = `${dotCmsRoot}/build/reports/tests/test`
 
 interface Command {
   cmd: string
@@ -29,15 +31,15 @@ export const COMMANDS: Commands = {
     cmd: './gradlew',
     args: ['test'],
     workingDir: dotCmsRoot,
-    outputDir: `${dotCmsRoot}/build/test-results/test`,
-    reportDir: `${dotCmsRoot}/build/reports/tests/test`
+    outputDir: outputDir,
+    reportDir: reportDir
   },
   maven: {
     cmd: './mvnw',
     args: ['test'],
     workingDir: dotCmsRoot,
-    outputDir: `${dotCmsRoot}/target/surefire-reports`,
-    reportDir: `${dotCmsRoot}/build/reports/tests/test`
+    outputDir: outputDir,
+    reportDir: reportDir
   }
 }
 
@@ -61,10 +63,11 @@ export const runTests = async (cmd: Command): Promise<number> => {
 }
 
 /**
- * Prepares tests by copyng necessary files into workspace
+ * Prepares tests by copying necessary files into workspace
  */
 const prepareTests = () => {
   core.info('Preparing unit tests')
+
   testResources.forEach(res => {
     const source = path.join(projectRoot, srcTestResourcesFolder, res)
     const dest = path.join(projectRoot, targetTestResourcesFolder, res)

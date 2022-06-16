@@ -89,27 +89,6 @@ function stopDependencies {
     down"
 }
 
-# Set Test Github Action outputs
-function setOutputs {
-  local return_code=${1}
-  local results_location=${2}
-
-  echo "::set-output name=tests-run-exit-code::${return_code}"
-  if [[ ${return_code} == 0 ]]; then
-    local status='PASSED'
-  else
-    local status='FAILED'
-  fi
-  echo "::set-output name=tests-results-status::${status}"
-  echo "::set-output name=tests-results-location::${results_location}"
-  if [[ -d ${results_location} ]]; then
-    local skip_report='false'
-  else
-    local skip_report='true'
-  fi
-  echo "::set-output name=skip-results-report::${skip_report}"
-}
-
 # HTTP-Encodes a provided string
 #
 # $1: string: url to encode
@@ -130,14 +109,13 @@ function urlEncode {
   echo "${encoded}"
 }
 
-# Resolves results path based on the definition TEST_TYPE and DB_TYPE env-vars
+# Resolves results path based on the definition INPUT_TEST_TYPE and DB_TYPE env-vars
 #
 # $1: path: initial path
 function resolveResultsPath {
   local path="${1}"
-  [[ -n "${TEST_TYPE}" ]] && path="${path}/${TEST_TYPE}"
-  [[ -n "${TEST_TYPE}" ]] && path="${path}/${TEST_TYPE}"
-  [[ -n "${DB_TYPE}" ]] && path="${path}/${DB_TYPE}"
+  [[ -n "${INPUT_TEST_TYPE}" ]] && path="${path}/${INPUT_TEST_TYPE}"
+  [[ -n "${INPUT_DB_TYPE}" ]] && path="${path}/${INPUT_DB_TYPE}"
   echo "${path}"
 }
 
@@ -408,66 +386,3 @@ function gitRemoteLs {
   local build_id=${2}
   return $(git ls-remote --heads ${repo_url} ${build_id} | wc -l | tr -d '[:space:]')
 }
-
-# Prints information about the status of any test type
-function printStatus {
-  local commit_folder=${BASE_STORAGE_URL}/${STORAGE_JOB_COMMIT_FOLDER}
-  local branch_folder=${BASE_STORAGE_URL}/${STORAGE_JOB_BRANCH_FOLDER}
-  local reports_commit_index_url="${commit_folder}/reports/html/index.html"
-  local reports_branch_index_url="${branch_folder}/reports/html/index.html"
-  local log_commit_url="${commit_folder}/logs/dotcms.log"
-  local log_branch_url="${branch_folder}/logs/dotcms.log"
-  local pull_request_url="https://github.com/dotCMS/${INPUT_TARGET_PROJECT}/pull/${INPUT_PULL_REQUEST}"
-
-  echo ""
-  echo -e "\e[36m==========================================================================================================================\e[0m"
-  echo -e "\e[36m==========================================================================================================================\e[0m"
-  echo -e "\e[1;36m                                                REPORTING\e[0m"
-  echo
-  echo -e "\e[31m   ${reports_branch_index_url}\e[0m"
-  if [[ "${INPUT_TEST_TYPE}" != 'postman' ]]; then
-    echo -e "\e[31m   ${log_branch_url}\e[0m"
-  fi
-  echo
-  echo -e "\e[31m   ${reports_commit_index_url}\e[0m"
-  if [[ "${INPUT_TEST_TYPE}" != 'postman' ]]; then
-    echo -e "\e[31m   ${log_commit_url}\e[0m"
-  fi
-  echo
-  [[ -n "${INPUT_PULL_REQUEST}" && "${INPUT_PULL_REQUEST}" != 'false' ]] \
-    && echo "   GITHUB pull request: [${pull_request_url}]" \
-    && echo
-  if [[ ${INPUT_TESTS_RUN_EXIT_CODE} == 0 ]]; then
-    echo -e "\e[1;32m                                 >>> Tests executed SUCCESSFULLY <<<\e[0m"
-  else
-    echo -e "\e[1;31m                                       >>> Tests FAILED <<<\e[0m"
-  fi
-  echo
-  echo -e "\e[36m==========================================================================================================================\e[0m"
-  echo -e "\e[36m==========================================================================================================================\e[0m"
-  echo ""
-}
-
-# Set Github Action outputs to be used by other actions
-function setOutputs {
-  echo "::set-output name=test_results_branch_url::${GITHUB_PERSIST_COMMIT_URL}/${REPORTS_LOCATION}/index.html"
-  echo "::set-output name=test_results_commit_url::${GITHUB_PERSIST_BRANCH_URL}/${REPORTS_LOCATION}/index.html"
-}
-
-# More Env-Vars definition, specifically to results storage
-githack_url=$(resolveRepoPath ${TEST_RESULTS_GITHUB_REPO} | sed -e 's/github.com/raw.githack.com/')
-export BASE_STORAGE_URL="${githack_url}/$(urlEncode ${BUILD_ID})/projects/${INPUT_TARGET_PROJECT}"
-export STORAGE_JOB_COMMIT_FOLDER="$(resolveResultsPath ${BUILD_HASH})"
-export STORAGE_JOB_BRANCH_FOLDER="$(resolveResultsPath current)"
-export GITHUB_PERSIST_COMMIT_URL="${BASE_STORAGE_URL}/${STORAGE_JOB_COMMIT_FOLDER}"
-export GITHUB_PERSIST_BRANCH_URL="${BASE_STORAGE_URL}/${STORAGE_JOB_BRANCH_FOLDER}"
-
-echo "############
-Storage vars
-############
-BASE_STORAGE_URL: ${BASE_STORAGE_URL}
-GITHUB_PERSIST_COMMIT_URL: ${GITHUB_PERSIST_COMMIT_URL}
-GITHUB_PERSIST_BRANCH_URL: ${GITHUB_PERSIST_BRANCH_URL}
-STORAGE_JOB_COMMIT_FOLDER: ${STORAGE_JOB_COMMIT_FOLDER}
-STORAGE_JOB_BRANCH_FOLDER: ${STORAGE_JOB_BRANCH_FOLDER}
-"

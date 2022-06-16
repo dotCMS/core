@@ -127,10 +127,12 @@ const tests = core.getInput('tests');
 const exportReport = core.getBooleanInput('export_report');
 const dockerFolder = path.join(projectRoot, 'cicd', 'docker');
 const licenseFolder = path.join(dockerFolder, 'license');
-const volumes = [licenseFolder, path.join(dockerFolder, 'cms-shared'), path.join(dockerFolder, 'cms-local')];
-const postmanTestsPath = path.join(projectRoot, 'dotCMS', 'src', 'curl-test');
-const postmanEnvFile = 'postman_environment.json';
 const dotCmsRoot = path.join(projectRoot, 'dotCMS');
+const logsFolder = path.join(dockerFolder, 'logs');
+const logFile = 'dotcms.log';
+const volumes = [licenseFolder, path.join(dockerFolder, 'cms-shared'), path.join(dockerFolder, 'cms-local'), logsFolder];
+const postmanTestsPath = path.join(dotCmsRoot, 'src', 'curl-test');
+const postmanEnvFile = 'postman_environment.json';
 const resultsFolder = path.join(dotCmsRoot, 'build', 'test-results', 'postmanTest');
 const reportFolder = path.join(dotCmsRoot, 'build', 'reports', 'tests', 'postmanTest');
 const runtTestsPrefix = 'postman-tests:';
@@ -144,29 +146,52 @@ const DEPS_ENV = {
     POSTGRES_PASSWORD: 'postgres',
     POSTGRES_DB: 'dotcms'
 };
-/**
- * Based on a revolved {@link Command}, resolve the command to execute in order to run integration tests.
+/*
  *
  * @returns a number representing the command exit code
  */
 const runTests = () => __awaiter(void 0, void 0, void 0, function* () {
     setup();
-    yield startDeps();
-    yield startDotCMS();
-    const results = yield runPostmanTests();
-    yield stopDotCMS();
-    yield stopDeps();
-    return results;
+    startDeps();
+    try {
+        return yield runPostmanTests();
+        copyOutputs();
+    }
+    catch (err) {
+        throw err;
+    }
+    finally {
+        yield stopDeps();
+    }
 });
 exports.runTests = runTests;
+/**
+ * Copies logs from docker volume to standard DotCMS location.
+ */
+const copyOutputs = () => __awaiter(void 0, void 0, void 0, function* () {
+    yield exec.exec('pwd', [], { cwd: logsFolder });
+    yield exec.exec('ls', ['-las', '.'], { cwd: logsFolder });
+    try {
+        fs.copyFileSync(path.join(logsFolder, logFile), path.join(dotCmsRoot, logFile));
+    }
+    catch (err) {
+        core.warning(`Error copying log file: ${err}`);
+    }
+});
+/**
+ * Sets up everuthing needed to run postman collections.
+ */
 const setup = () => {
     installDeps();
     createFolders();
     prepareLicense();
 };
+/**
+ * Install necessary dependencies to run the postman collections.
+ */
 const installDeps = () => __awaiter(void 0, void 0, void 0, function* () {
     core.info('Installing newman');
-    const npmArgs = ['install', '-g', 'newman'];
+    const npmArgs = ['install', '--location=global', 'newman'];
     if (exportReport) {
         npmArgs.push('newman-reporter-htmlextra');
     }
@@ -180,6 +205,9 @@ const installDeps = () => __awaiter(void 0, void 0, void 0, function* () {
     //   }
     // }
 });
+/**
+ * Start postman depencies: db, ES and DotCMS isntance.
+ */
 const startDeps = () => __awaiter(void 0, void 0, void 0, function* () {
     // Starting dependencies
     core.info(`
@@ -187,47 +215,51 @@ const startDeps = () => __awaiter(void 0, void 0, void 0, function* () {
     Starting postman tests dependencies
     =======================================`);
     // const depProcess = she
-    exec.exec('docker-compose', [
-        '-f',
-        'open-distro-compose.yml',
-        '-f',
-        `${dbType}-compose.yml`,
-        '-f',
-        'dotcms-compose.yml',
-        'up',
-        '--abort-on-container-exit'
-    ], {
+    exec.exec('docker-compose', ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'up'], {
         cwd: dockerFolder,
         env: DEPS_ENV
     });
-    yield waitFor(30, `ES, ${dbType} and DotCMS instance`);
+    //await startDotCMS()
 });
+/**
+ * Stop postman depencies: db, ES and DotCMS isntance.
+ */
 const stopDeps = () => __awaiter(void 0, void 0, void 0, function* () {
+    //await stopDotCMS()
     // Stopping dependencies
     core.info(`
-    =======================================
+    ===================================
     Stopping postman tests dependencies
-    =======================================`);
-    // const depProcess = she
-    yield exec.exec('docker-compose', ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'down'], {
-        cwd: dockerFolder,
-        env: DEPS_ENV
-    });
+    ===================================`);
+    try {
+        yield exec.exec('docker-compose', ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'down'], {
+            cwd: dockerFolder,
+            env: DEPS_ENV
+        });
+    }
+    catch (err) {
+        console.error(`Error stopping dependencies: ${err}`);
+    }
 });
-const startDotCMS = () => __awaiter(void 0, void 0, void 0, function* () {
-    core.info(`
-    =======================================
-    Starting DotCMS instance
-    =======================================`);
-    //exec.exec(path.join(tomcatRoot, 'bin', 'startup.sh'))
-});
-const stopDotCMS = () => __awaiter(void 0, void 0, void 0, function* () {
-    core.info(`
-    =======================================
-    Stopping DotCMS instance
-    =======================================`);
-    //await exec.exec(path.join(tomcatRoot, 'bin', 'shutdown.sh'))
-});
+// const startDotCMS = async () => {
+//   core.info(`
+//     =======================================
+//     Starting DotCMS instance
+//     =======================================`)
+//   exec.exec(path.join(tomcatRoot, 'bin', 'startup.sh'))
+// }
+// const stopDotCMS = async () => {
+//   core.info(`
+//     =======================================
+//     Stopping DotCMS instance
+//     =======================================`)
+//   await exec.exec(path.join(tomcatRoot, 'bin', 'shutdown.sh'))
+// }
+/**
+ * Run postman tests.
+ *
+ * @returns an overall ivew of the tests results
+ */
 const runPostmanTests = () => __awaiter(void 0, void 0, void 0, function* () {
     yield waitFor(150, `DotCMS instance`);
     // Executes Postman tests
@@ -247,7 +279,7 @@ const runPostmanTests = () => __awaiter(void 0, void 0, void 0, function* () {
     const collectionRuns = new Map();
     for (const collection of filtered) {
         try {
-            const returnCode = yield runPostmanTest(collection);
+            const returnCode = yield runPostmanCollection(collection);
             collectionRuns.set(collection, returnCode);
         }
         catch (err) {
@@ -258,7 +290,13 @@ const runPostmanTests = () => __awaiter(void 0, void 0, void 0, function* () {
     }
     return handleResults(collectionRuns);
 });
-const runPostmanTest = (collection) => __awaiter(void 0, void 0, void 0, function* () {
+/**
+ * Run a postman collection.
+ *
+ * @param collection postman collection
+ * @returns promise with process return code
+ */
+const runPostmanCollection = (collection) => __awaiter(void 0, void 0, void 0, function* () {
     core.info(`Running Postman test: ${collection}`);
     const normalized = collection.replace(/ /g, '_').replace('.json', '');
     const resultFile = path.join(resultsFolder, `${normalized}.xml`);
@@ -285,6 +323,11 @@ const runPostmanTest = (collection) => __awaiter(void 0, void 0, void 0, functio
         cwd: postmanTestsPath
     });
 });
+/*
+ *
+ * @param collectionRuns collection tests results map
+ * @returns an overall ivew of the tests results
+ */
 const handleResults = (collectionRuns) => {
     let collectionFailed = true;
     for (const collection in collectionRuns.keys) {
@@ -319,11 +362,15 @@ const waitFor = (wait, startLabel, endLabel) => __awaiter(void 0, void 0, void 0
     const finalLabel = endLabel || startLabel;
     core.info(`Waiting on ${finalLabel} loading has ended`);
 });
+/**
+ * Create necessary folders
+ */
 const createFolders = () => {
     const folders = [resultsFolder, reportFolder, ...volumes];
     for (const folder of folders) {
         fs.mkdirSync(folder, { recursive: true });
     }
+    shelljs.touch(path.join(dockerFolder, logFile));
 };
 /**
  * Creates license folder and file with appropiate key.
@@ -788,6 +835,13 @@ Object.defineProperty(exports, "summary", ({ enumerable: true, get: function () 
  */
 var summary_2 = __nccwpck_require__(1327);
 Object.defineProperty(exports, "markdownSummary", ({ enumerable: true, get: function () { return summary_2.markdownSummary; } }));
+/**
+ * Path exports
+ */
+var path_utils_1 = __nccwpck_require__(2981);
+Object.defineProperty(exports, "toPosixPath", ({ enumerable: true, get: function () { return path_utils_1.toPosixPath; } }));
+Object.defineProperty(exports, "toWin32Path", ({ enumerable: true, get: function () { return path_utils_1.toWin32Path; } }));
+Object.defineProperty(exports, "toPlatformPath", ({ enumerable: true, get: function () { return path_utils_1.toPlatformPath; } }));
 //# sourceMappingURL=core.js.map
 
 /***/ }),
@@ -922,6 +976,71 @@ class OidcClient {
 }
 exports.OidcClient = OidcClient;
 //# sourceMappingURL=oidc-utils.js.map
+
+/***/ }),
+
+/***/ 2981:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.toPlatformPath = exports.toWin32Path = exports.toPosixPath = void 0;
+const path = __importStar(__nccwpck_require__(1017));
+/**
+ * toPosixPath converts the given path to the posix form. On Windows, \\ will be
+ * replaced with /.
+ *
+ * @param pth. Path to transform.
+ * @return string Posix path.
+ */
+function toPosixPath(pth) {
+    return pth.replace(/[\\]/g, '/');
+}
+exports.toPosixPath = toPosixPath;
+/**
+ * toWin32Path converts the given path to the win32 form. On Linux, / will be
+ * replaced with \\.
+ *
+ * @param pth. Path to transform.
+ * @return string Win32 path.
+ */
+function toWin32Path(pth) {
+    return pth.replace(/[/]/g, '\\');
+}
+exports.toWin32Path = toWin32Path;
+/**
+ * toPlatformPath converts the given path to a platform-specific path. It does
+ * this by replacing instances of / and \ with the platform-specific path
+ * separator.
+ *
+ * @param pth The path to platformize.
+ * @return string The platform-specific path.
+ */
+function toPlatformPath(pth) {
+    return pth.replace(/[/\\]/g, path.sep);
+}
+exports.toPlatformPath = toPlatformPath;
+//# sourceMappingURL=path-utils.js.map
 
 /***/ }),
 

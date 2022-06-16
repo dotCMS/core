@@ -44,15 +44,10 @@ const core = __importStar(__nccwpck_require__(186));
 const exec = __importStar(__nccwpck_require__(514));
 const path = __importStar(__nccwpck_require__(17));
 const setup = __importStar(__nccwpck_require__(957));
-const buildEnv = core.getInput('build_env');
-const projectRoot = core.getInput('project_root');
-const workspaceRoot = path.dirname(projectRoot);
-const dotCmsRoot = path.join(projectRoot, 'dotCMS');
-const dbType = core.getInput('db_type');
-const runtTestsPrefix = 'integration-tests:';
 /**
  * Based on dbType resolves the ci index
- * @returns
+ *
+ * @returns index based on provided db type
  */
 const resolveCiIndex = () => {
     if (dbType === 'postgres') {
@@ -63,42 +58,51 @@ const resolveCiIndex = () => {
     }
     return -1;
 };
+const buildEnv = core.getInput('build_env');
+const projectRoot = core.getInput('project_root');
+const workspaceRoot = path.dirname(projectRoot);
+const dotCmsRoot = path.join(projectRoot, 'dotCMS');
+const dbType = core.getInput('db_type');
+const runtTestsPrefix = 'integration-tests:';
+const dockerFolder = `${projectRoot}/cicd/docker`;
+const outputDir = `${dotCmsRoot}/build/test-results/integrationTest`;
+const reportDir = `${dotCmsRoot}/build/reports/tests/integrationTest`;
+const ciIndex = resolveCiIndex();
 const DEPS_ENV = {
     postgres: {
         POSTGRES_USER: 'postgres',
         POSTGRES_PASSWORD: 'postgres',
         POSTGRES_DB: 'dotcms'
-    },
-    mssql: {}
+    }
 };
 exports.COMMANDS = {
     gradle: {
         cmd: './gradlew',
         args: ['integrationTest', `-PdatabaseType=${dbType}`],
         workingDir: dotCmsRoot,
-        outputDir: `${dotCmsRoot}/build/test-results/integrationTest`,
-        reportDir: `${dotCmsRoot}/build/reports/tests/integrationTest`,
-        ciIndex: resolveCiIndex()
+        outputDir: outputDir,
+        reportDir: reportDir,
+        ciIndex: ciIndex
     },
     maven: {
         cmd: './mvnw',
         args: ['integrationTest', `-PdatabaseType=${dbType}`],
         workingDir: dotCmsRoot,
-        outputDir: `${dotCmsRoot}/build/test-results/integrationTest`,
-        reportDir: `${dotCmsRoot}/build/reports/tests/integrationTest`,
-        ciIndex: resolveCiIndex()
+        outputDir: outputDir,
+        reportDir: reportDir,
+        ciIndex: ciIndex
     }
 };
 const START_DEPENDENCIES_CMD = {
     cmd: 'docker-compose',
-    args: ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, 'up', '--abort-on-container-exit'],
-    workingDir: `${projectRoot}/cicd/docker`,
+    args: ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, 'up'],
+    workingDir: dockerFolder,
     env: DEPS_ENV[dbType]
 };
 const STOP_DEPENDENCIES_CMD = {
     cmd: 'docker-compose',
     args: ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, 'down'],
-    workingDir: `${projectRoot}/cicd/docker`,
+    workingDir: dockerFolder,
     env: DEPS_ENV[dbType]
 };
 /**
@@ -130,22 +134,31 @@ const runTests = (cmd) => __awaiter(void 0, void 0, void 0, function* () {
       ===========================================
       Integration tests have finished to run
       ===========================================`);
-        stopDeps();
         return itCode;
     }
     catch (err) {
-        stopDeps();
         throw err;
+    }
+    finally {
+        stopDeps();
     }
 });
 exports.runTests = runTests;
+/**
+ * Stops dependencies.
+ */
 const stopDeps = () => __awaiter(void 0, void 0, void 0, function* () {
     // Stopping dependencies
     core.info(`
     =======================================
     Stopping integration tests dependencies
     =======================================`);
-    yield execCmd(STOP_DEPENDENCIES_CMD);
+    try {
+        yield execCmd(STOP_DEPENDENCIES_CMD);
+    }
+    catch (err) {
+        console.error(`Error stopping dependencies: ${err}`);
+    }
 });
 /**
  * Creates property map with DotCMS property information to override/append
@@ -159,7 +172,7 @@ const propertyMap = () => {
     properties.set('felixFolder', appendToWorkspace('custom/felix'));
     properties.set('assetsFolder', appendToWorkspace('custom/assets'));
     properties.set('esDataFolder', appendToWorkspace('custom/esdata'));
-    properties.set('logsFolder', appendToWorkspace('custom/output/logs'));
+    properties.set('logsFolder', dotCmsRoot);
     properties.set('dbType', dbType);
     return properties;
 };
@@ -297,20 +310,20 @@ const core = __importStar(__nccwpck_require__(186));
 const exec = __importStar(__nccwpck_require__(514));
 const fs = __importStar(__nccwpck_require__(147));
 const path = __importStar(__nccwpck_require__(17));
-const TEST_RESOURCES = ['log4j2.xml'];
 const SOURCE_TEST_RESOURCES_FOLDER = 'cicd/resources';
-const TARGET_TEST_RESOURCES_FOLDER = 'dotCMS/src/test/resources';
+const TARGET_TEST_RESOURCES_FOLDER = 'dotCMS/src/integration-test/resources';
 const LICENSE_FOLDER = 'custom/dotsecure/license';
+const projectRoot = core.getInput('project_root');
+const workspaceRoot = path.dirname(projectRoot);
 const IT_FOLDERS = [
     'custom/assets',
     'custom/dotsecure',
     'custom/esdata',
-    'custom/output/log',
+    'custom/output/reports/html',
     'custom/felix',
     LICENSE_FOLDER
 ];
-const projectRoot = core.getInput('project_root');
-const worskpaceFolder = path.dirname(projectRoot);
+const TEST_RESOURCES = [path.join(projectRoot, SOURCE_TEST_RESOURCES_FOLDER, 'log4j2.xml')];
 /**
  * Setup location folders and files. Override and add properties to config files so ITs can run.
  *
@@ -341,15 +354,14 @@ const getValue = (propertyMap, key) => propertyMap.get(key) || '';
 const prepareTests = () => __awaiter(void 0, void 0, void 0, function* () {
     core.info('Preparing integration tests');
     for (const folder of IT_FOLDERS) {
-        const itFolder = path.join(worskpaceFolder, folder);
+        const itFolder = path.join(workspaceRoot, folder);
         core.info(`Creating IT folder ${itFolder}`);
         fs.mkdirSync(itFolder, { recursive: true });
     }
     for (const res of TEST_RESOURCES) {
-        const source = path.join(projectRoot, SOURCE_TEST_RESOURCES_FOLDER, res);
-        const dest = path.join(projectRoot, TARGET_TEST_RESOURCES_FOLDER, res);
-        core.info(`Copying resource ${source} to ${dest}`);
-        fs.copyFileSync(source, dest);
+        const dest = path.join(projectRoot, TARGET_TEST_RESOURCES_FOLDER, path.basename(res));
+        core.info(`Copying resource ${res} to ${dest}`);
+        fs.copyFileSync(res, dest);
     }
 });
 /**
@@ -360,7 +372,6 @@ const prepareTests = () => __awaiter(void 0, void 0, void 0, function* () {
 const overrideProperties = (propertyMap) => __awaiter(void 0, void 0, void 0, function* () {
     core.info('Overriding properties');
     const overrides = getOverrides(propertyMap);
-    //core.info(`Detected overrides ${JSON.stringify(overrides, null, 2)}`)
     for (const file of overrides.files) {
         core.info(`Overriding properties at ${file.file}`);
         for (const prop of file.properties) {
@@ -381,7 +392,6 @@ const overrideProperties = (propertyMap) => __awaiter(void 0, void 0, void 0, fu
 const appendProperties = (propertyMap) => {
     core.info('Adding properties');
     const appends = getAppends(propertyMap);
-    //core.info(`Detected appends ${JSON.stringify(appends, null, 2)}`)
     for (const file of appends.files) {
         core.info(`Appending properties to ${file.file}`);
         const line = file.lines.join('\n');
@@ -529,7 +539,7 @@ const getAppends = (propertyMap) => {
  * Creates license folder and file with appropiate key.
  */
 const prepareLicense = () => __awaiter(void 0, void 0, void 0, function* () {
-    const licensePath = path.join(worskpaceFolder, LICENSE_FOLDER);
+    const licensePath = path.join(workspaceRoot, LICENSE_FOLDER);
     const licenseKey = core.getInput('license_key');
     const licenseFile = path.join(licensePath, 'license.dat');
     core.info(`Adding license to ${licenseFile}`);
@@ -583,10 +593,10 @@ const run = () => {
         core.error('Cannot resolve build tool, aborting');
         return;
     }
+    const dbType = core.getInput('db_type');
     core.setOutput('tests_results_location', cmd.outputDir);
     core.setOutput('tests_results_report_location', cmd.reportDir);
     core.setOutput('ci_index', cmd.ciIndex);
-    const dbType = core.getInput('db_type');
     integration
         .runTests(cmd)
         .then(exitCode => {
@@ -1041,6 +1051,13 @@ Object.defineProperty(exports, "summary", ({ enumerable: true, get: function () 
  */
 var summary_2 = __nccwpck_require__(327);
 Object.defineProperty(exports, "markdownSummary", ({ enumerable: true, get: function () { return summary_2.markdownSummary; } }));
+/**
+ * Path exports
+ */
+var path_utils_1 = __nccwpck_require__(981);
+Object.defineProperty(exports, "toPosixPath", ({ enumerable: true, get: function () { return path_utils_1.toPosixPath; } }));
+Object.defineProperty(exports, "toWin32Path", ({ enumerable: true, get: function () { return path_utils_1.toWin32Path; } }));
+Object.defineProperty(exports, "toPlatformPath", ({ enumerable: true, get: function () { return path_utils_1.toPlatformPath; } }));
 //# sourceMappingURL=core.js.map
 
 /***/ }),
@@ -1175,6 +1192,71 @@ class OidcClient {
 }
 exports.OidcClient = OidcClient;
 //# sourceMappingURL=oidc-utils.js.map
+
+/***/ }),
+
+/***/ 981:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.toPlatformPath = exports.toWin32Path = exports.toPosixPath = void 0;
+const path = __importStar(__nccwpck_require__(17));
+/**
+ * toPosixPath converts the given path to the posix form. On Windows, \\ will be
+ * replaced with /.
+ *
+ * @param pth. Path to transform.
+ * @return string Posix path.
+ */
+function toPosixPath(pth) {
+    return pth.replace(/[\\]/g, '/');
+}
+exports.toPosixPath = toPosixPath;
+/**
+ * toWin32Path converts the given path to the win32 form. On Linux, / will be
+ * replaced with \\.
+ *
+ * @param pth. Path to transform.
+ * @return string Win32 path.
+ */
+function toWin32Path(pth) {
+    return pth.replace(/[/]/g, '\\');
+}
+exports.toWin32Path = toWin32Path;
+/**
+ * toPlatformPath converts the given path to a platform-specific path. It does
+ * this by replacing instances of / and \ with the platform-specific path
+ * separator.
+ *
+ * @param pth The path to platformize.
+ * @return string The platform-specific path.
+ */
+function toPlatformPath(pth) {
+    return pth.replace(/[/\\]/g, path.sep);
+}
+exports.toPlatformPath = toPlatformPath;
+//# sourceMappingURL=path-utils.js.map
 
 /***/ }),
 

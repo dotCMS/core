@@ -52,7 +52,7 @@ function createThread {
     > ${testmo_run_id_file}"
   [[ ${cmd_result} != 0 ]] && echo 'Error executing command' && exit 3
   cat ${testmo_run_id_file}
-  setOutputs
+  setTestmoOutputs
 }
 
 # Initializes, add resources and create thread for Testmo
@@ -77,7 +77,7 @@ function submit {
     > ${testmo_run_id_file}"
   [[ ${cmd_result} != 0 ]] && echo 'Error executing command' && exit 4
   cat ${testmo_run_id_file}
-  setOutputs true
+  setTestmoOutputs true
 }
 
 # Submit thread test results to Testmo
@@ -91,7 +91,7 @@ function submitThread {
     --results '${INPUT_TESTS_RESULTS_LOCATION}'
     ${debug_param}"
   [[ ${cmd_result} != 0 ]] && echo 'Error executing command' && exit 5
-  setOutputs true
+  setTestmoOutputs true
 }
 
 # Send a complete event for threads within execution at Testmo
@@ -120,7 +120,7 @@ function extractTestmoRunId {
 # Sets Testmo run id an report location (when specified to) as outputs
 #
 # $1: setReport: flag telling to set the report location as well
-function setOutputs {
+function setTestmoOutputs {
   local testmo_run_id=$(extractTestmoRunId)
 
   echo "Run ID: ${testmo_run_id}"
