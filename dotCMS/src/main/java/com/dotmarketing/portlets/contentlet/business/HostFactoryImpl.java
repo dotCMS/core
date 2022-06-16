@@ -378,7 +378,7 @@ public class HostFactoryImpl implements HostFactory {
         return site;
     }
 
-    @NotNull
+    @WrapInTransaction
     private Boolean innerDeleteHost(final Host site, final User user, final boolean respectFrontendRoles) {
         try {
             deleteHost(site, user, respectFrontendRoles);
