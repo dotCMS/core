@@ -5,6 +5,7 @@ import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
@@ -128,7 +129,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
       return transformMap(shorty, db.loadObjectResults());
     } catch (DotDataException e) {
       Logger.warn(this.getClass(), "db exception:" + e.getMessage());
-      return noShorty(shorty);
+      throw new ShortyException("Unable to query for shorty:" + shorty, e);
     }
   }
 
@@ -148,7 +149,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
       return transformMap(shorty, db.loadObjectResults());
     } catch (DotDataException e) {
       Logger.warn(this.getClass(), "db exception:" + e.getMessage());
-      return noShorty(shorty);
+      throw new ShortyException("Unable to query for shorty:" + shorty, e);
     }
 
   }
