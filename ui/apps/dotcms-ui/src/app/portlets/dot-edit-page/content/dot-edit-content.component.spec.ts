@@ -1,20 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { of as observableOf, of, throwError } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, tick, fakeAsync, TestBed, flush } from '@angular/core/testing';
-import {
-    Component,
-    DebugElement,
-    EventEmitter,
-    Input,
-    Output,
-    ElementRef,
-    Injectable
-} from '@angular/core';
+import { Component, DebugElement, EventEmitter, Input, Output, ElementRef } from '@angular/core';
 import { RouterTestingModule } from '@angular/router/testing';
 import {
     ApiRoot,
@@ -82,59 +74,13 @@ import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-di
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotPageContainer } from '@models/dot-page-container/dot-page-container.model';
 import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
-import { DotContentTypeService } from '@services/dot-content-type';
+// import { DotContentTypeService } from '@services/dot-content-type';
 import { DotPaletteComponent } from '@dotcms/app/portlets/dot-edit-page/components/dot-palette/dot-palette.component';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DotGenerateSecurePasswordService } from '@services/dot-generate-secure-password/dot-generate-secure-password.service';
 import { DotPropertiesService } from '@services/dot-properties/dot-properties.service';
 import { PageModelChangeEventType } from './services/dot-edit-content-html/models';
 import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
-
-const responseData: DotCMSContentType[] = [
-    {
-        icon: 'cloud',
-        id: 'a1661fbc-9e84-4c00-bd62-76d633170da3',
-        name: 'Widget X',
-        variable: 'WidgetX',
-        baseType: 'WIDGET'
-    },
-    {
-        icon: 'alt_route',
-        id: '799f176a-d32e-4844-a07c-1b5fcd107578',
-        name: 'Banner',
-        variable: 'Banner'
-    },
-    {
-        icon: 'cloud',
-        id: '897cf4a9-171a-4204-accb-c1b498c813fe',
-        name: 'Contact',
-        variable: 'Contact'
-    },
-    {
-        icon: 'cloud',
-        id: 'now-show',
-        name: 'now-show',
-        variable: 'persona'
-    },
-    {
-        icon: 'cloud',
-        id: 'now-show',
-        name: 'now-show',
-        variable: 'host'
-    },
-    {
-        icon: 'cloud',
-        id: 'now-show',
-        name: 'now-show',
-        variable: 'vanityurl'
-    },
-    {
-        icon: 'cloud',
-        id: 'now-show',
-        name: 'now-show',
-        variable: 'languagevariable'
-    }
-] as DotCMSContentType[];
 
 @Component({
     selector: 'dot-global-message',
@@ -181,15 +127,9 @@ export class MockDotFormSelectorComponent {
 })
 export class MockDotPaletteComponent {
     @Input() languageId = '1';
-    @Input() items: any[];
+    @Input() allowedContent: string[];
 }
 
-@Injectable()
-class MockDotContentTypeService {
-    getContentTypes = jasmine
-        .createSpy('getContentTypes')
-        .and.returnValue(observableOf(responseData));
-}
 const mockRenderedPageState = new DotPageRenderState(
     mockUser(),
     new DotPageRender(mockDotRenderedPage())
@@ -285,7 +225,6 @@ describe('DotEditContentComponent', () => {
                 DotCustomEventHandlerService,
                 DotPropertiesService,
                 DotESContentService,
-                { provide: DotContentTypeService, useClass: MockDotContentTypeService },
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
@@ -732,7 +671,7 @@ describe('DotEditContentComponent', () => {
                         By.css('.dot-edit-content__palette-visibility')
                     );
                     const classList = contentPaletteWrapper.nativeElement.classList;
-                    expect(contentPalette.items).toEqual(responseData.slice(0, 3));
+
                     expect(parseInt(contentPalette.languageId)).toEqual(
                         mockDotRenderedPage().page.languageId
                     );
@@ -1434,13 +1373,12 @@ describe('DotEditContentComponent', () => {
         });
     });
 
-    describe('empty scenarios', () => {
-        beforeEach(() => {
-            spyOn(dotConfigurationService, 'getKeyAsList').and.returnValue(of(undefined));
-        });
-
-        it('should show content palette correctly when blacklist list is empty', fakeAsync(() => {
+    describe('allowedContent', () => {
+        it('should set filter the contentTypes and set the allowedContent correctly', fakeAsync(() => {
+            const blackList = ['host', 'vanityurl', 'persona', 'languagevariable'];
             spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
+            spyOn(dotConfigurationService, 'getKeyAsList').and.returnValue(of(blackList));
+
             const state = new DotPageRenderState(
                 mockUser(),
                 new DotPageRender({
@@ -1467,15 +1405,19 @@ describe('DotEditContentComponent', () => {
                 })
             );
 
-            route.parent.parent.data = of({
-                content: state
+            const allowedContent: Set<string> = new Set();
+            Object.values(state.containers).forEach((container) => {
+                Object.values(container.containerStructures).forEach((containerStructure) => {
+                    allowedContent.add(containerStructure.contentTypeVar.toLocaleLowerCase());
+                });
             });
+
+            blackList.forEach((content) => allowedContent.delete(content.toLocaleLowerCase()));
+
+            route.parent.parent.data = of({ content: state });
             detectChangesForIframeRender(fixture);
             fixture.detectChanges();
-            const contentPalette: DotPaletteComponent = de.query(
-                By.css('dot-palette')
-            ).componentInstance;
-            expect(contentPalette.items).toEqual(responseData.slice(0, 5));
+            expect(component.allowedContent).toEqual([...allowedContent]);
         }));
     });
 });

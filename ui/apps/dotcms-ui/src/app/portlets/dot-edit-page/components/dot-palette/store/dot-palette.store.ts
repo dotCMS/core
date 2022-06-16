@@ -143,7 +143,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
         super({
             contentlets: null,
             contentTypes: null,
-            allowedContent: null,
+            allowedContent: [],
             filter: '',
             languageId: '1',
             totalRecords: 0,

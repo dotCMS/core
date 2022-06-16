@@ -77,6 +77,33 @@ describe('DotContentletService', () => {
         req.flush({ entity: [...mockDotContentlet] });
     });
 
+    it('should call the BE with correct endpoint url and method for filterContentTypes()', () => {
+        const body = {
+            filter: {
+                types: 'contant,blog',
+                query: 'blog'
+            },
+            orderBy: 'name',
+            direction: 'ASC',
+            perPage: 40
+        };
+
+        const {
+            filter: { query, types }
+        } = body;
+
+        dotContentTypeService
+            .filterContentTypes(query, types)
+            .subscribe((contentTypes: DotCMSContentType[]) => {
+                expect(contentTypes).toEqual(responseData);
+            });
+        const req = httpMock.expectOne('/api/v1/contenttype/_filter');
+        expect(req.request.method).toBe('POST');
+        expect(req.request.body).toEqual(body);
+
+        req.flush({ entity: [...responseData] });
+    });
+
     it('should get url by id for getUrlById()', () => {
         const idSearched = 'banner';
 

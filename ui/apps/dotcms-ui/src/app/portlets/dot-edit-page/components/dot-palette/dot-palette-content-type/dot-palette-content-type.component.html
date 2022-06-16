@@ -4,10 +4,10 @@
 ></dot-palette-input-filter>
 <div
     class="dot-content-palette__items"
-    *ngIf="itemsFiltered === undefined || itemsFiltered?.length; else noResults"
+    *ngIf="items === undefined || items?.length; else noResults"
 >
     <div
-        *ngFor="let item of itemsFiltered"
+        *ngFor="let item of items"
         draggable="true"
         data-testId="paletteItem"
         (dragstart)="dragStart(item)"

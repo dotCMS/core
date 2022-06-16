@@ -72,6 +72,7 @@ describe('DotPaletteContentTypeComponent', () => {
     let componentHost: TestHostComponent;
     let dotContentletEditorService: DotContentletEditorService;
     let de: DebugElement;
+    let comp: DotPaletteContentTypeComponent;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -94,6 +95,7 @@ describe('DotPaletteContentTypeComponent', () => {
         componentHost = fixtureHost.componentInstance;
 
         de = fixtureHost.debugElement.query(By.css('dot-palette-content-type'));
+        comp = de.componentInstance;
         dotContentletEditorService = de.injector.get(DotContentletEditorService);
 
         fixtureHost.detectChanges();
@@ -114,14 +116,17 @@ describe('DotPaletteContentTypeComponent', () => {
         expect(emptyState).not.toBeNull();
     });
 
-    it('should filter items on search', () => {
-        componentHost.items = contentTypeDataMock;
+    it('should filter items on search', async () => {
+        spyOn(comp.filter, 'emit').and.callThrough();
         fixtureHost.detectChanges();
-        const input = fixtureHost.debugElement.query(By.css('dot-palette-input-filter'));
-        input.componentInstance.filter.emit('Product');
+        await fixtureHost.whenStable();
+
+        const filterComp = fixtureHost.debugElement.query(By.css('dot-palette-input-filter'));
+        filterComp.componentInstance.filter.emit('test');
+
         fixtureHost.detectChanges();
-        const contents = fixtureHost.debugElement.queryAll(By.css('[data-testId="paletteItem"]'));
-        expect(contents.length).toEqual(1);
+
+        expect(comp.filter.emit).toHaveBeenCalledWith('test');
     });
 
     it('should set Dragged ContentType on dragStart', () => {
@@ -136,11 +141,11 @@ describe('DotPaletteContentTypeComponent', () => {
 
     it('should emit event to show a specific contentlet', () => {
         componentHost.items = contentTypeDataMock;
-        spyOn(de.componentInstance.selected, 'emit').and.callThrough();
+        spyOn(comp.selected, 'emit').and.callThrough();
         fixtureHost.detectChanges();
         const buttons = fixtureHost.debugElement.queryAll(By.css('[data-testId="paletteItem"]'));
         buttons[3].nativeElement.click();
-        expect(de.componentInstance.itemsFiltered).toEqual(contentTypeDataMock);
-        expect(de.componentInstance.selected.emit).toHaveBeenCalledWith('Text');
+        expect(comp.items).toEqual(contentTypeDataMock as DotCMSContentType[]);
+        expect(comp.selected.emit).toHaveBeenCalledWith('Text');
     });
 });
