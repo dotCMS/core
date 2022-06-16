@@ -8694,6 +8694,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 try {
 
+                    Logger.debug(this, ()-> "Removing the permissions for: "  + contentlet.getTitle() +
+                            ", id: " + contentlet.getIdentifier());
+                    this.permissionAPI.removePermissions(contentletReturned);
                     Logger.debug(this, ()-> "Saving the permissions for: "  + contentlet.getTitle() +
                             ", id: " + contentlet.getIdentifier());
                     this.permissionAPI.save(selectedPermissions.stream()
