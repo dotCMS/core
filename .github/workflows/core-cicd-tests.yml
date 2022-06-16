@@ -22,6 +22,28 @@ jobs:
         uses: ./.github/actions/module-matcher
         with:
           current: core
+  run-unit-tests-job:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: module-matcher-job
+    if: needs.module-matcher-job.outputs.module_found == 'true'
+    env:
+      DOT_CICD_BRANCH: master
+      EXPORT_REPORTS: true
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
+      PULL_REQUEST: ${{ github.event.number }}
+    steps:
+      - id: fetch-core
+        name: Fetch Core repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - id: module-matcher
+        name: Module Matcher
+        uses: ./.github/actions/module-matcher
+        with:
+          current: core
   build-core-job:
     name: Build Core
     runs-on: ubuntu-latest
@@ -158,14 +180,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        db_type: [ postgres, mssql ]
-    outputs:
-      postgres_tests_results_status: ${{ steps.run-integration-tests.outputs.postgres_tests_results_status }}
-      postgres_tests_results_skip_report: ${{ steps.run-integration-tests.outputs.postgres_tests_results_skip_report }}
-      postgres_tests_results_report_url: ${{ steps.publish-integration-tests.outputs.postgres_tests_report_url }}
-      mssql_tests_results_status: ${{ steps.run-integration-tests.outputs.mssql_tests_results_status }}
-      mssql_tests_results_skip_report: ${{ steps.run-integration-tests.outputs.mssql_tests_results_skip_report }}
-      mssql_tests_results_report_url: ${{ steps.publish-integration-tests.outputs.mssql_tests_report_url }}
+        databaseType: [ postgres, mssql ]
+    needs: module-matcher-job
+    if: needs.module-matcher-job.outputs.module_found == 'true'
+    env:
+      DOT_CICD_BRANCH: master
+      EXPORT_REPORTS: true
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
+      PULL_REQUEST: ${{ github.event.number }}
+      RUN_ALL_DBS: true
     steps:
       - id: fetch-core
         name: Fetch Core Repo
