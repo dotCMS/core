@@ -1,24 +1,19 @@
 package com.dotcms.uuid.shorty;
 
+import static com.dotcms.util.CollectionsUtils.map;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UUIDUtil;
-import com.dotmarketing.util.UtilMethods;
-import org.apache.commons.lang3.math.NumberUtils;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * Implementation class for the {@link ShortyIdAPI}.
