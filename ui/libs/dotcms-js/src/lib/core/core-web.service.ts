@@ -184,7 +184,6 @@ export class CoreWebService {
                     return new ResponseView<T>(resp);
                 }
             }),
-            tap((resp) => console.log(resp)),
             catchError((err: HttpErrorResponse) => {
                 this.emitHttpError(err.status);
                 return throwError(this.handleResponseHttpErrors(err));

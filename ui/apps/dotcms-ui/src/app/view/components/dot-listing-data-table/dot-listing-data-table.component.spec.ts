@@ -73,14 +73,10 @@ class TestHostComponent {
     @Input() checkbox = false;
     @Input() paginatorExtraParams: { [key: string]: string } = {};
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    rowWasClicked(data: any) {
-        //console.log(data);
-    }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    selectedItems(data: any) {
-        //console.log(data);
-    }
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    rowWasClicked() {}
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    selectedItems() {}
 
     mapItems(items: any[]): any[] {
         return items.map((item) => {

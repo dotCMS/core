@@ -707,7 +707,7 @@ describe('Load fields and drag and drop', () => {
         expect(hostComp.loading).toBe(false);
     });
 
-    xit('should save all the fields (moving the last line to the top)', () => {
+    it('should save all the fields (moving the last line to the top)', (done) => {
         fixture.detectChanges();
 
         const fieldMoved = [
@@ -719,19 +719,19 @@ describe('Load fields and drag and drop', () => {
         comp.saveFields.subscribe((data) => {
             expect(data).toEqual(fieldMoved);
             expect(comp.fieldRows).toEqual(fieldMoved);
-            // done();
+            done();
         });
 
         testFieldDragDropService._fieldRowDropFromTarget.next(fieldMoved);
     });
 
-    xit('should break columns and emit save', () => {
+    it('should break columns and emit save', (done) => {
         fixture.detectChanges();
         comp.fieldRows = fieldsWithBreakColumn;
 
         comp.saveFields.subscribe((data) => {
             expect(data).toEqual(fieldsBrokenWithColumns);
-            //done();
+            done();
         });
 
         testFieldDragDropService._fieldDropFromSource.next({
@@ -741,7 +741,7 @@ describe('Load fields and drag and drop', () => {
         });
     });
 
-    xit('should not display Edit Dialog when drag & drop event happens', () => {
+    it('should not display Edit Dialog when drag & drop event happens', (done) => {
         fixture.detectChanges();
 
         const fieldMoved = [
@@ -752,7 +752,7 @@ describe('Load fields and drag and drop', () => {
 
         comp.saveFields.subscribe(() => {
             expect(comp.displayDialog).toBe(false);
-            //done();
+            done();
         });
 
         testFieldDragDropService._fieldRowDropFromTarget.next(fieldMoved);

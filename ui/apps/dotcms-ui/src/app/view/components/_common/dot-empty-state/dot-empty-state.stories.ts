@@ -24,9 +24,8 @@ export default {
         docs: {}
     },
     args: {
-        handleButtonClick: () => {
-            //console.log('button click');
-        }
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
+        handleButtonClick: () => {}
     }
 } as Meta;
 
