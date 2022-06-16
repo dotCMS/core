@@ -52,6 +52,7 @@ import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
@@ -752,9 +753,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public Date getDateProperty(String fieldVarName) throws DotRuntimeException {
 		try{
-			return (Date)map.get(fieldVarName);
+			return map.containsKey(fieldVarName) ? (Date) map.get(fieldVarName) : null;
 		}catch (Exception e) {
-			 throw new DotRuntimeException("Unable to retrive field value", e);
+			 throw new DotRuntimeException(String.format("Unable to retrive field(%s) value", fieldVarName), e);
 		}
 	}
 

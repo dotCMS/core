@@ -18,6 +18,7 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotMenuService } from '@services/dot-menu.service';
 import { DotAccountService, DotAccountUser } from '@services/dot-account-service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotAlertConfirmService } from '@dotcms/app/api/services/dot-alert-confirm/dot-alert-confirm.service';
 
 interface AccountUserForm extends DotAccountUser {
     confirmPassword?: string;
@@ -63,7 +64,8 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
         private loginService: LoginService,
         private dotRouterService: DotRouterService,
         private dotMenuService: DotMenuService,
-        private httpErrorManagerService: DotHttpErrorManagerService
+        private httpErrorManagerService: DotHttpErrorManagerService,
+        private dotAlertConfirmService: DotAlertConfirmService
     ) {
         this.passwordMatch = false;
         this.changePasswordOption = false;
@@ -152,8 +154,11 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
             .pipe(take(1))
             .subscribe(
                 (response) => {
-                    // TODO: replace the alert with a Angular components
-                    alert(this.dotMessageService.get('message.createaccount.success'));
+                    this.dotAlertConfirmService.alert({
+                        header: this.dotMessageService.get('my-account'),
+                        message: this.dotMessageService.get('message.createaccount.success')
+                    });
+
                     this.setShowStarter();
                     this.shutdown.emit();
 

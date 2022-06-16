@@ -17,6 +17,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -79,16 +80,20 @@ public class Task220330ChangeVanityURLSiteFieldType implements StartupTask {
     private void addNotJsonContentlet(final List<ContentletHost> result) throws DotDataException {
         final List<Map<String, Object>> fieldContentlets = getFromQuery(GET_FIELD_CONTENTLET);
         final Map<String, String> fieldContentletsMap = sortByStructure(fieldContentlets);
-        final List<Map<String, Object>> contentletsFromQuery = getFromQuery(
-                getContentletQuery(fieldContentlets));
+        final Optional<String> contentletQueryOptional = getContentletQuery(fieldContentlets);
 
-        for (final Map<String, Object> contentlet : contentletsFromQuery) {
-            final String fieldContentlet = fieldContentletsMap.get(
-                    contentlet.get("structure_inode"));
+        if (contentletQueryOptional.isPresent()) {
+            final List<Map<String, Object>> contentletsFromQuery = getFromQuery(
+                    contentletQueryOptional.get());
 
-            if (UtilMethods.isSet(fieldContentlet)) {
-                result.add(new ContentletHost(contentlet.get("identifier").toString(),
-                        contentlet.get(fieldContentlet).toString()));
+            for (final Map<String, Object> contentlet : contentletsFromQuery) {
+                final String fieldContentlet = fieldContentletsMap.get(
+                        contentlet.get("structure_inode"));
+
+                if (UtilMethods.isSet(fieldContentlet)) {
+                    result.add(new ContentletHost(contentlet.get("identifier").toString(),
+                            contentlet.get(fieldContentlet).toString()));
+                }
             }
         }
     }
@@ -108,14 +113,16 @@ public class Task220330ChangeVanityURLSiteFieldType implements StartupTask {
         return (List<Map<String, Object>>) dotConnect.loadResults();
     }
 
-    private String getContentletQuery(final List<Map<String, Object>> fieldContentlets) {
+    private Optional<String> getContentletQuery(final List<Map<String, Object>> fieldContentlets) {
         final String fieldContentletsString = fieldContentlets.stream()
                 .map(fields -> fields.get("field_contentlet").toString())
                 .collect(Collectors.toSet())
                 .stream()
                 .collect(Collectors.joining(","));
 
-        return String.format(GET_CONTENTLET_NOT_JSON, fieldContentletsString);
+        return UtilMethods.isSet(fieldContentletsString) ?
+                Optional.of(String.format(GET_CONTENTLET_NOT_JSON, fieldContentletsString)) :
+                Optional.empty();
     }
 
     private Map<String, String> sortByStructure(final  List<Map<String, Object>> fieldContentlets) {

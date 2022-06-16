@@ -17,6 +17,7 @@ import com.dotmarketing.util.json.JSONObject;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.util.XStreamFactory;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.workflow.form.FireActionForm;
@@ -59,6 +60,7 @@ import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.DomDriver;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
@@ -107,6 +109,7 @@ import static com.dotmarketing.util.NumberUtil.toInt;
 import static com.dotmarketing.util.NumberUtil.toLong;
 
 @Path("/content")
+@Tag(name = "Content Delivery")
 public class ContentResource {
 
     // set this only from an environmental variable so it cannot be overrriden in our Config class
@@ -776,7 +779,7 @@ public class ContentResource {
             final boolean allCategoriesInfo){
 
         final StringBuilder sb = new StringBuilder();
-        final XStream xstream = new XStream(new DomDriver());
+        final XStream xstream = XStreamFactory.INSTANCE.getInstance();
         xstream.alias("content", Map.class);
         xstream.registerConverter(new MapEntryConverter());
         sb.append("<?xml version=\"1.0\" encoding='UTF-8'?>");
@@ -1019,7 +1022,7 @@ public class ContentResource {
 
 
     private String getXMLContentIds(Contentlet con) {
-        XStream xstream = new XStream(new DomDriver());
+        XStream xstream = XStreamFactory.INSTANCE.getInstance();
         xstream.alias("content", Map.class);
         xstream.registerConverter(new MapEntryConverter());
         StringBuilder sb = new StringBuilder();
@@ -2130,7 +2133,7 @@ public class ContentResource {
                 .startsWith("<?XML")) {
             throw new DotSecurityException("Invalid XML");
         }
-        XStream xstream = new XStream(new DomDriver());
+        XStream xstream = XStreamFactory.INSTANCE.getInstance();
         xstream.alias("content", Map.class);
         xstream.registerConverter(new MapEntryConverter());
         Map<String, Object> root = (Map<String, Object>) xstream.fromXML(input);

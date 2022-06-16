@@ -1,6 +1,5 @@
 package com.dotcms.rendering.velocity.services;
 
-
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -24,7 +23,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.factories.PersonalizedContentlet;
-import com.dotmarketing.portlets.containers.business.*;
+import com.dotmarketing.portlets.containers.business.ContainerFinderByIdOrPathStrategy;
+import com.dotmarketing.portlets.containers.business.LiveContainerFinderByIdOrPathStrategyResolver;
+import com.dotmarketing.portlets.containers.business.WorkingContainerFinderByIdOrPathStrategyResolver;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
@@ -43,7 +44,10 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
@@ -61,7 +65,10 @@ import java.util.function.Supplier;
 import static com.dotmarketing.business.PermissionAPI.*;
 
 /**
- * Util class for rendering a Page
+ * Utility class that provides commonly used methods for rendering HTML Pages in dotCMS.
+ *
+ * @author Freddy Rodriguez
+ * @since Feb 22nd, 2019
  */
 public class PageRenderUtil implements Serializable {
 
@@ -72,7 +79,6 @@ public class PageRenderUtil implements Serializable {
     private final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
     private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
     private final TagAPI tagAPI = APILocator.getTagAPI();
-    private final PersonaAPI personaAPI = APILocator.getPersonaAPI();
 
     final IHTMLPage htmlPage;
     final User user;
@@ -80,12 +86,10 @@ public class PageRenderUtil implements Serializable {
     final PageMode mode;
     final List<Tag> pageFoundTags;
     final StringBuilder widgetPreExecute;
-    final static String WIDGET_PRE_EXECUTE = "WIDGET_PRE_EXECUTE";
     final List<ContainerRaw> containersRaw;
     final long languageId;
     final Host site;
     final TemplateLayout templateLayout;
-
 
     public PageRenderUtil(
             final IHTMLPage htmlPage,
@@ -190,57 +194,6 @@ public class PageRenderUtil implements Serializable {
 
 
         return ctxMap;
-    }
-
-    private Container getLiveContainerById(final String containerId) throws DotSecurityException, DotDataException {
-
-        final LiveContainerFinderByIdOrPathStrategyResolver strategyResolver =
-                LiveContainerFinderByIdOrPathStrategyResolver.getInstance();
-        final Optional<ContainerFinderByIdOrPathStrategy> strategy = strategyResolver.get(containerId);
-        final ContainerFinderByIdOrPathStrategy liveStrategy = strategy.isPresent() ? strategy.get() : strategyResolver.getDefaultStrategy();
-        final Supplier<Host> resourceHostSupplier = () -> this.site;
-
-
-        Container container = null;
-        try {
-
-            container =
-                    liveStrategy.apply(containerId, APILocator.systemUser(), false, resourceHostSupplier);
-        } catch (NotFoundInDbException e) {
-
-            container = null;
-        }
-
-        return container;
-    }
-
-    private Container getLiveContainerById(final String containerIdOrPath, final User user, final Template template) throws NotFoundInDbException {
-
-        final LiveContainerFinderByIdOrPathStrategyResolver strategyResolver =
-                LiveContainerFinderByIdOrPathStrategyResolver.getInstance();
-        final Optional<ContainerFinderByIdOrPathStrategy> strategy = strategyResolver.get(containerIdOrPath);
-
-        return this.geContainerById(containerIdOrPath, user, template, strategy, strategyResolver.getDefaultStrategy());
-    }
-
-    private Container getWorkingContainerById(final String containerIdOrPath, final User user, final Template template) throws NotFoundInDbException {
-
-        final WorkingContainerFinderByIdOrPathStrategyResolver strategyResolver =
-                WorkingContainerFinderByIdOrPathStrategyResolver.getInstance();
-        final Optional<ContainerFinderByIdOrPathStrategy> strategy = strategyResolver.get(containerIdOrPath);
-
-        return this.geContainerById(containerIdOrPath, user, template, strategy, strategyResolver.getDefaultStrategy());
-    }
-
-    private Container geContainerById(final String containerIdOrPath, final User user, final Template template,
-                                      final Optional<ContainerFinderByIdOrPathStrategy> strategy,
-                                      final ContainerFinderByIdOrPathStrategy defaultContainerFinderByIdOrPathStrategy) throws NotFoundInDbException {
-
-        final Supplier<Host> resourceHostSupplier = Sneaky.sneaked(() -> APILocator.getTemplateAPI().getTemplateHost(template));
-
-        return strategy.isPresent() ?
-                strategy.get().apply(containerIdOrPath, user, false, resourceHostSupplier) :
-                defaultContainerFinderByIdOrPathStrategy.apply(containerIdOrPath, user, false, resourceHostSupplier);
     }
 
     private List<ContainerRaw> populateContainers() throws DotDataException, DotSecurityException {
@@ -394,13 +347,74 @@ public class PageRenderUtil implements Serializable {
                 (templateLayout == null || !templateLayout.existsContainer(container, uniqueId));
     }
 
+    /**
+     * Returns the Contentlet specified in the {@link PersonalizedContentlet} object, which comes from the {@code
+     * multi_tree} table that determines how HTML Pages, Containers, Contentlets, and Personalization are associated.
+     * Depending on the current configuration in your dotCMS instance, the {@link Contentlet} being returned will be
+     * either the one in the current language, or the version in the default language.
+     *
+     * <p>Now, for HTML Page editing purposes ONLY, if the current User does not have {@code READ} permission on the
+     * specified Contentlet, the Anonymous User will be used to retrieve it. This way, limited Users can still open and
+     * edit the HTML Page without any problems.</p>
+     *
+     * @param personalizedContentlet The Personalized Content object.
+     *
+     * @return An instance of the {@link Contentlet} represented by the Identifier in the Personalized Contentlet
+     * object.
+     */
     private Contentlet getContentlet(final PersonalizedContentlet personalizedContentlet) {
-
-        return Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false)?
-                getContentletOrFallback(personalizedContentlet) : getSpecificContentlet(personalizedContentlet);
+        try {
+            return Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false) ?
+                    getContentletOrFallback(personalizedContentlet) : getSpecificContentlet(personalizedContentlet);
+        } catch (final DotSecurityException se) {
+            if (this.mode == PageMode.EDIT_MODE || this.mode == PageMode.PREVIEW_MODE) {
+                // In Edit Mode, allow Users who cannot edit a specific piece of content to be able to edit the HTML
+                // Page that is holding it without any problems
+                return limitedUserPermissionFallback(personalizedContentlet.getContentletId(), false);
+            }
+            throw new DotStateException(se);
+        }
     }
 
-    private Contentlet getSpecificContentlet(final PersonalizedContentlet personalizedContentlet) {
+    /**
+     * Checks if the CMS Anonymous User has {@code READ} permission on the specified Contentlet ID.
+     *
+     * @param contentletId The Identifier of the Contentlet whose permission will be checked.
+     *
+     * @return If the User has the expected {@code READ} permission, the {@link Contentlet} will be returned. If not, a
+     * {@code null} will be returned.
+     */
+    private Contentlet limitedUserPermissionFallback(final String contentletId, final boolean fallback) {
+        final long languageId = this.resolveLanguageId();
+        try {
+            final User anonymousUser = APILocator.getUserAPI().getAnonymousUser();
+            final Contentlet contentlet = fallback ?
+                    this.contentletAPI.findContentletByIdentifierOrFallback(contentletId, this.mode.showLive,
+                            languageId, anonymousUser, true).get() :
+                    this.contentletAPI.findContentletByIdentifier(contentletId, this.mode.showLive, languageId,
+                            anonymousUser, true);
+            return contentlet;
+        } catch (final Exception e) {
+            Logger.debug(this,
+                    String.format("User '%s' does not have access to Contentlet '%s' in Edit Mode. Just move on",
+                            this.user.getUserId(), contentletId));
+            return null;
+        }
+    }
+
+    /**
+     * Returns the Contentlet specified in the {@link PersonalizedContentlet} object, which comes from the {@code
+     * multi_tree} table that determines how HTML Pages, Containers, Contentlets, and Personalization are associated.
+     *
+     * @param personalizedContentlet - The Personalized Content object.
+     *
+     * @return An instance of the {@link Contentlet} represented by the Identifier in the Personalized Contentlet
+     * object.
+     *
+     * @throws DotSecurityException The specified User does not have {@code READ} permission on the specified Content
+     */
+    private Contentlet getSpecificContentlet(final PersonalizedContentlet personalizedContentlet) throws
+            DotSecurityException {
         try {
 
             final Contentlet contentlet = contentletAPI.findContentletByIdentifier
@@ -410,6 +424,9 @@ public class PageRenderUtil implements Serializable {
         } catch (final DotContentletStateException e) {
             // Expected behavior, DotContentletState Exception is used for flow control
             return null;
+        } catch (final DotSecurityException e) {
+            // Expected behavior. The User might not have permissions on a given Contentlet
+            throw e;
         } catch (Exception e) {
             throw new DotStateException(e);
         }
@@ -431,20 +448,32 @@ public class PageRenderUtil implements Serializable {
         return this.languageId;
     }
 
+    /**
+     * Returns the Contentlet specified in the {@link PersonalizedContentlet} object, which comes from the {@code
+     * multi_tree} table that determines how HTML Pages, Containers, Contentlets, and Personalization are associated. If
+     * the {@link Contentlet} being returned is NOT available in the current language, the version in the default
+     * language will be returned instead.
+     *
+     * <p>Now, for HTML Page editing purposes ONLY, if the current User does not have {@code READ} permission on the
+     * specified Contentlet, the Anonymous User will be used to retrieve it. This way, limited Users can still open and
+     * edit the HTML Page without any problems.</p>
+     *
+     * @param personalizedContentlet The Personalized Content object.
+     *
+     * @return An instance of the {@link Contentlet} represented by the Identifier in the Personalized Contentlet
+     * object.
+     */
     private Contentlet getContentletOrFallback(final PersonalizedContentlet personalizedContentlet) {
         try {
-
             final Optional<Contentlet> contentletOpt = contentletAPI.findContentletByIdentifierOrFallback
-                    (personalizedContentlet.getContentletId(), mode.showLive, languageId, user, mode.respectAnonPerms);
-
+                    (personalizedContentlet.getContentletId(), mode.showLive, languageId, user, true);
             final Contentlet contentlet = contentletOpt.isPresent()
                     ? contentletOpt.get() : contentletAPI.findContentletByIdentifierAnyLanguage(personalizedContentlet.getContentletId());
-
             return contentlet;
         } catch (final DotContentletStateException e) {
             // Expected behavior, DotContentletState Exception is used for flow control
             return null;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             throw new DotStateException(e);
         }
     }
@@ -549,4 +578,5 @@ public class PageRenderUtil implements Serializable {
             return contents.entrySet();
         }
     }
+
 }
