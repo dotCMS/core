@@ -29,7 +29,7 @@ export class PushPublishService {
         public _apiRoot: ApiRoot,
         private coreWebService: CoreWebService,
         private currentUser: DotCurrentUserService,
-        private dotFormatDateService: DotFormatDateService,
+        private dotFormatDateService: DotFormatDateService
     ) {}
 
     /**
@@ -41,7 +41,7 @@ export class PushPublishService {
         return this.currentUser.getCurrentUser().pipe(
             mergeMap((user: DotCurrentUser) => {
                 return this.coreWebService.requestView({
-                    url: `${this.pushEnvironementsUrl}/${user.roleId}/name=0`
+                    url: `${this.pushEnvironementsUrl}/${user.roleId}`
                 });
             }),
             pluck('bodyJsonObject'),
@@ -79,15 +79,33 @@ export class PushPublishService {
 
     private getPublishEnvironmentData(
         assetIdentifier: string,
-        { publishDate, expireDate, pushActionSelected, environment, filterKey, timezoneId }: DotPushPublishData
+        {
+            publishDate,
+            expireDate,
+            pushActionSelected,
+            environment,
+            filterKey,
+            timezoneId
+        }: DotPushPublishData
     ): string {
-
         let result = '';
         result += `assetIdentifier=${encodeURIComponent(assetIdentifier)}`;
-        result += `&remotePublishDate=${this.dotFormatDateService.format(publishDate ? new Date(publishDate) : new Date(), 'yyyy-MM-dd')}`;
-        result += `&remotePublishTime=${this.dotFormatDateService.format(publishDate ? new Date(publishDate) : new Date(), 'HH-mm')}`;
-        result += `&remotePublishExpireDate=${this.dotFormatDateService.format(expireDate ? new Date(expireDate) : new Date(), 'yyyy-MM-dd')}`;
-        result += `&remotePublishExpireTime=${this.dotFormatDateService.format(expireDate ? new Date(expireDate) : new Date(), 'HH-mm')}`;
+        result += `&remotePublishDate=${this.dotFormatDateService.format(
+            publishDate ? new Date(publishDate) : new Date(),
+            'yyyy-MM-dd'
+        )}`;
+        result += `&remotePublishTime=${this.dotFormatDateService.format(
+            publishDate ? new Date(publishDate) : new Date(),
+            'HH-mm'
+        )}`;
+        result += `&remotePublishExpireDate=${this.dotFormatDateService.format(
+            expireDate ? new Date(expireDate) : new Date(),
+            'yyyy-MM-dd'
+        )}`;
+        result += `&remotePublishExpireTime=${this.dotFormatDateService.format(
+            expireDate ? new Date(expireDate) : new Date(),
+            'HH-mm'
+        )}`;
         result += `&timezoneId=${timezoneId}`;
         result += `&iWantTo=${pushActionSelected}`;
         result += `&whoToSend=${environment}`;
