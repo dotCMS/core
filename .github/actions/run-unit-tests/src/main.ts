@@ -15,8 +15,8 @@ const run = () => {
     return
   }
 
-  core.setOutput('tests_results_location', cmd.outputDir)
-  core.setOutput('tests_results_report_location', cmd.reportDir)
+  setOutput('tests_results_location', cmd.outputDir)
+  setOutput('tests_results_report_location', cmd.reportDir)
 
   unit
     .runTests(cmd)
@@ -27,16 +27,22 @@ const run = () => {
         skipResultsReport: false
       }
       core.info(`Unit test results:\n${JSON.stringify(results)}`)
-      core.setOutput('tests_results_status', exitCode === 0 ? 'PASSED' : 'FAILED')
-      core.setOutput('tests_results_skip_report', false)
+      setOutput('tests_results_status', exitCode === 0 ? 'PASSED' : 'FAILED')
+      setOutput('tests_results_skip_report', false)
     })
     .catch(reason => {
       const messg = `Running unit tests failed due to ${reason}`
       const skipResults = !fs.existsSync(cmd.outputDir)
-      core.setOutput('tests_results_status', 'FAILED')
-      core.setOutput('tests_results_skip_report', skipResults)
+      setOutput('tests_results_status', 'FAILED')
+      setOutput('tests_results_skip_report', skipResults)
       core.setFailed(messg)
     })
+}
+
+const setOutput = (name: string, value: string | boolean | number | undefined) => {
+  const val = value === undefined ? '' : value
+  core.notice(`Setting output '${name}' with value: '${val}'`)
+  core.setOutput(name, value)
 }
 
 // Run main function

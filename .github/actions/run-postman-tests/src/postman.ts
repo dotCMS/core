@@ -19,12 +19,16 @@ const licenseKey = core.getInput('license_key')
 const customStarterUrl = core.getInput('custom_starter_url')
 const tests = core.getInput('tests')
 const exportReport = core.getBooleanInput('export_report')
-const dockerFolder = path.join(projectRoot, 'cicd', 'docker')
+const cicdFolder = path.join(projectRoot, 'cicd')
+const resourcesFolder = path.join(cicdFolder, 'resources', 'postman')
+const dockerFolder = path.join(cicdFolder, 'docker')
 const licenseFolder = path.join(dockerFolder, 'license')
-const volumes = [licenseFolder, path.join(dockerFolder, 'cms-shared'), path.join(dockerFolder, 'cms-local')]
-const postmanTestsPath = path.join(projectRoot, 'dotCMS', 'src', 'curl-test')
-const postmanEnvFile = 'postman_environment.json'
 const dotCmsRoot = path.join(projectRoot, 'dotCMS')
+const logsFolder = path.join(dockerFolder, 'logs')
+const logFile = 'dotcms.log'
+const volumes = [licenseFolder, path.join(dockerFolder, 'cms-shared'), path.join(dockerFolder, 'cms-local'), logsFolder]
+const postmanTestsPath = path.join(dotCmsRoot, 'src', 'curl-test')
+const postmanEnvFile = 'postman_environment.json'
 const resultsFolder = path.join(dotCmsRoot, 'build', 'test-results', 'postmanTest')
 const reportFolder = path.join(dotCmsRoot, 'build', 'reports', 'tests', 'postmanTest')
 const runtTestsPrefix = 'postman-tests:'
@@ -47,30 +51,53 @@ const DEPS_ENV: {[key: string]: string} = {
   POSTGRES_DB: 'dotcms'
 }
 
-/**
- * Based on a revolved {@link Command}, resolve the command to execute in order to run integration tests.
+/*
  *
  * @returns a number representing the command exit code
  */
 export const runTests = async (): Promise<PostmanTestsResult> => {
   setup()
-  await startDeps()
-  await startDotCMS()
-  const results = await runPostmanTests()
-  await stopDotCMS()
-  await stopDeps()
-  return results
+  startDeps()
+
+  try {
+    return await runPostmanTests()
+    copyOutputs()
+  } catch (err) {
+    throw err
+  } finally {
+    await stopDeps()
+  }
 }
 
+/**
+ * Copies logs from docker volume to standard DotCMS location.
+ */
+const copyOutputs = async () => {
+  await exec.exec('pwd', [], {cwd: logsFolder})
+  await exec.exec('ls', ['-las', '.'], {cwd: logsFolder})
+
+  try {
+    fs.copyFileSync(path.join(logsFolder, logFile), path.join(dotCmsRoot, logFile))
+  } catch (err) {
+    core.warning(`Error copying log file: ${err}`)
+  }
+}
+
+/**
+ * Sets up everuthing needed to run postman collections.
+ */
 const setup = () => {
   installDeps()
   createFolders()
   prepareLicense()
 }
 
+/**
+ * Install necessary dependencies to run the postman collections.
+ */
 const installDeps = async () => {
   core.info('Installing newman')
-  const npmArgs = ['install', '-g', 'newman']
+  const npmArgs = ['install', '--location=global', 'newman']
   if (exportReport) {
     npmArgs.push('newman-reporter-htmlextra')
   }
@@ -87,6 +114,9 @@ const installDeps = async () => {
   // }
 }
 
+/**
+ * Start postman depencies: db, ES and DotCMS isntance.
+ */
 const startDeps = async () => {
   // Starting dependencies
   core.info(`
@@ -96,58 +126,61 @@ const startDeps = async () => {
   // const depProcess = she
   exec.exec(
     'docker-compose',
-    [
-      '-f',
-      'open-distro-compose.yml',
-      '-f',
-      `${dbType}-compose.yml`,
-      '-f',
-      'dotcms-compose.yml',
-      'up',
-      '--abort-on-container-exit'
-    ],
+    ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'up'],
     {
       cwd: dockerFolder,
       env: DEPS_ENV
     }
   )
 
-  await waitFor(30, `ES, ${dbType} and DotCMS instance`)
+  //await startDotCMS()
 }
 
+/**
+ * Stop postman depencies: db, ES and DotCMS isntance.
+ */
 const stopDeps = async () => {
+  //await stopDotCMS()
   // Stopping dependencies
   core.info(`
-    =======================================
+    ===================================
     Stopping postman tests dependencies
-    =======================================`)
-  // const depProcess = she
-  await exec.exec(
-    'docker-compose',
-    ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'down'],
-    {
-      cwd: dockerFolder,
-      env: DEPS_ENV
-    }
-  )
+    ===================================`)
+  try {
+    await exec.exec(
+      'docker-compose',
+      ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'down'],
+      {
+        cwd: dockerFolder,
+        env: DEPS_ENV
+      }
+    )
+  } catch (err) {
+    console.error(`Error stopping dependencies: ${err}`)
+  }
 }
 
-const startDotCMS = async () => {
-  core.info(`
-    =======================================
-    Starting DotCMS instance
-    =======================================`)
-  //exec.exec(path.join(tomcatRoot, 'bin', 'startup.sh'))
-}
+// const startDotCMS = async () => {
+//   core.info(`
+//     =======================================
+//     Starting DotCMS instance
+//     =======================================`)
+//   exec.exec(path.join(tomcatRoot, 'bin', 'startup.sh'))
+// }
 
-const stopDotCMS = async () => {
-  core.info(`
-    =======================================
-    Stopping DotCMS instance
-    =======================================`)
-  //await exec.exec(path.join(tomcatRoot, 'bin', 'shutdown.sh'))
-}
+// const stopDotCMS = async () => {
+//   core.info(`
+//     =======================================
+//     Stopping DotCMS instance
+//     =======================================`)
+//   await exec.exec(path.join(tomcatRoot, 'bin', 'shutdown.sh'))
+// }
 
+/**
+ * Run postman tests.
+ *
+ * @returns an overall ivew of the tests results
+ */
 const runPostmanTests = async (): Promise<PostmanTestsResult> => {
   await waitFor(150, `DotCMS instance`)
 
@@ -168,26 +201,50 @@ const runPostmanTests = async (): Promise<PostmanTestsResult> => {
       : resolvedTests.filter(resolved => !!foundCollections.find(collection => collection === resolved))
   core.info(`Detected Postman collections:\n${filtered.join(',')}`)
 
+  const htmlResults: string[] = []
+  const header = fs.readFileSync(path.join(resourcesFolder, 'postman-results-header.html'), {
+    encoding: 'utf8',
+    flag: 'r'
+  })
+  const footer = fs.readFileSync(path.join(resourcesFolder, 'postman-results-footer.html'), {
+    encoding: 'utf8',
+    flag: 'r'
+  })
   const collectionRuns = new Map<string, number>()
+
   for (const collection of filtered) {
+    let rc: number
     try {
-      const returnCode = await runPostmanTest(collection)
-      collectionRuns.set(collection, returnCode)
+      rc = await runPostmanCollection(collection, htmlResults)
     } catch (err) {
       core.error(`Postman collection run for ${collection} failed due to: ${err}`)
-      collectionRuns.set(collection, 127)
+      rc = 127
     }
-    core.info(`Results files so far at ${resultsFolder}:\n${shelljs.ls(resultsFolder).join(',')}`)
+    collectionRuns.set(collection, rc)
+    const contents = [header, ...htmlResults, footer]
+    fs.writeFileSync(path.join(reportFolder, 'index.html'), `${contents.join('\n')}`, {
+      encoding: 'utf8',
+      flag: 'a+',
+      mode: 0o666
+    })
   }
 
   return handleResults(collectionRuns)
 }
 
-const runPostmanTest = async (collection: string): Promise<number> => {
+/**
+ * Run a postman collection.
+ *
+ * @param collection postman collection
+ * @param htmlResults array storing html results summary
+ * @returns promise with process return code
+ */
+const runPostmanCollection = async (collection: string, htmlResults: string[]): Promise<number> => {
   core.info(`Running Postman test: ${collection}`)
   const normalized = collection.replace(/ /g, '_').replace('.json', '')
   const resultFile = path.join(resultsFolder, `${normalized}.xml`)
-  const reportFile = path.join(reportFolder, `${normalized}.html`)
+  const page = `${normalized}.html`
+  const reportFile = path.join(reportFolder, page)
   const reporters = ['cli', 'junit']
   if (exportReport) {
     reporters.push('htmlextra')
@@ -206,11 +263,26 @@ const runPostmanTest = async (collection: string): Promise<number> => {
     args.push('--reporter-htmlextra-export')
     args.push(reportFile)
   }
-  return await exec.exec('newman', args, {
+  const rc = await exec.exec('newman', args, {
     cwd: postmanTestsPath
   })
+
+  if (exportReport) {
+    htmlResults.push(
+      `<tr><td><a href="./${page}">$f</a></td><td style="color: #ccd2da; background-color: ${
+        rc === 0 ? '#28a745' : '#dc3545'
+      };">${rc === 0 ? 'PASSED' : 'FAILED'}</td></tr>`
+    )
+  }
+
+  return rc
 }
 
+/*
+ *
+ * @param collectionRuns collection tests results map
+ * @returns an overall ivew of the tests results
+ */
 const handleResults = (collectionRuns: Map<string, number>): PostmanTestsResult => {
   let collectionFailed = true
   for (const collection in collectionRuns.keys) {
@@ -249,11 +321,16 @@ const waitFor = async (wait: number, startLabel: string, endLabel?: string) => {
   core.info(`Waiting on ${finalLabel} loading has ended`)
 }
 
+/**
+ * Create necessary folders
+ */
 const createFolders = () => {
   const folders = [resultsFolder, reportFolder, ...volumes]
   for (const folder of folders) {
     fs.mkdirSync(folder, {recursive: true})
   }
+
+  shelljs.touch(path.join(dockerFolder, logFile))
 }
 
 /**

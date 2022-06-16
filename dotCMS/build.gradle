@@ -721,7 +721,7 @@ war {
 
 task testDev(type: Test) {
     reports.junitXml.setDestination(file("$buildDir/test-results/unit-tests/xml"))
-//    reports.html.setDestination(file("$buildDir/test-results/unit-tests/html"))
+    reports.html.setDestination(file("$buildDir/test-results/unit-tests/html"))
 }
 
 // Distribution

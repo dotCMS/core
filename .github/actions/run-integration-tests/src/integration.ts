@@ -3,16 +3,10 @@ import * as exec from '@actions/exec'
 import * as path from 'path'
 import * as setup from './it-setup'
 
-const buildEnv = core.getInput('build_env')
-const projectRoot = core.getInput('project_root')
-const workspaceRoot = path.dirname(projectRoot)
-const dotCmsRoot = path.join(projectRoot, 'dotCMS')
-const dbType = core.getInput('db_type')
-const runtTestsPrefix = 'integration-tests:'
-
 /**
  * Based on dbType resolves the ci index
- * @returns
+ *
+ * @returns index based on provided db type
  */
 const resolveCiIndex = (): number => {
   if (dbType === 'postgres') {
@@ -23,6 +17,17 @@ const resolveCiIndex = (): number => {
 
   return -1
 }
+
+const buildEnv = core.getInput('build_env')
+const projectRoot = core.getInput('project_root')
+const workspaceRoot = path.dirname(projectRoot)
+const dotCmsRoot = path.join(projectRoot, 'dotCMS')
+const dbType = core.getInput('db_type')
+const runtTestsPrefix = 'integration-tests:'
+const dockerFolder = `${projectRoot}/cicd/docker`
+const outputDir = `${dotCmsRoot}/build/test-results/integrationTest`
+const reportDir = `${dotCmsRoot}/build/reports/tests/integrationTest`
+const ciIndex = resolveCiIndex()
 
 export interface Command {
   cmd: string
@@ -35,8 +40,8 @@ export interface Command {
 }
 
 interface DatabaseEnvs {
-  postgres: {[key: string]: string}
-  mssql: {[key: string]: string}
+  postgres?: {[key: string]: string}
+  mssql?: {[key: string]: string}
 }
 
 const DEPS_ENV: DatabaseEnvs = {
@@ -44,8 +49,7 @@ const DEPS_ENV: DatabaseEnvs = {
     POSTGRES_USER: 'postgres',
     POSTGRES_PASSWORD: 'postgres',
     POSTGRES_DB: 'dotcms'
-  },
-  mssql: {}
+  }
 }
 
 export interface Commands {
@@ -58,31 +62,31 @@ export const COMMANDS: Commands = {
     cmd: './gradlew',
     args: ['integrationTest', `-PdatabaseType=${dbType}`],
     workingDir: dotCmsRoot,
-    outputDir: `${dotCmsRoot}/build/test-results/integrationTest`,
-    reportDir: `${dotCmsRoot}/build/reports/tests/integrationTest`,
-    ciIndex: resolveCiIndex()
+    outputDir: outputDir,
+    reportDir: reportDir,
+    ciIndex: ciIndex
   },
   maven: {
     cmd: './mvnw',
     args: ['integrationTest', `-PdatabaseType=${dbType}`],
     workingDir: dotCmsRoot,
-    outputDir: `${dotCmsRoot}/build/test-results/integrationTest`,
-    reportDir: `${dotCmsRoot}/build/reports/tests/integrationTest`,
-    ciIndex: resolveCiIndex()
+    outputDir: outputDir,
+    reportDir: reportDir,
+    ciIndex: ciIndex
   }
 }
 
 const START_DEPENDENCIES_CMD: Command = {
   cmd: 'docker-compose',
-  args: ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, 'up', '--abort-on-container-exit'],
-  workingDir: `${projectRoot}/cicd/docker`,
+  args: ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, 'up'],
+  workingDir: dockerFolder,
   env: DEPS_ENV[dbType as keyof DatabaseEnvs]
 }
 
 const STOP_DEPENDENCIES_CMD: Command = {
   cmd: 'docker-compose',
   args: ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, 'down'],
-  workingDir: `${projectRoot}/cicd/docker`,
+  workingDir: dockerFolder,
   env: DEPS_ENV[dbType as keyof DatabaseEnvs]
 }
 
@@ -118,21 +122,28 @@ export const runTests = async (cmd: Command): Promise<number> => {
       ===========================================
       Integration tests have finished to run
       ===========================================`)
-    stopDeps()
     return itCode
   } catch (err) {
-    stopDeps()
     throw err
+  } finally {
+    stopDeps()
   }
 }
 
+/**
+ * Stops dependencies.
+ */
 const stopDeps = async () => {
   // Stopping dependencies
   core.info(`
     =======================================
     Stopping integration tests dependencies
     =======================================`)
-  await execCmd(STOP_DEPENDENCIES_CMD)
+  try {
+    await execCmd(STOP_DEPENDENCIES_CMD)
+  } catch (err) {
+    console.error(`Error stopping dependencies: ${err}`)
+  }
 }
 
 /**
@@ -147,7 +158,7 @@ const propertyMap = (): Map<string, string> => {
   properties.set('felixFolder', appendToWorkspace('custom/felix'))
   properties.set('assetsFolder', appendToWorkspace('custom/assets'))
   properties.set('esDataFolder', appendToWorkspace('custom/esdata'))
-  properties.set('logsFolder', appendToWorkspace('custom/output/logs'))
+  properties.set('logsFolder', dotCmsRoot)
   properties.set('dbType', dbType)
   return properties
 }
