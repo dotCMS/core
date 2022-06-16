@@ -55,10 +55,13 @@ export const contentTypeDataMock = [
 
 @Component({
     selector: 'dot-test-host-component',
-    template: ` <dot-palette-content-type [items]="items"></dot-palette-content-type> `
+    template: `
+        <dot-palette-content-type [items]="items" [loading]="loading"></dot-palette-content-type>
+    `
 })
 class TestHostComponent {
     @Input() items: any[];
+    @Input() loading: boolean;
     @Output() filter = new EventEmitter<any>();
 }
 
@@ -109,11 +112,22 @@ describe('DotPaletteContentTypeComponent', () => {
         expect(contents[0].nativeElement.draggable).toEqual(true);
     });
 
-    it('should show empty state', () => {
+    it('should show empty state', async () => {
         componentHost.items = [];
+        componentHost.loading = false;
         fixtureHost.detectChanges();
+        await fixtureHost.whenStable();
         const emptyState = fixtureHost.debugElement.query(By.css('[data-testId="emptyState"]'));
         expect(emptyState).not.toBeNull();
+    });
+
+    it('should show loding state', async () => {
+        componentHost.items = [];
+        componentHost.loading = true;
+        fixtureHost.detectChanges();
+        await fixtureHost.whenStable();
+        const loading = fixtureHost.debugElement.query(By.css('dot-spinner'));
+        expect(loading).not.toBeNull();
     });
 
     it('should filter items on search', async () => {

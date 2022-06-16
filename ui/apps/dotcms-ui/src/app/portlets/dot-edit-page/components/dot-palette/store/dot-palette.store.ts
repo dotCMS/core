@@ -82,10 +82,11 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
     });
 
     // EFFECTS
-    readonly loadContentTypes = this.effect((data$: Observable<DotCMSContentType[]>) => {
+    readonly loadContentTypes = this.effect((data$: Observable<string[]>) => {
         return data$.pipe(
-            map((data) => {
-                this.setContentTypes(data);
+            map((allowedContent) => {
+                this.setAllowedContent(allowedContent);
+                this.getContenttypesData();
             })
         );
     });
@@ -213,7 +214,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                     );
                     this.setLoaded();
                     // Set the first 50 items
-                    this.loadContentTypes(contentTypes.slice(0, 40));
+                    this.setContentTypes(contentTypes.slice(0, 40));
                 });
         });
     }

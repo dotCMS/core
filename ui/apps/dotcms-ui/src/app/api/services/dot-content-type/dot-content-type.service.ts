@@ -53,10 +53,11 @@ export class DotContentTypeService {
     }
 
     /**
+     * Gets an array of allowerdType of DotCMSContentType[]
      *
-     *
-     * @param {string} filter
-     * @return {*}  {Observable<StructureTypeView[]>}
+     * @param {string} [filter='']
+     * @param {string} [allowedTypes='']
+     * @return {*}  {Observable<DotCMSContentType[]>}
      * @memberof DotContentTypeService
      */
     filterContentTypes(

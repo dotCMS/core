@@ -166,7 +166,11 @@ describe('DotPaletteStore', () => {
 
     describe('Effects', () => {
         it('should load contentTypes to store', (done) => {
-            dotPaletteStore.loadContentTypes(contentTypeDataMock as DotCMSContentType[]);
+            spyOn(dotContentTypeService, 'filterContentTypes').and.returnValues(
+                of(contentTypeDataMock as DotCMSContentType[])
+            );
+            spyOn(dotContentTypeService, 'getContentTypes').and.returnValues(of([]));
+            dotPaletteStore.loadContentTypes(['blog', 'banner']);
             dotPaletteStore.vm$.subscribe((data) => {
                 expect(data.contentTypes).toEqual(contentTypeDataMock as DotCMSContentType[]);
                 done();

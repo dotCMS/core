@@ -74,7 +74,6 @@ import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-di
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotPageContainer } from '@models/dot-page-container/dot-page-container.model';
 import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
-// import { DotContentTypeService } from '@services/dot-content-type';
 import { DotPaletteComponent } from '@dotcms/app/portlets/dot-edit-page/components/dot-palette/dot-palette.component';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DotGenerateSecurePasswordService } from '@services/dot-generate-secure-password/dot-generate-secure-password.service';
@@ -1374,7 +1373,7 @@ describe('DotEditContentComponent', () => {
     });
 
     describe('allowedContent', () => {
-        it('should set filter the contentTypes and set the allowedContent correctly', fakeAsync(() => {
+        it('should set the allowedContent correctly', fakeAsync(() => {
             const blackList = ['host', 'vanityurl', 'persona', 'languagevariable'];
             spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
             spyOn(dotConfigurationService, 'getKeyAsList').and.returnValue(of(blackList));
