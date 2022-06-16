@@ -2,9 +2,10 @@
     <div [@inOut]="vm.viewContentlet" (@inOut.done)="onAnimationDone($event)" data-testId="wrapper">
         <dot-palette-content-type
             #contentTypes
+            [items]="vm.contentTypes"
+            [loading]="vm.loading"
             (selected)="switchView($event)"
             (filter)="filterContentTypes($event)"
-            [items]="vm.contentTypes"
         ></dot-palette-content-type>
         <dot-palette-contentlets
             #contentlets

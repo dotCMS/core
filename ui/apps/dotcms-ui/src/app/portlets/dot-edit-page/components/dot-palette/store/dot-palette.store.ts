@@ -229,5 +229,8 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
         this.setViewContentlet(viewContentlet);
         this.setFilter('');
         this.loadContentlets(variableName);
+        if (viewContentlet == 'contentlet:in') {
+            this.getContenttypesData();
+        }
     }
 }

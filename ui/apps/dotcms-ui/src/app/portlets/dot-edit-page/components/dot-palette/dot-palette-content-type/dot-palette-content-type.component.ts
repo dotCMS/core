@@ -12,6 +12,7 @@ export class DotPaletteContentTypeComponent {
     @ViewChild('filterInput', { static: true }) filterInput: DotPaletteInputFilterComponent;
 
     @Input() items: DotCMSContentType[] = [];
+    @Input() loading = true;
 
     @Output() selected = new EventEmitter<string>();
     @Output() filter = new EventEmitter<string>();

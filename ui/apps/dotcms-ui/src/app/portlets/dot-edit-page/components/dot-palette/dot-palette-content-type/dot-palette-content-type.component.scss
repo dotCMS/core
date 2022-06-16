@@ -10,6 +10,7 @@
     background: $white;
     transition: all $basic-speed ease-in-out;
     height: 100%;
+    text-align: center;
 }
 
 .dot-content-palette__items {
@@ -65,5 +66,3 @@
     padding: $spacing-1 0;
     margin: $spacing-4;
 }
-
-
