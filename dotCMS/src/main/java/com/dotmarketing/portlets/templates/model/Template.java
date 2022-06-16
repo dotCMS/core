@@ -6,6 +6,7 @@ import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.links.model.Link;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -324,7 +325,7 @@ public class Template extends WebAsset implements Serializable, Comparable, Mani
 		}
 	}
 
-
+	@JsonIgnore
 	public Map<String, Object> getMap () throws DotStateException, DotDataException, DotSecurityException {
 		final Map<String, Object> map = super.getMap();
 		map.put("anonymous", this.isAnonymous());
