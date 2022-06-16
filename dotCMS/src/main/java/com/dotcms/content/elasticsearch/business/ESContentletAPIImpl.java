@@ -8685,7 +8685,33 @@ public class ESContentletAPIImpl implements ContentletAPI {
             List<Category> cats, List<Permission> selectedPermissions, User user,
             boolean respectFrontendRoles, boolean generateSystemEvent) throws IllegalArgumentException,
             DotDataException, DotSecurityException, DotContentletStateException, DotContentletValidationException {
-        return checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, true, generateSystemEvent);
+
+        final Contentlet contentletReturned = checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, true, generateSystemEvent);
+
+        if (InodeUtils.isSet(contentletReturned.getInode()) && UtilMethods.isSet(selectedPermissions)) {
+
+            final Runnable savePermissions = () -> {
+
+                try {
+
+                    Logger.debug(this, ()-> "Saving the permissions for: "  + contentlet.getTitle() +
+                            ", id: " + contentlet.getIdentifier());
+                    this.permissionAPI.save(selectedPermissions.stream()
+                        .map(permission -> new Permission(contentletReturned.getInode(), permission.getRoleId(), permission.getPermission()))
+                        .collect(Collectors.toList()), contentletReturned, user, respectFrontendRoles);
+                } catch (Exception e) {
+
+                    Logger.error(this, "Could not save the permissions for: " + contentlet.getTitle() +
+                            ", id: " + contentlet.getIdentifier() + ", msg: " + e.getMessage(), e);
+                }
+            };
+
+            FunctionUtils.ifOrElse(DbConnectionFactory.inTransaction(),
+                    ()-> HibernateUtil.addCommitListener(contentletReturned.getInode(), savePermissions),
+                    ()-> savePermissions.run());
+        }
+
+        return contentletReturned;
     }
 
     @Override
