@@ -1,7 +1,5 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-cd ui
 npx pretty-quick --staged
 npm run nx lint -- dotcms-ui
-cd ..
