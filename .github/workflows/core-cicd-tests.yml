@@ -6,9 +6,27 @@ on:
       - master
       - release-*
 jobs:
+  module-matcher-job:
+    name: Module Matcher
+    runs-on: ubuntu-latest
+    outputs:
+      module_found: ${{ steps.module-matcher.outputs.module_found }}
+    steps:
+      - id: fetch-core
+        name: Fetch Core repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - id: module-matcher
+        name: Module Matcher
+        uses: ./.github/actions/module-matcher
+        with:
+          current: core
   run-unit-tests-job:
     name: Unit Tests
     runs-on: ubuntu-latest
+    needs: module-matcher-job
+    if: needs.module-matcher-job.outputs.module_found == 'true'
     env:
       DOT_CICD_BRANCH: master
       EXPORT_REPORTS: true
@@ -56,6 +74,8 @@ jobs:
   run-curl-tests-job:
     name: Curl Tests
     runs-on: ubuntu-latest
+    needs: module-matcher-job
+    if: needs.module-matcher-job.outputs.module_found == 'true'
     env:
       DOT_CICD_BRANCH: master
       EXPORT_REPORTS: true
@@ -122,6 +142,8 @@ jobs:
       fail-fast: false
       matrix:
         databaseType: [ postgres, mssql ]
+    needs: module-matcher-job
+    if: needs.module-matcher-job.outputs.module_found == 'true'
     env:
       DOT_CICD_BRANCH: master
       EXPORT_REPORTS: true
