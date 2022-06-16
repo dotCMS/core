@@ -8697,7 +8697,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     Logger.debug(this, ()-> "Saving the permissions for: "  + contentlet.getTitle() +
                             ", id: " + contentlet.getIdentifier());
                     this.permissionAPI.save(selectedPermissions.stream()
-                        .map(permission -> new Permission(contentletReturned.getInode(), permission.getRoleId(), permission.getPermission()))
+                        .map(permission -> new Permission(contentletReturned.getPermissionId(), permission.getRoleId(), permission.getPermission()))
                         .collect(Collectors.toList()), contentletReturned, user, respectFrontendRoles);
                 } catch (Exception e) {
 
