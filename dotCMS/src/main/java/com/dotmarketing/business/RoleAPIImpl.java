@@ -141,13 +141,16 @@ public class RoleAPIImpl implements RoleAPI {
 	 */
 	@CloseDBIfOpened
 	@Override
-	public List<Role> findRolesByKeyFilterLeftWildcard(String filter, int start,int limit) throws DotDataException {
+	public List<Role> findRolesByKeyFilterLeftWildcard(final String filter, final int start, final int limit) throws DotDataException {
 
-		if(filter !=null) {
-			filter = filter.toLowerCase() + "%";
+		Logger.debug(this, ()-> "Finding roles by key, filte: " + filter + ", start: " + start + ", limit: " + limit);
+
+		String filterIn = filter;
+		if(filterIn !=null) {
+			filterIn = filterIn.toLowerCase() + "%";
 		}
 
-		return roleFactory.getRolesByKeyFiltered(filter, start, limit);
+		return roleFactory.getRolesByKeyFiltered(filterIn, start, limit);
 	}
 
 	@CloseDBIfOpened

@@ -436,6 +436,9 @@ public class RoleResource implements Serializable {
 				.requiredFrontendUser(false).requestAndResponse(request, response)
 				.rejectWhenNoUser(true).init();
 
+		Logger.debug(this, ()-> "Searching role, searchName: " + searchName + ", searchKey: " + searchKey + ", roleId: " + roleId
+						+ ", start: " + startParam + ", count: " + count + ", includeUserRoles: " + includeUserRoles + ", includeWorkflowRoles: " + includeWorkflowRoles);
+
         int start = startParam;
         final Role cmsAnonOrig    = this.roleAPI.loadCMSAnonymousRole();
         final Role cmsAnon        = new Role();
