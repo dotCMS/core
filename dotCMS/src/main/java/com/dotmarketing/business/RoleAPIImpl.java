@@ -122,17 +122,35 @@ public class RoleAPIImpl implements RoleAPI {
 	
 	
     /* (non-Javadoc)
-	 * @see com.dotmarketing.business.RoleAPI#getRolesByName(java.lang.String, int, int)
+	 * @see com.dotmarketing.business.RoleAPI#findRolesByFilterLeftWildcard(java.lang.String, int, int)
 	 */
+	@CloseDBIfOpened
 	@Override
     public List<Role> findRolesByFilterLeftWildcard(String filter, final int start, final int limit) throws DotDataException {
     	
-		if(filter !=null)
+		if(filter !=null) {
 			filter = filter.toLowerCase() + "%";
+		}
 
     	return roleFactory.getRolesByNameFiltered(filter, start, limit);
     }
 
+	/**
+	 * (non-Javadoc)
+	 * @see com.dotmarketing.business.RoleAPI#findRolesByKeyFilterLeftWildcard(java.lang.String, int, int)
+	 */
+	@CloseDBIfOpened
+	@Override
+	public List<Role> findRolesByKeyFilterLeftWildcard(String filter, int start,int limit) throws DotDataException {
+
+		if(filter !=null) {
+			filter = filter.toLowerCase() + "%";
+		}
+
+		return roleFactory.getRolesByKeyFiltered(filter, start, limit);
+	}
+
+	@CloseDBIfOpened
     @Override
     public Role findRoleByName(final String rolename, final Role parent) throws DotDataException {
     	return roleFactory.findRoleByName(rolename, parent);

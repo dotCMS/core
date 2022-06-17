@@ -18,6 +18,7 @@ import com.dotmarketing.portlets.user.ajax.UserAjax;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
@@ -396,6 +397,10 @@ public class RoleResource implements Serializable {
 	 * /api/v1/roles/_search?searchName=CMS
 	 * Will include the roles starting by CMS
 	 *
+	 * if you want to filter by role key
+	 * /api/v1/roles/_search?searchKey=dotcms
+	 * Will include the roles starting by dotcmds
+	 *
 	 * Want specific role
 	 * /api/v1/roles/_search?roleId=654b0931-1027-41f7-ad4d-173115ed8ec1
 	 *
@@ -419,6 +424,7 @@ public class RoleResource implements Serializable {
 	public Response searchRoles(@Context final HttpServletRequest request,
 							    @Context final HttpServletResponse response,
 							    @DefaultValue("")   @QueryParam("searchName") final String searchName,
+								@DefaultValue("")   @QueryParam("searchKey") final String searchKey,
 								@DefaultValue("")   @QueryParam("roleId")     final String roleId,
 								@DefaultValue("0")  @QueryParam("start")      final int startParam,
 								@DefaultValue("20") @QueryParam("count")      final int count,
@@ -447,7 +453,7 @@ public class RoleResource implements Serializable {
             }
         }
 
-		if (this.fillRoles(searchName, count, start, cmsAnon, cmsAnonName, roleList, includeUserRoles)) { // include system user?
+		if (this.fillRoles(searchName, count, start, cmsAnon, cmsAnonName, roleList, includeUserRoles, searchKey)) { // include system user?
 
             roleList.add(0, cmsAnon);
         }
@@ -462,14 +468,16 @@ public class RoleResource implements Serializable {
 
 	private boolean fillRoles(final String searchName, final int count, final int startParam,
 							  final Role cmsAnon, final String cmsAnonName, final List<Role> roleList,
-							  final boolean includeUserRoles) throws DotDataException {
+							  final boolean includeUserRoles, final String searchKey) throws DotDataException {
 
 		boolean addSystemUser = searchName.length() > 0 && cmsAnonName.startsWith(searchName);
 		int start = startParam;
 
 		while (roleList.size() < count) {
 
-			final List<Role> roles = this.roleAPI.findRolesByFilterLeftWildcard(searchName, start, count);
+			final List<Role> roles = StringUtils.isSet(searchKey)?
+						this.roleAPI.findRolesByKeyFilterLeftWildcard(searchKey, start, count):
+						this.roleAPI.findRolesByFilterLeftWildcard(searchName, start, count);
 			if (roles.isEmpty()) {
 
 				break;
