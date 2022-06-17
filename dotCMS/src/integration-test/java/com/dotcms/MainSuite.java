@@ -297,16 +297,14 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.filters.VanityUrlFilterTest.class,
         com.dotcms.vanityurl.business.VanityUrlAPITest.class,
 
-        com.dotmarketing.portlets.fileassets.business.FileAssetAPITest.class,
+        /*com.dotmarketing.portlets.fileassets.business.FileAssetAPITest.class,
         com.dotmarketing.portlets.languagesmanager.business.LanguageAPITest.class,
         com.dotmarketing.portlets.languagesmanager.business.LanguageFactoryIntegrationTest.class,
         com.dotmarketing.portlets.linkchecker.business.LinkCheckerAPITest.class,
         com.dotmarketing.portlets.contentlet.util.ContentletUtilTest.class,
         com.dotmarketing.portlets.contentlet.business.ContentletCheckInTest.class,
         com.dotmarketing.portlets.contentlet.business.ContentletFactoryTest.class,
-
         com.dotmarketing.portlets.contentlet.business.HostAPITest.class,
-
         ContainerStructureFinderStrategyResolverTest.class,
         com.dotmarketing.portlets.contentlet.business.ContentletAPITest.class,
         com.dotmarketing.portlets.contentlet.model.ContentletIntegrationTest.class,
@@ -314,7 +312,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.contentlet.transform.ContentletTransformerTest.class,
         com.dotmarketing.portlets.contentlet.ajax.ContentletAjaxTest.class,
         com.dotmarketing.portlets.workflows.business.SaveContentDraftActionletTest.class,
-        com.dotmarketing.portlets.workflows.business.WorkflowFactoryTest.class
+        com.dotmarketing.portlets.workflows.business.WorkflowFactoryTest.class*/
 
 
 
