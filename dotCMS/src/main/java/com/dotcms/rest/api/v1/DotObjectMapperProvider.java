@@ -1,15 +1,11 @@
 package com.dotcms.rest.api.v1;
 
 import com.dotmarketing.util.Config;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 /**
  * Encapsulates the configuration for the Object Mapper on the Resources.
@@ -41,12 +37,6 @@ public class DotObjectMapperProvider {
 
         final ObjectMapper result = new ObjectMapper();
         result.disable(DeserializationFeature.WRAP_EXCEPTIONS);
-        result.enable(SerializationFeature.INDENT_OUTPUT);
-        result.registerModule(new Jdk8Module());
-        result.registerModule(new GuavaModule());
-        result.registerModule(new JavaTimeModule());
-        result.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-        result.setSerializationInclusion(Include.NON_NULL);
 
         if (Config.getBooleanProperty("dotcms.rest.sort.json.properties", true)) {
             result.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);

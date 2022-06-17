@@ -75,6 +75,16 @@ public class ContentletJsonHelper {
     }
 
     /**
+     * Serializes an object to JSON and saves it to a file
+     * @param object
+     * @param output
+     * @throws IOException
+     */
+    public void writeObjectToFile(final Object object, final File output) throws IOException {
+        objectMapper.get().writeValue(output, object);
+    }
+
+    /**
      *
      * @param object
      * @return

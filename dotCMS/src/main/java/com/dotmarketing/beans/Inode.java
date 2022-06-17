@@ -112,11 +112,13 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 
 	// sets the idate from the db
 	public void setIDate(String x) {
-		java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat(
-				"yyyy-MM-dd H:mm:ss");
-		java.text.ParsePosition pos = new java.text.ParsePosition(0);
-		iDate = formatter.parse(x, pos);
 
+		if (UtilMethods.isSet(x)) {
+			java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat(
+					"yyyy-MM-dd H:mm:ss");
+			java.text.ParsePosition pos = new java.text.ParsePosition(0);
+			iDate = formatter.parse(x, pos);
+		}
 		if (iDate == null) {
 			iDate = new java.util.Date();
 		}

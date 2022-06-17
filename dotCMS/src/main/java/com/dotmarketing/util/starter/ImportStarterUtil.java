@@ -12,18 +12,13 @@ import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.repackage.net.sf.hibernate.persister.AbstractEntityPersister;
-import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.DuplicateUserException;
 import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.Layout;
-import com.dotmarketing.business.LayoutsRoles;
-import com.dotmarketing.business.PortletsLayouts;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UsersRoles;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
@@ -35,29 +30,19 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.categories.model.Category;
-import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.containers.model.ContainerVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.portlets.links.model.LinkVersionInfo;
 import com.dotmarketing.portlets.rules.util.RulesImportExportObject;
 import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
-import com.dotmarketing.portlets.workflows.model.WorkFlowTaskFiles;
-import com.dotmarketing.portlets.workflows.model.WorkflowComment;
-import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
 import com.dotmarketing.startup.runalways.Task00004LoadStarter;
-import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Parameter;
@@ -162,93 +147,6 @@ public class ImportStarterUtil {
         }
     }
 
-    private List<StarterEntity> entitiesToImport = new ArrayList<>();
-
-    private void populateEntityList(){
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName("Company.json").setType(new TypeReference<List<Company>>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(Role.class.getCanonicalName() + "_").setType(new TypeReference<List<Role>>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(User.class.getCanonicalName() + ".json").setType(new TypeReference<List<User>>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(UsersRoles.class.getCanonicalName() + "_").setType(new TypeReference<List<UsersRoles>>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(Layout.class.getCanonicalName() + "_").setType(new TypeReference<List<Layout>>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(PortletsLayouts.class.getCanonicalName()).setType(new TypeReference<List<PortletsLayouts>>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(LayoutsRoles.class.getCanonicalName()).setType(new TypeReference<List<LayoutsRoles>>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(Language.class.getCanonicalName() + "_").setType(new TypeReference<List<Language>>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(Identifier.class.getCanonicalName()).setType(new TypeReference<List<Identifier>>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(Folder.class.getCanonicalName()).setType(new TypeReference<List<Folder>>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(ContentTypeImportExportUtil.CONTENT_TYPE_FILE_EXTENSION).setType(
-                ContentType.class).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(Relationship.class.getCanonicalName() + "_").setType(
-                new TypeReference<List<Relationship>>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(Contentlet.class.getCanonicalName() + "_").setType(
-                new TypeReference<List<com.dotcms.content.model.Contentlet>>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(Template.class.getCanonicalName() + "_").setType(
-                new TypeReference<List<Template>>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(Link.class.getCanonicalName() + "_").setType(
-                new TypeReference<List<Link>>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(Container.class.getCanonicalName() + "_").setType(
-                new TypeReference<List<Container>>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(
-                ContainerStructure.class.getCanonicalName() + "_").setType(
-                new TypeReference<List<ContainerStructure>>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(
-                Category.class.getCanonicalName() + "_").setType(
-                new TypeReference<List<Category>>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(
-                Tree.class.getCanonicalName() + "_").setType(
-                new TypeReference<List<Tree>>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(
-                "WorkflowSchemeImportExportObject.json").setType(
-                WorkflowSchemeImportExportObject.class).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(
-                Permission.class.getCanonicalName() + "_").setType(
-                new TypeReference<List<Permission>>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(
-                ContentletVersionInfo.class.getCanonicalName() + "_").setType(
-                new TypeReference<List<ContentletVersionInfo>>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(
-                LinkVersionInfo.class.getCanonicalName() + "_").setType(
-                new TypeReference<List<LinkVersionInfo>>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(
-                TemplateVersionInfo.class.getCanonicalName() + "_").setType(
-                new TypeReference<List<TemplateVersionInfo>>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(
-                ContainerVersionInfo.class.getCanonicalName() + "_").setType(
-                new TypeReference<List<ContainerVersionInfo>>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(
-                "RuleImportExportObject.json").setType(
-                RulesImportExportObject.class).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(
-                WorkflowTask.class.getCanonicalName() + "_").setType(
-                new TypeReference<List<WorkflowTask>>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(
-                WorkflowHistory.class.getCanonicalName() + "_").setType(
-                new TypeReference<List<WorkflowHistory>>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(
-                WorkflowComment.class.getCanonicalName() + "_").setType(
-                new TypeReference<List<WorkflowComment>>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(
-                WorkFlowTaskFiles.class.getCanonicalName() + "_").setType(
-                new TypeReference<List<WorkFlowTaskFiles>>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(
-                Tag.class.getCanonicalName() + "_").setType(
-                new TypeReference<List<Tag>>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(
-                "Counter.json").setType(
-                new TypeReference<List>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(
-                "Image.json").setType(
-                new TypeReference<List<Image>>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(
-                "Portlet.json").setType(
-                new TypeReference<List>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(
-                MultiTree.class.getCanonicalName() + "_").setType(
-                new TypeReference<List<MultiTree>>(){}).build());
-        entitiesToImport.add(StarterEntity.Builder.newInstance().setFileName(
-                TagInode.class.getCanonicalName() + "_").setType(
-                new TypeReference<List<TagInode>>(){}).build());
-    }
-
     /**
      * Takes a ZIP file from the /temp directory to restore dotCMS data. Currently, it will blow away
      * all current data. This method cannot currently be run in a transaction. For performance reasons
@@ -266,9 +164,8 @@ public class ImportStarterUtil {
 
         copyAssetDir();
         deleteDotCMS();
-        populateEntityList();
 
-        for (StarterEntity entity: entitiesToImport){
+        for (StarterEntity entity: StarterEntity.entitiesToImport){
             if (Identifier.class.getCanonicalName().equals(entity.fileName())){
                 saveIdentifiers();
                 continue;
@@ -583,7 +480,7 @@ public class ImportStarterUtil {
         List l = new ArrayList();
         List all;
 
-        if (null != _importClass && _importClass.equals(Contentlet.class)){
+        if (Contentlet.class.equals(_importClass)){
             l = getContentletList(file);
         } else{
             if (type instanceof TypeReference){
@@ -764,8 +661,6 @@ public class ImportStarterUtil {
             Collections.sort(roles);
             for (Role role : roles) {
                 _dh = new HibernateUtil(Role.class);
-                String id = HibernateUtil.getSession().getSessionFactory().getClassMetadata(Role.class).getIdentifierPropertyName();
-
                 if(UtilMethods.isSet(role.getRoleKey())) {
                     List<Map<String,Object>>  matches= new DotConnect().setSQL("select * from cms_role where role_key =?").addParam(role.getRoleKey()).loadObjectResults();
                     Logger.info(this.getClass(), "roleKey:" +role.getRoleKey() + " = " + matches.size() );
@@ -1106,13 +1001,6 @@ public class ImportStarterUtil {
         return matches;
 
 
-
-    }
-
-    List<File> startsWith(String pattern) {
-        List<File> matches = tempFiles.stream().filter(f -> f.getName().startsWith(pattern)).collect(Collectors.toList());
-        tempFiles.removeAll(matches);
-        return matches;
 
     }
 

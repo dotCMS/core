@@ -5,6 +5,7 @@ import static java.io.File.separator;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonAPIImpl;
+import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
@@ -265,7 +266,12 @@ public class ExportStarterUtil {
 
                     _writing = new File(outputDirectory,  clazz.getName() + "_" + formatter.format(i) + ".json");
 
-                    BundlerUtil.objectToJSON(_list, _writing);
+                    //We use a different serializer for ImmutableContentlets
+                    if (Contentlet.class.equals(clazz)) {
+                        ContentletJsonHelper.INSTANCE.get().writeObjectToFile(_list, _writing);
+                    } else{
+                        BundlerUtil.objectToJSON(_list, _writing);
+                    }
 
                     total = total + _list.size();
 
