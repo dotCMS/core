@@ -391,11 +391,25 @@ public class RoleResource implements Serializable {
 	}
 
 	/**
-	 * Loads the root roles.
+	 * Search roles
+	 * If you want to filter by name:
+	 * /api/v1/roles/_search?searchName=CMS
+	 * Will include the roles starting by CMS
 	 *
-	 * @param loadChildrenRoles true - will add the data of all children roles of the requested role.
-	 * 							false - will only show the data of the requested role.
-	 * @return list of {@link RoleView}
+	 * Want specific role
+	 * /api/v1/roles/_search?roleId=654b0931-1027-41f7-ad4d-173115ed8ec1
+	 *
+	 * Want pagination
+	 * /api/v1/roles/_search?start=5&count=10
+	 * From the 5 to the 15
+	 *
+	 * Do not want to include user roles (by default is true)
+	 * /api/v1/roles/_search?includeUserRoles=false
+	 *
+	 * Want to include workflow roles (by default is false)
+	 * /api/v1/roles/_search?includeWorkflowRoles=true
+	 *
+	 * @return list of {@link Role}
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
