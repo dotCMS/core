@@ -346,6 +346,8 @@ public class TaskLocatorUtil {
 		//ret.add(Task00030ClusterInitialize.class);
 		ret.add(Task00040CheckAnonymousUser.class);
 		ret.add(Task00050LoadAppsSecrets.class);
+		//UT that were backported to LTS
+		ret.add(Task220401CreateClusterLockTable.class);
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 
