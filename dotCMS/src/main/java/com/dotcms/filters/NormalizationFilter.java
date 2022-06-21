@@ -127,7 +127,7 @@ public class NormalizationFilter implements Filter {
                 hasError=true;
                 throw new IllegalArgumentException("Invalid URI passed:" + originalUri);
             }
-            String newNormal = originalUri.replace("+", "%20").replace(" ", "%20");
+            String newNormal = originalUri.replace("+", "%2B").replace(" ", "%20");
 
             return newNormal.startsWith("/") ? newNormal : "/" + newNormal;
 
