@@ -4,7 +4,6 @@ import static java.io.File.separator;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.json.ContentletJsonAPI;
-import com.dotcms.content.business.json.ContentletJsonAPIImpl;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
 import com.dotcms.publishing.BundlerUtil;
@@ -43,8 +42,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.TrashUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.ZipUtil;
-import com.dotmarketing.util.json.JSONException;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.ejb.ImageLocalManagerUtil;
 import com.liferay.portal.model.Company;
@@ -66,6 +63,11 @@ import javax.servlet.ServletException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.TeeOutputStream;
 
+/**
+ * Utility class used to generate a bundle with assets and data (starter file)
+ * The bundle will be a compressed file with assets and data modeled in JSON files
+ * @author nollymarlonga
+ */
 public class ExportStarterUtil {
 
     
@@ -268,7 +270,7 @@ public class ExportStarterUtil {
 
                     //We use a different serializer for ImmutableContentlets
                     if (Contentlet.class.equals(clazz)) {
-                        ContentletJsonHelper.INSTANCE.get().writeObjectToFile(_list, _writing);
+                        ContentletJsonHelper.INSTANCE.get().writeContentletListToFile(_list, _writing);
                     } else{
                         BundlerUtil.objectToJSON(_list, _writing);
                     }

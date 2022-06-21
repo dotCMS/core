@@ -413,20 +413,12 @@ public class BundlerUtil {
     public static <T> T jsonToObject(File f, TypeReference<T> typeReference){
         ObjectMapper mapper = new ObjectMapper();
 
-        BufferedInputStream input = null;
-        try {
-            input = new BufferedInputStream(Files.newInputStream(f.toPath()));
+        try (BufferedInputStream input = new BufferedInputStream(Files.newInputStream(f.toPath()))){
             T ret = mapper.readValue(input, typeReference);
             return ret;
         } catch (IOException e) {
             Logger.error(BundlerUtil.class,e.getMessage(),e);
             return null;
-        }finally{
-            try {
-                input.close();
-            }
-            catch(Exception e){
-            }
         }
     }
 

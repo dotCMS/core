@@ -1,6 +1,7 @@
 package com.dotcms.content.business.json;
 
 import com.dotcms.content.model.Contentlet;
+import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,6 +16,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -69,19 +71,23 @@ public class ContentletJsonHelper {
      * @return {@link List<Contentlet>}
      * @throws JsonProcessingException
      */
-    public List<Contentlet> readContentletListFromJsonFile(final File file) throws IOException {
-        final BufferedInputStream input = new BufferedInputStream(Files.newInputStream(file.toPath()));
-        return objectMapper.get().readValue(input, new TypeReference<>(){});
+    public List<Contentlet> readContentletListFromJsonFile(final File file){
+        try(BufferedInputStream input = new BufferedInputStream(Files.newInputStream(file.toPath()))){
+            return objectMapper.get().readValue(input, new TypeReference<>(){});
+        } catch (IOException e) {
+            Logger.error(this, "Error reading file " + file.getAbsolutePath(), e);
+        }
+        return Collections.emptyList();
     }
 
     /**
-     * Serializes an object to JSON and saves it to a file
-     * @param object
-     * @param output
+     * Serializes a list of {@link Contentlet} to JSON and saves it to a file
+     * @param contentletList {@link Contentlet}
+     * @param output {@link File}
      * @throws IOException
      */
-    public void writeObjectToFile(final Object object, final File output) throws IOException {
-        objectMapper.get().writeValue(output, object);
+    public void writeContentletListToFile(final List<Contentlet> contentletList, final File output) throws IOException {
+        objectMapper.get().writeValue(output, contentletList);
     }
 
     /**

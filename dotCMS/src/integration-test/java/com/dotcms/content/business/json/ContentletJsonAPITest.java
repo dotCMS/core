@@ -546,7 +546,7 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
 
         //The immutable content list is serialized
         final File tempFile = File.createTempFile("testSerializeContent", ".json");
-        ContentletJsonHelper.INSTANCE.get().writeObjectToFile(
+        ContentletJsonHelper.INSTANCE.get().writeContentletListToFile(
                 CollectionsUtils.list(immutableContentlet1, immutableContentlet2), tempFile);
 
         //The immutable content list is deserialized

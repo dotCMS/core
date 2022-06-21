@@ -120,12 +120,13 @@ public class ImportStarterUtil {
         final File backTemporalFile = new File(getBackupTempFilePath());
 
         tempFiles = Arrays.asList(backTemporalFile.listFiles()).stream().sorted().collect(Collectors.toList());
-        tempFiles.removeIf(f -> f.getName().endsWith("Counter.json"));
-        tempFiles.removeIf(f -> f.getName().contains(".Dashboard"));
-        tempFiles.removeIf(f -> f.getName().contains(".FixAudit_"));
-        tempFiles.removeIf(f -> f.getName().contains(".UserProxy_"));
-        tempFiles.removeIf(f -> f.getName().contains(".PluginProperty_"));
-        tempFiles.removeIf(f -> f.getName().contains(".Plugin_"));
+        tempFiles.removeIf(f -> f.getName().endsWith("Counter.json")
+                || f.getName().contains(".Dashboard")
+                || f.getName().contains(".FixAudit_")
+                || f.getName().contains(".UserProxy_")
+                || f.getName().contains(".PluginProperty_")
+                || f.getName().contains(".Plugin_")
+        );
 
         classesWithIdentity.add("Permission");
         classesWithIdentity.add("UsersToDelete");
@@ -826,13 +827,14 @@ public class ImportStarterUtil {
      * @return {@link List<Contentlet}
      * @throws IOException
      */
-    private List<Contentlet> getContentletList(final File file) throws IOException {
+    private List<Contentlet> getContentletList(final File file)  {
         return ContentletJsonHelper.INSTANCE.get().readContentletListFromJsonFile(file).stream().map(
                 cont -> {
                     try {
                         return APILocator.getContentletJsonAPI().toMutableContentlet(cont);
                     } catch (DotDataException | DotSecurityException e) {
-                        e.printStackTrace();
+                        Logger.warnAndDebug(ImportStarterUtil.class,
+                                "Error getting mutable contentlet with inode: " + cont.inode(), e);
                         return new Contentlet();
                     }
                 }).collect(Collectors.toList());
