@@ -5,21 +5,28 @@ import com.dotcms.ema.proxy.ProxyResponse;
 import com.dotcms.ema.proxy.ProxyTool;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableMap;
 import org.apache.http.Header;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -60,7 +67,7 @@ public class EMAWebInterceptor  implements WebInterceptor {
             return Result.NEXT;
         }
 
-        final Optional<String> proxyUrl = proxyUrl(currentHost);
+        final Optional<String> proxyUrl = proxyUrl(currentHost, request);
         final PageMode mode             = PageMode.get(request);
 
         if (!proxyUrl.isPresent() || mode == PageMode.LIVE) {
@@ -81,7 +88,7 @@ public class EMAWebInterceptor  implements WebInterceptor {
             if (response instanceof MockHttpCaptureResponse) {
 
                 final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-                final Optional<String> proxyUrl            = proxyUrl(currentHost);
+                final Optional<String> proxyUrl            = proxyUrl(currentHost, request);
                 final MockHttpCaptureResponse mockResponse = (MockHttpCaptureResponse)response;
                 final String postJson                      = new String(mockResponse.getBytes());
                 final JSONObject json                      = new JSONObject(postJson);
@@ -131,15 +138,46 @@ public class EMAWebInterceptor  implements WebInterceptor {
      * @param currentHost current Host to get the proxyUrl value
      * @return Optional String of the proxyUrl, if there is not found or an error is thrown returns an empty
      */
-    private Optional<String> proxyUrl(final Host currentHost) {
+    protected Optional<String> proxyUrl(final Host currentHost, final HttpServletRequest request) {
         AppSecrets appSecrets = null;
+
+        final Optional<String> overridedProxyUrl = this.getProxyURL(request);
+
+        if (overridedProxyUrl.isPresent()) {
+
+            return overridedProxyUrl;
+        }
 
         try{
             appSecrets = APILocator.getAppsAPI().getSecrets(EMA_APP_CONFIG_KEY,
                     true, currentHost, APILocator.systemUser()).get();
-            return appSecrets.getSecrets().containsKey(PROXY_EDIT_MODE_URL_VAR)?
+            final Optional<String> proxyUrlOpt =  appSecrets.getSecrets().containsKey(PROXY_EDIT_MODE_URL_VAR)?
                     Optional.ofNullable(appSecrets.getSecrets().get(PROXY_EDIT_MODE_URL_VAR).getString()) : Optional.empty();
 
+            if (proxyUrlOpt.isPresent()) {
+
+                final String proxyUrlText = proxyUrlOpt.get().trim();
+                if (StringUtils.isJson(proxyUrlText)) {
+
+                    final String cacheKey          = "ema-rewrite-"+currentHost.getIdentifier();
+                    RewritesBean rewriteBeans = (RewritesBean) CacheLocator.getSystemCache().get(cacheKey);
+                    if (null == rewriteBeans) {
+                        try {
+                            rewriteBeans = DotObjectMapperProvider.getInstance().
+                                    getDefaultObjectMapper().readValue(proxyUrlText, RewritesBean.class);
+                        } catch (JsonProcessingException e) {
+                            Logger.debug(this, "Wrong json: " + proxyUrlText + ", msg: " + e.getMessage(), e);
+                            return Optional.empty();
+                        }
+
+                        CacheLocator.getSystemCache().put(cacheKey, rewriteBeans);
+                    }
+
+                    return getProxyUrlFrom(rewriteBeans, request);
+                }
+            }
+
+            return proxyUrlOpt;
         } catch (DotSecurityException | DotDataException e) {
             Logger.error(this, e.getMessage());
             return Optional.empty();
@@ -148,6 +186,38 @@ public class EMAWebInterceptor  implements WebInterceptor {
                 appSecrets.destroy();
             }
         }
+    }
+
+    protected Optional<String> getProxyUrlFrom(final RewritesBean rewriteBeans, final HttpServletRequest request) {
+
+        if (UtilMethods.isSet(rewriteBeans)) {
+
+            final String requestURI = request.getRequestURI();
+            for (final RewriteBean rewriteBean : rewriteBeans.getRewrites()) {
+
+                if (isRequestURIMath (rewriteBean.getSource(), requestURI)) {
+
+                    return Optional.of(rewriteBean.getDestination());
+                }
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    protected boolean isRequestURIMath(final String source, final String requestURI) {
+
+        String uftUri = null;
+
+        try {
+
+            uftUri = URLDecoder.decode(requestURI, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+
+            uftUri = requestURI;
+        }
+
+        return RegEX.containsCaseInsensitive(uftUri, source.trim());
     }
 
     /**
@@ -162,6 +232,28 @@ public class EMAWebInterceptor  implements WebInterceptor {
                 hosts, APILocator.systemUser()).isEmpty();
     }
 
+    protected Optional<String> getProxyURL (final HttpServletRequest request) {
+
+        Optional<String> proxyURL = Optional.empty();
+        if (null != request.getParameter(PROXY_EDIT_MODE_URL_VAR)) {
+
+            final String proxyURLParamValue = request.getParameter(PROXY_EDIT_MODE_URL_VAR);
+            proxyURL = UtilMethods.isSet(proxyURLParamValue)?Optional.ofNullable(proxyURLParamValue):Optional.empty();
+            if (null != request.getSession(false)) {
+                if (UtilMethods.isSet(proxyURLParamValue)) { // if the proxy is set, stores in the session
+                    request.getSession(false).setAttribute(PROXY_EDIT_MODE_URL_VAR, proxyURLParamValue);
+                } else { // if it is set but it is empty or null, remove it
+                    request.getSession(false).removeAttribute(PROXY_EDIT_MODE_URL_VAR);
+                }
+            }
+        } else if (null != request.getSession(false) &&
+                UtilMethods.isSet(request.getSession(false).getAttribute(PROXY_EDIT_MODE_URL_VAR))) {
+
+            proxyURL = Optional.ofNullable(request.getSession(false).getAttribute(PROXY_EDIT_MODE_URL_VAR).toString());
+        }
+
+        return proxyURL;
+    }
 
 
 }
