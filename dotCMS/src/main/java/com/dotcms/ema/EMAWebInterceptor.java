@@ -178,7 +178,7 @@ public class EMAWebInterceptor  implements WebInterceptor {
             }
 
             return proxyUrlOpt;
-        } catch (DotSecurityException | DotDataException e) {
+        } catch (Exception e) {
             Logger.error(this, e.getMessage());
             return Optional.empty();
         } finally {
