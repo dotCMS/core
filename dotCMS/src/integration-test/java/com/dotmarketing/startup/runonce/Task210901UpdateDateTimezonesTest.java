@@ -1,13 +1,15 @@
 package com.dotmarketing.startup.runonce;
 
-import static org.junit.Assert.assertTrue;
+import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.UtilMethods;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.UtilMethods;
+
+import static org.junit.Assert.assertTrue;
 
 public class Task210901UpdateDateTimezonesTest {
 
@@ -17,7 +19,9 @@ public class Task210901UpdateDateTimezonesTest {
     public static void prepare() throws Exception {
         // Setting web app environment
         IntegrationTestInitService.getInstance().init();
-        selectedTimezone = new Task210901UpdateDateTimezones().selectTimeZone();
+        if (DbConnectionFactory.isPostgres()) {
+            selectedTimezone = new Task210901UpdateDateTimezones().selectTimeZone();
+        }
     }
 
     @AfterClass
@@ -33,6 +37,9 @@ public class Task210901UpdateDateTimezonesTest {
      */
     @Test
     public void test() throws Exception {
+        if (!DbConnectionFactory.isPostgres()) {
+            return;
+        }
         final Task210901UpdateDateTimezones tztask = new Task210901UpdateDateTimezones();
         if(tztask.forceRun()) {
             tztask.executeUpgrade();
@@ -41,13 +48,19 @@ public class Task210901UpdateDateTimezonesTest {
     }
 
     @Test
-    public void test_timezones_have_been_added() throws Exception{
+    public void test_timezones_have_been_added() throws Exception {
+        if (!DbConnectionFactory.isPostgres()) {
+            return;
+        }
         final Task210901UpdateDateTimezones tztask = new Task210901UpdateDateTimezones();
         assertTrue("Timezones are already added",tztask.hasTimeZones());
     }
 
     @Test
-    public void test_timezone_offset() throws Exception{
+    public void test_timezone_offset() throws Exception {
+        if (!DbConnectionFactory.isPostgres()) {
+            return;
+        }
         final Task210901UpdateDateTimezones tztask = new Task210901UpdateDateTimezones();
         updateTimeZone("UTC");
         assertTrue(tztask.calculateOffsetSeconds() == 0);
