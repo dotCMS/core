@@ -12,7 +12,8 @@
 <%@page import="com.dotmarketing.portlets.categories.business.CategoryAPI"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.containers.model.Container"%>
-<%@page import="com.dotmarketing.portlets.contentlet.struts.ContentletForm"%>
+<%-- Contentlet forms coming from here... Maybe(?) --%>
+<%@page import="com.dotmarketing.portlets.contentlet.struts.ContentletForm"%> 
 <%@page import="com.dotmarketing.portlets.structure.model.ContentletRelationships"%>
 <%@page import="com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords"%>
 <%@page import="com.dotmarketing.portlets.categories.model.Category"%>
@@ -70,6 +71,7 @@
 		copyOptions = ((String) request.getParameter("_copyOptions"))==null?"":(String) request.getParameter("_copyOptions");
 	}
 	//Content structure or user selected structure
+	// Step: 1 - Obtener la estructura del contentlet.
 	Structure structure = contentletForm.getStructure();
 	if(structure==null){
 	    structure=new StructureTransformer( APILocator.getContentTypeAPI(user).findDefault()).asStructure();
@@ -95,6 +97,8 @@
 	if (!InodeUtils.isSet(structure.getInode())){
 		structure = StructureFactory.getStructureByInode(request.getParameter("sibblingStructure"));
 	}
+
+	// Step: 2 - Obtener los fileds
 	List<Field> fields = new ArrayList<>(structure.getFields());
 
 	//Categories
@@ -159,6 +163,7 @@
 	boolean categoriesTabFieldExists = false;
 	boolean permissionsTabFieldExists = false;
 	boolean relationshipsTabFieldExists = false;
+	boolean relationshipsFieldExists = false;
 
 	/* Events code only */
 	Field startDateField = null;
@@ -346,10 +351,14 @@
                                         //field on the other side of the relationship
                                         request.setAttribute("relationshipRecords", contentletRelationships.getRelationshipsRecordsByField(f));
 										request.setAttribute("relatedField", newField);
+										request.setAttribute("relations123", true);
+										relationshipsFieldExists = true;
 								%>
                                         <jsp:include page="/html/portlet/ext/contentlet/field/relationship_field.jsp"/>
                                 <%  } else {
+										relationshipsFieldExists = false;
                                         request.setAttribute("relationshipRecords", legacyRelationshipRecords); %>
+										request.setAttribute("relations123", false);
                                         <jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp"/>
                                 <%  }
                                 %>
@@ -599,6 +608,7 @@
 <% 
     final String titleFieldValue = (contentlet != null ? contentlet.getTitle() : "").replace("'", "\'");
 %>
+		console.log('data', <%= relationshipsFieldExists %>)
         var customEvent = document.createEvent("CustomEvent");
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "edit-contentlet-loaded",

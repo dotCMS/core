@@ -63,6 +63,9 @@
         listOfRelatedInodes.add(relatedContent.getInode());
     }
     
+	System.out.println("AQUI:");
+	System.out.println(listOfRelatedInodes);
+
 	//Variable used to return after the work is done with the contentlet
 	String referer = "";
 	if (request.getParameter("referer") != null) {
@@ -392,6 +395,11 @@
 				if(!doesIdentifierExists)
 					data[data.length] = dataToRelate[indexK];
 			}				
+
+			// Step: 5 - Eliminar la clase 
+			const elements = document.querySelectorAll('.disabled-contentlet-action');
+
+			elements.forEach(element => element.classList.remove('disabled-contentlet-action'));
 
 			if( data == null || (data != null && data.length == 0) ) {
 			  return;
@@ -821,7 +829,7 @@
 	        dojo.byId("<%= relationJsName %>relateMenu").appendChild(button.domNode);
 	    }
 
-
+		// Step: 4 - Cargar las relaciones
         dojo.addOnLoad(
          function(){
              var doRelateContainer = document.getElementById('doRelateContainer');

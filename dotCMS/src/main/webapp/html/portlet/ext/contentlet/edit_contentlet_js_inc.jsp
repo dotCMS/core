@@ -291,7 +291,7 @@
         );
 
         var formElements = document.getElementById(formId).elements;
-
+        // console.log('FORM:', formElements);
         var formDataIndex = 0; // To collect name/values from multi-select,text-areas.
 
         for(var formElementsIndex = 0; formElementsIndex < formElements.length; formElementsIndex++,formDataIndex++){
@@ -333,6 +333,10 @@
             }
 
             formData[formDataIndex] = formElements[formElementsIndex].name+nameValueSeparator+formElements[formElementsIndex].value;
+            if(JSON.stringify(formData[formDataIndex]).includes('da883772-bc17-4adb-9e04-b49ffaafc792')) {
+                console.log('HERE:', { data: formData[formDataIndex], formDataIndex});
+                console.log(formElements[formElementsIndex]);
+            }
         }
 
         // Categories selected in the Category Dialog
@@ -421,6 +425,12 @@
         var fmData = new Array();
 
         fmData = getFormData("fm","<%= com.dotmarketing.util.WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR %>");
+
+        navigator.clipboard.writeText(JSON.stringify(fmData)).then(function() {
+            console.log('Async: Copying to clipboard was successful!');
+        }, function(err) {
+            console.error('Async: Could not copy text: ', err);
+        });
         if(isInodeSet(currentContentletInode)){
             isCheckin = false;
             isAutoSave=false;
@@ -805,6 +815,7 @@
 
         executeWfAction: function(wfId, popupable, showpush){
             this.wfActionId = wfId;
+            console.log("LLAMADO 1");
             if(popupable){
 
                 var inode = (currentContentletInode != undefined && currentContentletInode.length > 0)

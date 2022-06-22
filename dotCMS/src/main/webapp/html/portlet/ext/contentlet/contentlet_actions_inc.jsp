@@ -21,6 +21,7 @@ boolean isHost = ("Host".equals(structure.getVelocityVarName()));
 
 boolean isContLocked=(request.getParameter("sibbling") != null) ? false : contentlet.isLocked();
 WorkflowTask wfTask = APILocator.getWorkflowAPI().findTaskByContentlet(contentlet);
+boolean relationshipsExists = false;
 
 List<WorkflowStep> wfSteps = null;
 WorkflowStep wfStep = null;
@@ -41,6 +42,12 @@ catch(Exception e){
 	wfActions = new ArrayList<>();
 }
 
+try {
+	relationshipsExists = ((Boolean)request.getAttribute("relations123")).booleanValue();
+} catch(Exception e) {
+	relationshipsExists = false;
+}
+
 	Map<String, String> schemesAvailable = new HashMap<>();
 	for (WorkflowAction action : wfActions) {
 		if (!schemesAvailable.containsKey(action.getSchemeId())) {
@@ -52,6 +59,13 @@ catch(Exception e){
 <%@page import="com.dotmarketing.business.web.WebAPILocator"%>
 <%@ page import="java.util.Optional" %>
 <% com.dotmarketing.beans.Host myHost =  WebAPILocator.getHostWebAPI().getCurrentHost(request); %>
+
+<style>
+	.disabled-contentlet-action {
+		pointer-events: none;
+		background: #f1f1f1 !important;
+	}
+</style>
 
 <script>
 
@@ -192,9 +206,9 @@ function editPage(url, languageId) {
 			<% List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action); %>
 
 
-
+			<!--  Step: 3 - Agregar la clase 'disabled-contentlet-action' cuando existen relaciones -->
 			<a
-			style="<%if(schemesAvailable.size()>1){%>display:none;<%} %>" class="schemeId<%=action.getSchemeId()%> schemeActionsDiv"
+			style="<%if(schemesAvailable.size()>1){%>display:none;<%} %>" class="schemeId<%=action.getSchemeId()%> schemeActionsDiv <%if(relationshipsExists && action.hasSaveActionlet()){%>disabled-contentlet-action<%} %>"
 			onclick="contentAdmin.executeWfAction('<%=action.getId()%>', <%= action.hasPushPublishActionlet() || action.isAssignable() || action.isCommentable() || (action.hasMoveActionletActionlet() && !action.hasMoveActionletHasPathActionlet()) || UtilMethods.isSet(action.getCondition()) %>)">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, action.getName())) %>
 				<%if(action.hasSaveActionlet()){ %>
