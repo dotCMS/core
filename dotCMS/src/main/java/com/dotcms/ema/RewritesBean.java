@@ -5,6 +5,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
+/**
+ * {
+ *    "rewrites":[
+ *       {
+ *          "source":"/index*",
+ *          "destination":"proxy.demo.com"
+ *       }
+ *    ]
+ * }
+ * @author jsanca
+ */
 public class RewritesBean {
     private final List<RewriteBean> rewrites;
 
