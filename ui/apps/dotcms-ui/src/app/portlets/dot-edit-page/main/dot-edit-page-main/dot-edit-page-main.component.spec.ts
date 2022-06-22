@@ -8,7 +8,7 @@ import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotEditPageMainComponent } from './dot-edit-page-main.component';
 import { DotEditPageNavModule } from '../dot-edit-page-nav/dot-edit-page-nav.module';
 import { RouterTestingModule } from '@angular/router/testing';
-import { By, Title } from '@angular/platform-browser';
+import { By } from '@angular/platform-browser';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { ActivatedRoute } from '@angular/router';
@@ -90,7 +90,6 @@ describe('DotEditPageMainComponent', () => {
     let dotRouterService: DotRouterService;
     let dotCustomEventHandlerService: DotCustomEventHandlerService;
     let editContentlet: MockDotEditContentletComponent;
-    let titleService: Title;
 
     const messageServiceMock = new MockDotMessageService({
         'editpage.toolbar.nav.content': 'Content',
@@ -123,9 +122,6 @@ describe('DotEditPageMainComponent', () => {
                     {
                         provide: ActivatedRoute,
                         useValue: {
-                            data: observableOf({
-                                content: new DotPageRender(mockDotRenderedPage())
-                            }),
                             snapshot: {
                                 queryParams: {
                                     url: '/about-us/index'
@@ -171,8 +167,7 @@ describe('DotEditPageMainComponent', () => {
                     DotEventsService,
                     DotIframeService,
                     LoginService,
-                    DotLicenseService,
-                    Title
+                    DotLicenseService
                 ]
             });
         })
@@ -193,7 +188,6 @@ describe('DotEditPageMainComponent', () => {
         editContentlet = fixture.debugElement.query(
             By.css('dot-edit-contentlet')
         ).componentInstance;
-        titleService = fixture.debugElement.injector.get(Title);
         fixture.detectChanges();
     });
 
@@ -257,15 +251,6 @@ describe('DotEditPageMainComponent', () => {
             url: '/about-us/index',
             viewAs: { language: 1 }
         });
-    });
-
-    it('should set the page title correctly', () => {
-        spyOn(titleService, 'getTitle').and.callThrough();
-        const res: DotPageRender = new DotPageRender(mockDotRenderedPage());
-        const initialTitle = titleService.getTitle().split(' - ');
-        const title = initialTitle[initialTitle.length - 1];
-
-        expect(titleService.getTitle()).toBe(`${res.page.title}${title ? ` - ${title}` : ''}`);
     });
 
     describe('handle custom events from contentlet editor', () => {

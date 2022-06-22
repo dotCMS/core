@@ -43,7 +43,6 @@ export class DotContentletWrapperComponent {
     custom: EventEmitter<unknown> = new EventEmitter();
 
     private isContentletModified = false;
-    private _appMainTitle = '';
     private readonly customEventsHandler;
 
     constructor(
@@ -85,13 +84,12 @@ export class DotContentletWrapperComponent {
                     this.isContentletModified = false;
                 },
                 'edit-contentlet-loaded': (e: CustomEvent) => {
-                    this._appMainTitle = this.titleService.getTitle();
                     this.header = e.detail.data.contentType;
                     this.titleService.setTitle(
                         `${
                             e.detail.data.pageTitle
-                                ? e.detail.data.pageTitle + ' -'
-                                : `${this.dotMessageService.get('New')} ${this.header} -`
+                                ? e.detail.data.pageTitle + ' - '
+                                : `${this.dotMessageService.get('New')} ${this.header} - `
                         } ${this.titleService.getTitle().split(' - ')[1]}`
                     );
                 }
@@ -131,7 +129,6 @@ export class DotContentletWrapperComponent {
      * @memberof DotContentletWrapperComponent
      */
     onClose(): void {
-        this.titleService.setTitle(this._appMainTitle || this.titleService.getTitle());
         this.dotContentletEditorService.clear();
         this.isContentletModified = false;
         this.header = '';

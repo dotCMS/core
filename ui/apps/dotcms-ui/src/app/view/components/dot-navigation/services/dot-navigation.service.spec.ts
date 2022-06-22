@@ -384,7 +384,7 @@ describe('DotNavigationService', () => {
 
     it('should set Page title based on url', () => {
         router.triggerNavigationEnd('url/link1');
-        expect(titleService.setTitle).toHaveBeenCalledWith('Label 1 - dotCMS platform');
+        expect(titleService.setTitle).toHaveBeenCalledWith('Label 1 -  dotCMS platform');
     });
 
     // TODO: needs to fix this, looks like the dotcmsEventsService instance is different here not sure why.

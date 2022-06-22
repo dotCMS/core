@@ -182,9 +182,9 @@ export class DotNavigationService {
                     return this.dotMenuService.loadMenu().pipe(
                         tap((menu: DotMenu[]) => {
                             const pageTitle = this.getPageCurrentTitle(event.url, menu);
-                            if (pageTitle) {
-                                this.titleService.setTitle(`${pageTitle} - ${this._appMainTitle}`);
-                            }
+                            this.titleService.setTitle(
+                                `${pageTitle ? pageTitle + ' - ' : ''} ${this._appMainTitle}`
+                            );
                             return menu;
                         }),
                         setActiveItems({

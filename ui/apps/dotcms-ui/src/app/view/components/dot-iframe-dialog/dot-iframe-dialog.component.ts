@@ -85,7 +85,7 @@ export class DotIframeDialogComponent implements OnChanges, OnInit {
      * @param * $event
      * @memberof DotIframeDialogComponent
      */
-    onLoad($event: { target: HTMLIFrameElement }): void {
+    onLoad($event: { target:  HTMLIFrameElement }): void {
         $event.target.contentWindow.focus();
         this.charge.emit($event);
     }
