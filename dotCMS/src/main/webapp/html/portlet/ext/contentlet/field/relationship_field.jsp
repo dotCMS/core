@@ -431,8 +431,8 @@
 			}				
 
 			// Step: 5 - Eliminar la clase 
-			const elements = document.querySelectorAll('.disabled-contentlet-action');
-			elements.forEach(element => element.classList.remove('disabled-contentlet-action'));
+			const actions = document.querySelector('.disabled-contentlet-action');
+			actions.classList.remove('disabled-contentlet-action');
 			// Remove the loading
 			document.querySelector('#relationship-loading').remove();
 
