@@ -78,7 +78,7 @@ public class Task210901UpdateDateTimezones extends AbstractJDBCStartupTask {
         return tableUpdated;
     }
 
-    private int tablesCount;
+    protected int tablesCount;
 
     public int getTablesCount() {
         return tablesCount;
