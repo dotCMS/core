@@ -303,7 +303,7 @@ public class JSONObject implements Serializable, Map {
      *  string or a duplicated key.
      */
     public JSONObject(String source)  {
-        this(UtilMethods.isSet(source) ? new JSONTokener(source): null);
+        this(source!=null ? new JSONTokener(source): null);
     }
 
 
