@@ -6,16 +6,13 @@ import java.util.regex.Pattern;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
-import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.google.common.annotations.VisibleForTesting;
 import io.vavr.Lazy;
 
 /**
@@ -40,11 +37,9 @@ public class NormalizationFilter implements Filter {
     final String[] DISALLOWED_URI_DEFAULT = new String[] {
             ";",
             "..",
-            "//",
             "/./",
             "\\",
             "?",
-            "=",
             "%3B", // encoded semi-colon
             "%2E", // encoded period '.'
             "%2F", // encoded forward slash '/'
@@ -74,9 +69,16 @@ public class NormalizationFilter implements Filter {
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
                     throws IOException, ServletException {
 
+        
+        final String originalUri = ((HttpServletRequest) servletRequest).getRequestURI();
+
         try {
-            NormalizationRequestWrapper requestWrapper = new NormalizationRequestWrapper((HttpServletRequest) servletRequest);
-            filterChain.doFilter(requestWrapper, servletResponse);
+            if (!forbiddenRegex.get().isEmpty() && forbiddenRegex.get().get().matcher(originalUri).find()) {
+                throw new IllegalArgumentException("Invalid URI passed:" + originalUri);
+            }
+            if (containsNastyChar(originalUri)) {
+                throw new IllegalArgumentException("Invalid URI passed:" + originalUri);
+            }
         } catch (IllegalArgumentException iae) {
             Logger.warnAndDebug(getClass(),
                             "Invalid URI from:" + servletRequest.getRemoteAddr() + ", returning a 404", iae);
@@ -84,7 +86,8 @@ public class NormalizationFilter implements Filter {
             httpResponse.sendError(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
-
+        
+        filterChain.doFilter(servletRequest, servletResponse);
     }
 
     @Override
@@ -96,58 +99,14 @@ public class NormalizationFilter implements Filter {
      * removed only if it is preceded by a non-".." segment. 3. Normalization has no effect upon opaque
      * URIs. (mailto:a@b.com)
      */
-    public class NormalizationRequestWrapper extends HttpServletRequestWrapper {
 
-        @VisibleForTesting
-        boolean hasError = false;
-        String myUri;
-
-        public NormalizationRequestWrapper(HttpServletRequest request) {
-            super(request);
-            myUri = normalizeRequestUri();
-        }
-
-        @Override
-        public String getRequestURI() {
-            return myUri;
-        }
-
-        private String normalizeRequestUri() {
-
-            final String originalUri = super.getRequestURI();
-
-
-            if (!forbiddenRegex.get().isEmpty() && forbiddenRegex.get().get().matcher(originalUri).find()) {
-                hasError=true;
-                throw new IllegalArgumentException("Invalid URI passed:" + originalUri);
+    boolean containsNastyChar(final String newNormal) {
+        for (String reserved : forbiddenURIStrings.get()) {
+            if (newNormal.contains(reserved)) {
+                return true;
             }
-
-            if (containsNastyChar(originalUri)) {
-                hasError=true;
-                throw new IllegalArgumentException("Invalid URI passed:" + originalUri);
-            }
-            String newNormal = originalUri.replace("+", "%2B").replace(" ", "%20");
-
-            return newNormal.startsWith("/") ? newNormal : "/" + newNormal;
-
         }
-
-        boolean containsNastyChar(final String newNormal) {
-            for (String reserved : forbiddenURIStrings.get()) {
-                if (newNormal.contains(reserved)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-
-
-        @Override
-        public RequestDispatcher getRequestDispatcher(String path) {
-            myUri = path;
-            return super.getRequestDispatcher(path);
-        }
+        return false;
     }
 
 
