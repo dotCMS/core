@@ -163,7 +163,6 @@
 	boolean categoriesTabFieldExists = false;
 	boolean permissionsTabFieldExists = false;
 	boolean relationshipsTabFieldExists = false;
-	boolean relationshipsFieldExists = false;
 
 	/* Events code only */
 	Field startDateField = null;
@@ -351,14 +350,13 @@
                                         //field on the other side of the relationship
                                         request.setAttribute("relationshipRecords", contentletRelationships.getRelationshipsRecordsByField(f));
 										request.setAttribute("relatedField", newField);
-										request.setAttribute("relations123", true);
-										relationshipsFieldExists = true;
+										request.setAttribute("relationshipsFieldExists", true);
 								%>
                                         <jsp:include page="/html/portlet/ext/contentlet/field/relationship_field.jsp"/>
                                 <%  } else {
-										relationshipsFieldExists = false;
+
                                         request.setAttribute("relationshipRecords", legacyRelationshipRecords); %>
-										request.setAttribute("relations123", false);
+										request.setAttribute("relationshipsFieldExists", false);
                                         <jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp"/>
                                 <%  }
                                 %>
@@ -608,7 +606,6 @@
 <% 
     final String titleFieldValue = (contentlet != null ? contentlet.getTitle() : "").replace("'", "\'");
 %>
-		console.log('data', <%= relationshipsFieldExists %>)
         var customEvent = document.createEvent("CustomEvent");
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "edit-contentlet-loaded",

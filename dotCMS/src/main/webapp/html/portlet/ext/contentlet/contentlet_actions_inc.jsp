@@ -43,7 +43,7 @@ catch(Exception e){
 }
 
 try {
-	relationshipsExists = ((Boolean)request.getAttribute("relations123")).booleanValue();
+	relationshipsExists = ((Boolean)request.getAttribute("relationshipsFieldExists")).booleanValue();
 } catch(Exception e) {
 	relationshipsExists = false;
 }
@@ -208,7 +208,7 @@ function editPage(url, languageId) {
 
 			<!--  Step: 3 - Agregar la clase 'disabled-contentlet-action' cuando existen relaciones -->
 			<a
-			style="<%if(schemesAvailable.size()>1){%>display:none;<%} %>" class="schemeId<%=action.getSchemeId()%> schemeActionsDiv <%if(relationshipsExists && action.hasSaveActionlet()){%>disabled-contentlet-action<%} %>"
+			style="<%if(schemesAvailable.size()>1){%>display:none;<%} %>" class="schemeId<%=action.getSchemeId()%> schemeActionsDiv <%if(relationshipsExists){%>disabled-contentlet-action<%} %>"
 			onclick="contentAdmin.executeWfAction('<%=action.getId()%>', <%= action.hasPushPublishActionlet() || action.isAssignable() || action.isCommentable() || (action.hasMoveActionletActionlet() && !action.hasMoveActionletHasPathActionlet()) || UtilMethods.isSet(action.getCondition()) %>)">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, action.getName())) %>
 				<%if(action.hasSaveActionlet()){ %>
