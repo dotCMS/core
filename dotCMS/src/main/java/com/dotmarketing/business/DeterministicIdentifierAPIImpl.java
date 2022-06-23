@@ -171,6 +171,11 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
                         .find(((Folder) parent).getHostId(), APILocator.systemUser(), false))
                 .getOrElseThrow(DotRuntimeException::new);
 
+        if ((null == parentHost || null == parentHost.getHostname()) && parent instanceof Folder){
+            throw new DotRuntimeException(
+                    String.format(" Error finding host with ID: %s. Asset Title: %s", ((Folder)parent).getHostId(), asset.getTitle()));
+        }
+
 
         final Folder parentFolder = (parent instanceof Folder) ? (Folder) parent
                 : Try.of(folderAPI::findSystemFolder)
@@ -211,7 +216,7 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
         final String assetType = folder.getClass().getSimpleName();
         final String assetName = folder.getName();
 
-        if (null == parentHost || null == parentHost.getHostname()){
+        if ((null == parentHost || null == parentHost.getHostname()) && parent instanceof Folder){
             throw new DotRuntimeException(
                     String.format(" Error finding host with ID: %s. Folder Name: %s", ((Folder)parent).getHostId(), folder.getName()));
         }

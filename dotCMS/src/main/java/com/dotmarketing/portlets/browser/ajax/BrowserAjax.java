@@ -5,6 +5,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 import com.dotcms.browser.BrowserAPI;
+import com.dotcms.browser.BrowserQuery;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -85,9 +86,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 /**
+ * This class interacts with the DWR Framework in order to provide the {@code Site Browser} portlet with the expected
+ * data in the current dotCMS content repository.
  *
  * @author david
- *
+ * @since Mar 22nd, 2012
  */
 public class BrowserAjax {
 
@@ -308,10 +311,47 @@ public class BrowserAjax {
         openFolders.remove(parentInode);
     }
 
+	/**
+	 * Retrieves the contents living under a specific Folder so that they can be displayed in the UI.
+	 *
+	 * @param parentId     The ID of the {@link Folder} whose contents will be displayed.
+	 * @param sortBy       The order in which folder contents will be returned.
+	 * @param showArchived If archived contents must be included in the result set, set to {@code true}.
+	 * @param languageId   The Language ID of the contents that will be returned.
+	 *
+	 * @return The list of folder contents in the form of a Map.
+	 *
+	 * @throws DotSecurityException The {@link User} calling this operation does not have the required permissions to do
+	 *                              so.
+	 * @throws DotDataException     An error occurred when interacting with the data source.
+	 */
+	public List<Map<String, Object>> openFolderContent(final String parentId, final String sortBy,
+													   final boolean showArchived, final long languageId) throws
+			DotSecurityException, DotDataException {
 
-    @SuppressWarnings("unchecked")
-	public List<Map<String, Object>> openFolderContent (String parentId, String sortBy, boolean showArchived, long languageId) throws DotHibernateException, DotSecurityException, DotDataException {
+		return openFolderContent(parentId, sortBy, showArchived, false, languageId);
+	}
 
+	/**
+	 * Retrieves the contents living under a specific Folder so that they can be displayed in the UI.
+	 *
+	 * @param parentId     The ID of the {@link Folder} whose contents will be displayed.
+	 * @param sortBy       The order in which folder contents will be returned.
+	 * @param showArchived If archived contents must be included in the result set, set to {@code true}.
+	 * @param showShorties If the Shorty Identifier and Inode of every content in the Folder must be included in the
+	 *                     result set, set to {@code true}.
+	 * @param languageId   The Language ID of the contents that will be returned.
+	 *
+	 * @return The list of folder contents in the form of a Map.
+	 *
+	 * @throws DotSecurityException The {@link User} calling this operation does not have the required permissions to do
+	 *                              so.
+	 * @throws DotDataException     An error occurred when interacting with the data source.
+	 */
+	public List<Map<String, Object>> openFolderContent(final String parentId, final String sortBy,
+													   final boolean showArchived, final boolean showShorties,
+													   final long languageId) throws DotSecurityException,
+			DotDataException {
 		final WebContext ctx         = WebContextFactory.get();
 		final HttpSession session    = ctx.getSession();
 		String siteBrowserActiveFolderInode = null;
@@ -321,10 +361,8 @@ public class BrowserAjax {
 			session.removeAttribute("siteBrowserActiveFolderInode");
 		}
 
-        activeFolderInode = null != siteBrowserActiveFolderInode?siteBrowserActiveFolderInode:parentId;
-
+		activeFolderInode = null != siteBrowserActiveFolderInode ? siteBrowserActiveFolderInode : parentId;
 		this.lastSortBy = sortBy;
-
 		if (sortBy != null && UtilMethods.isSet(sortBy)) {
 			if (sortBy.equals(lastSortBy)) {
 				this.lastSortDirectionDesc = !this.lastSortDirectionDesc;
@@ -334,15 +372,18 @@ public class BrowserAjax {
 
 		List<Map<String, Object>> listToReturn;
         try {
-        	//Only show folders if the parent is not a host
-        	final boolean showFolders = APILocator.getHostAPI().find(parentId,APILocator.systemUser(),false)  == null;
-			Map<String, Object> resultsMap = getFolderContent(parentId, 0, -1, "", null, null, showArchived, !showFolders, false, this.lastSortBy, this.lastSortDirectionDesc, languageId);
+        	// Only show folders if the parent is not a Site
+        	final boolean showFolders = APILocator.getHostAPI().find(parentId,APILocator.systemUser(),false) == null;
+			final Map<String, Object> resultsMap =
+					getFolderContent(parentId, 0, -1, "", null, null, showArchived, !showFolders, false, showShorties,
+							this.lastSortBy, this.lastSortDirectionDesc, languageId);
             listToReturn = (List<Map<String, Object>>) resultsMap.get("list");
-		} catch ( NotFoundInDbException e ){
-            Logger.error( this, "Please refresh the screen you opened this Folder from.", e );
+		} catch (final NotFoundInDbException e){
+			Logger.error(this, String.format(
+					"Folder with ID '%s' does not exist. Please refresh the screen you opened the Folder from: %s",
+					parentId, e.getMessage()), e);
     		listToReturn = new ArrayList<>();
 		}
-
         return listToReturn;
     }
 
@@ -394,6 +435,63 @@ public class BrowserAjax {
 			pathArray[1] = hostId;
 		}catch(Exception e){}
 		return pathArray;
+	}
+
+	/**
+	 * Returns the contents of a given folder based on the specified filtering criteria.
+	 *
+	 * @param folderId     The ID of the {@link Folder} whose contents will be listed.
+	 * @param offset       The offset value for the result set, for pagination purposes.
+	 * @param maxResults   The maximum number of results that will be returned, for pagination purposes.
+	 * @param filter       An optional filtering criterion for narrowing results.
+	 * @param mimeTypes    The list of allowed MIME Types that the returned contents must match.
+	 * @param extensions   The list of allowed file extensions for the returned contents.
+	 * @param showArchived If archived contents must be returned, set to {@code true}.
+	 * @param noFolders    If no folders must be returned, set to {@code true}.
+	 * @param onlyFiles    If only Files must be returned, set to {@code true}.
+	 * @param sortBy       The sort criterion for the result set.
+	 * @param sortByDesc   If the sorting must be performed in descending order, set to {@code true}.
+	 * @param languageId   The ID of the language for the contents being returned.
+	 *
+	 * @return The filtered list of contents in the specified folder.
+	 *
+	 * @throws DotSecurityException The {@link User} calling this operation does not have the required permissions to do
+	 *                              so.
+	 * @throws DotDataException     An error occurred when interacting with the data source.
+	 */
+	public Map<String, Object> getFolderContent(final String folderId, final int offset, final int maxResults,
+												final String filter, final List<String> mimeTypes,
+												final List<String> extensions, final boolean showArchived,
+												final boolean noFolders, final boolean onlyFiles,
+												final boolean showShorties, final String sortBy,
+												final boolean sortByDesc, final long languageId) throws
+			DotSecurityException, DotDataException {
+
+		final WebContext ctx = WebContextFactory.get();
+		final HttpServletRequest req = ctx.getHttpServletRequest();
+		final User user = getUser(req);
+		req.getSession().setAttribute(WebKeys.LANGUAGE_SEARCHED, String.valueOf(languageId));
+		final boolean showPages =! onlyFiles;
+		final BrowserQuery browserQuery = BrowserQuery.builder()
+				.showDotAssets(Boolean.FALSE)
+				.showLinks(Boolean.TRUE)
+				.showExtensions(extensions)
+				.withFilter(filter)
+				.withHostOrFolderId(folderId)
+				.withLanguageId(languageId)
+				.offset(offset)
+				.showFiles(true)
+				.showPages(showPages)
+				.showFolders(!noFolders)
+				.showArchived(showArchived)
+				.showWorking(Boolean.TRUE)
+				.showMimeTypes(mimeTypes)
+				.maxResults(maxResults)
+				.sortBy(sortBy)
+				.sortByDesc(sortByDesc)
+				.withUser(user)
+				.showShorties(showShorties).build();
+		return this.browserAPI.getFolderContent(browserQuery);
 	}
 
 	public Map<String, Object> getFolderContent (String folderId, int offset, int maxResults, String filter, List<String> mimeTypes,
