@@ -230,61 +230,25 @@ public class NormalizationFilterTest extends UnitTestBase {
      * invalids URIs
      */
     @Test
-    public void test_uri_normalizer_fixes_double_slashes() throws IOException, ServletException {
-
-        
-        // remove all //, replace with /
-        String originalURI = "//folder/important/secret_file.dat";
-        String expectedNormalizedURI = "/folder/important/secret_file.dat";
-        shouldFail(originalURI);
-        shouldWork(expectedNormalizedURI,expectedNormalizedURI);
-
-        // testing ///
-        originalURI = "///folder/important/secret_file.dat";
-        shouldFail(originalURI);
-        shouldWork(expectedNormalizedURI,expectedNormalizedURI);
-
-        // testing ////
-        originalURI = "////folder/important/secret_file.dat";
-        shouldFail(originalURI);
-        
-
-        
-        // testing multiple ////
-        originalURI = "////folder/important///secret_file.dat";
-        shouldFail(originalURI);
-        
-        // testing // not at the root (query strings are not part of URI)
-        originalURI = "/test//folder/folder1//forward_jsp.jsp?FORWARD_URL=http://google.com";
-        expectedNormalizedURI = "/testfolder/folder1forward_jsp.jsp";
-        shouldFail(originalURI);
-        shouldWork(expectedNormalizedURI,expectedNormalizedURI);
-
+    public void test_uri_normalizer_dot_and_double_dots() throws IOException, ServletException {
         // A ".." segment is removed only if it is preceded by a non-".." segment
-        originalURI = "///test/../folder/important//../secret_file.dat";
-        expectedNormalizedURI = "/testfolder/important/secret_file.dat";
+        String originalURI = "///test/../folder/important//../secret_file.dat";
+        String expectedNormalizedURI = "/testfolder/important/secret_file.dat";
         shouldFail(originalURI);
         shouldWork(expectedNormalizedURI,expectedNormalizedURI);
 
         // Each "." segment is simply removed
-        originalURI = "./f/older//folder1//file.dat";
-        expectedNormalizedURI = "/f/olderfolder1file.dat";
-        shouldFail(originalURI);
-        shouldWork(expectedNormalizedURI,expectedNormalizedURI);
-
-        // Each "." segment is simply removed
-        originalURI = "./folder/./folder1/file.dat//..//";
+        originalURI = "./folder/./folder1/file.dat/../";
         expectedNormalizedURI = "/folder/folder1/file.dat";
         shouldFail(originalURI);
         shouldWork(expectedNormalizedURI,expectedNormalizedURI);
 
-        // starts with ..//
-        originalURI = "..//folder/./folder1//file.dat";
+        // starts with ../
+        originalURI = "../folder/./folder1/file.dat";
         expectedNormalizedURI = "/folder/folder1file.dat";
         shouldFail(originalURI);
         shouldWork(expectedNormalizedURI,expectedNormalizedURI);
     }
-    
     
     /**
      * Test to verify the {@link NormalizationFilter} is applying properly the normalization on
