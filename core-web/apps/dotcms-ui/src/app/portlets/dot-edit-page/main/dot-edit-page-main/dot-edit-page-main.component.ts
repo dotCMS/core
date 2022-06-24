@@ -8,10 +8,7 @@ import { DotPageStateService } from '../../content/services/dot-page-state/dot-p
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
-<<<<<<< HEAD
 import { Title } from '@angular/platform-browser';
-=======
->>>>>>> release-22.06
 
 @Component({
     selector: 'dot-edit-page-main',
@@ -31,12 +28,8 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
         private dotContentletEditorService: DotContentletEditorService,
         private dotPageStateService: DotPageStateService,
         private dotRouterService: DotRouterService,
-<<<<<<< HEAD
         private dotCustomEventHandlerService: DotCustomEventHandlerService,
         private titleService: Title
-=======
-        private dotCustomEventHandlerService: DotCustomEventHandlerService
->>>>>>> release-22.06
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
@@ -58,12 +51,9 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
         ).pipe(
             takeUntil(this.destroy$),
             tap(({ page }: DotPageRenderState) => {
-<<<<<<< HEAD
                 const pageTitle = this.titleService.getTitle().split(' - ');
                 const title = pageTitle[pageTitle.length - 1];
                 this.titleService.setTitle(`${page.title}${title ? ` - ${title}` : ''}`);
-=======
->>>>>>> release-22.06
                 this.pageUrl = page.pageURI;
                 this.languageId = page.languageId.toString();
             })
