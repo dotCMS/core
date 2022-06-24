@@ -66,6 +66,22 @@ public class Task220402UpdateDateTimezones extends Task210901UpdateDateTimezones
         return DbConnectionFactory.isMsSql();
     }
 
+    @Override
+    public void executeUpgrade() throws DotDataException, DotRuntimeException {
+        tablesCount = 0;
+        String tableName = null;
+        try {
+            for (final String table : findAllTables()) {
+                tableName = table;
+                if (this.updateTable(table)) {
+                    tablesCount++;
+                }
+            }
+        } catch (final Exception e) {
+            throw new DotRuntimeException(String.format("An error occurred when updating table '%s': %s", tableName, e.getMessage()), e);
+        }
+    }
+
     /**
      * Overridden for testing purposes
      * @return
