@@ -2,6 +2,9 @@ name: release-process-automation
 on:
   release:
     types: [published]
+  push:
+    branches:
+      - release-test
 jobs:
   release-process:
     name: Release Process Automation
