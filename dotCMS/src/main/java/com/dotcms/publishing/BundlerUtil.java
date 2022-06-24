@@ -264,8 +264,7 @@ public class BundlerUtil {
 
     public static void objectToXML(final Object obj, final OutputStream outputStream) {
         HierarchicalStreamWriter xmlWriter = new DotPrettyPrintWriter(new OutputStreamWriter(outputStream));
-        //XStreamFactory.INSTANCE.getInstance().marshal(obj, xmlWriter);
-        XMLSerializerUtil.getInstance().marshal(obj, xmlWriter);
+        XStreamFactory.INSTANCE.getInstance().marshal(obj, xmlWriter);
     }
 
     /**

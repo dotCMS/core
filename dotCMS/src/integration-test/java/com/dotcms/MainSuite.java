@@ -176,6 +176,7 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        DependencyBundlerTest.class,
         PublishAuditAPITest.class,
         FolderCacheImplIntegrationTest.class,
         StaticPublisherIntegrationTest.class,
@@ -305,14 +306,14 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.contentlet.business.ContentletCheckInTest.class,
         com.dotmarketing.portlets.contentlet.business.ContentletFactoryTest.class,
         com.dotmarketing.portlets.contentlet.business.HostAPITest.class,
-        ContainerStructureFinderStrategyResolverTest.class,
+        ContainerStructureFinderStrategyResolverTest.class,*/
         com.dotmarketing.portlets.contentlet.business.ContentletAPITest.class,
         com.dotmarketing.portlets.contentlet.model.ContentletIntegrationTest.class,
         com.dotmarketing.portlets.contentlet.transform.BinaryToMapTransformerTest.class,
         com.dotmarketing.portlets.contentlet.transform.ContentletTransformerTest.class,
         com.dotmarketing.portlets.contentlet.ajax.ContentletAjaxTest.class,
         com.dotmarketing.portlets.workflows.business.SaveContentDraftActionletTest.class,
-        com.dotmarketing.portlets.workflows.business.WorkflowFactoryTest.class*/
+        com.dotmarketing.portlets.workflows.business.WorkflowFactoryTest.class
 
 
 
@@ -481,7 +482,6 @@ import org.junit.runners.Suite.SuiteClasses;
         ResetPasswordTokenUtilTest.class,
         ContainerBundlerTest.class,
         ContentTypeBundlerTest.class,
-        DependencyBundlerTest.class,
         FolderBundlerTest.class,
         HostBundlerTest.class,
         LinkBundlerTest.class,
