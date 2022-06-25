@@ -14,7 +14,7 @@ jobs:
       REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      NODE_VERSION: 12
+      NODE_VERSION: '16.13'
       DEBUG: true
     steps:
       - name: GITHUB CONTEXT
@@ -100,6 +100,6 @@ jobs:
           MSG_MINIMAL: true
           SLACK_FOOTER: ""
           SLACK_ICON: https://avatars.slack-edge.com/temp/2021-12-08/2830145934625_e4e464d502865ff576e4.png
-          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS - dotCMS ${{ env.BUILD_ID }} :rocket:"
+          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS - ${{ env.BUILD_ID }} :rocket:"
 #       For testing purposes remember to switch webhook channel to an account that can be used for testing
         if: success() && env.DRY_RUN != 'true'
