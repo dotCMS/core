@@ -142,3 +142,4 @@ This maintenance release includes the following code fixes:
 
 77. https://github.com/dotCMS/core/issues/22390 : Disallow Matrix Parameters in URIs #22390
 78. https://github.com/dotCMS/core/issues/22410 : Change logo in backoffice UI not working for all logo sizes #22410
+79. https://github.com/dotCMS/core/issues/22430 : Do not cache bad shorty DB results #22430
