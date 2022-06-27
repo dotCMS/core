@@ -3,6 +3,10 @@ package com.dotcms.ema;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * Encapsulates a rewrite for the EMA
+ * @author jsanca
+ */
 public class RewriteBean {
     private final String source;
     private final String destination;
