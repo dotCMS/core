@@ -297,8 +297,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.elasticsearch.ESContentResourcePortletTest.class,
         com.dotcms.filters.VanityUrlFilterTest.class,
         com.dotcms.vanityurl.business.VanityUrlAPITest.class,
-
-        /*com.dotmarketing.portlets.fileassets.business.FileAssetAPITest.class,
+        com.dotmarketing.portlets.fileassets.business.FileAssetAPITest.class,
         com.dotmarketing.portlets.languagesmanager.business.LanguageAPITest.class,
         com.dotmarketing.portlets.languagesmanager.business.LanguageFactoryIntegrationTest.class,
         com.dotmarketing.portlets.linkchecker.business.LinkCheckerAPITest.class,
@@ -306,18 +305,14 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.contentlet.business.ContentletCheckInTest.class,
         com.dotmarketing.portlets.contentlet.business.ContentletFactoryTest.class,
         com.dotmarketing.portlets.contentlet.business.HostAPITest.class,
-        ContainerStructureFinderStrategyResolverTest.class,*/
+        ContainerStructureFinderStrategyResolverTest.class,
         com.dotmarketing.portlets.contentlet.business.ContentletAPITest.class,
         com.dotmarketing.portlets.contentlet.model.ContentletIntegrationTest.class,
         com.dotmarketing.portlets.contentlet.transform.BinaryToMapTransformerTest.class,
         com.dotmarketing.portlets.contentlet.transform.ContentletTransformerTest.class,
         com.dotmarketing.portlets.contentlet.ajax.ContentletAjaxTest.class,
         com.dotmarketing.portlets.workflows.business.SaveContentDraftActionletTest.class,
-        com.dotmarketing.portlets.workflows.business.WorkflowFactoryTest.class
-
-
-
-        ,
+        com.dotmarketing.portlets.workflows.business.WorkflowFactoryTest.class,
         com.dotmarketing.portlets.workflows.business.SaveContentActionletTest.class,
         com.dotmarketing.portlets.workflows.business.WorkflowAPIMultiLanguageTest.class,
         com.dotmarketing.portlets.workflows.business.WorkflowAPITest.class,
@@ -327,8 +322,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.workflows.actionlet.SaveContentActionletTest.class,
         com.dotmarketing.portlets.workflows.actionlet.SaveContentActionletWithTagsTest.class,
         com.dotmarketing.portlets.workflows.actionlet.CopyActionletTest.class,
-
-        //DependencyBundle work commented this group
         com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletTest.class,
         com.dotmarketing.portlets.personas.business.PersonaAPITest.class,
         com.dotmarketing.portlets.personas.business.DeleteMultiTreeUsedPersonaTagJobTest.class,
@@ -354,9 +347,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformerTest.class,
         com.dotmarketing.portlets.categories.business.CategoryAPITest.class,
         com.dotmarketing.filters.FiltersTest.class,
-        com.dotmarketing.business.VersionableAPITest.class
-
-        ,
+        com.dotmarketing.business.VersionableAPITest.class,
         com.dotmarketing.business.UserAPITest.class,
         com.dotmarketing.business.portal.PortletAPIImplTest.class,
         com.dotmarketing.business.cache.provider.guava.CachePerformanceTest.class,
@@ -406,9 +397,7 @@ import org.junit.runners.Suite.SuiteClasses;
         CleanUpFieldReferencesJobTest.class,
         ESContentletAPIImplTest.class,
         CachedParameterDecoratorTest.class,
-        ContainerFactoryImplTest.class
-
-        ,
+        ContainerFactoryImplTest.class,
         TemplateFactoryImplTest.class,
         TestConfig.class,
         ConfigTest.class,
@@ -458,10 +447,7 @@ import org.junit.runners.Suite.SuiteClasses;
         IntegrityDataGenerationJobTest.class,
         BundleAPITest.class,
         Task05390MakeRoomForLongerJobDetailTest.class,
-        Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest.class
-
-
-        ,
+        Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest.class,
         JSONToolTest.class,
         BundlePublisherResourceIntegrationTest.class,
         IntegrityResourceIntegrationTest.class,
@@ -510,11 +496,7 @@ import org.junit.runners.Suite.SuiteClasses;
         HostTest.class,
         FileToolTest.class,
         Task210719CleanUpTitleFieldTest.class,
-        Task210802UpdateStructureTableTest.class
-
-
-
-        ,
+        Task210802UpdateStructureTableTest.class,
         MaintenanceUtilTest.class,
         BundlePublisherTest.class,
         CategoryFactoryTest.class,

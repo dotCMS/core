@@ -86,7 +86,7 @@ public enum XStreamFactory {
         if (!UtilMethods.isSet(xstream)) {
             final String encodingAsString = UtilMethods.isSet(encoding) ? encoding.toString() : null;
             xstream = xStreamType.builder.apply(encodingAsString);
-            xstream.allowTypesByWildcard(WHITE_LIST);
+            //xstream.allowTypesByWildcard(WHITE_LIST);
             charsetXStreamMap.put(encoding, xstream);
         }
 
