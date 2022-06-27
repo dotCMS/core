@@ -22,3 +22,4 @@ This maintenance release includes the following code fixes:
 14. https://github.com/dotCMS/core/issues/22266 : Issue with static push publishing when pushing with a default language other than English #22266
 15. https://github.com/dotCMS/core/issues/21882 : OSGI restart needs to be cluster aware #21882
 16. https://github.com/dotCMS/core/issues/22410 : Change logo in backoffice UI not working for all logo sizes #22410
+17. https://github.com/dotCMS/core/issues/22430 : Do not cache bad shorty DB results #22430
