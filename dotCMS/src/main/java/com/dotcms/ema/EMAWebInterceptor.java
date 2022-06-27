@@ -126,7 +126,10 @@ public class EMAWebInterceptor  implements WebInterceptor {
                 response.getWriter().write(json.toString());
             }
         } catch (Exception e) {
-            Logger.error(this, e.getMessage());
+
+            final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+            Logger.warnAndDebug(this.getClass(), "Error on site: " +
+                (null != currentHost?currentHost.getIdentifier() +" " + currentHost.getHostname(): "unknown") + ", msg: " + e.getMessage(), e);
         }
 
         return true;
