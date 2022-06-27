@@ -56,6 +56,15 @@ public interface PermissionAPI {
 		public int getType() {
 			return type;
 		}
+
+		public static Type findById(int type) {
+			for(Type typeEnum : values()) {
+				if(typeEnum.type == type) {
+					return typeEnum;
+				}
+			}
+			return null;
+		}
 	}
 
 	//Permission types

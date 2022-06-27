@@ -555,6 +555,7 @@ public class RoleResource implements Serializable {
             map.put("name", role.getName() + ((role.isUser()) ? " (" + LanguageUtil.get(APILocator.getCompanyAPI().getDefaultCompany(), "User") + ")" : StringPool.BLANK));
             map.put("id", role.getId());
 			map.put("key", role.getRoleKey());
+			map.put("user", role.isUser());
             list.add(map);
         }
 
