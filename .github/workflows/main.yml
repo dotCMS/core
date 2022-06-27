@@ -28,7 +28,7 @@ jobs:
         name: Module Matcher
         uses: ./.github/actions/module-matcher
         with:
-          current: ui
+          current: core-web
   lint:
     runs-on: ubuntu-latest
     needs: module-matcher-job
@@ -42,20 +42,20 @@ jobs:
       - uses: actions/cache@v2
         with:
           path: |
-            ./ui/node_modules
-          key: ${{ runner.os }}-modules-${{ hashFiles('./ui/**/package-lock.json') }}
+            ./core-web/node_modules
+          key: ${{ runner.os }}-modules-${{ hashFiles('./core-web/**/package-lock.json') }}
       - name: Configuring Node.js
         uses: actions/setup-node@v2-beta
         with:
           node-version: "16.13.2"
       - name: Installing dependencies
         run: |
-          cd ui
+          cd core-web
           npm install
       - name: Running Lint in dotcms-ui
         id: lint_step
         run: |
-          cd ui
+          cd core-web
           if ! (npm run nx lint -- dotcms-ui) then
             echo "::set-output name=status::failure";
             echo "::set-output name=color::#ff2400";
@@ -84,27 +84,27 @@ jobs:
       - uses: actions/cache@v2
         with:
           path: |
-            ./ui/node_modules
-          key: ${{ runner.os }}-modules-${{ hashFiles('./ui/**/package-lock.json') }}
+            ./core-web/node_modules
+          key: ${{ runner.os }}-modules-${{ hashFiles('./core-web/**/package-lock.json') }}
       - name: Configuring Node.js
         uses: actions/setup-node@v2-beta
         with:
           node-version: "16.13.2"
       - name: Installing dependencies
         run: |
-          cd ui
+          cd core-web
           npm install
       - name:
           Building for production
           ## Build dotcms-webcomponents because dotcms-ui doesn't have the lib as a direct dep
-          ## so Nx can't be identified and build it.
+        ## so Nx can't be identified and build it.
         run: |
-          cd ui
+          cd core-web
           npm run nx build dotcms-webcomponents && npm run nx build dotcms-ui -- --prod
       - name: Running tests
         id: test_run
         run: |
-          cd ui
+          cd core-web
           if ! (npm run nx test --target=dotcms-ui --prod) then
             echo "::set-output name=status::failure";
             echo "::set-output name=color::#ff2400";
