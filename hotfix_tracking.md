@@ -324,3 +324,4 @@ This maintenance release includes the following code fixes:
 **Release-5.3.8.12**
 
 166. https://github.com/dotCMS/core/issues/22390 : Disallow Matrix Parameters in URIs #22390
+167. https://github.com/dotCMS/core/issues/22430 : Do not cache bad shorty DB results #22430

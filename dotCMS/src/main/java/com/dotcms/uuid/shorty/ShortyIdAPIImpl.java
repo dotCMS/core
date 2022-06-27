@@ -1,5 +1,9 @@
 package com.dotcms.uuid.shorty;
 
+import static com.dotcms.util.CollectionsUtils.map;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotmarketing.business.APILocator;
@@ -137,7 +141,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
       return transformMap(shorty, db.loadObjectResults());
     } catch (DotDataException e) {
       Logger.warn(this.getClass(), "db exception:" + e.getMessage());
-      return noShorty(shorty);
+      throw new ShortyException("Unable to query for shorty:" + shorty, e);
     }
   }
 
@@ -157,7 +161,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
       return transformMap(shorty, db.loadObjectResults());
     } catch (DotDataException e) {
       Logger.warn(this.getClass(), "db exception:" + e.getMessage());
-      return noShorty(shorty);
+      throw new ShortyException("Unable to query for shorty:" + shorty, e);
     }
 
   }
