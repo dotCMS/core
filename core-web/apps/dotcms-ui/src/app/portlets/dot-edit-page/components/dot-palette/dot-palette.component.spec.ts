@@ -90,6 +90,8 @@ const storeMock = jasmine.createSpyObj(
     'DotPaletteStore',
     [
         'getContentletsData',
+        'getContenttypesData',
+        'setAllowedContent',
         'setFilter',
         'setLanguageId',
         'setViewContentlet',
@@ -104,6 +106,7 @@ const storeMock = jasmine.createSpyObj(
         vm$: of({
             contentlets: [contentletProductDataMock],
             contentTypes: [itemMock],
+            allowedContent: null,
             filter: '',
             languageId: '1',
             totalRecords: 20,
@@ -137,7 +140,6 @@ describe('DotPaletteComponent', () => {
 
         fixture = TestBed.createComponent(DotPaletteComponent);
         comp = fixture.componentInstance;
-        comp.items = [itemMock];
         fixture.detectChanges();
     });
 
@@ -197,5 +199,15 @@ describe('DotPaletteComponent', () => {
         await fixture.whenStable();
 
         expect(store.getContentletsData).toHaveBeenCalledWith({ first: 20 });
+    });
+
+    it('should set allowedContent', async () => {
+        const allowedContent = ['persona', 'banner', 'contact'];
+        comp.allowedContent = allowedContent;
+
+        fixture.detectChanges();
+        await fixture.whenStable();
+
+        expect(store.setAllowedContent).toHaveBeenCalledWith(allowedContent);
     });
 });

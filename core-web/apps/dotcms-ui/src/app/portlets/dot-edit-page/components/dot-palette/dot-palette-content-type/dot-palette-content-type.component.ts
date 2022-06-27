@@ -13,6 +13,7 @@ export class DotPaletteContentTypeComponent {
 
     @Input() items: DotCMSContentType[] = [];
     @Input() loading = true;
+    @Input() viewContentlet = '';
 
     @Output() selected = new EventEmitter<string>();
     @Output() filter = new EventEmitter<string>();

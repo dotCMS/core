@@ -16,7 +16,7 @@
     </div>
 </div>
 
-<dot-spinner *ngIf="loading" [size]="'40px'" [borderSize]="'8px'"></dot-spinner>
+<dot-spinner *ngIf="loading && viewContentlet === 'contentlet:out'" [size]="'40px'" [borderSize]="'8px'"></dot-spinner>
 
 <span
     *ngIf="!items?.length && !loading"

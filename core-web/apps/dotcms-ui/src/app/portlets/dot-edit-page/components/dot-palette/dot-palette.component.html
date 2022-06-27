@@ -5,6 +5,7 @@
             (selected)="switchView($event)"
             [items]="vm.contentTypes"
             [loading]="vm.loading"
+            [viewContentlet]="vm.viewContentlet"
             (selected)="switchView($event)"
             (filter)="filterContentTypes($event)"
         ></dot-palette-content-type>
