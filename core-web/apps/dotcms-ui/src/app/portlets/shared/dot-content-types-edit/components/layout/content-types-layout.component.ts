@@ -26,7 +26,7 @@ import { DotInlineEditComponent } from '@components/_common/dot-inline-edit/dot-
 })
 export class ContentTypesLayoutComponent implements OnChanges, OnInit {
     @Input() contentType: DotCMSContentType;
-    @Output() openEditDialog: EventEmitter<unknown> = new EventEmitter();
+    @Output() openEditDialog: EventEmitter<void> = new EventEmitter();
     @Output() changeContentTypeName: EventEmitter<string> = new EventEmitter();
     @ViewChild('contentTypeNameInput') contentTypeNameInput: ElementRef;
     @ViewChild('dotEditInline') dotEditInline: DotInlineEditComponent;
