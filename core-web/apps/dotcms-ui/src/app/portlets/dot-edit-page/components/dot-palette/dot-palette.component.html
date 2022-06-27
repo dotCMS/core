@@ -4,6 +4,9 @@
             #contentTypes
             (selected)="switchView($event)"
             [items]="vm.contentTypes"
+            [loading]="vm.loading"
+            (selected)="switchView($event)"
+            (filter)="filterContentTypes($event)"
         ></dot-palette-content-type>
         <dot-palette-contentlets
             #contentlets

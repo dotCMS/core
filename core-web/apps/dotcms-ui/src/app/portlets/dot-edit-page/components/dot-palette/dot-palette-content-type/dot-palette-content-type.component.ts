@@ -1,12 +1,4 @@
-import {
-    Component,
-    EventEmitter,
-    Input,
-    OnChanges,
-    Output,
-    SimpleChanges,
-    ViewChild
-} from '@angular/core';
+import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotPaletteInputFilterComponent } from '../dot-palette-input-filter/dot-palette-input-filter.component';
@@ -16,22 +8,16 @@ import { DotPaletteInputFilterComponent } from '../dot-palette-input-filter/dot-
     templateUrl: './dot-palette-content-type.component.html',
     styleUrls: ['./dot-palette-content-type.component.scss']
 })
-export class DotPaletteContentTypeComponent implements OnChanges {
+export class DotPaletteContentTypeComponent {
     @ViewChild('filterInput', { static: true }) filterInput: DotPaletteInputFilterComponent;
 
     @Input() items: DotCMSContentType[] = [];
+    @Input() loading = true;
 
     @Output() selected = new EventEmitter<string>();
-
-    itemsFiltered: DotCMSContentType[];
+    @Output() filter = new EventEmitter<string>();
 
     constructor(private dotContentletEditorService: DotContentletEditorService) {}
-
-    ngOnChanges(changes: SimpleChanges) {
-        if (!changes?.items?.firstChange && changes?.items?.currentValue) {
-            this.itemsFiltered = [...this.items];
-        }
-    }
 
     /**
      * Set the content Type being dragged from the Content palette to dotContentletEditorService
@@ -52,7 +38,6 @@ export class DotPaletteContentTypeComponent implements OnChanges {
      */
     showContentTypesList(contentTypeVariable: string): void {
         this.filterInput.searchInput.nativeElement.value = '';
-        this.itemsFiltered = [...this.items];
         this.selected.emit(contentTypeVariable);
     }
 
@@ -63,9 +48,7 @@ export class DotPaletteContentTypeComponent implements OnChanges {
      * @memberof DotPaletteContentTypeComponent
      */
     filterContentTypes(value: string): void {
-        this.itemsFiltered = this.items.filter((item) =>
-            item.name?.toLowerCase().includes(value.toLowerCase())
-        );
+        this.filter.emit(value);
     }
 
     /**

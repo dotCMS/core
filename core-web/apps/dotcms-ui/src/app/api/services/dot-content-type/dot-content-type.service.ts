@@ -22,20 +22,23 @@ export class DotContentTypeService {
             .pipe(take(1), pluck('entity'));
     }
 
+
     /**
      *Get the content types from the endpoint
      *
-     * @returns {Observable<DotCMSContentType[]>}
+     * @param {*} { filter = '', page = 40, type = '' }
+     * @return {*}  {Observable<DotCMSContentType[]>}
      * @memberof DotContentTypeService
      */
-    getContentTypes(filter = '', page = 40): Observable<DotCMSContentType[]> {
+    getContentTypes({ filter = '', page = 40, type = '' }): Observable<DotCMSContentType[]> {
         return this.coreWebService
             .requestView({
-                url: `/api/v1/contenttype?filter=${filter}&orderby=modDate&direction=DESC&per_page=${page}`
+                url: `/api/v1/contenttype?filter=${filter}&orderby=modDate&direction=DESC&per_page=${page}${
+                    type ? `&type=${type}` : ''
+                }`
             })
             .pipe(pluck('entity'));
     }
-
     /**
      * Gets all content types excluding the RECENT ones
      *
@@ -48,6 +51,35 @@ export class DotContentTypeService {
                 filter((structure: StructureTypeView) => !this.isRecentContentType(structure))
             )
             .pipe(toArray());
+    }
+
+    /**
+     * Gets an array of allowerdType of DotCMSContentType[]
+     *
+     * @param {string} [filter='']
+     * @param {string} [allowedTypes='']
+     * @return {*}  {Observable<DotCMSContentType[]>}
+     * @memberof DotContentTypeService
+     */
+    filterContentTypes(
+        filter: string = '',
+        allowedTypes: string = ''
+    ): Observable<DotCMSContentType[]> {
+        return this.coreWebService
+            .requestView({
+                body: {
+                    filter: {
+                        types: allowedTypes,
+                        query: filter
+                    },
+                    orderBy: 'name',
+                    direction: 'ASC',
+                    perPage: 40
+                },
+                method: 'POST',
+                url: `/api/v1/contenttype/_filter`
+            })
+            .pipe(pluck('entity'));
     }
 
     /**
