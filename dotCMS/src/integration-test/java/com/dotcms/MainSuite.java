@@ -54,6 +54,7 @@ import com.dotcms.publisher.receiver.BundlePublisherTest;
 import com.dotcms.publisher.util.DependencyManagerTest;
 import com.dotcms.publisher.util.DependencyModDateUtilTest;
 import com.dotcms.publishing.BundlerUtilTest;
+import com.dotcms.publishing.BundlerUtilTest;
 import com.dotcms.publishing.PublisherFilterImplTest;
 import com.dotcms.publishing.PushPublishFiltersInitializerTest;
 import com.dotcms.publishing.job.SiteSearchJobImplTest;
@@ -158,9 +159,11 @@ import com.dotmarketing.startup.runonce.Task220203RemoveFolderInodeConstraintTes
 import com.dotmarketing.startup.runonce.Task220214AddOwnerAndIDateToFolderTableTest;
 import com.dotmarketing.startup.runonce.Task220215MigrateDataFromInodeToFolderTest;
 import com.dotmarketing.startup.runonce.Task220330ChangeVanityURLSiteFieldTypeTest;
-import com.dotmarketing.startup.runonce.Task220331UpdateDateTimezonesTest;
+import com.dotmarketing.startup.runonce.Task220401CreateClusterLockTableTest;
+import com.dotmarketing.startup.runonce.Task220402UpdateDateTimezonesTest;
 import com.dotmarketing.startup.runonce.Task220413IncreasePublishedPushedAssetIdColTest;
 import com.dotmarketing.startup.runonce.Task220512UpdateNoHTMLRegexValueTest;
+import com.dotmarketing.startup.runonce.Task220606UpdatePushNowActionletNameTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -541,7 +544,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task220214AddOwnerAndIDateToFolderTableTest.class,
         Task220215MigrateDataFromInodeToFolderTest.class,
         Task220330ChangeVanityURLSiteFieldTypeTest.class,
-        Task220331UpdateDateTimezonesTest.class,
+        Task220402UpdateDateTimezonesTest.class,
         Task220413IncreasePublishedPushedAssetIdColTest.class,
         XStreamFactoryTest.class,
         com.dotcms.util.pagination.ContainerPaginatorTest.class,
@@ -552,8 +555,9 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentWorkflowHandlerTest.class,
         Task220512UpdateNoHTMLRegexValueTest.class,
         MetadataDelegateTest.class,
+        Task220401CreateClusterLockTableTest.class,
+        Task220606UpdatePushNowActionletNameTest.class,
         BundlerUtilTest.class
-
 })
 public class MainSuite {
 

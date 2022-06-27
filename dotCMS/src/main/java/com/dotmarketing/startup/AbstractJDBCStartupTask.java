@@ -1547,29 +1547,36 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 	 * 
 	 * @return The SQL statement(s).
 	 */
-	abstract public String getPostgresScript();
+	public String getPostgresScript() {
+	    return null;
+	}
 
 	/**
 	 * Returns the upgrade SQL query for MySQL.
 	 * 
 	 * @return The SQL statement(s).
 	 */
-	abstract public String getMySQLScript();
+	public String getMySQLScript(){
+        return null;
+    }
 
 	/**
 	 * Returns the upgrade SQL query for Oracle.
 	 * 
 	 * @return The SQL statement(s).
 	 */
-	abstract public String getOracleScript();
+	public String getOracleScript(){
+        return null;
+    }
 
 	/**
 	 * Returns the upgrade SQL query for Microsoft SQL Server.
 	 * 
 	 * @return The SQL statement(s).
 	 */
-	abstract public String getMSSQLScript();
-
+	public String getMSSQLScript(){
+        return null;
+    }
 
 	/**
 	 * Returns the list of database tables whose keys, indexes, and constraints
@@ -1580,7 +1587,9 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 	 * dropped first before another table. Read the log errors thoroughly when
 	 * troubleshooting this.</b>
 	 */
-	abstract protected List<String> getTablesToDropConstraints();
+	protected List<String> getTablesToDropConstraints(){
+	    return List.of();
+	}
 
 	/**
 	 * Returns the Custom Constraint Processor object for a given set of primary

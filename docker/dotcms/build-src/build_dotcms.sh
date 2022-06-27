@@ -21,12 +21,11 @@ build_by_commit() {
     git pull
     echo "Checking out commit/tag/branch: ${build_source}"
     if [[ ${build_id} =~ ^v[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$ ]]; then
-      git fetch --tags
       echo "Executing: git checkout tags/${build_id} -b ${build_id}"
       git checkout tags/${build_id} -b ${build_id}
     elif [[ "${build_id}" != 'master' ]]; then
       echo "Executing: git checkout ${build_id}"
-      git checkout ${build_id}
+      git checkout -b ${build_id}
     fi
     git clean -f -d
   fi
@@ -41,7 +40,7 @@ case "${build_source}" in
 
   "COMMIT" | "TAG" )
 
-    build_by_commit "${build_id}"
+    build_by_commit
     ;;
 
   *)

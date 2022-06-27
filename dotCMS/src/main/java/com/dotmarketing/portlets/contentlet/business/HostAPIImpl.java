@@ -640,7 +640,6 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     }
 
     @CloseDBIfOpened
-    @WrapInTransaction
     private synchronized Host getOrCreateDefaultHost() throws DotDataException, DotSecurityException {
 
         final ContentType siteContentType = hostType();
