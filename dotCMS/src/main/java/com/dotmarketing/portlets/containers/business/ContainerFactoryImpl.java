@@ -468,6 +468,10 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			}
 
 			getPaginatedAssets(searchParams.offset(), searchParams.limit(), assets, toReturn);
+			if (searchParams.includeSystemContainer()) {
+				// System Container is being included, so increase the total result count by 1
+				assets.setTotalResults(assets.getTotalResults() + 1L);
+			}
 		} catch (final Exception e) {
 			Logger.error(ContainerFactoryImpl.class,
 					String.format("An error occurred when finding Containers [ %s ]: '%s'", searchParams, e), e);
