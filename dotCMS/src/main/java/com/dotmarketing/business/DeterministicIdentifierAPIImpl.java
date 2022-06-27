@@ -205,7 +205,7 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
 
         final Host parentHost = (parent instanceof Host) ? (Host) parent : Try.of(
                         () -> hostAPI
-                                .find(((Folder) parent).getHostId(), APILocator.systemUser(), false))
+                                .find(folder.getHostId(), APILocator.systemUser(), false))
                 .getOrElseThrow(DotRuntimeException::new);
 
 

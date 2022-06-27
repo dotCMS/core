@@ -20,7 +20,7 @@ import java.io.IOException;
 public class TemplateAsFileDataGen extends AbstractDataGen<FileAssetTemplate> {
 
     private Host host;
-    private String folderName = "/file-template" + System.currentTimeMillis();
+    private String folderName = "file-template" + System.currentTimeMillis();
     private String metaDataBasic = "$dotJSON.put(\"title\", \"Test Template\")\n";
     private String metaDataDesign = metaDataBasic + "$dotJSON.put(\"theme\", \"system_theme\")\n";
     private FileAsset metaData;
