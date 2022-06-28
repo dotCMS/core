@@ -1,0 +1,14 @@
+version: "3.7"
+
+services:
+
+  database:
+    image: postgres:11-alpine
+    environment:
+      POSTGRES_USER:
+      POSTGRES_PASSWORD:
+      POSTGRES_DB:
+    ports:
+      - "5432:5432"
+    tmpfs:
+      - /var/lib/postgresql/data:rw
