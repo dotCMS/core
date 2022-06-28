@@ -33,6 +33,7 @@ import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotPaletteModule } from '@dotcms/app/portlets/dot-edit-page/components/dot-palette/dot-palette.module';
 import { DotIconModule } from '@dotcms/ui';
 import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
+import { DotHtml2CanvasDomService } from './services/html/dot-html-2-canvas-dom.service';
 
 const routes: Routes = [
     {
@@ -69,6 +70,7 @@ const routes: Routes = [
         DotContainerContentletService,
         DotDOMHtmlUtilService,
         DotDragDropAPIHtmlService,
+        DotHtml2CanvasDomService,
         DotEditContentHtmlService,
         DotEditContentToolbarHtmlService,
         DotEditPageService,
