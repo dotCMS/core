@@ -132,6 +132,16 @@ describe('DotPaletteContentTypeComponent', () => {
         expect(loading).not.toBeNull();
     });
 
+    it('should not show loading state when switching view', async () => {
+        componentHost.items = [];
+        componentHost.loading = true;
+        componentHost.viewContentlet = 'contentlet:in';
+        fixtureHost.detectChanges();
+        await fixtureHost.whenStable();
+        const loading = fixtureHost.debugElement.query(By.css('dot-spinner'));
+        expect(loading).toBeNull();
+    });
+
     it('should filter items on search', async () => {
         spyOn(comp.filter, 'emit').and.callThrough();
         fixtureHost.detectChanges();
@@ -160,8 +170,9 @@ describe('DotPaletteContentTypeComponent', () => {
         spyOn(comp.selected, 'emit').and.callThrough();
         fixtureHost.detectChanges();
         const buttons = fixtureHost.debugElement.queryAll(By.css('[data-testId="paletteItem"]'));
-        buttons[3].nativeElement.click();
+        const label = buttons[0].nativeElement.querySelector('p').innerText.trim();
+        buttons[0].nativeElement.click();
         expect(comp.items).toEqual(contentTypeDataMock as DotCMSContentType[]);
-        expect(comp.selected.emit).toHaveBeenCalledWith('Text');
+        expect(comp.selected.emit).toHaveBeenCalledWith(label);
     });
 });

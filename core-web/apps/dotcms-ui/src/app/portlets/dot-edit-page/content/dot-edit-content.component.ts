@@ -264,7 +264,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             .getKeyAsList(CONTENT_HIDDEN_KEY)
             .pipe(take(1))
             .subscribe((results) => {
-                this.allowedContent = this.filterAllowedContentTypes(results, pageState);
+                this.allowedContent = this.filterAllowedContentTypes(results, pageState) || [];
             });
     }
 

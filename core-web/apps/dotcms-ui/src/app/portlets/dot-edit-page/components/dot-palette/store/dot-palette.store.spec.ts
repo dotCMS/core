@@ -166,15 +166,30 @@ describe('DotPaletteStore', () => {
 
     // Effects
     it('should load contentTypes to store', (done) => {
+        const sortedDataMock = contentTypeDataMock.sort((a, b) => a.name.localeCompare(b.name));
         spyOn(dotContentTypeService, 'filterContentTypes').and.returnValues(
-            of(contentTypeDataMock as DotCMSContentType[])
+            of(sortedDataMock as DotCMSContentType[])
         );
         spyOn(dotContentTypeService, 'getContentTypes').and.returnValues(of([]));
         dotPaletteStore.loadContentTypes(['blog', 'banner']);
         dotPaletteStore.vm$.subscribe((data) => {
-            expect(data.contentTypes).toEqual(contentTypeDataMock as DotCMSContentType[]);
+            expect(data.contentTypes).toEqual(sortedDataMock as DotCMSContentType[]);
             done();
         });
+    });
+
+    it('should load inly widgets to store if allowedContent is empty', (done) => {
+        const sortedDataMock = contentTypeDataMock.sort((a, b) => a.name.localeCompare(b.name));
+        spyOn(dotContentTypeService, 'filterContentTypes').and.returnValues(of([]));
+        spyOn(dotContentTypeService, 'getContentTypes').and.returnValues(of(sortedDataMock as DotCMSContentType[]));
+        dotPaletteStore.loadContentTypes([]);
+        dotPaletteStore.vm$.subscribe((data) => {
+            expect(data.contentTypes).toEqual(sortedDataMock as DotCMSContentType[]);
+            done();
+        });
+
+        expect(dotContentTypeService.filterContentTypes).not.toHaveBeenCalled();
+        expect(dotContentTypeService.getContentTypes).toHaveBeenCalled();
     });
 
     it('should load Forms contentlets to store', (done) => {

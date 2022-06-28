@@ -58,7 +58,7 @@ describe('DotContentletService', () => {
             expect(contentTypes).toEqual(responseData);
         });
         const req = httpMock.expectOne(
-            '/api/v1/contenttype?filter=&orderby=modDate&direction=DESC&per_page=40'
+            '/api/v1/contenttype?filter=&orderby=name&direction=ASC&per_page=40'
         );
         expect(req.request.method).toBe('GET');
         req.flush({ entity: [...responseData] });

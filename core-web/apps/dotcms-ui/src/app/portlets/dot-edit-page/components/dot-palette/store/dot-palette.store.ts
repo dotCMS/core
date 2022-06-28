@@ -213,25 +213,40 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
     getContenttypesData(): void {
         this.setLoading();
         this.state$.pipe(take(1)).subscribe(({ filter, allowedContent }) => {
-            forkJoin([
-                this.dotContentTypeService.filterContentTypes(filter, allowedContent.join(',')),
+            if(allowedContent && allowedContent.length) {
+                forkJoin([
+                    this.dotContentTypeService.filterContentTypes(filter, allowedContent.join(',')),
+                    this.dotContentTypeService.getContentTypes({ filter, page: 40, type: 'WIDGET' })
+                ])
+                    .pipe(take(1))
+                    .subscribe((results: DotCMSContentType[][] ) => {
+                        // Merge both array and order them by name
+                        const contentTypes = [...results[0], ...results[1]].sort(
+                            (a, b) => a.name.localeCompare(b.name)
+                        ).slice(0, 40);
+    
+                        this.loadContentypes(contentTypes);
+                    });
+            } else {
                 this.dotContentTypeService.getContentTypes({ filter, page: 40, type: 'WIDGET' })
-            ])
-                .pipe(take(1))
-                .subscribe((results) => {
-                    // Merge both array and order them by modDate
-                    const contentTypes = [...results[0], ...results[1]].sort(
-                        (a, b) => b.modDate - a.modDate
-                    ).slice(0, 40);
-                    this.setLoaded();
-                    // Set the first 40 items
-                    this.setContentTypes(contentTypes);
-
-                    if(!this.initialContent) {
-                        this.initialContent = contentTypes;
-                    };
-                });
+                    .pipe(take(1))
+                    .subscribe((data: DotCMSContentType[]) => this.loadContentypes(data));
+            }
         });
+    }
+
+    /**
+     *
+     *
+     * @param {DotCMSContentType[]} contentTypes
+     * @memberof DotPaletteStore
+     */
+    loadContentypes(contentTypes:  DotCMSContentType[]): void {
+        this.setLoaded();
+        this.setContentTypes(contentTypes);
+        if(!this.initialContent) {
+            this.initialContent = contentTypes;
+        };
     }
 
     /**
