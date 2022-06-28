@@ -137,11 +137,12 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
     }
 
     /**
-     * internal method Makes a regular contentlet and makes an ImmutableContentlet which later will be translated into a json
-     * @param contentlet
-     * @return
+     * Takes a regular contentlet and builds an ImmutableContentlet
+     * @param contentlet {@link com.dotmarketing.portlets.contentlet.model.Contentlet}
+     * @return {@link ImmutableContentlet}
      */
-    ImmutableContentlet toImmutable(
+    @Override
+    public ImmutableContentlet toImmutable(
             final com.dotmarketing.portlets.contentlet.model.Contentlet contentlet) {
 
         final Builder builder = ImmutableContentlet.builder();
@@ -221,10 +222,25 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Override
     public com.dotmarketing.portlets.contentlet.model.Contentlet mapContentletFieldsFromJson(final String json)
             throws JsonProcessingException, DotDataException, DotSecurityException{
         final Map<String, Object> map = mapFieldsFromJson(json);
         return new com.dotmarketing.portlets.contentlet.model.Contentlet(map);
+    }
+
+    /**
+     * Takes an {@link ImmutableContentlet} and builds a mutable(legacy) {@link com.dotmarketing.portlets.contentlet.model.Contentlet}
+     * @param immutableContent
+     * @return {@link Contentlet} immutableContent
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Override
+    public com.dotmarketing.portlets.contentlet.model.Contentlet toMutableContentlet(
+            final Contentlet immutableContent)
+            throws DotDataException, DotSecurityException{
+        return new com.dotmarketing.portlets.contentlet.model.Contentlet(getContentletMapFromImmutable(immutableContent));
     }
 
     /**
@@ -239,6 +255,18 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
             throws JsonProcessingException, DotDataException, DotSecurityException {
 
         final Contentlet immutableContentlet = immutableFromJson(json);
+        return getContentletMapFromImmutable(immutableContentlet);
+    }
+
+    /**
+     * Given a {@link Contentlet}, it returns a {@link Map} with its fields
+     * @param immutableContentlet
+     * @return {@link Map<String, Object>}
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    private Map<String, Object> getContentletMapFromImmutable(final Contentlet immutableContentlet)
+            throws DotSecurityException, DotDataException {
         final Map<String, Object> map = new HashMap<>();
         final String inode = immutableContentlet.inode();
         final String identifier = immutableContentlet.identifier();
@@ -282,7 +310,6 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
 
             map.put(field.variable(), value);
         }
-
         return map;
     }
 

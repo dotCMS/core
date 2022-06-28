@@ -26,6 +26,7 @@ import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import graphql.scalars.ExtendedScalars;
 import graphql.schema.GraphQLList;
@@ -34,6 +35,7 @@ import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
 import graphql.schema.PropertyDataFetcher;
+import java.io.File;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -145,7 +147,10 @@ public enum CustomFieldType {
 
         final Map<String, TypeFetcher> fileAssetTypeFields = new HashMap<>();
         fileAssetTypeFields.put(FILEASSET_FILE_NAME_FIELD_VAR,
-                new TypeFetcher(GraphQLString, PropertyDataFetcher.fetching(Contentlet::getName)));
+                new TypeFetcher(GraphQLString, PropertyDataFetcher.fetching((Function<Contentlet, String>)
+                        (contentlet)-> contentlet.getContentType().baseType()
+                                == BaseContentType.FILEASSET ? ((FileAsset) contentlet).getFileName()
+                                : contentlet.getName())));
         fileAssetTypeFields.put(FILEASSET_DESCRIPTION_FIELD_VAR, new TypeFetcher(GraphQLString,
                 PropertyDataFetcher.fetching((Function<Contentlet, String>)
                 (contentlet)-> contentlet.getContentType().baseType()

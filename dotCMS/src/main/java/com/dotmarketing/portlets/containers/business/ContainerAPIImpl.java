@@ -1236,8 +1236,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 		final PaginatedArrayList<Container> containers = new PaginatedArrayList<>();
 		if (originalContainers instanceof PaginatedArrayList) {
 			containers.setQuery(PaginatedArrayList.class.cast(originalContainers).getQuery());
-			// System Container is being included, so increase the total result count by 1
-			containers.setTotalResults(PaginatedArrayList.class.cast(originalContainers).getTotalResults() + 1L);
+			containers.setTotalResults(PaginatedArrayList.class.cast(originalContainers).getTotalResults());
 		}
 		containers.add(systemContainer());
 		containers.addAll(originalContainers);
