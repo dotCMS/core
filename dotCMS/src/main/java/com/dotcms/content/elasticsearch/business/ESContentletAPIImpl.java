@@ -1,19 +1,11 @@
 package com.dotcms.content.elasticsearch.business;
 
-
-import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
-import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
-import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
-
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
-import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.elasticsearch.business.event.ContentletArchiveEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
@@ -24,18 +16,10 @@ import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategyResolver;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.field.BinaryField;
-import com.dotcms.contenttype.model.field.CategoryField;
-import com.dotcms.contenttype.model.field.ConstantField;
-import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.FieldVariable;
-import com.dotcms.contenttype.model.field.HostFolderField;
-import com.dotcms.contenttype.model.field.RelationshipField;
-import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
-import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
@@ -51,31 +35,12 @@ import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
-import com.dotcms.util.CollectionsUtils;
-import com.dotcms.util.ConversionUtils;
-import com.dotcms.util.DotPreconditions;
-import com.dotcms.util.ThreadContextUtil;
-import com.dotcms.util.XStreamFactory;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.beans.Permission;
-import com.dotmarketing.beans.Tree;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotCacheException;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.RelationshipAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.Treeable;
-import com.dotmarketing.business.UserAPI;
+import com.dotcms.util.*;
+import com.dotmarketing.beans.*;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -85,12 +50,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
-import com.dotmarketing.exception.DoesNotExistException;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.exception.*;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.TreeFactory;
@@ -98,14 +58,7 @@ import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.business.BinaryFileFilter;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.ContentletCache;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
-import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
-import com.dotmarketing.portlets.contentlet.business.DotLockException;
-import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.business.*;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -141,22 +94,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.util.ActivityLogger;
-import com.dotmarketing.util.AdminLogger;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.HostUtil;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.PaginatedArrayList;
-import com.dotmarketing.util.RegEX;
-import com.dotmarketing.util.RegExMatch;
-import com.dotmarketing.util.TrashUtils;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -173,40 +111,8 @@ import com.liferay.util.StringPool;
 import com.liferay.util.StringUtil;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
-import io.vavr.Lazy;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import javax.activation.MimeType;
-import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -217,6 +123,29 @@ import org.elasticsearch.search.SearchHits;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.activation.MimeType;
+import javax.servlet.http.HttpServletRequest;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
+import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -251,10 +180,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private static final String backupPath = ConfigUtils.getBackupPath() + File.separator + "contentlets";
 
-    private static final Lazy<Boolean> UNIQUE_PER_SITE_CONFIG = Lazy.of(()->Config
-            .getBooleanProperty("uniquePerSite", true));
+    public final static String  UNIQUE_PER_SITE_FIELD_VARIABLE_NAME = "uniquePerSite";
 
-    private static Boolean uniquePerSite;
 
     /**
      * Property to fetch related content from database (only applies for relationship fields)
@@ -356,21 +283,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public Contentlet find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-
+    public Contentlet find(final String inode, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         final Contentlet contentlet = contentFactory.find(inode);
-
-        if(contentlet  == null) {
+        if (contentlet == null) {
             return null;
         }
 
-        if(permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
-
+        if (this.permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user,
+                respectFrontendRoles)) {
             return contentlet;
-        }else{
+        } else {
             final String userId = (user == null) ? "Unknown" : user.getUserId();
-            throw new DotSecurityException("User:" + userId + " does not have permissions on Contentlet "+ContentletUtil
-                    .toShortString(contentlet));
+            throw new DotSecurityException(String.format("User '%s' does not have READ permissions on %s", userId, ContentletUtil
+                    .toShortString(contentlet)));
         }
     }
 
@@ -6754,7 +6679,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                     buffy.append(" +languageId:" + contentlet.getLanguageId());
 
-                    if (getUniquePerSiteConfig()) {
+                    if (getUniquePerSiteConfig(field)) {
                         if (!UtilMethods.isSet(contentlet.getHost())) {
                             populateHost(contentlet);
                         }
@@ -6886,25 +6811,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
-    @NotNull
     private String getUniqueFieldErrorMessage(final Field field, final Object fieldValue, final ContentletSearch contentletSearch) {
 
         return String.format("Value of Field [%s] must be unique. Contents having the same value (%s): %s",
                 field.getVelocityVarName(), fieldValue, contentletSearch.getIdentifier());
     }
 
-    @VisibleForTesting
-    public static void setUniquePerSite(final Boolean uniquePerSite){
-        ESContentletAPIImpl.uniquePerSite = uniquePerSite;
+    private boolean getUniquePerSiteConfig(final Field field) {
+     return getUniquePerSiteConfig(LegacyFieldTransformer.from(field));
     }
 
-    @VisibleForTesting
-    public static Boolean getUniquePerSite(){
-        return uniquePerSite;
-    }
-
-    private boolean getUniquePerSiteConfig() {
-        return UtilMethods.isSet(uniquePerSite) ? uniquePerSite : UNIQUE_PER_SITE_CONFIG.get();
+    private boolean getUniquePerSiteConfig(final com.dotcms.contenttype.model.field.Field field) {
+        return field.fieldVariableValue(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME).map(value ->  Boolean.valueOf(value)).orElse(false);
     }
 
     private void validateBinary(final File binary, final String fieldName, final Field legacyField, final ContentType contentType) {

@@ -201,6 +201,7 @@ public class UserModel extends BaseModel {
 		_deleteDate = deleteDate;
 	}
 
+	@JsonIgnore
 	public String getPrimaryKey() {
 		return _userId;
 	}
@@ -933,11 +934,11 @@ public class UserModel extends BaseModel {
 		}
 	}
 
-	public Map<String, String> getAdditionalInfo(){
+	public Map<String, Object> getAdditionalInfo(){
 	    return _additionalInfo;
     }
 
-    public void setAdditionalInfo(final Map<String, String> additionalInfo){
+    public void setAdditionalInfo(final Map<String, Object> additionalInfo){
 	    _additionalInfo = additionalInfo;
     }
 
@@ -1066,5 +1067,5 @@ public class UserModel extends BaseModel {
 	private boolean _active;
 	private boolean _deleteInProgress;
 	private Date _deleteDate;
-	private Map<String, String> _additionalInfo;
+	private Map<String, Object> _additionalInfo;
 }

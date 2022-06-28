@@ -19,6 +19,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -156,20 +157,15 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
     @Override
     public synchronized boolean createContentIndex(String indexName, int shards) throws ElasticsearchException, IOException {
-        ClassLoader classLoader = null;
-        URL url = null;
-        classLoader = Thread.currentThread().getContextClassLoader();
         String settings = null;
+
         try {
-            url = classLoader.getResource("es-content-settings.json");
-            settings = new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));
+            settings = JsonUtil.getJsonFileContentAsString("es-content-settings.json");
         } catch (Exception e) {
             Logger.error(this.getClass(), "cannot load es-content-settings.json file, skipping", e);
         }
 
-        url = classLoader.getResource("es-content-mapping.json");
-        String mapping = new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));
-
+        final String mapping = JsonUtil.getJsonFileContentAsString("es-content-mapping.json");
         CreateIndexResponse cir = esIndexApi.createIndex(indexName, settings, shards);
 
         int i = 0;

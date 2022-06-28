@@ -48,6 +48,7 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.collections.keyvalue.MultiKey;
 import org.glassfish.jersey.server.JSONP;
 
@@ -73,6 +74,7 @@ import java.util.stream.Collectors;
  * @since Oct 6, 2017
  */
 @Path("/v1/page")
+@Tag(name = "Page")
 public class PageResource {
 
     private final PageResourceHelper pageResourceHelper;

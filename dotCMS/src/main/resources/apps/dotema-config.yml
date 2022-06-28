@@ -15,5 +15,5 @@ params:
     hidden: false
     type: "STRING"
     label: "Proxy Edit Mode URL"
-    hint: "Your rendering server and endpoint that dotCMS will be proxying the request to, including the port, e.g. https://myspa.com:3000"
+    hint: "Your rendering server and endpoint that dotCMS will be proxying the request to, including the port, e.g. https://myspa.com:3000.  If you want to proxy different paths to different endpoints, you can specify this as json, e.g. ```{\"rewrites\":[{\"source\":\"/index*\",\"destination\":\"proxy.demo.com\"}]}```"
     required: true

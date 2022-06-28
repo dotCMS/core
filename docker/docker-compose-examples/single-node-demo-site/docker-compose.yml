@@ -22,7 +22,7 @@ services:
       - 9200:9200
       - 9600:9600
     volumes:
-      - esdata
+      - esdata:/usr/share/elasticsearch/data
     networks:
       - es_net
 
@@ -36,12 +36,12 @@ services:
         "DOT_ES_AUTH_BASIC_PASSWORD": 'admin'
         "DOT_ES_ENDPOINTS": 'http://elasticsearch:9200'
         "DOT_INITIAL_ADMIN_PASSWORD": 'admin'
-        "CUSTOM_STARTER_URL": "https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20220209/starter-20220209.zip"
+        "CUSTOM_STARTER_URL": "https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20220504/starter-20220504.zip"
     depends_on:
       - elasticsearch
       - db
     volumes:
-      - cms-shared
+      - cms-shared:/data/shared
       #- {license_local_path}/license.zip:/data/shared/assets/license.zip
     networks:
       - db_net
@@ -58,6 +58,6 @@ services:
         "POSTGRES_PASSWORD": 'password'
         "POSTGRES_DB": 'dotcms'
     volumes:
-      - dbdata
+      - dbdata:/var/lib/postgresql/data
     networks:
       - db_net

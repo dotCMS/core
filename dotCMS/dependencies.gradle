@@ -71,37 +71,13 @@ dependencies {
     implementation group: 'com.dotcms.lib', name: 'dot.hibernate', version:'2.1.7_3'
     implementation group: 'com.dotcms.lib', name: 'dot.httpbridge', version:'ukv_2'
     implementation group: 'com.dotcms.lib', name: 'dot.httpclient', version:'4.2.2_2'
-//    implementation group: 'com.dotcms.lib', name: 'dot.httpcore', version:'4.2.2_2'
     implementation group: 'com.dotcms.lib', name: 'dot.iText', version:'2.1.0_2'
 
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.11.1'
+    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-guava', version: '2.13.2'
 
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.11.1'
-
-    implementation (group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.11.1') {
-        transitive = false
-    }
-
-    implementation (group: 'com.fasterxml.jackson.jaxrs', name: 'jackson-jaxrs-json-provider', version: '2.11.1'){
-        transitive = false
-    }
+    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: '2.13.2'
 
     implementation (group: 'com.fasterxml.jackson.jaxrs', name: 'jackson-jaxrs-base', version: '2.11.1'){
-        transitive = false
-    }
-
-    implementation (group: 'com.fasterxml.jackson.module', name: 'jackson-module-jaxb-annotations', version: '2.11.1'){
-        transitive = false
-    }
-
-    implementation (group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: '2.12.5'){
-        transitive = false
-    }
-
-    implementation ('com.fasterxml.jackson.datatype:jackson-datatype-guava:2.11.1'){
-        transitive = false
-    }
-    implementation ('com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.11.1'){
         transitive = false
     }
 
@@ -168,7 +144,9 @@ dependencies {
     implementation (group: 'org.glassfish.jersey.media', name: 'jersey-media-sse', version: '2.22.1'){
         transitive = false
     }
-    implementation group: 'io.swagger', name: 'swagger-jersey2-jaxrs', version: '1.5.22'
+    implementation group: 'io.swagger.core.v3', name: 'swagger-jaxrs2', version: '2.2.0'
+    implementation group: 'io.swagger.core.v3', name: 'swagger-jaxrs2-servlet-initializer', version: '2.2.0'
+    implementation group: 'com.google.guava', name: 'guava', version: '27.0.1-android'
     implementation group: 'com.dotcms.lib', name: 'dot.jsoup', version:'1.6.1_2'
     implementation group: 'com.dotcms.lib', name: 'dot.jstl', version:'1.0.5_2'
     implementation group: 'com.dotcms.lib', name: 'dot.jta', version:'1.1_2'

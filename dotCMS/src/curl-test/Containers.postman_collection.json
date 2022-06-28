@@ -1,33 +1,27 @@
 {
 	"info": {
-		"_postman_id": "5fcabadc-ae05-4432-944e-29622c28c226",
+		"_postman_id": "4fc60ba5-b23a-4bc0-a910-34bbee3f021d",
 		"name": "Containers",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "4500400"
 	},
 	"item": [
 		{
-			"name": "Deletes Container Test Folder",
+			"name": "pre_ImportBundleWithApplicationContainerFolder",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"  pm.response.to.have.status(200);",
-							"});",
+							"pm.test(\"Bundle uploaded sucessfully\", function () {",
+							"    pm.response.to.have.status(200);",
 							"",
-							"pm.test(\"No errors\", function () {",
-							"    ",
 							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.errors.length).to.eql(0);",
-							"});",
+							"    console.log(jsonData);",
 							"",
-							"",
-							"",
-							"",
-							"",
-							"",
-							""
+							"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"application_containers_folder.tar.gz\");",
+							"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+							"});"
 						],
 						"type": "text/javascript"
 					}
@@ -38,40 +32,62 @@
 					"type": "basic",
 					"basic": [
 						{
-							"key": "password",
-							"value": "admin",
+							"key": "username",
+							"value": "admin@dotcms.com",
 							"type": "string"
 						},
 						{
-							"key": "username",
-							"value": "admin@dotcms.com",
+							"key": "password",
+							"value": "admin",
 							"type": "string"
 						}
 					]
 				},
-				"method": "DELETE",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "[\n    \"/application/containers/test\"\n]",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"type": "text",
+						"value": "application/octet-stream"
+					},
+					{
+						"key": "Content-Disposition",
+						"type": "text",
+						"value": "attachment"
 					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "resources/ContainerResource/application_containers_folder.tar.gz"
+						}
+					]
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/folder/default",
+					"raw": "{{serverURL}}/api/bundle?sync=true",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
-						"v1",
-						"folder",
-						"default"
+						"bundle"
+					],
+					"query": [
+						{
+							"key": "sync",
+							"value": "true"
+						},
+						{
+							"key": "AUTH_TOKEN",
+							"value": "",
+							"disabled": true
+						}
 					]
-				}
+				},
+				"description": "Imports a Bundle that includes:\n* A piece of content with a tag field without any tags selected"
 			},
 			"response": []
 		},
@@ -1759,91 +1775,6 @@
 			"response": []
 		},
 		{
-			"name": "UnPublishFileContainer",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"No errors\", function () {",
-							"    ",
-							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.errors.length).to.eql(0);",
-							"});",
-							"",
-							"pm.test(\"Information Saved Correctly\", function () { ",
-							"    ",
-							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.entity.title).to.eql(\"Test Container\");",
-							"    pm.expect(jsonData.entity.live).to.eql(false); ",
-							"    ",
-							"    ",
-							"});",
-							"",
-							"",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						}
-					]
-				},
-				"method": "PUT",
-				"header": [
-					{
-						"key": "Content-Type",
-						"name": "Content-Type",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"identifier\":\"{{identifier}}\",\n    \"title\":\"TestContainer\",\n    \"friendlyName\":\"TestContainer description\",\n    \"maxContentlets\":1,\n    \"notes\":\"Notes 1\",\n    \"preLoop\":\"preLoop xxxx\",\n    \"postLoop\":\"postLoop xxxx\",\n    \"containerStructures\":[\n        {\n            \"structureId\":\"webPageContent\",\n            \"code\":\" code xxxx\"\n        },\n        {\n            \"structureId\":\"DotAsset\",\n            \"code\":\" tags: $!{tags}\"\n        }\n    ]\n\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/containers/_unpublish?containerId=/application/containers/test",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"containers",
-						"_unpublish"
-					],
-					"query": [
-						{
-							"key": "containerId",
-							"value": "/application/containers/test"
-						}
-					]
-				},
-				"description": "Unpublish a file container"
-			},
-			"response": []
-		},
-		{
 			"name": "GetLiveByuuid_does_not_exists",
 			"event": [
 				{
@@ -1995,6 +1926,177 @@
 			"response": []
 		},
 		{
+			"name": "UnPublishFileContainer",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"No errors\", function () {",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.errors.length).to.eql(0);",
+							"});",
+							"",
+							"pm.test(\"Information Saved Correctly\", function () { ",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.entity.title).to.eql(\"Test Container\");",
+							"    pm.expect(jsonData.entity.live).to.eql(false); ",
+							"    ",
+							"    ",
+							"});",
+							"",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"identifier\":\"{{identifier}}\",\n    \"title\":\"TestContainer\",\n    \"friendlyName\":\"TestContainer description\",\n    \"maxContentlets\":1,\n    \"notes\":\"Notes 1\",\n    \"preLoop\":\"preLoop xxxx\",\n    \"postLoop\":\"postLoop xxxx\",\n    \"containerStructures\":[\n        {\n            \"structureId\":\"webPageContent\",\n            \"code\":\" code xxxx\"\n        },\n        {\n            \"structureId\":\"DotAsset\",\n            \"code\":\" tags: $!{tags}\"\n        }\n    ]\n\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/containers/_unpublish?containerId=/application/containers/test",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"containers",
+						"_unpublish"
+					],
+					"query": [
+						{
+							"key": "containerId",
+							"value": "/application/containers/test"
+						}
+					]
+				},
+				"description": "Unpublish a file container"
+			},
+			"response": []
+		},
+		{
+			"name": "ArchiveContainer",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"No errors\", function () {",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.errors.length).to.eql(0);",
+							"});",
+							"",
+							"pm.test(\"Information Saved Correctly\", function () { ",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.entity.title).to.eql(\"TestContainer\");",
+							"    pm.expect(jsonData.entity.live).to.eql(false); ",
+							"    pm.expect(jsonData.entity.archived).to.eql(true); ",
+							"    ",
+							"    ",
+							"});",
+							"",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/containers/_archive?containerId={{identifier}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"containers",
+						"_archive"
+					],
+					"query": [
+						{
+							"key": "containerId",
+							"value": "{{identifier}}"
+						}
+					]
+				},
+				"description": "archive a container"
+			},
+			"response": []
+		},
+		{
 			"name": "ArchiveFileContainer",
 			"event": [
 				{
@@ -2059,169 +2161,6 @@
 						"v1",
 						"containers",
 						"_archive"
-					],
-					"query": [
-						{
-							"key": "containerId",
-							"value": "/application/containers/test"
-						}
-					]
-				},
-				"description": "Archive a file container"
-			},
-			"response": []
-		},
-		{
-			"name": "ArchiveContainer",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"No errors\", function () {",
-							"    ",
-							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.errors.length).to.eql(0);",
-							"});",
-							"",
-							"pm.test(\"Information Saved Correctly\", function () { ",
-							"    ",
-							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.entity.title).to.eql(\"TestContainer\");",
-							"    pm.expect(jsonData.entity.live).to.eql(false); ",
-							"    pm.expect(jsonData.entity.archived).to.eql(true); ",
-							"    ",
-							"    ",
-							"});",
-							"",
-							"",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						}
-					]
-				},
-				"method": "PUT",
-				"header": [
-					{
-						"key": "Content-Type",
-						"name": "Content-Type",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"identifier\":\"{{identifier}}\",\n    \"title\":\"TestContainer\",\n    \"friendlyName\":\"TestContainer description\",\n    \"maxContentlets\":1,\n    \"notes\":\"Notes 1\",\n    \"preLoop\":\"preLoop xxxx\",\n    \"postLoop\":\"postLoop xxxx\",\n    \"containerStructures\":[\n        {\n            \"structureId\":\"webPageContent\",\n            \"code\":\" code xxxx\"\n        },\n        {\n            \"structureId\":\"DotAsset\",\n            \"code\":\" tags: $!{tags}\"\n        }\n    ]\n\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/containers/_archive?containerId={{identifier}}",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"containers",
-						"_archive"
-					],
-					"query": [
-						{
-							"key": "containerId",
-							"value": "{{identifier}}"
-						}
-					]
-				},
-				"description": "archive a container"
-			},
-			"response": []
-		},
-		{
-			"name": "UnarchiveFileContainer",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"No errors\", function () {",
-							"    ",
-							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.errors.length).to.eql(0);",
-							"});",
-							"",
-							"pm.test(\"Information Saved Correctly\", function () { ",
-							"    ",
-							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.entity.title).to.eql(\"Test Container\");",
-							"    pm.expect(jsonData.entity.live).to.eql(false); ",
-							"    pm.expect(jsonData.entity.archived).to.eql(false); ",
-							"    ",
-							"    ",
-							"});",
-							"",
-							"",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						}
-					]
-				},
-				"method": "PUT",
-				"header": [
-					{
-						"key": "Content-Type",
-						"name": "Content-Type",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/containers/_unarchive?containerId=/application/containers/test",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"containers",
-						"_unarchive"
 					],
 					"query": [
 						{
@@ -2317,6 +2256,83 @@
 					]
 				},
 				"description": "Unarchive container"
+			},
+			"response": []
+		},
+		{
+			"name": "UnarchiveFileContainer",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"No errors\", function () {",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.errors.length).to.eql(0);",
+							"});",
+							"",
+							"pm.test(\"Information Saved Correctly\", function () { ",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.entity.title).to.eql(\"Test Container\");",
+							"    pm.expect(jsonData.entity.live).to.eql(false); ",
+							"    pm.expect(jsonData.entity.archived).to.eql(false); ",
+							"    ",
+							"    ",
+							"});",
+							"",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/containers/_unarchive?containerId=/application/containers/test",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"containers",
+						"_unarchive"
+					],
+					"query": [
+						{
+							"key": "containerId",
+							"value": "/application/containers/test"
+						}
+					]
+				},
+				"description": "un archive a file container"
 			},
 			"response": []
 		},
