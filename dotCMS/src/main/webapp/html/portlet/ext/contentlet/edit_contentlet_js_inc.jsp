@@ -333,10 +333,6 @@
             }
 
             formData[formDataIndex] = formElements[formElementsIndex].name+nameValueSeparator+formElements[formElementsIndex].value;
-            if(JSON.stringify(formData[formDataIndex]).includes('da883772-bc17-4adb-9e04-b49ffaafc792')) {
-                console.log('HERE:', { data: formData[formDataIndex], formDataIndex});
-                console.log(formElements[formElementsIndex]);
-            }
         }
 
         // Categories selected in the Category Dialog

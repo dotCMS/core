@@ -429,11 +429,13 @@
 			}				
 
 			const disabledActions = document.querySelector('.disabled-contentlet-action');
+
 			if(disabledActions) {
 				disabledActions.classList.remove('disabled-contentlet-action');
 			}
+
 			// Remove the loading
-			document.querySelector('#relationship-loading').remove();
+			document.querySelector('#relationship-loading')?.remove();
 
 			if( data == null || (data != null && data.length == 0) ) {
 			  renumberAndReorder<%= relationJsName %>();
