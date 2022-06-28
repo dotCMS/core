@@ -705,7 +705,7 @@ if(!InodeUtils.isSet(inode) && UtilMethods.isSet(sib) && !UtilMethods.isSet(popu
 		      	dijit.byId('populateDialog').hide();
 		     }
 			 dojo.addOnLoad(function () {
-				ådijit.byId('populateDialog').show();
+				dijit.byId('populateDialog').show();
              });
 		</script>
 

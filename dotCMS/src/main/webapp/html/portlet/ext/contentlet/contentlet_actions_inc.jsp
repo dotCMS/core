@@ -206,7 +206,6 @@ function editPage(url, languageId) {
 			<% List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action); %>
 
 
-			<!--  Step: 3 - Agregar la clase 'disabled-contentlet-action' cuando existen relaciones -->
 			<a
 			style="<%if(schemesAvailable.size()>1){%>display:none;<%} %>" class="schemeId<%=action.getSchemeId()%> schemeActionsDiv"
 			onclick="contentAdmin.executeWfAction('<%=action.getId()%>', <%= action.hasPushPublishActionlet() || action.isAssignable() || action.isCommentable() || (action.hasMoveActionletActionlet() && !action.hasMoveActionletHasPathActionlet()) || UtilMethods.isSet(action.getCondition()) %>)">
