@@ -2,12 +2,9 @@
     #filterInput
     (filter)="filterContentTypes($event)"
 ></dot-palette-input-filter>
-<div
-    class="dot-content-palette__items"
-    *ngIf="itemsFiltered === undefined || itemsFiltered?.length; else noResults"
->
+<div class="dot-content-palette__items" *ngIf="items?.length && !loading">
     <div
-        *ngFor="let item of itemsFiltered"
+        *ngFor="let item of items"
         draggable="true"
         data-testId="paletteItem"
         (dragstart)="dragStart(item)"
@@ -19,6 +16,12 @@
     </div>
 </div>
 
-<ng-template #noResults>
-    <span data-testId="emptyState" class="dot-content-palette__empty">{{ 'No-Results' | dm }}</span>
-</ng-template>
+<dot-spinner *ngIf="loading && viewContentlet === 'contentlet:out'" [size]="'40px'" [borderSize]="'8px'"></dot-spinner>
+
+<span
+    *ngIf="!items?.length && !loading"
+    data-testId="emptyState"
+    class="dot-content-palette__empty"
+>
+    {{ 'No-Results' | dm }}
+</span>
