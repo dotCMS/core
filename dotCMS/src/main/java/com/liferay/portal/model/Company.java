@@ -26,6 +26,8 @@ import static com.dotmarketing.util.UtilMethods.isSet;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.hash.Hashing;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.Base64;
@@ -40,6 +42,8 @@ import java.util.TimeZone;
  * @version $Revision: 1.16 $
  * 
  */
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Company extends CompanyModel {
 
 	public static final String[] TYPES = PropsUtil
@@ -93,6 +97,7 @@ public class Company extends CompanyModel {
 		super.setKey(key);
 	}
 
+	@JsonIgnore
 	public Key getKeyObj() {
 		return _keyObj;
 	}
@@ -103,6 +108,7 @@ public class Company extends CompanyModel {
 		super.setKey(Base64.objectToString(keyObj));
 	}
 
+	@JsonIgnore
 	public String getKeyDigest() {
 	    final String key = getKey();
 		if (isSet(key)) {
@@ -139,6 +145,7 @@ public class Company extends CompanyModel {
 		return getShortName() + " Administrator";
 	}
 
+	@JsonIgnore
 	public BaseModel getProtected() {
 		if (_company == null) {
 			protect();
@@ -147,14 +154,18 @@ public class Company extends CompanyModel {
 		return _company;
 	}
 
+	@JsonIgnore
 	public String getBackgroundColor() {
 	  return _company.getSize();
 	}
-	
-	 public String getPrimaryColor() {
+
+	@JsonIgnore
+	public String getPrimaryColor() {
 	    return _company.getType();
 	  }
-	  public String getSecondaryColor() {
+
+	@JsonIgnore
+	public String getSecondaryColor() {
       return _company.getStreet();
     }
 	
