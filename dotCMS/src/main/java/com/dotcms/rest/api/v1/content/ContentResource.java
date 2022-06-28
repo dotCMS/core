@@ -259,7 +259,7 @@ public class ContentResource {
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ResponseEntityView.class))),
                     @ApiResponse(responseCode = "404", description = "Contentlet not found"),
-                    @ApiResponse(responseCode = "400", description = "Contentlet has not a relationship field")})
+                    @ApiResponse(responseCode = "400", description = "Contentlet does not have a relationship field")})
     public Response pullRelated(@Context final HttpServletRequest request,
                                @Context final HttpServletResponse response,
                                final PullRelatedForm pullRelatedForm) throws DotDataException, DotSecurityException {
