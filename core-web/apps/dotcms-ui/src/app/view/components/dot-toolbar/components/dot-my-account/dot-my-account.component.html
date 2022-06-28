@@ -82,6 +82,13 @@
                 type="password"
                 required
             />
+
+            <small
+                *ngIf="confirmPasswordFailedMsg"
+                data-testId="dotCurrrentPasswordFailedMsg"
+                class="p-invalid"
+                >{{ confirmPasswordFailedMsg }}</small
+            >
         </div>
         <div class="field">
             <p-checkbox
@@ -106,10 +113,10 @@
             />
 
             <small
-                *ngIf="passwordFailedMsg"
+                *ngIf="newPasswordFailedMsg"
                 data-testId="dotSavePasswordFailedMsg"
                 class="p-invalid"
-                >{{ passwordFailedMsg }}</small
+                >{{ newPasswordFailedMsg }}</small
             >
         </div>
         <div class="field">
