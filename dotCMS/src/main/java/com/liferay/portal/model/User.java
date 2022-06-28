@@ -33,6 +33,7 @@ import com.dotmarketing.portlets.user.ajax.UserAjax;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.Recipient;
 import com.liferay.util.LocaleUtil;
@@ -56,6 +57,7 @@ import java.util.TimeZone;
  * @version $Revision: 1.34 $
  *
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class User extends UserModel implements Recipient, ManifestItem, DotCloneable {
 
 	public static final String DEFAULT = "default";
@@ -103,7 +105,7 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 				Date createDate, Date loginDate, String loginIP,
 				Date lastLoginDate, String lastLoginIP, int failedLoginAttempts,
 				boolean agreedToTermsOfUse, boolean active, boolean deleteInProgress, Date deleteDate,
-                final Map<String, String> additionalInfo) {
+                final Map<String, Object> additionalInfo) {
 
 		super(userId, companyId, password, passwordEncrypted,
 			  passwordExpirationDate, passwordReset, firstName, middleName,
@@ -147,8 +149,6 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 			return getCompanyId();
 		}
 	}
-
-
 
 	public boolean isPasswordExpired() {
 		if (getPasswordExpirationDate() != null &&
@@ -220,7 +220,7 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 			return false;
 		}
 	}
-	@JsonIgnore
+
 	public void setResolution(String resolution) {
 		if (Validator.isNull(resolution)) {
 			resolution = PropsUtil.get(
@@ -229,7 +229,7 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 
 		super.setResolution(resolution);
 	}
-	@JsonIgnore
+
 	public void setRefreshRate(String refreshRate) {
 		if (Validator.isNull(refreshRate)) {
 			refreshRate = PropsUtil.get(
@@ -239,7 +239,7 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 		super.setRefreshRate(refreshRate);
 	}
 
-
+	@JsonIgnore
 	public BaseModel getProtected() {
 		if (_user == null) {
 			protect();
@@ -308,7 +308,7 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
         setModified(true);
     }
 
-  public boolean isAnonymousUser(){
+    public boolean isAnonymousUser(){
       return UserAPI.CMS_ANON_USER_ID.equals(this.getUserId());
   }
 
@@ -317,6 +317,7 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 	 * Returns true if the user is an admin
 	 * @return boolean
 	 */
+	@JsonIgnore
 	public boolean isAdmin() {
 
 		return Try.of(() -> {
@@ -329,32 +330,30 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 
 	}
 
-  public boolean isBackendUser() {
+	@JsonIgnore
+	public boolean isBackendUser() {
+		return Try.of(() -> {
+		  if (isAnonymousUser()) {
+			return false;
+		  }
+		  return (APILocator.getRoleAPI().doesUserHaveRole(this, APILocator.getRoleAPI().loadBackEndUserRole()));
 
-    return Try.of(() -> {
-      if (isAnonymousUser()) {
-        return false;
-      }
-      return (APILocator.getRoleAPI().doesUserHaveRole(this, APILocator.getRoleAPI().loadBackEndUserRole()));
+		}).getOrElse(false);
+	}
 
-    }).getOrElse(false);
+	@JsonIgnore
+	public boolean isFrontendUser() {
+		return Try.of(() -> {
+			if (isAnonymousUser()) {
+				return true;
+			}
+			return (APILocator.getRoleAPI()
+					.doesUserHaveRole(this, APILocator.getRoleAPI().loadFrontEndUserRole()));
 
-  }
-
-  public boolean isFrontendUser() {
-
-    return Try.of(() -> {
-      if (isAnonymousUser()) {
-        return true;
-      }
-      return (APILocator.getRoleAPI().doesUserHaveRole(this, APILocator.getRoleAPI().loadFrontEndUserRole()));
-
-    }).getOrElse(false);
-
-  }
+		}).getOrElse(false);
+	}
 
 
-  @JsonIgnore
   public Role getUserRole() {
 
       return Try.of(() -> APILocator.getRoleAPI().loadRoleByKey(this.getUserId())).getOrElseThrow(e->new DotStateException("Unable to find user role for user:" + this.getUserId()));
@@ -426,7 +425,6 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 	private User _user;
 	private Date modificationDate;
 
-	@JsonIgnore
 	@Override
 	public ManifestInfo getManifestInfo(){
 		return new ManifestInfoBuilder()

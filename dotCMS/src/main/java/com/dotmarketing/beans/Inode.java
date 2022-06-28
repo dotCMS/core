@@ -11,20 +11,17 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.categories.business.Categorizable;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -39,6 +36,7 @@ import java.util.UUID;
  * @author rocco
  * @author David H Torres (2009)
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Inode implements Serializable, Comparable, Permissionable,Versionable,
 		Categorizable, UUIDable {
 
@@ -97,7 +95,7 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 	public String getModUser() {
 		return "";
 	}
-	
+
 	public String getCategoryId() {
 		return getInode();
 	}
@@ -114,11 +112,13 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 
 	// sets the idate from the db
 	public void setIDate(String x) {
-		java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat(
-				"yyyy-MM-dd H:mm:ss");
-		java.text.ParsePosition pos = new java.text.ParsePosition(0);
-		iDate = formatter.parse(x, pos);
 
+		if (UtilMethods.isSet(x)) {
+			java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat(
+					"yyyy-MM-dd H:mm:ss");
+			java.text.ParsePosition pos = new java.text.ParsePosition(0);
+			iDate = formatter.parse(x, pos);
+		}
 		if (iDate == null) {
 			iDate = new java.util.Date();
 		}
@@ -469,7 +469,7 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 	/**
 	 * Wipe out the old parents and associate a new parents set to the inode
 	 * 
-	 * @param newChildren
+	 * @param newParents
 	 *            New children set
 	 * @deprecated Association between inodes should be called through their
 	 *             respective API, calling the API ensures the consistency of
@@ -598,24 +598,31 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 	public boolean isParentPermissionable() {
 		return false;
 	}
+
 	public String getTitle() {
 		return "";
 	}
+
 	public String getVersionId() {
 		return getIdentifier();
 	}
+
 	public String getVersionType() {
 		return getType();
 	}
+
 	public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException {
 		return false;
 	}
+
 	public boolean isLive() throws DotStateException, DotDataException, DotSecurityException {
 		return false;
 	}
+
 	public boolean isLocked() throws DotStateException, DotDataException, DotSecurityException {
 		return false;
 	}
+
 	public boolean isWorking() throws DotStateException, DotDataException, DotSecurityException {
 		return false;
 	}
