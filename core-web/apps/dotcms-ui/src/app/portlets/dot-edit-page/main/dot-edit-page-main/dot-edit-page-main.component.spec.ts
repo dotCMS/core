@@ -261,9 +261,9 @@ describe('DotEditPageMainComponent', () => {
 
     it('should set the page title correctly', () => {
         spyOn(titleService, 'getTitle').and.callThrough();
-        const res: DotPageRender = new DotPageRender(mockDotRenderedPage());
         const initialTitle = titleService.getTitle().split(' - ');
-        const title = initialTitle[initialTitle.length - 1];
+        const res: DotPageRender = new DotPageRender(mockDotRenderedPage());
+        const title = initialTitle.length > 1 ? initialTitle[initialTitle.length - 1] : '';
 
         expect(titleService.getTitle()).toBe(`${res.page.title}${title ? ` - ${title}` : ''}`);
     });
