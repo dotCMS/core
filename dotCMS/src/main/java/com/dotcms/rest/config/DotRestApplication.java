@@ -24,6 +24,7 @@ import com.dotcms.rest.api.v1.contenttype.ContentTypeResource;
 import com.dotcms.rest.api.v1.contenttype.FieldResource;
 import com.dotcms.rest.api.v1.contenttype.FieldVariableResource;
 import com.dotcms.rest.api.v1.event.EventsResource;
+import com.dotcms.rest.api.v1.experiment.ExperimentResource;
 import com.dotcms.rest.api.v1.fileasset.FileAssetsResource;
 import com.dotcms.rest.api.v1.folder.FolderResource;
 import com.dotcms.rest.api.v1.form.FormResource;
@@ -180,6 +181,7 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 			.add(BrowserTreeResource.class)
 			.add(CategoriesResource.class)
 			.add(PageResource.class)
+			.add(ExperimentResource.class)
 			.add(ContentRelationshipsResource.class)
 			.add(com.dotcms.rest.api.v1.workflow.WorkflowResource.class)
 			.add(ContainerResource.class)
