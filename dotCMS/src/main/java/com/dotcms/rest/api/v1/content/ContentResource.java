@@ -30,6 +30,10 @@ import com.dotmarketing.util.json.JSONException;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
@@ -248,6 +252,14 @@ public class ContentResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("related")
+    @Operation(summary = "Pull Related Content",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityView.class))),
+                    @ApiResponse(responseCode = "404", description = "Contentlet not found"),
+                    @ApiResponse(responseCode = "400", description = "Contentlet has not a relationship field")})
     public Response pullRelated(@Context final HttpServletRequest request,
                                @Context final HttpServletResponse response,
                                final PullRelatedForm pullRelatedForm) throws DotDataException, DotSecurityException {
