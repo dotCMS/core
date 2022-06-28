@@ -12,7 +12,6 @@
 <%@page import="com.dotmarketing.portlets.categories.business.CategoryAPI"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.containers.model.Container"%>
-<%-- Contentlet forms coming from here... Maybe(?) --%>
 <%@page import="com.dotmarketing.portlets.contentlet.struts.ContentletForm"%> 
 <%@page import="com.dotmarketing.portlets.structure.model.ContentletRelationships"%>
 <%@page import="com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords"%>
@@ -71,7 +70,7 @@
 		copyOptions = ((String) request.getParameter("_copyOptions"))==null?"":(String) request.getParameter("_copyOptions");
 	}
 	//Content structure or user selected structure
-	// Step: 1 - Obtener la estructura del contentlet.
+
 	Structure structure = contentletForm.getStructure();
 	if(structure==null){
 	    structure=new StructureTransformer( APILocator.getContentTypeAPI(user).findDefault()).asStructure();
@@ -98,7 +97,7 @@
 		structure = StructureFactory.getStructureByInode(request.getParameter("sibblingStructure"));
 	}
 
-	// Step: 2 - Obtener los fileds
+
 	List<Field> fields = new ArrayList<>(structure.getFields());
 
 	//Categories
@@ -706,7 +705,7 @@ if(!InodeUtils.isSet(inode) && UtilMethods.isSet(sib) && !UtilMethods.isSet(popu
 		      	dijit.byId('populateDialog').hide();
 		     }
 			 dojo.addOnLoad(function () {
-                 dijit.byId('populateDialog').show();
+				ådijit.byId('populateDialog').show();
              });
 		</script>
 

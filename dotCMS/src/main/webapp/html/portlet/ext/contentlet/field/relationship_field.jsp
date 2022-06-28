@@ -62,9 +62,7 @@
     for(Contentlet relatedContent : relatedContents ){
         listOfRelatedInodes.add(relatedContent.getInode());
     }
-    
-	System.out.println("AQUI:");
-	System.out.println(listOfRelatedInodes);
+
 
 	//Variable used to return after the work is done with the contentlet
 	String referer = "";
@@ -430,9 +428,10 @@
 					data[data.length] = dataToRelate[indexK];
 			}				
 
-			// Step: 5 - Eliminar la clase 
-			const actions = document.querySelector('.disabled-contentlet-action');
-			actions.classList.remove('disabled-contentlet-action');
+			const disabledActions = document.querySelector('.disabled-contentlet-action');
+			if(disabledActions) {
+				disabledActions.classList.remove('disabled-contentlet-action');
+			}
 			// Remove the loading
 			document.querySelector('#relationship-loading').remove();
 
@@ -568,7 +567,6 @@
 			window.location=href;
 		}
 	    
-		// I found and easter egg
 		// DOTCMS-6097
 
 		var <%= relationJsName %>RelatedCons;
@@ -877,7 +875,6 @@
 			document.getElementById('<%= relationJsName %>Table').appendChild(row);
 		}
 
-		// Step: 4 - Cargar las relaciones
         dojo.addOnLoad(
          function(){
             var doRelateContainer = document.getElementById('doRelateContainer');
