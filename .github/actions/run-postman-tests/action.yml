@@ -1,0 +1,53 @@
+# action.yml
+name: 'Run Postman Tests'
+description: 'Run core postman tests'
+author: 'victoralfaro-dotcms'
+inputs:
+  project_root:
+    description: 'Project root'
+    required: true
+    default: ${{ github.WORKSPACE }}
+  build_env:
+    description: 'Build environment to use'
+    type: choice
+    options:
+    - gradle
+    - maven
+    required: true
+  db_type:
+    description: 'Database type'
+    required: true
+    default: postgres
+  built_image_name:
+    description: 'DotCMS built image name'
+    required: true
+  wait_for_deps:
+    description: 'Time to wait before starting DotCMS instance to let dependencies load'
+    required: true
+    default: '30'
+  license_key:
+    description: 'License key to use'
+    required: true
+  custom_starter_url:
+    description: 'Custom starter URL'
+    required: false
+  tests:
+    description: 'Comma delimited list with the specific prefix: runt-tests:'
+    required: false
+  export_report:
+    description: 'Export report flag'
+    type: boolean
+    required: false
+    default: 'false'
+outputs:
+  tests_results_status:
+    description: 'Tests results status'
+  tests_results_location:
+    description: 'Postman tests results location'
+  tests_results_report_location:
+    description: 'Postman tests report location'
+  tests_results_skip_report:
+    description: 'Flag indicating if results report is skipped'
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
