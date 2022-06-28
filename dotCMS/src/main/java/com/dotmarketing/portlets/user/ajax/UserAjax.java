@@ -607,7 +607,7 @@ public class UserAjax {
 
 			user.setActive(active);
 
-			final Map<String, String> additionalUserInfo = new HashMap<>();
+			final Map<String, Object> additionalUserInfo = new HashMap<>();
 
 			additionalUserInfo.put("prefix", prefix);
             additionalUserInfo.put("suffix", suffix);

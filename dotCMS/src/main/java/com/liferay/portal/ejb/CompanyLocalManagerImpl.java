@@ -177,8 +177,6 @@ public class CompanyLocalManagerImpl implements CompanyLocalManager {
 			Company company = CompanyUtil.findByPrimaryKey(companyId);
 
 			if (company.getKeyObj() == null) {
-				Key key = Encryptor.generateKey();
-
 				company.setKeyObj(Encryptor.generateKey());
 			}
 

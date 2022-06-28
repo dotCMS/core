@@ -2,13 +2,14 @@ package com.dotmarketing.portlets.workflows.model;
 
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
-
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class WorkflowComment  implements Serializable, WorkflowTimelineItem
 {
 	
