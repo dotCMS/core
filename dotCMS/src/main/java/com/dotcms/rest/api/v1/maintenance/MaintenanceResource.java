@@ -1,25 +1,12 @@
 package com.dotcms.rest.api.v1.maintenance;
 
-import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.WebResource;
-import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.util.AssetExporterUtil;
-import com.dotcms.util.DbExporterUtil;
-import com.dotmarketing.business.ApiProvider;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.exception.DoesNotExistException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ExportStarterUtil;
-import com.dotmarketing.util.FileUtil;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.SecurityLogger;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletRequest;
@@ -30,15 +17,34 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-
-import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
-import io.vavr.control.Try;
+import javax.ws.rs.core.StreamingOutput;
+import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.server.JSONP;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.util.AssetExporterUtil;
+import com.dotcms.util.DbExporterUtil;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.starter.ExportStarterUtil;
+import com.dotmarketing.util.FileUtil;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.StringUtils;
+import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 
 
 /**
@@ -175,15 +181,40 @@ public class MaintenanceResource implements Serializable {
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response downloadDb(@Context final HttpServletRequest request,
                                      @Context final HttpServletResponse response) throws IOException {
-        assertBackendUser(request, response);
+        User user = assertBackendUser(request, response).getUser();
+        
+        final String hostName = Try.of(()-> APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false).getHostname()).getOrElse("dotcms");
 
-        final File dbFile = DbExporterUtil.exportToFile();
-        Logger.info(this.getClass(), "Requested dbFile: " + dbFile.getCanonicalPath());
+        final SimpleDateFormat dateToString = new SimpleDateFormat("yyyy-MM-dd_hh-mm-ss");
+        final String fileName = StringUtils.sanitizeFileName(hostName)  + "_db_" + dateToString.format(new Date()) + ".sql.gz";
 
-        response.setHeader("Content-Disposition", "attachment; filename=" + dbFile.getName());
-        return Response.ok(dbFile, MediaType.APPLICATION_OCTET_STREAM).build();
+        SecurityLogger.logInfo(this.getClass(), "User : " + user.getEmailAddress() + " downloading database");
+        
+        response.setHeader("Content-Type", MediaType.APPLICATION_OCTET_STREAM);
+        response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
+        
+        return Response.ok(new PGDumpStreamingOutput()).build();
     }
 
+    
+    public static class PGDumpStreamingOutput implements StreamingOutput {
+
+        @Override
+        public void write(OutputStream output) throws IOException, WebApplicationException {
+
+            synchronized (PGDumpStreamingOutput.class) {
+                try (InputStream input = DbExporterUtil.exportSql()) {
+                    IOUtils.copy(input, output);
+
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+        }
+    }
+    
+    
     /**
      * This method attempts to send resolved DB dump file using an octet stream http response.
      *

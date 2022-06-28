@@ -192,9 +192,11 @@
         }
 
         function performMark(callback) {
+            dataLogPrintedElem.innerHTML = dataLogSourceElem.innerHTML;
+
             var keyword = keywordLogInput.value;
 
-            if (keyword && keyword.length > 1) {
+            if (keyword && keyword.length > 2) {
                 new HR(".logViewerPrinted", {
                     highlight: [keyword]
                 }).hr();
@@ -212,11 +214,12 @@
         }
 
         function filterLog(event) {
+            const ignoredKeys = ["ArrowLeft", "ArrowUp", "ArrowDown", "ArrowRight"];
+
             if (event.key === 'Enter') {
-                performMark(excludeNoMatchingRows);
                 excludeLogRowsActive = true;
-            } else {
-                dataLogPrintedElem.innerHTML = dataLogSourceElem.innerHTML;
+                performMark(excludeNoMatchingRows);
+            } else if (!ignoredKeys.includes(event.key)) {
                 excludeLogRowsActive = false;
                 performMark();
             }

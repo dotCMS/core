@@ -11,6 +11,7 @@ import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotmarketing.util.Logger;
 import org.apache.felix.framework.OSGIUtil;
 import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.util.FileUtil;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -32,7 +33,8 @@ public class OSGIAJAX extends OSGIBaseAJAX {
     }
 
     public void undeploy ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException, InterruptedException {
-
+        validateUser() ;
+        
         String jar = request.getParameter( "jar" );
         String bundleId = request.getParameter( "bundleId" );
 
@@ -74,6 +76,8 @@ public class OSGIAJAX extends OSGIBaseAJAX {
     }
 
     public void deploy ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
+        validateUser() ;
+        
         String loadPath = OSGIUtil.getInstance().getFelixDeployPath();
         String undeployedPath = OSGIUtil.getInstance().getFelixUndeployPath();
 
@@ -92,7 +96,8 @@ public class OSGIAJAX extends OSGIBaseAJAX {
     }
 
     public void stop ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
-
+        validateUser() ;
+        
         String bundleID = request.getParameter( "bundleId" );
         String jar = request.getParameter( "jar" );
         try {
@@ -110,7 +115,8 @@ public class OSGIAJAX extends OSGIBaseAJAX {
     }
 
     public void start ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
-
+        validateUser() ;
+        
         String bundleID = request.getParameter( "bundleId" );
         String jar = request.getParameter( "jar" );
         try {
@@ -127,7 +133,8 @@ public class OSGIAJAX extends OSGIBaseAJAX {
     }
 
     public void add ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
-
+        validateUser() ;
+        
         FileItemFactory factory = new DiskFileItemFactory();
         ServletFileUpload upload = new ServletFileUpload( factory );
         FileItemIterator iterator = null;
@@ -145,7 +152,7 @@ public class OSGIAJAX extends OSGIBaseAJAX {
                         break;
                     }
 
-                    String felixDeployFolder = OSGIUtil.getInstance().getFelixDeployPath();
+                    String felixDeployFolder = OSGIUtil.getInstance().getFelixUploadPath();
 
                     File felixFolder = new File(felixDeployFolder);
                     File osgiJar = new File(felixDeployFolder + File.separator + fname);
@@ -163,6 +170,9 @@ public class OSGIAJAX extends OSGIBaseAJAX {
                     IOUtils.closeQuietly( in );
                 }
             }
+            OSGIUtil.getInstance().checkUploadFolder();
+            
+            
           Logger.info( OSGIAJAX.class, "OSGI Bundle "+jar+ " Uploaded");
         } catch ( FileUploadException e ) {
             Logger.error( OSGIBaseAJAX.class, e.getMessage(), e );
@@ -180,7 +190,8 @@ public class OSGIAJAX extends OSGIBaseAJAX {
      * @throws IOException
      */
     public void getExtraPackages ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
-
+        validateUser() ;
+        
         //Read the list of the dotCMS exposed packages to the OSGI context
         String extraPackages = OSGIUtil.getInstance().getExtraOSGIPackages();
 
@@ -197,21 +208,21 @@ public class OSGIAJAX extends OSGIBaseAJAX {
      * @throws IOException
      */
     public void modifyExtraPackages ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
-
+        validateUser() ;
+        
         //Get the packages from the form
         String extraPackages = request.getParameter( "packages" );
 
-        //Override the file with the values we just read
-        BufferedWriter writer = new BufferedWriter( new FileWriter( OSGIUtil.getInstance().FELIX_EXTRA_PACKAGES_FILE ) );
-        writer.write( extraPackages );
-        writer.close();
-        Logger.info( OSGIAJAX.class, "OSGI Extra Packages Saved");
-        //Send a response
+
+        OSGIUtil.getInstance().writeOsgiExtras(extraPackages);
+
+        
         writeSuccess( response, "OSGI Extra Packages Saved" );
     }
 
     public void restart ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
-
+        validateUser() ;
+        
         // restart the framework at notify to all nodes to do the same
         OSGIUtil.getInstance().restartOsgiClusterWide();
         //Send a respose
@@ -219,7 +230,8 @@ public class OSGIAJAX extends OSGIBaseAJAX {
     }
 
     private void remove () {
-
+        validateUser() ;
+        
         //Remove Portlets in the list
         OSGIUtil.getInstance().portletIDsStopped.stream().forEach(p -> {APILocator.getPortletAPI().deletePortlet(p);});
         Logger.info( this, "Portlets Removed: " + OSGIUtil.getInstance().portletIDsStopped.toString() );

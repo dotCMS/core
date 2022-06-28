@@ -31,7 +31,6 @@ import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -1495,7 +1494,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 final FireActionForm fireActionForm1 = new FireActionForm(builder1);
                 final HttpServletRequest request1 = getHttpRequest();
                 final Response response1 = workflowResource
-                        .fireAction(request1, new EmptyHttpResponse(), saveAndPublishActionId, null, null, "FORCE", "-1",  fireActionForm1);
+                        .fireActionSinglePart(request1, new EmptyHttpResponse(), saveAndPublishActionId, null, null, "FORCE", "-1",  fireActionForm1);
 
                 final int statusCode1 = response1.getStatus();
                 assertEquals(Status.OK.getStatusCode(), statusCode1);
@@ -1515,7 +1514,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 final FireActionForm fireActionForm2 = new FireActionForm(builder2);
                 final HttpServletRequest request2 = getHttpRequest();
                 final Response response2 = workflowResource
-                     .fireAction(request2, new EmptyHttpResponse(), saveAndPublishActionId, brandNewContentlet.getInode(), null, "FORCE", "-1", fireActionForm2);
+                     .fireActionSinglePart(request2, new EmptyHttpResponse(), saveAndPublishActionId, brandNewContentlet.getInode(), null, "FORCE", "-1", fireActionForm2);
 
                 final int statusCode2 = response2.getStatus();
                 assertEquals(Status.OK.getStatusCode(), statusCode2);
@@ -1793,7 +1792,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 final FireActionForm fireActionForm1 = new FireActionForm(builder1);
                 final HttpServletRequest request1 = getHttpRequest();
                 final Response response1 = workflowResource
-                        .fireAction(request1, new EmptyHttpResponse(), SAVE_ACTION_ID, null,null, "FORCE", "-1", fireActionForm1);
+                        .fireActionSinglePart(request1, new EmptyHttpResponse(), SAVE_ACTION_ID, null,null, "FORCE", "-1", fireActionForm1);
 
                 final int statusCode1 = response1.getStatus();
                 assertEquals(Status.OK.getStatusCode(), statusCode1);
@@ -1817,7 +1816,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 final FireActionForm fireActionForm2 = new FireActionForm(builder2);
                 final HttpServletRequest request2 = getHttpRequest();
                 final Response response2 = workflowResource
-                        .fireAction(request2, new EmptyHttpResponse(), SAVE_ACTION_ID, brandNewContentlet.getInode(), null, "FORCE","-1", fireActionForm2);
+                        .fireActionSinglePart(request2, new EmptyHttpResponse(), SAVE_ACTION_ID, brandNewContentlet.getInode(), null, "FORCE","-1", fireActionForm2);
 
                 final int statusCode2 = response2.getStatus();
                 assertEquals(Status.OK.getStatusCode(), statusCode2);
@@ -1874,7 +1873,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final FireActionForm fireActionForm1 = new FireActionForm(builder1);
             final HttpServletRequest request1 = getHttpRequest();
             final Response response1 = workflowResource
-                    .fireAction(request1, new EmptyHttpResponse(), SAVE_ACTION_ID, null, null, "FORCE","-1", fireActionForm1);
+                    .fireActionSinglePart(request1, new EmptyHttpResponse(), SAVE_ACTION_ID, null, null, "FORCE","-1", fireActionForm1);
 
             final int statusCode1 = response1.getStatus();
             assertEquals(Status.OK.getStatusCode(), statusCode1);
@@ -1897,7 +1896,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final FireActionForm fireActionForm2 = new FireActionForm(builder2);
             final HttpServletRequest request2 = getHttpRequest();
             final Response response2 = workflowResource
-                    .fireAction(request2, new EmptyHttpResponse(), SAVE_ACTION_ID, brandNewContentlet.getInode(), null, "FORCE","-1", fireActionForm2);
+                    .fireActionSinglePart(request2, new EmptyHttpResponse(), SAVE_ACTION_ID, brandNewContentlet.getInode(), null, "FORCE","-1", fireActionForm2);
 
             final int statusCode2 = response2.getStatus();
             assertEquals(Status.OK.getStatusCode(), statusCode2);
@@ -1944,7 +1943,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final FireActionForm fireActionForm1 = new FireActionForm(builder1);
             final HttpServletRequest request1 = getHttpRequest();
             final Response response1 = workflowResource
-                    .fireAction(request1, new EmptyHttpResponse(), SAVE_ACTION_ID, null, null, "FORCE","-1", fireActionForm1);
+                    .fireActionSinglePart(request1, new EmptyHttpResponse(), SAVE_ACTION_ID, null, null, "FORCE","-1", fireActionForm1);
 
             final int statusCode1 = response1.getStatus();
             assertEquals(Status.OK.getStatusCode(), statusCode1);
@@ -1967,7 +1966,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final FireActionForm fireActionForm2 = new FireActionForm(builder2);
             final HttpServletRequest request2 = getHttpRequest();
             final Response response2 = workflowResource
-                    .fireAction(request2, new EmptyHttpResponse(), SAVE_ACTION_ID, brandNewContentlet.getInode(), null, "FORCE","-1", fireActionForm2);
+                    .fireActionSinglePart(request2, new EmptyHttpResponse(), SAVE_ACTION_ID, brandNewContentlet.getInode(), null, "FORCE","-1", fireActionForm2);
 
             final int statusCode2 = response2.getStatus();
             assertEquals(Status.OK.getStatusCode(), statusCode2);
@@ -2013,7 +2012,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final FireActionForm fireActionForm1 = new FireActionForm(builder1);
             final HttpServletRequest request1 = getHttpRequest();
             final Response response1 = workflowResource
-                    .fireAction(request1, new EmptyHttpResponse(), SAVE_ACTION_ID, null, null, "FORCE","-1", fireActionForm1);
+                    .fireActionSinglePart(request1, new EmptyHttpResponse(), SAVE_ACTION_ID, null, null, "FORCE","-1", fireActionForm1);
 
             final int statusCode1 = response1.getStatus();
             assertEquals(Status.OK.getStatusCode(), statusCode1);
@@ -2033,7 +2032,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final FireActionForm fireActionForm2 = new FireActionForm(builder2);
             final HttpServletRequest request2 = getHttpRequest();
             final Response response2 = workflowResource
-                    .fireAction(request2, new EmptyHttpResponse(), SAVE_ACTION_ID, brandNewContentlet.getInode(), null, "FORCE","-1", fireActionForm2);
+                    .fireActionSinglePart(request2, new EmptyHttpResponse(), SAVE_ACTION_ID, brandNewContentlet.getInode(), null, "FORCE","-1", fireActionForm2);
 
             final int statusCode2 = response2.getStatus();
             assertEquals(Status.BAD_REQUEST.getStatusCode(), statusCode2);
@@ -2067,7 +2066,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final FireActionForm fireActionForm1 = new FireActionForm(builder1);
             final HttpServletRequest request1 = getHttpRequest();
             final Response response1 = workflowResource
-                    .fireActionDefault(request1, new EmptyHttpResponse(), null, null, "FORCE",
+                    .fireActionDefaultSinglePart(request1, new EmptyHttpResponse(), null, null, "FORCE",
                             String.valueOf(languageAPI.getDefaultLanguage().getId()), SystemAction.PUBLISH,  fireActionForm1);
             final int statusCode1 = response1.getStatus();
             assertEquals(Status.OK.getStatusCode(), statusCode1);
@@ -2087,7 +2086,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final FireActionForm fireActionForm2 = new FireActionForm(builder2);
             final HttpServletRequest request2 = getHttpRequest();
             final Response response2 = workflowResource
-                    .fireActionDefault(request2, new EmptyHttpResponse(), null, null, "FORCE",
+                    .fireActionDefaultSinglePart(request2, new EmptyHttpResponse(), null, null, "FORCE",
                             String.valueOf(languageAPI.getDefaultLanguage().getId()), SystemAction.PUBLISH,  fireActionForm2);
             final int statusCode2 = response2.getStatus();
             assertEquals(Status.OK.getStatusCode(), statusCode2);
@@ -2165,7 +2164,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final FireActionForm fireActionForm1 = new FireActionForm(builder1);
             final HttpServletRequest request1 = getHttpRequest();
             final Response response1 = workflowResource
-                    .fireActionDefault(request1, new EmptyHttpResponse(), null, null, "FORCE",
+                    .fireActionDefaultSinglePart(request1, new EmptyHttpResponse(), null, null, "FORCE",
                             String.valueOf(languageAPI.getDefaultLanguage().getId()), SystemAction.PUBLISH,  fireActionForm1);
             final int statusCode1 = response1.getStatus();
             assertEquals(Status.OK.getStatusCode(), statusCode1);

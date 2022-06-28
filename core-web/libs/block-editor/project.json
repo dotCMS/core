@@ -1,0 +1,61 @@
+{
+    "projectType": "library",
+    "root": "libs/block-editor",
+    "sourceRoot": "libs/block-editor/src",
+    "prefix": "dotcms",
+    "targets": {
+        "lint": {
+            "executor": "@nrwl/linter:eslint",
+            "options": {
+                "lintFilePatterns": [
+                    "libs/block-editor/src/**/*.ts",
+                    "libs/block-editor/src/**/*.html"
+                ]
+            },
+            "outputs": ["{options.outputFile}"]
+        },
+        "test": {
+            "executor": "@nrwl/jest:jest",
+            "outputs": ["coverage/libs/block-editor"],
+            "options": {
+                "jestConfig": "libs/block-editor/jest.config.js",
+                "passWithNoTests": true
+            }
+        },
+        "storybook": {
+            "executor": "@nrwl/storybook:storybook",
+            "options": {
+                "uiFramework": "@storybook/angular",
+                "port": 6600,
+                "config": {
+                    "configFolder": "libs/block-editor/.storybook"
+                },
+                "projectBuildConfig": "block-editor:build-storybook"
+            },
+            "configurations": {
+                "ci": {
+                    "quiet": true
+                }
+            }
+        },
+        "build-storybook": {
+            "executor": "@nrwl/storybook:build",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "uiFramework": "@storybook/angular",
+                "outputPath": "docs/block-editor",
+                "deleteOutputPath": false,
+                "config": {
+                    "configFolder": "libs/block-editor/.storybook"
+                },
+                "projectBuildConfig": "block-editor:build-storybook"
+            },
+            "configurations": {
+                "ci": {
+                    "quiet": true
+                }
+            }
+        }
+    },
+    "tags": []
+}

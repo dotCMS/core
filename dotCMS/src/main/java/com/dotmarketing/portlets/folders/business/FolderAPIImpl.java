@@ -634,9 +634,11 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 
         // remove folder and parent from navigation cache
-        CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
-        CacheLocator.getNavToolCache().removeNavByPath(existingID.getHostId(), existingID.getParentPath());
-
+		if (!isNew) {
+			CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
+			CacheLocator.getNavToolCache()
+					.removeNavByPath(existingID.getHostId(), existingID.getParentPath());
+		}
         SystemEventType systemEventType = isNew ? SystemEventType.SAVE_FOLDER : SystemEventType.UPDATE_FOLDER;
 		systemEventsAPI.pushAsync(systemEventType, new Payload(folder, Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
@@ -696,12 +698,13 @@ public class FolderAPIImpl implements FolderAPI  {
 				folder.setDefaultFileType((parent!=null && parent.getDefaultFileType() !=null)
 				                ? parent.getDefaultFileType() 
 				                : defaultFileAssetType);
-				final Identifier newIdentifier = !UtilMethods.isSet(parent)?
-						APILocator.getIdentifierAPI().createNew(folder, host):
-						APILocator.getIdentifierAPI().createNew(folder, parent);
 
-				folder.setIdentifier(newIdentifier.getId());
-				folder.setPath(newIdentifier.getPath());
+				if (!UtilMethods.isSet(parent)) {
+					APILocator.getIdentifierAPI().createNew(folder, host);
+				} else {
+					APILocator.getIdentifierAPI().createNew(folder, parent);
+				}
+
 				save(folder,  user,  respectFrontEndPermissions);
 			}
 			parent = folder;

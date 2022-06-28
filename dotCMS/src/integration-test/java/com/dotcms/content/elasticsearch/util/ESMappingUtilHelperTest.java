@@ -333,6 +333,8 @@ public class ESMappingUtilHelperTest {
                     .setProperty("myDateField", new Date())
                     .setProperty("myDateTimeField", new Date()).nextPersisted();
 
+            final String formatExpected = "yyyy-MM-dd't'HH:mm:ssZ||yyyy-MM-dd't'HH:mm:ss||MMM d, yyyy h:mm:ss a||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd HH:mm:ss.SSS||yyyy-MM-dd||epoch_millis";
+
             //verifies mapping type for common text fields
             Map<String, String> mapping = (Map<String, String>) esMappingAPI
                     .getFieldMappingAsMap(APILocator.getIndiciesAPI().loadIndicies().getWorking(),
@@ -342,9 +344,7 @@ public class ESMappingUtilHelperTest {
                     .next().getValue();
             assertTrue(UtilMethods.isSet(mapping.get("type")));
             assertEquals("date", mapping.get("type"));
-            assertEquals(
-                    "yyyy-MM-dd't'HH:mm:ss||MMM d, yyyy h:mm:ss a||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd HH:mm:ss.SSS||yyyy-MM-dd||epoch_millis",
-                    mapping.get("format"));
+            assertEquals(formatExpected, mapping.get("format"));
 
             mapping = (Map<String, String>) esMappingAPI
                     .getFieldMappingAsMap(APILocator.getIndiciesAPI().loadIndicies().getWorking(),
@@ -354,18 +354,14 @@ public class ESMappingUtilHelperTest {
                     .next().getValue();
             assertTrue(UtilMethods.isSet(mapping.get("type")));
             assertEquals("date", mapping.get("type"));
-            assertEquals(
-                    "yyyy-MM-dd't'HH:mm:ss||MMM d, yyyy h:mm:ss a||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd HH:mm:ss.SSS||yyyy-MM-dd||epoch_millis",
-                    mapping.get("format"));
+            assertEquals(formatExpected, mapping.get("format"));
 
             mapping = (Map<String, String>) esMappingAPI
                     .getFieldMappingAsMap(APILocator.getIndiciesAPI().loadIndicies().getWorking(),
                             "moddate").entrySet().iterator().next().getValue();
             assertTrue(UtilMethods.isSet(mapping.get("type")));
             assertEquals("date", mapping.get("type"));
-            assertEquals(
-                    "yyyy-MM-dd't'HH:mm:ss||MMM d, yyyy h:mm:ss a||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd HH:mm:ss.SSS||yyyy-MM-dd||epoch_millis",
-                    mapping.get("format"));
+            assertEquals(formatExpected, mapping.get("format"));
         } finally {
             if (contentType != null) {
                 contentTypeAPI.delete(contentType);

@@ -1,0 +1,29 @@
+{
+    "root": "apps/dotcms-ui-e2e",
+    "sourceRoot": "apps/dotcms-ui-e2e/src",
+    "projectType": "application",
+    "targets": {
+        "e2e": {
+            "executor": "@nrwl/cypress:cypress",
+            "options": {
+                "cypressConfig": "apps/dotcms-ui-e2e/cypress.json",
+                "tsConfig": "apps/dotcms-ui-e2e/tsconfig.e2e.json",
+                "devServerTarget": "dotcms-ui:serve"
+            },
+            "configurations": {
+                "production": {
+                    "devServerTarget": "dotcms-ui:serve:production"
+                }
+            }
+        },
+        "lint": {
+            "executor": "@nrwl/linter:eslint",
+            "options": {
+                "lintFilePatterns": ["apps/dotcms-ui-e2e/**/*.{js,ts}"]
+            },
+            "outputs": ["{options.outputFile}"]
+        }
+    },
+    "tags": [],
+    "implicitDependencies": ["dotcms-ui"]
+}
