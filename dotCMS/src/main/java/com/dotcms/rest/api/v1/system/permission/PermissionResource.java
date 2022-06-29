@@ -17,6 +17,10 @@ import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 
@@ -128,6 +132,13 @@ public class PermissionResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(summary = "Get permission for a Contentlet",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityPermissionView.class))),
+                    @ApiResponse(responseCode = "403", description = "If not admin user"),})
     public Response getByContentlet(final @Context HttpServletRequest request,
                                     final @Context HttpServletResponse response,
                                     final @QueryParam("contentletId")   String contentletId,
@@ -154,7 +165,7 @@ public class PermissionResource {
         final List<Permission> permissions = APILocator.getPermissionAPI().getPermissions(
                 APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(contentletId));
 
-        return Response.ok(new ResponseEntityView(permissions.stream()
+        return Response.ok(new ResponseEntityPermissionView(permissions.stream()
                 .filter(permission -> this.filter(permissionType, permission))
                 .map(PermissionResource::from)
                 .collect(Collectors.toList()))).build();
