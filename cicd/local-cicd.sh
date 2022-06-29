@@ -386,3 +386,14 @@ function gitRemoteLs {
   local build_id=${2}
   return $(git ls-remote --heads ${repo_url} ${build_id} | wc -l | tr -d '[:space:]')
 }
+
+# Sets a Github Action output and announce it as notice
+#
+# $1: $name: output name
+# $2: $value: output value
+function setOutput {
+  local name=${1}
+  local value=${2}
+  echo "::notice::Setting output '${name}' with value: '${value}'"
+  echo "::set-output name=${name}::${value}"
+}

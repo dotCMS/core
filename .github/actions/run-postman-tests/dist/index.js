@@ -29,6 +29,15 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
 const path = __importStar(__nccwpck_require__(1017));
@@ -36,31 +45,18 @@ const postman = __importStar(__nccwpck_require__(9368));
 /**
  * Main entry point for this action.
  */
-const run = () => {
+const run = () => __awaiter(void 0, void 0, void 0, function* () {
     const projectRoot = core.getInput('project_root');
     const dotCmsRoot = path.join(projectRoot, 'dotCMS');
     const resultsFolder = path.join(dotCmsRoot, 'build', 'test-results', 'postmanTest');
     const reportFolder = path.join(dotCmsRoot, 'build', 'reports', 'tests', 'postmanTest');
     core.info("Running Core's postman tests");
+    const results = yield postman.runTests();
     setOutput('tests_results_location', resultsFolder);
     setOutput('tests_results_report_location', reportFolder);
-    postman
-        .runTests()
-        .then(results => {
-        core.info(`Postman test results:\n${JSON.stringify(results)}`);
-        setOutput('tests_results_status', results.testsResultsStatus);
-        setOutput('tests_results_skip_report', results.skipResultsReport);
-        if (results.testsResultsStatus === 'FAILED') {
-            core.setFailed('Postman tests failed');
-        }
-    })
-        .catch(reason => {
-        core.error(`Postman test results failed due to ${reason}`);
-        setOutput('tests_results_status', 'FAILED');
-        setOutput('tests_results_skip_report', true);
-        core.setFailed(reason);
-    });
-};
+    setOutput('tests_results_status', results.testsResultsStatus);
+    setOutput('tests_results_skip_report', results.skipResultsReport);
+});
 const setOutput = (name, value) => {
     const val = value === undefined ? '' : value;
     core.notice(`Setting output '${name}' with value: '${val}'`);
@@ -143,6 +139,8 @@ const postmanEnvFile = 'postman_environment.json';
 const resultsFolder = path.join(dotCmsRoot, 'build', 'test-results', 'postmanTest');
 const reportFolder = path.join(dotCmsRoot, 'build', 'reports', 'tests', 'postmanTest');
 const runtTestsPrefix = 'postman-tests:';
+const PASSED = 'PASSED';
+const FAILED = 'FAILED';
 const DEPS_ENV = {
     DOTCMS_IMAGE: builtImageName,
     TEST_TYPE: 'postman',
@@ -161,11 +159,17 @@ const runTests = () => __awaiter(void 0, void 0, void 0, function* () {
     setup();
     startDeps();
     try {
-        return yield runPostmanTests();
+        const rt = yield runPostmanCollections();
         copyOutputs();
+        return rt;
     }
     catch (err) {
-        throw err;
+        core.setFailed(`Postman tests faiuled due to: ${err}`);
+        return {
+            testsRunExitCode: 127,
+            testsResultsStatus: FAILED,
+            skipResultsReport: !fs.existsSync(reportFolder)
+        };
     }
     finally {
         yield stopDeps();
@@ -267,7 +271,7 @@ const stopDeps = () => __awaiter(void 0, void 0, void 0, function* () {
  *
  * @returns an overall ivew of the tests results
  */
-const runPostmanTests = () => __awaiter(void 0, void 0, void 0, function* () {
+const runPostmanCollections = () => __awaiter(void 0, void 0, void 0, function* () {
     yield waitFor(150, `DotCMS instance`);
     // Executes Postman tests
     core.info(`
@@ -284,23 +288,36 @@ const runPostmanTests = () => __awaiter(void 0, void 0, void 0, function* () {
         : resolvedTests.filter(resolved => !!foundCollections.find(collection => collection === resolved));
     core.info(`Detected Postman collections:\n${filtered.join(',')}`);
     const htmlResults = [];
-    const header = fs.readFileSync(path.join(resourcesFolder, 'postman-results-header.html'), { encoding: 'utf8', flag: 'r' });
-    const footer = fs.readFileSync(path.join(resourcesFolder, 'postman-results-footer.html'), { encoding: 'utf8', flag: 'r' });
+    const header = fs.readFileSync(path.join(resourcesFolder, 'postman-results-header.html'), {
+        encoding: 'utf8',
+        flag: 'r'
+    });
+    const footer = fs.readFileSync(path.join(resourcesFolder, 'postman-results-footer.html'), {
+        encoding: 'utf8',
+        flag: 'r'
+    });
     const collectionRuns = new Map();
     for (const collection of filtered) {
+        const normalized = collection.replace(/ /g, '_').replace('.json', '');
         let rc;
         try {
-            rc = yield runPostmanCollection(collection, htmlResults);
+            rc = yield runPostmanCollection(collection, normalized);
         }
         catch (err) {
-            core.error(`Postman collection run for ${collection} failed due to: ${err}`);
+            core.info(`Postman collection run for ${collection} failed due to: ${err}`);
             rc = 127;
         }
         collectionRuns.set(collection, rc);
+        if (exportReport) {
+            const passed = rc === 0;
+            htmlResults.push(`<tr><td><a href="./${normalized}.html">${collection}</a></td><td style="color: #ffffff; background-color: ${passed ? '#28a745' : '#dc3545'}; font-weight: bold;">${passed ? PASSED : FAILED}</td></tr>`);
+        }
+    }
+    if (exportReport) {
         const contents = [header, ...htmlResults, footer];
         fs.writeFileSync(path.join(reportFolder, 'index.html'), `${contents.join('\n')}`, {
-            encoding: "utf8",
-            flag: "a+",
+            encoding: 'utf8',
+            flag: 'a+',
             mode: 0o666
         });
     }
@@ -310,12 +327,11 @@ const runPostmanTests = () => __awaiter(void 0, void 0, void 0, function* () {
  * Run a postman collection.
  *
  * @param collection postman collection
- * @param htmlResults array storing html results summary
+ * @param normalized normalized collection
  * @returns promise with process return code
  */
-const runPostmanCollection = (collection, htmlResults) => __awaiter(void 0, void 0, void 0, function* () {
-    core.info(`Running Postman test: ${collection}`);
-    const normalized = collection.replace(/ /g, '_').replace('.json', '');
+const runPostmanCollection = (collection, normalized) => __awaiter(void 0, void 0, void 0, function* () {
+    core.info(`Running Postman collection: ${collection}`);
     const resultFile = path.join(resultsFolder, `${normalized}.xml`);
     const page = `${normalized}.html`;
     const reportFile = path.join(reportFolder, page);
@@ -340,19 +356,21 @@ const runPostmanCollection = (collection, htmlResults) => __awaiter(void 0, void
     const rc = yield exec.exec('newman', args, {
         cwd: postmanTestsPath
     });
-    if (exportReport) {
-        htmlResults.push(`<tr><td><a href="./${page}">$f</a></td><td style="color: #ccd2da; background-color: ${rc === 0 ? '#28a745' : '#dc3545'};">${rc === 0 ? 'PASSED' : 'FAILED'}</td></tr>`);
-    }
     return rc;
 });
 /*
+ * Process results.
  *
  * @param collectionRuns collection tests results map
  * @returns an overall ivew of the tests results
  */
 const handleResults = (collectionRuns) => {
-    let collectionFailed = true;
-    for (const collection in collectionRuns.keys) {
+    core.info(`Postman collection results:`);
+    for (const collection of collectionRuns.keys()) {
+        core.info(`"${collection}" -> ${collectionRuns.get(collection)}`);
+    }
+    let collectionFailed = false;
+    for (const collection of collectionRuns.keys()) {
         if (collectionRuns.get(collection) !== 0) {
             collectionFailed = true;
             break;
@@ -360,8 +378,8 @@ const handleResults = (collectionRuns) => {
     }
     return {
         testsRunExitCode: collectionFailed ? 1 : 0,
-        testsResultsStatus: collectionFailed ? 'PASSED' : 'FAILED',
-        skipResultsReport: false
+        testsResultsStatus: collectionFailed ? FAILED : PASSED,
+        skipResultsReport: !fs.existsSync(reportFolder)
     };
 };
 /**
@@ -409,16 +427,13 @@ const prepareLicense = () => __awaiter(void 0, void 0, void 0, function* () {
  * @returns array of tring representing postman collections
  */
 const resolveSpecific = () => {
-    if (!tests) {
+    const extracted = extractFromMessg(tests);
+    if (extracted.length === 0) {
         core.info('No specific postman tests found');
         return [];
     }
     const resolved = [];
-    for (const l of tests.split('\n')) {
-        const line = l.trim();
-        if (!line.toLowerCase().startsWith(runtTestsPrefix)) {
-            continue;
-        }
+    for (const line of extracted) {
         const testLine = line.slice(runtTestsPrefix.length).trim();
         for (const collection of testLine.trim().split(',')) {
             const trimmed = collection.trim();
@@ -426,8 +441,22 @@ const resolveSpecific = () => {
             resolved.push(normalized);
         }
     }
-    core.info(`Resolved specific collections ${resolved.join(',')}`);
+    core.info(`Resolved specific collections:\n${resolved.join(',')}`);
     return resolved;
+};
+const extractFromMessg = (message) => {
+    if (!message) {
+        return [];
+    }
+    const extracted = [];
+    for (const l of tests.split('\n')) {
+        const trimmed = l.trim();
+        const line = trimmed.toLocaleLowerCase();
+        if (line.startsWith(runtTestsPrefix)) {
+            extracted.push(trimmed);
+        }
+    }
+    return extracted;
 };
 
 
