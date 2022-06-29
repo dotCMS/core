@@ -53,7 +53,9 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
     dialogActions: DotDialogActions;
     showStarter: boolean;
 
-    passwordFailedMsg = '';
+    newPasswordFailedMsg = '';
+    confirmPasswordFailedMsg = '';
+
     isSaving$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -118,7 +120,8 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
     }
 
     checkPasswords(): void {
-        this.passwordFailedMsg = '';
+        this.newPasswordFailedMsg = '';
+        this.confirmPasswordFailedMsg = '';
 
         this.passwordMatch =
             this.dotAccountUser.newPassword !== '' &&
@@ -176,8 +179,11 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
                     const { errorCode, message } = response.error.errors[0];
 
                     switch (errorCode) {
+                        case 'User-Info-Confirm-Current-Password-Failed':
+                            this.confirmPasswordFailedMsg = message;
+                            break;
                         case 'User-Info-Save-Password-Failed':
-                            this.passwordFailedMsg = message;
+                            this.newPasswordFailedMsg = message;
                             break;
                         default:
                             this.httpErrorManagerService

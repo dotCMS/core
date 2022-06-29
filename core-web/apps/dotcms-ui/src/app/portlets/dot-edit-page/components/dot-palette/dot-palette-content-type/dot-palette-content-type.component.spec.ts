@@ -55,10 +55,14 @@ export const contentTypeDataMock = [
 
 @Component({
     selector: 'dot-test-host-component',
-    template: ` <dot-palette-content-type [items]="items"></dot-palette-content-type> `
+    template: `
+        <dot-palette-content-type [items]="items" [loading]="loading" [viewContentlet]="viewContentlet"></dot-palette-content-type>
+    `
 })
 class TestHostComponent {
     @Input() items: any[];
+    @Input() loading: boolean;
+    @Input() viewContentlet: string;
     @Output() filter = new EventEmitter<any>();
 }
 
@@ -72,6 +76,7 @@ describe('DotPaletteContentTypeComponent', () => {
     let componentHost: TestHostComponent;
     let dotContentletEditorService: DotContentletEditorService;
     let de: DebugElement;
+    let comp: DotPaletteContentTypeComponent;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -94,6 +99,7 @@ describe('DotPaletteContentTypeComponent', () => {
         componentHost = fixtureHost.componentInstance;
 
         de = fixtureHost.debugElement.query(By.css('dot-palette-content-type'));
+        comp = de.componentInstance;
         dotContentletEditorService = de.injector.get(DotContentletEditorService);
 
         fixtureHost.detectChanges();
@@ -107,21 +113,46 @@ describe('DotPaletteContentTypeComponent', () => {
         expect(contents[0].nativeElement.draggable).toEqual(true);
     });
 
-    it('should show empty state', () => {
+    it('should show empty state', async () => {
         componentHost.items = [];
+        componentHost.loading = false;
         fixtureHost.detectChanges();
+        await fixtureHost.whenStable();
         const emptyState = fixtureHost.debugElement.query(By.css('[data-testId="emptyState"]'));
         expect(emptyState).not.toBeNull();
     });
 
-    it('should filter items on search', () => {
-        componentHost.items = contentTypeDataMock;
+    it('should show loading state', async () => {
+        componentHost.items = [];
+        componentHost.loading = true;
+        componentHost.viewContentlet = 'contentlet:out';
         fixtureHost.detectChanges();
-        const input = fixtureHost.debugElement.query(By.css('dot-palette-input-filter'));
-        input.componentInstance.filter.emit('Product');
+        await fixtureHost.whenStable();
+        const loading = fixtureHost.debugElement.query(By.css('dot-spinner'));
+        expect(loading).not.toBeNull();
+    });
+
+    it('should not show loading state when switching view', async () => {
+        componentHost.items = [];
+        componentHost.loading = true;
+        componentHost.viewContentlet = 'contentlet:in';
         fixtureHost.detectChanges();
-        const contents = fixtureHost.debugElement.queryAll(By.css('[data-testId="paletteItem"]'));
-        expect(contents.length).toEqual(1);
+        await fixtureHost.whenStable();
+        const loading = fixtureHost.debugElement.query(By.css('dot-spinner'));
+        expect(loading).toBeNull();
+    });
+
+    it('should filter items on search', async () => {
+        spyOn(comp.filter, 'emit').and.callThrough();
+        fixtureHost.detectChanges();
+        await fixtureHost.whenStable();
+
+        const filterComp = fixtureHost.debugElement.query(By.css('dot-palette-input-filter'));
+        filterComp.componentInstance.filter.emit('test');
+
+        fixtureHost.detectChanges();
+
+        expect(comp.filter.emit).toHaveBeenCalledWith('test');
     });
 
     it('should set Dragged ContentType on dragStart', () => {
@@ -136,11 +167,12 @@ describe('DotPaletteContentTypeComponent', () => {
 
     it('should emit event to show a specific contentlet', () => {
         componentHost.items = contentTypeDataMock;
-        spyOn(de.componentInstance.selected, 'emit').and.callThrough();
+        spyOn(comp.selected, 'emit').and.callThrough();
         fixtureHost.detectChanges();
         const buttons = fixtureHost.debugElement.queryAll(By.css('[data-testId="paletteItem"]'));
-        buttons[3].nativeElement.click();
-        expect(de.componentInstance.itemsFiltered).toEqual(contentTypeDataMock);
-        expect(de.componentInstance.selected.emit).toHaveBeenCalledWith('Text');
+        const label = buttons[0].nativeElement.querySelector('p').innerText.trim();
+        buttons[0].nativeElement.click();
+        expect(comp.items).toEqual(contentTypeDataMock as DotCMSContentType[]);
+        expect(comp.selected.emit).toHaveBeenCalledWith(label);
     });
 });
