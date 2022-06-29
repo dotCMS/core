@@ -1,17 +1,12 @@
 package com.dotmarketing.portlets.structure.model;
 
-import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_ONE;
-import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_MANY;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.transform.contenttype.ContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
-import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
-import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.LegacyInode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -19,10 +14,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.util.UtilMethods;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.liferay.util.StringPool;
 import java.io.Serializable;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Objects;
 
@@ -36,6 +30,8 @@ import java.util.Objects;
  * @author root
  * @since Mar 22, 2012
  */
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Relationship extends LegacyInode implements Serializable, ManifestItem {
 	
 	private static final long serialVersionUID = 1L;
@@ -328,7 +324,6 @@ public class Relationship extends LegacyInode implements Serializable, ManifestI
 		this.modDate = modDate;
 	}
 
-	@JsonIgnore
 	@Override
 	public ManifestInfo getManifestInfo(){
 		return new ManifestInfoBuilder()

@@ -1,0 +1,73 @@
+# action.yml
+name: 'Tests status aggregator'
+description: 'Aggregates tests results status'
+author: 'victoralfaro-dotcms'
+inputs:
+  unit_tests_results_status:
+    description: 'Unit tests results status'
+    type: choice
+    options:
+      - SUCCESS
+      - FAILED
+    required: false
+  unit_tests_results_report_url:
+    description: 'Unit tests results report url'
+    required: false
+  unit_tests_results_log_url:
+    description: 'Unit tests results log url'
+    required: false
+  testmo_unit_tests_results_report_url:
+    description: 'Testmo Unit tests results report url'
+    required: false
+  integration_postgres_tests_results_status:
+    description: 'Integration postgres tests results status'
+    type: choice
+    options:
+      - SUCCESS
+      - FAILED
+    required: false
+  integration_postgres_tests_results_report_url:
+    description: 'Integration postgres tests results report url'
+    required: false
+  integration_postgres_tests_results_log_url:
+    description: 'Integration postgres tests results log url'
+    required: false
+  testmo_integration_postgres_tests_results_report_url:
+    description: 'Testmo integration postgres tests results report url'
+    required: false
+  integration_mssql_tests_results_status:
+    description: 'Integration mssql tests results status'
+    type: choice
+    options:
+      - SUCCESS
+      - FAILED
+    required: false
+  integration_mssql_tests_results_report_url:
+    description: 'Integration mssql tests results report url'
+    required: false
+  integration_mssql_tests_results_log_url:
+    description: 'Integration mssql tests results log url'
+    required: false
+  testmo_integration_mssql_tests_results_report_url:
+    description: 'Testmo integration mssql tests results report url'
+    required: false
+  postman_tests_results_status:
+    description: 'Postman tests results status'
+    type: choice
+    options:
+      - SUCCESS
+      - FAILED
+    required: false
+  postman_tests_results_report_url:
+    description: 'Postman tests results report url'
+    required: false
+  postman_tests_results_log_url:
+    description: 'Postman tests results log url'
+    required: false
+  testmo_postman_tests_results_report_url:
+    description: 'Testmo postman tests results report url'
+    required: false
+  
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
