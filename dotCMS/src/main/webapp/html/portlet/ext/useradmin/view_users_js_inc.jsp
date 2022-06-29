@@ -822,7 +822,7 @@
 
 	    treeModel = new dijit.tree.ObjectStoreModel({
 	        store: store,
-	        labelType: 'html'
+	        labelType: 'html',
 	        deferItemLoadingUntilExpand: true,
 	        childrenAttrs: ["roleChildren"],
 			getChildren: (object, onComplete) => {
