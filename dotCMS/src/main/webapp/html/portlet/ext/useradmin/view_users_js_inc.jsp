@@ -97,13 +97,13 @@
         _pattern: /[!#%+23456789:=?@ABCDEFGHJKLMNPRSTUVWXYZabcdefghijkmnopqrstuvwxyz]/,
 
         _getRandomByte: function() {
-        if(window.crypto && window.crypto.getRandomValues) 
+        if(window.crypto && window.crypto.getRandomValues)
         {
             var result = new Uint8Array(1);
             window.crypto.getRandomValues(result);
             return result[0];
         }
-        else if(window.msCrypto && window.msCrypto.getRandomValues) 
+        else if(window.msCrypto && window.msCrypto.getRandomValues)
         {
             var result = new Uint8Array(1);
             window.msCrypto.getRandomValues(result);
@@ -120,16 +120,16 @@
             .map(function()
             {
             var result;
-            while(true) 
+            while(true)
             {
                 result = String.fromCharCode(this._getRandomByte());
                 if(this._pattern.test(result))
                 {
                 return result;
                 }
-            }        
+            }
             }, this)
-            .join('');  
+            .join('');
         }
 
     };
@@ -538,7 +538,7 @@
 		passwordChanged = true;
 	}
 
-    
+
 
     //Sends custom NG event to display modal with secure password
     function generateSecurePasswordModal() {
@@ -743,7 +743,7 @@
                 dijit.byId("adminRoleCheck").attr('checked',true);
             }
 			roleCacheMap[roles[i].id] = roles[i];
-	        
+
 	    }
 
 
@@ -822,11 +822,11 @@
 
 	    treeModel = new dijit.tree.ObjectStoreModel({
 	        store: store,
-	        
+	        labelType: 'html'
 	        deferItemLoadingUntilExpand: true,
 	        childrenAttrs: ["roleChildren"],
 			getChildren: (object, onComplete) => {
-				if (object.id === 'root' && roleCacheMap['root']) { 
+				if (object.id === 'root' && roleCacheMap['root']) {
 					onComplete(roleCacheMap['root'].roleChildren)
 				} else {
 					dotGetRoles(object.id)
@@ -850,7 +850,7 @@
 						roleCacheMap['root'] = {id:'root', name:'root', roleChildren: data.entity}
 						onItem({id:'root', name:'root', roleChildren: data.entity})
 					})
-					.catch(() => onItem([]));		
+					.catch(() => onItem([]));
 				}
 			}
 	    });
