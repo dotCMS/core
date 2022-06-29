@@ -423,6 +423,50 @@ describe('DotMyAccountComponent', () => {
         );
     });
 
+    it(`should show current password input error message`, async () => {
+        const errorResponse = {
+            status: 400,
+            error: {
+                errors: [
+                    {
+                        errorCode: 'User-Info-Confirm-Current-Password-Failed',
+                        fieldName: null,
+                        message: 'amazing message from backend'
+                    }
+                ]
+            }
+        };
+        spyOn(dotAccountService, 'updateUser').and.returnValue(throwError(errorResponse));
+
+        fixture.detectChanges();
+        await fixture.whenStable();
+
+        comp.form.setValue({
+            givenName: 'Admin2',
+            surname: 'Admi2',
+            email: 'admin@dotcms.com',
+            password: 'test',
+            newPassword: 'admin',
+            confirmPassword: 'admin'
+        });
+
+        const changePassword = de.query(By.css('#dot-my-account-change-password-option'));
+        changePassword.triggerEventHandler('onChange', {});
+        fixture.detectChanges();
+
+        const save = de.query(By.css('.dialog__button-accept'));
+        save.triggerEventHandler('click', {});
+        fixture.detectChanges();
+
+        const passwordFailMsg: DebugElement = de.query(
+            By.css('[data-testId="dotCurrrentPasswordFailedMsg"]')
+        );
+
+        expect(passwordFailMsg.nativeElement.innerText).toEqual(
+            errorResponse.error.errors[0].message.trim()
+        );
+    });
+
     it(`should call to HttpErrorManagerServices to show a generic dialog error message `, async () => {
         const errorResponse = {
             status: 400,

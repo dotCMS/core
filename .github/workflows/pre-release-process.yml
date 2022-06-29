@@ -84,10 +84,10 @@ jobs:
           dry_run: ${{ env.DRY_RUN }}
         if: env.DRY_RUN != 'true'
       - name: Slack Notification
-        uses: rtCamp/action-slack-notify@master
+        uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.CODE_FREEZE_SLACK_WEBHOOK }}
-          SLACK_USERNAME: dotcms-bot
+          SLACK_USERNAME: dotBot
           SLACK_TITLE: "Attention dotters: New pre-release created!"
           SLACK_MSG_AUTHOR: " "
           MSG_MINIMAL: true
