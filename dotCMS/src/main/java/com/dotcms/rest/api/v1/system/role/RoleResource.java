@@ -4,6 +4,7 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.api.v1.system.permission.ResponseEntityPermissionView;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
@@ -24,6 +25,10 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.apache.commons.beanutils.BeanUtils;
 
 import java.io.IOException;
@@ -421,6 +426,12 @@ public class RoleResource implements Serializable {
 	@Path("_search")
 	@GET
 	@Produces("application/json")
+	@Operation(summary = "Search Roles",
+			responses = {
+					@ApiResponse(
+							responseCode = "200",
+							content = @Content(mediaType = "application/json",
+									schema = @Schema(implementation = ResponseEntitySmallRoleView.class)))})
 	public Response searchRoles(@Context final HttpServletRequest request,
 							    @Context final HttpServletResponse response,
 							    @DefaultValue("")   @QueryParam("searchName") final String searchName,
@@ -451,7 +462,7 @@ public class RoleResource implements Serializable {
             final Role role = this.roleAPI.loadRoleById(roleId);
             if (role != null) {
 
-                return Response.ok(new ResponseEntityView(rolesToView(
+                return Response.ok(new ResponseEntitySmallRoleView(rolesToView(
 						List.of(role.getId().equals(cmsAnon.getId())? cmsAnon:role)))).build();
             }
         }
@@ -466,7 +477,7 @@ public class RoleResource implements Serializable {
             roleList.addAll(APILocator.getRoleAPI().findWorkflowSpecialRoles());
         }
 
-		return Response.ok(new ResponseEntityView(rolesToView(roleList))).build();
+		return Response.ok(new ResponseEntitySmallRoleView(rolesToView(roleList))).build();
 	}
 
 	private boolean fillRoles(final String searchName, final int count, final int startParam,
@@ -530,10 +541,10 @@ public class RoleResource implements Serializable {
 		return addSystemUser;
 	}
 
-	private List<Map<String, Object>> rolesToView (final List <Role> roles)
+	private List<SmallRoleView> rolesToView (final List <Role> roles)
         throws DotDataException, LanguageException {
 
-        final List<Map<String, Object>> list = new ArrayList<>();
+        final List<SmallRoleView> list = new ArrayList<>();
         final User defaultUser = APILocator.getUserAPI().getDefaultUser();
         Role defaultUserRole   = null;
         if (defaultUser != null) {
@@ -552,11 +563,8 @@ public class RoleResource implements Serializable {
                 continue;
             }
 
-            map.put("name", role.getName() + ((role.isUser()) ? " (" + LanguageUtil.get(APILocator.getCompanyAPI().getDefaultCompany(), "User") + ")" : StringPool.BLANK));
-            map.put("id",   role.getId());
-			map.put("roleKey",  role.getRoleKey());
-			map.put("user", role.isUser());
-            list.add(map);
+            list.add(new SmallRoleView(role.getName() + ((role.isUser()) ? " (" + LanguageUtil.get(APILocator.getCompanyAPI().getDefaultCompany(), "User") + ")" : StringPool.BLANK),
+					role.getId(), role.getRoleKey(), role.isUser()));
         }
 
         return list;

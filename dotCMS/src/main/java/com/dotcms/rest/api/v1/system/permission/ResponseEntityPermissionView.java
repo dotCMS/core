@@ -5,7 +5,7 @@ import com.dotcms.rest.ResponseEntityView;
 import java.util.List;
 
 /**
- * Wrapper for the reponse entity view output
+ * Wrapper for the response entity view output
  * @author jsanca
  */
 public class ResponseEntityPermissionView extends ResponseEntityView<List<PermissionView>> {
