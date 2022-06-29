@@ -83,7 +83,7 @@ public class ExperimentResource {
                         )
                 ));
 
-                final int random = (int) Math.random() * 100;
+                final int random = (int) (Math.random() * 100);
                 Map variantSelected = null;
 
                 for (Map variant : variants) {
