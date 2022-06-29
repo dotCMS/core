@@ -429,13 +429,14 @@
 					data[data.length] = dataToRelate[indexK];
 			}
 
+			// Remove the loading
+			document.querySelector('#relationship-loading<%=relationJsName%>')?.remove();
+
 			if( data == null || (data != null && data.length == 0) ) {
 				renumberAndReorder<%= relationJsName %>();
 			  return;
 			}
 
-			// Remove the loading
-			document.querySelector('#relationship-loading<%=relationJsName%>')?.remove();
 
 			var dataNoRep = new Array();
 
@@ -768,14 +769,12 @@
                  var srcNode = document.getElementById("<%=relationJsName%>Table");
                  var row = document.createElement("tr");
                  row.id="<%=relationJsName%>TableMessage"
-				 row.className = 'dataRow<%=relationJsName%>';
+				row.className = 'dataRow<%=relationJsName%>';
                  var cell = row.insertCell (0);
                  cell.setAttribute("colspan", "100");
                  cell.setAttribute("style","text-align:center");
                  cell.innerHTML = <%=thereCanBeOnlyOne%> ? "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.relationship.selectOne")) %>" : "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.relationship.selectMulti")) %>";
                  srcNode.appendChild(row);
-				 // Remove the loading
-				 document.querySelector('#relationship-loading<%=relationJsName%>')?.remove();
              } 
 		}
 

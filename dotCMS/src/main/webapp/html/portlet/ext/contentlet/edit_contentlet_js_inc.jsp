@@ -806,7 +806,7 @@
 
         },
 
-        executeWfAction: async function(wfId, popupable, showpush){
+        executeWfAction: function(wfId, popupable, showpush){
             this.wfActionId = wfId;
             if(popupable){
                 var inode = (currentContentletInode != undefined && currentContentletInode.length > 0)

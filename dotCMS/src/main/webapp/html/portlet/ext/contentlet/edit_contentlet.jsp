@@ -73,12 +73,12 @@
 	function allRelationsHaveLoad(selectors = []) {
 		let count = 0;
 		selectors.forEach((selector) => {
-			// Check that the component Exist
+			// Check that the Relation field exist.
 			if(document.querySelector(selector)) {
 				count++;
 			}
 		});
-
+		// Check all the Relation fields exist.
 		return count  === selectors.length;
 	}
 </script>
