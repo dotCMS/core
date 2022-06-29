@@ -263,9 +263,9 @@ describe('DotEditPageMainComponent', () => {
         spyOn(titleService, 'getTitle').and.callThrough();
         const initialTitle = titleService.getTitle().split(' - ');
         const res: DotPageRender = new DotPageRender(mockDotRenderedPage());
-        const complement = initialTitle.length > 1 ? initialTitle[initialTitle.length - 1] : '';
+        const subtTitle = initialTitle.length > 1 ? initialTitle[initialTitle.length - 1] : '';
 
-        expect(titleService.getTitle()).toBe(`${res.page.title}${complement ? ` - ${complement}` : ''}`);
+        expect(titleService.getTitle()).toBe(`${res.page.title}${subtTitle ? ` - ${subtTitle}` : ''}`);
     });
 
     describe('handle custom events from contentlet editor', () => {
