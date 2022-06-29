@@ -21,7 +21,6 @@ boolean isHost = ("Host".equals(structure.getVelocityVarName()));
 
 boolean isContLocked=(request.getParameter("sibbling") != null) ? false : contentlet.isLocked();
 WorkflowTask wfTask = APILocator.getWorkflowAPI().findTaskByContentlet(contentlet);
-boolean relationshipsExists = false;
 
 List<WorkflowStep> wfSteps = null;
 WorkflowStep wfStep = null;
@@ -42,12 +41,6 @@ catch(Exception e){
 	wfActions = new ArrayList<>();
 }
 
-try {
-	relationshipsExists = ((Boolean)request.getAttribute("relationshipsFieldExists")).booleanValue();
-} catch(Exception e) {
-	relationshipsExists = false;
-}
-
 	Map<String, String> schemesAvailable = new HashMap<>();
 	for (WorkflowAction action : wfActions) {
 		if (!schemesAvailable.containsKey(action.getSchemeId())) {
@@ -59,13 +52,6 @@ try {
 <%@page import="com.dotmarketing.business.web.WebAPILocator"%>
 <%@ page import="java.util.Optional" %>
 <% com.dotmarketing.beans.Host myHost =  WebAPILocator.getHostWebAPI().getCurrentHost(request); %>
-
-<style>
-	.disabled-contentlet-action a {
-		pointer-events: none;
-		background: #f1f1f1 !important;
-	}
-</style>
 
 <script>
 
@@ -133,7 +119,7 @@ function editPage(url, languageId) {
 
 
 <%if(!wfActionsAll.isEmpty()){%>
-<div class="content-edit-actions <%if(relationshipsExists){%>disabled-contentlet-action<%} %>">
+<div class="content-edit-actions">
 
 		<%if(isContLocked && (contentEditable || isUserCMSAdmin)) {%>
 			<%if(contentEditable){ %>

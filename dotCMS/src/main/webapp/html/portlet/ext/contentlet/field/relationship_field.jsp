@@ -262,6 +262,7 @@
 		var <%= relationJsName %>_specialFields = { <%= jsSpecialFields %> };
 		var <%= relationJsName %>_showFields = [ <%= jsFieldNames %> ];
 
+		relationsName.push('.dataRow<%=relationJsName%>');
         function getCurrentLanguageIndex(o) {
             var index = 0;
 
@@ -426,21 +427,15 @@
 				}
 				if(!doesIdentifierExists)
 					data[data.length] = dataToRelate[indexK];
-			}				
+			}
 
-			const disabledActions = document.querySelector('.disabled-contentlet-action');
-
-			if(disabledActions) {
-				disabledActions.classList.remove('disabled-contentlet-action');
+			if( data == null || (data != null && data.length == 0) ) {
+				renumberAndReorder<%= relationJsName %>();
+			  return;
 			}
 
 			// Remove the loading
-			document.querySelector('#relationship-loading')?.remove();
-
-			if( data == null || (data != null && data.length == 0) ) {
-			  renumberAndReorder<%= relationJsName %>();
-			  return;
-			}
+			document.querySelector('#relationship-loading<%=relationJsName%>')?.remove();
 
 			var dataNoRep = new Array();
 
@@ -773,11 +768,14 @@
                  var srcNode = document.getElementById("<%=relationJsName%>Table");
                  var row = document.createElement("tr");
                  row.id="<%=relationJsName%>TableMessage"
+				 row.className = 'dataRow<%=relationJsName%>';
                  var cell = row.insertCell (0);
                  cell.setAttribute("colspan", "100");
                  cell.setAttribute("style","text-align:center");
                  cell.innerHTML = <%=thereCanBeOnlyOne%> ? "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.relationship.selectOne")) %>" : "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.relationship.selectMulti")) %>";
                  srcNode.appendChild(row);
+				 // Remove the loading
+				 document.querySelector('#relationship-loading<%=relationJsName%>')?.remove();
              } 
 		}
 
@@ -865,7 +863,7 @@
 		function add<%= relationJsName %>Loading() {
 			// Create row
 			const row = document.createElement("tr");
-			row.setAttribute("id", 'relationship-loading');
+			row.setAttribute("id", 'relationship-loading<%=relationJsName%>');
 			// Create column
 			const col = document.createElement("td");
 			col.setAttribute("style", "text-align:center");
@@ -879,12 +877,11 @@
 
         dojo.addOnLoad(
          function(){
-            var doRelateContainer = document.getElementById('doRelateContainer');
-            doRelateContainer.style.display = '<%= relationship.getCardinality() == 2 ? "none" : "block"%>';
-         	// Load initial relationships
-            ContentletAjax.getContentletsData ('<%=String.join(",", listOfRelatedInodes)%>', <%= relationJsName %>_addRelationshipCallback);
-         }
-        );
+			var doRelateContainer = document.getElementById('doRelateContainer');
+			doRelateContainer.style.display = '<%= relationship.getCardinality() == 2 ? "none" : "block"%>';
+			// Load initial relationships
+			ContentletAjax.getContentletsData ('<%=String.join(",", listOfRelatedInodes)%>', <%= relationJsName %>_addRelationshipCallback);
+        });
 	</script>
 	
 

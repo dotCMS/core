@@ -46,8 +46,42 @@
 
 </style>
 
+<script type="text/javascript">
 
+	const relationsName = [];
 
+	function waitForRelation(selectors = []) {
+		return new Promise(resolve => {
+			if (allRelationsHaveLoad(selectors)) {
+				return resolve(true);
+			}
+
+			const observer = new MutationObserver(mutations => {
+				if (allRelationsHaveLoad(selectors)) {
+					resolve(true);
+					observer.disconnect();
+				}
+			});
+
+			observer.observe(document.body, {
+				childList: true,
+				subtree: true
+			});
+		});
+	}
+
+	function allRelationsHaveLoad(selectors = []) {
+		let count = 0;
+		selectors.forEach((selector) => {
+			// Check that the component Exist
+			if(document.querySelector(selector)) {
+				count++;
+			}
+		});
+
+		return count  === selectors.length;
+	}
+</script>
 
 
 
@@ -349,13 +383,11 @@
                                         //field on the other side of the relationship
                                         request.setAttribute("relationshipRecords", contentletRelationships.getRelationshipsRecordsByField(f));
 										request.setAttribute("relatedField", newField);
-										request.setAttribute("relationshipsFieldExists", true);
 								%>
                                         <jsp:include page="/html/portlet/ext/contentlet/field/relationship_field.jsp"/>
                                 <%  } else {
 
                                         request.setAttribute("relationshipRecords", legacyRelationshipRecords); %>
-										request.setAttribute("relationshipsFieldExists", false);
                                         <jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp"/>
                                 <%  }
                                 %>
@@ -631,6 +663,8 @@
 		window.onbeforeunload=function(){return "";};
 		dojo.disconnect(onBeforeUnloadHandle);
 	}
+
+
 </script>
 
 <div id="saveContentErrors" style="display: none;" dojoType="dijit.Dialog" class="content-edit__dialog-error" title="<%= LanguageUtil.get(pageContext, "error") %>">

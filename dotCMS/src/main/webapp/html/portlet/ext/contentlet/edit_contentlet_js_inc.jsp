@@ -368,7 +368,7 @@
     }
 
 
-    function persistContent(isAutoSave, publish){
+    async function persistContent(isAutoSave, publish){
 
         window.onbeforeunload=true;
         var isAjaxFileUploading = false;
@@ -412,6 +412,8 @@
         window.scrollTo(0,0);	// To show lightbox effect(IE) and save content errors.
         dijit.byId('savingContentDialog').show();
 
+        // Check if the relations HTML have been loaded.
+        await waitForRelation(relationsName);
 
 
         if(isAutoSave && isContentSaving){
@@ -804,11 +806,9 @@
 
         },
 
-        executeWfAction: function(wfId, popupable, showpush){
+        executeWfAction: async function(wfId, popupable, showpush){
             this.wfActionId = wfId;
-
             if(popupable){
-
                 var inode = (currentContentletInode != undefined && currentContentletInode.length > 0)
                     ? currentContentletInode
                     :workingContentletInode;
