@@ -12,6 +12,7 @@ interface ModuleConf {
   main?: boolean
 }
 
+const buildId = core.getInput('build_id')
 const current = core.getInput('current')
 const modulesConf: ModuleConf[] = JSON.parse(core.getInput('modules'))
 const pullRequest = core.getInput('pull_request')
@@ -36,13 +37,16 @@ export const moduleMatches = async (): Promise<boolean> => {
     return false
   }
 
+  if (/^release-\d{2}\.\d{2}(\.\d{1,2})?$|master/.test(buildId)) {
+    core.info('Master o release branch detected, allowing workflow to run')
+    return true
+  }
+
   const commits = await resolveCommits()
   core.info(`Commits found: ${commits.length}`)
   if (commits.length >= 100) {
     // Probably not found bu the amount of commits definitively calls for returning true
-    core.info(
-      "Commits reached max capacity, probably it's a good idea to allow ALL workflows to run"
-    )
+    core.info('Commits reached max capacity, allowing workflow to run')
     return true
   }
 

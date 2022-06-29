@@ -7,6 +7,7 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.ContentTypeUtil;
@@ -21,13 +22,13 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +46,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import org.glassfish.jersey.server.JSONP;
 
 /**
@@ -71,6 +73,12 @@ public class PortletResource implements Serializable {
     this.portletApi = portletApi;
   }
 
+    /**
+     * Creates a Portlet for a given name content-types and Display view
+     * @param request
+     * @param formData
+     * @return
+     */
   @POST
   @Path("/custom")
   @JSONP
@@ -114,6 +122,11 @@ public class PortletResource implements Serializable {
     /**
      * This endpoint links a layout with a portlet Security is considered so the user must have
      * roles on the layout otherwise an unauthorized code is returned.
+     * @param request
+     * @param portletId
+     * @param layoutId
+     * @return
+     * @throws DotDataException
      */
     @PUT
     @Path("/custom/{portletId}/_addtolayout/{layoutId}")
@@ -123,7 +136,8 @@ public class PortletResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response addContentPortletToLayout(@Context final HttpServletRequest request,
             @PathParam("portletId") final String portletId,
-            @PathParam("layoutId") final String layoutId) throws DotDataException {
+            @PathParam("layoutId") final String layoutId)
+            throws DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -145,20 +159,19 @@ public class PortletResource implements Serializable {
         }
 
         final Portlet portlet = portletAPI.findPortlet(portletId);
-        if (null == portlet) {
-
-           final String errorMessage = Try.of(()->LanguageUtil.get( user.getLocale(), "custom.content.portlet.not.found", portletId ))
-                    .getOrElse(String.format("Portlet with id %s wasn't found.", portletId)); //fallback message
-
-            throw new DoesNotExistException(errorMessage);
+        if (null == portlet || UtilMethods.isNotSet(portlet.getPortletId())) {
+            return ResponseUtil.INSTANCE
+                    .getErrorResponse(request, Status.NOT_FOUND, user.getLocale(),
+                            user.getUserId(),
+                            "custom.content.portlet.not.found",user.getUserId(), portletId);
         }
 
         final Layout layout = layoutAPI.loadLayout(layoutId);
-        if (null == layout) {
-            final String errorMessage = Try.of(()->LanguageUtil.get( user.getLocale(), "custom.content.portlet.layout.not.found", layoutId ))
-                    .getOrElse(String.format("Layout with id %s wasn't found.", portletId)); //fallback message
-
-            throw new DoesNotExistException(errorMessage);
+        if (null == layout || UtilMethods.isNotSet(layout.getId())) {
+            return ResponseUtil.INSTANCE
+                    .getErrorResponse(request, Status.NOT_FOUND, user.getLocale(),
+                            user.getUserId(),
+                            "custom.content.portlet.layout.not.found",user.getUserId(), layoutId);
         }
 
         final List<Layout> userLayouts = layoutAPI.loadLayoutsForUser(user);
@@ -170,7 +183,16 @@ public class PortletResource implements Serializable {
         }
 
         final List<String> portletIds = new ArrayList<>(layout.getPortletIds());
-        portletIds.add(portlet.getPortletId());
+
+        if(!portletIds.contains(portletId)){
+            portletIds.add(portletId);
+        } else {
+            return ResponseUtil.INSTANCE
+                    .getErrorResponse(request, Status.BAD_REQUEST, user.getLocale(),
+                            user.getUserId(),
+                            "custom.content.portlet.layout.contains.portletId",layout.getId(),portletId);
+        }
+
         layoutAPI.setPortletIdsToLayout(layout, portletIds);
 
         return Response.ok(new ResponseEntityView(
@@ -179,7 +201,12 @@ public class PortletResource implements Serializable {
 
     }
 
-
+    /**
+     *  Custom Portlet delete endpoint
+     * @param request
+     * @param portletId
+     * @return
+     */
   @DELETE
   @Path("/custom/{portletId}")
   @JSONP
@@ -209,7 +236,12 @@ public class PortletResource implements Serializable {
 
   }
 
-  
+    /**
+     * Portlet delete
+     * @param request
+     * @param portletId
+     * @return
+     */
     @DELETE
     @Path("/portletId/{portletId}")
     @JSONP
@@ -226,6 +258,13 @@ public class PortletResource implements Serializable {
     }
 
 
+    /**
+     * Delete Portlet For Role
+     * @param request
+     * @param portletId
+     * @param roleId
+     * @return
+     */
     @DELETE
     @Path("/portletId/{portletId}/roleId/{roleId}")
     @JSONP
@@ -298,19 +337,31 @@ public class PortletResource implements Serializable {
     public final Response findPortlet(@Context final HttpServletRequest request,
             @PathParam("portletId") final String portletId) {
 
-        new WebResource.InitBuilder(webResource)
+        final User user = new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
                 .rejectWhenNoUser(true)
                 .requiredPortlet(portletId)
-                .init();
+                .init().getUser();
 
+        final Portlet portlet = APILocator.getPortletAPI().findPortlet(portletId);
+        if(null == portlet){
+            return ResponseUtil.INSTANCE.getErrorResponse(request, Status.NOT_FOUND, user.getLocale(),
+                    user.getUserId(),
+                    "Unable to find portlet");
+        }
         return Response.ok(new ResponseEntityView(
-                map("response", APILocator.getPortletAPI().findPortlet(portletId)))).build();
+                map("response", portlet))).build();
 
     }
 
+    /**
+     * portlet access permis2sion check
+     * @param request
+     * @param portletId
+     * @return
+     */
     @GET
     @JSONP
     @Path("/{portletId}/_doesuserhaveaccess")

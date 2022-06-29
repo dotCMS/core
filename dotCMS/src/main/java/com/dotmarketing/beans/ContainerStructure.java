@@ -6,6 +6,7 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.io.Serializable;
 
 /**
@@ -15,6 +16,7 @@ import java.io.Serializable;
  * @author Daniel Silva
  * @since May 14th, 2013
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ContainerStructure implements Serializable {
 
 	private static final long serialVersionUID = 1L;

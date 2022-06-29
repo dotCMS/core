@@ -17,241 +17,393 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - id: read-cicd-local-env
+        name: Read CICD local library
+        run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
       - id: module-matcher
         name: Module Matcher
         uses: ./.github/actions/module-matcher
         with:
+          build_id: ${{ env.BUILD_ID }}
           current: core
+  build-core-job:
+    name: Build Core
+    runs-on: ubuntu-latest
+    needs: module-matcher-job
+    if: needs.module-matcher-job.outputs.module_found == 'true'
+    env:
+      DEBUG: true
+    outputs:
+      cache_metadata: ${{ steps.cache-core.outputs.cache_metadata }}
+      commit_message: ${{ steps.get-commit-message.outputs.commit_message }}
+    steps:
+      - id: fetch-core
+        name: Fetch Core repo
+        uses: actions/checkout@v3
+      - name: Get commit message
+        id: get-commit-message
+        uses: dotcms/get-commit-message@master
+        with:
+          accessToken: ${{ secrets.GITHUB_TOKEN }}
+      - id: read-cicd-local-env
+        name: Read CICD local library
+        run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
+        if: success()
+      - id: build-core
+        name: Build Core
+        uses: ./.github/actions/build-core
+        with:
+          build_env: ${{ env.BUILD_ENV }}
+        if: success()
+      - id: core-cache-locator
+        name: Core Cache Locator
+        uses: ./.github/actions/core-cache-locator
+        with:
+          build_env: ${{ env.BUILD_ENV }}
+          cache_build_output: true
+        if: success()
+      - id: cache-core
+        name: Cache Core
+        uses: ./.github/actions/cache-core
+        with:
+          build_env: ${{ env.BUILD_ENV }}
+          cache_locations: ${{ steps.core-cache-locator.outputs.cache_locations }}
+        if: success()
   run-unit-tests-job:
-    name: Unit Tests
+    name: Run Unit Tests
     runs-on: ubuntu-latest
-    needs: module-matcher-job
-    env:
-      DOT_CICD_BRANCH: master
-      EXPORT_REPORTS: true
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
-      PULL_REQUEST: ${{ github.event.number }}
-    if: needs.module-matcher-job.outputs.module_found == 'true'
+    needs: build-core-job
+    if: success()
+    outputs:
+      tests_results_status: ${{ steps.run-unit-tests.outputs.tests_results_status }}
+      tests_results_skip_report: ${{ steps.run-unit-tests.outputs.tests_results_skip_report }}
+      tests_results_report_url: ${{ steps.github-publish-unit-tests.outputs.tests_report_url }}
+      tests_results_log_url: ${{ steps.github-publish-unit-tests.outputs.test_logs_url }}
+      testmo_tests_results_report_url: ${{ steps.publish-unit-tests.outputs.tests_report_url }}
     steps:
-      - name: GITHUB CONTEXT
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
-        if: env.DEBUG == 'true'
-      - name: Get commit message
-        id: get-commit-message
-        uses: dotcms/get-commit-message@master
+      - id: fetch-core
+        name: Fetch Core Repo
+        uses: actions/checkout@v3
+      - id: read-cicd-local-env
+        name: Read CICD local library
+        run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
+        if: success()
+      - id: restore-core
+        name: Restore Core Cache
+        uses: ./.github/actions/restore-core
         with:
-          accessToken: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set Common Vars
-        run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            BUILD_ID="${{ github.head_ref }}"
-          else
-            BUILD_ID=$(basename "${{ github.ref }}")
-          fi
-
-          COMMIT_MESSG="${{ steps.get-commit-message.outputs.commit_message }}"
-          echo "COMMIT_MESSG: ${COMMIT_MESSG}"
-          echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
-
-          if [[ "${{ github.event_name }}" == "pull_request" || ${BUILD_ID} =~ master|^release-[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$|^test-[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$ || ${COMMIT_MESSG} =~ run-all|run-unit ]]; then
-            echo "jobRun=true" >> $GITHUB_ENV
-          else
-            echo "jobRun=false" >> $GITHUB_ENV
-          fi
-      - name: Prepare dot-cicd
-        run: |
-          sh -c "$(curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/${DOT_CICD_BRANCH}/seed/install-dot-cicd.sh)"
-        if: env.jobRun == 'true'
-      - name: Run Unit Tests
-        run: |
-          ../dotcicd/library/pipeline.sh runUnit
-        env:
-          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
-        if: env.jobRun == 'true'
-  run-curl-tests-job:
-    name: Curl Tests
+          cache_metadata: ${{ needs.build-core-job.outputs.cache_metadata }}
+        if: success()
+      - id: run-unit-tests
+        name: Run Unit Tests
+        uses: ./.github/actions/run-unit-tests
+        with:
+          build_env: ${{ env.BUILD_ENV }}
+          tests: ${{ needs.build-core-job.outputs.commit_message }}
+      - id: unit-tests-comment
+        name: Unit Test Comment
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        with:
+          files: ${{ steps.run-unit-tests.outputs.tests_results_location }}/*.xml
+          check_name: 'Unit Tests Report'
+        if: always() && steps.run-unit-tests.outputs.tests_results_skip_report != 'true'
+      - id: github-publish-unit-tests
+        name: Github publish unit tests
+        uses: ./.github/actions/publish-test-results
+        with:
+          build_id: ${{ env.BUILD_ID }}
+          build_hash: ${{ env.BUILD_HASH }}
+          test_type: unit
+          pull_request: ${{ github.event.number }}
+          tests_results_status: ${{ steps.run-unit-tests.outputs.tests_results_status }}
+          tests_results_report_location: ${{ steps.run-unit-tests.outputs.tests_results_report_location }}
+          cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+      - id: publish-unit-tests
+        name: Publish unit tests to Testmo
+        uses: ./.github/actions/testmo-wrapper
+        with:
+          operation: submit
+          github_sha: ${{ env.BUILD_HASH }}
+          build_id: ${{ env.BUILD_ID }}
+          testmo_token: ${{ secrets.TESTMO_TOKEN }}
+          testmo_project_id: 1
+          test_type: unit
+          tests_results_location: ${{ steps.run-unit-tests.outputs.tests_results_location }}/*.xml
+          debug: true
+        if: always() && steps.run-unit-tests.outputs.tests_results_skip_report != 'true'
+      - id: github-status
+        name: Send Github Status
+        uses: ./.github/actions/github-status
+        with:
+          test_type: unit
+          test_results_status: ${{ steps.run-unit-tests.outputs.tests_results_status }}
+          pull_request: ${{ github.event.number }}
+          github_user: ${{ env.GITHUB_USER }}
+          cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+          tests_report_url: ${{ steps.publish-unit-tests.outputs.tests_report_url }}
+        if: always() && steps.publish-unit-tests.outputs.tests_report_url != ''
+  integration-tests-thread-setup-job:
+    name: Integration tests thread (matrix) setup
     runs-on: ubuntu-latest
-    needs: module-matcher-job
-    if: needs.module-matcher-job.outputs.module_found == 'true'
-    env:
-      DOT_CICD_BRANCH: master
-      EXPORT_REPORTS: true
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
-      PULL_REQUEST: ${{ github.event.number }}
+    needs: build-core-job
+    outputs:
+      testmo_run_id: ${{ steps.thread-setup.outputs.testmo_run_id }}
     steps:
-      - name: GITHUB CONTEXT
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
-        if: env.DEBUG == 'true'
-      - name: Get commit message
-        id: get-commit-message
-        uses: dotcms/get-commit-message@master
-
+      - id: fetch-core
+        name: Fetch Core Repo
+        uses: actions/checkout@v3
+      - id: read-cicd-local-env
+        name: Read CICD local library
+        run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
+        if: success()
+      - id: thread-setup
+        name: Initial thread (matrix) setup
+        uses: ./.github/actions/testmo-wrapper
         with:
-          accessToken: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set Common Vars
-        run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            IS_PR=true
-          else
-            IS_PR=false
-          fi
-
-          if [[ ${IS_PR} == true ]]; then
-            BUILD_ID="${{ github.head_ref }}"
-          else
-            BUILD_ID=$(basename "${{ github.ref }}")
-          fi
-
-          COMMIT_MESSG="${{ steps.get-commit-message.outputs.commit_message }}"
-          echo "COMMIT_MESSG: ${COMMIT_MESSG}"
-          echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
-
-          [[ ${BUILD_ID} =~ master|^release-[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$|^test-[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$ ]] && SPECIAL_BRANCH=true
-
-          if [[ ${IS_PR} == true || "${SPECIAL_BRANCH}" == 'true' || ${COMMIT_MESSG} =~ run-all|run-curl ]]; then
-            echo "jobRun=true" >> $GITHUB_ENV
-          else
-            echo "jobRun=false" >> $GITHUB_ENV
-          fi
-      - name: Checkout core
-        uses: actions/checkout@v2
-      - name: Prepare dot-cicd
-        run: |
-          sh -c "$(curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/${DOT_CICD_BRANCH}/seed/install-dot-cicd.sh)"
-        if: env.jobRun == 'true'
-      - name: Run Curl Tests - postgres
-        run: |
-          ../dotcicd/library/pipeline.sh runCurl
-        env:
-          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
-          databaseType: postgres
-          PROVIDER_DB_USERNAME: postgres
-          PROVIDER_DB_PASSWORD: postgres
-        if: success() && env.jobRun == 'true'
+          operation: thread-resources
+          github_sha: ${{ env.BUILD_HASH }}
+          build_id: ${{ env.BUILD_ID }}
+          testmo_token: ${{ secrets.TESTMO_TOKEN }}
+          testmo_project_id: 1
+          test_type: integration
+          debug: true
+        if: success()
   run-integration-tests-job:
-    name: Integration Tests
+    name: Run Integration Tests
     runs-on: ubuntu-latest
-    needs: module-matcher-job
-    if: needs.module-matcher-job.outputs.module_found == 'true'
-    continue-on-error: true
+    needs: [ build-core-job, integration-tests-thread-setup-job ]
     strategy:
       fail-fast: false
       matrix:
-        databaseType: [postgres, mssql]
-    env:
-      DOT_CICD_BRANCH: master
-      EXPORT_REPORTS: true
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
-      PULL_REQUEST: ${{ github.event.number }}
-      RUN_ALL_DBS: true
+        db_type: [ postgres, mssql ]
+    outputs:
+      postgres_tests_results_status: ${{ steps.run-integration-tests.outputs.postgres_tests_results_status }}
+      postgres_tests_results_skip_report: ${{ steps.run-integration-tests.outputs.postgres_tests_results_skip_report }}
+      postgres_tests_results_report_url: ${{ steps.github-publish-integration-tests.outputs.postgres_tests_report_url }}
+      postgres_tests_results_log_url: ${{ steps.github-publish-integration-tests.outputs.postgres_test_logs_url }}
+      testmo_postgres_tests_results_report_url: ${{ steps.publish-integration-tests.outputs.postgres_tests_report_url }}
+      mssql_tests_results_status: ${{ steps.run-integration-tests.outputs.mssql_tests_results_status }}
+      mssql_tests_results_skip_report: ${{ steps.run-integration-tests.outputs.mssql_tests_results_skip_report }}
+      mssql_tests_results_report_url: ${{ steps.github-publish-integration-tests.outputs.mssql_tests_report_url }}
+      mssql_tests_results_log_url: ${{ steps.github-publish-integration-tests.outputs.mssql_test_logs_url }}
+      testmo_mssql_tests_results_report_url: ${{ steps.publish-integration-tests.outputs.mssql_tests_report_url }}
     steps:
-      - name: GITHUB CONTEXT
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        if: env.DEBUG == 'true'
-        run: echo "$GITHUB_CONTEXT"
-      - name: Get commit message
-        id: get-commit-message
-        uses: dotcms/get-commit-message@master
+      - id: fetch-core
+        name: Fetch Core Repo
+        uses: actions/checkout@v3
+      - id: read-cicd-local-env
+        name: Read CICD local library
+        run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
+        if: success()
+      - id: restore-core
+        name: Restore Core Cache
+        uses: ./.github/actions/restore-core
         with:
-          accessToken: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set Common Vars
-        run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            IS_PR=true
-          else
-            IS_PR=false
-          fi
-
-          if [[ ${IS_PR} == true ]]; then
-            BUILD_ID="${{ github.head_ref }}"
-          else
-            BUILD_ID=$(basename "${{ github.ref }}")
-          fi
-
-          COMMIT_MESSG="${{ steps.get-commit-message.outputs.commit_message }}"
-          echo "COMMIT_MESSG: ${COMMIT_MESSG}"
-          echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
-
-          [[ ${IS_PR} == false && ${BUILD_ID} =~ master|^release-[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$|^test-[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$ ]] && SPECIAL_BRANCH=true
-
-          if [[ "${RUN_ALL_DBS}" == 'true' ]]; then
-            RUN_POSTGRES=true
-            RUN_MYSQL=true
-            RUN_ORACLE=true && echo "WAIT_DB_FOR=60" >> $GITHUB_ENV
-            RUN_MSSQL=true
-          else
-            # Evaluate postgres
-            [[ ((! ${COMMIT_MESSG} =~ run-mysql|run-oracle|run-mssql) || ${COMMIT_MESSG} =~ run-all|run-postgres) \
-              && "${{ matrix.databaseType }}" == 'postgres' ]] && RUN_POSTGRES=true
-            # Evaluate mysql
-            [[ ("${SPECIAL_BRANCH}" == 'true' || ${COMMIT_MESSG} =~ run-all|run-mysql) \
-              && "${{ matrix.databaseType }}" == 'mysql' ]] && RUN_MYSQL=true
-            # Evaluate oracle
-            [[ ("${SPECIAL_BRANCH}" == 'true' || ${COMMIT_MESSG} =~ run-all|run-oracle) \
-              && "${{ matrix.databaseType }}" == 'oracle' ]] && RUN_ORACLE=true && echo "WAIT_DB_FOR=60" >> $GITHUB_ENV
-            # Evaluate mssql
-            [[ ("${SPECIAL_BRANCH}" == 'true' || ${COMMIT_MESSG} =~ run-all|run-mssql) \
-              && "${{ matrix.databaseType }}" == 'mssql' ]] && RUN_MSSQL=true
-          fi
-
-          if [[ "${RUN_POSTGRES}" == 'true' || "${RUN_MYSQL}" == 'true' || "${RUN_ORACLE}" == 'true' || "${RUN_MSSQL}" == 'true' ]]; then
-            JOB_RUN=true
-          else
-            JOB_RUN=false
-          fi
-          echo "jobRun=${JOB_RUN}" >> $GITHUB_ENV
-      - name: Prepare dot-cicd
-        run: |
-          sh -c "$(curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/${DOT_CICD_BRANCH}/seed/install-dot-cicd.sh)"
-        if: env.jobRun == 'true'
-      - name: Run Integration Tests - ${{ matrix.databaseType }}
-        run: |
-          ../dotcicd/library/pipeline.sh runIntegration
-        env:
-          databaseType: ${{ matrix.databaseType }}
-          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
-        if: success() && env.jobRun == 'true'
-  slack-notification:
-    name: Notification
+          cache_metadata: ${{ needs.build-core-job.outputs.cache_metadata }}
+        if: success()
+      - id: run-integration-tests
+        name: Run Integration Tests
+        uses: ./.github/actions/run-integration-tests
+        with:
+          build_env: ${{ env.BUILD_ENV }}
+          db_type: ${{ matrix.db_type }}
+          license_key: ${{ secrets.DOTCMS_LICENSE }}
+          tests: ${{ needs.build-core-job.outputs.commit_message }}
+        if: success()
+      - id: integration-tests-comment
+        name: Integration Test Comment
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        with:
+          files: ${{ steps.run-integration-tests.outputs.tests_results_location }}/*.xml
+          check_name: 'Integration Tests [${{ matrix.db_type }}] Report'
+        if: always() && steps.run-integration-tests.outputs.tests_results_skip_report != 'true'
+      - id: github-publish-integration-tests
+        name: Github publish integration tests
+        uses: ./.github/actions/publish-test-results
+        with:
+          build_id: ${{ env.BUILD_ID }}
+          build_hash: ${{ env.BUILD_HASH }}
+          test_type: integration
+          db_type: ${{ matrix.db_type }}
+          pull_request: ${{ github.event.number }}
+          tests_results_status: ${{ steps.run-integration-tests.outputs.tests_results_status }}
+          tests_results_report_location: ${{ steps.run-integration-tests.outputs.tests_results_report_location }}
+          cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+      - id: publish-integration-tests
+        name: Publish integration tests to Testmo
+        uses: ./.github/actions/testmo-wrapper
+        with:
+          operation: submit-thread
+          github_sha: ${{ env.BUILD_HASH }}
+          build_id: ${{ env.BUILD_ID }}
+          testmo_token: ${{ secrets.TESTMO_TOKEN }}
+          testmo_project_id: 1
+          testmo_run_id: ${{ needs.integration-tests-thread-setup-job.outputs.testmo_run_id }}
+          test_type: integration
+          tests_results_location: ${{ steps.run-integration-tests.outputs.tests_results_location }}/*.xml
+          ci_index: ${{ steps.run-integration-tests.outputs.ci_index }}
+          ci_total: 2
+          ci_label: ${{ matrix.db_type }}
+          debug: true
+        if: always() && steps.run-integration-tests.outputs.tests_results_skip_report != 'true'
+      - id: github-status
+        name: Send Github Status
+        uses: ./.github/actions/github-status
+        with:
+          test_type: integration
+          db_type: ${{ matrix.db_type }}
+          test_results_status: ${{ steps.run-integration-tests.outputs.tests_results_status }}
+          pull_request: ${{ github.event.number }}
+          github_user: ${{ env.GITHUB_USER }}
+          cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+          tests_report_url: ${{ steps.publish-integration-tests.outputs.tests_report_url }}
+        if: always() && steps.publish-integration-tests.outputs.tests_report_url != ''
+  integration-tests-complete-job:
+    name: Integration tests publish complete setup
     runs-on: ubuntu-latest
-    env:
-      DOT_CICD_TARGET: core
-      GITHUB_USER: victoralfaro-dotcms
-      GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
-      PULL_REQUEST: ${{ github.event.number }}
-    needs:
-      [
-        module-matcher-job,
-        run-unit-tests-job,
-        run-curl-tests-job,
-        run-integration-tests-job,
-      ]
-    if: (success() || failure()) && needs.module-matcher-job.outputs.module_found == 'true'
+    needs: [ integration-tests-thread-setup-job, run-integration-tests-job ]
+    if: always() && needs.run-integration-tests-job.outputs.tests_results_skip_report != 'true'
     steps:
-      - name: GITHUB CONTEXT
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
-        if: env.DEBUG == 'true'
-      - name: Set Common Vars
-        run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "BUILD_ID=${{ github.head_ref }}" >> $GITHUB_ENV
-          else
-            echo "BUILD_ID=$(basename ${{ github.ref }})" >> $GITHUB_ENV
-          fi
-      - name: Notify through CI/CD slack action
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: dotcms/cicd-slack-action@master
+      - id: fetch-core
+        name: Fetch Core Repo
+        uses: actions/checkout@v3
+      - id: read-cicd-local-env
+        name: Read CICD local library
+        run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
+        if: success()
+      - id: complete
+        name: Post submit complete
+        uses: ./.github/actions/testmo-wrapper
         with:
-          github-user: ${{ github.actor }}
-          branch: ${{ env.BUILD_ID }}
+          operation: complete
+          github_sha: ${{ env.BUILD_HASH }}
+          testmo_token: ${{ secrets.TESTMO_TOKEN }}
+          testmo_project_id: 1
+          testmo_run_id: ${{ needs.integration-tests-thread-setup-job.outputs.testmo_run_id }}
+          test_type: integration
+          debug: true
+  run-postman-tests-job:
+    name: Run Postman Tests
+    runs-on: ubuntu-latest
+    needs: build-core-job
+    if: success()
+    outputs:
+      tests_results_status: ${{ steps.run-postman-tests.outputs.tests_results_status }}
+      tests_results_skip_report: ${{ steps.run-postman-tests.outputs.tests_results_skip_report }}
+      tests_results_report_url: ${{ steps.github-publish-postman-tests.outputs.tests_report_url }}
+      tests_results_log_url: ${{ steps.github-publish-postman-tests.outputs.test_logs_url }}
+      testmo_tests_results_report_url: ${{ steps.publish-postman-tests.outputs.tests_report_url }}
+    env:
+      PUBLISH_MODE: ALL
+    steps:
+      - id: fetch-core
+        name: Fetch Core Repo
+        uses: actions/checkout@v3
+      - id: read-cicd-local-env
+        name: Read CICD local library
+        run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
+        if: success()
+      - id: restore-core
+        name: Restore Core Cache
+        uses: ./.github/actions/restore-core
+        with:
+          cache_metadata: ${{ needs.build-core-job.outputs.cache_metadata }}
+        if: success()
+      - id: build-dotcms-image
+        name: Build DotCMS Docker image
+        uses: ./.github/actions/build-docker-image
+        with:
+          build_id  : ${{ env.BUILD_ID }}
+          image_name: dotcms:${{ env.BUILD_HASH }}
+      - id: run-postman-tests
+        name: Run Postman Tests
+        uses: ./.github/actions/run-postman-tests
+        with:
+          built_image_name: ${{ steps.build-dotcms-image.outputs.built_image_name }}
+          license_key: ${{ secrets.DOTCMS_LICENSE }}
+          tests: ${{ needs.build-core-job.outputs.commit_message }}
+          export_report: ${{ env.PUBLISH_MODE == 'ALL' || env.PUBLISH_MODE == 'RESULTS' }}
+      - id: postman-tests-comment
+        name: Postman Test Comment
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        with:
+          files: ${{ steps.run-postman-tests.outputs.tests_results_location }}/*.xml
+          check_name: 'Postman Tests Report'
+        if: always() && steps.run-postman-tests.outputs.tests_results_skip_report != 'true'
+      - id: github-publish-postman-tests
+        name: Github publish postman tests
+        uses: ./.github/actions/publish-test-results
+        with:
+          build_id: ${{ env.BUILD_ID }}
+          build_hash: ${{ env.BUILD_HASH }}
+          test_type: postman
+          pull_request: ${{ github.event.number }}
+          tests_results_status: ${{ steps.run-postman-tests.outputs.tests_results_status }}
+          tests_results_report_location: ${{ steps.run-postman-tests.outputs.tests_results_report_location }}
+          cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+          mode: ${{ env.PUBLISH_MODE }}
+      - id: publish-postman-tests
+        name: Publish postman tests to Testmo
+        uses: ./.github/actions/testmo-wrapper
+        with:
+          operation: submit
+          github_sha: ${{ env.BUILD_HASH }}
+          build_id: ${{ env.BUILD_ID }}
+          testmo_token: ${{ secrets.TESTMO_TOKEN }}
+          testmo_project_id: 1
+          test_type: postman
+          tests_results_location: ${{ steps.run-postman-tests.outputs.tests_results_location }}/*.xml
+          debug: true
+        if: always() && steps.run-postman-tests.outputs.tests_results_skip_report != 'true'
+      - id: github-status
+        name: Send Github Status
+        uses: ./.github/actions/github-status
+        with:
+          test_type: postman
+          test_results_status: ${{ steps.run-postman-tests.outputs.tests_results_status }}
+          pull_request: ${{ github.event.number }}
+          github_user: ${{ env.GITHUB_USER }}
+          cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+          tests_report_url: ${{ steps.publish-postman-tests.outputs.tests_report_url }}
+        if: always() && steps.publish-postman-tests.outputs.tests_report_url != ''
+  test-results-handler-job:
+    name: Tests results handler
+    runs-on: ubuntu-latest
+    needs: [run-unit-tests-job, run-integration-tests-job, run-postman-tests-job, integration-tests-complete-job]
+    if: always() && (needs.run-unit-tests-job.outputs.tests_results_report_url != '' || needs.run-integration-tests-job.outputs.postgres_tests_results_report_url != '' || needs.run-integration-tests-job.outputs.mssql_tests_results_report_url != '' || needs.run-postman-tests-job.outputs.tests_results_report_url != '')
+    steps:
+      - id: fetch-core
+        name: Fetch Core Repo
+        uses: actions/checkout@v3
+      - id: tests-status-aggregator
+        name: Tests status aggregator
+        uses: ./.github/actions/tests-status-aggregator
+        with:
+          unit_tests_results_status: ${{ needs.run-unit-tests-job.outputs.tests_results_status }}
+          unit_tests_results_report_url: ${{ needs.run-unit-tests-job.outputs.tests_results_report_url }}
+          unit_tests_results_log_url: ${{ needs.run-unit-tests-job.outputs.tests_results_log_url }}
+          testmo_unit_tests_results_report_url: ${{ needs.run-unit-tests-job.outputs.testmo_tests_results_report_url }}
+          integration_postgres_tests_results_status: ${{ needs.run-integration-tests-job.outputs.postgres_tests_results_status }}
+          integration_postgres_tests_results_report_url: ${{ needs.run-integration-tests-job.outputs.postgres_tests_results_report_url }}
+          integration_postgres_tests_results_log_url: ${{ needs.run-integration-tests-job.outputs.postgres_tests_results_log_url }}
+          testmo_integration_postgres_tests_results_report_url: ${{ needs.run-integration-tests-job.outputs.testmo_postgres_tests_results_report_url }}
+          integration_mssql_tests_results_status: ${{ needs.run-integration-tests-job.outputs.mssql_tests_results_status }}
+          integration_mssql_tests_results_report_url: ${{ needs.run-integration-tests-job.outputs.mssql_tests_results_report_url }}
+          integration_mssql_tests_results_log_url: ${{ needs.run-integration-tests-job.outputs.mssql_tests_results_log_url }}
+          testmo_integration_mssql_tests_results_report_url: ${{ needs.run-integration-tests-job.outputs.testmo_mssql_tests_results_report_url }}
+          postman_tests_results_status: ${{ needs.run-postman-tests-job.outputs.tests_results_status }}
+          postman_tests_results_report_url: ${{ needs.run-postman-tests-job.outputs.tests_results_report_url }}
+          postman_tests_results_log_url: ${{ needs.run-postman-tests-job.outputs.tests_results_log_url }}
+          testmo_postman_tests_results_report_url: ${{ needs.run-postman-tests-job.outputs.testmo_tests_results_report_url }}
+      - id: tests-results-slack
+        name: Tests results Slack notification
+        if: steps.tests-status-aggregator.outputs.status != ''
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.CORE_SLACK_WEBHOOK }}
+          SLACK_USERNAME: dotBot
+          SLACK_ICON: https://avatars.slack-edge.com/2020-09-21/1362682893351_5b474f175640cf5f5912_72.png
+          SLACK_COLOR: ${{ steps.tests-status-aggregator.outputs.color }}
+          SLACK_TITLE: ${{ steps.tests-status-aggregator.outputs.status }}
+          SLACK_MESSAGE: ${{ steps.tests-status-aggregator.outputs.message }}
+          SLACK_FOOTER: ${{ env.PULL_REQUEST_URL }}

@@ -21,7 +21,7 @@ import com.dotmarketing.portlets.folders.struts.FolderForm;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
@@ -34,6 +34,7 @@ import java.util.Map;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 /** @author Hibernate CodeGenerator */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
 		Parentable, ManifestItem {
 
@@ -116,13 +117,11 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
 		this.type = type;
 	}
 
-    
-    @JsonIgnore
+
     public Host getHost() {
         return Try.of(()->APILocator.getHostAPI().find(hostId, APILocator.systemUser(), false)).getOrNull();
     }
     
-    @JsonIgnore
     public boolean isSystemFolder() {
         return Try.of(()->FolderAPI.SYSTEM_FOLDER.equals(inode)).getOrElse(false);
     }
