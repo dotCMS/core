@@ -180,7 +180,6 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
-        PublishAuditAPITest.class,
         FolderCacheImplIntegrationTest.class,
         StaticPublisherIntegrationTest.class,
         com.dotcms.publishing.PublisherAPIImplTest.class,
@@ -405,6 +404,7 @@ import org.junit.runners.Suite.SuiteClasses;
         TestConfig.class,
         ConfigTest.class,
         FolderTest.class,
+        PublishAuditAPITest.class,
         BundleFactoryTest.class,
         com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class,
         AppsAPIImplTest.class,
@@ -551,13 +551,13 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentDispositionFileNameParserTest.class,
         SecureFileValidatorTest.class,
         BoundedBufferedReaderTest.class,
-        AWSS3PublisherTest.class,
         ContentWorkflowHandlerTest.class,
         Task220512UpdateNoHTMLRegexValueTest.class,
         MetadataDelegateTest.class,
         Task220401CreateClusterLockTableTest.class,
         Task220606UpdatePushNowActionletNameTest.class,
-        BundlerUtilTest.class
+        BundlerUtilTest.class,
+        AWSS3PublisherTest.class
 })
 public class MainSuite {
 
