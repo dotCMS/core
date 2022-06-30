@@ -19,9 +19,12 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -44,6 +47,8 @@ public class ContentletTransformer implements DBTransformer {
 
     final List<Contentlet> list;
 
+    private static Lazy<Boolean> IS_UNIQUE_PUBLISH_EXPIRE_DATE =
+            Lazy.of(() -> Config.getBooleanProperty("uniquePublishExpireDate", false));
 
     public ContentletTransformer(final List<Map<String, Object>> initList){
         final List<Contentlet> newList = new ArrayList<>();
@@ -146,20 +151,10 @@ public class ContentletTransformer implements DBTransformer {
             contentlet.setHost(identifier.getHostId());
             contentlet.setFolder(folder.getInode());
 
-            // lets check if we have publish/expire fields to set
-            final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
-                    .find(contentTypeId);
-
-            if (UtilMethods.isSet(contentType.publishDateVar())) {
-                contentlet.setDateProperty(contentType.publishDateVar(),
-                        identifier.getSysPublishDate());
+            if (isUniquePublishExpireDatePerLanguages()) {
+                setPublishExpireDateFromIdentifier(contentlet);
             }
 
-            if (UtilMethods.isSet(contentType.expireDateVar())) {
-                contentlet
-                        .setDateProperty(contentType.expireDateVar(),
-                                identifier.getSysExpireDate());
-            }
         } else {
             if (contentlet.isSystemHost()) {
                 // When we are saving a systemHost we cannot call
@@ -171,6 +166,36 @@ public class ContentletTransformer implements DBTransformer {
                 contentlet.setHost(APILocator.getHostAPI().findSystemHost().getIdentifier());
             }
             contentlet.setFolder(APILocator.getFolderAPI().findSystemFolder().getInode());
+        }
+    }
+
+    @VisibleForTesting
+    public static void setUniquePublishExpireDatePerLanguages(final boolean newUniquePublishExpireDate) {
+        IS_UNIQUE_PUBLISH_EXPIRE_DATE = Lazy.of(() -> newUniquePublishExpireDate);
+    }
+
+    public static boolean isUniquePublishExpireDatePerLanguages() {
+        return IS_UNIQUE_PUBLISH_EXPIRE_DATE.get();
+    }
+
+    private static void setPublishExpireDateFromIdentifier(final Contentlet contentlet) throws DotSecurityException, DotDataException {
+
+        final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
+        final String contentTypeId = contentlet.getContentTypeId();
+
+        final ContentType contentType = APILocator.getContentTypeAPI(
+                        APILocator.systemUser())
+                .find(contentTypeId);
+
+        if (UtilMethods.isSet(contentType.publishDateVar())) {
+            contentlet.setDateProperty(contentType.publishDateVar(),
+                    identifier.getSysPublishDate());
+        }
+
+        if (UtilMethods.isSet(contentType.expireDateVar())) {
+            contentlet
+                    .setDateProperty(contentType.expireDateVar(),
+                            identifier.getSysExpireDate());
         }
     }
 

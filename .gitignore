@@ -73,7 +73,7 @@ dotCMS/.gradle/
 dotCMS/.settings/
 dotCMS/src/main/webapp/WEB-INF/classes/
 dotCMS/src/main/webapp/WEB-INF/lib/
-dotCMS/src/main/webapp/WEB-INF/velocity/static/plugiga ns/
+dotCMS/src/main/webapp/WEB-INF/velocity/static/plugins/
 dotCMS/src/main/webapp/html/plugins/
 
 # immutables.github.io generated folder#
@@ -91,31 +91,33 @@ tmp/
 
 /node_modules
 /**/node_modules
+node_modules/
+.github/actions/**/lib/
 
 # compiled output
-/ui/dist
-/ui/dist-lib
-/ui/docs
-/ui/tmp
-/ui/out-tsc
-/ui/karma_html
+/core-web/dist
+/core-web/dist-lib
+/core-web/docs
+/core-web/tmp
+/core-web/out-tsc
+/core-web/karma_html
 
 # misc
-/ui/.angular/cache
-/ui/.sass-cache
-/ui/connect.lock
-/ui/coverage
-/ui/libpeerconnection.log
+/core-web/.angular/cache
+/core-web/.sass-cache
+/core-web/connect.lock
+/core-web/coverage
+/core-web/libpeerconnection.log
 npm-debug.log
 yarn-error.log
 testem.log
-/ui/typings
+/core-web/typings
 karma_html/
 
 # e2e
-/ui/e2e/*.js
-/ui/e2e/*.map
+/core-web/e2e/*.js
+/core-web/e2e/*.map
 
-/ui/storybook
-/ui/out*/
+/core-web/storybook
+/core-web/out*/
 dist-docs/

@@ -2,6 +2,10 @@ name: 'Workflow router'
 description: 'Based on event (push or pull request) gather the involved commits to determine if workflow is allowed run'
 author: 'victoralfaro-dotcms'
 inputs:
+  build_id:
+    description: 'Current branch'
+    required: true
+    default: 
   current:
     description: 'Current module'
     required: true
@@ -16,7 +20,7 @@ inputs:
                 "main": true
               },
               {
-                "module": "ui"
+                "module": "core-web"
               },
               {
                 "module": "enterprise"

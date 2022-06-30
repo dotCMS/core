@@ -1,10 +1,8 @@
 package com.dotmarketing.portlets.categories.model;
 
-import static com.dotcms.util.CollectionsUtils.map;
 
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
-import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Tree;
@@ -21,6 +19,7 @@ import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.liferay.portal.model.User;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -30,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
-
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Category extends Inode implements Serializable, ManifestItem {
 
 	private static final long serialVersionUID = 1L;

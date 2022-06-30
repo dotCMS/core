@@ -25,6 +25,7 @@ import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.RelationshipAPI;
@@ -366,16 +367,27 @@ public class ESMappingUtilHelper {
         String mappingForField = null;
 
         if (!matchesExclusions(fieldVariableName)) {
-        if (field instanceof DateField || field instanceof DateTimeField
-                || field instanceof TimeField) {
-            mappingForField = "{\n\"type\":\"date\",\n";
-            mappingForField += "\"format\": \"yyyy-MM-dd't'HH:mm:ss||MMM d, yyyy h:mm:ss a||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd HH:mm:ss.SSS||yyyy-MM-dd||epoch_millis\"\n}";
-        } else if (field instanceof TextField || field instanceof TextAreaField
-                || field instanceof WysiwygField || field instanceof RadioField
+            if (field instanceof DateField || field instanceof DateTimeField
+                    || field instanceof TimeField) {
+
+                mappingForField = "{\n\"type\":\"date\",\n";
+
+                try {
+                    final Map<String, Object> jsonFileContent = JsonUtil.getJsonFileContent(
+                            "es-content-mapping.json");
+
+                    mappingForField += String.format("\"format\": \"%s\"\n}",
+                            ((List) jsonFileContent.get("dynamic_date_formats")).get(0));
+                } catch (IOException e) {
+                    Logger.error("Error getting es-content-mapping.json file: " + e.getMessage(), e);
+                    throw new JSONException(e);
+                }
+            } else if (field instanceof TextField || field instanceof TextAreaField
+                    || field instanceof WysiwygField || field instanceof RadioField
                     || field instanceof SelectField || field instanceof MultiSelectField
                     || field instanceof TagField || field instanceof StoryBlockField) {
 
-            if (dataTypesMap.containsKey(field.dataType())) {
+                if (dataTypesMap.containsKey(field.dataType())) {
                     mappingForField = String
                             .format("{\n\"type\":\"%s\"\n}",
                                     dataTypesMap.get(field.dataType()));
@@ -383,12 +395,12 @@ public class ESMappingUtilHelper {
                     if (field.unique() || field instanceof TagField) {
                         mappingForField = "{\n\"type\":\"keyword\"\n}";
                     } else {
-                mappingForField = "{\n"
+                        mappingForField = "{\n"
                                 + ("\"type\":\"text\",\n")
-                        + "\"analyzer\":\"my_analyzer\""
-                        + "\n}";
-            }
-        }
+                                + "\"analyzer\":\"my_analyzer\""
+                                + "\n}";
+                    }
+                }
             }
         }
 

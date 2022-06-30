@@ -333,7 +333,7 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		folderFactory.copy(folderToCopy, newParentFolder);
 
-		this.systemEventsAPI.pushAsync(SystemEventType.COPY_FOLDER, new Payload(folderToCopy, Visibility.EXCLUDE_OWNER,
+		this.systemEventsAPI.pushAsync(SystemEventType.COPY_FOLDER, new Payload(folderToCopy.getMap(), Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
@@ -353,7 +353,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		validateFolderName(folderToCopy);
 		folderFactory.copy(folderToCopy, newParentHost);
 
-		this.systemEventsAPI.pushAsync(SystemEventType.COPY_FOLDER, new Payload(folderToCopy, Visibility.EXCLUDE_OWNER,
+		this.systemEventsAPI.pushAsync(SystemEventType.COPY_FOLDER, new Payload(folderToCopy.getMap(), Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
@@ -471,7 +471,7 @@ public class FolderAPIImpl implements FolderAPI  {
 				Logger.debug(getClass(), "Pushing async events: " + path);
 			}
 
-			this.systemEventsAPI.pushAsync(SystemEventType.DELETE_FOLDER, new Payload(folder, Visibility.EXCLUDE_OWNER,
+			this.systemEventsAPI.pushAsync(SystemEventType.DELETE_FOLDER, new Payload(folder.getMap(), Visibility.EXCLUDE_OWNER,
 					new ExcludeOwnerVerifierBean(user.getUserId(),
 							new VisibilityRoles(VisibilityRoles.Operator.OR, roles), Visibility.ROLES)));
 
@@ -634,11 +634,13 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 
         // remove folder and parent from navigation cache
-        CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
-        CacheLocator.getNavToolCache().removeNavByPath(existingID.getHostId(), existingID.getParentPath());
-
+		if (!isNew) {
+			CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
+			CacheLocator.getNavToolCache()
+					.removeNavByPath(existingID.getHostId(), existingID.getParentPath());
+		}
         SystemEventType systemEventType = isNew ? SystemEventType.SAVE_FOLDER : SystemEventType.UPDATE_FOLDER;
-		systemEventsAPI.pushAsync(systemEventType, new Payload(folder, Visibility.EXCLUDE_OWNER,
+		systemEventsAPI.pushAsync(systemEventType, new Payload(folder.getMap(), Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
@@ -655,7 +657,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	                                                });
 	
 	
-	@WrapInTransaction
+	@CloseDBIfOpened
 	public Folder findSystemFolder()  {
 		return loadSystemFolder.get();
 	}
@@ -850,7 +852,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 		boolean move = folderFactory.move(folderToMove, newParentFolder);
 
-		this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FOLDER, new Payload(folderToMove, Visibility.EXCLUDE_OWNER,
+		this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FOLDER, new Payload(folderToMove.getMap(), Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
 		return move;
@@ -972,9 +974,10 @@ public class FolderAPIImpl implements FolderAPI  {
 		});
 	}
 
-	private void sendMoveFolderSystemEvent (final Folder folderToMove, final User user) throws DotDataException {
+	private void sendMoveFolderSystemEvent (final Folder folderToMove, final User user)
+			throws DotDataException, DotSecurityException {
 
-		this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FOLDER, new Payload(folderToMove, Visibility.EXCLUDE_OWNER,
+		this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FOLDER, new Payload(folderToMove.getMap(), Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 

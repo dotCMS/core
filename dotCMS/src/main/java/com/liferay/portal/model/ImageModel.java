@@ -33,6 +33,7 @@ import com.liferay.util.Xss;
  * @version $Revision: 1.89 $
  *
  */
+
 public class ImageModel extends BaseModel {
 	public static boolean CACHEABLE = GetterUtil.get(PropsUtil.get(
 				"value.object.cacheable.com.liferay.portal.model.Image"),

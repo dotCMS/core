@@ -10,7 +10,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Encapsulates the logic to interact with the Browser App
+ * Encapsulates the logic to interact with the {@code Site Browser} portlet in dotCMS.
+ * <p>From the Site Browser you can easily find, create, and modify folders, File Assets, Pages and Menu Links, and
+ * upload File Assets to any folder.</p>
+ *
+ * @author Jonathan Sanchez
+ * @since Apr 28th, 2020
  */
 public interface BrowserAPI {
 
@@ -224,7 +229,23 @@ public interface BrowserAPI {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    public Map<String, Object> getFolderContent(final BrowserQuery browserQuery) throws DotSecurityException, DotDataException;
+
+	/**
+	 * Returns the contents of a specific Folder in the form of a Map with the following data structure:
+	 * <ul>
+	 *     <li>{@code "total"}: The total count of items living under the Folder.</li>
+	 *     <li>{@code "list"}: The Folder items represented as Maps so that their data can be processed in the UI.</li>
+	 * </ul>
+	 *
+	 * @param browserQuery The {@link BrowserQuery} object with the appropriate query and filtering criteria.
+	 *
+	 * @return The Folder contents in the form of a Map.
+	 *
+	 * @throws DotSecurityException The {@link User} calling this operation does not have the required permissions to do
+	 *                              so.
+	 * @throws DotDataException     An error occurred when interacting with the data source.
+	 */
+	Map<String, Object> getFolderContent(final BrowserQuery browserQuery) throws DotSecurityException, DotDataException;
 
 
 	/**
