@@ -2,7 +2,6 @@ import { of as observableOf, Observable } from 'rxjs';
 import { DebugElement, Component } from '@angular/core';
 import { DotFormSelectorComponent } from './dot-form-selector.component';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { By } from '@angular/platform-browser';
 import { PaginatorService } from '@services/paginator';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
@@ -11,6 +10,12 @@ import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { dotcmsContentTypeBasicMock } from '@tests/dot-content-types.mock';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { ButtonModule } from 'primeng/button';
+import { CoreWebServiceMock } from '@dotcms/app/test/core-web.service.mock';
+import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
+import { TableModule } from 'primeng/table';
+import { CoreWebService } from '@dotcms/dotcms-js';
 import { delay } from 'rxjs/operators';
 
 const mockContentType: DotCMSContentType = {
@@ -33,7 +38,7 @@ class TestHostComponent {
 }
 
 function getWithOffsetMock<T>(): Observable<T> {
-    return observableOf([mockContentType]).pipe(delay(10)) as Observable<T>;
+    return observableOf([mockContentType]).pipe(delay(0)) as Observable<T>;
 }
 
 const messageServiceMock = new MockDotMessageService({
@@ -50,16 +55,24 @@ describe('DotFormSelectorComponent', () => {
 
     beforeEach(
         waitForAsync(() => {
-            DOTTestBed.configureTestingModule({
+            TestBed.configureTestingModule({
                 declarations: [DotFormSelectorComponent, TestHostComponent],
                 providers: [
                     PaginatorService,
                     {
                         provide: DotMessageService,
                         useValue: messageServiceMock
-                    }
+                    },
+                    { provide: CoreWebService, useClass: CoreWebServiceMock }
                 ],
-                imports: [DotDialogModule, BrowserAnimationsModule]
+                imports: [
+                    DotDialogModule,
+                    BrowserAnimationsModule,
+                    HttpClientTestingModule,
+                    TableModule,
+                    DotPipesModule,
+                    ButtonModule
+                ]
             });
         })
     );
@@ -87,6 +100,7 @@ describe('DotFormSelectorComponent', () => {
         beforeEach(() => {
             spyOn(paginatorService, 'getWithOffset').and.callFake(getWithOffsetMock);
 
+            fixture.detectChanges();
             fixture.componentInstance.show = true;
             fixture.detectChanges();
         });
@@ -98,8 +112,12 @@ describe('DotFormSelectorComponent', () => {
                 pTableComponent = de.query(By.css('p-table'));
             });
 
-            it('should have one', () => {
-                expect(pTableComponent).toBeTruthy();
+            it('should have one', (done) => {
+                setTimeout(() => {
+                    fixture.detectChanges();
+                    expect(pTableComponent).toBeTruthy();
+                    done();
+                }, 0);
             });
         });
 
@@ -128,6 +146,8 @@ describe('DotFormSelectorComponent', () => {
                     spyOn(component.shutdown, 'emit');
 
                     fixture.componentInstance.show = true;
+                    paginatorService.totalRecords = 1;
+                    paginatorService.paginationPerPage = 1;
                     fixture.detectChanges();
                 });
 
@@ -138,16 +158,21 @@ describe('DotFormSelectorComponent', () => {
                     expect(component.shutdown.emit).toHaveBeenCalledWith(true);
                 });
 
-                xit('trigger event when click select button', async () => {
-                    fixture.detectChanges();
-                    await fixture.whenStable();
-
-                    const button = de.query(By.css('.form-selector__button'));
-                    button.triggerEventHandler('click', null);
-
-                    expect(component.pick.emit).toHaveBeenCalledWith(mockContentType);
+                it('trigger event when click select button', (done) => {
+                    setTimeout(() => {
+                        fixture.detectChanges();
+                        const button = de.query(By.css('.form-selector__button'));
+                        button.triggerEventHandler('click', null);
+                        expect(component.pick.emit).toHaveBeenCalledWith(mockContentType);
+                        done();
+                    }, 0);
                 });
             });
+        });
+
+        afterEach(() => {
+            fixture.componentInstance.show = false;
+            fixture.detectChanges();
         });
     });
 });
