@@ -159,9 +159,7 @@ const runTests = () => __awaiter(void 0, void 0, void 0, function* () {
     setup();
     startDeps();
     try {
-        const rt = yield runPostmanCollections();
-        copyOutputs();
-        return rt;
+        return yield runPostmanCollections();
     }
     catch (err) {
         core.setFailed(`Postman tests faiuled due to: ${err}`);
@@ -172,6 +170,7 @@ const runTests = () => __awaiter(void 0, void 0, void 0, function* () {
         };
     }
     finally {
+        copyOutputs();
         yield stopDeps();
     }
 });
@@ -180,13 +179,15 @@ exports.runTests = runTests;
  * Copies logs from docker volume to standard DotCMS location.
  */
 const copyOutputs = () => __awaiter(void 0, void 0, void 0, function* () {
+    yield exec.exec('docker', ['ps']);
+    yield exec.exec('docker', ['cp', 'docker_dotcms-app_1:/srv/dotserver/tomcat-9.0.60/logs/dotcms.log', logsFolder]);
     yield exec.exec('pwd', [], { cwd: logsFolder });
     yield exec.exec('ls', ['-las', '.'], { cwd: logsFolder });
     try {
         fs.copyFileSync(path.join(logsFolder, logFile), path.join(dotCmsRoot, logFile));
     }
     catch (err) {
-        core.warning(`Error copying log file: ${err}`);
+        core.error(`Error copying log file: ${err}`);
     }
 });
 /**
