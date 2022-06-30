@@ -216,7 +216,11 @@
     };
 
     var remotePublishUsers = function () {
-        pushHandler.showDialog( "users_", true );
+        if (window.selectedUser) {
+            pushHandler.showDialog( "user_" + window.selectedUser, true );
+        }else{
+            pushHandler.showDialog( "users_", true );
+        }
     };
 
     var addToBundleUser = function () {
@@ -226,7 +230,13 @@
     };
 
     var addToBundleUsers = function () {
-        pushHandler.showAddToBundleDialog("users_", '<%=LanguageUtil.get(pageContext, "Add-To-Bundle")%>', true);
+
+        if (window.selectedUser) {
+            pushHandler.showAddToBundleDialog("user_" + window.selectedUser, '<%=LanguageUtil.get(pageContext, "Add-To-Bundle")%>', true);
+        }else{
+            pushHandler.showAddToBundleDialog("users_", '<%=LanguageUtil.get(pageContext, "Add-To-Bundle")%>', true);
+        }
+
     };
 
 	var filterUsersHandler;
@@ -293,6 +303,8 @@
 		if(userChanged && currentUser && userId != currentUser.id &&
 			!confirm(abondonUserChangesConfirm))
 			return;
+
+        window.selectedUser = userId;
 		dojo.byId('userProfileTabs').style.display = 'none';
 		dojo.byId('loadingUserProfile').style.display = '';
 	    dojo.byId('gravatarTextHolder').display='none';
