@@ -124,15 +124,15 @@ function setTestmoOutputs {
   local testmo_run_id=$(extractTestmoRunId)
 
   echo "Run ID: ${testmo_run_id}"
-  echo "::set-output name=testmo_run_id::${testmo_run_id}"
+  setOutput testmo_run_id ${testmo_run_id}
 
   local setReport=${1}
   if [[ "${setReport}" == 'true' ]]; then
     local tests_report_url="${INPUT_TESTMO_URL}/automation/runs/view/${testmo_run_id}"
     echo "Tests report URL: ${tests_report_url}"
-    echo "::set-output name=tests_report_url::${tests_report_url}"
+    setOutput tests_report_url ${tests_report_url}
     if [[ "${INPUT_TEST_TYPE}" ==  'integration' && -n "${INPUT_CI_LABEL}" ]]; then
-      echo "::set-output name=${INPUT_CI_LABEL}_tests_report_url::${tests_report_url}"
+      setOutput ${INPUT_CI_LABEL}_tests_report_url ${tests_report_url}
     fi
   fi
 }

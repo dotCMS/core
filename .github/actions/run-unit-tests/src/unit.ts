@@ -59,7 +59,12 @@ export const runTests = async (cmd: Command): Promise<number> => {
     Running unit tests
     ==================`)
   core.info(`Executing command: ${cmd.cmd} ${cmd.args.join(' ')}`)
-  return await exec.exec(cmd.cmd, cmd.args, {cwd: cmd.workingDir})
+  try {
+    return await exec.exec(cmd.cmd, cmd.args, {cwd: cmd.workingDir})
+  } catch (err) {
+    core.setFailed(`Unit tests failed due to: ${err}`)
+    return 127
+  }
 }
 
 /**
