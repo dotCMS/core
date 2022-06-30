@@ -329,3 +329,4 @@ This maintenance release includes the following code fixes:
 **Release-5.3.8.13**
 
 168. https://github.com/dotCMS/core/issues/22478 : NormalizationFilter does not set javax.servlet.forward.request_uri #22478
+169. https://github.com/dotCMS/core/issues/22498 : Normalization filter is too aggressive #22498
