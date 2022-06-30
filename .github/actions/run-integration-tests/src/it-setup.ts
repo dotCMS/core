@@ -125,7 +125,7 @@ const appendProperties = (propertyMap: Map<string, string>) => {
     core.info(`Appending properties to ${file.file}`)
     const line = file.lines.join('\n')
     core.info(`Appeding properties:\n ${line}`)
-    fs.appendFileSync(file.file, line, {encoding: 'utf8', flag: 'a+', mode: 0o666})
+    fs.appendFileSync(file.file, `\n${line}`, {encoding: 'utf8', flag: 'a+', mode: 0o666})
   }
 }
 

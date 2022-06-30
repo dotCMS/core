@@ -4,6 +4,7 @@ interface TestsStatus {
   status?: string
   reportUrl?: string
   logUrl?: string
+  testmoReportUrl?: string
 }
 
 interface TypeLabels {
@@ -22,8 +23,8 @@ export interface OverallTestsStatus {
 const inputTypes = ['unit', 'integration_postgres', 'integration_mssql', 'postman']
 const typeLabels: TypeLabels = {
   unit: 'Unit Tests',
-  integration_postgres: 'Integration Postgres Tests',
-  integration_mssql: 'Integration MSSQL Tests',
+  integration_postgres: 'Integration Tests [Postgres]',
+  integration_mssql: 'Integration Tests [MSSQL]',
   postman: 'Postman Tests'
 }
 const PASSED = 'PASSED'
@@ -32,7 +33,14 @@ const FAILED = 'FAILED'
 export const aggregate = (): OverallTestsStatus => {
   let status = PASSED
   let color = '#5E7D00'
+
   const messages = []
+
+  const slackUser = resolveSlackUser()
+  if (slackUser) {
+    messages.push(`Hey <@${slackUser}>, your tests have run:`)
+  }
+
   for (const type of inputTypes) {
     const testsStatus = resolveInputs(type)
     if (status === PASSED && (!testsStatus.status || testsStatus.status === FAILED)) {
@@ -40,15 +48,17 @@ export const aggregate = (): OverallTestsStatus => {
       color = '#ff2400'
     }
 
-    let emoji = testsStatus.status === PASSED ? ':sunny: ' : ':thunder_cloud_and_rain: '
-    if (!testsStatus.reportUrl) {
-      emoji = ''
-    }
-    const reportUrl = testsStatus.reportUrl || 'not available'
-    const logUrl = testsStatus.logUrl || 'not available'
-    messages.push(`${emoji}${typeLabels[type as keyof TypeLabels]}:`)
-    messages.push(`Report: ${reportUrl}`)
-    messages.push(`Log: ${logUrl}`)
+    const emoji = testsStatus.status === PASSED ? ':sunny: ' : ':thunder_cloud_and_rain: '
+    const reportUrls = [
+      testsStatus.reportUrl ? `<${testsStatus.reportUrl}|Github>` : '',
+      testsStatus.testmoReportUrl ? `<${testsStatus.testmoReportUrl}|Testmo>` : ''
+    ].filter(url => !!url)
+    const logUrl = testsStatus.logUrl || ''
+    const message = `${emoji}*${typeLabels[type as keyof TypeLabels]}*`
+    const reportChunk = reportUrls.length > 0 ? `${reportUrls.join(' | ')}` : 'Report unavailable'
+    const logChunk = logUrl ? `<${logUrl}|Log>` : 'Log unavailable'
+
+    messages.push(`${message}: ${reportChunk} | ${logChunk}`)
   }
 
   return {
@@ -61,8 +71,19 @@ export const aggregate = (): OverallTestsStatus => {
 const resolveInputs = (type: string): TestsStatus => {
   return {
     status: core.getInput(`${type}_tests_results_status`),
-    reportUrl:
-      core.getInput(`testmo_${type}_tests_results_report_url`) || core.getInput(`${type}_tests_results_report_url`),
-    logUrl: core.getInput(`${type}_tests_results_log_url`)
+    reportUrl: core.getInput(`${type}_tests_results_report_url`),
+    logUrl: core.getInput(`${type}_tests_results_log_url`),
+    testmoReportUrl: core.getInput(`testmo_${type}_tests_results_report_url`)
   }
+}
+
+const resolveSlackUser = (): string => {
+  const githubUser = core.getInput('github_user') || ''
+  core.info(`Detected user ${githubUser}`)
+  const confStr = core.getInput('github_slack_conf') || '{}'
+  const githubSlackConf = JSON.parse(confStr)
+  core.info(`Provided conf:\n${confStr}`)
+  const resolved = githubSlackConf[githubUser] || ''
+  core.info(`Resolved slack user id ${resolved}`)
+  return resolved
 }
