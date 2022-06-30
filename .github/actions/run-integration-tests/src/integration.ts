@@ -2,6 +2,7 @@ import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as path from 'path'
 import * as setup from './it-setup'
+// import * as shelljs from 'shelljs'
 
 /**
  * Based on dbType resolves the ci index
@@ -32,7 +33,7 @@ const ciIndex = resolveCiIndex()
 export interface Command {
   cmd: string
   args: string[]
-  workingDir?: string
+  workingDir: string
   outputDir?: string
   reportDir?: string
   ciIndex?: number
@@ -105,9 +106,9 @@ export const runTests = async (cmd: Command): Promise<number> => {
     =======================================
     Starting integration tests dependencies
     =======================================`)
-  execCmd(START_DEPENDENCIES_CMD)
+  execCmdAsync(START_DEPENDENCIES_CMD)
 
-  await waitFor(30, `ES and ${dbType}`)
+  await waitFor(60, `ES and ${dbType}`)
 
   // Executes ITs
   resolveParams(cmd)
@@ -124,7 +125,8 @@ export const runTests = async (cmd: Command): Promise<number> => {
       ===========================================`)
     return itCode
   } catch (err) {
-    throw err
+    core.setFailed(`Running integration tests failed due to ${err}`)
+    return 127
   } finally {
     stopDeps()
   }
@@ -246,7 +248,7 @@ const waitFor = async (wait: number, startLabel: string, endLabel?: string) => {
   core.info(`Waiting on ${finalLabel} loading has ended`)
 }
 
-const execCmd = async (cmd: Command): Promise<number> => {
+const printCmd = (cmd: Command) => {
   let message = `Executing cmd: ${cmd.cmd} ${cmd.args.join(' ')}`
   if (cmd.workingDir) {
     message += `\ncwd: ${cmd.workingDir}`
@@ -254,7 +256,16 @@ const execCmd = async (cmd: Command): Promise<number> => {
   if (cmd.env) {
     message += `\nenv: ${JSON.stringify(cmd.env, null, 2)}`
   }
-
   core.info(message)
-  return exec.exec(cmd.cmd, cmd.args, {cwd: cmd.workingDir, env: cmd.env})
+}
+
+const execCmd = async (cmd: Command): Promise<number> => {
+  printCmd(cmd)
+  return await exec.exec(cmd.cmd, cmd.args, {cwd: cmd.workingDir, env: cmd.env})
+}
+
+const execCmdAsync = (cmd: Command) => {
+  printCmd(cmd)
+  //shelljs.exec([cmd.cmd, ...cmd.args].join(' '), {async: true})
+  exec.exec(cmd.cmd, cmd.args, {cwd: cmd.workingDir, env: cmd.env})
 }

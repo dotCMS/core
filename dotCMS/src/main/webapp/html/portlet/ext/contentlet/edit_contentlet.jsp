@@ -12,7 +12,7 @@
 <%@page import="com.dotmarketing.portlets.categories.business.CategoryAPI"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.containers.model.Container"%>
-<%@page import="com.dotmarketing.portlets.contentlet.struts.ContentletForm"%>
+<%@page import="com.dotmarketing.portlets.contentlet.struts.ContentletForm"%> 
 <%@page import="com.dotmarketing.portlets.structure.model.ContentletRelationships"%>
 <%@page import="com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords"%>
 <%@page import="com.dotmarketing.portlets.categories.model.Category"%>
@@ -46,8 +46,42 @@
 
 </style>
 
+<script type="text/javascript">
 
+	const relationsName = [];
 
+	function waitForRelation(selectors = []) {
+		return new Promise(resolve => {
+			if (allRelationsHaveLoad(selectors)) {
+				return resolve(true);
+			}
+
+			const observer = new MutationObserver(mutations => {
+				if (allRelationsHaveLoad(selectors)) {
+					resolve(true);
+					observer.disconnect();
+				}
+			});
+
+			observer.observe(document.body, {
+				childList: true,
+				subtree: true
+			});
+		});
+	}
+
+	function allRelationsHaveLoad(selectors = []) {
+		let count = 0;
+		selectors.forEach((selector) => {
+			// Check that the Relation field exist.
+			if(document.querySelector(selector)) {
+				count++;
+			}
+		});
+		// Check all the Relation fields exist.
+		return count  === selectors.length;
+	}
+</script>
 
 
 
@@ -70,6 +104,7 @@
 		copyOptions = ((String) request.getParameter("_copyOptions"))==null?"":(String) request.getParameter("_copyOptions");
 	}
 	//Content structure or user selected structure
+
 	Structure structure = contentletForm.getStructure();
 	if(structure==null){
 	    structure=new StructureTransformer( APILocator.getContentTypeAPI(user).findDefault()).asStructure();
@@ -95,6 +130,8 @@
 	if (!InodeUtils.isSet(structure.getInode())){
 		structure = StructureFactory.getStructureByInode(request.getParameter("sibblingStructure"));
 	}
+
+
 	List<Field> fields = new ArrayList<>(structure.getFields());
 
 	//Categories
@@ -349,6 +386,7 @@
 								%>
                                         <jsp:include page="/html/portlet/ext/contentlet/field/relationship_field.jsp"/>
                                 <%  } else {
+
                                         request.setAttribute("relationshipRecords", legacyRelationshipRecords); %>
                                         <jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp"/>
                                 <%  }
@@ -625,6 +663,8 @@
 		window.onbeforeunload=function(){return "";};
 		dojo.disconnect(onBeforeUnloadHandle);
 	}
+
+
 </script>
 
 <div id="saveContentErrors" style="display: none;" dojoType="dijit.Dialog" class="content-edit__dialog-error" title="<%= LanguageUtil.get(pageContext, "error") %>">
@@ -699,7 +739,7 @@ if(!InodeUtils.isSet(inode) && UtilMethods.isSet(sib) && !UtilMethods.isSet(popu
 		      	dijit.byId('populateDialog').hide();
 		     }
 			 dojo.addOnLoad(function () {
-                 dijit.byId('populateDialog').show();
+				dijit.byId('populateDialog').show();
              });
 		</script>
 

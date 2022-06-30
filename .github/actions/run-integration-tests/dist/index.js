@@ -44,6 +44,7 @@ const core = __importStar(__nccwpck_require__(186));
 const exec = __importStar(__nccwpck_require__(514));
 const path = __importStar(__nccwpck_require__(17));
 const setup = __importStar(__nccwpck_require__(957));
+// import * as shelljs from 'shelljs'
 /**
  * Based on dbType resolves the ci index
  *
@@ -119,8 +120,8 @@ const runTests = (cmd) => __awaiter(void 0, void 0, void 0, function* () {
     =======================================
     Starting integration tests dependencies
     =======================================`);
-    execCmd(START_DEPENDENCIES_CMD);
-    yield waitFor(30, `ES and ${dbType}`);
+    execCmdAsync(START_DEPENDENCIES_CMD);
+    yield waitFor(60, `ES and ${dbType}`);
     // Executes ITs
     resolveParams(cmd);
     core.info(`
@@ -137,7 +138,8 @@ const runTests = (cmd) => __awaiter(void 0, void 0, void 0, function* () {
         return itCode;
     }
     catch (err) {
-        throw err;
+        core.setFailed(`Running integration tests failed due to ${err}`);
+        return 127;
     }
     finally {
         stopDeps();
@@ -252,7 +254,7 @@ const waitFor = (wait, startLabel, endLabel) => __awaiter(void 0, void 0, void 0
     const finalLabel = endLabel || startLabel;
     core.info(`Waiting on ${finalLabel} loading has ended`);
 });
-const execCmd = (cmd) => __awaiter(void 0, void 0, void 0, function* () {
+const printCmd = (cmd) => {
     let message = `Executing cmd: ${cmd.cmd} ${cmd.args.join(' ')}`;
     if (cmd.workingDir) {
         message += `\ncwd: ${cmd.workingDir}`;
@@ -261,8 +263,16 @@ const execCmd = (cmd) => __awaiter(void 0, void 0, void 0, function* () {
         message += `\nenv: ${JSON.stringify(cmd.env, null, 2)}`;
     }
     core.info(message);
-    return exec.exec(cmd.cmd, cmd.args, { cwd: cmd.workingDir, env: cmd.env });
+};
+const execCmd = (cmd) => __awaiter(void 0, void 0, void 0, function* () {
+    printCmd(cmd);
+    return yield exec.exec(cmd.cmd, cmd.args, { cwd: cmd.workingDir, env: cmd.env });
 });
+const execCmdAsync = (cmd) => {
+    printCmd(cmd);
+    //shelljs.exec([cmd.cmd, ...cmd.args].join(' '), {async: true})
+    exec.exec(cmd.cmd, cmd.args, { cwd: cmd.workingDir, env: cmd.env });
+};
 
 
 /***/ }),
@@ -396,7 +406,7 @@ const appendProperties = (propertyMap) => {
         core.info(`Appending properties to ${file.file}`);
         const line = file.lines.join('\n');
         core.info(`Appeding properties:\n ${line}`);
-        fs.appendFileSync(file.file, line, { encoding: 'utf8', flag: 'a+', mode: 0o666 });
+        fs.appendFileSync(file.file, `\n${line}`, { encoding: 'utf8', flag: 'a+', mode: 0o666 });
     }
 };
 /**
@@ -578,6 +588,15 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(186));
 const fs = __importStar(__nccwpck_require__(147));
@@ -587,40 +606,23 @@ const dbType = core.getInput('db_type');
 /**
  * Main entry point for this action.
  */
-const run = () => {
+const run = () => __awaiter(void 0, void 0, void 0, function* () {
     core.info("Running Core's integration tests");
     const cmd = integration.COMMANDS[buildEnv];
     if (!cmd) {
         core.error('Cannot resolve build tool, aborting');
         return;
     }
+    const exitCode = yield integration.runTests(cmd);
+    const skipReport = !(cmd.outputDir && fs.existsSync(cmd.outputDir));
     setOutput('tests_results_location', cmd.outputDir);
     setOutput('tests_results_report_location', cmd.reportDir);
     setOutput('ci_index', cmd.ciIndex);
-    integration
-        .runTests(cmd)
-        .then(exitCode => {
-        const results = {
-            testsRunExitCode: exitCode,
-            testResultsLocation: cmd.outputDir,
-            skipResultsReport: false
-        };
-        core.info(`Integration test results:\n${JSON.stringify(results)}`);
-        setOutput('tests_results_status', exitCode === 0 ? 'PASSED' : 'FAILED');
-        setOutput('tests_results_skip_report', false);
-        setOutput(`${dbType}_tests_results_status`, exitCode === 0 ? 'PASSED' : 'FAILED');
-        setOutput(`${dbType}_tests_results_skip_report`, false);
-    })
-        .catch(reason => {
-        const messg = `Running integration tests failed due to ${reason}`;
-        const skipResults = !!cmd.outputDir && !fs.existsSync(cmd.outputDir);
-        setOutput('tests_results_status', 'FAILED');
-        setOutput('tests_results_skip_report', skipResults);
-        setOutput(`${dbType}_tests_results_status`, 'FAILED');
-        setOutput(`${dbType}_tests_results_skip_report`, skipResults);
-        core.setFailed(messg);
-    });
-};
+    setOutput('tests_results_status', exitCode === 0 ? 'PASSED' : 'FAILED');
+    setOutput('tests_results_skip_report', skipReport);
+    setOutput(`${dbType}_tests_results_status`, exitCode === 0 ? 'PASSED' : 'FAILED');
+    setOutput(`${dbType}_tests_results_skip_report`, skipReport);
+});
 const setOutput = (name, value) => {
     const val = value === undefined ? '' : value;
     core.notice(`Setting output '${name}' with value: '${val}'`);
