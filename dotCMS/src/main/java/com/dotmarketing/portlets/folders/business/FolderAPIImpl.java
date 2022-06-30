@@ -3,7 +3,6 @@ package com.dotmarketing.portlets.folders.business;
 import static com.dotmarketing.business.APILocator.getPermissionAPI;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 import static com.liferay.util.StringPool.BLANK;
-import static com.liferay.util.StringPool.FORWARD_SLASH;
 
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
@@ -334,7 +333,7 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		folderFactory.copy(folderToCopy, newParentFolder);
 
-		this.systemEventsAPI.pushAsync(SystemEventType.COPY_FOLDER, new Payload(folderToCopy, Visibility.EXCLUDE_OWNER,
+		this.systemEventsAPI.pushAsync(SystemEventType.COPY_FOLDER, new Payload(folderToCopy.getMap(), Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
@@ -354,7 +353,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		validateFolderName(folderToCopy);
 		folderFactory.copy(folderToCopy, newParentHost);
 
-		this.systemEventsAPI.pushAsync(SystemEventType.COPY_FOLDER, new Payload(folderToCopy, Visibility.EXCLUDE_OWNER,
+		this.systemEventsAPI.pushAsync(SystemEventType.COPY_FOLDER, new Payload(folderToCopy.getMap(), Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
@@ -472,7 +471,7 @@ public class FolderAPIImpl implements FolderAPI  {
 				Logger.debug(getClass(), "Pushing async events: " + path);
 			}
 
-			this.systemEventsAPI.pushAsync(SystemEventType.DELETE_FOLDER, new Payload(folder, Visibility.EXCLUDE_OWNER,
+			this.systemEventsAPI.pushAsync(SystemEventType.DELETE_FOLDER, new Payload(folder.getMap(), Visibility.EXCLUDE_OWNER,
 					new ExcludeOwnerVerifierBean(user.getUserId(),
 							new VisibilityRoles(VisibilityRoles.Operator.OR, roles), Visibility.ROLES)));
 
@@ -587,12 +586,18 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 	}
 
-	@Override
+	/**
+	 * Saves a folder
+	 *
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 * @throws DotStateException
+	 */
 	@WrapInTransaction
 	public void save(final Folder folder, final String existingId,
 					 final User user, final boolean respectFrontEndPermissions) throws DotDataException, DotStateException, DotSecurityException {
 
-		final Identifier existingID = APILocator.getIdentifierAPI().find(folder.getIdentifier());
+		Identifier existingID = APILocator.getIdentifierAPI().find(folder.getIdentifier());
 		if(existingID ==null || !UtilMethods.isSet(existingID.getId())){
 			throw new DotStateException("Folder must already have an identifier before saving");
 		}
@@ -603,15 +608,13 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 
 		validateFolderName(folder);
-		if (UtilMethods.isNotSet(folder.getTitle())) {
-			folder.setTitle(existingID.getAssetName());
-		}
-		final Host folderSite = APILocator.getHostAPI().find(folder.getHostId(), user, respectFrontEndPermissions);
-		final Folder parentFolder = findFolderByPath(existingID.getParentPath(), existingID.getHostId(), user, respectFrontEndPermissions);
-		final Permissionable parent = existingID.getParentPath().equals(FORWARD_SLASH) ? folderSite : parentFolder;
 
-		if (parent == null || UtilMethods.isNotSet(parent.getPermissionId())) {
-			throw new DotStateException("No Parent Folder Found for id: " + existingID.getParentPath());
+		Host host = APILocator.getHostAPI().find(folder.getHostId(), user, respectFrontEndPermissions);
+		Folder parentFolder = findFolderByPath(existingID.getParentPath(), existingID.getHostId(), user, respectFrontEndPermissions);
+		Permissionable parent = existingID.getParentPath().equals("/")?host:parentFolder;
+
+		if(parent ==null){
+			throw new DotStateException("No Folder Found for id: " + existingID.getParentPath());
 		}
 		if (!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user,respectFrontEndPermissions)
 				|| !permissionAPI.doesUserHavePermissions(PermissionableType.FOLDERS, PermissionAPI.PERMISSION_EDIT, user)) {
@@ -619,7 +622,9 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new AddContentToFolderPermissionException(userId, parentFolder.getPath());
 		}
 
-		final boolean isNew = folder.getInode() == null;
+		boolean isNew = folder.getInode() == null;
+
+
 		//if the folder was renamed, we will need to create a new identifier
 		if (!folder.getName().equals(existingID.getAssetName())){
 			folderFactory.renameFolder(folder, folder.getName(), user, respectFrontEndPermissions);
@@ -634,8 +639,8 @@ public class FolderAPIImpl implements FolderAPI  {
 			CacheLocator.getNavToolCache()
 					.removeNavByPath(existingID.getHostId(), existingID.getParentPath());
 		}
-        final SystemEventType systemEventType = isNew ? SystemEventType.SAVE_FOLDER : SystemEventType.UPDATE_FOLDER;
-		systemEventsAPI.pushAsync(systemEventType, new Payload(folder, Visibility.EXCLUDE_OWNER,
+        SystemEventType systemEventType = isNew ? SystemEventType.SAVE_FOLDER : SystemEventType.UPDATE_FOLDER;
+		systemEventsAPI.pushAsync(systemEventType, new Payload(folder.getMap(), Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
@@ -847,7 +852,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 		boolean move = folderFactory.move(folderToMove, newParentFolder);
 
-		this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FOLDER, new Payload(folderToMove, Visibility.EXCLUDE_OWNER,
+		this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FOLDER, new Payload(folderToMove.getMap(), Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
 		return move;
@@ -969,9 +974,10 @@ public class FolderAPIImpl implements FolderAPI  {
 		});
 	}
 
-	private void sendMoveFolderSystemEvent (final Folder folderToMove, final User user) throws DotDataException {
+	private void sendMoveFolderSystemEvent (final Folder folderToMove, final User user)
+			throws DotDataException, DotSecurityException {
 
-		this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FOLDER, new Payload(folderToMove, Visibility.EXCLUDE_OWNER,
+		this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FOLDER, new Payload(folderToMove.getMap(), Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
