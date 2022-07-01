@@ -44,6 +44,7 @@ import java.util.concurrent.*;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.felix.framework.OSGIUtil;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * The main purpose of this class is to determine all possible content
@@ -307,6 +308,10 @@ public class DependencyManager {
 									"Plugin id: %s is not present as a jar, not pushed.",
 									asset.getAsset() != null ? asset.getAsset() : "N/A"));
 				}
+			} else if (asset.getType().equals(PusheableAsset.USER.getType())) {
+				final String userID = getUserID(asset);
+				final User user = APILocator.getUserAPI().loadUserById(userID);
+				config.add(user, PusheableAsset.USER, ManifestReason.INCLUDE_BY_USER.getMessage());
 			}
 		}
 
@@ -337,6 +342,14 @@ public class DependencyManager {
 				throw new DotBundleException(rootCause.getMessage(), (Exception) rootCause);
 			}
 		}
+	}
+
+	@NotNull
+	private String getUserID(PublishQueueElement asset) {
+		final String assetKey = asset.getAsset();
+		final int indexOf = assetKey.indexOf("_") + 1;
+		final String userID = assetKey.substring(indexOf);
+		return userID;
 	}
 
 	private <T> void add(final T asset, final PusheableAsset pusheableAsset) {
@@ -421,7 +434,10 @@ public class DependencyManager {
 		} else if (Plugin.class.isInstance(asset)) {
 			final Plugin plugin = Plugin.class.cast(asset);
 			return plugin.getId();
-		}else {
+		} else if (User.class.isInstance(asset)) {
+			final User user = User.class.cast(asset);
+			return user.getUserId();
+		} else {
 			throw new IllegalArgumentException("Not allowed: " + asset.getClass().getName());
 		}
 	}
