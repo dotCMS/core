@@ -25,10 +25,12 @@ export function DotBubbleMenuExtension(viewContainerRef: ViewContainerRef) {
     return BubbleMenu.extend<BubbleMenuOptions>({
         // Default Options
         addOptions(): BubbleMenuOptions {
+
             return {
                 element: null,
                 tippyOptions: defaultTippyOptions,
                 pluginKey: 'bubbleMenu',
+                // @ts-ignore
                 shouldShow: shouldShowBubbleMenu
             };
         },

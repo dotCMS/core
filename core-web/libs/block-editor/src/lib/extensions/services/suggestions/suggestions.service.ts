@@ -19,7 +19,8 @@ export class SuggestionsService {
     }
 
     getContentTypes(filter = '', allowedTypes = ''): Observable<DotCMSContentType[]> {
-        return this.http
+        // @ts-ignore
+      return this.http
             .post(`/api/v1/contenttype/_filter`, {
                 filter: {
                     types: allowedTypes,
@@ -37,7 +38,8 @@ export class SuggestionsService {
         filter,
         currentLanguage
     }: ContentletFilters): Observable<DotCMSContentlet[]> {
-        return this.http
+        // @ts-ignore
+      return this.http
             .post('/api/content/_search', {
                 query: `+contentType:${contentType} +languageId:${currentLanguage} +deleted:false +working:true +catchall:*${filter}* `,
                 sort: 'modDate desc',

@@ -44,8 +44,7 @@
         "help": "nx help",
         "pretty-quick": "pretty-quick",
         "prepare": "is-ci || (pwd && cd ../ && pwd && husky install ui/.husky && cd ./ui)",
-        "test:ci": "npm run test dotcms-ui --browser=ChromeHeadlessCI",
-        "preinstall": "npx npm-force-resolutions"
+        "test:ci": "npm run test dotcms-ui --browser=ChromeHeadlessCI"
     },
     "private": false,
     "dependencies": {
@@ -129,17 +128,18 @@
         "@nxext/stencil": "^13.1.2",
         "@stencil/core": "^2.3.0",
         "@stencil/sass": "^1.5.2",
-        "@storybook/addon-actions": "^6.4.13",
-        "@storybook/addon-docs": "^6.5.7",
-        "@storybook/addon-essentials": "^6.5.7",
-        "@storybook/addon-links": "^6.5.7",
-        "@storybook/addons": "^6.5.7",
-        "@storybook/angular": "^6.5.7",
-        "@storybook/builder-webpack5": "^6.5.7",
-        "@storybook/html": "^6.5.7",
-        "@storybook/manager-webpack5": "^6.5.7",
+        "@storybook/addon-actions": "~6.4.12",
+        "@storybook/addon-docs": "~6.4.12",
+        "@storybook/addon-essentials": "~6.4.12",
+        "@storybook/addon-links": "~6.4.12",
+        "@storybook/addons": "~6.4.12",
+        "@storybook/angular": "~6.4.12",
+        "@storybook/builder-webpack5": "~6.4.12",
+        "@storybook/core-server": "~6.4.12",
+        "@storybook/html": "~6.4.12",
+        "@storybook/manager-webpack5": "~6.4.12",
         "@storybook/storybook-deployer": "^2.8.10",
-        "@storybook/theming": "^6.5.7",
+        "@storybook/theming": "~6.4.12",
         "@types/chart.js": "^2.9.32",
         "@types/googlemaps": "^3.43.3",
         "@types/jasmine": "~3.6.2",
@@ -156,6 +156,7 @@
         "eslint": "^8.17.0",
         "eslint-config-prettier": "^8.3.0",
         "eslint-plugin-cypress": "^2.12.1",
+        "eslint-plugin-storybook": "^0.5.13",
         "flatpickr": "^4.5.7",
         "gh-pages": "^3.1.0",
         "husky": "^8.0.1",
@@ -196,8 +197,7 @@
     "resolutions": {
         "glob-parent": "^6.0.1",
         "trim-newlines": "4.0.2",
-        "remark-parse": "^9.0.0",
-        "remark-mdx": "2.1.1",
-        "trim": "1.0.1"
+        "trim": "1.0.1",
+        "webpack": "^5.64.0"
     }
 }

@@ -75,6 +75,7 @@ export class FloatingActionsView {
         this.element.addEventListener('mousedown', this.mousedownHandler, { capture: true });
         this.editor.on('focus', () => {
             this.tippy.unmount();
+            // @ts-ignore
             this.update(this.editor.view);
         });
         this.element.style.visibility = 'visible';
@@ -146,12 +147,14 @@ export class FloatingActionsView {
         }
 
         this.tippy.setProps({
+            // @ts-ignore
             getReferenceClientRect: () => posToDOMRect(view, from, to)
         });
         this.show();
 
         if (next.open) {
             const { from, to } = this.editor.state.selection;
+            // @ts-ignore
             const rect = posToDOMRect(this.view, from, to);
 
             this.render().onStart({

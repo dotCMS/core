@@ -30,12 +30,18 @@ export const DotBubbleMenuPlugin = (options: DotBubbleMenuPluginProps) => {
     const component = options.component.instance;
     const changeTo = options.changeToComponent.instance;
 
+
+
     return new Plugin<DotBubbleMenuPluginProps>({
         key:
             typeof options.pluginKey === 'string'
                 ? new PluginKey(options.pluginKey)
                 : options.pluginKey,
-        view: (view) => new DotBubbleMenuPluginView({ view, ...options }),
+        view: (view) => new DotBubbleMenuPluginView({
+            // @ts-ignore
+             view,
+            ...options
+        }),
         props: {
             /**
              * Catch and handle the keydown in the plugin
@@ -117,6 +123,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
     }
 
     /* @Overrrider */
+    // @ts-ignore
     update(view: EditorView, oldState?: EditorState) {
         const { state, composing } = view;
         const { doc, selection } = state;
@@ -150,6 +157,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
         this.shouldShowProp = this.shouldShow?.({
             editor: this.editor,
+            // @ts-ignore
             view,
             state,
             oldState,
@@ -173,7 +181,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                         return getNodePosition(node, type);
                     }
                 }
-
+                // @ts-ignore
                 return posToDOMRect(view, from, to);
             }
         });
@@ -245,15 +253,19 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         const { markAction: action, active } = item;
         switch (action) {
             case 'bold':
+                // @ts-ignore
                 this.editor.commands.toggleBold();
                 break;
             case 'italic':
+                // @ts-ignore
                 this.editor.commands.toggleItalic();
                 break;
             case 'strike':
+                // @ts-ignore
                 this.editor.commands.toggleStrike();
                 break;
             case 'underline':
+                // @ts-ignore
                 this.editor.commands.toggleUnderline();
                 break;
             case 'left':
@@ -266,9 +278,11 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                 this.toggleTextAlign(action, active);
                 break;
             case 'bulletList':
+                // @ts-ignore
                 this.editor.commands.toggleBulletList();
                 break;
             case 'orderedList':
+                // @ts-ignore
                 this.editor.commands.toggleOrderedList();
                 break;
             case 'indent':
@@ -301,8 +315,10 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
     toggleTextAlign(alignment, active) {
         if (active) {
+            // @ts-ignore
             this.editor.commands.unsetTextAlign();
         } else {
+            // @ts-ignore
             this.editor.commands.setTextAlign(alignment);
         }
     }
@@ -311,27 +327,35 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         const changeToOptions = suggestionOptions.filter((item) => item.id != 'horizontalLine');
         const changeTopCommands = {
             heading1: () => {
+                // @ts-ignore
                 this.editor.chain().focus().clearNodes().setHeading({ level: 1 }).run();
             },
             heading2: () => {
+                // @ts-ignore
                 this.editor.chain().focus().clearNodes().setHeading({ level: 2 }).run();
             },
             heading3: () => {
+                // @ts-ignore
                 this.editor.chain().focus().clearNodes().setHeading({ level: 3 }).run();
             },
             paragraph: () => {
+                // @ts-ignore
                 this.editor.chain().focus().clearNodes().setParagraph().run();
             },
             orderedList: () => {
+                // @ts-ignore
                 this.editor.chain().focus().clearNodes().toggleOrderedList().run();
             },
             bulletList: () => {
+                // @ts-ignore
                 this.editor.chain().focus().clearNodes().toggleBulletList().run();
             },
             blockquote: () => {
+                // @ts-ignore
                 this.editor.chain().focus().clearNodes().toggleBlockquote().run();
             },
             codeBlock: () => {
+                // @ts-ignore
                 this.editor.chain().focus().clearNodes().toggleCodeBlock().run();
             }
         };

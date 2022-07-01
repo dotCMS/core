@@ -200,7 +200,7 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
                 render: () => {
                     return {
                         onStart,
-                        onKeyDown,
+                        //onKeyDown,
                         onExit
                     };
                 },
