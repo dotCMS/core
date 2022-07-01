@@ -127,16 +127,6 @@ function persistResults {
   fi
 }
 
-# Set common variables
-function setVars {
-  [[ ${INPUT_MODE} =~ ALL|RESULTS ]] && export INCLUDE_RESULTS=true
-  [[ ${INPUT_MODE} =~ ALL|LOGS ]] && export INCLUDE_LOGS=true
-
-  export COMMIT_TEST_RESULT_URL=${GITHUB_PERSIST_COMMIT_URL}/${REPORTS_LOCATION}/index.html
-  export BRANCH_TEST_RESULT_URL=${GITHUB_PERSIST_BRANCH_URL}/${REPORTS_LOCATION}/index.html
-  export TEST_LOG_URL=${GITHUB_PERSIST_COMMIT_URL}/logs/dotcms.log
-}
-
 # Creates a summary status file for test the specific INPUT_TEST_TYPE, INPUT_DB_TYPE in both commit and branch paths.
 #
 # $1: results status
@@ -175,19 +165,13 @@ function copyResults {
   fi
 }
 
-# Prints reports locations
-function printReportLocations {
-  echo "::notice::Pushing reports and/or logs to [${GITHUB_PERSIST_COMMIT_URL}]"
-  echo "::notice::Pushing reports and/or logs to [${GITHUB_PERSIST_BRANCH_URL}]"
-}
-
 # Set Github Action outputs to be used by other actions
 function setOutputs {
-  echo "::set-output name=tests_report_url::${COMMIT_TEST_RESULT_URL}"
-  echo "::set-output name=test_logs_url::${TEST_LOG_URL}"
+  setOutput tests_report_url ${COMMIT_TEST_RESULT_URL}
+  setOutput test_logs_url ${TEST_LOG_URL}
   if [[ "${INPUT_TEST_TYPE}" == 'integration' ]]; then
-    echo "::set-output name=${INPUT_DB_TYPE}_tests_report_url::${COMMIT_TEST_RESULT_URL}"
-    echo "::set-output name=${INPUT_DB_TYPE}_test_logs_url::${TEST_LOG_URL}"
+    setOutput ${INPUT_DB_TYPE}_tests_report_url ${COMMIT_TEST_RESULT_URL}
+    setOutput ${INPUT_DB_TYPE}_test_logs_url ${TEST_LOG_URL}
   fi
 }
 
@@ -231,25 +215,35 @@ function printStatus {
 
 # More Env-Vars definition, specifically to results storage
 githack_url=$(resolveRepoPath ${TEST_RESULTS_GITHUB_REPO} | sed -e 's/github.com/raw.githack.com/')
+export OUTPUT_FOLDER="${INPUT_PROJECT_ROOT}/output"
+export REPORTS_LOCATION='reports/html'
+export REPORTS_FOLDER="${OUTPUT_FOLDER}/${REPORTS_LOCATION}"
+export LOGS_FOLDER="${OUTPUT_FOLDER}/logs"
 export BASE_STORAGE_URL="${githack_url}/$(urlEncode ${BUILD_ID})/projects/${INPUT_TARGET_PROJECT}"
 export STORAGE_JOB_COMMIT_FOLDER="$(resolveResultsPath ${BUILD_HASH})"
 export STORAGE_JOB_BRANCH_FOLDER="$(resolveResultsPath current)"
 export GITHUB_PERSIST_COMMIT_URL="${BASE_STORAGE_URL}/${STORAGE_JOB_COMMIT_FOLDER}"
 export GITHUB_PERSIST_BRANCH_URL="${BASE_STORAGE_URL}/${STORAGE_JOB_BRANCH_FOLDER}"
-export OUTPUT_FOLDER="${INPUT_PROJECT_ROOT}/output"
-export REPORTS_LOCATION='reports/html'
-export REPORTS_FOLDER="${OUTPUT_FOLDER}/${REPORTS_LOCATION}"
-export LOGS_FOLDER="${OUTPUT_FOLDER}/logs"
+export REPORT_PERSIST_COMMIT_URL="${GITHUB_PERSIST_COMMIT_URL}/${REPORTS_LOCATION}"
+export REPORT_PERSIST_BRANCH_URL="${GITHUB_PERSIST_BRANCH_URL}/${REPORTS_LOCATION}"
+export COMMIT_TEST_RESULT_URL=${REPORT_PERSIST_COMMIT_URL}/index.html
+export BRANCH_TEST_RESULT_URL=${REPORT_PERSIST_BRANCH_URL}/index.html
+export TEST_LOG_URL=${GITHUB_PERSIST_COMMIT_URL}/logs/dotcms.log
+[[ ${INPUT_MODE} =~ ALL|RESULTS ]] && export INCLUDE_RESULTS=true
+[[ ${INPUT_MODE} =~ ALL|LOGS ]] && export INCLUDE_LOGS=true
 
 echo "############
 Storage vars
 ############
+OUTPUT_FOLDER: ${OUTPUT_FOLDER}
+REPORTS_FOLDER: ${REPORTS_FOLDER}
+LOGS_FOLDER: ${LOGS_FOLDER}
 BASE_STORAGE_URL: ${BASE_STORAGE_URL}
 GITHUB_PERSIST_COMMIT_URL: ${GITHUB_PERSIST_COMMIT_URL}
 GITHUB_PERSIST_BRANCH_URL: ${GITHUB_PERSIST_BRANCH_URL}
 STORAGE_JOB_COMMIT_FOLDER: ${STORAGE_JOB_COMMIT_FOLDER}
 STORAGE_JOB_BRANCH_FOLDER: ${STORAGE_JOB_BRANCH_FOLDER}
-OUTPUT_FOLDER: ${OUTPUT_FOLDER}
-REPORTS_FOLDER: ${REPORTS_FOLDER}
-LOGS_FOLDER: ${LOGS_FOLDER}
+INPUT_MODE: ${INPUT_MODE}
+INCLUDE_RESULTS: ${INCLUDE_RESULTS}
+INCLUDE_LOGS: ${INCLUDE_LOGS}
 "

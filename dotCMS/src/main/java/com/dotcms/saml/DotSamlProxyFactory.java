@@ -131,20 +131,9 @@ public class DotSamlProxyFactory implements EventSubscriber<AppSecretSavedEvent>
 
                 if (null == this.samlServiceBuilder) {
 
-                    try {
-                        if (!OSGISystem.getInstance().isInitialized()) {
-                            Logger.warn(this.getClass(),
-                                    "OSGI Framework not initialized, trying to initialize...");
-                            OSGISystem.getInstance().initializeFramework();
-                        }
-                    } catch (Exception e) {
 
-                        Logger.error(this.getClass(), "Unable to initialized OSGI Framework", e);
-                    }
-
-                    if (OSGISystem.getInstance().isInitialized()) {
-                        try {
-
+                   OSGISystem.getInstance().initializeFramework();
+                       try {
                             this.samlServiceBuilder = OSGISystem.getInstance().getService(SamlServiceBuilder.class,
                                     OSGIConstants.BUNDLE_NAME_DOTCMS_SAML);
 
@@ -155,10 +144,7 @@ public class DotSamlProxyFactory implements EventSubscriber<AppSecretSavedEvent>
                                             SamlServiceBuilder.class,
                                             OSGIConstants.BUNDLE_NAME_DOTCMS_SAML), e);
                         }
-                    } else {
 
-                        Logger.error(this.getClass(), "OSGI Framework is not initialized, SAML couldn't start");
-                    }
                 }
             }
         }

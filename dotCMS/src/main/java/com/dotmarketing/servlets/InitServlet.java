@@ -244,9 +244,25 @@ public class InitServlet extends HttpServlet {
         // Tell the world we are started up
         System.setProperty(WebKeys.DOTCMS_STARTED_UP, "true");
 
-        //Initializing felix
+
+        //Initializing System felix
+        Logger.info(InitServlet.class,"Starting System OSGi Framework");
         OSGISystem.getInstance().initializeFramework();
-        OSGIUtil.getInstance().initializeFramework();
+        
+        //Initializing Client Felix
+        final Runnable task = () -> {
+            Logger.info(InitServlet.class,"Starting Client OSGi Framework");
+            OSGIUtil.getInstance().initializeFramework();
+        };
+        
+        if(Config.getBooleanProperty("START_CLIENT_OSGI_IN_SEPARATE_THREAD", true)) {
+            new Thread(task).start();
+        }else {
+            task.run();
+        }
+        
+        
+        
 
         // Record how long it took to start us up.
         try{

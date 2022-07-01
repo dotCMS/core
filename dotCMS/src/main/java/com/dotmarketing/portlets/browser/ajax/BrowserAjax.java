@@ -329,29 +329,6 @@ public class BrowserAjax {
 													   final boolean showArchived, final long languageId) throws
 			DotSecurityException, DotDataException {
 
-		return openFolderContent(parentId, sortBy, showArchived, false, languageId);
-	}
-
-	/**
-	 * Retrieves the contents living under a specific Folder so that they can be displayed in the UI.
-	 *
-	 * @param parentId     The ID of the {@link Folder} whose contents will be displayed.
-	 * @param sortBy       The order in which folder contents will be returned.
-	 * @param showArchived If archived contents must be included in the result set, set to {@code true}.
-	 * @param showShorties If the Shorty Identifier and Inode of every content in the Folder must be included in the
-	 *                     result set, set to {@code true}.
-	 * @param languageId   The Language ID of the contents that will be returned.
-	 *
-	 * @return The list of folder contents in the form of a Map.
-	 *
-	 * @throws DotSecurityException The {@link User} calling this operation does not have the required permissions to do
-	 *                              so.
-	 * @throws DotDataException     An error occurred when interacting with the data source.
-	 */
-	public List<Map<String, Object>> openFolderContent(final String parentId, final String sortBy,
-													   final boolean showArchived, final boolean showShorties,
-													   final long languageId) throws DotSecurityException,
-			DotDataException {
 		final WebContext ctx         = WebContextFactory.get();
 		final HttpSession session    = ctx.getSession();
 		String siteBrowserActiveFolderInode = null;
@@ -374,9 +351,10 @@ public class BrowserAjax {
         try {
         	// Only show folders if the parent is not a Site
         	final boolean showFolders = APILocator.getHostAPI().find(parentId,APILocator.systemUser(),false) == null;
-			final Map<String, Object> resultsMap =
-					getFolderContent(parentId, 0, -1, "", null, null, showArchived, !showFolders, false, showShorties,
-							this.lastSortBy, this.lastSortDirectionDesc, languageId);
+			// By default, return Shorty IDs for folder items
+			final boolean showShorties = Boolean.TRUE;
+			final Map<String, Object> resultsMap = getFolderContent(parentId, 0, -1, "", null, null, showArchived,
+					!showFolders, false, showShorties, this.lastSortBy, this.lastSortDirectionDesc, languageId);
             listToReturn = (List<Map<String, Object>>) resultsMap.get("list");
 		} catch (final NotFoundInDbException e){
 			Logger.error(this, String.format(

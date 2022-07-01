@@ -29,6 +29,15 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(186));
 const fs = __importStar(__nccwpck_require__(147));
@@ -36,7 +45,7 @@ const unit = __importStar(__nccwpck_require__(733));
 /**
  * Main entry point for this action.
  */
-const run = () => {
+const run = () => __awaiter(void 0, void 0, void 0, function* () {
     core.info("Running Core's unit tests");
     const buildEnv = core.getInput('build_env');
     const cmd = unit.COMMANDS[buildEnv];
@@ -44,28 +53,12 @@ const run = () => {
         core.error('Cannot resolve build tool, aborting');
         return;
     }
+    const exitCode = yield unit.runTests(cmd);
     setOutput('tests_results_location', cmd.outputDir);
     setOutput('tests_results_report_location', cmd.reportDir);
-    unit
-        .runTests(cmd)
-        .then(exitCode => {
-        const results = {
-            testsRunExitCode: exitCode,
-            testResultsLocation: cmd.outputDir,
-            skipResultsReport: false
-        };
-        core.info(`Unit test results:\n${JSON.stringify(results)}`);
-        setOutput('tests_results_status', exitCode === 0 ? 'PASSED' : 'FAILED');
-        setOutput('tests_results_skip_report', false);
-    })
-        .catch(reason => {
-        const messg = `Running unit tests failed due to ${reason}`;
-        const skipResults = !fs.existsSync(cmd.outputDir);
-        setOutput('tests_results_status', 'FAILED');
-        setOutput('tests_results_skip_report', skipResults);
-        core.setFailed(messg);
-    });
-};
+    setOutput('tests_results_status', exitCode === 0 ? 'PASSED' : 'FAILED');
+    setOutput('tests_results_skip_report', !fs.existsSync(cmd.outputDir));
+});
 const setOutput = (name, value) => {
     const val = value === undefined ? '' : value;
     core.notice(`Setting output '${name}' with value: '${val}'`);
@@ -159,7 +152,13 @@ const runTests = (cmd) => __awaiter(void 0, void 0, void 0, function* () {
     Running unit tests
     ==================`);
     core.info(`Executing command: ${cmd.cmd} ${cmd.args.join(' ')}`);
-    return yield exec.exec(cmd.cmd, cmd.args, { cwd: cmd.workingDir });
+    try {
+        return yield exec.exec(cmd.cmd, cmd.args, { cwd: cmd.workingDir });
+    }
+    catch (err) {
+        core.setFailed(`Unit tests failed due to: ${err}`);
+        return 127;
+    }
 });
 exports.runTests = runTests;
 /**

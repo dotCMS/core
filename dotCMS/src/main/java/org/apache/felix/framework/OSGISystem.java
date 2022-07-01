@@ -1,14 +1,13 @@
 package org.apache.felix.framework;
 
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.osgi.HostActivator;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
-import com.google.common.collect.ImmutableList;
-import com.liferay.util.StringPool;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringWriter;
+import java.net.URL;
+import java.util.Properties;
 import org.apache.felix.framework.util.FelixConstants;
 import org.apache.felix.main.AutoProcessor;
 import org.apache.felix.main.Main;
@@ -16,49 +15,49 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.launch.Framework;
-
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.StringWriter;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Map;
-import java.util.Properties;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import com.dotmarketing.osgi.HostActivator;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.google.common.collect.ImmutableList;
+import io.vavr.Lazy;
 
 /**
- * This OSGI framework only encapsulates the system osgi bundles (not the plugins, for them @see @{@link org.apache.felix.framework.OSGIUtil})
- * These bundles are: saml, tika, ...
+ * This OSGI framework only encapsulates the system osgi bundles (not the plugins, for
+ * them @see @{@link org.apache.felix.framework.OSGIUtil}) These bundles are: saml, tika, ...
+ * 
  * @author jsanca
  */
 public class OSGISystem {
 
-    private static final String OSGI_EXTRA_CONFIG_FILE_PATH_KEY = "sytem.OSGI_EXTRA_CONFIG_FILE_PATH_KEY";
+
     private static final String WEB_INF_FOLDER = "/WEB-INF";
     private static final String FELIX_BASE_DIR = "felix.base.dir";
-    private static final String FELIX_FRAMEWORK_STORAGE  = org.osgi.framework.Constants.FRAMEWORK_STORAGE;
-    private static final String AUTO_DEPLOY_DIR_PROPERTY =  AutoProcessor.AUTO_DEPLOY_DIR_PROPERTY;
+    private static final String FELIX_FRAMEWORK_STORAGE = org.osgi.framework.Constants.FRAMEWORK_STORAGE;
+    private static final String AUTO_DEPLOY_DIR_PROPERTY = AutoProcessor.AUTO_DEPLOY_DIR_PROPERTY;
     private static final String FELIX_FILEINSTALL_DIR = "felix.fileinstall.dir";
     private static final String FELIX_UNDEPLOYED_DIR = "felix.undeployed.dir";
     private static final String UTF_8 = "utf-8";
     private static final String PROPERTY_OSGI_PACKAGES_EXTRA = "org.osgi.framework.system.packages.extra";
-    private Framework felixFramework;
+    private final Framework felixFramework;
+    private final static Lazy<OSGISystem> instance = Lazy.of(OSGISystem::new);
 
     public static OSGISystem getInstance() {
-        return OSGISystem.OSGIUtilHolder.instance;
+        return instance.get();
     }
 
-    private static class OSGIUtilHolder{
-        private static OSGISystem instance = new OSGISystem();
+    private OSGISystem() {
+        this.felixFramework = buildFramework();
     }
+
+
+    public void initializeFramework() {
+        if(this.felixFramework==null) {
+            throw new RuntimeException("OSGi System Framework not initied");
+        }
+        Logger.debug(getClass(), ()->"OSGi System Framework OK");
+    }
+
+
 
     /**
      * Loads the default properties
@@ -72,10 +71,14 @@ public class OSGISystem {
 
         Logger.info(this, () -> "Felix System base dir: " + felixDirectory);
 
-        final String felixAutoDeployDirectory = Config.getStringProperty("system."+AUTO_DEPLOY_DIR_PROPERTY,  felixDirectory + File.separator + "bundle") ;
-        final String felixLoadDirectory =       Config.getStringProperty("system."+FELIX_FILEINSTALL_DIR,     felixDirectory + File.separator + "load") ;
-        final String felixUndeployDirectory =   Config.getStringProperty("system."+FELIX_UNDEPLOYED_DIR,      felixDirectory + File.separator + "undeployed") ;
-        final String felixCacheDirectory =      Config.getStringProperty("system."+FELIX_FRAMEWORK_STORAGE,   felixDirectory + File.separator + "felix-cache") ;
+        final String felixAutoDeployDirectory = Config.getStringProperty("system." + AUTO_DEPLOY_DIR_PROPERTY,
+                        felixDirectory + File.separator + "bundle");
+        final String felixLoadDirectory =
+                        Config.getStringProperty("system." + FELIX_FILEINSTALL_DIR, felixDirectory + File.separator + "load");
+        final String felixUndeployDirectory = Config.getStringProperty("system." + FELIX_UNDEPLOYED_DIR,
+                        felixDirectory + File.separator + "undeployed");
+        final String felixCacheDirectory = Config.getStringProperty("system." + FELIX_FRAMEWORK_STORAGE,
+                        felixDirectory + File.separator + "felix-cache");
 
         felixProps.put(FELIX_BASE_DIR, felixDirectory);
         felixProps.put(AUTO_DEPLOY_DIR_PROPERTY, felixAutoDeployDirectory);
@@ -104,63 +107,50 @@ public class OSGISystem {
      *
      * @return Framework
      */
-    public synchronized Framework initializeFramework() {
+    private Framework buildFramework() {
 
-        if(felixFramework != null) {
-
-            return felixFramework;
-        }
-
+        Logger.info(getClass(), "Starting: OSGi System Framework");
         // load all properties and set base directory
-        final Properties felixProps =  defaultProperties();
+        final Properties felixProps = defaultProperties();
 
         try {
 
-            // Set all OSGI Packages
-            String extraPackages;
-            try {
-                extraPackages = getExtraOSGIPackages();
-            } catch (IOException e) {
-                Logger.error(this, "Error loading the OSGI framework properties: " + e);
-                throw new RuntimeException(e);
-            }
 
             // Setting the OSGI extra packages property
-            felixProps.setProperty(PROPERTY_OSGI_PACKAGES_EXTRA, extraPackages);
+            felixProps.setProperty(PROPERTY_OSGI_PACKAGES_EXTRA,  getExtraOSGIPackages());
 
             // before init we have to check if any new bundle has been upload
             // Create an instance and initialize the framework.
             final FrameworkFactory factory = this.getFrameworkFactory();
-            felixFramework = factory.newFramework(felixProps);
-            felixFramework.init();
+            final Framework myFelixFrameWork = factory.newFramework(felixProps);
+            myFelixFrameWork.init();
+            AutoProcessor.process(felixProps, myFelixFrameWork.getBundleContext());
 
-            AutoProcessor.process(felixProps, felixFramework.getBundleContext());
+            myFelixFrameWork.start();
+            Logger.info(this, () -> "Started : OSGi System Framework");
 
-            felixFramework.start();
-            Logger.info(this, () -> "Osgi Felix System Framework started");
+
+            return myFelixFrameWork;
         } catch (Exception ex) {
-            felixFramework=null;
-            Logger.error(this, "Could not create OSGI SYSTEM framework: " + ex);
             throw new RuntimeException(ex);
         }
 
-        System.setProperty("system"+WebKeys.OSGI_ENABLED, "true");
 
-        return felixFramework;
     }
 
     /**
-     * Returns the packages inside the <strong>osgi-extra.conf</strong> and the
-     * osgi-extra-generate.conf files If neither of those files are there, it will generate the
-     * osgi-extra-generate.conf based off the classpath for the OSGI configuration property
-     * <strong>org.osgi.framework.system.packages.extra</strong>. <br/><br/> The property
-     * <strong>org.osgi.framework.system.packages.extra</strong> is use to set the list of packages
-     * the dotCMS context in going to expose to the OSGI context.
+     * Returns the packages inside the <strong>osgi-extra.conf</strong> and the osgi-extra-generate.conf
+     * files If neither of those files are there, it will generate the osgi-extra-generate.conf based
+     * off the classpath for the OSGI configuration property
+     * <strong>org.osgi.framework.system.packages.extra</strong>. <br/>
+     * <br/>
+     * The property <strong>org.osgi.framework.system.packages.extra</strong> is use to set the list of
+     * packages the dotCMS context in going to expose to the OSGI context.
      *
      * @return String
      * @throws IOException Any IOException
      */
-    public String getExtraOSGIPackages() throws IOException {
+    private String getExtraOSGIPackages() throws IOException {
 
         final StringWriter writer = new StringWriter();
 
@@ -175,9 +165,8 @@ public class OSGISystem {
             writer.flush();
         }
 
-        //Clean up the properties, it is better to keep it simple and in a standard format
-        return writer.toString().replaceAll("\\\n", "").
-                replaceAll("\\\r", "").replaceAll("\\\\", "");
+        // Clean up the properties, it is better to keep it simple and in a standard format
+        return writer.toString().replaceAll("\\\n", "").replaceAll("\\\r", "").replaceAll("\\\\", "");
     }
 
     /**
@@ -186,16 +175,16 @@ public class OSGISystem {
      * @return FrameworkFactory
      * @throws Exception Any Exception
      */
-    private static FrameworkFactory getFrameworkFactory() throws Exception {
+    private FrameworkFactory getFrameworkFactory() throws Exception {
 
         final URL url = Main.class.getClassLoader().getResource("META-INF/services/org.osgi.framework.launch.FrameworkFactory");
-        if ( url != null ) {
+        if (url != null) {
 
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream()))){
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream()))) {
                 for (String s = br.readLine(); s != null; s = br.readLine()) {
                     s = s.trim();
                     // Try to load first non-empty, non-commented line.
-                    if ((s.length() > 0) && (s.charAt( 0 ) != '#')) {
+                    if ((s.length() > 0) && (s.charAt(0) != '#')) {
                         Logger.info(OSGIUtil.class, "Loading Factory " + s);
                         return (FrameworkFactory) Class.forName(s).newInstance();
                     }
@@ -207,58 +196,22 @@ public class OSGISystem {
     }
 
 
-    /**
-     * Gets the base directory, fetching it from the real path on the servlet context.
-     * If not found, it tries to fetch it from configuration context.
-     * If still not found, it fetches it from the 'felix.base.dir' property
-     * If value is null an exception is thrown.
-     *
-     * @return String
-     */
-    public String getBaseDirectory() {
-
-        String baseDirectory = null;
-
-        if (this.isInitialized()) {
-            if (this.getConfig().containsKey(FELIX_BASE_DIR)) {
-                baseDirectory = (String) this.getConfig().get(FELIX_BASE_DIR);
-            }
-        }
-
-        if (!UtilMethods.isSet(baseDirectory)) {
-            baseDirectory = getFelixBaseDirFromConfig();
-        }
-
-        if (!UtilMethods.isSet(baseDirectory)) {
-            String errorMessage = "Base directory for the Felix framework is not found. Value is null";
-            Logger.error(this, errorMessage);
-
-            throw new RuntimeException(errorMessage);
-        }
-
-        return baseDirectory;
-    }
 
     private Framework getFelixFramework() {
         return this.felixFramework;
     }
 
-    public Map<String, Object> getConfig() {
-        return ((Felix) getFelixFramework()).getConfig();
-    }
 
     public Boolean isInitialized() {
-        return null != felixFramework ;
+        return true;
     }
 
     private String getFelixBaseDirFromConfig() {
 
         final String defaultBasePath = Config.CONTEXT.getRealPath(WEB_INF_FOLDER);
 
-        return new File(Config
-                .getStringProperty(FELIX_BASE_DIR,
-                        defaultBasePath + File.separator + "felix-system"))
-                .getAbsolutePath();
+        return new File(Config.getStringProperty(FELIX_BASE_DIR, defaultBasePath + File.separator + "felix-system"))
+                        .getAbsolutePath();
     }
 
     /**
@@ -272,32 +225,26 @@ public class OSGISystem {
 
         final Bundle foundBundle = findBundle(bundleName);
         if (null == foundBundle) {
-            throw new IllegalStateException(
-                    String.format("[%s] OSGI bundle NOT FOUND.", bundleName));
+            throw new IllegalStateException(String.format("[%s] OSGI bundle NOT FOUND.", bundleName));
         }
 
         final BundleContext bundleContext = foundBundle.getBundleContext();
         if (null == bundleContext) {
-            throw new IllegalStateException(
-                    String.format("OSGI bundle context NOT FOUND for bundle [%s]", bundleName));
+            throw new IllegalStateException(String.format("OSGI bundle context NOT FOUND for bundle [%s]", bundleName));
         }
 
-        //Getting the requested OSGI service reference
-        final ServiceReference serviceReference = bundleContext
-                .getServiceReference(serviceClass.getName());
+        // Getting the requested OSGI service reference
+        final ServiceReference serviceReference = bundleContext.getServiceReference(serviceClass.getName());
         if (null == serviceReference) {
-            throw new IllegalStateException(String.format(
-                    "[%s] Service Reference NOT FOUND.",
-                    serviceClass.getName()));
+            throw new IllegalStateException(String.format("[%s] Service Reference NOT FOUND.", serviceClass.getName()));
         }
 
         final T osgiBundleService;
         try {
-            //Service reference instance exposed through OSGI
+            // Service reference instance exposed through OSGI
             osgiBundleService = (T) bundleContext.getService(serviceReference);
         } catch (Exception e) {
-            throw new IllegalStateException(
-                    String.format("Error reading [%s] Service.", serviceClass.getName()), e);
+            throw new IllegalStateException(String.format("Error reading [%s] Service.", serviceClass.getName()), e);
         }
 
         return osgiBundleService;
@@ -312,7 +259,7 @@ public class OSGISystem {
 
         Bundle foundBundle = null;
 
-        //Get the list of existing bundles
+        // Get the list of existing bundles
         final Bundle[] bundles = this.getBundles();
         for (final Bundle bundle : bundles) {
             if (bundleName.equalsIgnoreCase(bundle.getSymbolicName())) {
