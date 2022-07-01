@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
-import { FormControl } from '@angular/forms';
+import { UntypedFormControl } from '@angular/forms';
 import { ServerSideFieldModel } from '../../services/ServerSideFieldModel';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { I18nService } from '../.././services/system/locale/I18n';
@@ -56,7 +56,7 @@ export class VisitorsLocationContainer {
     lng = 0;
     radius = 50000;
     comparisonValue = 'within';
-    comparisonControl: FormControl;
+    comparisonControl: UntypedFormControl;
     comparisonOptions: { value: string; label: Observable<string>; icon: string }[];
     fromLabel = 'of';
 

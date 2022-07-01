@@ -1,6 +1,6 @@
 import { Component, ViewChild } from '@angular/core';
 import { FieldProperty } from '../field-properties.model';
-import { FormGroup } from '@angular/forms';
+import { UntypedFormGroup } from '@angular/forms';
 import { DotTextareaContentComponent } from '@components/_common/dot-textarea-content/dot-textarea-content.component';
 
 @Component({
@@ -11,7 +11,7 @@ import { DotTextareaContentComponent } from '@components/_common/dot-textarea-co
 export class ValuesPropertyComponent {
     @ViewChild('value') value: DotTextareaContentComponent;
     property: FieldProperty;
-    group: FormGroup;
+    group: UntypedFormGroup;
     helpText: string;
 
     private validTextHelperClazz = [

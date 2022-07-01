@@ -4,7 +4,7 @@ import { DebugElement } from '@angular/core';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DOTTestBed } from '@tests/dot-test-bed';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { FormGroup, FormControl } from '@angular/forms';
+import { UntypedFormGroup, UntypedFormControl } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
 
@@ -36,8 +36,8 @@ describe('DataTypePropertyComponent', () => {
             fixture = DOTTestBed.createComponent(DataTypePropertyComponent);
             comp = fixture.componentInstance;
 
-            group = new FormGroup({
-                name: new FormControl('')
+            group = new UntypedFormGroup({
+                name: new UntypedFormControl('')
             });
 
             comp.group = group;
