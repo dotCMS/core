@@ -23,7 +23,13 @@ import net.jodah.failsafe.CircuitBreakerOpenException;
 
 public class CircuitBreakerUrlTest {
 
-    final static String goodUrl = "https://dotcms.com";
+    
+    
+    final static String goodUrl = "https://www.dotcms.com";
+    
+    
+    // this will redirect to https
+    final static String redirectUrl = "http://www.dotcms.com";
     final static String badUrl = "https://localhost:9999/test";
 
     final static String HEADER="X-MY-HEADER";
@@ -252,7 +258,29 @@ public class CircuitBreakerUrlTest {
 
 
     }
+    
+    
+    @Test(expected = BadRequestException.class)
+    public void disallowRedirects() throws Exception {
 
+        final String key = "testBreaker";
+        final int timeout = 2000;
+
+        CircuitBreaker breaker = CurcuitBreakerPool.getBreaker(key);
+        assert (breaker.isClosed());
+
+
+        new CircuitBreakerUrl(redirectUrl, timeout, breaker).doString();
+
+  
+
+
+    }
+    
+    
+    
+    
+    
     public void testMemory() throws Exception {
         System.gc();
 
