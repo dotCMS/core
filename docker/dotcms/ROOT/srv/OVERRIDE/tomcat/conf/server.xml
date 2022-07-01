@@ -99,8 +99,7 @@
         compressionMinSize="128"
         useSendfile="false"
         SSLEnabled="true"
-        keystoreFile="conf/server.keystore"
-        keystorePass="dotcms"
+        SSLCertificateFile="conf/local.dotcms.site.pem"
     />
 
 
