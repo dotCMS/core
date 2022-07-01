@@ -210,7 +210,7 @@ public class OSGISystem {
 
         final String defaultBasePath = Config.CONTEXT.getRealPath(WEB_INF_FOLDER);
 
-        return new File(Config.getStringProperty(FELIX_BASE_DIR, defaultBasePath + File.separator + "felix-system"))
+        return new File(Config.getStringProperty("system." +FELIX_BASE_DIR, defaultBasePath + File.separator + "felix-system"))
                         .getAbsolutePath();
     }
 

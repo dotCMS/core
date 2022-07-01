@@ -48,11 +48,12 @@ public class TikaUtils {
     private final ObjectMapper objectMapper = DotObjectMapperProvider.createDefaultMapper();
 
     private TikaProxyService tikaService;
-    private Boolean osgiInitialized;
+    private boolean osgiInitialized;
 
     public TikaUtils() throws DotDataException {
 
         OSGISystem.getInstance().initializeFramework();
+        osgiInitialized = true;
 
         //Search for the TikaServiceBuilder service instance expose through OSGI
         TikaServiceBuilder tikaServiceBuilder = null;

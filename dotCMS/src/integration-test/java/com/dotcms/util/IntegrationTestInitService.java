@@ -40,7 +40,6 @@ public class IntegrationTestInitService {
         try {
             if (initCompleted.compareAndSet(false, true)) {
                 ConfigTestHelper._setupFakeTestingContext();
-                OSGISystem.getInstance().initializeFramework();
 
                 CacheLocator.init();
                 FactoryLocator.init();
