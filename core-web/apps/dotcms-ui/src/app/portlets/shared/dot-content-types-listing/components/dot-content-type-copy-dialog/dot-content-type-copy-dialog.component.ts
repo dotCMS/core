@@ -10,7 +10,7 @@ import {
     ViewChild
 } from '@angular/core';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotCopyContentTypeDialogFormFields } from '@dotcms/dotcms-models';
 import { combineLatest, Observable, of } from 'rxjs';
@@ -38,10 +38,10 @@ export class DotContentTypeCopyDialogComponent implements OnInit, AfterViewCheck
 
     @Output()
     validFormFields = new EventEmitter<DotCopyContentTypeDialogFormFields>();
-    form!: FormGroup;
+    form!: UntypedFormGroup;
 
     constructor(
-        private readonly fb: FormBuilder,
+        private readonly fb: UntypedFormBuilder,
         private readonly dotMessageService: DotMessageService,
         private readonly cd: ChangeDetectorRef
     ) {
@@ -49,11 +49,11 @@ export class DotContentTypeCopyDialogComponent implements OnInit, AfterViewCheck
     }
 
     get variableControl() {
-        return this.form.get('variable') as FormControl;
+        return this.form.get('variable') as UntypedFormControl;
     }
 
     get nameControl() {
-        return this.form.get('name') as FormControl;
+        return this.form.get('name') as UntypedFormControl;
     }
 
     /**

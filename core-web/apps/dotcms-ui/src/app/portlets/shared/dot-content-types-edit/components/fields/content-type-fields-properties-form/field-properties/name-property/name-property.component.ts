@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { FormGroup } from '@angular/forms/forms';
+import { FormGroup } from '@angular/forms';
 import { FieldProperty } from '../field-properties.model';
 
 @Component({

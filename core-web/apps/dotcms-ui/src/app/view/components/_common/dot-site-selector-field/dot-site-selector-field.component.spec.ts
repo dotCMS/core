@@ -5,7 +5,7 @@ import { DotSiteSelectorFieldComponent } from './dot-site-selector-field.compone
 import { SiteService } from '@dotcms/dotcms-js';
 import { SiteServiceMock } from '../../../../test/site-service.mock';
 import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormGroup, FormBuilder } from '@angular/forms';
+import { UntypedFormGroup, UntypedFormBuilder } from '@angular/forms';
 
 @Component({
     selector: 'dot-fake-form',
@@ -17,9 +17,9 @@ import { FormGroup, FormBuilder } from '@angular/forms';
     `
 })
 class FakeFormComponent {
-    form: FormGroup;
+    form: UntypedFormGroup;
 
-    constructor(private fb: FormBuilder) {
+    constructor(private fb: UntypedFormBuilder) {
         /*
             This should go in the ngOnInit but I don't want to detectChanges everytime for
             this fake test component

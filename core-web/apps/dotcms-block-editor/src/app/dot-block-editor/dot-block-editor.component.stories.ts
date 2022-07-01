@@ -25,7 +25,7 @@ import {
 
 export default {
     title: 'Block Editor'
-};
+}component: DotBlockEditorComponent,;
 
 export const primary = () => ({
     moduleMetadata: {
@@ -633,5 +633,4 @@ export const primary = () => ({
             BubbleMenuLinkFormComponent
         ]
     },
-    component: DotBlockEditorComponent
-});
+    });

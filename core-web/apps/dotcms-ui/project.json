@@ -1,6 +1,6 @@
 {
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
     "projectType": "application",
-    "root": "apps/dotcms-ui",
     "sourceRoot": "apps/dotcms-ui/src",
     "prefix": "dot",
     "targets": {
@@ -121,14 +121,12 @@
             }
         },
         "storybook": {
-            "executor": "@nrwl/storybook:storybook",
+            "executor": "@storybook/angular:start-storybook",
             "options": {
-                "uiFramework": "@storybook/angular",
                 "port": 4400,
-                "config": {
-                    "configFolder": "apps/dotcms-ui/.storybook"
-                },
-                "projectBuildConfig": "dotcms-ui"
+                "configDir": "apps/dotcms-ui/.storybook",
+                "browserTarget": "dotcms-ui:build",
+                "compodoc": false
             },
             "configurations": {
                 "ci": {
@@ -137,16 +135,14 @@
             }
         },
         "build-storybook": {
-            "executor": "@nrwl/storybook:build",
+            "executor": "@storybook/angular:build-storybook",
             "outputs": ["{options.outputPath}"],
             "options": {
-                "uiFramework": "@storybook/angular",
-                "outputPath": "dist-docs",
                 "deleteOutputPath": false,
-                "config": {
-                    "configFolder": "apps/dotcms-ui/.storybook"
-                },
-                "projectBuildConfig": "dotcms-ui"
+                "outputDir": "dist-docs",
+                "configDir": "apps/dotcms-ui/.storybook",
+                "browserTarget": "dotcms-ui:build",
+                "compodoc": false
             },
             "configurations": {
                 "ci": {

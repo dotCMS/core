@@ -12,8 +12,8 @@ import { ContentTypeFieldsPropertiesFormComponent } from './content-type-fields-
 import { ComponentFixture, waitForAsync, TestBed } from '@angular/core/testing';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import {
-    FormBuilder,
-    FormGroup,
+    UntypedFormBuilder,
+    UntypedFormGroup,
     ValidationErrors,
     Validators,
     ReactiveFormsModule
@@ -51,7 +51,7 @@ class TestDynamicFieldPropertyDirective {
     @Input()
     field: DotCMSContentTypeField;
     @Input()
-    group: FormGroup;
+    group: UntypedFormGroup;
 }
 
 @Injectable()
@@ -138,7 +138,7 @@ xdescribe('ContentTypeFieldsPropertiesFormComponent', () => {
                 ],
                 imports: [ReactiveFormsModule, DotPipesModule],
                 providers: [
-                    FormBuilder,
+                    UntypedFormBuilder,
                     ComponentFactoryResolver,
                     FieldPropertyService,
                     { provide: FieldPropertyService, useClass: TestFieldPropertiesService },

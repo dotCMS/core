@@ -3,7 +3,7 @@
 import { DebugElement, Input } from '@angular/core';
 import { Component } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { of } from 'rxjs';
 
 import { SiteService } from '@dotcms/dotcms-js';
@@ -55,9 +55,9 @@ class MockDotSiteSelectorComponent {
     `
 })
 class TestHostFilledComponent {
-    form: FormGroup;
+    form: UntypedFormGroup;
 
-    constructor(private fb: FormBuilder) {
+    constructor(private fb: UntypedFormBuilder) {
         this.form = this.fb.group({
             theme: '123'
         });
@@ -73,9 +73,9 @@ class TestHostFilledComponent {
     `
 })
 class TestHostEmtpyComponent {
-    form: FormGroup;
+    form: UntypedFormGroup;
 
-    constructor(private fb: FormBuilder) {
+    constructor(private fb: UntypedFormBuilder) {
         this.form = this.fb.group({
             theme: ''
         });
