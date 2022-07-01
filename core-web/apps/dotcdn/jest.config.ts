@@ -1,5 +1,6 @@
-module.exports = {
-    displayName: 'block-editor',
+/* eslint-disable */
+export default {
+    displayName: 'dotcdn',
     preset: '../../jest.preset.js',
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
     globals: {
@@ -9,7 +10,7 @@ module.exports = {
             tsconfig: '<rootDir>/tsconfig.spec.json'
         }
     },
-    coverageDirectory: '../../coverage/libs/block-editor',
+    coverageDirectory: '../../coverage/apps/dotcdn',
     snapshotSerializers: [
         'jest-preset-angular/build/serializers/no-ng-attributes',
         'jest-preset-angular/build/serializers/ng-snapshot',

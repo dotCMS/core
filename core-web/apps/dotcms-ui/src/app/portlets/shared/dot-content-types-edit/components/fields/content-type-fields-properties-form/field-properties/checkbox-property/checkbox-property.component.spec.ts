@@ -5,7 +5,7 @@ import { DOTTestBed } from '@tests/dot-test-bed';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { By } from '@angular/platform-browser';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { FormGroup, FormControl } from '@angular/forms';
+import { UntypedFormGroup, UntypedFormControl } from '@angular/forms';
 import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
 
 describe('CheckboxPropertyComponent', () => {
@@ -33,7 +33,7 @@ describe('CheckboxPropertyComponent', () => {
     );
 
     it('should have a form', () => {
-        const group = new FormGroup({});
+        const group = new UntypedFormGroup({});
         comp.group = group;
         const divForm: DebugElement = fixture.debugElement.query(By.css('div'));
 
@@ -42,8 +42,8 @@ describe('CheckboxPropertyComponent', () => {
     });
 
     it('should have a p-checkbox', () => {
-        comp.group = new FormGroup({
-            indexed: new FormControl('')
+        comp.group = new UntypedFormGroup({
+            indexed: new UntypedFormControl('')
         });
         comp.property = {
             name: 'indexed',

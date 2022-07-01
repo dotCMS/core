@@ -1,4 +1,5 @@
 {
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
     "projectType": "library",
     "generators": {
         "@nxext/stencil:component": {
@@ -6,7 +7,6 @@
             "storybook": true
         }
     },
-    "root": "libs/dotcms-webcomponents",
     "sourceRoot": "libs/dotcms-webcomponents/src",
     "targets": {
         "test": {

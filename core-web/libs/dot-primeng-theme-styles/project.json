@@ -1,6 +1,6 @@
 {
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
     "projectType": "library",
-    "root": "libs/dot-primeng-theme-styles",
     "sourceRoot": "libs/dot-primeng-theme-styles/src",
     "prefix": "dotcms",
     "targets": {

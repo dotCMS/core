@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 
 import { Subject } from 'rxjs';
 import { filter, takeUntil } from 'rxjs/operators';
@@ -24,12 +24,12 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     vm$ = this.store.vm$;
     didTemplateChanged$ = this.store.didTemplateChanged$;
 
-    form: FormGroup;
+    form: UntypedFormGroup;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         private store: DotTemplateStore,
-        private fb: FormBuilder,
+        private fb: UntypedFormBuilder,
         private dialogService: DialogService,
         private dotMessageService: DotMessageService,
         private dotSiteService: SiteService
@@ -161,7 +161,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
         });
     }
 
-    private getForm(template: DotTemplateItem): FormGroup {
+    private getForm(template: DotTemplateItem): UntypedFormGroup {
         if (template.type === 'design') {
             return this.fb.group({
                 type: template.type,

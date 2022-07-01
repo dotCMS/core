@@ -8,7 +8,7 @@ import { DotWorkflowsSelectorFieldComponent } from './dot-workflows-selector-fie
 import { DotWorkflowService } from './../../../../api/services/dot-workflow/dot-workflow.service';
 import { MultiSelect } from 'primeng/multiselect';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { FormGroup, FormBuilder } from '@angular/forms';
+import { UntypedFormGroup, UntypedFormBuilder } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { mockWorkflows, DotWorkflowServiceMock } from '@tests/dot-workflow-service.mock';
@@ -31,9 +31,9 @@ const messageServiceMock = new MockDotMessageService({
     `
 })
 class FakeFormComponent {
-    form: FormGroup;
+    form: UntypedFormGroup;
 
-    constructor(private fb: FormBuilder) {
+    constructor(private fb: UntypedFormBuilder) {
         /*
             This should go in the ngOnInit but I don't want to detectChanges everytime for
             this fake test component
