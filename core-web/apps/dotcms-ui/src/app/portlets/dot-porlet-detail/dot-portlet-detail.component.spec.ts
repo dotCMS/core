@@ -104,8 +104,10 @@ describe('DotPortletDetailComponent', () => {
     });
 
     it('should not have dot-workflow-task', () => {
+
         spyOnProperty(router, 'parent', 'get').and.returnValue({
             parent: {
+                // @ts-ignore
                 snapshot: {
                     params: {
                         id: ''
@@ -122,6 +124,7 @@ describe('DotPortletDetailComponent', () => {
     it('should have dot-workflow-task', () => {
         spyOnProperty(router, 'parent', 'get').and.returnValue({
             parent: {
+                // @ts-ignore
                 snapshot: {
                     params: {
                         id: 'workflow'
@@ -138,6 +141,7 @@ describe('DotPortletDetailComponent', () => {
     it('should have dot-contentlets', () => {
         spyOnProperty(router, 'parent', 'get').and.returnValue({
             parent: {
+                // @ts-ignore
                 snapshot: {
                     params: {
                         id: 'content'
