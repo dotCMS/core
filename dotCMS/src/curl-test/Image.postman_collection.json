@@ -102,7 +102,7 @@
 							"script": {
 								"exec": [
 									"pm.test(\"Image should have proper dimentions\", function () {",
-									"    pm.response.to.be.header(\"Content-Type\", \"image/jpeg\")",
+									"    pm.response.to.be.header(\"Content-Type\", \"image/png\")",
 									"    pm.response.to.be.header(\"Content-Length\", \"980852\")",
 									"});"
 								],
@@ -140,7 +140,7 @@
 							"script": {
 								"exec": [
 									"pm.test(\"Image should have proper dimentions\", function () {",
-									"    pm.response.to.be.header(\"Content-Type\", \"image/jpeg\")",
+									"    pm.response.to.be.header(\"Content-Type\", \"image/png\")",
 									"    pm.response.to.be.header(\"Content-Length\", \"355062\")",
 									"});"
 								],
