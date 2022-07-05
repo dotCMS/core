@@ -30,6 +30,8 @@ const SOURCE_TEST_RESOURCES_FOLDER = 'cicd/resources'
 const TARGET_TEST_RESOURCES_FOLDER = 'dotCMS/src/integration-test/resources'
 const LICENSE_FOLDER = 'custom/dotsecure/license'
 const projectRoot = core.getInput('project_root')
+const tomcatRoot = path.join(projectRoot, 'dist', 'dotserver', 'tomcat-9.0.60')
+const SYSTEM_FELIX_FOLDER = path.join(tomcatRoot, 'webapps', 'ROOT', 'WEB-INF', 'felix-system')
 const workspaceRoot = path.dirname(projectRoot)
 const IT_FOLDERS = [
   'custom/assets',
@@ -37,7 +39,8 @@ const IT_FOLDERS = [
   'custom/esdata',
   'custom/output/reports/html',
   'custom/felix',
-  LICENSE_FOLDER
+  LICENSE_FOLDER,
+  SYSTEM_FELIX_FOLDER
 ]
 
 const TEST_RESOURCES = [path.join(projectRoot, SOURCE_TEST_RESOURCES_FOLDER, 'log4j2.xml')]
@@ -243,13 +246,10 @@ const getAppends = (propertyMap: Map<string, string>): AppendProperties => {
         lines: [
           `felix.felix.fileinstall.dir=${felixFolder}/load`,
           `felix.felix.undeployed.dir=${felixFolder}/undeploy`,
-          'dotcms.concurrent.locks.disable=false'
+          'dotcms.concurrent.locks.disable=false',
+          `system.felix.base.dir=${SYSTEM_FELIX_FOLDER}`
         ]
       },
-      // {
-      //   file: `${itResourcesFolder}/it-dotcms-config-cluster.properties`,
-      //   lines: ['ES_ENDPOINTS=http://localhost:9200', 'ES_PROTOCOL=http', 'ES_HOSTNAME=localhost', 'ES_PORT=9200']
-      // },
       {
         file: `${dotCmsFolder}/src/main/webapp/WEB-INF/elasticsearch/config/elasticsearch-override.yml`,
         lines: [
