@@ -113,6 +113,16 @@ public class PushPublisherConfig extends PublisherConfig {
 		this.switchIndexWhenDone = switchIndexWhenDone;
 	}
 
+	public boolean justIncludesUsers() {
+		for (PublishQueueElement asset : this.getAssets()) {
+			if (!PusheableAsset.USER.name().equalsIgnoreCase(asset.getType())) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	public List<PublishingEndPoint> getEndpoints() {
 		return endpoints;
 	}
