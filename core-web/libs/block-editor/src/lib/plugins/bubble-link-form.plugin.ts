@@ -230,10 +230,13 @@ export class BubbleLinkFormView {
         this.editor.off('focus', this.focusHandler);
     }
 
-    hanlderScroll() {
-        if (this.tippy?.state.isVisible) {
-            this.tippy?.hide();
+    hanlderScroll(e: Event) {
+        // When the text is too long, the input fires the `scroll` event.
+        // When that happens, we do not want to hide the tippy.
+        if(this.component.instance.input.nativeElement === e.target) {
+            return;
         }
+        this.tippy?.hide();
     }
 }
 
