@@ -304,7 +304,9 @@
 			!confirm(abondonUserChangesConfirm))
 			return;
 
-        window.selectedUser = userId;
+        document.getElementById('remotePublishUsersDiv_text').innerHTML = '<%=LanguageUtil.get(pageContext, "Remote-Publish")%>';
+        document.getElementById('addToBundleUsersDiv_text').innerHTML = '<%=LanguageUtil.get(pageContext, "Add-To-Bundle")%>';
+
 		dojo.byId('userProfileTabs').style.display = 'none';
 		dojo.byId('loadingUserProfile').style.display = '';
 	    dojo.byId('gravatarTextHolder').display='none';
