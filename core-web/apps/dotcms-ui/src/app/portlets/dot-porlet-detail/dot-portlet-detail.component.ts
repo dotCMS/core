@@ -12,6 +12,7 @@ export class DotPortletDetailComponent implements OnInit {
     constructor(private route: ActivatedRoute) {}
 
     ngOnInit() {
+        // TODO: Change to use this.route.snapshot.paramMap.get('id')
         const currentPortlet: string = this.route.parent.parent.snapshot.params.id;
         this.isWorkflow = currentPortlet === 'workflow';
         this.isContent = !this.isWorkflow;

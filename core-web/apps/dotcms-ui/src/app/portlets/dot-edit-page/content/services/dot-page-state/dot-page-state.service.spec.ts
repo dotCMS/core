@@ -343,10 +343,13 @@ describe('DotPageStateService', () => {
 
     describe('login as user', () => {
         beforeEach(() => {
+
             spyOnProperty(loginService, 'auth', 'get').and.returnValue({
+                // @ts-ignore
                 loginAsUser: {
                     userId: 'login-as-user'
                 },
+                // @ts-ignore
                 user: {
                     userId: '123'
                 }

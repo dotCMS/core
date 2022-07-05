@@ -150,10 +150,6 @@ describe('SiteSelectorComponent', () => {
         expect(comp.handleSitesRefresh).toHaveBeenCalledTimes(1);
     });
 
-    describe('Pagination', () => {
-        //
-    });
-
     it('should change page', () => {
         const filter = 'filter';
         const page = 1;
