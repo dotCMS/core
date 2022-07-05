@@ -67,7 +67,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "/build/src/core/dotCMS/src/curl-test/resources/Scripting/metadata/fear.jpg"
+									"src": "resourcesresources/Scripting/metadata/fear.jpg"
 								}
 							]
 						},
