@@ -103,9 +103,15 @@ describe('DotPortletDetailComponent', () => {
     });
 
     it('should not have dot-workflow-task', () => {
-        const mockRoute = new ActivatedRoute();
-        mockRoute.parent.snapshot.params = { id: '' };
-        spyOnProperty(router, 'parent', 'get').and.returnValue(mockRoute);
+        spyOnProperty(router, 'parent', 'get').and.returnValue({
+            parent: {
+                snapshot: {
+                    params: {
+                        id: ''
+                    }
+                }
+            }
+        });
 
         fixture.detectChanges();
         expect(de.query(By.css('dot-workflow-task')) === null).toBe(true);
@@ -113,9 +119,15 @@ describe('DotPortletDetailComponent', () => {
     });
 
     it('should have dot-workflow-task', () => {
-        const mockRoute = new ActivatedRoute();
-        mockRoute.parent.snapshot.params = { id: 'workflow' };
-        spyOnProperty(router, 'parent', 'get').and.returnValue(mockRoute);
+        spyOnProperty(router, 'parent', 'get').and.returnValue({
+            parent: {
+                snapshot: {
+                    params: {
+                        id: 'workflow'
+                    }
+                }
+            }
+        });
 
         fixture.detectChanges();
         expect(de.query(By.css('dot-workflow-task'))).toBeTruthy();
@@ -123,9 +135,15 @@ describe('DotPortletDetailComponent', () => {
     });
 
     it('should have dot-contentlets', () => {
-        const mockRoute = new ActivatedRoute();
-        mockRoute.parent.snapshot.params = { id: 'content' };
-        spyOnProperty(router, 'parent', 'get').and.returnValue(mockRoute);
+        spyOnProperty(router, 'parent', 'get').and.returnValue({
+            parent: {
+                snapshot: {
+                    params: {
+                        id: 'content'
+                    }
+                }
+            }
+        });
 
         fixture.detectChanges();
         expect(de.query(By.css('dot-contentlets'))).toBeTruthy();

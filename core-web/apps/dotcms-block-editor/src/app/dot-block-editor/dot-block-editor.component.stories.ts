@@ -633,4 +633,5 @@ export const primary = () => ({
             BubbleMenuLinkFormComponent
         ]
     },
+    component: DotBlockEditorComponent
     });
