@@ -218,10 +218,13 @@ describe('DotAppsConfigurationComponent', () => {
             );
         });
 
-        it('should have dot-apps-configuration-list with correct values', () => {
+        fit('should have dot-apps-configuration-list with correct values', () => {
+            console.log('listComp--> ','here')
             const listComp = fixture.debugElement.query(
                 By.css('dot-apps-configuration-list')
             ).componentInstance;
+            fixture.detectChanges();
+            console.log('listComp--> ',listComp)
             expect(listComp.siteConfigurations).toBe(component.apps.sites);
             expect(listComp.hideLoadDataButton).toBe(true);
             expect(listComp.itemsPerPage).toBe(component.paginationPerPage);
