@@ -2554,9 +2554,9 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
         function fillQuery (counters) {
                         <%
-                        String restBaseUrl= (request.getProtocol().toUpperCase().contains("HTTPS") ? "https://" : "http://") +
+                        String restBaseUrl="http://"+
                            APILocator.getHostAPI().find((String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID), user, false).getHostname()+
-                           ((request.getLocalPort()!=80) ? ":"+request.getLocalPort() : "") +
+                           ((request.getLocalPort()!=80) ? ":"+request.getLocalPort() : "")+
                            "/api/content/render/false";
 
                         String restBasePostUrl="http://"+
