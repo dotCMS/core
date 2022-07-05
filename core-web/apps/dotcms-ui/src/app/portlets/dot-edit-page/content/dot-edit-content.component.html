@@ -66,11 +66,14 @@
 </div>
 <div
     class="dot-edit-content__palette"
-    *ngIf="isEnterpriseLicense && isEditMode"
+    *ngIf="isEnterpriseLicense && isEditMode && allowedContent"
     [class.editMode]="isEditMode"
     [class.collapsed]="paletteCollapsed"
 >
-    <dot-palette [languageId]="pageStateInternal.page?.languageId" [items]="contentPalletItems">
+    <dot-palette
+        [languageId]="pageStateInternal.page?.languageId"
+        [allowedContent]="allowedContent"
+    >
     </dot-palette>
     <div
         class="dot-edit-content__palette-visibility"

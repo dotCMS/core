@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { Observable, of } from 'rxjs';
 import { DotPaletteStore } from './dot-palette.store';
 import { Injectable } from '@angular/core';
@@ -7,10 +7,58 @@ import { PaginatorService } from '@dotcms/app/api/services/paginator';
 import { contentTypeDataMock } from '../dot-palette-content-type/dot-palette-content-type.component.spec';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 import { ESContent } from '../../../../../shared/models/dot-es-content/dot-es-content.model';
+import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
+
 import {
     contentletFormDataMock,
     contentletProductDataMock
 } from '../dot-palette-contentlets/dot-palette-contentlets.component.spec';
+
+const responseData: DotCMSContentType[] = [
+    {
+        icon: 'cloud',
+        id: 'a1661fbc-9e84-4c00-bd62-76d633170da3',
+        name: 'Widget X',
+        variable: 'WidgetX',
+        baseType: 'WIDGET'
+    },
+    {
+        icon: 'alt_route',
+        id: '799f176a-d32e-4844-a07c-1b5fcd107578',
+        name: 'Banner',
+        variable: 'Banner'
+    },
+    {
+        icon: 'cloud',
+        id: '897cf4a9-171a-4204-accb-c1b498c813fe',
+        name: 'Contact',
+        variable: 'Contact'
+    },
+    {
+        icon: 'cloud',
+        id: 'now-show',
+        name: 'now-show',
+        variable: 'persona'
+    },
+    {
+        icon: 'cloud',
+        id: 'now-show',
+        name: 'now-show',
+        variable: 'host'
+    },
+    {
+        icon: 'cloud',
+        id: 'now-show',
+        name: 'now-show',
+        variable: 'vanityurl'
+    },
+    {
+        icon: 'cloud',
+        id: 'now-show',
+        name: 'now-show',
+        variable: 'languagevariable'
+    }
+] as DotCMSContentType[];
 
 @Injectable()
 class MockPaginatorService {
@@ -40,9 +88,21 @@ class MockESPaginatorService {
     }
 }
 
+@Injectable()
+class MockContentTypeService {
+    public getContentTypes(): Observable<ESContent> {
+        return null;
+    }
+
+    public filterContentTypes(): Observable<ESContent> {
+        return null;
+    }
+}
+
 describe('DotPaletteStore', () => {
     let dotPaletteStore: DotPaletteStore;
     let paginatorService: PaginatorService;
+    let dotContentTypeService: DotContentTypeService;
     let dotESContentService: DotESContentService;
 
     beforeEach(() => {
@@ -50,14 +110,17 @@ describe('DotPaletteStore', () => {
             providers: [
                 DotPaletteStore,
                 { provide: PaginatorService, useClass: MockPaginatorService },
+                { provide: DotContentTypeService, useClass: MockContentTypeService },
                 { provide: DotESContentService, useClass: MockESPaginatorService }
             ]
         });
         dotPaletteStore = TestBed.inject(DotPaletteStore);
         paginatorService = TestBed.inject(PaginatorService);
+        dotContentTypeService = TestBed.inject(DotContentTypeService);
         dotESContentService = TestBed.inject(DotESContentService);
     });
 
+    // Updaters
     it('should update filter', () => {
         dotPaletteStore.setFilter('test');
         dotPaletteStore.state$.subscribe((data) => {
@@ -93,12 +156,40 @@ describe('DotPaletteStore', () => {
         });
     });
 
+    it('should update allowdContent', () => {
+        const allowedContent = ['banner', 'contact', 'block editor'];
+        dotPaletteStore.setAllowedContent(allowedContent);
+        dotPaletteStore.state$.subscribe((data) => {
+            expect(data.allowedContent).toEqual(allowedContent);
+        });
+    });
+
+    // Effects
     it('should load contentTypes to store', (done) => {
-        dotPaletteStore.loadContentTypes(contentTypeDataMock as DotCMSContentType[]);
+        const sortedDataMock = contentTypeDataMock.sort((a, b) => a.name.localeCompare(b.name));
+        spyOn(dotContentTypeService, 'filterContentTypes').and.returnValues(
+            of(sortedDataMock as DotCMSContentType[])
+        );
+        spyOn(dotContentTypeService, 'getContentTypes').and.returnValues(of([]));
+        dotPaletteStore.loadContentTypes(['blog', 'banner']);
         dotPaletteStore.vm$.subscribe((data) => {
-            expect(data.contentTypes).toEqual(contentTypeDataMock as DotCMSContentType[]);
+            expect(data.contentTypes).toEqual(sortedDataMock as DotCMSContentType[]);
             done();
         });
+    });
+
+    it('should load inly widgets to store if allowedContent is empty', (done) => {
+        const sortedDataMock = contentTypeDataMock.sort((a, b) => a.name.localeCompare(b.name));
+        spyOn(dotContentTypeService, 'filterContentTypes').and.returnValues(of([]));
+        spyOn(dotContentTypeService, 'getContentTypes').and.returnValues(of(sortedDataMock as DotCMSContentType[]));
+        dotPaletteStore.loadContentTypes([]);
+        dotPaletteStore.vm$.subscribe((data) => {
+            expect(data.contentTypes).toEqual(sortedDataMock as DotCMSContentType[]);
+            done();
+        });
+
+        expect(dotContentTypeService.filterContentTypes).not.toHaveBeenCalled();
+        expect(dotContentTypeService.getContentTypes).toHaveBeenCalled();
     });
 
     it('should load Forms contentlets to store', (done) => {
@@ -169,4 +260,45 @@ describe('DotPaletteStore', () => {
             done();
         });
     });
+
+    it('should filter contenttypes in stores', fakeAsync(() => {
+        spyOn(dotContentTypeService, 'filterContentTypes').and.returnValue(of(responseData));
+        spyOn(dotContentTypeService, 'getContentTypes').and.returnValue(of(responseData));
+
+        const allowedContent = ['banner', 'blog'];
+        const filter = 'blog';
+
+        dotPaletteStore.setAllowedContent(allowedContent);
+        dotPaletteStore.filterContentTypes(filter);
+
+        tick(400);
+
+        dotPaletteStore.vm$.subscribe((data) => expect(data.filter).toEqual(filter));
+
+        expect(dotContentTypeService.filterContentTypes).toHaveBeenCalledWith(
+            filter,
+            allowedContent.join(',')
+        );
+        expect(dotContentTypeService.getContentTypes).toHaveBeenCalledWith({
+            filter,
+            page: 40,
+            type: 'WIDGET'
+        });
+    }));
+
+    it('should not call filterContentTypes is filter values es shoter than 3 caracteres', fakeAsync(() => {
+        spyOn(dotContentTypeService, 'filterContentTypes').and.returnValue(of(responseData));
+        spyOn(dotContentTypeService, 'getContentTypes').and.returnValue(of(responseData));
+
+        const allowedContent = ['banner', 'blog'];
+        const filter = 'bo';
+
+        dotPaletteStore.setAllowedContent(allowedContent);
+        dotPaletteStore.filterContentTypes(filter);
+
+        tick(400);
+
+        expect(dotContentTypeService.filterContentTypes).not.toHaveBeenCalled();
+        expect(dotContentTypeService.getContentTypes).not.toHaveBeenCalled();
+    }));
 });

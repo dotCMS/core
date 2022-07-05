@@ -35,7 +35,10 @@ public class CookiesFilter implements Filter {
 	public void init(FilterConfig arg0) throws ServletException {
 		if ( com.dotmarketing.util.CookieUtil.ALWAYS.equals(Config.getStringProperty(COOKIES_SECURE_FLAG, com.dotmarketing.util.CookieUtil.HTTPS))
 				|| com.dotmarketing.util.CookieUtil.HTTPS.equals(Config.getStringProperty(COOKIES_SECURE_FLAG, com.dotmarketing.util.CookieUtil.HTTPS)) ){
-			Config.CONTEXT.getSessionCookieConfig().setSecure(true);
+		    // allows CookiesFilter to re-init
+		    if(!Config.CONTEXT.getSessionCookieConfig().isSecure()) {
+			    Config.CONTEXT.getSessionCookieConfig().setSecure(true);
+			}
 		}
 	}
 

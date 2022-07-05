@@ -38,7 +38,7 @@ import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ExportStarterUtil;
+import com.dotmarketing.util.starter.ExportStarterUtil;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;

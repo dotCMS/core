@@ -21,6 +21,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.XMLUtils;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
@@ -155,12 +156,12 @@ public class BundlerUtil {
     /**
      * Return true if <code>status</code> is one of the follow {@link PublishAuditStatus.Status}:
      *
-     * - {@link PublishAuditStatus#Status#FAILED_TO_PUBLISH}
-     * - {@link PublishAuditStatus#Status#SUCCESS}
-     * - {@link PublishAuditStatus#Status#SUCCESS_WITH_WARNINGS}
-     * - {@link PublishAuditStatus#Status#FAILED_TO_SEND_TO_ALL_GROUPS}
-     * - {@link PublishAuditStatus#Status#FAILED_TO_SEND_TO_SOME_GROUPS}
-     * - {@link PublishAuditStatus#Status#FAILED_TO_SENT}
+     * - {@link Status#FAILED_TO_PUBLISH}
+     * - {@link Status#SUCCESS}
+     * - {@link Status#SUCCESS_WITH_WARNINGS}
+     * - {@link Status#FAILED_TO_SEND_TO_ALL_GROUPS}
+     * - {@link Status#FAILED_TO_SEND_TO_SOME_GROUPS}
+     * - {@link Status#FAILED_TO_SENT}
      *
      * @param status
      * @return
@@ -402,6 +403,25 @@ public class BundlerUtil {
 			}
 		}
 	}
+
+    /**
+     * Deserialize an object back from JSON (using jackson)
+     *
+     * @param f file to deserialize
+     * @param typeReference value type to deserialize
+     * @return A deserialized object
+     */
+    public static <T> T jsonToObject(File f, TypeReference<T> typeReference){
+        ObjectMapper mapper = new ObjectMapper();
+
+        try (BufferedInputStream input = new BufferedInputStream(Files.newInputStream(f.toPath()))){
+            T ret = mapper.readValue(input, typeReference);
+            return ret;
+        } catch (IOException e) {
+            Logger.error(BundlerUtil.class,e.getMessage(),e);
+            return null;
+        }
+    }
 
     /**
      * Collects the pieces of content that will be included in this Bundle.

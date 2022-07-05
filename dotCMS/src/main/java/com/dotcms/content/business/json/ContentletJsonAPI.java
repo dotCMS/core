@@ -1,11 +1,12 @@
 package com.dotcms.content.business.json;
 
+import com.dotcms.content.model.Contentlet;
+import com.dotcms.content.model.ImmutableContentlet;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.liferay.portal.model.User;
 
 /**
  * This is class takes care of translating a contentlet from it's regular mutable representation
@@ -32,6 +33,14 @@ public interface ContentletJsonAPI {
      */
     String toJson(final com.dotmarketing.portlets.contentlet.model.Contentlet contentlet)
             throws JsonProcessingException, DotDataException;
+
+    /**
+     * Takes a regular contentlet and builds an ImmutableContentlet
+     * @param contentlet {@link com.dotmarketing.portlets.contentlet.model.Contentlet}
+     * @return {@link ImmutableContentlet}
+     */
+    ImmutableContentlet toImmutable(
+            com.dotmarketing.portlets.contentlet.model.Contentlet contentlet);
 
     /**
      * Json String to Regular Contentlet
@@ -71,4 +80,14 @@ public interface ContentletJsonAPI {
         return Config.getBooleanProperty(SAVE_CONTENTLET_AS_COLUMNS, !isPersistContentAsJson());
     }
 
+    /**
+     * Takes an {@link ImmutableContentlet} and builds a mutable(legacy) {@link com.dotmarketing.portlets.contentlet.model.Contentlet}
+     * @param immutableContent
+     * @return {@link Contentlet} immutableContent
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    com.dotmarketing.portlets.contentlet.model.Contentlet toMutableContentlet(
+            Contentlet immutableContent)
+            throws DotDataException, DotSecurityException;
 }

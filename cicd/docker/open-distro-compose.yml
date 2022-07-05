@@ -1,0 +1,14 @@
+version: "3.7"
+
+services:
+
+  elasticsearch:
+    image: "dotcms/es-open-distro:1.3.0"
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    environment:
+      PROVIDER_ELASTICSEARCH_HEAP_SIZE: "1500m"
+      PROVIDER_ELASTICSEARCH_DNSNAMES: "localhost"
+      ES_ADMIN_PASSWORD: "admin"
+      discovery.type: "single-node"
