@@ -426,7 +426,7 @@ public class TagResource {
                 saveFails.add(new ErrorEntity("tag.save.error.default", e.getMessage(), tag.getTagName()));
             }
         }
-        return Response.ok(new ResponseEntityView(saveFails, tagInodes)).build();
+        return Response.ok(new ResponseEntityView<List<TagInode>>(saveFails, tagInodes)).build();
     }
 
     /**

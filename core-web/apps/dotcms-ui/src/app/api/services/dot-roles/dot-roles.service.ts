@@ -41,4 +41,29 @@ export class DotRolesService {
                 )
             );
     }
+
+    /**
+     * Return list of roles associated to specific role .
+     * @returns Observable<DotRole[]>
+     * @memberof DotRolesService
+     */
+    search(): Observable<DotRole[]> {
+        return this.coreWebService
+            .requestView({
+                url: `/api/v1/roles/_search`
+            })
+            .pipe(
+                pluck('entity'),
+                map((roles: DotRole[]) =>
+                    roles
+                        .filter((role: DotRole) => role.roleKey !== 'anonymous')
+                        .map((role: DotRole) => {
+                            if (role.roleKey === CURRENT_USER_KEY) {
+                                role.name = this.dotMessageService.get('current-user');
+                            }
+                            return role;
+                        })
+                )
+            );
+    }
 }

@@ -93,6 +93,19 @@ public interface RoleAPI {
 	 * @throws DotDataException 
 	 */
      List<Role> findRolesByFilterLeftWildcard(String filter, int start,int limit) throws DotDataException ;
+
+	/**
+	 *
+	 * This method returns a list of roles whose keys are like the string passed in.
+	 * Left wildcarded, so "John S" would match "John Smith" but not "Mr. John Smith"
+	 * @param filter compare string
+	 * @param start First element to display. For a negative value, zero is assumed.
+	 * @param limit Max number of elements to show. For a negative value, zero is assumed.
+	 * @return List<Role> of Role entities.
+	 * @throws DotRuntimeException, SystemException
+	 * @throws DotDataException
+	 */
+	List<Role> findRolesByKeyFilterLeftWildcard(String filter, int start,int limit) throws DotDataException ;
     	
 	/**
 	 * Add a role to a user

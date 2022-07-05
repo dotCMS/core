@@ -4,6 +4,7 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.api.v1.system.permission.ResponseEntityPermissionView;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
@@ -18,12 +19,26 @@ import com.dotmarketing.portlets.user.ajax.UserAjax;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import org.apache.commons.beanutils.BeanUtils;
+
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -46,7 +61,7 @@ import static com.dotcms.util.CollectionsUtils.map;
 /**
  * This end-point provides access to information associated to dotCMS roles that
  * can be associated to one or more users in the system.
- * 
+ *
  * @author Jose Castro
  * @version 3.7
  * @since Aug 9, 2016
@@ -82,11 +97,11 @@ public class RoleResource implements Serializable {
 	 * Once it finds a role that is associated to the user, it will return.
 	 * <p>
 	 * Example:
-	 * 
+	 *
 	 * <pre>
 	 * http://localhost:8080/api/v1/roles/checkuserroles/userid/dotcms.org.2789/roleids/8b21a705-5deb-4572-8752-fa0c25c34332,892ab105-f212-407f-8fb4-58ec59310a5e
 	 * </pre>
-	 * 
+	 *
 	 * @param request
 	 *            - The {@link HttpServletRequest} object.
 	 * @param userId
@@ -380,4 +395,178 @@ public class RoleResource implements Serializable {
 		return Response.ok(new ResponseEntityView(rootRolesView)).build();
 
 	}
+
+	/**
+	 * Search roles
+	 * If you want to filter by name:
+	 * /api/v1/roles/_search?searchName=CMS
+	 * Will include the roles starting by CMS
+	 *
+	 * if you want to filter by role key
+	 * /api/v1/roles/_search?searchKey=dotcms
+	 * Will include the roles starting by dotcmds
+	 *
+	 * Want specific role
+	 * /api/v1/roles/_search?roleId=654b0931-1027-41f7-ad4d-173115ed8ec1
+	 *
+	 * Want pagination
+	 * /api/v1/roles/_search?start=5&count=10
+	 * From the 5 to the 15
+	 *
+	 * Do not want to include user roles (by default is true)
+	 * /api/v1/roles/_search?includeUserRoles=false
+	 *
+	 * Want to include workflow roles (by default is false)
+	 * /api/v1/roles/_search?includeWorkflowRoles=true
+	 *
+	 * @return list of {@link Role}
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@Path("_search")
+	@GET
+	@Produces("application/json")
+	@Operation(summary = "Search Roles",
+			responses = {
+					@ApiResponse(
+							responseCode = "200",
+							content = @Content(mediaType = "application/json",
+									schema = @Schema(implementation = ResponseEntitySmallRoleView.class)))})
+	public Response searchRoles(@Context final HttpServletRequest request,
+							    @Context final HttpServletResponse response,
+							    @DefaultValue("")   @QueryParam("searchName") final String searchName,
+								@DefaultValue("")   @QueryParam("searchKey") final String searchKey,
+								@DefaultValue("")   @QueryParam("roleId")     final String roleId,
+								@DefaultValue("0")  @QueryParam("start")      final int startParam,
+								@DefaultValue("20") @QueryParam("count")      final int count,
+								@DefaultValue("true") @QueryParam("includeUserRoles")      final boolean includeUserRoles,
+								@DefaultValue("false") @QueryParam("includeWorkflowRoles")  final boolean includeWorkflowRoles)
+            throws DotDataException, DotSecurityException, LanguageException, IOException, InvocationTargetException, IllegalAccessException {
+
+		final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource).requiredBackendUser(true)
+				.requiredFrontendUser(false).requestAndResponse(request, response)
+				.rejectWhenNoUser(true).init();
+
+		Logger.debug(this, ()-> "Searching role, searchName: " + searchName + ", searchKey: " + searchKey + ", roleId: " + roleId
+						+ ", start: " + startParam + ", count: " + count + ", includeUserRoles: " + includeUserRoles + ", includeWorkflowRoles: " + includeWorkflowRoles);
+
+        int start = startParam;
+        final Role cmsAnonOrig    = this.roleAPI.loadCMSAnonymousRole();
+        final Role cmsAnon        = new Role();
+        BeanUtils.copyProperties(cmsAnon, cmsAnonOrig);
+        final String cmsAnonName  = LanguageUtil.get(initDataObject.getUser(), "current-user");
+        cmsAnon.setName(cmsAnonName);
+        final List<Role> roleList = new ArrayList<>();
+        if (UtilMethods.isSet(roleId)) {
+
+            final Role role = this.roleAPI.loadRoleById(roleId);
+            if (role != null) {
+
+                return Response.ok(new ResponseEntitySmallRoleView(rolesToView(
+						List.of(role.getId().equals(cmsAnon.getId())? cmsAnon:role)))).build();
+            }
+        }
+
+		if (this.fillRoles(searchName, count, start, cmsAnon, cmsAnonName, roleList, includeUserRoles, searchKey)) { // include system user?
+
+            roleList.add(0, cmsAnon);
+        }
+
+        if(includeWorkflowRoles) {
+
+            roleList.addAll(APILocator.getRoleAPI().findWorkflowSpecialRoles());
+        }
+
+		return Response.ok(new ResponseEntitySmallRoleView(rolesToView(roleList))).build();
+	}
+
+	private boolean fillRoles(final String searchName, final int count, final int startParam,
+							  final Role cmsAnon, final String cmsAnonName, final List<Role> roleList,
+							  final boolean includeUserRoles, final String searchKey) throws DotDataException {
+
+		boolean addSystemUser = searchName.length() > 0 && cmsAnonName.startsWith(searchName);
+		int start = startParam;
+
+		while (roleList.size() < count) {
+
+			final List<Role> roles = StringUtils.isSet(searchKey)?
+						this.roleAPI.findRolesByKeyFilterLeftWildcard(searchKey, start, count):
+						this.roleAPI.findRolesByFilterLeftWildcard(searchName, start, count);
+			if (roles.isEmpty()) {
+
+				break;
+			}
+			for (Role role : roles) {
+
+				if (role.isUser()) {
+
+					if (!includeUserRoles) {
+						continue;
+					}
+
+					try {
+
+						APILocator.getUserAPI().loadUserById(role.getRoleKey(), APILocator.systemUser(), false );
+					} catch ( Exception e ) {
+						continue;
+					}
+				}
+
+				if (role.getId().equals(cmsAnon.getId())) {
+
+					role = cmsAnon;
+					addSystemUser = false;
+				}
+
+				if (role.isSystem() &&
+						!role.isUser() &&
+						!role.getId().equals(cmsAnon.getId()) &&
+						!role.getId().equals(APILocator.getRoleAPI().loadCMSAdminRole().getId())) {
+
+					continue;
+				}
+
+				if (role.getName().equals(searchName)) {
+
+					roleList.add( 0, role );
+				} else {
+
+					roleList.add( role );
+				}
+			}
+
+			start = start + count;
+		}
+
+		return addSystemUser;
+	}
+
+	private List<SmallRoleView> rolesToView (final List <Role> roles)
+        throws DotDataException, LanguageException {
+
+        final List<SmallRoleView> list = new ArrayList<>();
+        final User defaultUser = APILocator.getUserAPI().getDefaultUser();
+        Role defaultUserRole   = null;
+        if (defaultUser != null) {
+
+            defaultUserRole = APILocator.getRoleAPI().getUserRole(defaultUser);
+        }
+
+        for (final Role role : roles) {
+
+			final Map<String, Object> map = new HashMap<>();
+
+            if ((defaultUserRole != null && role.getId().equals(defaultUserRole.getId())) || //Exclude default user
+                    (!role.isEditPermissions()) || //We just want to add roles that can have permissions assigned to them
+                    (role.getName().contains("anonymous user")) //We need to exclude also the system anonymous user
+            ) {
+                continue;
+            }
+
+            list.add(new SmallRoleView(role.getName() + ((role.isUser()) ? " (" + LanguageUtil.get(APILocator.getCompanyAPI().getDefaultCompany(), "User") + ")" : StringPool.BLANK),
+					role.getId(), role.getRoleKey(), role.isUser()));
+        }
+
+        return list;
+    }
 }

@@ -1,0 +1,74 @@
+<dot-form-dialog
+    data-testId="dialogForm"
+    [saveButtonDisabled]="(isFormValid$ | async) === false"
+    (cancel)="onCancel()"
+    (save)="onSave()"
+>
+    <form class="p-fluid" [formGroup]="form" data-testId="form" *ngIf="form">
+        <div class="field" data-testId="urlField">
+            <label for="previewThumbnail" class="p-label-input-required">{{
+                'preview' | dm
+            }}</label>
+            <p-skeleton
+                id="previewThumbnail"
+                styleClass="skeleton"
+                width="10rem"
+                height="10rem"
+                *ngIf="!pageThumbnail; else previewImg"
+            ></p-skeleton>
+            <ng-template #previewImg>
+                <img style="width: 100%" id="previewImgHtmlTag" [src]="pageThumbnail" />
+            </ng-template>
+        </div>
+        <div class="field" data-testId="titleField">
+            <label for="title" class="p-label-input-required">{{ 'title' | dm }}</label>
+            <input
+                id="title"
+                pInputText
+                formControlName="title"
+                autofocus
+                data-testId="templatePropsTitleField"
+            />
+            <dot-field-validation-message
+                [field]="form.get('title')"
+            ></dot-field-validation-message>
+        </div>
+        <div class="field" data-testId="urlField">
+            <label for="url" class="p-label-input-required">{{ 'url' | dm }}</label>
+            <input
+                id="url"
+                pInputText
+                formControlName="url"
+                data-testId="templatePropsTitleField"
+            />
+            <dot-field-validation-message [field]="form.get('url')"></dot-field-validation-message>
+        </div>
+        <div class="field" data-testId="orderField">
+            <label for="order" class="p-label-input-required">{{ 'order' | dm }}</label>
+            <input
+                id="order"
+                pInputText
+                formControlName="order"
+                data-testId="templatePropsTitleField"
+            />
+            <dot-field-validation-message
+                [field]="form.get('order')"
+            ></dot-field-validation-message>
+        </div>
+
+        <div class="field" data-testId="orderField">
+            <label for="permissions" class="p-label-input-required">{{ 'share.with' | dm }}</label>
+            <p-multiSelect
+                id="permissions"
+                [options]="roleOptions"
+                formControlName="permissions"
+                optionLabel="name"
+                appendTo="body"
+            ></p-multiSelect>
+
+            <dot-field-validation-message
+                [field]="form.get('permissions')"
+            ></dot-field-validation-message>
+        </div>
+    </form>
+</dot-form-dialog>
