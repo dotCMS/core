@@ -4,7 +4,6 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
-import com.dotcms.rest.api.v1.system.permission.ResponseEntityPermissionView;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
@@ -18,7 +17,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.user.ajax.UserAjax;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
-
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
@@ -31,15 +29,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.apache.commons.beanutils.BeanUtils;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
@@ -52,8 +41,19 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
@@ -397,6 +397,68 @@ public class RoleResource implements Serializable {
 	}
 
 	/**
+	 * todo: doc
+	 *
+	 * @param excludeRolesInput {@link Boolean}
+	 * @param excludeRoles {@link String}
+	 * @param excludeUserRoles {@link Boolean}
+	 * @return list of {@link RoleView}
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@Path("_tree")
+	@GET
+	@Produces("application/json")
+	@Operation(summary = "Get Roles Tree",
+			responses = {
+					@ApiResponse(
+							responseCode = "200",
+							content = @Content(mediaType = "application/json",
+									schema = @Schema(implementation = ResponseEntityRoleView.class)))})
+	public Response getRolesTree(@Context final HttpServletRequest request,
+								@Context final HttpServletResponse response,
+								@DefaultValue("false")   @QueryParam("onlyUserAssignableRoles") final boolean onlyUserAssignableRoles,
+								@DefaultValue("")        @QueryParam("excludeRoles")            final String excludeRoles,
+								@DefaultValue("false")   @QueryParam("excludeUserRoles")        final boolean excludeUserRoles)
+			throws Exception {
+
+		final List<RoleView> roleViews = new ArrayList<>();
+		final List<Role> rootRoles     = roleAPI.findRootRoles();
+		final Set<String> excludeRolesSet = this.createExcludeRoles(excludeRoles);
+
+		// todo: do this need to be the user logged in?
+		Logger.debug(this, ()-> "Getting Roles Tree, onlyUserAssignableRoles: " + onlyUserAssignableRoles +
+								", excludeRoles: " + excludeRoles + ", excludeUserRoles: " + excludeUserRoles);
+
+		for(final Role role : rootRoles) {
+
+			if(onlyUserAssignableRoles) {
+
+				//If the role has no children and is not user assignable then we don't include it
+				if(!role.isEditUsers() && (role.getRoleChildren() == null || role.getRoleChildren().size() == 0)) {
+					continue;
+				}
+
+				//Special case the users roles branch should be entirely hidden
+				if(role.getRoleKey() != null && role.getRoleKey().equals(RoleAPI.USERS_ROOT_ROLE_KEY)) {
+					continue;
+				}
+			}
+
+			if(excludeUserRoles && this.isUserRole(role)) {
+
+				continue;
+			}
+
+			final RoleView roleMap = constructRoleMap(role, excludeRolesSet, onlyUserAssignableRoles);
+			roleViews.add(roleMap);
+
+		}
+
+		return Response.ok(new ResponseEntityRoleView(roleViews)).build();
+	}
+
+	/**
 	 * Search roles
 	 * If you want to filter by name:
 	 * /api/v1/roles/_search?searchName=CMS
@@ -569,4 +631,91 @@ public class RoleResource implements Serializable {
 
         return list;
     }
+
+	private RoleView constructRoleMap(final Role role,
+									 final Set<String> excludeRoles,
+									 final boolean onlyUserAssignableRoles) throws DotDataException {
+
+		final List<RoleView> children = new ArrayList<>();
+		if(role != null && role.getRoleChildren() != null) {
+			for(final String childrenId : role.getRoleChildren()) {
+
+				final Role childRole = roleAPI.loadRoleById(childrenId);
+
+				if(onlyUserAssignableRoles) {
+					//If the role has no children and is not user assignable then we don't include it
+					if(!childRole.isEditUsers() && (childRole.getRoleChildren() == null || childRole.getRoleChildren().size() == 0)) {
+						continue;
+					}
+
+					//Special case the users roles branch should be entirely hidden
+					if(childRole.getRoleKey() != null && childRole.getRoleKey().equals(RoleAPI.USERS_ROOT_ROLE_KEY)) {
+						continue;
+					}
+				}
+
+				// Exclude roles in the excludeRoles list
+				if(excludeRoles.contains(childrenId)) {
+					continue;
+				}
+
+				final RoleView childRoleView = constructRoleMap(childRole, excludeRoles, onlyUserAssignableRoles);
+				if (null != childRoleView) {
+					children.add(childRoleView);
+				}
+			}
+		}
+
+		Collections.sort(children, Comparator.comparing(RoleView::getName));
+
+		return role!=null? new RoleView(role, children): null;
+	}
+
+	/**
+	 * Get a string comma separated with the workflow special roles. These Workflow roles should not
+	 * be displayed in the permission tabs
+	 *
+	 * @return String of comma separated ID's of the workflow roles
+	 */
+	private String getWorkflowRolesId() throws DotDataException {
+
+		final StringBuilder workflowRolesIds = new StringBuilder();
+		try {
+			for (final Role role : APILocator.getRoleAPI().findWorkflowSpecialRoles()) {
+				if (workflowRolesIds.length() > 0) {
+					workflowRolesIds.append(StringPool.COMMA).append(role.getId());
+				} else {
+					workflowRolesIds.append(role.getId());
+				}
+			}
+
+		} catch (DotSecurityException e) {
+			Logger.error(this, "Error getting workflow roles.", e);
+		}
+		return workflowRolesIds.toString();
+	}
+
+	/**
+	 * Returns true if it is an user role
+	 * @param role {@link Role}
+	 * @return boolean if the role is a user role
+	 */
+	private boolean isUserRole (final Role role) {
+
+		return role.getRoleKey() != null && role.getRoleKey().equals(RoleAPI.USERS_ROOT_ROLE_KEY);
+	}
+
+	private Set<String> createExcludeRoles(String excludeRoles) throws DotDataException {
+
+		final Set<String> excludeRolesSet = new HashSet<>();
+		if(UtilMethods.isSet(excludeRoles)) {
+
+			excludeRoles = excludeRoles + StringPool.COMMA + getWorkflowRolesId();
+			excludeRolesSet.addAll(Arrays.asList(excludeRoles.split(StringPool.COMMA)));
+		} else {
+			excludeRolesSet.addAll(Arrays.asList(getWorkflowRolesId().split(StringPool.COMMA)));
+		}
+
+		return excludeRolesSet;
+	}
 }
