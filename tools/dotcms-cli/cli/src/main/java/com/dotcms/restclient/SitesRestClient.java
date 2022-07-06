@@ -1,0 +1,26 @@
+package com.dotcms.restclient;
+
+import com.dotcms.model.site.GetSitesResponse;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
+import org.eclipse.microprofile.rest.client.annotation.ClientHeaderParam;
+import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
+
+@Path("/v1/site")
+@RegisterRestClient(configKey = "legacy-api")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+@ClientHeaderParam(name = "Authorization", value = "{lookupAuth}")
+public interface SitesRestClient extends AuthAware {
+
+    @GET
+    GetSitesResponse getSites(@QueryParam("filter") String filter,
+            @QueryParam("showArchived") Boolean showArchived,
+            @QueryParam("showLive") Boolean showLive, @QueryParam("showSystem") Boolean showSystem,
+            @QueryParam("page") Integer page, @QueryParam("perPage") Integer perPage);
+
+}
