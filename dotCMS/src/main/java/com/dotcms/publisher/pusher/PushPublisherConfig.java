@@ -114,6 +114,11 @@ public class PushPublisherConfig extends PublisherConfig {
 	}
 
 	public boolean justIncludesUsers() {
+
+		if (!UtilMethods.isSet(this.getAssets())) {
+			return false;
+		}
+
 		for (PublishQueueElement asset : this.getAssets()) {
 			if (!PusheableAsset.USER.name().equalsIgnoreCase(asset.getType())) {
 				return false;
