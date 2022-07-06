@@ -296,6 +296,7 @@ const runPostmanCollections = () => __awaiter(void 0, void 0, void 0, function* 
     for (const collection of filtered) {
         const normalized = collection.replace(/ /g, '_').replace('.json', '');
         let rc;
+        const start = new Date().getTime();
         try {
             rc = yield runPostmanCollection(collection, normalized);
         }
@@ -303,10 +304,15 @@ const runPostmanCollections = () => __awaiter(void 0, void 0, void 0, function* 
             core.info(`Postman collection run for ${collection} failed due to: ${err}`);
             rc = 127;
         }
+        const end = new Date().getTime();
+        const duration = (end - start) / 1000;
+        core.info(`Collection ${collection} took ${duration} seconds to run`);
         collectionRuns.set(collection, rc);
         if (exportReport) {
             const passed = rc === 0;
-            htmlResults.push(`<tr><td><a href="./${normalized}.html">${collection}</a></td><td style="color: #ffffff; background-color: ${passed ? '#28a745' : '#dc3545'}; font-weight: bold;">${passed ? PASSED : FAILED}</td></tr>`);
+            htmlResults.push(`<tr><td><a href="./${normalized}.html">${collection}</a></td><td style="color: #ffffff; background-color: ${passed ? '#28a745' : '#dc3545'}; font-weight: bold;">${passed ? PASSED : FAILED}</td>
+        <td>${duration} seconds</td>
+        </tr>`);
         }
     }
     if (exportReport) {
