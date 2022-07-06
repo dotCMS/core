@@ -5,12 +5,13 @@ import com.dotcms.cli.ApplicationContext;
 import com.dotcms.model.authentication.APITokenRequest;
 import com.dotcms.model.authentication.APITokenResponse;
 import io.quarkus.test.junit.QuarkusTest;
+import java.util.Optional;
 import javax.inject.Inject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-//@QuarkusTestResource(WireMockExtensionsResource.class)
 public class LegacyAuthenticationClientTest {
 
     @Inject
@@ -22,14 +23,22 @@ public class LegacyAuthenticationClientTest {
 
     @Test
     public void testTokenApi() {
-        APITokenResponse tokenResponse = client.getToken(
+
+        final String userString = "admin@dotCMS.com";
+        final String passwordString = "admin";
+
+        final APITokenResponse tokenResponse = client.getToken(
                 APITokenRequest.builder()
-                        .user("admin@dotcms.com")
-                        .password("admin")
+                        .user(userString)
+                        .password(passwordString)
                         .expirationDays(1).build());
 
-        System.out.println("Token response="+tokenResponse);
-        applicationContext.setToken(tokenResponse.toString(),"admin@dotCMS.com");
-
+        Assertions.assertNotNull(tokenResponse);
+        applicationContext.setToken(tokenResponse.toString(), userString);
+        final Optional<String> user = applicationContext.getUser();
+        Assertions.assertTrue(user.isPresent());
+        final Optional<String> token = applicationContext.getToken();
+        Assertions.assertTrue(token.isPresent());
+        Assertions.assertEquals(token.get(),tokenResponse.toString());
     }
 }

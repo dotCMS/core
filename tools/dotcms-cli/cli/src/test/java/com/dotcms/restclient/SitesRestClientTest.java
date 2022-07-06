@@ -8,6 +8,7 @@ import com.dotcms.model.site.GetSitesResponse;
 import io.quarkus.test.junit.QuarkusTest;
 import javax.inject.Inject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
@@ -28,13 +29,14 @@ public class SitesRestClientTest {
     public void Test_Get_Sites() {
 
         final String user = "admin@dotcms.com";
-        APITokenResponse resp = authClient.getToken(
+        final APITokenResponse resp = authClient.getToken(
                 APITokenRequest.builder().user(user).password("admin").expirationDays(1).build());
 
         applicationContext.setToken(resp.entity().token(), user);
 
-        GetSitesResponse sitesResponse = sitesRestClient.getSites(null,false, true, true,1, 10);
-        System.out.println(sitesResponse);
+        final GetSitesResponse sitesResponse = sitesRestClient.getSites(null, false, true, true, 1,
+                10);
+        Assertions.assertNotNull(sitesResponse);
     }
 
 

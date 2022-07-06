@@ -8,6 +8,7 @@ import com.dotcms.model.contenttype.GetContentTypesResponse;
 import io.quarkus.test.junit.QuarkusTest;
 import javax.inject.Inject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
@@ -34,7 +35,7 @@ public class ContentTypeRestClientTest {
         applicationContext.setToken(resp.entity().token(), user);
 
         final GetContentTypesResponse response = client.getContentTypes(null, null, null, null, null, null, null );
-        System.out.println(response);
+        Assertions.assertNotNull(response);
     }
 
 }
