@@ -62,9 +62,7 @@ export const runTests = async (): Promise<PostmanTestsResult> => {
   startDeps()
 
   try {
-    const rt = await runPostmanCollections()
-    copyOutputs()
-    return rt
+    return await runPostmanCollections()
   } catch (err) {
     core.setFailed(`Postman tests faiuled due to: ${err}`)
     return {
@@ -73,6 +71,7 @@ export const runTests = async (): Promise<PostmanTestsResult> => {
       skipResultsReport: !fs.existsSync(reportFolder)
     }
   } finally {
+    copyOutputs()
     await stopDeps()
   }
 }
@@ -81,13 +80,15 @@ export const runTests = async (): Promise<PostmanTestsResult> => {
  * Copies logs from docker volume to standard DotCMS location.
  */
 const copyOutputs = async () => {
+  await exec.exec('docker', ['ps'])
+  await exec.exec('docker', ['cp', 'docker_dotcms-app_1:/srv/dotserver/tomcat-9.0.60/logs/dotcms.log', logsFolder])
   await exec.exec('pwd', [], {cwd: logsFolder})
   await exec.exec('ls', ['-las', '.'], {cwd: logsFolder})
 
   try {
     fs.copyFileSync(path.join(logsFolder, logFile), path.join(dotCmsRoot, logFile))
   } catch (err) {
-    core.warning(`Error copying log file: ${err}`)
+    core.error(`Error copying log file: ${err}`)
   }
 }
 

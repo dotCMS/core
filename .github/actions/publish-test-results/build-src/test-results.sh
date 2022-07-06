@@ -144,8 +144,8 @@ function trackCoreTests {
   echo "TEST_TYPE=${INPUT_TEST_TYPE^}" >> ${result_file}
   echo "DB_TYPE=${INPUT_DB_TYPE}" >> ${result_file}
   echo "TEST_TYPE_RESULT=${result_label}" >> ${result_file}
-  echo "COMMIT_TEST_RESULT_URL=${COMMIT_TEST_RESULT_URL}" >> ${result_file}
   echo "BRANCH_TEST_RESULT_URL=${BRANCH_TEST_RESULT_URL}" >> ${result_file}
+  echo "COMMIT_TEST_RESULT_URL=${COMMIT_TEST_RESULT_URL}" >> ${result_file}
   echo "TEST_LOG_URL=${TEST_LOG_URL}" >> ${result_file}
 
   cat ${result_file}
@@ -167,11 +167,14 @@ function copyResults {
 
 # Set Github Action outputs to be used by other actions
 function setOutputs {
-  setOutput tests_report_url ${COMMIT_TEST_RESULT_URL}
+  setOutput tests_report_url ${BRANCH_TEST_RESULT_URL}
   setOutput test_logs_url ${TEST_LOG_URL}
+  echo "::notice::Commit test results URL: '${COMMIT_TEST_RESULT_URL}'"
+
   if [[ "${INPUT_TEST_TYPE}" == 'integration' ]]; then
-    setOutput ${INPUT_DB_TYPE}_tests_report_url ${COMMIT_TEST_RESULT_URL}
+    setOutput ${INPUT_DB_TYPE}_tests_report_url ${BRANCH_TEST_RESULT_URL}
     setOutput ${INPUT_DB_TYPE}_test_logs_url ${TEST_LOG_URL}
+    echo "::notice::[${INPUT_DB_TYPE}] Commit test results URL: '${COMMIT_TEST_RESULT_URL}'"
   fi
 }
 
@@ -190,14 +193,16 @@ function appendLogLocation {
 function printStatus {
   local pull_request_url="https://github.com/dotCMS/${INPUT_TARGET_PROJECT}/pull/${INPUT_PULL_REQUEST}"
 
-  echo ""
+  echo
   echo -e "\e[36m==========================================================================================================================\e[0m"
   echo -e "\e[36m==========================================================================================================================\e[0m"
   echo -e "\e[1;36m                                                REPORTING\e[0m"
   echo
-  [[ "${INCLUDE_RESULTS}" == 'true' ]] && echo "         ${BRANCH_TEST_RESULT_URL}" && echo
-  [[ "${INCLUDE_RESULTS}" == 'true' ]] && echo "         ${COMMIT_TEST_RESULT_URL}" && echo
-  [[ "${INCLUDE_LOGS}" == 'true' ]] && echo "         ${TEST_LOG_URL}" && echo
+
+  [[ "${INCLUDE_RESULTS}" == 'true' ]] && echo -e "\e[31m         ${BRANCH_TEST_RESULT_URL}\e[0m"
+  [[ "${INCLUDE_RESULTS}" == 'true' ]] && echo -e "\e[31m         ${COMMIT_TEST_RESULT_URL}\e[0m"
+  [[ "${INCLUDE_LOGS}" == 'true' ]] && echo -e "\e[31m         ${TEST_LOG_URL}\e[0m"
+
   echo
   [[ -n "${INPUT_PULL_REQUEST}" && "${INPUT_PULL_REQUEST}" != 'false' ]] \
     && echo "   GITHUB pull request: [${pull_request_url}]" \
@@ -210,7 +215,7 @@ function printStatus {
   echo
   echo -e "\e[36m==========================================================================================================================\e[0m"
   echo -e "\e[36m==========================================================================================================================\e[0m"
-  echo ""
+  echo
 }
 
 # More Env-Vars definition, specifically to results storage
@@ -226,8 +231,8 @@ export GITHUB_PERSIST_COMMIT_URL="${BASE_STORAGE_URL}/${STORAGE_JOB_COMMIT_FOLDE
 export GITHUB_PERSIST_BRANCH_URL="${BASE_STORAGE_URL}/${STORAGE_JOB_BRANCH_FOLDER}"
 export REPORT_PERSIST_COMMIT_URL="${GITHUB_PERSIST_COMMIT_URL}/${REPORTS_LOCATION}"
 export REPORT_PERSIST_BRANCH_URL="${GITHUB_PERSIST_BRANCH_URL}/${REPORTS_LOCATION}"
-export COMMIT_TEST_RESULT_URL=${REPORT_PERSIST_COMMIT_URL}/index.html
 export BRANCH_TEST_RESULT_URL=${REPORT_PERSIST_BRANCH_URL}/index.html
+export COMMIT_TEST_RESULT_URL=${REPORT_PERSIST_COMMIT_URL}/index.html
 export TEST_LOG_URL=${GITHUB_PERSIST_COMMIT_URL}/logs/dotcms.log
 [[ ${INPUT_MODE} =~ ALL|RESULTS ]] && export INCLUDE_RESULTS=true
 [[ ${INPUT_MODE} =~ ALL|LOGS ]] && export INCLUDE_LOGS=true
