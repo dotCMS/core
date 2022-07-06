@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.folders.business;
 import static com.dotmarketing.business.APILocator.getPermissionAPI;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 import static com.liferay.util.StringPool.BLANK;
+import static com.liferay.util.StringPool.FORWARD_SLASH;
 
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
@@ -586,18 +587,12 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 	}
 
-	/**
-	 * Saves a folder
-	 *
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 * @throws DotStateException
-	 */
+	@Override
 	@WrapInTransaction
 	public void save(final Folder folder, final String existingId,
 					 final User user, final boolean respectFrontEndPermissions) throws DotDataException, DotStateException, DotSecurityException {
 
-		Identifier existingID = APILocator.getIdentifierAPI().find(folder.getIdentifier());
+		final Identifier existingID = APILocator.getIdentifierAPI().find(folder.getIdentifier());
 		if(existingID ==null || !UtilMethods.isSet(existingID.getId())){
 			throw new DotStateException("Folder must already have an identifier before saving");
 		}
@@ -608,13 +603,15 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 
 		validateFolderName(folder);
+		if (UtilMethods.isNotSet(folder.getTitle())) {
+			folder.setTitle(existingID.getAssetName());
+		}
+		final Host folderSite = APILocator.getHostAPI().find(folder.getHostId(), user, respectFrontEndPermissions);
+		final Folder parentFolder = findFolderByPath(existingID.getParentPath(), existingID.getHostId(), user, respectFrontEndPermissions);
+		final Permissionable parent = existingID.getParentPath().equals(FORWARD_SLASH) ? folderSite : parentFolder;
 
-		Host host = APILocator.getHostAPI().find(folder.getHostId(), user, respectFrontEndPermissions);
-		Folder parentFolder = findFolderByPath(existingID.getParentPath(), existingID.getHostId(), user, respectFrontEndPermissions);
-		Permissionable parent = existingID.getParentPath().equals("/")?host:parentFolder;
-
-		if(parent ==null){
-			throw new DotStateException("No Folder Found for id: " + existingID.getParentPath());
+		if (parent == null || UtilMethods.isNotSet(parent.getPermissionId())) {
+			throw new DotStateException("No Parent Folder Found for id: " + existingID.getParentPath());
 		}
 		if (!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user,respectFrontEndPermissions)
 				|| !permissionAPI.doesUserHavePermissions(PermissionableType.FOLDERS, PermissionAPI.PERMISSION_EDIT, user)) {
@@ -622,9 +619,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new AddContentToFolderPermissionException(userId, parentFolder.getPath());
 		}
 
-		boolean isNew = folder.getInode() == null;
-
-
+		final boolean isNew = folder.getInode() == null;
 		//if the folder was renamed, we will need to create a new identifier
 		if (!folder.getName().equals(existingID.getAssetName())){
 			folderFactory.renameFolder(folder, folder.getName(), user, respectFrontEndPermissions);
@@ -639,7 +634,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			CacheLocator.getNavToolCache()
 					.removeNavByPath(existingID.getHostId(), existingID.getParentPath());
 		}
-        SystemEventType systemEventType = isNew ? SystemEventType.SAVE_FOLDER : SystemEventType.UPDATE_FOLDER;
+        final SystemEventType systemEventType = isNew ? SystemEventType.SAVE_FOLDER : SystemEventType.UPDATE_FOLDER;
 		systemEventsAPI.pushAsync(systemEventType, new Payload(folder.getMap(), Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
@@ -1255,4 +1250,5 @@ public class FolderAPIImpl implements FolderAPI  {
 		Logger.debug(this, () -> "Updating references for user " + userId);
 		folderFactory.updateUserReferences(userId, replacementUserId);
 	}
+
 }
