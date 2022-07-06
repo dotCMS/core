@@ -224,12 +224,19 @@ const runPostmanCollections = async (): Promise<PostmanTestsResult> => {
   for (const collection of filtered) {
     const normalized = collection.replace(/ /g, '_').replace('.json', '')
     let rc: number
+    const start = new Date().getTime()
+
     try {
       rc = await runPostmanCollection(collection, normalized)
     } catch (err) {
       core.info(`Postman collection run for ${collection} failed due to: ${err}`)
       rc = 127
     }
+
+    const end = new Date().getTime()
+    const duration = (end - start) / 1000
+    core.info(`Collection ${collection} took ${duration} seconds to run`)
+
     collectionRuns.set(collection, rc)
 
     if (exportReport) {
@@ -237,7 +244,9 @@ const runPostmanCollections = async (): Promise<PostmanTestsResult> => {
       htmlResults.push(
         `<tr><td><a href="./${normalized}.html">${collection}</a></td><td style="color: #ffffff; background-color: ${
           passed ? '#28a745' : '#dc3545'
-        }; font-weight: bold;">${passed ? PASSED : FAILED}</td></tr>`
+        }; font-weight: bold;">${passed ? PASSED : FAILED}</td>
+        <td>${duration} seconds</td>
+        </tr>`
       )
     }
   }
