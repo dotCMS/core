@@ -179,10 +179,10 @@ exports.runTests = runTests;
  * Copies logs from docker volume to standard DotCMS location.
  */
 const copyOutputs = () => __awaiter(void 0, void 0, void 0, function* () {
-    yield exec.exec('docker', ['ps']);
-    yield exec.exec('docker', ['cp', 'docker_dotcms-app_1:/srv/dotserver/tomcat-9.0.60/logs/dotcms.log', logsFolder]);
-    yield exec.exec('pwd', [], { cwd: logsFolder });
-    yield exec.exec('ls', ['-las', '.'], { cwd: logsFolder });
+    yield execCmd('docker', ['ps']);
+    yield execCmd('docker', ['cp', 'docker_dotcms-app_1:/srv/dotserver/tomcat-9.0.60/logs/dotcms.log', logsFolder]);
+    yield execCmd('pwd', [], logsFolder);
+    yield execCmd('ls', ['-las', '.'], logsFolder);
     try {
         fs.copyFileSync(path.join(logsFolder, logFile), path.join(dotCmsRoot, logFile));
     }
@@ -207,10 +207,10 @@ const installDeps = () => __awaiter(void 0, void 0, void 0, function* () {
     if (exportReport) {
         npmArgs.push('newman-reporter-htmlextra');
     }
-    yield exec.exec('npm', npmArgs);
+    yield execCmd('npm', npmArgs);
     // if (!fs.existsSync(tomcatRoot) && buildEnv === 'gradle') {
     //   core.info(`Tomcat root does not exist, creating it`)
-    //   await exec.exec('./gradlew', ['clonePullTomcatDist'])
+    //   await execCmd('./gradlew', ['clonePullTomcatDist'])
     //   tomcatRoot = resolveTomcat()
     //   if (!tomcatRoot) {
     //     throw new Error('Cannot find any Tomcat root folder')
@@ -227,10 +227,7 @@ const startDeps = () => __awaiter(void 0, void 0, void 0, function* () {
     Starting postman tests dependencies
     =======================================`);
     // const depProcess = she
-    exec.exec('docker-compose', ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'up'], {
-        cwd: dockerFolder,
-        env: DEPS_ENV
-    });
+    execCmd('docker-compose', ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'up'], dockerFolder, DEPS_ENV);
     //await startDotCMS()
 });
 /**
@@ -244,10 +241,7 @@ const stopDeps = () => __awaiter(void 0, void 0, void 0, function* () {
     Stopping postman tests dependencies
     ===================================`);
     try {
-        yield exec.exec('docker-compose', ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'down'], {
-            cwd: dockerFolder,
-            env: DEPS_ENV
-        });
+        yield execCmd('docker-compose', ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'down'], dockerFolder, DEPS_ENV);
     }
     catch (err) {
         console.error(`Error stopping dependencies: ${err}`);
@@ -258,14 +252,14 @@ const stopDeps = () => __awaiter(void 0, void 0, void 0, function* () {
 //     =======================================
 //     Starting DotCMS instance
 //     =======================================`)
-//   exec.exec(path.join(tomcatRoot, 'bin', 'startup.sh'))
+//   execCmd(path.join(tomcatRoot, 'bin', 'startup.sh'))
 // }
 // const stopDotCMS = async () => {
 //   core.info(`
 //     =======================================
 //     Stopping DotCMS instance
 //     =======================================`)
-//   await exec.exec(path.join(tomcatRoot, 'bin', 'shutdown.sh'))
+//   await execCmd(path.join(tomcatRoot, 'bin', 'shutdown.sh'))
 // }
 /**
  * Run postman tests.
@@ -354,9 +348,7 @@ const runPostmanCollection = (collection, normalized) => __awaiter(void 0, void 
         args.push('--reporter-htmlextra-export');
         args.push(reportFile);
     }
-    const rc = yield exec.exec('newman', args, {
-        cwd: postmanTestsPath
-    });
+    const rc = yield execCmd('newman', args, postmanTestsPath);
     return rc;
 });
 /*
@@ -420,7 +412,7 @@ const prepareLicense = () => __awaiter(void 0, void 0, void 0, function* () {
     const licenseFile = path.join(licenseFolder, 'license.dat');
     core.info(`Adding license to ${licenseFile}`);
     fs.writeFileSync(licenseFile, licenseKey, { encoding: 'utf8', flag: 'a+', mode: 0o777 });
-    yield exec.exec('ls', ['-las', licenseFile]);
+    yield execCmd('ls', ['-las', licenseFile]);
 });
 /**
  * Resolves tests when provided
@@ -459,6 +451,17 @@ const extractFromMessg = (message) => {
     }
     return extracted;
 };
+const execCmd = (cmd, args, workingDir, env) => __awaiter(void 0, void 0, void 0, function* () {
+    let message = `Executing cmd: ${cmd} ${(args === null || args === void 0 ? void 0 : args.join(' ')) || ''}`;
+    if (workingDir) {
+        message += `\ncwd: ${workingDir}`;
+    }
+    if (env) {
+        message += `\nenv: ${JSON.stringify(env, null, 2)}`;
+    }
+    core.info(message);
+    return yield exec.exec(cmd, args, { cwd: workingDir, env });
+});
 
 
 /***/ }),

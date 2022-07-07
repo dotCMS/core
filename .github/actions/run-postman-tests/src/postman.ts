@@ -80,10 +80,10 @@ export const runTests = async (): Promise<PostmanTestsResult> => {
  * Copies logs from docker volume to standard DotCMS location.
  */
 const copyOutputs = async () => {
-  await exec.exec('docker', ['ps'])
-  await exec.exec('docker', ['cp', 'docker_dotcms-app_1:/srv/dotserver/tomcat-9.0.60/logs/dotcms.log', logsFolder])
-  await exec.exec('pwd', [], {cwd: logsFolder})
-  await exec.exec('ls', ['-las', '.'], {cwd: logsFolder})
+  await execCmd('docker', ['ps'])
+  await execCmd('docker', ['cp', 'docker_dotcms-app_1:/srv/dotserver/tomcat-9.0.60/logs/dotcms.log', logsFolder])
+  await execCmd('pwd', [], logsFolder)
+  await execCmd('ls', ['-las', '.'], logsFolder)
 
   try {
     fs.copyFileSync(path.join(logsFolder, logFile), path.join(dotCmsRoot, logFile))
@@ -110,11 +110,11 @@ const installDeps = async () => {
   if (exportReport) {
     npmArgs.push('newman-reporter-htmlextra')
   }
-  await exec.exec('npm', npmArgs)
+  await execCmd('npm', npmArgs)
 
   // if (!fs.existsSync(tomcatRoot) && buildEnv === 'gradle') {
   //   core.info(`Tomcat root does not exist, creating it`)
-  //   await exec.exec('./gradlew', ['clonePullTomcatDist'])
+  //   await execCmd('./gradlew', ['clonePullTomcatDist'])
 
   //   tomcatRoot = resolveTomcat()
   //   if (!tomcatRoot) {
@@ -133,13 +133,11 @@ const startDeps = async () => {
     Starting postman tests dependencies
     =======================================`)
   // const depProcess = she
-  exec.exec(
+  execCmd(
     'docker-compose',
     ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'up'],
-    {
-      cwd: dockerFolder,
-      env: DEPS_ENV
-    }
+    dockerFolder,
+    DEPS_ENV
   )
 
   //await startDotCMS()
@@ -156,13 +154,11 @@ const stopDeps = async () => {
     Stopping postman tests dependencies
     ===================================`)
   try {
-    await exec.exec(
+    await execCmd(
       'docker-compose',
       ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'down'],
-      {
-        cwd: dockerFolder,
-        env: DEPS_ENV
-      }
+      dockerFolder,
+      DEPS_ENV
     )
   } catch (err) {
     console.error(`Error stopping dependencies: ${err}`)
@@ -174,7 +170,7 @@ const stopDeps = async () => {
 //     =======================================
 //     Starting DotCMS instance
 //     =======================================`)
-//   exec.exec(path.join(tomcatRoot, 'bin', 'startup.sh'))
+//   execCmd(path.join(tomcatRoot, 'bin', 'startup.sh'))
 // }
 
 // const stopDotCMS = async () => {
@@ -182,7 +178,7 @@ const stopDeps = async () => {
 //     =======================================
 //     Stopping DotCMS instance
 //     =======================================`)
-//   await exec.exec(path.join(tomcatRoot, 'bin', 'shutdown.sh'))
+//   await execCmd(path.join(tomcatRoot, 'bin', 'shutdown.sh'))
 // }
 
 /**
@@ -284,9 +280,7 @@ const runPostmanCollection = async (collection: string, normalized: string): Pro
     args.push('--reporter-htmlextra-export')
     args.push(reportFile)
   }
-  const rc = await exec.exec('newman', args, {
-    cwd: postmanTestsPath
-  })
+  const rc = await execCmd('newman', args, postmanTestsPath)
 
   return rc
 }
@@ -359,7 +353,7 @@ const prepareLicense = async () => {
   const licenseFile = path.join(licenseFolder, 'license.dat')
   core.info(`Adding license to ${licenseFile}`)
   fs.writeFileSync(licenseFile, licenseKey, {encoding: 'utf8', flag: 'a+', mode: 0o777})
-  await exec.exec('ls', ['-las', licenseFile])
+  await execCmd('ls', ['-las', licenseFile])
 }
 
 /**
@@ -404,4 +398,22 @@ const extractFromMessg = (message: string): string[] => {
   }
 
   return extracted
+}
+
+const execCmd = async (
+  cmd: string,
+  args?: string[],
+  workingDir?: string,
+  env?: {[key: string]: string}
+): Promise<number> => {
+  let message = `Executing cmd: ${cmd} ${args?.join(' ') || ''}`
+  if (workingDir) {
+    message += `\ncwd: ${workingDir}`
+  }
+  if (env) {
+    message += `\nenv: ${JSON.stringify(env, null, 2)}`
+  }
+  core.info(message)
+
+  return await exec.exec(cmd, args, {cwd: workingDir, env})
 }
