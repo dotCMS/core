@@ -12,6 +12,8 @@ for d in $(ls) ; do
     [[ -d ./node_modules ]] && rm -rf ./node_modules
     [[ -f package-lock.json ]] && rm package-lock.json
     npm install
+  elif [[ "${mode}" == 'install' ]]; then
+    npm install
   fi
   npm run all
   popd

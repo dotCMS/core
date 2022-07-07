@@ -1,19 +1,13 @@
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as fs from 'fs'
+import {ChildProcess} from 'node:child_process'
 import * as path from 'path'
 import * as shelljs from 'shelljs'
 
-// const resolveTomcat = (): string => {
-//   const dotServerFolder = path.join(projectRoot, 'dist', 'dotserver')
-//   const tomcatFolder = shelljs.ls(dotServerFolder).find(folder => folder.startsWith('tomcat-'))
-//   return path.join(dotServerFolder, tomcatFolder || '')
-// }
-
 const projectRoot = core.getInput('project_root')
-// const buildEnv = core.getInput('build_env')
+const buildEnv = core.getInput('build_env')
 const builtImageName = core.getInput('built_image_name')
-const waitForDeps = core.getInput('wait_for_deps')
 const dbType = core.getInput('db_type')
 const licenseKey = core.getInput('license_key')
 const customStarterUrl = core.getInput('custom_starter_url')
@@ -22,11 +16,13 @@ const exportReport = core.getBooleanInput('export_report')
 const cicdFolder = path.join(projectRoot, 'cicd')
 const resourcesFolder = path.join(cicdFolder, 'resources', 'postman')
 const dockerFolder = path.join(cicdFolder, 'docker')
-const licenseFolder = path.join(dockerFolder, 'license')
 const dotCmsRoot = path.join(projectRoot, 'dotCMS')
-const logsFolder = path.join(dockerFolder, 'logs')
-const logFile = 'dotcms.log'
-const volumes = [licenseFolder, path.join(dockerFolder, 'cms-shared'), path.join(dockerFolder, 'cms-local'), logsFolder]
+const tomcatFolder = core.getInput('tomcat_folder')
+const tomcatRoot = path.join(projectRoot, 'dist', 'dotserver', tomcatFolder)
+const logsFolder = path.join(tomcatRoot, 'logs')
+const tomcatLogFile = path.join(logsFolder, 'catalina.out')
+const logFile = path.join(logsFolder, 'dotcms.log')
+const licenseFolder = path.join(tomcatRoot, 'webapps', 'ROOT', 'dotsecure', 'license')
 const postmanTestsPath = path.join(dotCmsRoot, 'src', 'curl-test')
 const postmanEnvFile = 'postman_environment.json'
 const resultsFolder = path.join(dotCmsRoot, 'build', 'test-results', 'postmanTest')
@@ -34,7 +30,8 @@ const reportFolder = path.join(dotCmsRoot, 'build', 'reports', 'tests', 'postman
 const runtTestsPrefix = 'postman-tests:'
 const PASSED = 'PASSED'
 const FAILED = 'FAILED'
-//let tomcatRoot = resolveTomcat()
+let dotCmsProcess: ChildProcess
+let logProcess: ChildProcess
 
 export interface PostmanTestsResult {
   testsRunExitCode: number
@@ -42,23 +39,43 @@ export interface PostmanTestsResult {
   skipResultsReport: boolean
 }
 
+export interface Command {
+  cmd: string
+  args?: string[]
+  workingDir?: string
+  env?: {[key: string]: string}
+}
+
 const DEPS_ENV: {[key: string]: string} = {
   DOTCMS_IMAGE: builtImageName,
   TEST_TYPE: 'postman',
   DB_TYPE: dbType,
   CUUSTOM_STARTER_FOLDER: customStarterUrl,
-  WAIT_FOR_DEPS: waitForDeps,
-  POSTGRES_USER: 'postgres',
-  POSTGRES_PASSWORD: 'postgres',
+  POSTGRES_USER: 'dotcms',
+  POSTGRES_PASSWORD: 'dotcms',
   POSTGRES_DB: 'dotcms'
 }
 
+const DOTCMS_ENV: {[key: string]: string} = {
+  databaseType: dbType,
+  CATALINA_OPTS: '-XX:+PrintFlagsFinal',
+  DOT_ES_ENDPOINTS: 'https://localhost:9200',
+  DOT_DOTCMS_DEV_MODE: 'true',
+  DB_MAX_TOTAL: '15',
+  DOT_INDEX_POLICY_SINGLE_CONTENT: 'FORCE',
+  DOT_ASYNC_REINDEX_COMMIT_LISTENERS: 'false',
+  DOT_ASYNC_COMMIT_LISTENERS: 'false',
+  DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS: '600'
+}
+
 /*
+ * Run postman tests.
  *
  * @returns a number representing the command exit code
  */
 export const runTests = async (): Promise<PostmanTestsResult> => {
   setup()
+
   startDeps()
 
   try {
@@ -73,22 +90,6 @@ export const runTests = async (): Promise<PostmanTestsResult> => {
   } finally {
     copyOutputs()
     await stopDeps()
-  }
-}
-
-/**
- * Copies logs from docker volume to standard DotCMS location.
- */
-const copyOutputs = async () => {
-  await exec.exec('docker', ['ps'])
-  await exec.exec('docker', ['cp', 'docker_dotcms-app_1:/srv/dotserver/tomcat-9.0.60/logs/dotcms.log', logsFolder])
-  await exec.exec('pwd', [], {cwd: logsFolder})
-  await exec.exec('ls', ['-las', '.'], {cwd: logsFolder})
-
-  try {
-    fs.copyFileSync(path.join(logsFolder, logFile), path.join(dotCmsRoot, logFile))
-  } catch (err) {
-    core.error(`Error copying log file: ${err}`)
   }
 }
 
@@ -110,17 +111,15 @@ const installDeps = async () => {
   if (exportReport) {
     npmArgs.push('newman-reporter-htmlextra')
   }
-  await exec.exec('npm', npmArgs)
+  await execCmd(toCommand('npm', npmArgs))
 
-  // if (!fs.existsSync(tomcatRoot) && buildEnv === 'gradle') {
-  //   core.info(`Tomcat root does not exist, creating it`)
-  //   await exec.exec('./gradlew', ['clonePullTomcatDist'])
-
-  //   tomcatRoot = resolveTomcat()
-  //   if (!tomcatRoot) {
-  //     throw new Error('Cannot find any Tomcat root folder')
-  //   }
-  // }
+  if (!fs.existsSync(tomcatRoot) && buildEnv === 'gradle') {
+    core.info(`Tomcat root ${tomcatRoot} does not exist, creating it`)
+    await execCmd(toCommand('./gradlew', ['clonePullTomcatDist']))
+    if (!tomcatRoot) {
+      throw new Error('Cannot find any Tomcat root folder')
+    }
+  }
 }
 
 /**
@@ -132,58 +131,73 @@ const startDeps = async () => {
     =======================================
     Starting postman tests dependencies
     =======================================`)
-  // const depProcess = she
-  exec.exec(
-    'docker-compose',
-    ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'up'],
-    {
-      cwd: dockerFolder,
-      env: DEPS_ENV
-    }
+  execCmdAsync(
+    toCommand(
+      'docker-compose',
+      ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, 'up'],
+      dockerFolder,
+      DEPS_ENV
+    ),
+    false
   )
 
-  //await startDotCMS()
+  await waitFor(70, 'DotCMS dependencies')
+
+  startDotCMS()
 }
 
 /**
  * Stop postman depencies: db, ES and DotCMS isntance.
  */
 const stopDeps = async () => {
-  //await stopDotCMS()
+  await stopDotCMS()
+
   // Stopping dependencies
   core.info(`
     ===================================
     Stopping postman tests dependencies
     ===================================`)
   try {
-    await exec.exec(
-      'docker-compose',
-      ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'down'],
-      {
-        cwd: dockerFolder,
-        env: DEPS_ENV
-      }
+    await execCmd(
+      toCommand(
+        'docker-compose',
+        ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, 'down'],
+        dockerFolder,
+        DEPS_ENV
+      )
     )
   } catch (err) {
-    console.error(`Error stopping dependencies: ${err}`)
+    console.error(`Could not stop dependencies gracefully due to: ${err}`)
   }
 }
 
-// const startDotCMS = async () => {
-//   core.info(`
-//     =======================================
-//     Starting DotCMS instance
-//     =======================================`)
-//   exec.exec(path.join(tomcatRoot, 'bin', 'startup.sh'))
-// }
+const startDotCMS = () => {
+  core.info(`
+    =======================================
+    Starting DotCMS instance
+    =======================================`)
+  dotCmsProcess = execCmdAsync(
+    toCommand(path.join(tomcatRoot, 'bin', 'startup.sh'), [], tomcatRoot, DOTCMS_ENV),
+    true
+  ) as ChildProcess
+  logProcess = execCmdAsync(toCommand('tail', ['-f', tomcatLogFile]), true) as ChildProcess
+  core.info(`Log process: ${logProcess}`)
+}
 
-// const stopDotCMS = async () => {
-//   core.info(`
-//     =======================================
-//     Stopping DotCMS instance
-//     =======================================`)
-//   await exec.exec(path.join(tomcatRoot, 'bin', 'shutdown.sh'))
-// }
+const stopDotCMS = async () => {
+  core.info(`
+    =======================================
+    Stopping DotCMS instance
+    =======================================`)
+  try {
+    await execCmd(toCommand(path.join(tomcatRoot, 'bin', 'shutdown.sh'), [], tomcatRoot, DOTCMS_ENV))
+  } catch (err) {
+    core.warning(`Could not stop gracefully DotCMS due to: ${err}`)
+  } finally {
+    tryToKill(dotCmsProcess, 20, 'DotCMS to stop')
+    tryToKill(logProcess, 2, 'DotCMS log to stop')
+  }
+}
 
 /**
  * Run postman tests.
@@ -191,7 +205,7 @@ const stopDeps = async () => {
  * @returns an overall ivew of the tests results
  */
 const runPostmanCollections = async (): Promise<PostmanTestsResult> => {
-  await waitFor(150, `DotCMS instance`)
+  await waitFor(160, `DotCMS instance`)
 
   // Executes Postman tests
   core.info(`
@@ -224,12 +238,19 @@ const runPostmanCollections = async (): Promise<PostmanTestsResult> => {
   for (const collection of filtered) {
     const normalized = collection.replace(/ /g, '_').replace('.json', '')
     let rc: number
+    const start = new Date().getTime()
+
     try {
       rc = await runPostmanCollection(collection, normalized)
     } catch (err) {
       core.info(`Postman collection run for ${collection} failed due to: ${err}`)
       rc = 127
     }
+
+    const end = new Date().getTime()
+    const duration = (end - start) / 1000
+    core.info(`Collection ${collection} took ${duration} seconds to run`)
+
     collectionRuns.set(collection, rc)
 
     if (exportReport) {
@@ -237,7 +258,9 @@ const runPostmanCollections = async (): Promise<PostmanTestsResult> => {
       htmlResults.push(
         `<tr><td><a href="./${normalized}.html">${collection}</a></td><td style="color: #ffffff; background-color: ${
           passed ? '#28a745' : '#dc3545'
-        }; font-weight: bold;">${passed ? PASSED : FAILED}</td></tr>`
+        }; font-weight: bold;">${passed ? PASSED : FAILED}</td>
+        <td>${duration} seconds</td>
+        </tr>`
       )
     }
   }
@@ -284,9 +307,7 @@ const runPostmanCollection = async (collection: string, normalized: string): Pro
     args.push('--reporter-htmlextra-export')
     args.push(reportFile)
   }
-  const rc = await exec.exec('newman', args, {
-    cwd: postmanTestsPath
-  })
+  const rc = await execCmd(toCommand('newman', args, postmanTestsPath))
 
   return rc
 }
@@ -344,12 +365,12 @@ const waitFor = async (wait: number, startLabel: string, endLabel?: string) => {
  * Create necessary folders
  */
 const createFolders = () => {
-  const folders = [resultsFolder, reportFolder, ...volumes]
+  shelljs.touch(tomcatLogFile)
+
+  const folders = [resultsFolder, reportFolder, licenseFolder]
   for (const folder of folders) {
     fs.mkdirSync(folder, {recursive: true})
   }
-
-  shelljs.touch(path.join(dockerFolder, logFile))
 }
 
 /**
@@ -359,7 +380,7 @@ const prepareLicense = async () => {
   const licenseFile = path.join(licenseFolder, 'license.dat')
   core.info(`Adding license to ${licenseFile}`)
   fs.writeFileSync(licenseFile, licenseKey, {encoding: 'utf8', flag: 'a+', mode: 0o777})
-  await exec.exec('ls', ['-las', licenseFile])
+  await execCmd(toCommand('ls', ['-las', licenseFile]))
 }
 
 /**
@@ -404,4 +425,81 @@ const extractFromMessg = (message: string): string[] => {
   }
 
   return extracted
+}
+
+const toCommand = (cmd: string, args?: string[], workingDir?: string, env?: {[key: string]: string}): Command => {
+  return {
+    cmd,
+    args,
+    workingDir,
+    env
+  }
+}
+
+const printCmd = (cmd: Command) => {
+  let message = `Executing cmd: ${cmd.cmd} ${cmd.args?.join(' ') || ''}`
+  if (cmd.workingDir) {
+    message += `\ncwd: ${cmd.workingDir}`
+  }
+  if (cmd.env) {
+    message += `\nenv: ${JSON.stringify(cmd.env, null, 2)}`
+  }
+  core.info(message)
+}
+
+const execCmd = async (cmd: Command): Promise<number> => {
+  printCmd(cmd)
+  return await exec.exec(cmd.cmd, cmd.args, {cwd: cmd.workingDir, env: cmd.env})
+}
+
+const execCmdAsync = (cmd: Command, useChild: boolean): ChildProcess | void => {
+  printCmd(cmd)
+
+  if (cmd.env) {
+    for (const env of Object.keys(cmd.env)) {
+      shelljs.env[env] = cmd.env[env]
+    }
+  }
+
+  const args = cmd.args || []
+  if (useChild) {
+    const cmdStr = [cmd.cmd, ...args].join(' ')
+    const process = shelljs.exec(cmdStr, {async: true})
+    core.info(`Creating process from '${cmdStr}': ${process.pid}`)
+    return process
+  }
+
+  exec.exec(cmd.cmd, cmd.args, {cwd: cmd.workingDir, env: cmd.env})
+}
+
+const killProcess = (process?: ChildProcess, sig?: number) => {
+  if (process) {
+    core.info(`Killing process: ${process.pid}`)
+    sig ? process.kill(sig) : process.kill()
+  } else {
+    core.info('No process found to kill')
+  }
+}
+
+const tryToKill = async (process: ChildProcess, wait: number, label: string) => {
+  if (!process.killed) {
+    killProcess(process)
+
+    await waitFor(wait, label)
+
+    if (!process.killed) {
+      killProcess(process, 9)
+    }
+  }
+}
+
+/**
+ * Copies logs from docker volume to standard DotCMS location.
+ */
+const copyOutputs = async () => {
+  try {
+    fs.copyFileSync(tomcatLogFile, logFile)
+  } catch (err) {
+    core.error(`Error copying log file: ${err}`)
+  }
 }

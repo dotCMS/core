@@ -14,6 +14,10 @@ inputs:
     - gradle
     - maven
     required: true
+  tomcat_folder:
+    description: 'Tomcat folder'
+    required: true
+    default: 'tomcat-9.0.60'
   db_type:
     description: 'Database type'
     required: true
@@ -21,10 +25,6 @@ inputs:
   built_image_name:
     description: 'DotCMS built image name'
     required: true
-  wait_for_deps:
-    description: 'Time to wait before starting DotCMS instance to let dependencies load'
-    required: true
-    default: '30'
   license_key:
     description: 'License key to use'
     required: true

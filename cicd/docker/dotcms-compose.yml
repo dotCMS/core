@@ -23,6 +23,7 @@ services:
       - 8000:8000
     environment:
       databaseType: "${DB_TYPE}"
+      DOTCMS_IMAGE:
       CATALINA_OPTS: "-XX:+PrintFlagsFinal"
       DB_BASE_URL: "jdbc:postgresql://database/dotcms"
       DB_USERNAME: "postgres"
