@@ -157,7 +157,6 @@ describe('DotCrumbtrailService', () => {
     });
 
     it('Should take url from NavegationEnd event', () => {
-        // @ts-ignore
         dotNavigationServiceMock.navigationEnd.next({
             url: '/first_portlet',
             urlAfterRedirects: '/first_portlet',
@@ -177,7 +176,6 @@ describe('DotCrumbtrailService', () => {
     });
 
     it('Should ignore c prefix', () => {
-        // @ts-ignore
         dotNavigationServiceMock.navigationEnd.next({
             url: '/first_portlet',
             urlAfterRedirects: '/first_portlet',
@@ -197,7 +195,6 @@ describe('DotCrumbtrailService', () => {
     });
 
     it('Should exclude URL', () => {
-        // @ts-ignore
         dotNavigationServiceMock.navigationEnd.next({
             url: '/content-types-angular/create/content',
             urlAfterRedirects: '/content-types-angular/create/content',
@@ -234,7 +231,6 @@ describe('DotCrumbtrailService', () => {
             }
         };
 
-        // @ts-ignore
         dotNavigationServiceMock.navigationEnd.next({
             url: '/content-types-angular/edit/02853fe9-bd7b-48b4-b19d-058b9dad19a8',
             urlAfterRedirects: '/content-types-angular/edit/02853fe9-bd7b-48b4-b19d-058b9dad19a8',
@@ -280,7 +276,6 @@ describe('DotCrumbtrailService', () => {
             }
         };
 
-        // @ts-ignore
         dotNavigationServiceMock.navigationEnd.next({
             url: '/edit-page/content?url=%2Fabout-us%2Findex&language_id=1',
             urlAfterRedirects: '/edit-page/content?url=%2Fabout-us%2Findex&language_id=1',
@@ -324,7 +319,6 @@ describe('DotCrumbtrailService', () => {
             }
         };
 
-        // @ts-ignore
         dotNavigationServiceMock.navigationEnd.next({
             url: '/apps/google-translate',
             urlAfterRedirects: '/apps/google-translate',
@@ -360,7 +354,6 @@ describe('DotCrumbtrailService', () => {
             }
         };
 
-        // @ts-ignore
         dotNavigationServiceMock.navigationEnd.next({
             url: 'templates/edit/7173cb7a-5d08-4c75-82b3-a7788848c263',
             urlAfterRedirects: 'templates/edit/7173cb7a-5d08-4c75-82b3-a7788848c263',
@@ -392,7 +385,6 @@ describe('DotCrumbtrailService', () => {
             }
         };
 
-        // @ts-ignore
         dotNavigationServiceMock.navigationEnd.next({
             url: 'templates/new',
             urlAfterRedirects: 'templates/new',
