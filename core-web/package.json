@@ -37,16 +37,13 @@
     "format": "nx format:write",
     "format:write": "nx format:write",
     "format:check": "nx format:check",
-    "update": "nx migrate latest",
-    "workspace-generator": "nx workspace-generator",
     "dep-graph": "nx dep-graph",
-    "help": "nx help",
     "pretty-quick": "pretty-quick",
     "prepare": "cd .. && node core-web/prepare.js"
   },
   "private": false,
   "dependencies": {
-        "@angular-devkit/core": "^14.0.5",
+    "@angular-devkit/core": "^14.0.5",
     "@angular/animations": "14.0.4",
     "@angular/cdk": "14.0.4",
     "@angular/common": "14.0.4",
@@ -116,6 +113,7 @@
     "@babel/core": "^7.12.9",
     "@compodoc/compodoc": "^1.1.11",
     "@materia-ui/ngx-monaco-editor": "^6.0.0",
+    "@mdx-js/react": "^2.1.2",
     "@nrwl/cli": "14.4.1",
     "@nrwl/cypress": "14.4.1",
     "@nrwl/eslint-plugin-nx": "14.4.1",
@@ -136,6 +134,7 @@
     "@storybook/builder-webpack5": "6.5.9",
     "@storybook/html": "^6.5.9",
     "@storybook/manager-webpack5": "6.5.9",
+    "@storybook/mdx2-csf": "^0.0.3",
     "@storybook/storybook-deployer": "^2.8.10",
     "@storybook/theming": "^6.5.9",
     "@types/chart.js": "^2.9.32",
@@ -194,4 +193,3 @@
     "webpack-bundle-analyzer": "^4.5.0"
   }
 }
-
