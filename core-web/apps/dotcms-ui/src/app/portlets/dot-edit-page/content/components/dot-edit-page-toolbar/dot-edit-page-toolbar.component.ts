@@ -44,7 +44,8 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
     isEnterpriseLicense$: Observable<boolean>;
     showWhatsChanged: boolean;
     apiLink: string;
-    screenShot: string;
+    // screenShot: string;
+    pageRenderedHtml: string;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -54,6 +55,7 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
     ) {}
 
     ngOnInit() {
+        console.log('***pagsetat', this.pageState);
         this.isEnterpriseLicense$ = this.dotLicenseService.isEnterprise();
 
         this.apiLink = `api/v1/page/render${this.pageState.page.pageURI}?language_id=${this.pageState.page.languageId}`;
@@ -62,6 +64,8 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
     ngOnChanges(): void {
         console.log('**pagestate', this.pageState.params.viewAs.device?.cssWidth);
         console.log('**pagestate', this.pageState);
+
+        this.updateRenderedHtml();
 
         this.showWhatsChanged =
             this.pageState.state.mode === DotPageMode.PREVIEW &&
@@ -94,7 +98,10 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
                     title: this.pageState.params.page?.title || null,
                     url: this.pageState.params.page?.pageURI || null,
                     order: 1,
-                    deviceWidth: this.pageState.params.viewAs.device?.cssWidth || null
+                    deviceWidth: this.pageState.params.viewAs.device?.cssWidth || null,
+                    pageRenderedHtml: this.pageRenderedHtml || null,
+                    deviceId: this.pageState.params.viewAs.device?.identifier || null,
+                    languageId: this.pageState.params.viewAs.language.id || null
                 },
                 onSave: (value: DotFavoritePage) => {
                     console.log('**save', value);
@@ -219,5 +226,11 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
             document.body.appendChild(canvas);
         });
 */
+    }
+    private updateRenderedHtml(): void {
+        this.pageRenderedHtml =
+            this.pageState?.params.viewAs.mode === DotPageMode.PREVIEW
+                ? this.pageState.params.page.rendered
+                : this.pageRenderedHtml;
     }
 }

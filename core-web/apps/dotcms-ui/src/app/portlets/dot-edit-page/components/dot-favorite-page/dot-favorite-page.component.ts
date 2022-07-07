@@ -1,5 +1,5 @@
 import { Observable, Subject, throwError } from 'rxjs';
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy } from '@angular/core';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { finalize, map, switchMap, take, takeUntil } from 'rxjs/operators';
@@ -16,6 +16,9 @@ export interface DotFavoritePage {
     url: string;
     order: number;
     deviceWidth?: number;
+    pageRenderedHtml?: string;
+    deviceId?: string;
+    languageId?: string;
 }
 
 @Component({
@@ -27,6 +30,12 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
     isFormValid$: Observable<boolean>;
     pageThumbnail: string;
     roleOptions: DotRole[];
+
+    pageRenderedHtml: string;
+
+    imgRatio43 = 1.333;
+    imgWidth = this.config.data.page.deviceWidth || 1024;
+    imgHeight = (this.config.data.page.deviceWidth || 1024) / this.imgRatio43;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -42,6 +51,9 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         const { page }: { page: DotFavoritePage } = this.config.data;
+        this.pageRenderedHtml = page.pageRenderedHtml;
+        console.log('+++imgWidth', this.imgWidth, this.imgHeight);
+        console.log('______oage', page);
 
         this.dotRolesService
             .search()
@@ -53,10 +65,14 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
                 // this.disabled = this.options.length === 0;
             });
 
+        const url =
+            `${page.url}?language_id=${page.languageId}` + (page.deviceId
+                ? `&device_id=${page.deviceId}`
+                : '');
         const formGroupAttrs = {
             thumbnail: ['', Validators.required],
             title: [page.title, Validators.required],
-            url: [page.url, Validators.required],
+            url: [url, Validators.required],
             order: [page.order, Validators.required],
             permissions: []
         };
@@ -73,7 +89,23 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
             // startWith(false)
         );
 
-        this.takeScreenshot(page.deviceWidth || 1024);
+        setTimeout(() => {
+            const dotHtmlToImageElement = document.querySelector('dot-html-to-image');
+            dotHtmlToImageElement.addEventListener('pageThumbnail', (event: CustomEvent) => {
+                console.log('=====updateThumbnailForm', event.detail);
+                console.log('=====form', this.form.getRawValue());
+
+                this.form.setValue({
+                    ...this.form.getRawValue(),
+                    thumbnail: event.detail
+                });
+                console.log('=====form', this.form);
+            });
+        }, 0);
+    }
+
+    updateThumbnailForm(e: Event): void {
+        console.log('=====updateThumbnailForm', e);
     }
 
     takeScreenshot(renderedWidth?: number): void {
@@ -112,7 +144,7 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
         };
 
         // Transfer port2 to the iframe
-        iframe.contentWindow.postMessage(message, '*', [channel.port2]);
+        // iframe.contentWindow.postMessage(message, '*', [channel.port2]);
 
         // Handle messages received on port1
         // function onMessage(e) {
