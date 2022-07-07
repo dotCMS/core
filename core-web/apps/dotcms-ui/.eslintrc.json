@@ -1,6 +1,6 @@
 {
     "extends": ["../../.eslintrc.json"],
-    "ignorePatterns": ["!**/*"],
+    "ignorePatterns": ["!**/*", "*.spec.ts"],
     "overrides": [
         {
             "files": ["*.ts"],
@@ -8,6 +8,7 @@
                 "plugin:@nrwl/nx/angular",
                 "plugin:@angular-eslint/template/process-inline-templates"
             ],
+
             "rules": {
                 "@angular-eslint/directive-selector": [
                     "error",
@@ -24,8 +25,7 @@
                         "prefix": "dot",
                         "style": "kebab-case"
                     }
-                ],
-                "@typescript-eslint/ban-ts-comment": ["warn"]
+                ]
             }
         },
         {
