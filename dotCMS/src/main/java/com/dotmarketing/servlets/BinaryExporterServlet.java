@@ -180,9 +180,7 @@ public class BinaryExporterServlet extends HttpServlet {
 		String exporterPath = uriPieces[1];
 		String uuid = uriPieces[2];
 
-		if(uri.contains("scale")) {
-			Logger.info(this, "*****URI: " + uri);
-		}
+		Logger.info(this, "*****URI: " + uri);
 
 		Map<String, String[]> params = new LinkedHashMap<>();
 		params.putAll(req.getParameterMap());
