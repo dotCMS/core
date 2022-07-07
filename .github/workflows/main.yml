@@ -98,18 +98,15 @@ jobs:
         run: |
           cd core-web
           npm install
-      - name:
-          Building for production
-          ## Build dotcms-webcomponents because dotcms-ui doesn't have the lib as a direct dep
-        ## so Nx can't be identified and build it.
+      - name: Building for production
         run: |
           cd core-web
-          npm run nx build dotcms-webcomponents && npm run nx build dotcms-ui -- --prod
+          npm run build:prod
       - name: Running tests
         id: test_run
         run: |
           cd core-web
-          if ! (npm run nx test --target=dotcms-ui --prod) then
+          if ! (npx nx run nx test --target=dotcms-ui --prod) then
             echo "::set-output name=status::failure";
             echo "::set-output name=color::#ff2400";
             exit 1;
