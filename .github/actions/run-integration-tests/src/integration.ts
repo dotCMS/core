@@ -2,7 +2,6 @@ import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as path from 'path'
 import * as setup from './it-setup'
-// import * as shelljs from 'shelljs'
 
 /**
  * Based on dbType resolves the ci index
@@ -174,7 +173,7 @@ const propertyMap = (): Map<string, string> => {
 const appendToWorkspace = (folder: string): string => path.join(workspaceRoot, folder)
 
 /**
- * Resolve paramateres to produce command arguments
+ * Resolve parameters to produce command arguments
  *
  * @param cmd {@link Command} object holding command and arguments
  */
