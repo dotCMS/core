@@ -1,5 +1,6 @@
-package com.dotcms.restclient;
+package com.dotcms.api;
 
+import com.dotcms.api.microprofile.DotCMSClientHeaders;
 import com.dotcms.model.APIResponse;
 import com.dotcms.model.user.User;
 import com.dotcms.model.user.UserFilter;
@@ -10,15 +11,15 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-import org.eclipse.microprofile.rest.client.annotation.ClientHeaderParam;
+import org.eclipse.microprofile.rest.client.annotation.RegisterClientHeaders;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
 @Path("/v1/users")
 @RegisterRestClient(configKey="legacy-api")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@ClientHeaderParam(name = "Authorization", value = "{lookupAuth}")
-public interface LegacyUsersClient extends AuthAware {
+@RegisterClientHeaders(DotCMSClientHeaders.class)
+public interface LegacyUsersClient  {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)

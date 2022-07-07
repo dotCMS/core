@@ -1,7 +1,6 @@
-package com.dotcms.restclient;
+package com.dotcms.api;
 
 
-import com.dotcms.cli.ApplicationContext;
 import com.dotcms.model.authentication.APITokenRequest;
 import com.dotcms.model.authentication.APITokenResponse;
 import com.dotcms.model.contenttype.GetContentTypesResponse;
@@ -12,18 +11,18 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-public class ContentTypeRestClientTest {
+public class ContentTypeAPITest {
 
     @Inject
-    ApplicationContext applicationContext;
-
-    @Inject
-    @RestClient
-    ContentTypeRestClient client;
+    AuthSecurityContext authSecurityContext;
 
     @Inject
     @RestClient
-    LegacyAuthenticationClient authClient;
+    ContentTypeAPI client;
+
+    @Inject
+    @RestClient
+    AuthenticationAPI authClient;
 
     @Test
     public void Test_Content_Type() {
@@ -32,7 +31,7 @@ public class ContentTypeRestClientTest {
         APITokenResponse resp = authClient.getToken(
                 APITokenRequest.builder().user(user).password("admin").expirationDays(1).build());
 
-        applicationContext.setToken(resp.entity().token(), user);
+        authSecurityContext.setToken(resp.entity().token(), user);
 
         final GetContentTypesResponse response = client.getContentTypes(null, null, null, null, null, null, null );
         Assertions.assertNotNull(response);

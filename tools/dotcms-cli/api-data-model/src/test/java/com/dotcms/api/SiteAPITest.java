@@ -1,9 +1,7 @@
-package com.dotcms.restclient;
+package com.dotcms.api;
 
-import com.dotcms.cli.ApplicationContext;
 import com.dotcms.model.authentication.APITokenRequest;
 import com.dotcms.model.authentication.APITokenResponse;
-import com.dotcms.model.site.GetSitesRequest;
 import com.dotcms.model.site.GetSitesResponse;
 import io.quarkus.test.junit.QuarkusTest;
 import javax.inject.Inject;
@@ -12,18 +10,18 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-public class SitesRestClientTest {
+public class SiteAPITest {
 
     @Inject
-    ApplicationContext applicationContext;
-
-    @Inject
-    @RestClient
-    LegacyAuthenticationClient authClient;
+    AuthSecurityContext authSecurityContext;
 
     @Inject
     @RestClient
-    SitesRestClient sitesRestClient;
+    AuthenticationAPI authClient;
+
+    @Inject
+    @RestClient
+    SiteAPI siteAPI;
 
     @Test
     public void Test_Get_Sites() {
@@ -32,9 +30,9 @@ public class SitesRestClientTest {
         final APITokenResponse resp = authClient.getToken(
                 APITokenRequest.builder().user(user).password("admin").expirationDays(1).build());
 
-        applicationContext.setToken(resp.entity().token(), user);
+        authSecurityContext.setToken(resp.entity().token(), user);
 
-        final GetSitesResponse sitesResponse = sitesRestClient.getSites(null, false, true, true, 1,
+        final GetSitesResponse sitesResponse = siteAPI.getSites(null, false, true, true, 1,
                 10);
         Assertions.assertNotNull(sitesResponse);
     }

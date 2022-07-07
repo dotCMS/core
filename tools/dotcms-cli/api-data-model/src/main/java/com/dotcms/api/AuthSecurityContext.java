@@ -1,4 +1,4 @@
-package com.dotcms.cli;
+package com.dotcms.api;
 
 import com.starxg.keytar.Keytar;
 import com.starxg.keytar.KeytarException;
@@ -18,9 +18,9 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
 @ApplicationScoped
-public class ApplicationContext {
+public class AuthSecurityContext {
 
-    private static final Logger logger = Logger.getLogger(ApplicationContext.class);
+    private static final Logger logger = Logger.getLogger(AuthSecurityContext.class);
     private static final String CURRENT_USER = "cli-current-user";
     private static final String NONE = "none";
 
@@ -31,11 +31,11 @@ public class ApplicationContext {
         return NONE.equals(user) ? Optional.empty() : Optional.ofNullable(user);
     }
 
-    @ConfigProperty(name = "password-store-name")
+    @ConfigProperty(name = "password-store-name",defaultValue = "default")
     String passwordStoreName;
     // Make thread safe
 
-    @ConfigProperty(name = "dotcms.api.url")
+    @ConfigProperty(name = "dotcms.api.url", defaultValue = "http://localhost:8080/api")
     String dotCMSAPIHost;
 
     public String getDotCMSAPIHost() {

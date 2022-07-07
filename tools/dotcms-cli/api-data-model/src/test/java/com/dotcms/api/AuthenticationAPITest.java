@@ -1,7 +1,6 @@
-package com.dotcms.restclient;
+package com.dotcms.api;
 
 
-import com.dotcms.cli.ApplicationContext;
 import com.dotcms.model.authentication.APITokenRequest;
 import com.dotcms.model.authentication.APITokenResponse;
 import io.quarkus.test.junit.QuarkusTest;
@@ -12,14 +11,14 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-public class LegacyAuthenticationClientTest {
+public class AuthenticationAPITest {
 
     @Inject
     @RestClient
-    LegacyAuthenticationClient client;
+    AuthenticationAPI client;
 
     @Inject
-    ApplicationContext applicationContext;
+    AuthSecurityContext authSecurityContext;
 
     @Test
     public void testTokenApi() {
@@ -34,10 +33,10 @@ public class LegacyAuthenticationClientTest {
                         .expirationDays(1).build());
 
         Assertions.assertNotNull(tokenResponse);
-        applicationContext.setToken(tokenResponse.toString(), userString);
-        final Optional<String> user = applicationContext.getUser();
+        authSecurityContext.setToken(tokenResponse.toString(), userString);
+        final Optional<String> user = authSecurityContext.getUser();
         Assertions.assertTrue(user.isPresent());
-        final Optional<String> token = applicationContext.getToken();
+        final Optional<String> token = authSecurityContext.getToken();
         Assertions.assertTrue(token.isPresent());
         Assertions.assertEquals(token.get(),tokenResponse.toString());
     }

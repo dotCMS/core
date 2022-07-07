@@ -1,4 +1,4 @@
-package com.dotcms.restclient;
+package com.dotcms.api;
 
 import com.dotcms.model.authentication.APITokenRequest;
 import com.dotcms.model.authentication.APITokenResponse;
@@ -11,7 +11,7 @@ import javax.ws.rs.core.MediaType;
 @RegisterRestClient(configKey="legacy-api")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public interface LegacyAuthenticationClient {
+public interface AuthenticationAPI {
 
     @POST
     @Path("/api-token")

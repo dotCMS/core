@@ -23,7 +23,6 @@
         <quarkus.platform.version>2.9.1.Final</quarkus.platform.version>
         <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
         <!--version.jboss-logging>3.5.0.Final</version.jboss-logging-->
-        <version.java-keytar>1.0.0</version.java-keytar>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -75,24 +74,11 @@
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-rest-client</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-rest-client-jackson</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
             <artifactId>quarkus-devtools-registry-client</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.starxg</groupId>
-            <artifactId>java-keytar</artifactId>
-            <version>${version.java-keytar}</version>
         </dependency>
     </dependencies>
     <build>

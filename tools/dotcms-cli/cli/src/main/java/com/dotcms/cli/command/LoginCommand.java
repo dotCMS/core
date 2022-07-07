@@ -1,10 +1,10 @@
 package com.dotcms.cli.command;
 
 
-import com.dotcms.cli.ApplicationContext;
+import com.dotcms.api.AuthSecurityContext;
 import com.dotcms.model.authentication.APITokenRequest;
 import com.dotcms.model.authentication.APITokenResponse;
-import com.dotcms.restclient.LegacyAuthenticationClient;
+import com.dotcms.api.AuthenticationAPI;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.logging.Logger;
 import picocli.CommandLine;
@@ -24,17 +24,17 @@ public class LoginCommand implements Runnable {
 
     @Inject
     @RestClient
-    LegacyAuthenticationClient client;
+    AuthenticationAPI client;
 
     @Inject
-    ApplicationContext applicationContext;
+    AuthSecurityContext authSecurityContext;
 
 
     @Override
     public void run() {
         final APITokenRequest tokenRequest = APITokenRequest.builder().user(user).password(password).expirationDays(10).build();
         final APITokenResponse resp = client.getToken(tokenRequest);
-        applicationContext.setToken(resp.entity().token(), user);
+        authSecurityContext.setToken(resp.entity().token(), user);
         logger.info(String.format("Successfully logged-in as %s. ",user));
     }
 }
