@@ -25,7 +25,8 @@
                         "prefix": "dot",
                         "style": "kebab-case"
                     }
-                ]
+                ],
+                "@typescript-eslint/ban-ts-comment": ["warn"]
             }
         },
         {
