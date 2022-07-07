@@ -50,52 +50,50 @@ describe('DotPortletDetailComponent', () => {
     let de: DebugElement;
     let router: ActivatedRoute;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                providers: [
-                    DotMenuService,
-                    { provide: LoginService, useClass: LoginServiceMock },
-                    { provide: DotRouterService, useClass: MockDotRouterService },
-                    { provide: DotUiColorsService, useClass: MockDotUiColorsService },
-                    DotCustomEventHandlerService,
-                    DotWorkflowEventHandlerService,
-                    DotIframeService,
-                    { provide: CoreWebService, useClass: CoreWebServiceMock },
-                    PushPublishService,
-                    ApiRoot,
-                    DotFormatDateService,
-                    UserModel,
-                    StringUtils,
-                    DotcmsEventsService,
-                    LoggerService,
-                    DotEventsSocket,
-                    { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
-                    DotcmsConfigService,
-                    LoggerService,
-                    DotCurrentUserService,
-                    DotMessageDisplayService,
-                    DotWizardService,
-                    DotHttpErrorManagerService,
-                    DotAlertConfirmService,
-                    ConfirmationService,
-                    DotWorkflowActionsFireService,
-                    DotGlobalMessageService,
-                    DotEventsService,
-                    DotGenerateSecurePasswordService
-                ],
-                declarations: [DotPortletDetailComponent],
-                imports: [
-                    DotWorkflowTaskModule,
-                    DotContentletsModule,
-                    RouterTestingModule,
-                    BrowserAnimationsModule,
-                    DotDownloadBundleDialogModule,
-                    HttpClientTestingModule
-                ]
-            });
-        })
-    );
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            providers: [
+                DotMenuService,
+                { provide: LoginService, useClass: LoginServiceMock },
+                { provide: DotRouterService, useClass: MockDotRouterService },
+                { provide: DotUiColorsService, useClass: MockDotUiColorsService },
+                DotCustomEventHandlerService,
+                DotWorkflowEventHandlerService,
+                DotIframeService,
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                PushPublishService,
+                ApiRoot,
+                DotFormatDateService,
+                UserModel,
+                StringUtils,
+                DotcmsEventsService,
+                LoggerService,
+                DotEventsSocket,
+                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
+                DotcmsConfigService,
+                LoggerService,
+                DotCurrentUserService,
+                DotMessageDisplayService,
+                DotWizardService,
+                DotHttpErrorManagerService,
+                DotAlertConfirmService,
+                ConfirmationService,
+                DotWorkflowActionsFireService,
+                DotGlobalMessageService,
+                DotEventsService,
+                DotGenerateSecurePasswordService
+            ],
+            declarations: [DotPortletDetailComponent],
+            imports: [
+                DotWorkflowTaskModule,
+                DotContentletsModule,
+                RouterTestingModule,
+                BrowserAnimationsModule,
+                DotDownloadBundleDialogModule,
+                HttpClientTestingModule
+            ]
+        });
+    }));
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotPortletDetailComponent);
@@ -104,10 +102,8 @@ describe('DotPortletDetailComponent', () => {
     });
 
     it('should not have dot-workflow-task', () => {
-
         spyOnProperty(router, 'parent', 'get').and.returnValue({
             parent: {
-                // @ts-ignore
                 snapshot: {
                     params: {
                         id: ''
@@ -124,7 +120,6 @@ describe('DotPortletDetailComponent', () => {
     it('should have dot-workflow-task', () => {
         spyOnProperty(router, 'parent', 'get').and.returnValue({
             parent: {
-                // @ts-ignore
                 snapshot: {
                     params: {
                         id: 'workflow'
@@ -141,7 +136,6 @@ describe('DotPortletDetailComponent', () => {
     it('should have dot-contentlets', () => {
         spyOnProperty(router, 'parent', 'get').and.returnValue({
             parent: {
-                // @ts-ignore
                 snapshot: {
                     params: {
                         id: 'content'
