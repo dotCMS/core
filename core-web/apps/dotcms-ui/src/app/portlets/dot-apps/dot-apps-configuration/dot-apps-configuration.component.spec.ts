@@ -216,8 +216,7 @@ describe('DotAppsConfigurationComponent', () => {
             );
         });
 
-        fit('should have dot-apps-configuration-list with correct values', () => {
-            console.log('listComp--> ','here')
+        it('should have dot-apps-configuration-list with correct values', () => {
             const listComp = fixture.debugElement.query(
                 By.css('dot-apps-configuration-list')
             ).componentInstance;
