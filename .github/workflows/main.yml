@@ -106,7 +106,7 @@ jobs:
         id: test_run
         run: |
           cd core-web
-          if ! (npx nx run nx test --target=dotcms-ui --prod) then
+          if ! (npm run test:dotcms-ui) then
             echo "::set-output name=status::failure";
             echo "::set-output name=color::#ff2400";
             exit 1;
