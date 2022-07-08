@@ -140,7 +140,7 @@ const startDeps = async () => {
     )
   )
 
-  await waitFor(60, 'DotCMS dependencies')
+  await waitFor(70, 'DotCMS dependencies')
 
   startDotCMS()
 }
@@ -180,7 +180,7 @@ const startDotCMS = () => {
     true
   ) as ChildProcess
   logProcess = execCmdAsync(toCommand('tail', ['-f', tomcatLogFile]), true) as ChildProcess
-  core.info(`Log process: ${logProcess ? JSON.stringify(logProcess, null, 2) : 'undfined'}`)
+  core.info(`Log process: ${logProcess}`)
 }
 
 const stopDotCMS = async () => {
@@ -203,7 +203,7 @@ const stopDotCMS = async () => {
  * @returns an overall ivew of the tests results
  */
 const runPostmanCollections = async (): Promise<PostmanTestsResult> => {
-  await waitFor(150, `DotCMS instance`)
+  await waitFor(160, `DotCMS instance`)
 
   // Executes Postman tests
   core.info(`
@@ -468,7 +468,7 @@ const execCmdAsync = (cmd: Command, useChild?: boolean): ChildProcess | void => 
 
 const killProcess = (process?: ChildProcess, sig?: number) => {
   if (process) {
-    core.info(`Killing process ${JSON.stringify(process, null, 2)}`)
+    core.info(`Killing process ${process}`)
     process.kill(sig || 9)
   } else {
     core.info('')

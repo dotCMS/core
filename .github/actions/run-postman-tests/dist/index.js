@@ -220,7 +220,7 @@ const startDeps = () => __awaiter(void 0, void 0, void 0, function* () {
     Starting postman tests dependencies
     =======================================`);
     execCmdAsync(toCommand('docker-compose', ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, 'up'], dockerFolder, DEPS_ENV));
-    yield waitFor(60, 'DotCMS dependencies');
+    yield waitFor(70, 'DotCMS dependencies');
     startDotCMS();
 });
 /**
@@ -247,7 +247,7 @@ const startDotCMS = () => {
     =======================================`);
     dotCmsProcess = execCmdAsync(toCommand(path.join(tomcatRoot, 'bin', 'startup.sh'), [], tomcatRoot, DOTCMS_ENV), true);
     logProcess = execCmdAsync(toCommand('tail', ['-f', tomcatLogFile]), true);
-    core.info(`Log process: ${logProcess ? JSON.stringify(logProcess, null, 2) : 'undfined'}`);
+    core.info(`Log process: ${logProcess}`);
 };
 const stopDotCMS = () => __awaiter(void 0, void 0, void 0, function* () {
     core.info(`
@@ -269,7 +269,7 @@ const stopDotCMS = () => __awaiter(void 0, void 0, void 0, function* () {
  * @returns an overall ivew of the tests results
  */
 const runPostmanCollections = () => __awaiter(void 0, void 0, void 0, function* () {
-    yield waitFor(150, `DotCMS instance`);
+    yield waitFor(160, `DotCMS instance`);
     // Executes Postman tests
     core.info(`
     ===========================================
@@ -497,7 +497,7 @@ const execCmdAsync = (cmd, useChild) => {
 };
 const killProcess = (process, sig) => {
     if (process) {
-        core.info(`Killing process ${JSON.stringify(process, null, 2)}`);
+        core.info(`Killing process ${process}`);
         process.kill(sig || 9);
     }
     else {
