@@ -187,7 +187,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 				_flush(cacheToFlush);
 				//Reloads PushPublishing Filters if all cache or system cache is flushed
 				if(isAllCachesFlush || cacheToFlush.equalsIgnoreCase("system")){
-					new PushPublishFiltersInitializer().init();
+					APILocator.getPublisherAPI().initializeFilterDescriptors();
 				}
 				message = isAllCachesFlush ? "message.cmsmaintenance.cache.flushallcache" : "message.cmsmaintenance.cache.flushcache";
 			} else {
