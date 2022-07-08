@@ -109,6 +109,7 @@
         },
         "test": {
             "executor": "@angular-devkit/build-angular:karma",
+            "dependsOn": ["build"],
             "options": {
                 "main": "apps/dotcms-ui/src/test.ts",
                 "tsConfig": "apps/dotcms-ui/tsconfig.spec.json",
