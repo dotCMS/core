@@ -38,8 +38,6 @@ public class ImageFilterExporter implements BinaryContentExporter {
 
         try {
 
-            Logger.info(this, "*****Params: " + parameters);
-
             final Map<String,Class> filters = new ImageFilterApiImpl().resolveFilters(parameters);
             parameters.put("filter", filters.keySet().toArray(new String[filters.size()]));
             parameters.put("filters", filters.keySet().toArray(new String[filters.size()]));

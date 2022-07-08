@@ -180,8 +180,6 @@ public class BinaryExporterServlet extends HttpServlet {
 		String exporterPath = uriPieces[1];
 		String uuid = uriPieces[2];
 
-		Logger.info(this, "*****URI: " + uri);
-
 		Map<String, String[]> params = new LinkedHashMap<>();
 		params.putAll(req.getParameterMap());
 		// only set uri params if they are not set in the query string - meaning

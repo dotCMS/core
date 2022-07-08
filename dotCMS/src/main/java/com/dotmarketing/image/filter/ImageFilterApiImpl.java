@@ -97,9 +97,6 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
             }
         });
 
-        Logger.info(this, "*****Filters: " + filters);
-        Logger.info(this, "*****Classes: " + classes);
-
         return classes;
     }
 
