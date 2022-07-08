@@ -49,17 +49,14 @@ const DEPS_ENV: {[key: string]: string} = {
   TEST_TYPE: 'postman',
   DB_TYPE: dbType,
   CUUSTOM_STARTER_FOLDER: customStarterUrl,
-  POSTGRES_USER: 'postgres',
-  POSTGRES_PASSWORD: 'postgres',
+  POSTGRES_USER: 'dotcms',
+  POSTGRES_PASSWORD: 'dotcms',
   POSTGRES_DB: 'dotcms'
 }
 
 const DOTCMS_ENV: {[key: string]: string} = {
   databaseType: dbType,
   CATALINA_OPTS: '-XX:+PrintFlagsFinal',
-  DB_BASE_URL: 'jdbc:postgresql://localhost/dotcms',
-  DB_USERNAME: 'dotcms',
-  DB_PASSWORD: 'dotcms',
   DOT_ES_ENDPOINTS: 'https://localhost:9200',
   DOT_DOTCMS_DEV_MODE: 'true',
   DB_MAX_TOTAL: '15',
