@@ -137,7 +137,8 @@ const startDeps = async () => {
       ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, 'up'],
       dockerFolder,
       DEPS_ENV
-    )
+    ),
+    false
   )
 
   await waitFor(70, 'DotCMS dependencies')
@@ -458,7 +459,7 @@ const execCmd = async (cmd: Command): Promise<number> => {
   return await exec.exec(cmd.cmd, cmd.args, {cwd: cmd.workingDir, env: cmd.env})
 }
 
-const execCmdAsync = (cmd: Command, useChild?: boolean): ChildProcess | void => {
+const execCmdAsync = (cmd: Command, useChild: boolean): ChildProcess | void => {
   printCmd(cmd)
 
   if (cmd.env) {
@@ -468,10 +469,11 @@ const execCmdAsync = (cmd: Command, useChild?: boolean): ChildProcess | void => 
   }
 
   const args = cmd.args || []
-  if (!!useChild) {
+  if (useChild) {
     const cmdStr = [cmd.cmd, ...args].join(' ')
     const process = shelljs.exec(cmdStr, {async: true})
     core.info(`Creating process from '${cmdStr}': ${process.pid}`)
+    return process
   }
 
   exec.exec(cmd.cmd, cmd.args, {cwd: cmd.workingDir, env: cmd.env})
@@ -482,7 +484,7 @@ const killProcess = (process?: ChildProcess, sig?: number) => {
     core.info(`Killing process: ${process.pid}`)
     sig ? process.kill(sig) : process.kill()
   } else {
-    core.info('')
+    core.info('No process found to kill')
   }
 }
 

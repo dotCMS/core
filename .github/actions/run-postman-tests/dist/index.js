@@ -219,7 +219,7 @@ const startDeps = () => __awaiter(void 0, void 0, void 0, function* () {
     =======================================
     Starting postman tests dependencies
     =======================================`);
-    execCmdAsync(toCommand('docker-compose', ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, 'up'], dockerFolder, DEPS_ENV));
+    execCmdAsync(toCommand('docker-compose', ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, 'up'], dockerFolder, DEPS_ENV), false);
     yield waitFor(70, 'DotCMS dependencies');
     startDotCMS();
 });
@@ -496,10 +496,11 @@ const execCmdAsync = (cmd, useChild) => {
         }
     }
     const args = cmd.args || [];
-    if (!!useChild) {
+    if (useChild) {
         const cmdStr = [cmd.cmd, ...args].join(' ');
         const process = shelljs.exec(cmdStr, { async: true });
         core.info(`Creating process from '${cmdStr}': ${process.pid}`);
+        return process;
     }
     exec.exec(cmd.cmd, cmd.args, { cwd: cmd.workingDir, env: cmd.env });
 };
@@ -509,7 +510,7 @@ const killProcess = (process, sig) => {
         sig ? process.kill(sig) : process.kill();
     }
     else {
-        core.info('');
+        core.info('No process found to kill');
     }
 };
 /**
