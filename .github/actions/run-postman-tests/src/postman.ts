@@ -195,7 +195,7 @@ const stopDotCMS = async () => {
     core.warning(`Could not stop gracefully DotCMS due to: ${err}`)
   }
 
-  if (!dotCmsProcess.killed) {
+  if (dotCmsProcess && !dotCmsProcess.killed) {
     killProcess(dotCmsProcess)
 
     await waitFor(20, 'DotCMS to stop')

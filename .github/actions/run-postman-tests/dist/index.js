@@ -261,7 +261,7 @@ const stopDotCMS = () => __awaiter(void 0, void 0, void 0, function* () {
     catch (err) {
         core.warning(`Could not stop gracefully DotCMS due to: ${err}`);
     }
-    if (!dotCmsProcess.killed) {
+    if (dotCmsProcess && !dotCmsProcess.killed) {
         killProcess(dotCmsProcess);
         yield waitFor(20, 'DotCMS to stop');
         if (!dotCmsProcess.killed) {
