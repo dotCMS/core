@@ -30,6 +30,7 @@ const reportFolder = path.join(dotCmsRoot, 'build', 'reports', 'tests', 'postman
 const runtTestsPrefix = 'postman-tests:'
 const PASSED = 'PASSED'
 const FAILED = 'FAILED'
+let dotCmsProcess: ChildProcess
 let logProcess: ChildProcess
 
 export interface PostmanTestsResult {
@@ -174,8 +175,12 @@ const startDotCMS = () => {
     =======================================
     Starting DotCMS instance
     =======================================`)
-  execCmdAsync(toCommand(path.join(tomcatRoot, 'bin', 'startup.sh'), [], tomcatRoot, DOTCMS_ENV))
-  logProcess = shelljs.exec(`tail -f ${tomcatLogFile}`, {async: true})
+  dotCmsProcess = execCmdAsync(
+    toCommand(path.join(tomcatRoot, 'bin', 'startup.sh'), [], tomcatRoot, DOTCMS_ENV),
+    true
+  ) as ChildProcess
+  logProcess = execCmdAsync(toCommand('tail', ['-f', tomcatLogFile]), true) as ChildProcess
+  core.info(`Log process: ${logProcess ? JSON.stringify(logProcess, null, 2) : 'undfined'}`)
 }
 
 const stopDotCMS = async () => {
@@ -184,10 +189,9 @@ const stopDotCMS = async () => {
     Stopping DotCMS instance
     =======================================`)
   try {
-    if (logProcess) {
-      logProcess.kill(9)
-    }
-    await execCmd(toCommand(path.join(tomcatRoot, 'bin', 'shutdown.sh'), [], tomcatRoot, DOTCMS_ENV))
+    killProcess(logProcess)
+    killProcess(dotCmsProcess)
+    //await execCmd(toCommand(path.join(tomcatRoot, 'bin', 'shutdown.sh'), [], tomcatRoot, DOTCMS_ENV))
   } catch (err) {
     core.warning(`Could not stop gracefully DotCMS due to: ${err}`)
   }
@@ -446,10 +450,29 @@ const execCmd = async (cmd: Command): Promise<number> => {
   return await exec.exec(cmd.cmd, cmd.args, {cwd: cmd.workingDir, env: cmd.env})
 }
 
-const execCmdAsync = (cmd: Command) => {
+const execCmdAsync = (cmd: Command, useChild?: boolean): ChildProcess | void => {
   printCmd(cmd)
-  //shelljs.exec([cmd.cmd, ...cmd.args].join(' '), {async: true})
+  const args = cmd.args || []
+  if (cmd.env) {
+    for (const env of Object.keys(cmd.env)) {
+      shelljs.env[env] = cmd.env[env]
+    }
+  }
+
+  if (!!useChild) {
+    return shelljs.exec([cmd.cmd, ...args].join(' '), {async: true})
+  }
+
   exec.exec(cmd.cmd, cmd.args, {cwd: cmd.workingDir, env: cmd.env})
+}
+
+const killProcess = (process?: ChildProcess, sig?: number) => {
+  if (process) {
+    core.info(`Killing process ${JSON.stringify(process, null, 2)}`)
+    process.kill(sig || 9)
+  } else {
+    core.info('')
+  }
 }
 
 /**
