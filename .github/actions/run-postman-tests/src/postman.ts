@@ -1,6 +1,7 @@
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as fs from 'fs'
+import {ChildProcess} from 'node:child_process'
 import * as path from 'path'
 import * as shelljs from 'shelljs'
 
@@ -15,14 +16,13 @@ const exportReport = core.getBooleanInput('export_report')
 const cicdFolder = path.join(projectRoot, 'cicd')
 const resourcesFolder = path.join(cicdFolder, 'resources', 'postman')
 const dockerFolder = path.join(cicdFolder, 'docker')
-const licenseFolder = path.join(dockerFolder, 'license')
 const dotCmsRoot = path.join(projectRoot, 'dotCMS')
 const tomcatFolder = core.getInput('tomcat_folder')
 const tomcatRoot = path.join(projectRoot, 'dist', 'dotserver', tomcatFolder)
 const logsFolder = path.join(tomcatRoot, 'logs')
 const tomcatLogFile = path.join(logsFolder, 'catalina.out')
 const logFile = path.join(logsFolder, 'dotcms.log')
-const volumes = [licenseFolder, path.join(dockerFolder, 'cms-shared'), path.join(dockerFolder, 'cms-local')]
+const licenseFolder = path.join(tomcatRoot, 'webapps', 'ROOT', 'dotsecure', 'license')
 const postmanTestsPath = path.join(dotCmsRoot, 'src', 'curl-test')
 const postmanEnvFile = 'postman_environment.json'
 const resultsFolder = path.join(dotCmsRoot, 'build', 'test-results', 'postmanTest')
@@ -30,6 +30,7 @@ const reportFolder = path.join(dotCmsRoot, 'build', 'reports', 'tests', 'postman
 const runtTestsPrefix = 'postman-tests:'
 const PASSED = 'PASSED'
 const FAILED = 'FAILED'
+let logProcess: ChildProcess
 
 export interface PostmanTestsResult {
   testsRunExitCode: number
@@ -174,7 +175,7 @@ const startDotCMS = () => {
     Starting DotCMS instance
     =======================================`)
   execCmdAsync(toCommand(path.join(tomcatRoot, 'bin', 'startup.sh'), [], tomcatRoot, DOTCMS_ENV))
-  execCmdAsync(toCommand('tail', ['-f', tomcatLogFile]))
+  logProcess = shelljs.exec(`tail -f ${tomcatLogFile}`, {async: true})
 }
 
 const stopDotCMS = async () => {
@@ -183,6 +184,9 @@ const stopDotCMS = async () => {
     Stopping DotCMS instance
     =======================================`)
   try {
+    if (logProcess) {
+      logProcess.kill('SIGHUP')
+    }
     await execCmd(toCommand(path.join(tomcatRoot, 'bin', 'shutdown.sh'), [], tomcatRoot, DOTCMS_ENV))
   } catch (err) {
     core.warning(`Could not stop gracefully DotCMS due to: ${err}`)
@@ -357,7 +361,7 @@ const waitFor = async (wait: number, startLabel: string, endLabel?: string) => {
 const createFolders = () => {
   shelljs.touch(tomcatLogFile)
 
-  const folders = [resultsFolder, reportFolder, ...volumes]
+  const folders = [resultsFolder, reportFolder]
   for (const folder of folders) {
     fs.mkdirSync(folder, {recursive: true})
   }
