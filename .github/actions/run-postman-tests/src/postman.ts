@@ -190,19 +190,12 @@ const stopDotCMS = async () => {
     Stopping DotCMS instance
     =======================================`)
   try {
-    killProcess(logProcess)
     await execCmd(toCommand(path.join(tomcatRoot, 'bin', 'shutdown.sh'), [], tomcatRoot, DOTCMS_ENV))
   } catch (err) {
     core.warning(`Could not stop gracefully DotCMS due to: ${err}`)
-  }
-
-  if (dotCmsProcess && !dotCmsProcess.killed) {
-    killProcess(dotCmsProcess)
-
-    await waitFor(20, 'DotCMS to stop')
-    if (!dotCmsProcess.killed) {
-      killProcess(dotCmsProcess, 9)
-    }
+  } finally {
+    tryToKill(dotCmsProcess, 'DotCMS to stop')
+    tryToKill(logProcess, 'DotCMS log to stop')
   }
 }
 
@@ -485,6 +478,18 @@ const killProcess = (process?: ChildProcess, sig?: number) => {
     sig ? process.kill(sig) : process.kill()
   } else {
     core.info('No process found to kill')
+  }
+}
+
+const tryToKill = async (process: ChildProcess, label: string) => {
+  if (!process.killed) {
+    killProcess(process)
+
+    await waitFor(20, label)
+
+    if (!process.killed) {
+      killProcess(process, 9)
+    }
   }
 }
 

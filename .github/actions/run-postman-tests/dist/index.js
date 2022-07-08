@@ -255,18 +255,14 @@ const stopDotCMS = () => __awaiter(void 0, void 0, void 0, function* () {
     Stopping DotCMS instance
     =======================================`);
     try {
-        killProcess(logProcess);
         yield execCmd(toCommand(path.join(tomcatRoot, 'bin', 'shutdown.sh'), [], tomcatRoot, DOTCMS_ENV));
     }
     catch (err) {
         core.warning(`Could not stop gracefully DotCMS due to: ${err}`);
     }
-    if (dotCmsProcess && !dotCmsProcess.killed) {
-        killProcess(dotCmsProcess);
-        yield waitFor(20, 'DotCMS to stop');
-        if (!dotCmsProcess.killed) {
-            killProcess(dotCmsProcess, 9);
-        }
+    finally {
+        tryToKill(dotCmsProcess, 'DotCMS to stop');
+        tryToKill(logProcess, 'DotCMS log to stop');
     }
 });
 /**
@@ -513,6 +509,15 @@ const killProcess = (process, sig) => {
         core.info('No process found to kill');
     }
 };
+const tryToKill = (process, label) => __awaiter(void 0, void 0, void 0, function* () {
+    if (!process.killed) {
+        killProcess(process);
+        yield waitFor(20, label);
+        if (!process.killed) {
+            killProcess(process, 9);
+        }
+    }
+});
 /**
  * Copies logs from docker volume to standard DotCMS location.
  */
