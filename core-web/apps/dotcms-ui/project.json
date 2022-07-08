@@ -152,5 +152,6 @@
             }
         }
     },
-    "tags": []
+    "tags": [],
+    "implicitDependencies": ["dotcms-webcomponents"]
 }
