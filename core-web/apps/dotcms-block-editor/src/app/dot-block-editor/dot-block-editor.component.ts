@@ -1,6 +1,7 @@
 import { Component, Injector, Input, OnInit, ViewContainerRef } from '@angular/core';
-import { Editor } from '@tiptap/core';
-import StarterKit from '@tiptap/starter-kit';
+import { Editor, Extensions } from '@tiptap/core';
+import { HeadingOptions } from '@tiptap/extension-heading';
+import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 
 import {
@@ -11,7 +12,8 @@ import {
     DotBubbleMenuExtension,
     DragHandler,
     ImageBlock,
-    ImageUpload
+    ImageUpload,
+    DotConfigExtension
 } from '@dotcms/block-editor';
 
 // Marks Extensions
@@ -34,6 +36,7 @@ function toTitleCase(str) {
 export class DotBlockEditorComponent implements OnInit {
     @Input() lang = DEFAULT_LANG_ID;
     @Input() allowedContentTypes = '';
+    @Input() allowedBlocks = '';
 
     editor: Editor;
 
@@ -42,42 +45,91 @@ export class DotBlockEditorComponent implements OnInit {
     constructor(private injector: Injector, public viewContainerRef: ViewContainerRef) {}
 
     ngOnInit() {
-        this.editor = new Editor({
-            extensions: [
-                StarterKit,
-                ContentletBlock(this.injector),
-                ImageBlock(this.injector),
-                ActionsMenu(this.viewContainerRef),
-                DragHandler(this.viewContainerRef),
-                ImageUpload(this.injector, this.viewContainerRef),
-                BubbleLinkFormExtension(this.injector, this.viewContainerRef),
-                DotBubbleMenuExtension(this.viewContainerRef),
-                // Marks Extensions
-                Underline,
-                TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'dotImage'] }),
-                Highlight.configure({ HTMLAttributes: { style: 'background: #accef7;' } }),
-                Link.configure({ openOnClick: true }),
-                Placeholder.configure({
-                    placeholder: ({ node }) => {
-                        if (node.type.name === 'heading') {
-                            return `${toTitleCase(node.type.name)} ${node.attrs.level}`;
-                        }
-
-                        return 'Type "/" for commmands';
+        const defaultExtensions: Extensions = [
+            DotConfigExtension({
+                lang: this.lang,
+                allowedContentTypes: this.allowedContentTypes,
+                allowedBlocks: this.setAllowedBlocks()
+            }),
+            ImageBlock(this.injector),
+            ActionsMenu(this.viewContainerRef),
+            DragHandler(this.viewContainerRef),
+            ImageUpload(this.injector, this.viewContainerRef),
+            BubbleLinkFormExtension(this.injector, this.viewContainerRef),
+            DotBubbleMenuExtension(this.viewContainerRef),
+            // Marks Extensions
+            Underline,
+            TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'dotImage'] }),
+            Highlight.configure({ HTMLAttributes: { style: 'background: #accef7;' } }),
+            Link.configure({ openOnClick: true }),
+            Placeholder.configure({
+                placeholder: ({ node }) => {
+                    if (node.type.name === 'heading') {
+                        return `${toTitleCase(node.type.name)} ${node.attrs.level}`;
                     }
-                })
-            ]
-        });
 
-        this.setEditorStorageData();
+                    return 'Type "/" for commmands';
+                }
+            })
+        ];
+
+        this.editor = new Editor({
+            extensions: this.setEditorExtensions(defaultExtensions)
+        });
     }
 
-    // Here we create the dotConfig name space
-    // to storage information in the editor.
-    private setEditorStorageData() {
-        this.editor.storage.dotConfig = {
-            lang: this.lang,
-            allowedContentTypes: this.allowedContentTypes
-        };
+    private setEditorExtensions(defaultExtensions: Extensions): Extensions {
+        if (this.allowedBlocks) {
+            const allowedArray = this.allowedBlocks.split(',');
+            console.log(allowedArray);
+            const headingOptions: HeadingOptions = { levels: [], HTMLAttributes: {} };
+            const customExtension: Extensions = [...defaultExtensions];
+            const starterKitOptions: Partial<StarterKitOptions> = {
+                heading: false,
+                orderedList: false,
+                bulletList: false,
+                blockquote: false,
+                codeBlock: false,
+                horizontalRule: false
+            };
+            allowedArray.forEach((block: string) => {
+                switch (block) {
+                    case 'heading1':
+                        headingOptions.levels.push(1);
+                        break;
+                    case 'heading2':
+                        headingOptions.levels.push(2);
+                        break;
+                    case 'heading3':
+                        headingOptions.levels.push(3);
+                        break;
+                    case 'orderedList':
+                        delete starterKitOptions.orderedList;
+                        break;
+                    case 'bulletList':
+                        delete starterKitOptions.bulletList;
+                        break;
+                    case 'blockquote':
+                        delete starterKitOptions.blockquote;
+                        break;
+                    case 'codeBlock':
+                        delete starterKitOptions.codeBlock;
+                        break;
+                    case 'horizontalRule':
+                        delete starterKitOptions.horizontalRule;
+                        break;
+                    case 'contentlets':
+                        customExtension.push(ContentletBlock(this.injector));
+                }
+            });
+            starterKitOptions.heading = headingOptions.levels.length ? headingOptions : false;
+            return [...customExtension, StarterKit.configure(starterKitOptions)];
+        }
+
+        return [StarterKit, ContentletBlock(this.injector), ...defaultExtensions];
+    }
+
+    private setAllowedBlocks(): string[] {
+        return ['paragraph', ...this.allowedBlocks.replace(/ /g, '').split(',').filter(Boolean)];
     }
 }

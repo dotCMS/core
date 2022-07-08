@@ -21,7 +21,7 @@ import { ActionButtonComponent } from './components/action-button/action-button.
 import { PluginKey } from 'prosemirror-state';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { SuggestionPopperModifiers } from '../utils/suggestion.utils';
+import {suggestionOptions, SuggestionPopperModifiers} from '../utils/suggestion.utils';
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
@@ -124,10 +124,16 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
      * @param {(SuggestionProps | FloatingActionsProps)} { editor, range, clientRect }
      */
     function onStart({ editor, range, clientRect }: SuggestionProps | FloatingActionsProps): void {
+        const allowedBlocks: string[] = editor.storage.dotConfig.allowedBlocks;
         suggestionsComponent = getSuggestionComponent(viewContainerRef);
         suggestionsComponent.instance.currentLanguage = editor.storage.dotConfig.lang;
         suggestionsComponent.instance.allowedContentTypes =
             editor.storage.dotConfig.allowedContentTypes;
+        if (allowedBlocks.length > 1) {
+            suggestionsComponent.instance.items = suggestionOptions.filter((item) =>
+                allowedBlocks.includes(item.id)
+            );
+        }
         suggestionsComponent.instance.onSelection = (item) => {
             const suggestionQuery = suggestionKey.getState(editor.view.state).query?.length || 0;
             range.to = range.to + suggestionQuery;
