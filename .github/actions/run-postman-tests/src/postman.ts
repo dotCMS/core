@@ -185,7 +185,7 @@ const stopDotCMS = async () => {
     =======================================`)
   try {
     if (logProcess) {
-      logProcess.kill('SIGHUP')
+      logProcess.kill(9)
     }
     await execCmd(toCommand(path.join(tomcatRoot, 'bin', 'shutdown.sh'), [], tomcatRoot, DOTCMS_ENV))
   } catch (err) {

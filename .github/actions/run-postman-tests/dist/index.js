@@ -254,7 +254,7 @@ const stopDotCMS = () => __awaiter(void 0, void 0, void 0, function* () {
     =======================================`);
     try {
         if (logProcess) {
-            logProcess.kill('SIGHUP');
+            logProcess.kill(9);
         }
         yield execCmd(toCommand(path.join(tomcatRoot, 'bin', 'shutdown.sh'), [], tomcatRoot, DOTCMS_ENV));
     }
