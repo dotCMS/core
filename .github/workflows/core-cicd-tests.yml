@@ -311,12 +311,6 @@ jobs:
         with:
           cache_metadata: ${{ needs.build-core-job.outputs.cache_metadata }}
         if: success()
-      - id: build-dotcms-image
-        name: Build DotCMS Docker image
-        uses: ./.github/actions/build-docker-image
-        with:
-          build_id  : ${{ env.BUILD_ID }}
-          image_name: dotcms:${{ env.BUILD_HASH }}
       - id: run-postman-tests
         name: Run Postman Tests
         uses: ./.github/actions/run-postman-tests
