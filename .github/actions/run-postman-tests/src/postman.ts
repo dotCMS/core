@@ -190,10 +190,18 @@ const stopDotCMS = async () => {
     =======================================`)
   try {
     killProcess(logProcess)
-    killProcess(dotCmsProcess)
-    //await execCmd(toCommand(path.join(tomcatRoot, 'bin', 'shutdown.sh'), [], tomcatRoot, DOTCMS_ENV))
+    await execCmd(toCommand(path.join(tomcatRoot, 'bin', 'shutdown.sh'), [], tomcatRoot, DOTCMS_ENV))
   } catch (err) {
     core.warning(`Could not stop gracefully DotCMS due to: ${err}`)
+  }
+
+  if (!dotCmsProcess.killed) {
+    killProcess(dotCmsProcess)
+
+    await waitFor(20, 'DotCMS to stop')
+    if (!dotCmsProcess.killed) {
+      killProcess(dotCmsProcess, 9)
+    }
   }
 }
 
@@ -452,15 +460,18 @@ const execCmd = async (cmd: Command): Promise<number> => {
 
 const execCmdAsync = (cmd: Command, useChild?: boolean): ChildProcess | void => {
   printCmd(cmd)
-  const args = cmd.args || []
+
   if (cmd.env) {
     for (const env of Object.keys(cmd.env)) {
       shelljs.env[env] = cmd.env[env]
     }
   }
 
+  const args = cmd.args || []
   if (!!useChild) {
-    return shelljs.exec([cmd.cmd, ...args].join(' '), {async: true})
+    const cmdStr = [cmd.cmd, ...args].join(' ')
+    const process = shelljs.exec(cmdStr, {async: true})
+    core.info(`Creating process from '${cmdStr}': ${process.pid}`)
   }
 
   exec.exec(cmd.cmd, cmd.args, {cwd: cmd.workingDir, env: cmd.env})
@@ -468,8 +479,8 @@ const execCmdAsync = (cmd: Command, useChild?: boolean): ChildProcess | void => 
 
 const killProcess = (process?: ChildProcess, sig?: number) => {
   if (process) {
-    core.info(`Killing process ${process}`)
-    process.kill(sig || 9)
+    core.info(`Killing process: ${process.pid}`)
+    sig ? process.kill(sig) : process.kill()
   } else {
     core.info('')
   }
