@@ -23,6 +23,7 @@ import { DotDevice } from '@shared/models/dot-device/dot-device.model';
 import { mockResponseView } from '@tests/response-view.mock';
 import { PageModelChangeEventType } from '../dot-edit-content-html/models';
 import { mockDotPersona } from '@tests/dot-persona.mock';
+import { mockUserAuth } from '@tests/dot-auth-user.mock';
 
 const getDotPageRenderStateMock = () => {
     return new DotPageRenderState(mockUser(), mockDotRenderedPage());
@@ -343,14 +344,7 @@ describe('DotPageStateService', () => {
 
     describe('login as user', () => {
         beforeEach(() => {
-            spyOnProperty(loginService, 'auth', 'get').and.returnValue({
-                loginAsUser: {
-                    userId: 'login-as-user'
-                },
-                user: {
-                    userId: '123'
-                }
-            });
+            spyOnProperty(loginService, 'auth', 'get').and.returnValue(mockUserAuth);
         });
 
         it('should set lockedByAnotherUser', () => {
