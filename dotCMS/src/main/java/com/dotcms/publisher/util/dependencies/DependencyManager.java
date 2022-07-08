@@ -44,7 +44,6 @@ import java.util.concurrent.*;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.felix.framework.OSGIUtil;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * The main purpose of this class is to determine all possible content
@@ -344,7 +343,6 @@ public class DependencyManager {
 		}
 	}
 
-	@NotNull
 	private String getUserID(PublishQueueElement asset) {
 		final String assetKey = asset.getAsset();
 		final int indexOf = assetKey.indexOf("_") + 1;
