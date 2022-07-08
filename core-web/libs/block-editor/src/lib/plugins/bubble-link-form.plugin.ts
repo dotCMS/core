@@ -7,7 +7,7 @@ import { ComponentRef } from '@angular/core';
 import { BubbleMenuLinkFormComponent } from '../extensions/components/bubble-menu-link-form/bubble-menu-link-form.component';
 
 // Interface
-import { PluginStorage } from '../extensions/bubble-link-form.extension';
+import { PluginStorage, LINK_FORM_PLUGIN_KEY } from '../extensions/bubble-link-form.extension';
 
 interface PluginState {
     toggle: boolean;
@@ -42,6 +42,11 @@ export class BubbleLinkFormView {
     public component?: ComponentRef<BubbleMenuLinkFormComponent>;
 
     public storage: PluginStorage;
+
+    private scrollElementMap = {
+        'editor-suggestion-list': true,
+        'editor-input-link': true
+    }
 
     constructor({
         editor,
@@ -117,6 +122,7 @@ export class BubbleLinkFormView {
 
     show() {
         this.tippy?.show();
+        this.dispatchTransition(true);
         // Afther show the component set values
         this.setInputValues();
         this.focusInput();
@@ -125,12 +131,14 @@ export class BubbleLinkFormView {
 
     hide() {
         this.tippy?.hide();
-        // Afther show the component focus editor
+        this.dispatchTransition(false);
+        this.component.instance.items = [];
+        // After show the component focus editor
         this.editor.view.focus();
         this.editor.commands.unsetHighlight();
     }
 
-    setTippyPosition(): ClientRect {
+    setTippyPosition(): DOMRect {
         // Get Node Position
         const { view } = this.editor;
         const { state } = view;
@@ -156,11 +164,11 @@ export class BubbleLinkFormView {
         return isOverflow || isNodeImage ? bubbleMenuRect : nodeClientRect;
     }
 
-    addLink(link: string) {
+    addLink({link, blank = false}) {
         if (this.isDotImageNode()) {
             this.editor.commands.setImageLink({ href: link });
         } else {
-            this.editor.commands.setLink({ href: link });
+            this.editor.commands.setLink({ href: link, target:  blank ? '_blank' : '_self' });
         }
         this.hide();
     }
@@ -175,8 +183,8 @@ export class BubbleLinkFormView {
     }
 
     setInputValues() {
-        this.component.instance.nodeLink = this.getNodeLink();
-        this.component.instance.newLink = this.getNodeLink() || this.getLinkSelect();
+        this.component.instance.link = this.getNodeLink();
+        this.component.instance.props.link = this.getNodeLink() || this.getLinkSelect();
     }
 
     focusInput() {
@@ -230,13 +238,19 @@ export class BubbleLinkFormView {
         this.editor.off('focus', this.focusHandler);
     }
 
-    hanlderScroll(e: Event) {
+    private hanlderScroll(e: Event) {
+       const element = e.target as HTMLElement;
         // When the text is too long, the input fires the `scroll` event.
         // When that happens, we do not want to hide the tippy.
-        if(this.component.instance.input.nativeElement === e.target) {
+        if(this.scrollElementMap[element.id]) {
             return;
         }
         this.tippy?.hide();
+    }
+
+    private dispatchTransition(open: boolean) {
+        const transaction = this.editor.state.tr.setMeta(LINK_FORM_PLUGIN_KEY, { open });
+        this.editor.view.dispatch(transaction);
     }
 }
 
@@ -255,7 +269,7 @@ export const bubbleLinkFormPlugin = (options: BubbleLinkFormProps) => {
                 const transactionMeta = transaction.getMeta(options.pluginKey);
                 if (transactionMeta) {
                     return {
-                        toggle: options.storage.show
+                        toggle: options.storage.show,
                     };
                 }
 

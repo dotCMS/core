@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { pluck } from 'rxjs/operators';
 
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
-// eslint-disable-next-line max-len
+
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { ContentletFilters } from '../../../models/dot-bubble-menu.model';
 
@@ -40,6 +40,20 @@ export class SuggestionsService {
         return this.http
             .post('/api/content/_search', {
                 query: `+contentType:${contentType} +languageId:${currentLanguage} +deleted:false +working:true +catchall:*${filter}* `,
+                sort: 'modDate desc',
+                offset: 0,
+                limit: 40
+            })
+            .pipe(pluck('entity', 'jsonObjectView', 'contentlets'));
+    }
+
+    getContentletsUrlMap({
+        query,
+        currentLanguage = '1'
+    }: Record<string, string>): Observable<DotCMSContentlet[]> {
+        return this.http
+            .post('/api/content/_search', {
+                query: `+languageId:${currentLanguage} +deleted:false +working:true +(urlmap:*${query}* OR +(basetype:5 AND path:*${query}*))`,
                 sort: 'modDate desc',
                 offset: 0,
                 limit: 40

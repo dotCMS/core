@@ -27,7 +27,7 @@ declare module '@tiptap/core' {
 }
 export const LINK_FORM_PLUGIN_KEY = new PluginKey('addLink');
 
-export const BubbleLinkFormExtension = (injector: Injector, viewContainerRef: ViewContainerRef) => {
+export const BubbleLinkFormExtension = (_injector: Injector, viewContainerRef: ViewContainerRef) => {
     return Extension.create<BubbleLinkFormOptions>({
         name: 'bubbleLinkForm',
         defaultOptions: {

@@ -1,29 +1,58 @@
 <div class="form-container">
     <form
         autoComplete="off"
+        (keydown)="onKeyDownEvent($event)"
         (mousedown)="focusInput()"
         (submit)="addLink()"
     >
-        <input
-            name="link" 
-            placeholder="Type or Paste Link"
-            type="text"
-            [(ngModel)]="newLink"
-            #input
-        />
-        <button class="btn btn-add" click="addLink()">ADD</button>
-    </form>
-    <div class="card-container" *ngIf="nodeLink">
-        <div class="card-header">
-            <span class="linked-to">LINKED TO</span>
-            <div class="link-container">
-                <a class="link" [href]="nodeLink" target="_blank">
+        <div class="form-control">
+            <input
+                #input
+                id="editor-input-link"
+                name="link"
+                class="search"
+                placeholder="Paste link or search for pages"
+                type="text"
+                [(ngModel)]="props.link"
+                (input)="getContentlets()"
+            />
+            <button class="btn btn-add" click="addLink()">ADD</button>
+        </div>
+
+        <div class="form-control" *ngIf="link">
+            <div class="label-container">
+                <a class="label-link" [href]="nodeLink" target="_blank">
                     <span class="material-icons">language</span>
-                    {{ nodeLink.length > 50 ? (nodeLink | slice:0:50 ) + '...' : nodeLink}}
+                    {{ link.length > 50 ? (link | slice:0:70 ) + '...' : link}}
                 </a>
             </div>
         </div>
-        <div class="card-footer">
+
+        <div class="form-control">
+            <input
+                id="blank"
+                name="blank"
+                [(ngModel)]="props.blank"
+                type="checkbox"
+            />
+            <label for="blank">Open in a new tap</label>
+        </div>
+    </form>
+
+    <div class="suggestions" *ngIf="items.length">
+        <hr class="divider m-0"/>
+        <dotcms-suggestions
+            class="inherited-styles"
+            [items]="items"
+            [onSelection]="onSelection"
+            #suggestions
+            >
+        </dotcms-suggestions>
+    </div>
+
+    <div *ngIf="link">
+        <hr class="divider" />
+        <div class="form-actions">
             <button class="btn btn-copy" (click)="copyLink()">
                 COPY LINK
             </button>

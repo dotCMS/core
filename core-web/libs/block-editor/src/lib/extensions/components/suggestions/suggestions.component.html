@@ -2,10 +2,11 @@
     (mousedown)="onMouseDownHandler($event)"
     *ngIf="items.length; else isFilterActive ? noResults : emptyBlock"
 >
-    <h3>{{ title }}</h3>
+    <!-- <h3>{{ title }}</h3> -->
 
-    <dotcms-suggestion-list class="suggestion-list-container" #list>
+    <dotcms-suggestion-list class="suggestion-list-container inherited-styles" id="editor-suggestion-list" #list>
         <dotcms-suggestions-list-item
+            class="inherited-styles"
             *ngFor="let item of items; let i = index"
             (mousedown)="onMouseDown($event, item)"
             (mouseenter)="onMouseEnter($event)"

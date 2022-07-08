@@ -10,6 +10,11 @@
     align-items: center;
 }
 
+.url-label {
+    color: $gray-light;
+    font-size: 0.9rem;
+}
+
 .icon-wrapper {
     align-items: center;
     border: solid 1px lightgrey;
@@ -45,12 +50,13 @@
         display: block;
         white-space: nowrap;
         text-overflow: ellipsis;
+        margin-bottom: 4px;
     }
 
     .state {
         margin-top: $spacing-1;
         display: flex;
-
+        align-items: flex-end;
         dot-state-icon {
             margin-right: $spacing-1;
         }
