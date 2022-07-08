@@ -406,6 +406,7 @@ const waitFor = (wait, startLabel, endLabel) => __awaiter(void 0, void 0, void 0
  * Create necessary folders
  */
 const createFolders = () => {
+    shelljs.touch(tomcatLogFile);
     const folders = [resultsFolder, reportFolder, ...volumes];
     for (const folder of folders) {
         fs.mkdirSync(folder, { recursive: true });
