@@ -1,13 +1,5 @@
 package com.dotcms.rest;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsFactory;
 import com.dotcms.mock.request.MockAttributeRequest;
@@ -34,19 +26,6 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import io.vavr.control.Try;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import org.glassfish.jersey.internal.util.Base64;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
@@ -54,6 +33,24 @@ import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class BundleResourceTest {
 
@@ -166,7 +163,7 @@ public class BundleResourceTest {
      * Should: Generate the bundle without issues, 200.
      */
     @Test
-    public void test_generateBundle_success() throws DotDataException, IOException {
+    public void test_generateBundle_success() throws DotDataException {
         //Create new bundle
         final String bundleId = insertPublishingBundle(adminUser.getUserId(),new Date());
 
@@ -188,7 +185,7 @@ public class BundleResourceTest {
         });
 
         bundleResource.generateBundle(getHttpRequest(),response,asyncResponse,bundleForm);
-        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
+        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).clearFilterDescriptorList();
     }
 
     /**
@@ -225,7 +222,7 @@ public class BundleResourceTest {
         bundle.setOperation(PushPublisherConfig.Operation.PUBLISH.ordinal());
         APILocator.getBundleAPI().generateTarGzipBundleFile(bundle);
 
-        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
+        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).clearFilterDescriptorList();
 
         //Call download endpoint
         final Response responseResource = bundleResource.downloadBundle(getHttpRequest(),response,bundleId);
