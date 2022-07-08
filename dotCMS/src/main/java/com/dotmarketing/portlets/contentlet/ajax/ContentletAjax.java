@@ -87,6 +87,7 @@ import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
 import io.vavr.control.Try;
+import javax.servlet.http.Cookie;
 import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.HttpServletRequest;
@@ -610,6 +611,8 @@ public class ContentletAjax {
 				}
 			}
 			luceneQuery.append(") ");
+			HttpServletRequest request;
+
 
 		} else {
 		    for(int i=0;i<fields.size();i++){

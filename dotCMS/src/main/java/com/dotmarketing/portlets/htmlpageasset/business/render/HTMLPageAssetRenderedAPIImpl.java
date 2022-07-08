@@ -53,6 +53,15 @@ import javax.ws.rs.core.Context;
  */
 public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
+    private String scriptJitsu = "<script src=\"//localhost:8080/s/lib.js\"\n"
+            + "        data-key=\"js.ch1gesoxtyetqm3bsk3jdp.9xwkm0flad8dcj0wtmsmr\"\n"
+            + "        data-init-only=\"false\"\n"
+            + "        defer></script>\n"
+            + "<script>window.jitsu = window.jitsu || (function(){(window.jitsuQ = window.jitsuQ || []).push(arguments);})</script>\n"
+            + "\n";
+
+    private String scriptMetricts = "<script src=\"//localhost:8080/api/v1/experiment/js/experiments.js\"></script>\n";
+
     private final HostWebAPI hostWebAPI;
     private final HTMLPageAssetAPI htmlPageAssetAPI;
     private final LanguageAPI languageAPI;
@@ -273,7 +282,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         final HTMLPageUrl htmlPageUrl = getHtmlPageAsset(context, host, request);
         final HTMLPageAsset page = htmlPageUrl.getHTMLPage();
 
-        return new HTMLPageAssetRenderedBuilder()
+        final String pageHTML = new HTMLPageAssetRenderedBuilder()
                 .setHtmlPageAsset(page)
                 .setUser(context.getUser())
                 .setRequest(request)
@@ -282,6 +291,8 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setURLMapper(htmlPageUrl.getPageUrlMapper())
                 .setLive(htmlPageUrl.hasLive())
                 .getPageHTML(context.getPageMode());
+
+        return pageHTML.replace("<head>", "<head>" + scriptJitsu + scriptMetricts);
     }
 
     private HTMLPageUrl getHtmlPageAsset(final PageContext context, final Host host, final HttpServletRequest request)
