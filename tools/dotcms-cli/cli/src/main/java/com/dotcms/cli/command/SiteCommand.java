@@ -1,6 +1,6 @@
 package com.dotcms.cli.command;
 
-import com.dotcms.model.site.GetSitesResponse;
+import com.dotcms.model.site.GetSitesAbstractResponseEntityView;
 import com.dotcms.model.site.Site;
 import com.dotcms.api.SiteAPI;
 import java.util.List;
@@ -36,7 +36,7 @@ public class SiteCommand implements Runnable {
     @Override
     public void run() {
 
-        final GetSitesResponse response = siteAPI.getSites(name, archived, live, true, page, pageSize);
+        final GetSitesAbstractResponseEntityView response = siteAPI.getSites(name, archived, live, true, page, pageSize);
         final List<Site> sites = response.entity();
         if (sites.isEmpty()) {
             logger.info("I couldn't find any sites with this search criteria.");

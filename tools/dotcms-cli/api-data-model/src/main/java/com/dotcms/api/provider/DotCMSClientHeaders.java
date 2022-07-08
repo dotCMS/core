@@ -1,4 +1,4 @@
-package com.dotcms.api.microprofile;
+package com.dotcms.api.provider;
 
 import com.dotcms.api.AuthSecurityContext;
 import javax.enterprise.context.RequestScoped;

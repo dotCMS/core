@@ -3,7 +3,7 @@ package com.dotcms.cli.command;
 
 import com.dotcms.api.AuthSecurityContext;
 import com.dotcms.model.user.User;
-import com.dotcms.api.LegacyUsersClient;
+import com.dotcms.api.UserAPI;
 import java.util.Optional;
 import javax.inject.Inject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
@@ -17,7 +17,7 @@ public class StatusCommand implements Runnable {
 
     @Inject
     @RestClient
-    LegacyUsersClient usersClient;
+    UserAPI usersClient;
 
     @Inject
     AuthSecurityContext authSecurityContext;

@@ -11,8 +11,8 @@ import java.util.List;
 
 @ValueType
 @Value.Immutable
-@JsonDeserialize(as = APIResponse.class)
-public interface AbstractAPIResponse<T> {
+@JsonDeserialize(builder = ResponseEntityView.Builder.class)
+public interface AbstractResponseEntityView<T> {
     List<String> errors();
     T entity();
     List<String> messages();

@@ -2,14 +2,14 @@ package com.dotcms.cli.command;
 
 
 import com.dotcms.api.AuthSecurityContext;
-import com.dotcms.model.authentication.APITokenRequest;
-import com.dotcms.model.authentication.APITokenResponse;
 import com.dotcms.api.AuthenticationAPI;
+import com.dotcms.model.ResponseEntityView;
+import com.dotcms.model.authentication.APITokenRequest;
+import com.dotcms.model.authentication.TokenEntity;
+import javax.inject.Inject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.logging.Logger;
 import picocli.CommandLine;
-
-import javax.inject.Inject;
 
 @CommandLine.Command(name = "login", description = "Login Command Expects a user and a password.")
 public class LoginCommand implements Runnable {
@@ -33,8 +33,8 @@ public class LoginCommand implements Runnable {
     @Override
     public void run() {
         final APITokenRequest tokenRequest = APITokenRequest.builder().user(user).password(password).expirationDays(10).build();
-        final APITokenResponse resp = client.getToken(tokenRequest);
-        authSecurityContext.setToken(resp.entity().token(), user);
+        final ResponseEntityView<TokenEntity> response = client.getToken(tokenRequest);
+        authSecurityContext.setToken(response.entity().token(), user);
         logger.info(String.format("Successfully logged-in as %s. ",user));
     }
 }

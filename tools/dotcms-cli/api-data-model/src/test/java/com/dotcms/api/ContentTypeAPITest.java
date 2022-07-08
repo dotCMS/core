@@ -1,9 +1,10 @@
 package com.dotcms.api;
 
 
+import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.authentication.APITokenRequest;
-import com.dotcms.model.authentication.APITokenResponse;
-import com.dotcms.model.contenttype.GetContentTypesResponse;
+import com.dotcms.model.authentication.TokenEntity;
+import com.dotcms.model.contenttype.GetContentTypesAbstractResponseEntityView;
 import io.quarkus.test.junit.QuarkusTest;
 import javax.inject.Inject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
@@ -28,12 +29,12 @@ public class ContentTypeAPITest {
     public void Test_Content_Type() {
 
         final String user = "admin@dotcms.com";
-        APITokenResponse resp = authClient.getToken(
+        final ResponseEntityView<TokenEntity> resp = authClient.getToken(
                 APITokenRequest.builder().user(user).password("admin").expirationDays(1).build());
 
         authSecurityContext.setToken(resp.entity().token(), user);
 
-        final GetContentTypesResponse response = client.getContentTypes(null, null, null, null, null, null, null );
+        final GetContentTypesAbstractResponseEntityView response = client.getContentTypes(null, null, null, null, null, null, null );
         Assertions.assertNotNull(response);
     }
 

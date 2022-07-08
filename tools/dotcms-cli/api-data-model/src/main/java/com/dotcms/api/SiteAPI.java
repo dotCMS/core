@@ -1,7 +1,9 @@
 package com.dotcms.api;
 
-import com.dotcms.api.microprofile.DotCMSClientHeaders;
-import com.dotcms.model.site.GetSitesResponse;
+import com.dotcms.api.provider.DotCMSClientHeaders;
+import com.dotcms.model.ResponseEntityView;
+import com.dotcms.model.site.Site;
+import java.util.List;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -19,7 +21,7 @@ import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 public interface SiteAPI {
 
     @GET
-    GetSitesResponse getSites(@QueryParam("filter") String filter,
+    ResponseEntityView<List<Site>> getSites(@QueryParam("filter") String filter,
             @QueryParam("showArchived") Boolean showArchived,
             @QueryParam("showLive") Boolean showLive, @QueryParam("showSystem") Boolean showSystem,
             @QueryParam("page") Integer page, @QueryParam("perPage") Integer perPage);

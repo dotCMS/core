@@ -1,8 +1,9 @@
 package com.dotcms.api;
 
 
+import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.authentication.APITokenRequest;
-import com.dotcms.model.authentication.APITokenResponse;
+import com.dotcms.model.authentication.TokenEntity;
 import io.quarkus.test.junit.QuarkusTest;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -26,7 +27,7 @@ public class AuthenticationAPITest {
         final String userString = "admin@dotCMS.com";
         final String passwordString = "admin";
 
-        final APITokenResponse tokenResponse = client.getToken(
+        final ResponseEntityView<TokenEntity> tokenResponse = client.getToken(
                 APITokenRequest.builder()
                         .user(userString)
                         .password(passwordString)

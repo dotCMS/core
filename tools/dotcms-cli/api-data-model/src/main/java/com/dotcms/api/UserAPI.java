@@ -1,7 +1,7 @@
 package com.dotcms.api;
 
-import com.dotcms.api.microprofile.DotCMSClientHeaders;
-import com.dotcms.model.APIResponse;
+import com.dotcms.api.provider.DotCMSClientHeaders;
+import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.user.User;
 import com.dotcms.model.user.UserFilter;
 import com.dotcms.model.user.UserListResponse;
@@ -19,7 +19,7 @@ import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RegisterClientHeaders(DotCMSClientHeaders.class)
-public interface LegacyUsersClient  {
+public interface UserAPI {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -29,7 +29,7 @@ public interface LegacyUsersClient  {
     @GET
     @Path("/filter/{params:.*}")
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-    APIResponse<UserListResponse> filter(@PathParam("params") final UserFilter params);
+    ResponseEntityView<UserListResponse> filter(@PathParam("params") final UserFilter params);
 
 
 }

@@ -1,9 +1,12 @@
 package com.dotcms.api;
 
+import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.authentication.APITokenRequest;
-import com.dotcms.model.authentication.APITokenResponse;
-import com.dotcms.model.site.GetSitesResponse;
+import com.dotcms.model.authentication.TokenEntity;
+import com.dotcms.model.site.GetSitesAbstractResponseEntityView;
+import com.dotcms.model.site.Site;
 import io.quarkus.test.junit.QuarkusTest;
+import java.util.List;
 import javax.inject.Inject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Assertions;
@@ -27,12 +30,12 @@ public class SiteAPITest {
     public void Test_Get_Sites() {
 
         final String user = "admin@dotcms.com";
-        final APITokenResponse resp = authClient.getToken(
+        final ResponseEntityView<TokenEntity> resp = authClient.getToken(
                 APITokenRequest.builder().user(user).password("admin").expirationDays(1).build());
 
         authSecurityContext.setToken(resp.entity().token(), user);
 
-        final GetSitesResponse sitesResponse = siteAPI.getSites(null, false, true, true, 1,
+        final ResponseEntityView<List<Site>> sitesResponse = siteAPI.getSites(null, false, true, true, 1,
                 10);
         Assertions.assertNotNull(sitesResponse);
     }
