@@ -1,4 +1,4 @@
-package com.dotcms.apl.client;
+package com.dotcms.api.client;
 
 import java.net.URI;
 import java.util.Map;

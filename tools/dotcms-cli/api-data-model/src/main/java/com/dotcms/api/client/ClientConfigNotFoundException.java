@@ -1,4 +1,4 @@
-package com.dotcms.apl.client;
+package com.dotcms.api.client;
 
 public class ClientConfigNotFoundException extends RuntimeException {
     public ClientConfigNotFoundException(String configName) {

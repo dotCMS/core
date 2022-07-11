@@ -1,4 +1,4 @@
-package com.dotcms.apl.client;
+package com.dotcms.api.client;
 
 import io.quarkus.test.junit.QuarkusTest;
 import javax.inject.Inject;
