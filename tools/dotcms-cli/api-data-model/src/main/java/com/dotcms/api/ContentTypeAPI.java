@@ -1,7 +1,9 @@
 package com.dotcms.api;
 
 import com.dotcms.api.provider.DotCMSClientHeaders;
-import com.dotcms.model.contenttype.GetContentTypesAbstractResponseEntityView;
+import com.dotcms.model.ResponseEntityView;
+import com.dotcms.model.contenttype.ContentType;
+import java.util.List;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -19,7 +21,7 @@ import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 public interface ContentTypeAPI {
 
     @GET
-    GetContentTypesAbstractResponseEntityView getContentTypes(@QueryParam("filter") String filter,
+    ResponseEntityView<List<ContentType>> getContentTypes(@QueryParam("filter") String filter,
             @QueryParam("page") Integer page,
             @QueryParam("perPage") Integer perPage,
             @QueryParam("orderBy") String orderBy,

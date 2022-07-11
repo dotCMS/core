@@ -22,7 +22,7 @@ public class AuthenticationAPITest {
     AuthSecurityContext authSecurityContext;
 
     @Test
-    public void testTokenApi() {
+    public void Test_Get_Token() {
 
         final String userString = "admin@dotCMS.com";
         final String passwordString = "admin";
@@ -31,7 +31,8 @@ public class AuthenticationAPITest {
                 APITokenRequest.builder()
                         .user(userString)
                         .password(passwordString)
-                        .expirationDays(1).build());
+                        .expirationDays(1).build()
+        );
 
         Assertions.assertNotNull(tokenResponse);
         authSecurityContext.setToken(tokenResponse.toString(), userString);

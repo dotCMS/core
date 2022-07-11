@@ -1,8 +1,8 @@
 package com.dotcms.cli.command;
 
-import com.dotcms.model.site.GetSitesAbstractResponseEntityView;
-import com.dotcms.model.site.Site;
 import com.dotcms.api.SiteAPI;
+import com.dotcms.model.ResponseEntityView;
+import com.dotcms.model.site.Site;
 import java.util.List;
 import javax.inject.Inject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
@@ -36,7 +36,7 @@ public class SiteCommand implements Runnable {
     @Override
     public void run() {
 
-        final GetSitesAbstractResponseEntityView response = siteAPI.getSites(name, archived, live, true, page, pageSize);
+        final ResponseEntityView<List<Site>> response = siteAPI.getSites(name, archived, live, true, page, pageSize);
         final List<Site> sites = response.entity();
         if (sites.isEmpty()) {
             logger.info("I couldn't find any sites with this search criteria.");

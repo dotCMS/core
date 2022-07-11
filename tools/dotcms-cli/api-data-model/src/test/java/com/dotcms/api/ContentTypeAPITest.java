@@ -4,8 +4,9 @@ package com.dotcms.api;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.authentication.APITokenRequest;
 import com.dotcms.model.authentication.TokenEntity;
-import com.dotcms.model.contenttype.GetContentTypesAbstractResponseEntityView;
+import com.dotcms.model.contenttype.ContentType;
 import io.quarkus.test.junit.QuarkusTest;
+import java.util.List;
 import javax.inject.Inject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Assertions;
@@ -34,7 +35,7 @@ public class ContentTypeAPITest {
 
         authSecurityContext.setToken(resp.entity().token(), user);
 
-        final GetContentTypesAbstractResponseEntityView response = client.getContentTypes(null, null, null, null, null, null, null );
+        final ResponseEntityView<List<ContentType>> response = client.getContentTypes(null, null, null, null, null, null, null );
         Assertions.assertNotNull(response);
     }
 

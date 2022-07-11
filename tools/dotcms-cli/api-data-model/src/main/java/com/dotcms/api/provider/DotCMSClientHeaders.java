@@ -7,6 +7,10 @@ import javax.ws.rs.core.MultivaluedMap;
 import org.eclipse.microprofile.rest.client.ext.ClientHeadersFactory;
 import org.jboss.logging.Logger;
 
+
+/**
+ * Microprofile Provided that injexcts the authentication header into every api-request.
+ */
 @RequestScoped
 public class DotCMSClientHeaders implements ClientHeadersFactory {
 

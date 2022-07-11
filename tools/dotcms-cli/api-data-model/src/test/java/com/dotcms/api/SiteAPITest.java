@@ -3,7 +3,6 @@ package com.dotcms.api;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.authentication.APITokenRequest;
 import com.dotcms.model.authentication.TokenEntity;
-import com.dotcms.model.site.GetSitesAbstractResponseEntityView;
 import com.dotcms.model.site.Site;
 import io.quarkus.test.junit.QuarkusTest;
 import java.util.List;
@@ -30,10 +29,10 @@ public class SiteAPITest {
     public void Test_Get_Sites() {
 
         final String user = "admin@dotcms.com";
-        final ResponseEntityView<TokenEntity> resp = authClient.getToken(
+        final ResponseEntityView<TokenEntity> response = authClient.getToken(
                 APITokenRequest.builder().user(user).password("admin").expirationDays(1).build());
 
-        authSecurityContext.setToken(resp.entity().token(), user);
+        authSecurityContext.setToken(response.entity().token(), user);
 
         final ResponseEntityView<List<Site>> sitesResponse = siteAPI.getSites(null, false, true, true, 1,
                 10);
