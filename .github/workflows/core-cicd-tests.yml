@@ -141,7 +141,7 @@ jobs:
           pull_request: ${{ github.event.number }}
           github_user: ${{ env.GITHUB_USER }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
-          tests_report_url: ${{ steps.publish-unit-tests.outputs.tests_report_url }}
+          tests_report_url: ${{ steps.github-publish-unit-tests.outputs.test_logs_url }}
         if: always() && steps.publish-unit-tests.outputs.tests_report_url != ''
   integration-tests-thread-setup-job:
     name: Integration tests thread (matrix) setup
@@ -258,7 +258,7 @@ jobs:
           pull_request: ${{ github.event.number }}
           github_user: ${{ env.GITHUB_USER }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
-          tests_report_url: ${{ steps.publish-integration-tests.outputs.tests_report_url }}
+          tests_report_url: ${{ steps.github-publish-integration-tests.outputs.tests_report_url }}
         if: always() && steps.publish-integration-tests.outputs.tests_report_url != ''
   integration-tests-complete-job:
     name: Integration tests publish complete setup
@@ -367,7 +367,7 @@ jobs:
           pull_request: ${{ github.event.number }}
           github_user: ${{ env.GITHUB_USER }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
-          tests_report_url: ${{ steps.publish-postman-tests.outputs.tests_report_url }}
+          tests_report_url: ${{ steps.github-publish-postman-tests.outputs.tests_report_url }}
         if: always() && steps.publish-postman-tests.outputs.tests_report_url != ''
   test-results-handler-job:
     name: Tests results handler

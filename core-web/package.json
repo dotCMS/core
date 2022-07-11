@@ -1,6 +1,6 @@
 {
     "name": "dotcms-ui",
-    "version": "22.6.0-next.4",
+    "version": "22.7.0-rc.23",
     "license": "MIT",
     "engines": {
         "node": ">=16.13.2"
@@ -42,10 +42,11 @@
         "dep-graph": "nx dep-graph",
         "help": "nx help",
         "pretty-quick": "pretty-quick",
-        "prepare": "is-ci || (pwd && cd ../ && pwd && husky install ui/.husky && cd ./ui)"
+        "prepare": "cd .. && node core-web/prepare.js"
     },
     "private": false,
     "dependencies": {
+        "@angular-devkit/core": "^14.0.5",
         "@angular/animations": "13.2.3",
         "@angular/cdk": "13.2.3",
         "@angular/common": "13.2.3",

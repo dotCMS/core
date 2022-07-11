@@ -1,0 +1,62 @@
+<com.dotcms.publisher.pusher.wrapper.UserWrapper>
+    <user>
+        <__new>false</__new>
+        <__modified>true</__modified>
+        <__userId>277703e0-af8f-4e08-875c-677780ccb0dd</__userId>
+        <__companyId>dotcms.org</__companyId>
+        <__password>1657034255031</__password>
+        <__passwordEncrypted>true</__passwordEncrypted>
+        <__passwordReset>false</__passwordReset>
+        <__firstName>testFirstName1657034255031</__firstName>
+        <__lastName>testLastName1657034255031</__lastName>
+        <__male>true</__male>
+        <__emailAddress>testemailaddress@1657034255031.com</__emailAddress>
+        <__languageId>en_US</__languageId>
+        <__timeZoneId>UTC</__timeZoneId>
+        <__skinId>921c2fbb-2e39-4e27-bf8c-3ef8b8b33248</__skinId>
+        <__dottedSkins>false</__dottedSkins>
+        <__roundedSkins>false</__roundedSkins>
+        <__greeting>Welcome, 277703e0-af8f-4e08-875c-677780ccb0dd 277703e0-af8f-4e08-875c-677780ccb0dd!</__greeting>
+        <__layoutIds></__layoutIds>
+        <__createDate class="sql-timestamp">2022-07-05 15:17:35.165</__createDate>
+        <__failedLoginAttempts>0</__failedLoginAttempts>
+        <__agreedToTermsOfUse>false</__agreedToTermsOfUse>
+        <__active>true</__active>
+        <__deleteInProgress>false</__deleteInProgress>
+        <__additionalInfo/>
+        <__defaultUser>false</__defaultUser>
+        <__locale>en_US</__locale>
+        <__timeZone class="sun.util.calendar.ZoneInfo" serialization="custom">
+            <java.util.TimeZone>
+                <default>
+                    <ID>UTC</ID>
+                </default>
+            </java.util.TimeZone>
+            <sun.util.calendar.ZoneInfo>
+                <default>
+                    <checksum>0</checksum>
+                    <dstSavings>0</dstSavings>
+                    <rawOffset>0</rawOffset>
+                    <rawOffsetDiff>0</rawOffsetDiff>
+                    <willGMTOffsetChange>false</willGMTOffsetChange>
+                </default>
+            </sun.util.calendar.ZoneInfo>
+        </__timeZone>
+        <modificationDate class="sql-timestamp">2022-07-05 15:17:35.408</modificationDate>
+    </user>
+    <userRole>
+        <id>a58c2144-f31e-4acf-99f4-35d6022b6504</id>
+        <name>testFirstName1657034255031 testLastName1657034255031</name>
+        <description></description>
+        <roleKey>277703e0-af8f-4e08-875c-677780ccb0dd</roleKey>
+        <DBFQN>9ac1ff78-71a9-4485-a541-9d1418b17aa4 --&gt; a58c2144-f31e-4acf-99f4-35d6022b6504</DBFQN>
+        <FQN>Users --&gt; testFirstName1657034255031 testLastName1657034255031</FQN>
+        <parent>9ac1ff78-71a9-4485-a541-9d1418b17aa4</parent>
+        <editPermissions>true</editPermissions>
+        <editUsers>false</editUsers>
+        <editLayouts>true</editLayouts>
+        <locked>false</locked>
+        <system>true</system>
+    </userRole>
+    <operation>PUBLISH</operation>
+</com.dotcms.publisher.pusher.wrapper.UserWrapper>
