@@ -541,6 +541,11 @@ export namespace Components {
          */
         "row": DotCMSContentTypeLayoutRow;
     }
+    interface DotHtmlToImage {
+        "height": string;
+        "value": string;
+        "width": string;
+    }
     interface DotInputCalendar {
         /**
           * (optional) Disables field's interaction
@@ -1148,6 +1153,10 @@ export interface DotFormCustomEvent<T> extends CustomEvent<T> {
     detail: T;
     target: HTMLDotFormElement;
 }
+export interface DotHtmlToImageCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLDotHtmlToImageElement;
+}
 export interface DotInputCalendarCustomEvent<T> extends CustomEvent<T> {
     detail: T;
     target: HTMLDotInputCalendarElement;
@@ -1345,6 +1354,12 @@ declare global {
         prototype: HTMLDotFormRowElement;
         new (): HTMLDotFormRowElement;
     };
+    interface HTMLDotHtmlToImageElement extends Components.DotHtmlToImage, HTMLStencilElement {
+    }
+    var HTMLDotHtmlToImageElement: {
+        prototype: HTMLDotHtmlToImageElement;
+        new (): HTMLDotHtmlToImageElement;
+    };
     interface HTMLDotInputCalendarElement extends Components.DotInputCalendar, HTMLStencilElement {
     }
     var HTMLDotInputCalendarElement: {
@@ -1472,6 +1487,7 @@ declare global {
         "dot-form": HTMLDotFormElement;
         "dot-form-column": HTMLDotFormColumnElement;
         "dot-form-row": HTMLDotFormRowElement;
+        "dot-html-to-image": HTMLDotHtmlToImageElement;
         "dot-input-calendar": HTMLDotInputCalendarElement;
         "dot-key-value": HTMLDotKeyValueElement;
         "dot-label": HTMLDotLabelElement;
@@ -2021,6 +2037,12 @@ declare namespace LocalJSX {
           * Fields metada to be rendered
          */
         "row"?: DotCMSContentTypeLayoutRow;
+    }
+    interface DotHtmlToImage {
+        "height"?: string;
+        "onPageThumbnail"?: (event: DotHtmlToImageCustomEvent<File>) => void;
+        "value"?: string;
+        "width"?: string;
     }
     interface DotInputCalendar {
         /**
@@ -2598,6 +2620,7 @@ declare namespace LocalJSX {
         "dot-form": DotForm;
         "dot-form-column": DotFormColumn;
         "dot-form-row": DotFormRow;
+        "dot-html-to-image": DotHtmlToImage;
         "dot-input-calendar": DotInputCalendar;
         "dot-key-value": DotKeyValue;
         "dot-label": DotLabel;
@@ -2645,6 +2668,7 @@ declare module "@stencil/core" {
             "dot-form": LocalJSX.DotForm & JSXBase.HTMLAttributes<HTMLDotFormElement>;
             "dot-form-column": LocalJSX.DotFormColumn & JSXBase.HTMLAttributes<HTMLDotFormColumnElement>;
             "dot-form-row": LocalJSX.DotFormRow & JSXBase.HTMLAttributes<HTMLDotFormRowElement>;
+            "dot-html-to-image": LocalJSX.DotHtmlToImage & JSXBase.HTMLAttributes<HTMLDotHtmlToImageElement>;
             "dot-input-calendar": LocalJSX.DotInputCalendar & JSXBase.HTMLAttributes<HTMLDotInputCalendarElement>;
             "dot-key-value": LocalJSX.DotKeyValue & JSXBase.HTMLAttributes<HTMLDotKeyValueElement>;
             "dot-label": LocalJSX.DotLabel & JSXBase.HTMLAttributes<HTMLDotLabelElement>;

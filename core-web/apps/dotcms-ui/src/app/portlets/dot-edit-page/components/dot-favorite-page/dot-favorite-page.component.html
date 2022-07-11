@@ -9,16 +9,11 @@
             <label for="previewThumbnail" class="p-label-input-required">{{
                 'preview' | dm
             }}</label>
-            <p-skeleton
-                id="previewThumbnail"
-                styleClass="skeleton"
-                width="10rem"
-                height="10rem"
-                *ngIf="!pageThumbnail; else previewImg"
-            ></p-skeleton>
-            <ng-template #previewImg>
-                <img style="width: 100%" id="previewImgHtmlTag" [src]="pageThumbnail" />
-            </ng-template>
+            <dot-html-to-image
+                [value]="pageRenderedHtml"
+                [width]="imgWidth"
+                [height]="imgHeight"
+            ></dot-html-to-image>
         </div>
         <div class="field" data-testId="titleField">
             <label for="title" class="p-label-input-required">{{ 'title' | dm }}</label>
@@ -56,7 +51,7 @@
             ></dot-field-validation-message>
         </div>
 
-        <div class="field" data-testId="orderField">
+        <div class="field" data-testId="shareWithField" *ngIf="isAdmin">
             <label for="permissions" class="p-label-input-required">{{ 'share.with' | dm }}</label>
             <p-multiSelect
                 id="permissions"

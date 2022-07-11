@@ -461,7 +461,7 @@ public class TagResource {
             Logger.error(TagResource.class, String.format("No tags were found by the inode %s.",inode));
             return Response.status(Status.NOT_FOUND).build();
         }
-        return Response.ok(new ResponseEntityView(tagInodes)).build();
+        return Response.ok(new ResponseEntityView<List<TagInode>>(tagInodes)).build();
     }
 
     /**
