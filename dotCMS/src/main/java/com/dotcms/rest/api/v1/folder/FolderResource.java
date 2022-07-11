@@ -120,7 +120,7 @@ public class FolderResource implements Serializable {
             }
         }
 
-        return Response.ok(new ResponseEntityView(deletedFolders)).build(); // 200
+        return Response.ok(new ResponseEntityView<>(deletedFolders)).build(); // 200
     }
 
     @POST
@@ -146,7 +146,7 @@ public class FolderResource implements Serializable {
 
             final List<Map<String, Object>> createdFolders = folderHelper.createFolders(paths, siteName, user);
 
-            return Response.ok(new ResponseEntityView(createdFolders)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(createdFolders)).build(); // 200
     }
 
     @PUT
@@ -324,7 +324,7 @@ public class FolderResource implements Serializable {
 
         folderPath = !folderPath.startsWith(StringPool.FORWARD_SLASH) ? StringPool.FORWARD_SLASH.concat(folderPath) : folderPath;
 
-        return Response.ok(new ResponseEntityView(folderHelper.findSubFoldersPathByParentPath(siteId,folderPath, user))).build(); // 200
+        return Response.ok(new ResponseEntityView<>(folderHelper.findSubFoldersPathByParentPath(siteId,folderPath, user))).build(); // 200
     }
 
     /**
