@@ -11,6 +11,7 @@ import { DotRolesService } from '@dotcms/app/api/services/dot-roles/dot-roles.se
 import { DotRole } from '@dotcms/app/shared/models/dot-role/dot-role.model';
 
 export interface DotFavoritePage {
+    isAdmin?: boolean;
     thumbnail?: Blob;
     title: string;
     url: string;
@@ -30,8 +31,10 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
     isFormValid$: Observable<boolean>;
     pageThumbnail: string;
     roleOptions: DotRole[];
+    currentUserRole: DotRole;
 
     pageRenderedHtml: string;
+    isAdmin: boolean;
 
     imgRatio43 = 1.333;
     imgWidth = this.config.data.page.deviceWidth || 1024;
@@ -52,6 +55,8 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         const { page }: { page: DotFavoritePage } = this.config.data;
         this.pageRenderedHtml = page.pageRenderedHtml;
+        this.isAdmin = page.isAdmin;
+
         console.log('+++imgWidth', this.imgWidth, this.imgHeight);
         console.log('______oage', page);
 
@@ -60,15 +65,16 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
             .pipe(take(1))
             .subscribe((roles: DotRole[]) => {
                 console.log('**roles', roles);
-                this.roleOptions = roles;
+                this.currentUserRole = roles.find((item: DotRole) => item.name === 'Current User');
+                this.roleOptions = roles.filter((item: DotRole) => item.name !== 'Current User');
+
                 // this.options = this.decorateLabels(languages);
                 // this.disabled = this.options.length === 0;
             });
 
         const url =
-            `${page.url}?language_id=${page.languageId}` + (page.deviceId
-                ? `&device_id=${page.deviceId}`
-                : '');
+            `${page.url}?language_id=${page.languageId}` +
+            (page.deviceId ? `&device_id=${page.deviceId}` : '');
         const formGroupAttrs = {
             thumbnail: ['', Validators.required],
             title: [page.title, Validators.required],
@@ -171,8 +177,12 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
         const value = this.form.value;
         const file = new File([value.thumbnail], 'image.png');
         const individualPermissions = {
-            READ: value.permissions.map((item) => item.id)
+            READ: []
         };
+        individualPermissions.READ = value.permissions
+            ? value.permissions.map((item) => item.id)
+            : [];
+        individualPermissions.READ.push(this.currentUserRole.id);
 
         // REQUEST BEGIN
         this.dotTempFileUploadService

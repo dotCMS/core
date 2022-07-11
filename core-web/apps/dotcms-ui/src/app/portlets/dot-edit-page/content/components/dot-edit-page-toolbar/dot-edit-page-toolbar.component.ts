@@ -95,6 +95,7 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
             width: '40rem',
             data: {
                 page: {
+                    isAdmin: this.pageState.user.admin || null,
                     title: this.pageState.params.page?.title || null,
                     url: this.pageState.params.page?.pageURI || null,
                     order: 1,
