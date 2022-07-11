@@ -28,6 +28,7 @@ export class BubbleMenuLinkFormComponent implements OnInit {
     @Output() removeLink: EventEmitter<boolean> = new EventEmitter(false);
     @Output() submitForm: EventEmitter<{ link: string, blank: boolean }> = new EventEmitter();
     
+    @Input() formPristine = true;
     @Input() initialValues: Record<string, unknown> = {
         link: '',
         blank: false
@@ -53,8 +54,9 @@ export class BubbleMenuLinkFormComponent implements OnInit {
 
         this.form.valueChanges
             .pipe(debounceTime(500))
-            .subscribe( ({link}) => {
-                if( link.length < 3 || link === this.initialValues.link) {
+            .subscribe( ({ link }) => {
+                if(link.length < 3 || this.formPristine) {
+                    this.formPristine = false;
                     return
                 }
                 this.setContentlets({ link });

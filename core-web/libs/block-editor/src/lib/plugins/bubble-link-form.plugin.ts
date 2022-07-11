@@ -124,13 +124,14 @@ export class BubbleLinkFormView {
         this.tippy?.show();
         // Afther show the component set values
         this.setInputValues();
+        this.component.instance.items = [];
+        this.component.instance.formPristine = true;
         this.component.instance.focusInput();
         this.tippy?.setProps({ getReferenceClientRect: () => this.setTippyPosition() });
     }
 
     hide() {
         this.tippy?.hide();
-        this.component.instance.items = [];
         // After show the component focus editor
         this.editor.view.focus();
         this.editor.commands.unsetHighlight();
