@@ -59,6 +59,7 @@ import org.glassfish.jersey.server.JSONP;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
@@ -219,7 +220,7 @@ public class PermissionResource {
      * @throws DotRuntimeException
      * @throws DotSecurityException
      */
-    @PUT
+    @DELETE
     @Path("/_byasset")
     @JSONP
     @NoCache
