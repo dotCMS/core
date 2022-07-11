@@ -9,9 +9,9 @@ import java.util.List;
  * Wrapper for the response entity view output
  * @author jsanca
  */
-public class ResponseEntityRoleView extends ResponseEntityView<RoleView> {
+public class ResponseEntityRoleListView extends ResponseEntityView<List<RoleView>> {
 
-    public ResponseEntityRoleView(final RoleView entity) {
+    public ResponseEntityRoleListView(final List<RoleView> entity) {
         super(entity);
     }
 }

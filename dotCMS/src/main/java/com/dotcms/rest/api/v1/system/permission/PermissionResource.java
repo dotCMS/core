@@ -7,6 +7,7 @@ import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityBooleanView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -28,6 +29,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -59,6 +61,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -203,6 +206,51 @@ public class PermissionResource {
                 .filter(permission -> this.filter(permissionType, permission))
                 .map(PermissionResource::from)
                 .collect(Collectors.toList()))).build();
+    }
+
+    /**
+     * Reset permissions for the given asset
+     * @param assetId    {@link String}
+     * @param languageId {@link Long}
+     * @return
+     * @throws DotDataException
+     * @throws SystemException
+     * @throws PortalException
+     * @throws DotRuntimeException
+     * @throws DotSecurityException
+     */
+    @PUT
+    @Path("/_byasset")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(summary = "Reset permissions for an asset",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityBooleanView.class)))
+    })
+    public Response resetAssetPermissions (final @Context HttpServletRequest request,
+                                       final @Context HttpServletResponse response,
+                                       final @QueryParam("assetId")   String assetId,
+                                       final @QueryParam("languageId")   Long languageId) throws Exception {
+
+        final User user = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true).init().getUser();
+
+        Logger.debug(this, ()-> "Doing reset of the asset: " + assetId + ", lang: " + languageId);
+
+        final PageMode pageMode = PageMode.get(request);
+        final boolean respectFrontendRoles = pageMode.respectAnonPerms;
+        final Permissionable asset = retrievePermissionable(assetId, languageId, user, respectFrontendRoles);
+        APILocator.getPermissionAPI().removePermissions(asset);
+
+        return Response.ok(new ResponseEntityBooleanView(true)).build();
     }
 
     /**

@@ -4,6 +4,7 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
@@ -301,6 +302,47 @@ public class RoleResource implements Serializable {
 				null != roleNameToFilter? this.filterRoleList(roleNameToFilter, roleList):roleList)).build();
 	}
 
+	/**
+	 * Load the user and roles by role id.
+	 * @param request   {@link HttpServletRequest}
+	 * @param response  {@link HttpServletResponse}
+	 * @param roleId    {@link String} role
+	 * @param roleHierarchyForAssign {@link Boolean} true if want to include the hierarchy, false by default
+	 * @param roleNameToFilter {@link String} prefix role name, if you want to filter the results
+	 * @return Response
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@GET
+	@Path("/users/{userId}")
+	@Produces("application/json") // ResponseEntityRoleView
+	@Operation(summary = "Get User Role",
+			responses = {
+					@ApiResponse(
+							responseCode = "200",
+							content = @Content(mediaType = "application/json",
+									schema = @Schema(implementation = ResponseEntityRoleView.class)))})
+	@SuppressWarnings("unchecked")
+	public Response getUserRole(@Context final HttpServletRequest request,
+											  @Context final HttpServletResponse response,
+											  @PathParam   ("userId") final String userId) throws DotDataException, DotSecurityException {
+
+		new WebResource.InitBuilder(this.webResource).requiredBackendUser(true)
+				.requiredFrontendUser(false).requestAndResponse(request, response)
+				.rejectWhenNoUser(true).init();
+
+		Logger.debug(this, ()-> "Getting the user role for the user: " + userId);
+
+		if(UtilMethods.isSet(userId)) {
+
+			final User userForRole = userAPI.loadUserById(userId);
+			return Response.ok(new ResponseEntityRoleView(new RoleView(
+					this.roleAPI.getUserRole(userForRole), null))).build();
+		}
+
+		throw new BadRequestException("User id is required");
+	}
+
 	private final List<Role> filterRoleList(final String roleNameToFilter, final List<Role> roleList) {
 
 		final String roleNameToFilterClean = roleNameToFilter.toLowerCase().replaceAll( "\\*", StringPool.BLANK);
@@ -397,7 +439,11 @@ public class RoleResource implements Serializable {
 	}
 
 	/**
-	 * todo: doc
+	 * Return the tree of roles + user.
+	 * The user can include assignables roles only (false by default), exclude some roles or exclude the roles that are users (false by default)
+	 * example:
+	 * This excludes the user roles
+	 * /api/v1/roles/_tree?excludeUserRoles=true
 	 *
 	 * @param excludeRolesInput {@link Boolean}
 	 * @param excludeRoles {@link String}
@@ -414,7 +460,7 @@ public class RoleResource implements Serializable {
 					@ApiResponse(
 							responseCode = "200",
 							content = @Content(mediaType = "application/json",
-									schema = @Schema(implementation = ResponseEntityRoleView.class)))})
+									schema = @Schema(implementation = ResponseEntityRoleListView.class)))})
 	public Response getRolesTree(@Context final HttpServletRequest request,
 								@Context final HttpServletResponse response,
 								@DefaultValue("false")   @QueryParam("onlyUserAssignableRoles") final boolean onlyUserAssignableRoles,
@@ -426,7 +472,10 @@ public class RoleResource implements Serializable {
 		final List<Role> rootRoles     = roleAPI.findRootRoles();
 		final Set<String> excludeRolesSet = this.createExcludeRoles(excludeRoles);
 
-		// todo: do this need to be the user logged in?
+		new WebResource.InitBuilder(this.webResource).requiredBackendUser(true)
+				.requiredFrontendUser(false).requestAndResponse(request, response)
+				.rejectWhenNoUser(true).init();
+
 		Logger.debug(this, ()-> "Getting Roles Tree, onlyUserAssignableRoles: " + onlyUserAssignableRoles +
 								", excludeRoles: " + excludeRoles + ", excludeUserRoles: " + excludeUserRoles);
 
@@ -455,7 +504,7 @@ public class RoleResource implements Serializable {
 
 		}
 
-		return Response.ok(new ResponseEntityRoleView(roleViews)).build();
+		return Response.ok(new ResponseEntityRoleListView(roleViews)).build();
 	}
 
 	/**
