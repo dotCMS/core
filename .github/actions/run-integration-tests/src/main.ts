@@ -8,7 +8,7 @@ const dbType = core.getInput('db_type')
 /**
  * Main entry point for this action.
  */
-const run = () => {
+const run = async () => {
   core.info("Running Core's integration tests")
 
   const cmd = integration.COMMANDS[buildEnv as keyof integration.Commands]
@@ -17,33 +17,15 @@ const run = () => {
     return
   }
 
+  const exitCode = await integration.runTests(cmd)
+  const skipReport = !(cmd.outputDir && fs.existsSync(cmd.outputDir))
   setOutput('tests_results_location', cmd.outputDir)
   setOutput('tests_results_report_location', cmd.reportDir)
   setOutput('ci_index', cmd.ciIndex)
-
-  integration
-    .runTests(cmd)
-    .then(exitCode => {
-      const results = {
-        testsRunExitCode: exitCode,
-        testResultsLocation: cmd.outputDir,
-        skipResultsReport: false
-      }
-      core.info(`Integration test results:\n${JSON.stringify(results)}`)
-      setOutput('tests_results_status', exitCode === 0 ? 'PASSED' : 'FAILED')
-      setOutput('tests_results_skip_report', false)
-      setOutput(`${dbType}_tests_results_status`, exitCode === 0 ? 'PASSED' : 'FAILED')
-      setOutput(`${dbType}_tests_results_skip_report`, false)
-    })
-    .catch(reason => {
-      const messg = `Running integration tests failed due to ${reason}`
-      const skipResults = !!cmd.outputDir && !fs.existsSync(cmd.outputDir)
-      setOutput('tests_results_status', 'FAILED')
-      setOutput('tests_results_skip_report', skipResults)
-      setOutput(`${dbType}_tests_results_status`, 'FAILED')
-      setOutput(`${dbType}_tests_results_skip_report`, skipResults)
-      core.setFailed(messg)
-    })
+  setOutput('tests_results_status', exitCode === 0 ? 'PASSED' : 'FAILED')
+  setOutput('tests_results_skip_report', skipReport)
+  setOutput(`${dbType}_tests_results_status`, exitCode === 0 ? 'PASSED' : 'FAILED')
+  setOutput(`${dbType}_tests_results_skip_report`, skipReport)
 }
 
 const setOutput = (name: string, value: string | boolean | number | undefined) => {

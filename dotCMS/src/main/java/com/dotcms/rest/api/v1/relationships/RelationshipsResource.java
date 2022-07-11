@@ -1,8 +1,5 @@
 package com.dotcms.rest.api.v1.relationships;
 
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotcms.util.CollectionsUtils.toImmutableList;
-
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.InitDataObject;
@@ -18,8 +15,8 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import java.util.Arrays;
-import java.util.Map;
+import org.glassfish.jersey.server.JSONP;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DefaultValue;
@@ -30,7 +27,11 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.glassfish.jersey.server.JSONP;
+import java.util.Arrays;
+import java.util.Map;
+
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.CollectionsUtils.toImmutableList;
 
 /**
  * This resource provides all the different end-points associated to information and actions that
@@ -123,5 +124,4 @@ public class RelationshipsResource {
             return ResponseUtil.mapExceptionResponse(e);
         }
     }
-
 }
