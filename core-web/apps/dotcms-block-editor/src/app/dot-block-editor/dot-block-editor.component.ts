@@ -50,7 +50,7 @@ export class DotBlockEditorComponent implements OnInit {
                 ActionsMenu(this.viewContainerRef),
                 DragHandler(this.viewContainerRef),
                 ImageUpload(this.injector, this.viewContainerRef),
-                BubbleLinkFormExtension(this.injector, this.viewContainerRef),
+                BubbleLinkFormExtension(this.viewContainerRef),
                 DotBubbleMenuExtension(this.viewContainerRef),
                 // Marks Extensions
                 Underline,

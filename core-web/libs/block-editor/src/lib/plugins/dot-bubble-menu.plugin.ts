@@ -137,7 +137,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         doc.nodesBetween(
             this.selectionRange.$from.pos,
             this.selectionRange.$to.pos,
-            (node, _pos) => {
+            (node) => {
                 if (node.isBlock) {
                     this.selectionNodesCount++;
                 }

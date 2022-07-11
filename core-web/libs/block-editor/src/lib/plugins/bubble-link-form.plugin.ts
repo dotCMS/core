@@ -7,7 +7,7 @@ import { ComponentRef } from '@angular/core';
 import { BubbleMenuLinkFormComponent } from '../extensions/components/bubble-menu-link-form/bubble-menu-link-form.component';
 
 // Interface
-import { PluginStorage, LINK_FORM_PLUGIN_KEY } from '../extensions/bubble-link-form.extension';
+import { PluginStorage } from '../extensions/bubble-link-form.extension';
 
 interface PluginState {
     toggle: boolean;
@@ -122,16 +122,14 @@ export class BubbleLinkFormView {
 
     show() {
         this.tippy?.show();
-        this.dispatchTransition(true);
         // Afther show the component set values
         this.setInputValues();
-        this.focusInput();
+        this.component.instance.focusInput();
         this.tippy?.setProps({ getReferenceClientRect: () => this.setTippyPosition() });
     }
 
     hide() {
         this.tippy?.hide();
-        this.dispatchTransition(false);
         this.component.instance.items = [];
         // After show the component focus editor
         this.editor.view.focus();
@@ -168,7 +166,7 @@ export class BubbleLinkFormView {
         if (this.isDotImageNode()) {
             this.editor.commands.setImageLink({ href: link });
         } else {
-            this.editor.commands.setLink({ href: link, target:  blank ? '_blank' : '_self' });
+            this.editor.commands.setLink({ href: link, target: blank ? '_blank' : '_top' });
         }
         this.hide();
     }
@@ -183,28 +181,28 @@ export class BubbleLinkFormView {
     }
 
     setInputValues() {
-        this.component.instance.link = this.getNodeLink();
-        this.component.instance.props.link = this.getNodeLink() || this.getLinkSelect();
-    }
-
-    focusInput() {
-        this.component.instance.focusInput();
+        const values = this.getLinkProps();
+        this.component.instance.initialValues = values;
+        this.component.instance.setFormValue(values);
     }
 
     setComponentEvents() {
-        this.component.instance.hideForm.subscribe(() => this.hide());
+        this.component.instance.hide.subscribe(() => this.hide());
         this.component.instance.removeLink.subscribe(() => this.removeLink());
-        this.component.instance.setLink.subscribe((event) => this.addLink(event));
+        this.component.instance.submitForm.subscribe((event) => this.addLink(event));
     }
 
     detectLinkFormChanges() {
         this.component.changeDetectorRef.detectChanges();
     }
 
-    getNodeLink(): string {
-        return this.editor.isActive('link')
-            ? this.editor.getAttributes('link').href
-            : this.editor.getAttributes('dotImage').href || '';
+    getLinkProps(): Record<string, unknown> {
+        const { href = '', target } = this.editor.isActive('link')
+        ? this.editor.getAttributes('link')
+        : this.editor.getAttributes('dotImage');
+        const link = href || this.getLinkSelect();
+        const blank = target === '_blank';
+        return { link, blank };
     }
 
     getLinkSelect() {
@@ -247,11 +245,6 @@ export class BubbleLinkFormView {
         }
         this.tippy?.hide();
     }
-
-    private dispatchTransition(open: boolean) {
-        const transaction = this.editor.state.tr.setMeta(LINK_FORM_PLUGIN_KEY, { open });
-        this.editor.view.dispatch(transaction);
-    }
 }
 
 export const bubbleLinkFormPlugin = (options: BubbleLinkFormProps) => {
@@ -269,7 +262,7 @@ export const bubbleLinkFormPlugin = (options: BubbleLinkFormProps) => {
                 const transactionMeta = transaction.getMeta(options.pluginKey);
                 if (transactionMeta) {
                     return {
-                        toggle: options.storage.show,
+                        toggle: options.storage.show
                     };
                 }
 

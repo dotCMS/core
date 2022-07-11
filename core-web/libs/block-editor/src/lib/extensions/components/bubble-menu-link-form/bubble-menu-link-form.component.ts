@@ -10,8 +10,9 @@ import { SuggestionsService } from '../../services/suggestions/suggestions.servi
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotMenuItem, SuggestionsCommandProps, SuggestionsComponent } from '../suggestions/suggestions.component';
 import { DotLanguageService, Languages } from '../../services/dot-language/dot-language.service';
-import { take } from 'rxjs/operators';
+import { take, debounceTime } from 'rxjs/operators';
 import { OnInit } from '@angular/core';
+import { FormBuilder, FormGroup } from '@angular/forms';
 
 @Component({
     selector: 'dotcms-bubble-menu-link-form',
@@ -19,42 +20,50 @@ import { OnInit } from '@angular/core';
     styleUrls: ['./bubble-menu-link-form.component.scss']
 })
 export class BubbleMenuLinkFormComponent implements OnInit {
-
+    
     @ViewChild('input') input: ElementRef;
     @ViewChild('suggestions', { static: false }) suggestionsComponent: SuggestionsComponent;
     
-    @Output() hideForm: EventEmitter<boolean> = new EventEmitter(false);
+    @Output() hide: EventEmitter<boolean> = new EventEmitter(false);
     @Output() removeLink: EventEmitter<boolean> = new EventEmitter(false);
-    @Output() setLink: EventEmitter<{ link: string, blank: boolean }> = new EventEmitter();
-
-    @Input() link = '';
-    @Input() props = {
+    @Output() submitForm: EventEmitter<{ link: string, blank: boolean }> = new EventEmitter();
+    
+    @Input() initialValues: Record<string, unknown> = {
         link: '',
         blank: false
     };
-
+    
     public items: DotMenuItem[] = [];
+    public form: FormGroup;
     private dotLangs: Languages;
 
-    constructor(private suggestionService: SuggestionsService,  private dotLanguageService: DotLanguageService) {/* */}
+    constructor(
+        private suggestionService: SuggestionsService,
+        private dotLanguageService: DotLanguageService,
+        private fb: FormBuilder
+    ) {/* */}
 
     ngOnInit() {
+        this.form = this.fb.group({...this.initialValues});
+
         this.dotLanguageService
         .getLanguages()
         .pipe(take(1))
         .subscribe((dotLang) => (this.dotLangs = dotLang));
+
+        this.form.valueChanges
+            .pipe(debounceTime(500))
+            .subscribe( ({link}) => {
+                if( link.length < 3 || link === this.initialValues.link) {
+                    return
+                }
+                this.setContentlets({ link });
+            });
     }
 
-    addLink() {
-        this.setLink.emit( this.props );
-    }
-
-    getContentlets() {
-        if(this.props.link.length < 3) {
-            return;
-        }
+    setContentlets({ link = ''}) {
         this.suggestionService
-            .getContentletsUrlMap({ query: this.props.link })
+            .getContentletsUrlMap({ query: link })
             .subscribe((contentlets: DotCMSContentlet[]) => {
                 this.items = contentlets.map((contentlet) => {
                     const { languageId } = contentlet;
@@ -79,26 +88,25 @@ export class BubbleMenuLinkFormComponent implements OnInit {
 
     }
 
-    copyLink() {
-        navigator.clipboard
-            .writeText(this.link)
-            .then(() => this.hideForm.emit(true))
-            .catch(() => alert('Could not copy link'));
+    setFormValue({link, blank}: Record<string, unknown>) {
+        this.form.setValue({ link, blank });
     }
 
     focusInput() {
         this.input.nativeElement.focus();
     }
 
-    onSelection({ payload }: SuggestionsCommandProps) {
-        this.props.link = payload.url;
-        this.addLink();
+    copyLink() {
+        navigator.clipboard
+            .writeText(this.initialValues.link as string)
+            .then(() => this.hide.emit(true))
+            .catch(() => alert('Could not copy link'));
     }
 
     onKeyDownEvent(e:KeyboardEvent) {
         switch (e.key) {
             case 'Escape':
-                this.hideForm.emit(true);
+                this.hide.emit(true);
                 break;
             case "ArrowUp":
                 this.suggestionsComponent.updateSelection(e);
@@ -107,6 +115,11 @@ export class BubbleMenuLinkFormComponent implements OnInit {
                 this.suggestionsComponent.updateSelection(e);
                 break;
         }
+    }
+
+    private onSelection({ payload: { url } }: SuggestionsCommandProps) {
+        this.setFormValue({ ...this.form.value, link: url})
+        this.submitForm.emit( this.form.value );
     }
 
     private getContentletLanguage(languageId: number): string {

@@ -1,29 +1,28 @@
 <div class="form-container">
     <form
         autoComplete="off"
+        [formGroup]="form"
         (keydown)="onKeyDownEvent($event)"
         (mousedown)="focusInput()"
-        (submit)="addLink()"
+        (ngSubmit)="submitForm.emit( form.value )"
     >
         <div class="form-control">
             <input
                 #input
                 id="editor-input-link"
-                name="link"
+                type="text"
                 class="search"
                 placeholder="Paste link or search for pages"
-                type="text"
-                [(ngModel)]="props.link"
-                (input)="getContentlets()"
+                formControlName="link"
             />
-            <button class="btn btn-add" click="addLink()">ADD</button>
+            <button class="btn btn-add" type="submit">ADD</button>
         </div>
 
-        <div class="form-control" *ngIf="link">
+        <div class="form-control" *ngIf="initialValues.link">
             <div class="label-container">
                 <a class="label-link" [href]="nodeLink" target="_blank">
                     <span class="material-icons">language</span>
-                    {{ link.length > 50 ? (link | slice:0:70 ) + '...' : link}}
+                    <span class="truncate">{{ initialValues.link }}</span>
                 </a>
             </div>
         </div>
@@ -31,9 +30,8 @@
         <div class="form-control">
             <input
                 id="blank"
-                name="blank"
-                [(ngModel)]="props.blank"
                 type="checkbox"
+                formControlName="blank"
             />
             <label for="blank">Open in a new tap</label>
         </div>
@@ -42,15 +40,16 @@
     <div class="suggestions" *ngIf="items.length">
         <hr class="divider m-0"/>
         <dotcms-suggestions
+            #suggestions
             class="inherited-styles"
+            [showTitle]="false"
             [items]="items"
             [onSelection]="onSelection"
-            #suggestions
             >
         </dotcms-suggestions>
     </div>
 
-    <div *ngIf="link">
+    <div *ngIf="initialValues.link">
         <hr class="divider" />
         <div class="form-actions">
             <button class="btn btn-copy" (click)="copyLink()">

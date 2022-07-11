@@ -1,5 +1,5 @@
 import { NgModule } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { EditorDirective } from './editor.directive';
 import { BubbleMenuDirective } from './bubble-menu.directive';
@@ -28,7 +28,7 @@ import { BubbleMenuLinkFormComponent } from './extensions/components/bubble-menu
 import { ContentletStatePipe } from './extensions/pipes/contentlet-state/contentlet-state.pipe';
 
 @NgModule({
-    imports: [CommonModule, FormsModule, CardModule, MenuModule],
+    imports: [CommonModule, FormsModule, ReactiveFormsModule, CardModule, MenuModule],
     declarations: [
         EditorDirective,
         BubbleMenuDirective,
@@ -56,7 +56,8 @@ import { ContentletStatePipe } from './extensions/pipes/contentlet-state/content
         NodeViewContentDirective,
         ActionButtonComponent,
         BubbleMenuComponent,
-        BubbleMenuLinkFormComponent
+        BubbleMenuLinkFormComponent,
+        ReactiveFormsModule
     ]
 })
 export class NgxTiptapModule {}

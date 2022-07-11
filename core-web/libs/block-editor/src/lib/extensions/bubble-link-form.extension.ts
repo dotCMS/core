@@ -1,7 +1,7 @@
 import { Extension } from '@tiptap/core';
 import { PluginKey } from 'prosemirror-state';
 import { BubbleMenuLinkFormComponent } from './components/bubble-menu-link-form/bubble-menu-link-form.component';
-import { Injector, ViewContainerRef } from '@angular/core';
+import { ViewContainerRef } from '@angular/core';
 import { bubbleLinkFormPlugin } from '../plugins/bubble-link-form.plugin';
 import { Props } from 'tippy.js';
 
@@ -27,7 +27,7 @@ declare module '@tiptap/core' {
 }
 export const LINK_FORM_PLUGIN_KEY = new PluginKey('addLink');
 
-export const BubbleLinkFormExtension = (_injector: Injector, viewContainerRef: ViewContainerRef) => {
+export const BubbleLinkFormExtension = (viewContainerRef: ViewContainerRef) => {
     return Extension.create<BubbleLinkFormOptions>({
         name: 'bubbleLinkForm',
         defaultOptions: {
