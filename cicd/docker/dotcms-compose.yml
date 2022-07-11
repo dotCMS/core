@@ -12,7 +12,6 @@ volumes:
   cms-local:
   output:
   license:
-  logs:
 
 services:
   dotcms-app:
@@ -42,7 +41,6 @@ services:
     volumes:
       - cms-shared:/data/shared
       - cms-local:/data/local
-      - logs:/srv/dotserver/tomcat-9.0.60/logs
       - type: bind
         source: ./license/license.dat
         target: /data/local/dotsecure/license/license.dat

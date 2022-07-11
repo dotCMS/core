@@ -32,6 +32,8 @@ const postmanEnvFile = 'postman_environment.json'
 const resultsFolder = path.join(dotCmsRoot, 'build', 'test-results', 'postmanTest')
 const reportFolder = path.join(dotCmsRoot, 'build', 'reports', 'tests', 'postmanTest')
 const runtTestsPrefix = 'postman-tests:'
+const PASSED = 'PASSED'
+const FAILED = 'FAILED'
 //let tomcatRoot = resolveTomcat()
 
 export interface PostmanTestsResult {
@@ -60,11 +62,16 @@ export const runTests = async (): Promise<PostmanTestsResult> => {
   startDeps()
 
   try {
-    return await runPostmanTests()
-    copyOutputs()
+    return await runPostmanCollections()
   } catch (err) {
-    throw err
+    core.setFailed(`Postman tests faiuled due to: ${err}`)
+    return {
+      testsRunExitCode: 127,
+      testsResultsStatus: FAILED,
+      skipResultsReport: !fs.existsSync(reportFolder)
+    }
   } finally {
+    copyOutputs()
     await stopDeps()
   }
 }
@@ -73,13 +80,15 @@ export const runTests = async (): Promise<PostmanTestsResult> => {
  * Copies logs from docker volume to standard DotCMS location.
  */
 const copyOutputs = async () => {
+  await exec.exec('docker', ['ps'])
+  await exec.exec('docker', ['cp', 'docker_dotcms-app_1:/srv/dotserver/tomcat-9.0.60/logs/dotcms.log', logsFolder])
   await exec.exec('pwd', [], {cwd: logsFolder})
   await exec.exec('ls', ['-las', '.'], {cwd: logsFolder})
 
   try {
     fs.copyFileSync(path.join(logsFolder, logFile), path.join(dotCmsRoot, logFile))
   } catch (err) {
-    core.warning(`Error copying log file: ${err}`)
+    core.error(`Error copying log file: ${err}`)
   }
 }
 
@@ -181,7 +190,7 @@ const stopDeps = async () => {
  *
  * @returns an overall ivew of the tests results
  */
-const runPostmanTests = async (): Promise<PostmanTestsResult> => {
+const runPostmanCollections = async (): Promise<PostmanTestsResult> => {
   await waitFor(150, `DotCMS instance`)
 
   // Executes Postman tests
@@ -213,14 +222,27 @@ const runPostmanTests = async (): Promise<PostmanTestsResult> => {
   const collectionRuns = new Map<string, number>()
 
   for (const collection of filtered) {
+    const normalized = collection.replace(/ /g, '_').replace('.json', '')
     let rc: number
     try {
-      rc = await runPostmanCollection(collection, htmlResults)
+      rc = await runPostmanCollection(collection, normalized)
     } catch (err) {
-      core.error(`Postman collection run for ${collection} failed due to: ${err}`)
+      core.info(`Postman collection run for ${collection} failed due to: ${err}`)
       rc = 127
     }
     collectionRuns.set(collection, rc)
+
+    if (exportReport) {
+      const passed = rc === 0
+      htmlResults.push(
+        `<tr><td><a href="./${normalized}.html">${collection}</a></td><td style="color: #ffffff; background-color: ${
+          passed ? '#28a745' : '#dc3545'
+        }; font-weight: bold;">${passed ? PASSED : FAILED}</td></tr>`
+      )
+    }
+  }
+
+  if (exportReport) {
     const contents = [header, ...htmlResults, footer]
     fs.writeFileSync(path.join(reportFolder, 'index.html'), `${contents.join('\n')}`, {
       encoding: 'utf8',
@@ -236,12 +258,11 @@ const runPostmanTests = async (): Promise<PostmanTestsResult> => {
  * Run a postman collection.
  *
  * @param collection postman collection
- * @param htmlResults array storing html results summary
+ * @param normalized normalized collection
  * @returns promise with process return code
  */
-const runPostmanCollection = async (collection: string, htmlResults: string[]): Promise<number> => {
-  core.info(`Running Postman test: ${collection}`)
-  const normalized = collection.replace(/ /g, '_').replace('.json', '')
+const runPostmanCollection = async (collection: string, normalized: string): Promise<number> => {
+  core.info(`Running Postman collection: ${collection}`)
   const resultFile = path.join(resultsFolder, `${normalized}.xml`)
   const page = `${normalized}.html`
   const reportFile = path.join(reportFolder, page)
@@ -267,25 +288,23 @@ const runPostmanCollection = async (collection: string, htmlResults: string[]): 
     cwd: postmanTestsPath
   })
 
-  if (exportReport) {
-    htmlResults.push(
-      `<tr><td><a href="./${page}">$f</a></td><td style="color: #ccd2da; background-color: ${
-        rc === 0 ? '#28a745' : '#dc3545'
-      };">${rc === 0 ? 'PASSED' : 'FAILED'}</td></tr>`
-    )
-  }
-
   return rc
 }
 
 /*
+ * Process results.
  *
  * @param collectionRuns collection tests results map
  * @returns an overall ivew of the tests results
  */
 const handleResults = (collectionRuns: Map<string, number>): PostmanTestsResult => {
-  let collectionFailed = true
-  for (const collection in collectionRuns.keys) {
+  core.info(`Postman collection results:`)
+  for (const collection of collectionRuns.keys()) {
+    core.info(`"${collection}" -> ${collectionRuns.get(collection)}`)
+  }
+
+  let collectionFailed = false
+  for (const collection of collectionRuns.keys()) {
     if (collectionRuns.get(collection) !== 0) {
       collectionFailed = true
       break
@@ -294,8 +313,8 @@ const handleResults = (collectionRuns: Map<string, number>): PostmanTestsResult 
 
   return {
     testsRunExitCode: collectionFailed ? 1 : 0,
-    testsResultsStatus: collectionFailed ? 'PASSED' : 'FAILED',
-    skipResultsReport: false
+    testsResultsStatus: collectionFailed ? FAILED : PASSED,
+    skipResultsReport: !fs.existsSync(reportFolder)
   }
 }
 
@@ -349,18 +368,15 @@ const prepareLicense = async () => {
  * @returns array of tring representing postman collections
  */
 const resolveSpecific = (): string[] => {
-  if (!tests) {
+  const extracted = extractFromMessg(tests)
+
+  if (extracted.length === 0) {
     core.info('No specific postman tests found')
     return []
   }
 
   const resolved: string[] = []
-  for (const l of tests.split('\n')) {
-    const line = l.trim()
-    if (!line.toLowerCase().startsWith(runtTestsPrefix)) {
-      continue
-    }
-
+  for (const line of extracted) {
     const testLine = line.slice(runtTestsPrefix.length).trim()
     for (const collection of testLine.trim().split(',')) {
       const trimmed = collection.trim()
@@ -369,6 +385,23 @@ const resolveSpecific = (): string[] => {
     }
   }
 
-  core.info(`Resolved specific collections ${resolved.join(',')}`)
+  core.info(`Resolved specific collections:\n${resolved.join(',')}`)
   return resolved
+}
+
+const extractFromMessg = (message: string): string[] => {
+  if (!message) {
+    return []
+  }
+
+  const extracted: string[] = []
+  for (const l of tests.split('\n')) {
+    const trimmed = l.trim()
+    const line = trimmed.toLocaleLowerCase()
+    if (line.startsWith(runtTestsPrefix)) {
+      extracted.push(trimmed)
+    }
+  }
+
+  return extracted
 }
