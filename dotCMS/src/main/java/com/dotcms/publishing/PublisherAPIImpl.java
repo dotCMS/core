@@ -22,6 +22,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -53,9 +54,8 @@ public class PublisherAPIImpl implements PublisherAPI {
     private final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
     private List<FilterDescriptor> filterList = new CopyOnWriteArrayList<>();
     /** Path where the YAML files are stored */
-    private final String PUBLISHING_FILTERS_FOLDER =
-            APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "server" + File.separator +
-                    "publishing-filters" + File.separator;
+    private final Lazy<String> PUBLISHING_FILTERS_FOLDER =
+            Lazy.of(() -> APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "server" + File.separator + "publishing-filters" + File.separator);
 
     @Override
     final public PublishStatus publish ( PublisherConfig config) throws DotPublishingException {
@@ -210,9 +210,9 @@ public class PublisherAPIImpl implements PublisherAPI {
     @Override
     public void initializeFilterDescriptors() {
         try {
-            final File basePath = new File(PUBLISHING_FILTERS_FOLDER);
+            final File basePath = new File(PUBLISHING_FILTERS_FOLDER.get());
             if (!basePath.exists()) {
-                Logger.info(this, ()->"Push Publishing Filters directory does not exist. Creating it under: " + PUBLISHING_FILTERS_FOLDER);
+                Logger.info(this, ()->"Push Publishing Filters directory does not exist. Creating it under: " + PUBLISHING_FILTERS_FOLDER.get());
                 basePath.mkdir();
                 // If the directory does not exist, copy the YAML files that are shipped with dotCMS into the created
                 // directory
@@ -221,7 +221,7 @@ public class PublisherAPIImpl implements PublisherAPI {
                 final File systemFilters = new File(systemFiltersPathString);
                 Files.list(systemFilters.toPath()).forEach(filter -> {
                     try {
-                        Files.copy(filter, Paths.get(PUBLISHING_FILTERS_FOLDER + filter.getFileName()));
+                        Files.copy(filter, Paths.get(PUBLISHING_FILTERS_FOLDER.get() + filter.getFileName()));
                     } catch (final IOException e) {
                         Logger.error(this, String.format("An error occurred when copying PP filter '%s': %s",
                                 filter.getFileName(), e.getMessage()), e);
@@ -333,7 +333,7 @@ public class PublisherAPIImpl implements PublisherAPI {
             Logger.warn(this, ()-> String.format("Filter '%s' does not exist", filterKey));
             return Boolean.FALSE;
         }
-        final File filterPathFile = new File(new File(PUBLISHING_FILTERS_FOLDER), filterKey);
+        final File filterPathFile = new File(new File(PUBLISHING_FILTERS_FOLDER.get()), filterKey);
         if (FileUtils.deleteQuietly(filterPathFile)) {
             this.initializeFilterDescriptors();
             return Boolean.TRUE;
@@ -343,7 +343,7 @@ public class PublisherAPIImpl implements PublisherAPI {
 
     @Override
     public void upsertFilterDescriptor(FilterDescriptor filterDescriptor) {
-        final File filterPathFile = new File(new File(PUBLISHING_FILTERS_FOLDER), filterDescriptor.getKey());
+        final File filterPathFile = new File(new File(PUBLISHING_FILTERS_FOLDER.get()), filterDescriptor.getKey());
         YamlUtil.write(filterPathFile, filterDescriptor);
         this.initializeFilterDescriptors();
     }
@@ -351,7 +351,7 @@ public class PublisherAPIImpl implements PublisherAPI {
     @Override
     public void saveFilterDescriptors(final List<File> filterFiles) {
         for (final File file : filterFiles) {
-            final File filterPathFile = new File(new File(PUBLISHING_FILTERS_FOLDER), file.getName());
+            final File filterPathFile = new File(new File(PUBLISHING_FILTERS_FOLDER.get()), file.getName());
             try {
                 FileUtils.copyFile(file, filterPathFile);
             } catch (final IOException e) {
