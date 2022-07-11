@@ -34,7 +34,7 @@ interface RestoreConfiguration {
 const RESTORE_CONFIGURATION: RestoreConfiguration = {
   gradle: {
     dependencies: ['~/.gradle/caches', '~/.gradle/wrapper'],
-    buildOutput: ['dotCMS/.gradle', 'dotCMS/build/classes', 'dotCMS/build/resources', 'dist/dotserver']
+    buildOutput: ['dotCMS/.gradle', 'dotCMS/build/classes', 'dotCMS/build/resources']
   },
   maven: {
     dependencies: ['~/.m2/repository'],

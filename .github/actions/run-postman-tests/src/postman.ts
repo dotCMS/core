@@ -42,6 +42,13 @@ export interface PostmanTestsResult {
   skipResultsReport: boolean
 }
 
+export interface Command {
+  cmd: string
+  args?: string[]
+  workingDir?: string
+  env?: {[key: string]: string}
+}
+
 const DEPS_ENV: {[key: string]: string} = {
   DOTCMS_IMAGE: builtImageName,
   TEST_TYPE: 'postman',
@@ -60,6 +67,7 @@ const DEPS_ENV: {[key: string]: string} = {
 export const runTests = async (): Promise<PostmanTestsResult> => {
   setup()
   startDeps()
+  printInfo()
 
   try {
     return await runPostmanCollections()
@@ -79,11 +87,11 @@ export const runTests = async (): Promise<PostmanTestsResult> => {
 /**
  * Copies logs from docker volume to standard DotCMS location.
  */
-const copyOutputs = async () => {
-  await exec.exec('docker', ['ps'])
-  await exec.exec('docker', ['cp', 'docker_dotcms-app_1:/srv/dotserver/tomcat-9.0.60/logs/dotcms.log', logsFolder])
-  await exec.exec('pwd', [], {cwd: logsFolder})
-  await exec.exec('ls', ['-las', '.'], {cwd: logsFolder})
+const copyOutputs = () => {
+  printInfo()
+  execCmd(toCommand('docker', ['cp', 'docker_dotcms-app_1:/srv/dotserver/tomcat-9.0.60/logs/dotcms.log', logsFolder]))
+  execCmd(toCommand('pwd', [], logsFolder))
+  execCmd(toCommand('ls', ['-las', '.'], logsFolder))
 
   try {
     fs.copyFileSync(path.join(logsFolder, logFile), path.join(dotCmsRoot, logFile))
@@ -99,18 +107,24 @@ const setup = () => {
   installDeps()
   createFolders()
   prepareLicense()
+  printInfo()
+}
+
+const printInfo = () => {
+  execCmd(toCommand('docker', ['images']))
+  execCmd(toCommand('docker', ['ps']))
 }
 
 /**
  * Install necessary dependencies to run the postman collections.
  */
-const installDeps = async () => {
+const installDeps = () => {
   core.info('Installing newman')
   const npmArgs = ['install', '--location=global', 'newman']
   if (exportReport) {
     npmArgs.push('newman-reporter-htmlextra')
   }
-  await exec.exec('npm', npmArgs)
+  execCmd(toCommand('npm', npmArgs))
 
   // if (!fs.existsSync(tomcatRoot) && buildEnv === 'gradle') {
   //   core.info(`Tomcat root does not exist, creating it`)
@@ -126,20 +140,19 @@ const installDeps = async () => {
 /**
  * Start postman depencies: db, ES and DotCMS isntance.
  */
-const startDeps = async () => {
+const startDeps = () => {
   // Starting dependencies
   core.info(`
     =======================================
     Starting postman tests dependencies
     =======================================`)
-  // const depProcess = she
-  exec.exec(
-    'docker-compose',
-    ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'up'],
-    {
-      cwd: dockerFolder,
-      env: DEPS_ENV
-    }
+  execCmdAsync(
+    toCommand(
+      'docker-compose',
+      ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'up'],
+      dockerFolder,
+      DEPS_ENV
+    )
   )
 
   //await startDotCMS()
@@ -148,7 +161,7 @@ const startDeps = async () => {
 /**
  * Stop postman depencies: db, ES and DotCMS isntance.
  */
-const stopDeps = async () => {
+const stopDeps = () => {
   //await stopDotCMS()
   // Stopping dependencies
   core.info(`
@@ -156,13 +169,13 @@ const stopDeps = async () => {
     Stopping postman tests dependencies
     ===================================`)
   try {
-    await exec.exec(
-      'docker-compose',
-      ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'down'],
-      {
-        cwd: dockerFolder,
-        env: DEPS_ENV
-      }
+    execCmd(
+      toCommand(
+        'docker-compose',
+        ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'down'],
+        dockerFolder,
+        DEPS_ENV
+      )
     )
   } catch (err) {
     console.error(`Error stopping dependencies: ${err}`)
@@ -270,7 +283,7 @@ const runPostmanCollections = async (): Promise<PostmanTestsResult> => {
  * @param normalized normalized collection
  * @returns promise with process return code
  */
-const runPostmanCollection = async (collection: string, normalized: string): Promise<number> => {
+const runPostmanCollection = (collection: string, normalized: string): Promise<number> => {
   core.info(`Running Postman collection: ${collection}`)
   const resultFile = path.join(resultsFolder, `${normalized}.xml`)
   const page = `${normalized}.html`
@@ -293,11 +306,8 @@ const runPostmanCollection = async (collection: string, normalized: string): Pro
     args.push('--reporter-htmlextra-export')
     args.push(reportFile)
   }
-  const rc = await exec.exec('newman', args, {
-    cwd: postmanTestsPath
-  })
 
-  return rc
+  return execCmd(toCommand('newman', args, postmanTestsPath))
 }
 
 /*
@@ -364,11 +374,11 @@ const createFolders = () => {
 /**
  * Creates license folder and file with appropiate key.
  */
-const prepareLicense = async () => {
+const prepareLicense = () => {
   const licenseFile = path.join(licenseFolder, 'license.dat')
   core.info(`Adding license to ${licenseFile}`)
   fs.writeFileSync(licenseFile, licenseKey, {encoding: 'utf8', flag: 'a+', mode: 0o777})
-  await exec.exec('ls', ['-las', licenseFile])
+  execCmd(toCommand('ls', ['-las', licenseFile]))
 }
 
 /**
@@ -413,4 +423,34 @@ const extractFromMessg = (message: string): string[] => {
   }
 
   return extracted
+}
+
+const toCommand = (cmd: string, args?: string[], workingDir?: string, env?: {[key: string]: string}): Command => {
+  return {
+    cmd,
+    args,
+    workingDir,
+    env
+  }
+}
+
+const printCmd = (cmd: Command) => {
+  let message = `Executing cmd: ${cmd.cmd} ${cmd.args?.join(' ') || ''}`
+  if (cmd.workingDir) {
+    message += `\ncwd: ${cmd.workingDir}`
+  }
+  if (cmd.env) {
+    message += `\nenv: ${JSON.stringify(cmd.env, null, 2)}`
+  }
+  core.info(message)
+}
+
+const execCmd = async (cmd: Command): Promise<number> => {
+  printCmd(cmd)
+  return await exec.exec(cmd.cmd, cmd.args || [], {cwd: cmd.workingDir, env: cmd.env})
+}
+
+const execCmdAsync = (cmd: Command) => {
+  printCmd(cmd)
+  exec.exec(cmd.cmd, cmd.args || [], {cwd: cmd.workingDir, env: cmd.env})
 }
