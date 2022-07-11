@@ -49,7 +49,7 @@ define("dojox/embed/Quicktime", [
 				if(o!==undefined){
 					//	pull the qt version too
 					var v = o.QuickTimeVersion.toString(16);
-					function p(i){ return (v.substring(i, i+1)-0) || 0; }
+					var p = function p(i){ return (v.substring(i, i+1)-0) || 0; };
 					qtVersion = {
 						major: p(0),
 						minor: p(1),
@@ -63,7 +63,7 @@ define("dojox/embed/Quicktime", [
 
 		qtMarkup = function(kwArgs){
 			if(!installed){ return { id: null, markup: getQTMarkup }; }
-			
+
 			kwArgs = prep(kwArgs);
 			if(!kwArgs){ return null; }
 			var s = '<object classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B" '
@@ -196,7 +196,7 @@ define("dojox/embed/Quicktime", [
 			if(!(node = domUtil.byId(node))){
 				node=domConstruct.create("div", { id:o.id+"-container" }, windowUtil.body());
 			}
-			
+
 			if(o){
 				node.innerHTML = o.markup;
 				if(o.id){
@@ -215,7 +215,7 @@ define("dojox/embed/Quicktime", [
 			top = "-1000px",
 			widthHeight = "1px";
 
-		function getVer(){
+		var getVer = function getVer(){
 			setTimeout(function(){
 				var qt = document[o.id],
 					n = domUtil.byId(id);
@@ -237,7 +237,7 @@ define("dojox/embed/Quicktime", [
 
 				if(!c && n){ domConstruct.destroy(n); }
 			}, 20);
-		}
+		};
 
 		domConstruct.create("div", {
 			innerHTML: o.markup,

@@ -19,7 +19,8 @@
 }
 
 .nihilo .dijitProgressBarFull {
-	border-right:1px solid #f8d582;
+	border: 0px solid #f8d582;
+	border-right-width: 1px;
 }
 
 .nihilo .dijitProgressBarLabel {
