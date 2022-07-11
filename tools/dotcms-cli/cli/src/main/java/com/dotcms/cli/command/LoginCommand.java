@@ -8,6 +8,7 @@ import com.dotcms.model.authentication.APITokenRequest;
 import com.dotcms.model.authentication.TokenEntity;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
+import javax.ws.rs.WebApplicationException;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.logging.Logger;
 import picocli.CommandLine;
@@ -31,12 +32,16 @@ public class LoginCommand implements Runnable {
     @Inject
     AuthSecurityContext authSecurityContext;
 
-
     @Override
     public void run() {
+        logger.info(String.format("Logging in as %s. ",user));
         final APITokenRequest tokenRequest = APITokenRequest.builder().user(user).password(password).expirationDays(10).build();
-        final ResponseEntityView<TokenEntity> response = client.getToken(tokenRequest);
-        authSecurityContext.setToken(response.entity().token(), user);
-        logger.info(String.format("Successfully logged-in as %s. ",user));
+        try {
+            final ResponseEntityView<TokenEntity> response = client.getToken(tokenRequest);
+            authSecurityContext.setToken(response.entity().token(), user);
+            logger.info(String.format("Successfully logged-in as %s. ", user));
+        }catch (WebApplicationException wae){
+            logger.error("Unable to login. ", wae);
+        }
     }
 }

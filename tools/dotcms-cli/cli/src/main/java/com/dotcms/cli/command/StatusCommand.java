@@ -7,6 +7,7 @@ import com.dotcms.api.UserAPI;
 import java.util.Optional;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
+import javax.ws.rs.WebApplicationException;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.logging.Logger;
 import picocli.CommandLine;
@@ -33,8 +34,12 @@ public class StatusCommand implements Runnable {
         } else {
             final Optional<String> token = authSecurityContext.getToken();
             if (token.isPresent()) {
-                final User user = usersClient.getCurrent();
-                logger.info("You're currently logged in as "+user.email());
+               try {
+                   final User user = usersClient.getCurrent();
+                   logger.info("You're currently logged in as " + user.email());
+               }catch (WebApplicationException wae){
+                   logger.error("Unable to get current user from API. Token could have expired. Please login again!", wae);
+               }
             } else {
                 logger.info("I did not find a valid token saved for saved user "+userId.get());
             }
