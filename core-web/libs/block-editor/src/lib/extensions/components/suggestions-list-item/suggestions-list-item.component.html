@@ -1,4 +1,4 @@
-<div class="icon-wrapper inherited-styles" [class.dot-contentlet]="data?.contentlet">
+<div class="icon-wrapper" [class.dot-contentlet]="data?.contentlet">
     <i class="material-icons" *ngIf="icon; else thumbnail">{{ url }}</i>
 
     <ng-template #thumbnail>

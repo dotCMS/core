@@ -63,6 +63,10 @@ export class BubbleMenuLinkFormComponent implements OnInit {
             });
     }
 
+    onSubmit(form) {
+        this.submitForm.emit( form.value );
+    }
+
     setContentlets({ link = ''}) {
         this.suggestionService
             .getContentletsUrlMap({ query: link })
@@ -110,17 +114,21 @@ export class BubbleMenuLinkFormComponent implements OnInit {
             case 'Escape':
                 this.hide.emit(true);
                 break;
+            case 'Enter':
+                this.suggestionsComponent?.execCommand();
+                // prevent submit form
+                return false;
             case "ArrowUp":
-                this.suggestionsComponent.updateSelection(e);
+                this.suggestionsComponent?.updateSelection(e);
                 break;
             case "ArrowDown":
-                this.suggestionsComponent.updateSelection(e);
+                this.suggestionsComponent?.updateSelection(e);
                 break;
         }
     }
 
     private onSelection({ payload: { url } }: SuggestionsCommandProps) {
-        this.setFormValue({ ...this.form.value, link: url})
+        this.setFormValue({ ...this.form.value, link: url});
         this.submitForm.emit( this.form.value );
     }
 
