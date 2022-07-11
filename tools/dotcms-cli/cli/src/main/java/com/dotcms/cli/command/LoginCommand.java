@@ -6,11 +6,13 @@ import com.dotcms.api.AuthenticationAPI;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.authentication.APITokenRequest;
 import com.dotcms.model.authentication.TokenEntity;
+import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.logging.Logger;
 import picocli.CommandLine;
 
+@ActivateRequestContext
 @CommandLine.Command(name = "login", description = "Login Command Expects a user and a password.")
 public class LoginCommand implements Runnable {
 

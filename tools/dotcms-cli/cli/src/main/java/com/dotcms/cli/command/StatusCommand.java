@@ -5,11 +5,13 @@ import com.dotcms.api.AuthSecurityContext;
 import com.dotcms.model.user.User;
 import com.dotcms.api.UserAPI;
 import java.util.Optional;
+import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.logging.Logger;
 import picocli.CommandLine;
 
+@ActivateRequestContext
 @CommandLine.Command(name = "status", description = "Login Status.")
 public class StatusCommand implements Runnable {
 

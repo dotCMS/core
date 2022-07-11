@@ -4,11 +4,13 @@ import com.dotcms.api.SiteAPI;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.Site;
 import java.util.List;
+import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.logging.Logger;
 import picocli.CommandLine;
 
+@ActivateRequestContext
 @CommandLine.Command(name = "site", description = "Retrieves Sites info.")
 public class SiteCommand implements Runnable {
 
