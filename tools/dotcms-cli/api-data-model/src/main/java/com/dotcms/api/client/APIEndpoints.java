@@ -17,6 +17,12 @@ public class APIEndpoints {
         this.apiBaseUri = apiBaseUri;
     }
 
+    /**
+     * Get or instantiate a Rest Client
+     * @param clazz
+     * @return
+     * @param <T>
+     */
     @SuppressWarnings("unchecked")
     <T> T getClient(final Class<T> clazz) {
         return (T) registry.computeIfAbsent(clazz, c ->

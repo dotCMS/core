@@ -30,7 +30,7 @@ public class SiteAPITest {
 
         final String user = "admin@dotcms.com";
         final ResponseEntityView<TokenEntity> response = authClient.getToken(
-                APITokenRequest.builder().user(user).password("admin").expirationDays(1).build());
+                APITokenRequest.builder().user(user).password("admin12345678").expirationDays(1).build());
 
         authSecurityContext.setToken(response.entity().token(), user);
 
