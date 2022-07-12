@@ -37,7 +37,7 @@ const path = __importStar(__nccwpck_require__(17));
 const CACHE_CONFIGURATION = {
     gradle: {
         dependencies: ['~/.gradle/caches', '~/.gradle/wrapper'],
-        buildOutput: ['dotCMS/.gradle', 'dotCMS/build/classes', 'dotCMS/build/resources', 'dist/dotserver']
+        buildOutput: ['dotCMS/.gradle', 'dotCMS/build/classes', 'dotCMS/build/resources']
     },
     maven: {
         dependencies: ['~/.m2/repository'],
