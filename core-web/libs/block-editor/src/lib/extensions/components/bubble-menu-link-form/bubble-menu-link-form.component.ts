@@ -93,17 +93,14 @@ export class BubbleMenuLinkFormComponent implements OnInit {
             });
             this.loading = false;
             // Active first result
-            requestAnimationFrame(() => this.suggestionsComponent.setFirstItemActive());
+            requestAnimationFrame(() => this.suggestionsComponent?.setFirstItemActive());
         })
 
     }
 
     setLoading() {
         const link = this.form.get('link').value;
-        if(link.length < 3 || this.items.length) {
-            return;
-        }
-        this.loading = true;
+        this.loading = link.length < 3 || this.items.length ? false : true;
     }
 
     setFormValue({link, blank}: Record<string, unknown>) {
@@ -122,6 +119,9 @@ export class BubbleMenuLinkFormComponent implements OnInit {
     }
 
     onKeyDownEvent(e:KeyboardEvent) {
+        if(!this.items.length) {
+            return true;
+        }
         switch (e.key) {
             case 'Escape':
                 this.hide.emit(true);
