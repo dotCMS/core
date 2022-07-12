@@ -269,7 +269,7 @@ jobs:
     name: Integration tests publish complete setup
     runs-on: ubuntu-latest
     needs: [ integration-tests-thread-setup-job, run-integration-tests-job ]
-    if: needs.run-integration-tests-job.outputs.tests_results_skip_report != 'true'
+    if: always() &&  needs.run-integration-tests-job.outputs.tests_results_skip_report != 'true'
     steps:
       - id: fetch-core
         name: Fetch Core Repo
@@ -373,7 +373,7 @@ jobs:
     name: Tests results handler
     runs-on: ubuntu-latest
     needs: [run-unit-tests-job, integration-tests-complete-job, run-postman-tests-job]
-    if: (needs.run-unit-tests-job.outputs.tests_results_report_url != '' || needs.run-integration-tests-job.outputs.postgres_tests_results_report_url != '' || needs.run-integration-tests-job.outputs.mssql_tests_results_report_url != '' || needs.run-postman-tests-job.outputs.tests_results_report_url != '')
+    if: always() && (needs.run-unit-tests-job.outputs.tests_results_report_url != '' || needs.run-integration-tests-job.outputs.postgres_tests_results_report_url != '' || needs.run-integration-tests-job.outputs.mssql_tests_results_report_url != '' || needs.run-postman-tests-job.outputs.tests_results_report_url != '')
     steps:
       - id: fetch-core
         name: Fetch Core Repo
