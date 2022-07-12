@@ -108,7 +108,7 @@ jobs:
         with:
           files: ${{ steps.run-unit-tests.outputs.tests_results_location }}/*.xml
           check_name: 'Unit Tests Report'
-        if: steps.run-unit-tests.outputs.tests_results_skip_report != 'true'
+        if: (success() || failure()) && steps.run-unit-tests.outputs.tests_results_skip_report != 'true'
       - id: github-publish-unit-tests
         name: Github publish unit tests
         uses: ./.github/actions/publish-test-results
@@ -120,7 +120,7 @@ jobs:
           tests_results_status: ${{ steps.run-unit-tests.outputs.tests_results_status }}
           tests_results_report_location: ${{ steps.run-unit-tests.outputs.tests_results_report_location }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
-        if: steps.run-unit-tests.outputs.tests_results_skip_report != 'true'
+        if: (success() || failure()) && steps.run-unit-tests.outputs.tests_results_skip_report != 'true'
       - id: publish-unit-tests
         name: Publish unit tests to Testmo
         uses: ./.github/actions/testmo-wrapper
@@ -133,7 +133,7 @@ jobs:
           test_type: unit
           tests_results_location: ${{ steps.run-unit-tests.outputs.tests_results_location }}/*.xml
           debug: true
-        if: steps.run-unit-tests.outputs.tests_results_skip_report != 'true'
+        if: (success() || failure()) && steps.run-unit-tests.outputs.tests_results_skip_report != 'true'
       - id: github-status
         name: Send Github Status
         uses: ./.github/actions/github-status
@@ -144,7 +144,7 @@ jobs:
           github_user: ${{ env.GITHUB_USER }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
           tests_report_url: ${{ steps.github-publish-unit-tests.outputs.test_logs_url }}
-        if: steps.publish-unit-tests.outputs.tests_report_url != ''
+        if: (success() || failure()) && steps.publish-unit-tests.outputs.tests_report_url != ''
   integration-tests-thread-setup-job:
     name: Integration tests thread (matrix) setup
     runs-on: ubuntu-latest
@@ -222,7 +222,7 @@ jobs:
         with:
           files: ${{ steps.run-integration-tests.outputs.tests_results_location }}/*.xml
           check_name: 'Integration Tests [${{ matrix.db_type }}] Report'
-        if: steps.run-integration-tests.outputs.tests_results_skip_report != 'true'
+        if: (success() || failure()) && steps.run-integration-tests.outputs.tests_results_skip_report != 'true'
       - id: github-publish-integration-tests
         name: Github publish integration tests
         uses: ./.github/actions/publish-test-results
@@ -235,7 +235,7 @@ jobs:
           tests_results_status: ${{ steps.run-integration-tests.outputs.tests_results_status }}
           tests_results_report_location: ${{ steps.run-integration-tests.outputs.tests_results_report_location }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
-        if: steps.run-integration-tests.outputs.tests_results_skip_report != 'true'
+        if: (success() || failure()) && steps.run-integration-tests.outputs.tests_results_skip_report != 'true'
       - id: publish-integration-tests
         name: Publish integration tests to Testmo
         uses: ./.github/actions/testmo-wrapper
@@ -252,7 +252,7 @@ jobs:
           ci_total: 2
           ci_label: ${{ matrix.db_type }}
           debug: true
-          if: steps.run-integration-tests.outputs.tests_results_skip_report != 'true'
+          if: (success() || failure()) && steps.run-integration-tests.outputs.tests_results_skip_report != 'true'
       - id: github-status
         name: Send Github Status
         uses: ./.github/actions/github-status
@@ -264,12 +264,12 @@ jobs:
           github_user: ${{ env.GITHUB_USER }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
           tests_report_url: ${{ steps.github-publish-integration-tests.outputs.tests_report_url }}
-        if: steps.publish-integration-tests.outputs.tests_report_url != ''
+        if: (success() || failure()) && steps.publish-integration-tests.outputs.tests_report_url != ''
   integration-tests-complete-job:
     name: Integration tests publish complete setup
     runs-on: ubuntu-latest
     needs: [ integration-tests-thread-setup-job, run-integration-tests-job ]
-    if: always() &&  needs.run-integration-tests-job.outputs.tests_results_skip_report != 'true'
+    if: (success() || failure()) && needs.run-integration-tests-job.outputs.tests_results_skip_report != 'true'
     steps:
       - id: fetch-core
         name: Fetch Core Repo
@@ -331,7 +331,7 @@ jobs:
         with:
           files: ${{ steps.run-postman-tests.outputs.tests_results_location }}/*.xml
           check_name: 'Postman Tests Report'
-        if: steps.run-postman-tests.outputs.tests_results_skip_report != 'true'
+        if: (success() || failure()) && steps.run-postman-tests.outputs.tests_results_skip_report != 'true'
       - id: github-publish-postman-tests
         name: Github publish postman tests
         uses: ./.github/actions/publish-test-results
@@ -344,7 +344,7 @@ jobs:
           tests_results_report_location: ${{ steps.run-postman-tests.outputs.tests_results_report_location }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
           mode: ${{ env.PUBLISH_MODE }}
-        if: steps.run-postman-tests.outputs.tests_results_skip_report != 'true'
+        if: (success() || failure()) && steps.run-postman-tests.outputs.tests_results_skip_report != 'true'
       - id: publish-postman-tests
         name: Publish postman tests to Testmo
         uses: ./.github/actions/testmo-wrapper
@@ -368,12 +368,12 @@ jobs:
           github_user: ${{ env.GITHUB_USER }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
           tests_report_url: ${{ steps.github-publish-postman-tests.outputs.tests_report_url }}
-        if: steps.publish-postman-tests.outputs.tests_report_url != ''
+        if: (success() || failure()) && steps.publish-postman-tests.outputs.tests_report_url != ''
   test-results-handler-job:
     name: Tests results handler
     runs-on: ubuntu-latest
     needs: [run-unit-tests-job, integration-tests-complete-job, run-postman-tests-job]
-    if: always() && (needs.run-unit-tests-job.outputs.tests_results_report_url != '' || needs.run-integration-tests-job.outputs.postgres_tests_results_report_url != '' || needs.run-integration-tests-job.outputs.mssql_tests_results_report_url != '' || needs.run-postman-tests-job.outputs.tests_results_report_url != '')
+    if: (success() || failure()) &&  && (needs.run-unit-tests-job.outputs.tests_results_report_url != '' || needs.run-integration-tests-job.outputs.postgres_tests_results_report_url != '' || needs.run-integration-tests-job.outputs.mssql_tests_results_report_url != '' || needs.run-postman-tests-job.outputs.tests_results_report_url != '')
     steps:
       - id: fetch-core
         name: Fetch Core Repo
