@@ -38,13 +38,13 @@
         </div>
     </form>
 
-    <div class="suggestions">
+    <div class="suggestions" *ngIf="loading || items.length">
         <hr class="divider m-0"/>
         <dotcms-suggestions
-            *ngIf="loading || items.length"
             #suggestions
             class="suggestions-styles"
             [showTitle]="false"
+            [showURL]="showURL"
             [loading]="loading"
             [items]="items"
             [onSelection]="onSelection"

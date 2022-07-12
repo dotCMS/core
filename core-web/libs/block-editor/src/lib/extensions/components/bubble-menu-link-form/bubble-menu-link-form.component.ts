@@ -73,7 +73,6 @@ export class BubbleMenuLinkFormComponent implements OnInit {
             .getContentletsUrlMap({ query: link })
             .subscribe((contentlets: DotCMSContentlet[]) => {
                 this.items = contentlets.map((contentlet) => {
-                    this.loading = false;
                     const { languageId } = contentlet;
                     contentlet.language = this.getContentletLanguage(languageId);
                     return {
@@ -91,8 +90,9 @@ export class BubbleMenuLinkFormComponent implements OnInit {
                             });
                         }
                     };
-            })
-            // Set the first result 
+            });
+            this.loading = false;
+            // Active first result
             requestAnimationFrame(() => this.suggestionsComponent.setFirstItemActive());
         })
 

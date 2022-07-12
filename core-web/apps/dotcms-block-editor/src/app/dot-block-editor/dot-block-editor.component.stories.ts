@@ -291,7 +291,7 @@ export const primary = () => ({
                     },
                     getContentletsUrlMap({ query }) {
 
-                        return  of(contentletsMock || contentletsMock.filter((item) => 
+                        return  of(contentletsMock.filter((item) => 
                                     item.url.match(new RegExp(query, 'i'))
                                 ))
                                 .pipe(debounceTime(400));;

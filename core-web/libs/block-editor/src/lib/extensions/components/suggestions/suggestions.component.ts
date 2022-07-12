@@ -55,6 +55,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
     @Input() currentLanguage = DEFAULT_LANG_ID;
     @Input() allowedContentTypes = '';
     @Input() showTitle = true;
+    @Input() showURL = false;
     @Input() loading = false;
 
     @Output() clearFilter: EventEmitter<string> = new EventEmitter<string>();

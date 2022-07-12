@@ -12,7 +12,7 @@
 </div>
 <div class='data-wrapper'>
     <span>{{ label }}</span>
-    <span class="url-label" *ngIf="data?.contentlet">{{ data.contentlet.url }}</span>
+    <span class="url-label" *ngIf="data?.contentlet && showURL">{{ data.contentlet.url }}</span>
     <div *ngIf="data?.contentlet" class="state">
         <dot-state-icon [state]="data.contentlet" size="16px"></dot-state-icon>
         <dot-badge bordered="true">{{data.contentlet.language | lowercase }}</dot-badge>
