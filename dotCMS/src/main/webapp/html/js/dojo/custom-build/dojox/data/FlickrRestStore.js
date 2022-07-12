@@ -39,7 +39,7 @@ var FlickrRestStore = declare("dojox.data.FlickrRestStore",
 
 	// _flickrRestUrl: String
 	//		The URL to the Flickr REST services.
-	_flickrRestUrl: "http://www.flickr.com/services/rest/",
+	_flickrRestUrl: "https://www.flickr.com/services/rest/",
 
 	// _apikey: String
 	//		The users API key to be used when accessing Flickr REST services.
@@ -407,7 +407,7 @@ var FlickrRestStore = declare("dojox.data.FlickrRestStore",
 			case "imageUrlThumb":
 				return [ item.media.t ]; // String
 			case "link":
-				return [ "http://www.flickr.com/photos/" + item.owner + "/" + item.id ]; // String
+				return [ "https://www.flickr.com/photos/" + item.owner + "/" + item.id ]; // String
 			case "dateTaken":
 				return [ item.datetaken ];
 			case "datePublished":
@@ -446,7 +446,7 @@ var FlickrRestStore = declare("dojox.data.FlickrRestStore",
 				template[3] = item.server;
 				template[5] = item.id;
 				template[7] = item.secret;
-				
+
 				var base = template.join("");
 				item.media = {
 					s: base + "_s.jpg",
