@@ -125,7 +125,6 @@ export class BubbleLinkFormView {
         // Afther show the component set values
         this.setInputValues();
         this.component.instance.items = [];
-        this.component.instance.formPristine = true;
         this.component.instance.focusInput();
         this.tippy?.setProps({ getReferenceClientRect: () => this.setTippyPosition() });
     }

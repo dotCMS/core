@@ -14,6 +14,7 @@
                 class="search"
                 placeholder="Paste link or search for pages"
                 formControlName="link"
+                (input)="setLoading()"
             />
             <button class="btn btn-add" type="submit">ADD</button>
         </div>
@@ -37,12 +38,14 @@
         </div>
     </form>
 
-    <div class="suggestions" *ngIf="items.length">
+    <div class="suggestions">
         <hr class="divider m-0"/>
         <dotcms-suggestions
+            *ngIf="loading || items.length"
             #suggestions
-            class="inherited-styles"
+            class="suggestions-styles"
             [showTitle]="false"
+            [loading]="loading"
             [items]="items"
             [onSelection]="onSelection"
             >

@@ -55,6 +55,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
     @Input() currentLanguage = DEFAULT_LANG_ID;
     @Input() allowedContentTypes = '';
     @Input() showTitle = true;
+    @Input() loading = false;
 
     @Output() clearFilter: EventEmitter<string> = new EventEmitter<string>();
 
@@ -65,6 +66,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
     private initialItems: DotMenuItem[];
 
     isFilterActive = false;
+    loadingItems = Array(4).fill(0);
 
     @HostListener('mousemove', ['$event'])
     onMousemove() {
@@ -78,7 +80,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
     ) {}
 
     ngOnInit(): void {
-        if (this.items?.length === 0) {
+        if (this.items?.length === 0 && !this.loading) {
             // assign the default suggestions options.
             this.items = suggestionOptions;
             this.items.forEach((item) => {
@@ -155,7 +157,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
      * @memberof SuggestionsComponent
      */
     updateActiveItem(index: number): void {
-        this.list.updateActiveItem(index);
+        this.list?.updateActiveItem(index);
     }
 
     /**

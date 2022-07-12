@@ -20,8 +20,15 @@
     </dotcms-suggestion-list>
 </div>
 
+<div class="suggestion-list-container" *ngIf="loading">
+    <dotcms-suggestion-loading-item
+     *ngFor="let item of loadingItems"
+    >
+    </dotcms-suggestion-loading-item>
+</div>
+
 <ng-template #emptyBlock>
-    <div class="empty">
+    <div class="empty" *ngIf="!loading">
         <p [innerHTML]="title"></p>
         <button (mousedown)="handleBackButton($event)">Back</button>
     </div>

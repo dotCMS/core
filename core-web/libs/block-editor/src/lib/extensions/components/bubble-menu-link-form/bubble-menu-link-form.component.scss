@@ -2,14 +2,14 @@
 
 // TODO: REMOVE find a better way to edit styles from the father component
 :host ::ng-deep {
-    dotcms-suggestions.inherited-styles {
+    dotcms-suggestions.suggestions-styles {
         display: block;
         width: 100%;
         box-shadow: none;
         padding: 0;
         font-family: "Roboto", Helvetica, sans-serif, Arial;
         align-items: flex-start;
-        dotcms-suggestion-list {
+        .suggestion-list-container {
             max-height: 280px;
         }
     

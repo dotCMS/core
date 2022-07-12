@@ -26,6 +26,7 @@ import { BubbleMenuComponent } from './extensions/components/bubble-menu/bubble-
 import { BubbleMenuButtonComponent } from './extensions/components/bubble-menu-button/bubble-menu-button.component';
 import { BubbleMenuLinkFormComponent } from './extensions/components/bubble-menu-link-form/bubble-menu-link-form.component';
 import { ContentletStatePipe } from './extensions/pipes/contentlet-state/contentlet-state.pipe';
+import { SuggestionLoadingItemComponent } from './extensions/components/suggestion-loading-item/suggestion-loading-item.component';
 
 @NgModule({
     imports: [CommonModule, FormsModule, ReactiveFormsModule, CardModule, MenuModule],
@@ -45,7 +46,8 @@ import { ContentletStatePipe } from './extensions/pipes/contentlet-state/content
         BubbleMenuComponent,
         BubbleMenuButtonComponent,
         BubbleMenuLinkFormComponent,
-        ContentletStatePipe
+        ContentletStatePipe,
+        SuggestionLoadingItemComponent
     ],
     providers: [SuggestionsService, DotImageService, LoggerService, StringUtils],
     exports: [

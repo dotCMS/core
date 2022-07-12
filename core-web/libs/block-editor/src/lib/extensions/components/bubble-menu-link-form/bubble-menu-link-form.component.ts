@@ -27,13 +27,13 @@ export class BubbleMenuLinkFormComponent implements OnInit {
     @Output() hide: EventEmitter<boolean> = new EventEmitter(false);
     @Output() removeLink: EventEmitter<boolean> = new EventEmitter(false);
     @Output() submitForm: EventEmitter<{ link: string, blank: boolean }> = new EventEmitter();
-    
-    @Input() formPristine = true;
+
     @Input() initialValues: Record<string, unknown> = {
         link: '',
         blank: false
     };
     
+    public loading = false;
     public items: DotMenuItem[] = [];
     public form: FormGroup;
     private dotLangs: Languages;
@@ -52,12 +52,13 @@ export class BubbleMenuLinkFormComponent implements OnInit {
         .pipe(take(1))
         .subscribe((dotLang) => (this.dotLangs = dotLang));
 
-        this.form.valueChanges
+        this.form.get('link')
+            .valueChanges
             .pipe(debounceTime(500))
-            .subscribe( ({ link }) => {
-                if(link.length < 3 || this.formPristine) {
-                    this.formPristine = false;
-                    return
+            .subscribe( (link) => {
+                if(link.length < 3) {
+                    this.items = [];
+                    return;
                 }
                 this.setContentlets({ link });
             });
@@ -72,6 +73,7 @@ export class BubbleMenuLinkFormComponent implements OnInit {
             .getContentletsUrlMap({ query: link })
             .subscribe((contentlets: DotCMSContentlet[]) => {
                 this.items = contentlets.map((contentlet) => {
+                    this.loading = false;
                     const { languageId } = contentlet;
                     contentlet.language = this.getContentletLanguage(languageId);
                     return {
@@ -90,12 +92,22 @@ export class BubbleMenuLinkFormComponent implements OnInit {
                         }
                     };
             })
+            // Set the first result 
+            requestAnimationFrame(() => this.suggestionsComponent.setFirstItemActive());
         })
 
     }
 
+    setLoading() {
+        const link = this.form.get('link').value;
+        if(link.length < 3 || this.items.length) {
+            return;
+        }
+        this.loading = true;
+    }
+
     setFormValue({link, blank}: Record<string, unknown>) {
-        this.form.setValue({ link, blank });
+        this.form.setValue({ link, blank }, { emitEvent: false });
     }
 
     focusInput() {
