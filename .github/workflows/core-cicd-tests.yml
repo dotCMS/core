@@ -83,9 +83,6 @@ jobs:
     env:
       DEBUG: true
     steps:
-      - name: GITHUB CONTEXT
-        run: echo "${{ toJson(github) }}"
-        if: env.DEBUG == 'true'
       - id: fetch-core
         name: Fetch Core Repo
         uses: actions/checkout@v3
@@ -197,9 +194,6 @@ jobs:
     env:
       DEBUG: true
     steps:
-      - name: GITHUB CONTEXT
-        run: echo "${{ toJson(github) }}"
-        if: env.DEBUG == 'true'
       - id: fetch-core
         name: Fetch Core Repo
         uses: actions/checkout@v3
@@ -310,9 +304,6 @@ jobs:
       PUBLISH_MODE: ALL
       DEBUG: true
     steps:
-      - name: GITHUB CONTEXT
-        run: echo "${{ toJson(github) }}"
-        if: env.DEBUG == 'true'
       - id: fetch-core
         name: Fetch Core Repo
         uses: actions/checkout@v3
