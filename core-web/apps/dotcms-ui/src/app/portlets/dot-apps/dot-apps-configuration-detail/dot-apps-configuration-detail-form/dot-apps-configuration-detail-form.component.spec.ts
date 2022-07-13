@@ -98,25 +98,11 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
                 DotIconModule,
                 InputTextareaModule,
                 InputTextModule,
-                MarkdownModule,
                 ReactiveFormsModule,
                 TooltipModule
             ],
             declarations: [DotAppsConfigurationDetailFormComponent],
-            providers: [
-                {
-                    provide: MarkdownService,
-                    useValue: {
-                        compile(text) {
-                            return text;
-                        },
-
-                        highlight() {
-                            //
-                        }
-                    }
-                }
-            ]
+            providers: [MarkdownService]
         });
     });
 

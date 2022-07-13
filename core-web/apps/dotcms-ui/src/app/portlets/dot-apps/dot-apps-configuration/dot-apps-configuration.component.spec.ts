@@ -21,7 +21,7 @@ import { CommonModule } from '@angular/common';
 import { DotAppsConfigurationListModule } from './dot-apps-configuration-list/dot-apps-configuration-list.module';
 import { PaginatorService } from '@services/paginator';
 import { DotAppsConfigurationHeaderModule } from '../dot-apps-configuration-header/dot-apps-configuration-header.module';
-import { MarkdownService } from 'ngx-markdown';
+import { MarkdownModule, MarkdownService } from 'ngx-markdown';
 import { DotAppsImportExportDialogModule } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.module';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
@@ -112,7 +112,8 @@ describe('DotAppsConfigurationComponent', () => {
                 DotAppsImportExportDialogModule,
                 DotAppsConfigurationListModule,
                 HttpClientTestingModule,
-                DotPipesModule
+                DotPipesModule,
+                MarkdownModule.forRoot()
             ],
             declarations: [DotAppsConfigurationComponent],
             providers: [
@@ -128,18 +129,6 @@ describe('DotAppsConfigurationComponent', () => {
                 {
                     provide: DotRouterService,
                     useClass: MockDotRouterService
-                },
-                {
-                    provide: MarkdownService,
-                    useValue: {
-                        compile(text) {
-                            return text;
-                        },
-
-                        highlight() {
-                            //
-                        }
-                    }
                 },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 DotAppsConfigurationResolver,

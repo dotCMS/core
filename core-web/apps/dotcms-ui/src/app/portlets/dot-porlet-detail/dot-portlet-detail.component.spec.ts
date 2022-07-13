@@ -1,6 +1,6 @@
 import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { DebugElement } from '@angular/core';
+import { DebugElement, Type } from '@angular/core';
 
 import { DotPortletDetailComponent } from './dot-portlet-detail.component';
 import { DotWorkflowTaskModule } from './dot-workflow-task/dot-workflow-task.module';
@@ -21,7 +21,7 @@ import { LoginServiceMock } from '../../test/login-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotContentletsModule } from './dot-contentlets/dot-contentlets.module';
-import { ActivatedRoute, Params } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { MockDotRouterService } from '@tests/dot-router-service.mock';
@@ -44,7 +44,6 @@ import { DotGlobalMessageService } from '@components/_common/dot-global-message/
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotGenerateSecurePasswordService } from '@services/dot-generate-secure-password/dot-generate-secure-password.service';
-import { Observable } from 'rxjs';
 
 describe('DotPortletDetailComponent', () => {
     let fixture: ComponentFixture<DotPortletDetailComponent>;
@@ -103,7 +102,7 @@ describe('DotPortletDetailComponent', () => {
     });
 
     it('should not have dot-workflow-task', () => {
-        spyOnProperty(router, 'parent', 'get').and.returnValue({
+        spyOnProperty<any>(router, 'parent', 'get').and.returnValue({
             parent: {
                 snapshot: {
                     params: {
@@ -119,7 +118,7 @@ describe('DotPortletDetailComponent', () => {
     });
 
     it('should have dot-workflow-task', () => {
-        spyOnProperty(router, 'parent', 'get').and.returnValue({
+        spyOnProperty<any>(router, 'parent', 'get').and.returnValue({
             parent: {
                 snapshot: {
                     params: {
@@ -135,7 +134,7 @@ describe('DotPortletDetailComponent', () => {
     });
 
     it('should have dot-contentlets', () => {
-        spyOnProperty(router, 'parent', 'get').and.returnValue({
+        spyOnProperty<any>(router, 'parent', 'get').and.returnValue({
             parent: {
                 snapshot: {
                     params: {

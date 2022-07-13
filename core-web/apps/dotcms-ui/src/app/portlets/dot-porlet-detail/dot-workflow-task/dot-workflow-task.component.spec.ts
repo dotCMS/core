@@ -142,14 +142,14 @@ describe('DotWorkflowTaskComponent', () => {
         taskDetail = de.query(By.css('dot-workflow-task-detail'));
     });
 
-    it('should call workflow task modal', async(() => {
+    it('should call workflow task modal', () => {
         const params = {
             header: 'Task Detail',
             id: '74cabf7a-0e9d-48b6-ab1c-8f76d0ad31e0'
         };
 
         expect(dotWorkflowTaskDetailService.view).toHaveBeenCalledWith(params);
-    }));
+    });
 
     it('should redirect to /workflow and refresh data when modal closed', () => {
         taskDetail.triggerEventHandler('shutdown', {});
