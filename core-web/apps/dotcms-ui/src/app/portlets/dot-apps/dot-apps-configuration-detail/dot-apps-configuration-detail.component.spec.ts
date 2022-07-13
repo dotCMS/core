@@ -18,7 +18,7 @@ import { By } from '@angular/platform-browser';
 import { DotAppsSaveData, DotAppsSecrets } from '@shared/models/dot-apps/dot-apps.model';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
 import { DotAppsConfigurationHeaderModule } from '../dot-apps-configuration-header/dot-apps-configuration-header.module';
-import { MarkdownService } from 'ngx-markdown';
+import { MarkdownModule, MarkdownService } from 'ngx-markdown';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 const messages = {
@@ -133,65 +133,53 @@ describe('DotAppsConfigurationDetailComponent', () => {
 
     const messageServiceMock = new MockDotMessageService(messages);
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [
-                    RouterTestingModule.withRoutes([
-                        {
-                            component: DotAppsConfigurationDetailComponent,
-                            path: ''
-                        }
-                    ]),
-                    ButtonModule,
-                    CommonModule,
-                    DotCopyButtonModule,
-                    DotAppsConfigurationHeaderModule,
-                    DotPipesModule
-                ],
-                declarations: [
-                    DotAppsConfigurationDetailComponent,
-                    MockDotKeyValueComponent,
-                    MockDotAppsConfigurationDetailFormComponent
-                ],
-                providers: [
-                    { provide: DotMessageService, useValue: messageServiceMock },
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [
+                RouterTestingModule.withRoutes([
                     {
-                        provide: ActivatedRoute,
-                        useClass: ActivatedRouteMock
-                    },
-                    {
-                        provide: DotAppsService,
-                        useClass: MockDotAppsService
-                    },
-                    {
-                        provide: DotRouterService,
-                        useClass: MockDotRouterService
-                    },
-                    {
-                        provide: MarkdownService,
-                        useValue: {
-                            compile(text) {
-                                return text;
-                            },
+                        component: DotAppsConfigurationDetailComponent,
+                        path: ''
+                    }
+                ]),
+                ButtonModule,
+                CommonModule,
+                DotCopyButtonModule,
+                DotAppsConfigurationHeaderModule,
+                DotPipesModule,
+                MarkdownModule.forRoot()
+            ],
+            declarations: [
+                DotAppsConfigurationDetailComponent,
+                MockDotKeyValueComponent,
+                MockDotAppsConfigurationDetailFormComponent
+            ],
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                {
+                    provide: ActivatedRoute,
+                    useClass: ActivatedRouteMock
+                },
+                {
+                    provide: DotAppsService,
+                    useClass: MockDotAppsService
+                },
+                {
+                    provide: DotRouterService,
+                    useClass: MockDotRouterService
+                },
 
-                            highlight() {
-                                //
-                            }
-                        }
-                    },
-                    DotAppsConfigurationDetailResolver
-                ]
-            });
+                DotAppsConfigurationDetailResolver
+            ]
+        });
 
-            fixture = TestBed.createComponent(DotAppsConfigurationDetailComponent);
-            component = fixture.debugElement.componentInstance;
-            appsServices = TestBed.inject(DotAppsService);
-            routerService = TestBed.inject(DotRouterService);
-            activatedRoute = TestBed.inject(ActivatedRoute);
-            spyOn(appsServices, 'saveSiteConfiguration').and.callThrough();
-        })
-    );
+        fixture = TestBed.createComponent(DotAppsConfigurationDetailComponent);
+        component = fixture.debugElement.componentInstance;
+        appsServices = TestBed.inject(DotAppsService);
+        routerService = TestBed.inject(DotRouterService);
+        activatedRoute = TestBed.inject(ActivatedRoute);
+        spyOn(appsServices, 'saveSiteConfiguration').and.callThrough();
+    }));
 
     describe('Without dynamic params', () => {
         beforeEach(() => {
