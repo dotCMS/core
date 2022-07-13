@@ -103,7 +103,7 @@ const BUILD_OUTPUT = 'buildOutput';
 const RESTORE_CONFIGURATION = {
     gradle: {
         dependencies: ['~/.gradle/caches', '~/.gradle/wrapper'],
-        buildOutput: ['dotCMS/.gradle', 'dotCMS/build/classes', 'dotCMS/build/resources', 'dist/dotserver']
+        buildOutput: ['dotCMS/.gradle', 'dotCMS/build/classes', 'dotCMS/build/resources']
     },
     maven: {
         dependencies: ['~/.m2/repository'],
