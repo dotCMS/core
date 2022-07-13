@@ -5,7 +5,7 @@ import * as unit from './unit'
 /**
  * Main entry point for this action.
  */
-const run = () => {
+const run = async () => {
   core.info("Running Core's unit tests")
 
   const buildEnv = core.getInput('build_env')
@@ -15,28 +15,11 @@ const run = () => {
     return
   }
 
+  const exitCode = await unit.runTests(cmd)
   setOutput('tests_results_location', cmd.outputDir)
   setOutput('tests_results_report_location', cmd.reportDir)
-
-  unit
-    .runTests(cmd)
-    .then(exitCode => {
-      const results = {
-        testsRunExitCode: exitCode,
-        testResultsLocation: cmd.outputDir,
-        skipResultsReport: false
-      }
-      core.info(`Unit test results:\n${JSON.stringify(results)}`)
-      setOutput('tests_results_status', exitCode === 0 ? 'PASSED' : 'FAILED')
-      setOutput('tests_results_skip_report', false)
-    })
-    .catch(reason => {
-      const messg = `Running unit tests failed due to ${reason}`
-      const skipResults = !fs.existsSync(cmd.outputDir)
-      setOutput('tests_results_status', 'FAILED')
-      setOutput('tests_results_skip_report', skipResults)
-      core.setFailed(messg)
-    })
+  setOutput('tests_results_status', exitCode === 0 ? 'PASSED' : 'FAILED')
+  setOutput('tests_results_skip_report', !fs.existsSync(cmd.outputDir))
 }
 
 const setOutput = (name: string, value: string | boolean | number | undefined) => {

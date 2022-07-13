@@ -6,6 +6,12 @@
 	background-color: #f7f7f7;
 }
 
+.tundra .dijitMenuTable {
+  border-collapse: separate;
+  border-spacing: 0 0;
+  padding: 0;
+}
+
 .tundra .dijitBorderContainer .dijitMenuBar {
 	border:1px solid #ccc;
 }
@@ -59,19 +65,24 @@
 }
 
 /* the checked menu item */
-.tundra .dijitCheckedMenuItemIconChar {
-	display: none;
-}
-
-.tundra .dijitCheckedMenuItemIcon {
+.tundra .dijitCheckedMenuItem .dijitMenuItemIcon,
+.tundra .dijitRadioMenuItem .dijitMenuItemIcon {
 	background-image: url('images/checkmark.png');
 	background-position: -80px;
 }
 
-.dj_ie6 .tundra .dijitCheckedMenuItemIcon {
+.dj_ie6 .tundra .dijitCheckedMenuItem .dijitMenuItemIcon,
+.dj_ie6 .tundra .dijitRadioMenuItem .dijitMenuItemIcon {
 	background-image: url('images/checkmark.gif');
 }
 
-.tundra .dijitCheckedMenuItemChecked .dijitCheckedMenuItemIcon {
+.tundra .dijitCheckedMenuItemChecked .dijitMenuItemIcon {
 	background-position: -64px;
+}
+
+.tundra .dijitRadioMenuItem .dijitMenuItemIcon {
+	background-position: -110px; /* 15px * 8 */
+}
+.tundra .dijitRadioMenuItemChecked .dijitMenuItemIcon {
+	background-position: -95px;	/* 15px * 7 */
 }

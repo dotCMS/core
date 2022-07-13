@@ -24,11 +24,7 @@
 	background:#b7b7b7;
 }
 .soria .dojoxRadioButtonSelected {
-/*
-    the following url does not exist; commented out to quiet build errors; tracked at #15696
-	background:#b7cdee url('../../../dijit/themes/soria/images/gradientTopBg.png') repeat-x top center;
-*/
-	background:#b7cdee;
+	background:#b7cdee url('../../../dijit/themes/soria/images/sliderEmptyVertical.png') repeat-x top center;
 }
 
 .dojoxRadioButtonLabel {

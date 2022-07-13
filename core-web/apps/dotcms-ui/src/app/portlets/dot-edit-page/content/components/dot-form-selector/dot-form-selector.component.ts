@@ -52,6 +52,7 @@ export class DotFormSelectorComponent implements OnInit, OnChanges {
                                   .getBoundingClientRect().height
                           }px`
                         : '';
+                this.datatable.tableViewChild.nativeElement.querySelector('button')?.focus();
             }
         }, 0);
     }

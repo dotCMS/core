@@ -22,8 +22,9 @@
   line-height: normal;
 }
 .mblListItemSelected {
-  color: white;
+  color: #ffffff;
   background-image: -webkit-gradient(linear, left top, left bottom, from(#088eef), to(#0851ad), color-stop(0.5, #0869c6));
+  background-image: linear-gradient(to bottom, #088eef 0%, #0869c6 50%, #0851ad 100%);
 }
 .mblListItemSelected .mblDomButton div {
   border-color: white;
@@ -60,7 +61,9 @@
   margin-bottom: -15px;
   margin-right: 11px;
 }
-.mblListItemRightIcon, .mblListItemRightIcon2, .mblListItemUncheckIcon {
+.mblListItemRightIcon,
+.mblListItemRightIcon2,
+.mblListItemUncheckIcon {
   position: relative;
   float: right;
   line-height: normal;
@@ -109,6 +112,7 @@
   border: 1px solid gray;
   opacity: 0.5;
   -webkit-box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
-  -webkit-border-radius: 0px !important;
+  box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
+  border-radius: 0px !important;
   -moz-border-radius: 0px !important;
 }
