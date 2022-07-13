@@ -221,8 +221,8 @@ public class CircuitBreakerUrl {
 
         if (threadIdConnectionCountSet.size() >= circuitBreakerMaxConnTotal.get()) {
 
-            Logger.info(this, "The maximum number of connections has been reached, size: " + threadIdConnectionCountSet.size());
-            throw new RejectedExecutionException("The maximum number of connections has been reached.");
+            Logger.debug(this, "The maximum number of connections has been reached, size: " + threadIdConnectionCountSet.size());
+            throw new RejectedExecutionException("Rejecting execution on Circuit Breaker: The maximum number of connections has been reached.");
         }
 
         threadIdConnectionCountSet.add(Thread.currentThread().getId());
@@ -232,22 +232,28 @@ public class CircuitBreakerUrl {
             }
             Failsafe.with(circuitBreaker)
                     .onSuccess(connection -> { 
-                        if(verbose) Logger.info(this, "success to " + this.proxyUrl);
+                        if(verbose) {
+                            Logger.info(this, "success to " + this.proxyUrl);
+                        }
                     })
                     .onFailure(failure -> Logger.warn(this, "Connection attempts failed " + failure.getMessage()))
                     .run(ctx -> {
-                        RequestConfig config = RequestConfig.custom()
+
+                        final RequestConfig config = RequestConfig.custom()
                                 .setConnectTimeout(Math.toIntExact(this.timeoutMs))
                                 .setRedirectsEnabled(allowRedirects)
                                 .setConnectionRequestTimeout(Math.toIntExact(this.timeoutMs))
                                 .setSocketTimeout(Math.toIntExact(this.timeoutMs)).build();
+
                         try (CloseableHttpClient httpclient = HttpClientBuilder
                                 .create()
                                 .setConnectionManager(this.connectionManager())
                                 .setDefaultRequestConfig(config).build()) {
                             
-                            if(IPUtils.isIpPrivateSubnet(this.request.getURI().getHost()) && !allowAccessToPrivateSubnets.get()){
-                                throw new DotRuntimeException("Remote HttpRequests cannot access private subnets.  Set ALLOW_ACCESS_TO_PRIVATE_SUBNETS=true to allow");
+                            if(IPUtils.isIpPrivateSubnet(this.request.getURI().getHost()) && !allowAccessToPrivateSubnets.get()) {
+
+                                throw new DotRuntimeException("Remote HttpRequests cannot access private subnets.  " +
+                                        "Set ALLOW_ACCESS_TO_PRIVATE_SUBNETS=true to allow");
                             }
 
                             try (CloseableHttpResponse innerResponse = httpclient.execute(this.request)) {
@@ -262,7 +268,8 @@ public class CircuitBreakerUrl {
                             }
 
                             // throw an error if the request is bad
-                            if(this.response<200 || this.response>299){
+                            if(this.response<200 || this.response>299) {
+
                                 throw new BadRequestException("got invalid response for url: " + this.proxyUrl + " response: " + this.response);
                             }
                         }
@@ -284,6 +291,7 @@ public class CircuitBreakerUrl {
     }
 
     private HttpClientConnectionManager connectionManager() {
+
         if (null == httpClientConnectionManager) {
             synchronized (this) {
                 if (null == httpClientConnectionManager) {
@@ -313,7 +321,7 @@ public class CircuitBreakerUrl {
                             final int maxConnTotal,
                             final int maxConnPerRoute) {
 
-        final String[] supportedProtocols    = systemProperties ?    split(System.getProperty("https.protocols")) : null;
+        final String[] supportedProtocols    = systemProperties ? split(System.getProperty("https.protocols")) : null;
         final String[] supportedCipherSuites = systemProperties ? split(System.getProperty("https.cipherSuites")) : null;
         final HostnameVerifier hostnameVerifierCopy = new DefaultHostnameVerifier(PublicSuffixMatcherLoader.getDefault());
         final LayeredConnectionSocketFactory sslSocketFactoryCopy = systemProperties?
@@ -387,14 +395,12 @@ public class CircuitBreakerUrl {
         return new CircuitBreakerUrlBuilder();
     }
 
-
     @Override
     public String toString() {
         return "CircuitBreakerUrl [proxyUrl=" + proxyUrl + ", timeoutMs=" + timeoutMs + ", circuitBreaker=" + circuitBreaker + "]";
     }
 
     final static TypeReference<HashMap<String,Object>> typeRef = new TypeReference<HashMap<String,Object>>() {};
-
 
     public Map<String,Object> doMap() {
         return (Map<String,Object>) Try.of(()-> DotObjectMapperProvider.getInstance().getDefaultObjectMapper().readValue(doString(), typeRef)).onFailure(e->Logger.warnAndDebug(CircuitBreakerUrl.class,  e)).getOrElse(HashMap::new);
@@ -408,7 +414,4 @@ public class CircuitBreakerUrl {
         GET, POST, PUT, DELETE, PATCH;
 
     }
-
-
-
 }
