@@ -34,22 +34,31 @@ exports.getCacheLocations = void 0;
 const core = __importStar(__nccwpck_require__(186));
 const fs = __importStar(__nccwpck_require__(147));
 const path = __importStar(__nccwpck_require__(17));
+const HOME_FOLDER = path.join('/home', 'runner');
+const GRADLE_FOLDER = path.join(HOME_FOLDER, '.gradle');
+const M2_FOLDER = path.join(HOME_FOLDER, '.m2');
+const PROJECT_ROOT = core.getInput('project_root');
+const DOTCMS_ROOT = path.join(PROJECT_ROOT, 'dotCMS');
 const CACHE_CONFIGURATION = {
     gradle: {
-        dependencies: ['~/.gradle/caches', '~/.gradle/wrapper'],
-        buildOutput: ['dotCMS/.gradle', 'dotCMS/build/classes', 'dotCMS/build/resources']
+        dependencies: [path.join(GRADLE_FOLDER, 'caches'), path.join(GRADLE_FOLDER, 'wrapper')],
+        buildOutput: [
+            path.join(DOTCMS_ROOT, '.gradle'),
+            path.join(DOTCMS_ROOT, 'build', 'classes'),
+            path.join(DOTCMS_ROOT, 'build', 'resources')
+        ]
     },
     maven: {
-        dependencies: ['~/.m2/repository'],
-        buildOutput: ['dotCMS/target']
+        dependencies: [path.join(M2_FOLDER, 'repository')],
+        buildOutput: [path.join(DOTCMS_ROOT, 'target')]
     }
 };
 const EMPTY_CACHE_LOCATIONS = {
     dependencies: [],
     buildOutput: []
 };
-const BUILD_OUTPUT = 'buildOutput';
-const CACHE_FOLDER = path.join(path.dirname(core.getInput('project_root')), 'cache');
+//const BUILD_OUTPUT = 'buildOutput'
+//const CACHE_FOLDER = path.join(path.dirname(core.getInput('project_root')), 'cache')
 /**
  * Resolves locations to be cached after building core.
  *
@@ -65,7 +74,9 @@ const getCacheLocations = () => {
         return EMPTY_CACHE_LOCATIONS;
     }
     // For each cache location resolves the location to be cached
-    Object.keys(cacheLocations).forEach(key => resolveLocations(buildEnv, cacheLocations, key, key === BUILD_OUTPUT ? decorateBuildOutput : undefined));
+    for (const key of Object.keys(cacheLocations)) {
+        resolveLocations(buildEnv, cacheLocations, key, undefined);
+    }
     return cacheLocations;
 };
 exports.getCacheLocations = getCacheLocations;
@@ -111,7 +122,7 @@ const resolveLocations = (buildEnv, cacheLocations, key, decorateFn) => {
  * @param location location
  * @returns decorated string
  */
-const decorateBuildOutput = (location) => path.join(CACHE_FOLDER, location);
+//const decorateBuildOutput = (location: string): string => path.join(CACHE_FOLDER, location)
 
 
 /***/ }),
