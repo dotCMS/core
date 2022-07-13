@@ -555,7 +555,6 @@ public class HostFactoryImpl implements HostFactory {
 
         class DeleteHostThread implements Callable<Boolean> {
 
-            @WrapInTransaction
             @Override
             public Boolean call() {
                 return innerDeleteHost(site, user, respectFrontendRoles);
