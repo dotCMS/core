@@ -220,8 +220,14 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                 ])
                     .pipe(take(1))
                     .subscribe((results: DotCMSContentType[][] ) => {
+                        const [ allowContent, widgets ] = results;
+
+                        // Some pages allow widgets, but we already make a request just to get them.
+                        // This filter is used to prevent widgets from being repeated.
+                        const contentLets = allowContent.filter((item) => item.baseType !== 'WIDGET');
+
                         // Merge both array and order them by name
-                        const contentTypes = [...results[0], ...results[1]].sort(
+                        const contentTypes = [...contentLets, ...widgets].sort(
                             (a, b) => a.name.localeCompare(b.name)
                         ).slice(0, 40);
     
