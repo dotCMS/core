@@ -92,12 +92,13 @@ exports.getCacheLocations = getCacheLocations;
 const resolveLocations = (buildEnv, cacheLocations, key, decorateFn) => {
     const cacheEnableKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
     const cacheEnable = core.getBooleanInput(`cache_${cacheEnableKey}`);
+    const locationKey = key;
     if (!cacheEnable) {
         core.notice(`Core cache is disabled for ${key}`);
+        cacheLocations[locationKey] = undefined;
         return;
     }
     core.info(`Looking cache configuration for ${key}`);
-    const locationKey = key;
     const locations = cacheLocations[locationKey];
     if (!locations) {
         core.warning(`Cannot resolve any ${key} locations for build env ${buildEnv}`);

@@ -3,8 +3,8 @@ import * as fs from 'fs'
 import * as path from 'path'
 
 interface CacheLocations {
-  dependencies: string[]
-  buildOutput: string[]
+  dependencies?: string[]
+  buildOutput?: string[]
 }
 
 interface CacheConfiguration {
@@ -81,13 +81,14 @@ const resolveLocations = (
 ) => {
   const cacheEnableKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`)
   const cacheEnable = core.getBooleanInput(`cache_${cacheEnableKey}`)
+  const locationKey = key as keyof CacheLocations
   if (!cacheEnable) {
     core.notice(`Core cache is disabled for ${key}`)
+    cacheLocations[locationKey] = undefined
     return
   }
 
   core.info(`Looking cache configuration for ${key}`)
-  const locationKey = key as keyof CacheLocations
   const locations = cacheLocations[locationKey]
   if (!locations) {
     core.warning(`Cannot resolve any ${key} locations for build env ${buildEnv}`)
