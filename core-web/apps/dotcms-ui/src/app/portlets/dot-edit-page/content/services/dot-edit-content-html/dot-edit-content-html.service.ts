@@ -33,7 +33,6 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
 import { DotPage } from '@dotcms/app/shared/models/dot-page/dot-page.model';
 import { DotAddContentTypePayload } from './models/dot-contentlets-events.model';
 import { DotIframeEditEvent } from '@dotcms/dotcms-models';
-import { DotHtml2CanvasDomService } from '../html/dot-html-2-canvas-dom.service';
 
 export enum DotContentletAction {
     EDIT,
@@ -73,7 +72,6 @@ export class DotEditContentHtmlService {
     constructor(
         private dotContainerContentletService: DotContainerContentletService,
         private dotDragDropAPIHtmlService: DotDragDropAPIHtmlService,
-        private dotHtml2CanvasDomService: DotHtml2CanvasDomService,
         private dotEditContentToolbarHtmlService: DotEditContentToolbarHtmlService,
         private dotDOMHtmlUtilService: DotDOMHtmlUtilService,
         private dotDialogService: DotAlertConfirmService,
@@ -128,15 +126,6 @@ export class DotEditContentHtmlService {
             const iframeElement = this.getEditPageIframe();
 
             iframeElement.addEventListener('load', () => {
-                console.log('***dotEditContent render page');
-
-                this.dotHtml2CanvasDomService.initHtml2CanvasContext(this.getEditPageIframe());
-
-                // const scriptTag = document.createElement('script');
-                // scriptTag.src = 'https://github.com/niklasvh/html2canvas/releases/download/v1.4.1/html2canvas.min.js';
-                // const doc = iframeElement.contentDocument || iframeElement.contentWindow.document;
-                // doc.body.appendChild(scriptTag);
-
                 iframeElement.contentWindow[MODEL_VAR_NAME] = this.pageModel$;
                 iframeElement.contentWindow['contentletEvents'] = this.contentletEvents$;
 

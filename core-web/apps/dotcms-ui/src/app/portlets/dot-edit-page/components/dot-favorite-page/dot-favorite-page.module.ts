@@ -7,9 +7,7 @@ import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.modu
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
-import { DotHtml2CanvasDomService } from '../../content/services/html/dot-html-2-canvas-dom.service';
 import { DotFavoritePageComponent } from './dot-favorite-page.component';
-import { SkeletonModule } from 'primeng/skeleton';
 import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
 import { DotWorkflowActionsFireService } from '@dotcms/app/api/services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 import { DotRolesService } from '@dotcms/app/api/services/dot-roles/dot-roles.service';
@@ -27,11 +25,9 @@ import { MultiSelectModule } from 'primeng/multiselect';
         DropdownModule,
         InputTextModule,
         ReactiveFormsModule,
-        SkeletonModule,
         MultiSelectModule
     ],
     providers: [
-        DotHtml2CanvasDomService,
         DotTempFileUploadService,
         DotWorkflowActionsFireService,
         DotRolesService

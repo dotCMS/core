@@ -43,7 +43,7 @@ export class DotRolesService {
     }
 
     /**
-     * Return list of roles associated to specific role .
+     * Return list of roles.
      * @returns Observable<DotRole[]>
      * @memberof DotRolesService
      */

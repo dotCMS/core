@@ -1,5 +1,4 @@
 import { Component, Prop, h, Host, Event, EventEmitter, State } from '@stencil/core';
-import '@material/mwc-icon-button';
 import '@material/mwc-circular-progress';
 
 @Component({
@@ -23,11 +22,11 @@ export class DotHtmlToImage {
     iframeId = `iframe_${Math.floor(Date.now() / 1000).toString()}`;
     loadScript = `
         html2canvas(document.body, {
-            height: IMG_HEIGHT, // up to how many px you want to get
-            windowHeight: IMG_HEIGHT, // up to how many px you want to get
-            width: IMG_WIDTH, //e.data.width, // up to how many px you want to get
-            windowWidth: IMG_WIDTH, //e.data.width, // up to how many px you want to get
-        }).then( (canvas) => {
+            height: IMG_HEIGHT, // The height of the canvas
+            windowHeight: IMG_HEIGHT, // Window height to use when rendering Element
+            width: IMG_WIDTH, // The width of the canvas
+            windowWidth: IMG_WIDTH, // Window width to use when rendering Element
+        }).then((canvas) => {
             canvas.toBlob((blob) => {
                 const fileObj = new File([blob], 'image.png');
                 window.parent.postMessage({
@@ -42,7 +41,6 @@ export class DotHtmlToImage {
     ;`;
 
     componentDidLoad() {
-        console.log('----scriptTAG', this.loadScript);
         const iframe = document.querySelector(`#${this.iframeId}`) as HTMLIFrameElement;
         const doc = iframe.contentDocument || iframe.contentWindow.document;
 
@@ -66,6 +64,7 @@ export class DotHtmlToImage {
                 doc.body.appendChild(script);
             });
         };
+
         doc.body.append(scriptLib);
 
         window.addEventListener('message', (event) => {
@@ -79,20 +78,19 @@ export class DotHtmlToImage {
             img.style.width = '100%';
             iframe.parentElement.appendChild(img);
 
-            console.log('***webcomponent emit file', img, fileObj);
             this.pageThumbnail.emit(fileObj);
         });
     }
 
     render() {
         return (
-            <Host style={{ display: 'flex', 'flex-direction': 'column', 'align-items': 'center' }}>
-                {this.previewImg ? (
-                    ''
-                ) : (
+            <Host>
+                {!this.previewImg ? (
                     <mwc-circular-progress indeterminate></mwc-circular-progress>
+                ) : (
+                    ''
                 )}
-                <iframe id={this.iframeId} style={{ width: '0', height: '0', border: '0' }} />
+                <iframe id={this.iframeId} />
             </Host>
         );
     }

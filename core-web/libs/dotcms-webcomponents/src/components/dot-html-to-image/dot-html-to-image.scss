@@ -1,17 +1,15 @@
 dot-html-to-image {
-    :host {
-        display: "flex";
-        flex-direction: "column";
-        align-items: "center";
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 
-        iframe {
-            border: 0;
-            height: 0;
-            width: 0;
-        }
+    iframe {
+        border: 0;
+        height: 0;
+        width: 0;
+    }
 
-        mwc-circular-progress {
-            --mdc-theme-primary: var(--color-main);
-        }
+    mwc-circular-progress {
+        --mdc-theme-primary: var(--color-main);
     }
 }

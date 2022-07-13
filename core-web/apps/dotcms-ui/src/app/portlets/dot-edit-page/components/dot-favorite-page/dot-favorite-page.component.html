@@ -5,7 +5,7 @@
     (save)="onSave()"
 >
     <form class="p-fluid" [formGroup]="form" data-testId="form" *ngIf="form">
-        <div class="field" data-testId="urlField">
+        <div class="field" data-testId="thumbnailField">
             <label for="previewThumbnail" class="p-label-input-required">{{
                 'preview' | dm
             }}</label>
@@ -22,7 +22,7 @@
                 pInputText
                 formControlName="title"
                 autofocus
-                data-testId="templatePropsTitleField"
+                data-testId="favoritePageTitleField"
             />
             <dot-field-validation-message
                 [field]="form.get('title')"
@@ -30,12 +30,7 @@
         </div>
         <div class="field" data-testId="urlField">
             <label for="url" class="p-label-input-required">{{ 'url' | dm }}</label>
-            <input
-                id="url"
-                pInputText
-                formControlName="url"
-                data-testId="templatePropsTitleField"
-            />
+            <input id="url" pInputText formControlName="url" data-testId="favoritePageUrlField" />
             <dot-field-validation-message [field]="form.get('url')"></dot-field-validation-message>
         </div>
         <div class="field" data-testId="orderField">
@@ -44,15 +39,14 @@
                 id="order"
                 pInputText
                 formControlName="order"
-                data-testId="templatePropsTitleField"
+                data-testId="favoritePageOrderField"
             />
             <dot-field-validation-message
                 [field]="form.get('order')"
             ></dot-field-validation-message>
         </div>
-
         <div class="field" data-testId="shareWithField" *ngIf="isAdmin">
-            <label for="permissions" class="p-label-input-required">{{ 'share.with' | dm }}</label>
+            <label for="permissions" class="p-label-input-required">{{ 'favoritePage.dialog.field.shareWith' | dm }}</label>
             <p-multiSelect
                 id="permissions"
                 [options]="roleOptions"
@@ -60,7 +54,6 @@
                 optionLabel="name"
                 appendTo="body"
             ></p-multiSelect>
-
             <dot-field-validation-message
                 [field]="form.get('permissions')"
             ></dot-field-validation-message>

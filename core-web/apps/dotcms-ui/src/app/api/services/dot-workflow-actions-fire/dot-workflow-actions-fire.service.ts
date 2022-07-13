@@ -144,14 +144,16 @@ export class DotWorkflowActionsFireService {
         individualPermissions
     }: DotActionRequestOptions): Observable<T> {
         const contentlet = contentType ? { contentType: contentType, ...data } : data;
-        console.log('****request', contentlet, individualPermissions);
+        const bodyRequest = individualPermissions
+            ? { contentlet, individualPermissions }
+            : { contentlet };
         return this.coreWebService
             .requestView({
                 method: 'PUT',
                 url: `v1/workflow/actions/default/fire/${action}${
                     data.inode ? `?inode=${data.inode}` : ''
                 }`,
-                body: { contentlet, individualPermissions }
+                body: bodyRequest
             })
             .pipe(take(1), pluck('entity'));
     }
