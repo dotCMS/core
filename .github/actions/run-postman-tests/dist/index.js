@@ -131,9 +131,8 @@ const resourcesFolder = path.join(cicdFolder, 'resources', 'postman');
 const dockerFolder = path.join(cicdFolder, 'docker');
 const licenseFolder = path.join(dockerFolder, 'license');
 const dotCmsRoot = path.join(projectRoot, 'dotCMS');
-const logsFolder = path.join(dockerFolder, 'logs');
-const logFile = 'dotcms.log';
-const volumes = [licenseFolder, path.join(dockerFolder, 'cms-shared'), path.join(dockerFolder, 'cms-local'), logsFolder];
+const logFile = path.join(dotCmsRoot, 'dotcms.log');
+const volumes = [licenseFolder, path.join(dockerFolder, 'cms-shared'), path.join(dockerFolder, 'cms-local')];
 const postmanTestsPath = path.join(dotCmsRoot, 'src', 'curl-test');
 const postmanEnvFile = 'postman_environment.json';
 const resultsFolder = path.join(dotCmsRoot, 'build', 'test-results', 'postmanTest');
@@ -179,18 +178,15 @@ exports.runTests = runTests;
 /**
  * Copies logs from docker volume to standard DotCMS location.
  */
-const copyOutputs = () => {
+const copyOutputs = () => __awaiter(void 0, void 0, void 0, function* () {
     printInfo();
-    execCmd(toCommand('docker', ['cp', 'docker_dotcms-app_1:/srv/dotserver/tomcat-9.0.60/logs/dotcms.log', logsFolder]));
-    execCmd(toCommand('pwd', [], logsFolder));
-    execCmd(toCommand('ls', ['-las', '.'], logsFolder));
-    try {
-        fs.copyFileSync(path.join(logsFolder, logFile), path.join(dotCmsRoot, logFile));
-    }
-    catch (err) {
-        core.error(`Error copying log file: ${err}`);
-    }
-};
+    yield execCmd(toCommand('docker', [
+        'cp',
+        'docker_dotcms-app_1:/srv/dotserver/tomcat-9.0.60/logs/dotcms.log',
+        logFile
+    ]));
+    yield execCmd(toCommand('ls', ['-las', dotCmsRoot]));
+});
 /**
  * Sets up everuthing needed to run postman collections.
  */
@@ -200,20 +196,20 @@ const setup = () => {
     prepareLicense();
     printInfo();
 };
-const printInfo = () => {
-    execCmd(toCommand('docker', ['images']));
-    execCmd(toCommand('docker', ['ps']));
-};
+const printInfo = () => __awaiter(void 0, void 0, void 0, function* () {
+    yield execCmd(toCommand('docker', ['images']));
+    yield execCmd(toCommand('docker', ['ps']));
+});
 /**
  * Install necessary dependencies to run the postman collections.
  */
-const installDeps = () => {
+const installDeps = () => __awaiter(void 0, void 0, void 0, function* () {
     core.info('Installing newman');
     const npmArgs = ['install', '--location=global', 'newman'];
     if (exportReport) {
         npmArgs.push('newman-reporter-htmlextra');
     }
-    execCmd(toCommand('npm', npmArgs));
+    yield execCmd(toCommand('npm', npmArgs));
     // if (!fs.existsSync(tomcatRoot) && buildEnv === 'gradle') {
     //   core.info(`Tomcat root does not exist, creating it`)
     //   await exec.exec('./gradlew', ['clonePullTomcatDist'])
@@ -222,7 +218,7 @@ const installDeps = () => {
     //     throw new Error('Cannot find any Tomcat root folder')
     //   }
     // }
-};
+});
 /**
  * Start postman depencies: db, ES and DotCMS isntance.
  */
@@ -238,7 +234,7 @@ const startDeps = () => {
 /**
  * Stop postman depencies: db, ES and DotCMS isntance.
  */
-const stopDeps = () => {
+const stopDeps = () => __awaiter(void 0, void 0, void 0, function* () {
     //await stopDotCMS()
     // Stopping dependencies
     core.info(`
@@ -246,12 +242,12 @@ const stopDeps = () => {
     Stopping postman tests dependencies
     ===================================`);
     try {
-        execCmd(toCommand('docker-compose', ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'down'], dockerFolder, DEPS_ENV));
+        yield execCmd(toCommand('docker-compose', ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'down'], dockerFolder, DEPS_ENV));
     }
     catch (err) {
         console.error(`Error stopping dependencies: ${err}`);
     }
-};
+});
 // const startDotCMS = async () => {
 //   core.info(`
 //     =======================================
@@ -336,7 +332,7 @@ const runPostmanCollections = () => __awaiter(void 0, void 0, void 0, function* 
  * @param normalized normalized collection
  * @returns promise with process return code
  */
-const runPostmanCollection = (collection, normalized) => {
+const runPostmanCollection = (collection, normalized) => __awaiter(void 0, void 0, void 0, function* () {
     core.info(`Running Postman collection: ${collection}`);
     const resultFile = path.join(resultsFolder, `${normalized}.xml`);
     const page = `${normalized}.html`;
@@ -359,8 +355,8 @@ const runPostmanCollection = (collection, normalized) => {
         args.push('--reporter-htmlextra-export');
         args.push(reportFile);
     }
-    return execCmd(toCommand('newman', args, postmanTestsPath));
-};
+    return yield execCmd(toCommand('newman', args, postmanTestsPath));
+});
 /*
  * Process results.
  *
@@ -413,17 +409,16 @@ const createFolders = () => {
     for (const folder of folders) {
         fs.mkdirSync(folder, { recursive: true });
     }
-    shelljs.touch(path.join(dockerFolder, logFile));
 };
 /**
  * Creates license folder and file with appropiate key.
  */
-const prepareLicense = () => {
+const prepareLicense = () => __awaiter(void 0, void 0, void 0, function* () {
     const licenseFile = path.join(licenseFolder, 'license.dat');
     core.info(`Adding license to ${licenseFile}`);
     fs.writeFileSync(licenseFile, licenseKey, { encoding: 'utf8', flag: 'a+', mode: 0o777 });
-    execCmd(toCommand('ls', ['-las', licenseFile]));
-};
+    yield execCmd(toCommand('ls', ['-las', licenseFile]));
+});
 /**
  * Resolves tests when provided
  *

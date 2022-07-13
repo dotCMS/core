@@ -22,7 +22,7 @@
   "dependencies": {
     "@actions/cache": "^1.0.9",
     "@actions/core": "^1.6.0",
-    "@actions/exec": "^1.1.0"
+    "@actions/exec": "^1.1.1"
   },
   "devDependencies": {
     "@tsconfig/node16": "^1.0.2",

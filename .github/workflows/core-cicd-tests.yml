@@ -27,8 +27,8 @@ jobs:
         with:
           build_id: ${{ env.BUILD_ID }}
           current: core
-      - name: Get commit message
-        id: get-commit-message
+      - id: get-commit-message
+        name: Get commit message
         uses: dotcms/get-commit-message@master
         with:
           accessToken: ${{ secrets.GITHUB_TOKEN }}
@@ -60,7 +60,7 @@ jobs:
         uses: ./.github/actions/core-cache-locator
         with:
           build_env: ${{ env.BUILD_ENV }}
-          cache_build_output: true
+          cache_build_output: false
         if: success()
       - id: cache-core
         name: Cache Core
@@ -72,7 +72,7 @@ jobs:
   run-unit-tests-job:
     name: Run Unit Tests
     runs-on: ubuntu-latest
-    needs: build-core-job
+    needs: [repo-metadata-job, build-core-job]
     if: success()
     outputs:
       tests_results_status: ${{ steps.run-unit-tests.outputs.tests_results_status }}
@@ -144,7 +144,7 @@ jobs:
           github_user: ${{ env.GITHUB_USER }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
           tests_report_url: ${{ steps.github-publish-unit-tests.outputs.test_logs_url }}
-        if: (success() || failure()) && steps.publish-unit-tests.outputs.tests_report_url != ''
+        if: (success() || failure()) && steps.github-publish-unit-tests.outputs.tests_report_url != ''
   integration-tests-thread-setup-job:
     name: Integration tests thread (matrix) setup
     runs-on: ubuntu-latest
@@ -174,7 +174,7 @@ jobs:
   run-integration-tests-job:
     name: Run Integration Tests
     runs-on: ubuntu-latest
-    needs: [ build-core-job, integration-tests-thread-setup-job ]
+    needs: [repo-metadata-job, build-core-job, integration-tests-thread-setup-job]
     strategy:
       fail-fast: false
       matrix:
@@ -252,7 +252,7 @@ jobs:
           ci_total: 2
           ci_label: ${{ matrix.db_type }}
           debug: true
-          if: (success() || failure()) && steps.run-integration-tests.outputs.tests_results_skip_report != 'true'
+        if: (success() || failure()) && steps.run-integration-tests.outputs.tests_results_skip_report != 'true'
       - id: github-status
         name: Send Github Status
         uses: ./.github/actions/github-status
@@ -264,11 +264,11 @@ jobs:
           github_user: ${{ env.GITHUB_USER }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
           tests_report_url: ${{ steps.github-publish-integration-tests.outputs.tests_report_url }}
-        if: (success() || failure()) && steps.publish-integration-tests.outputs.tests_report_url != ''
+        if: (success() || failure()) && steps.github-publish-integration-tests.outputs.tests_report_url != ''
   integration-tests-complete-job:
     name: Integration tests publish complete setup
     runs-on: ubuntu-latest
-    needs: [ integration-tests-thread-setup-job, run-integration-tests-job ]
+    needs: [integration-tests-thread-setup-job, run-integration-tests-job]
     if: (success() || failure()) && needs.run-integration-tests-job.outputs.tests_results_skip_report != 'true'
     steps:
       - id: fetch-core
@@ -357,7 +357,7 @@ jobs:
           test_type: postman
           tests_results_location: ${{ steps.run-postman-tests.outputs.tests_results_location }}/*.xml
           debug: true
-        if: steps.run-postman-tests.outputs.tests_results_skip_report != 'true'
+        if: (success() || failure()) && steps.run-postman-tests.outputs.tests_results_skip_report != 'true'
       - id: github-status
         name: Send Github Status
         uses: ./.github/actions/github-status
@@ -368,11 +368,11 @@ jobs:
           github_user: ${{ env.GITHUB_USER }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
           tests_report_url: ${{ steps.github-publish-postman-tests.outputs.tests_report_url }}
-        if: (success() || failure()) && steps.publish-postman-tests.outputs.tests_report_url != ''
+        if: (success() || failure()) && steps.github-publish-postman-tests.outputs.tests_report_url != ''
   test-results-handler-job:
     name: Tests results handler
     runs-on: ubuntu-latest
-    needs: [run-unit-tests-job, integration-tests-complete-job, run-postman-tests-job]
+    needs: [run-unit-tests-job, run-integration-tests-job, integration-tests-complete-job, run-postman-tests-job]
     if: (success() || failure()) && (needs.run-unit-tests-job.outputs.tests_results_report_url != '' || needs.run-integration-tests-job.outputs.postgres_tests_results_report_url != '' || needs.run-integration-tests-job.outputs.mssql_tests_results_report_url != '' || needs.run-postman-tests-job.outputs.tests_results_report_url != '')
     steps:
       - id: fetch-core
