@@ -20,6 +20,14 @@ import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSocketFactory;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletResponse;
@@ -27,17 +35,36 @@ import net.jodah.failsafe.CircuitBreaker;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.FailsafeException;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.config.ConnectionConfig;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.config.SocketConfig;
+import org.apache.http.conn.ConnectionRequest;
+import org.apache.http.conn.DnsResolver;
+import org.apache.http.conn.HttpClientConnectionManager;
+import org.apache.http.conn.routing.HttpRoute;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.LayeredConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.DefaultHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.util.PublicSuffixMatcherLoader;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.pool.PoolStats;
+import org.apache.http.ssl.SSLContexts;
+import org.apache.http.util.TextUtils;
 
 /**
  * Defaults to GET requests with 2000 timeout
@@ -69,7 +96,10 @@ public class CircuitBreakerUrl {
     private Header[] responseHeaders;
     private final boolean allowRedirects;
 
-    
+    private static HttpClientConnectionManager httpClientConnectionManager = null;
+    private static final Lazy<Integer> circuitBreakerMaxConnTotal = Lazy.of(()->Config.getIntProperty("CIRCUIT_BREAKER_MAX_CONN_TOTAL",100));
+    private static final Lazy<Boolean> allowAccessToPrivateSubnets = Lazy.of(()->Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false));
+    private static final Set<Long> threadIdConnectionCountSet = ConcurrentHashMap.newKeySet();
     /**
      * 
      * @param proxyUrl
@@ -192,12 +222,15 @@ public class CircuitBreakerUrl {
         });
     }
 
-    
-    
-    
-    
-    
     public void doOut(final HttpServletResponse response) throws IOException {
+
+        if (threadIdConnectionCountSet.size() >= circuitBreakerMaxConnTotal.get()) {
+
+            Logger.info(this, "The maximum number of connections has been reached, size: " + threadIdConnectionCountSet.size());
+            throw new RejectedExecutionException("The maximum number of connections has been reached.");
+        }
+
+        threadIdConnectionCountSet.add(Thread.currentThread().getId());
         try (final OutputStream out = response.getOutputStream()) {
             if(verbose) {
                 Logger.info(this.getClass(), "Circuitbreaker to " + request + " is " + circuitBreaker.getState());
@@ -213,22 +246,26 @@ public class CircuitBreakerUrl {
                                 .setRedirectsEnabled(allowRedirects)
                                 .setConnectionRequestTimeout(Math.toIntExact(this.timeoutMs))
                                 .setSocketTimeout(Math.toIntExact(this.timeoutMs)).build();
-                        try (CloseableHttpClient httpclient = HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
+                        try (CloseableHttpClient httpclient = HttpClientBuilder
+                                .create()
+                                .setConnectionManager(this.connectionManager())
+                                .setDefaultRequestConfig(config).build()) {
                             
-                            if(IPUtils.isIpPrivateSubnet(this.request.getURI().getHost()) && !Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false)){
+                            if(IPUtils.isIpPrivateSubnet(this.request.getURI().getHost()) && !allowAccessToPrivateSubnets.get()){
                                 throw new DotRuntimeException("Remote HttpRequests cannot access private subnets.  Set ALLOW_ACCESS_TO_PRIVATE_SUBNETS=true to allow");
                             }
-                            
-                            HttpResponse innerResponse = httpclient.execute(this.request);
 
-                            this.responseHeaders = innerResponse.getAllHeaders();
+                            try (CloseableHttpResponse innerResponse = httpclient.execute(this.request)) {
 
-                            copyHeaders(innerResponse, response);
+                                this.responseHeaders = innerResponse.getAllHeaders();
 
-                            this.response = innerResponse.getStatusLine().getStatusCode();
-                            
-                            IOUtils.copy(innerResponse.getEntity().getContent(), out);
-                            
+                                copyHeaders(innerResponse, response);
+
+                                this.response = innerResponse.getStatusLine().getStatusCode();
+
+                                IOUtils.copy(innerResponse.getEntity().getContent(), out);
+                            }
+
                             // throw an error if the request is bad
                             if(this.response<200 || this.response>299){
                                 throw new BadRequestException("got invalid response for url: " + this.proxyUrl + " response: " + this.response);
@@ -236,8 +273,101 @@ public class CircuitBreakerUrl {
                         }
                     });
         } catch (FailsafeException ee) {
+
             Logger.debug(this.getClass(), ee.getMessage() + " " + toString());
+        } finally {
+
+            threadIdConnectionCountSet.remove(Thread.currentThread().getId());
         }
+    }
+
+    private static String[] split(final String s) {
+        if (TextUtils.isBlank(s)) {
+            return null;
+        }
+        return s.split(" *, *");
+    }
+
+    private HttpClientConnectionManager connectionManager() {
+        if (null == httpClientConnectionManager) {
+            synchronized (this) {
+                if (null == httpClientConnectionManager) {
+                    final long connTimeToLive = this.timeoutMs;
+                    final TimeUnit connTimeToLiveTimeUnit = TimeUnit.MILLISECONDS;
+                    final boolean systemProperties = false;
+                    final DnsResolver dnsResolver = null;
+                    final SocketConfig defaultSocketConfig = null;
+                    final ConnectionConfig defaultConnectionConfig = null;
+                    final int maxConnTotal = circuitBreakerMaxConnTotal.get();
+                    final int maxConnPerRoute = 0;
+                    httpClientConnectionManager = connectionManager(connTimeToLive, connTimeToLiveTimeUnit, systemProperties, dnsResolver, defaultSocketConfig,
+                            defaultConnectionConfig, maxConnTotal, maxConnPerRoute);
+                }
+            }
+        }
+
+        return httpClientConnectionManager;
+    }
+
+    private HttpClientConnectionManager connectionManager(final long connTimeToLive,
+                            final TimeUnit connTimeToLiveTimeUnit,
+                            final boolean systemProperties,
+                            final DnsResolver dnsResolver,
+                            final SocketConfig defaultSocketConfig,
+                            final ConnectionConfig defaultConnectionConfig,
+                            final int maxConnTotal,
+                            final int maxConnPerRoute) {
+
+        final String[] supportedProtocols    = systemProperties ?    split(System.getProperty("https.protocols")) : null;
+        final String[] supportedCipherSuites = systemProperties ? split(System.getProperty("https.cipherSuites")) : null;
+        final HostnameVerifier hostnameVerifierCopy = new DefaultHostnameVerifier(PublicSuffixMatcherLoader.getDefault());
+        final LayeredConnectionSocketFactory sslSocketFactoryCopy = systemProperties?
+            new SSLConnectionSocketFactory(
+                    (SSLSocketFactory) SSLSocketFactory.getDefault(),
+                    supportedProtocols, supportedCipherSuites, hostnameVerifierCopy):
+                    new SSLConnectionSocketFactory(
+                    SSLContexts.createDefault(),
+                    hostnameVerifierCopy);
+
+        final PoolingHttpClientConnectionManager poolingmgr = new PoolingHttpClientConnectionManager(
+                RegistryBuilder.<ConnectionSocketFactory>create()
+                        .register("http", PlainConnectionSocketFactory.getSocketFactory())
+                        .register("https", sslSocketFactoryCopy)
+                        .build(),
+                null,
+                null,
+                dnsResolver,
+                connTimeToLive,
+                connTimeToLiveTimeUnit != null ? connTimeToLiveTimeUnit : TimeUnit.MILLISECONDS) {
+            @Override
+            public void shutdown() {
+                //super.shutdown(); // we do not want to close it
+            }
+        };
+
+        if (defaultSocketConfig != null) {
+            poolingmgr.setDefaultSocketConfig(defaultSocketConfig);
+        }
+        if (defaultConnectionConfig != null) {
+            poolingmgr.setDefaultConnectionConfig(defaultConnectionConfig);
+        }
+        if (systemProperties) {
+            String s = System.getProperty("http.keepAlive", "true");
+            if ("true".equalsIgnoreCase(s)) {
+                s = System.getProperty("http.maxConnections", "5");
+                final int max = Integer.parseInt(s);
+                poolingmgr.setDefaultMaxPerRoute(max);
+                poolingmgr.setMaxTotal(2 * max);
+            }
+        }
+        if (maxConnTotal > 0) {
+            poolingmgr.setMaxTotal(maxConnTotal);
+        }
+        if (maxConnPerRoute > 0) {
+            poolingmgr.setDefaultMaxPerRoute(maxConnPerRoute);
+        }
+
+        return poolingmgr;
     }
 
     private void copyHeaders(final HttpResponse innerResponse, final HttpServletResponse response) {
@@ -283,6 +413,7 @@ public class CircuitBreakerUrl {
         GET, POST, PUT, DELETE, PATCH;
 
     }
+
 
 
 }
