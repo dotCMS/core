@@ -51,7 +51,7 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 			} else {
 				document.getElementById("titleField").value = name.trim();
 			}
-			if (document.getElementById("titleField").value == ""){
+			if (document.getElementById("titleField").value === ""){
 				alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.folder.name.required.url")) %>');
 				dijit.byId('processingDialog').hide();
 				return false;
