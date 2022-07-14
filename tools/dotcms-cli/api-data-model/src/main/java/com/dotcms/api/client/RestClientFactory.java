@@ -69,15 +69,11 @@ public class RestClientFactory {
      * @param <T>
      */
     public <T> T getClient(final Class<T> clazz) {
-        return getClient(dotCMSInstanceProfile.get(), clazz);
+        return getClient(currentSelectedProfile(), clazz);
     }
 
-    /**
-     * We should be able to tell this class what profile we're currently looking at.
-     * @param profile
-     */
-    public void setProfile(final String profile) {
-        dotCMSInstanceProfile.set(profile);
+    public String currentSelectedProfile()
+    {
+        return dotCMSInstanceProfile.get();
     }
-
 }

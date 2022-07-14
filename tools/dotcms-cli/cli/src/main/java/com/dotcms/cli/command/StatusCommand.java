@@ -27,6 +27,7 @@ public class StatusCommand implements Runnable {
 
     @Override
     public void run() {
+
         logger.info("We're set to the API at "+ authSecurityContext.getDotCMSAPIHost());
         final Optional<String> userId = authSecurityContext.getUser();
         if (userId.isEmpty()) {

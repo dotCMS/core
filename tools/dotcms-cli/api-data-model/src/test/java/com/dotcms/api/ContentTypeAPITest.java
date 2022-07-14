@@ -31,7 +31,7 @@ public class ContentTypeAPITest {
 
         final String user = "admin@dotcms.com";
         final ResponseEntityView<TokenEntity> resp = authClient.getToken(
-                APITokenRequest.builder().user(user).password("admin12345678").expirationDays(1).build());
+                APITokenRequest.builder().user(user).password("admin").expirationDays(1).build());
 
         authSecurityContext.setToken(resp.entity().token(), user);
 

@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-public class AuthSecurityContextTest {
+public class AuthAuthenticationContextTest {
 
 
     @Inject
