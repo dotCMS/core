@@ -40,7 +40,7 @@ export class DotBlockEditorComponent implements OnInit {
         this._allowedBlocks = ['paragraph', ...blocks.replace(/ /g, '').split(',').filter(Boolean)];
     }
 
-    _allowedBlocks: string[];
+    _allowedBlocks = [];
     editor: Editor;
 
     value = ''; // can be HTML or JSON, see https://www.tiptap.dev/api/editor#content
@@ -60,7 +60,6 @@ export class DotBlockEditorComponent implements OnInit {
                 allowedContentTypes: this.allowedContentTypes,
                 allowedBlocks: this._allowedBlocks
             }),
-            ImageBlock(this.injector),
             ActionsMenu(this.viewContainerRef),
             DragHandler(this.viewContainerRef),
             ImageUpload(this.injector, this.viewContainerRef),
@@ -122,13 +121,17 @@ export class DotBlockEditorComponent implements OnInit {
                         break;
                     case 'contentlets':
                         customExtension.push(ContentletBlock(this.injector));
+                        break
+                    case 'dotImage':
+                        customExtension.push(ImageBlock(this.injector));
+                        break
                 }
             });
             starterKitOptions.heading = headingOptions.levels.length ? headingOptions : false;
             return [...customExtension, StarterKit.configure(starterKitOptions)];
         }
 
-        return [StarterKit, ContentletBlock(this.injector), ...defaultExtensions];
+        return [StarterKit, ...defaultExtensions, ImageBlock(this.injector), ContentletBlock(this.injector)];
     }
 
 }
