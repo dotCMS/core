@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { FormGroup } from '@angular/forms';
+import { UntypedFormGroup } from '@angular/forms';
 import { FieldProperty } from '../field-properties.model';
 
 @Component({
@@ -9,5 +9,5 @@ import { FieldProperty } from '../field-properties.model';
 })
 export class NamePropertyComponent {
     property: FieldProperty;
-    group: FormGroup;
+    group: UntypedFormGroup;
 }

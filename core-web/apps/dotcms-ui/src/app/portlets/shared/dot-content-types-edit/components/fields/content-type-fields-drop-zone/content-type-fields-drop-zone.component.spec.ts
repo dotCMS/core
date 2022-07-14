@@ -1,13 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import {
-    waitForAsync,
-    ComponentFixture,
-    fakeAsync,
-    tick,
-    async,
-    TestBed
-} from '@angular/core/testing';
+import { waitForAsync, ComponentFixture, fakeAsync, tick, TestBed } from '@angular/core/testing';
 import { DebugElement, Component, Input, Output, EventEmitter, Injectable } from '@angular/core';
 import { ContentTypeFieldsDropZoneComponent } from '.';
 import { By } from '@angular/platform-browser';

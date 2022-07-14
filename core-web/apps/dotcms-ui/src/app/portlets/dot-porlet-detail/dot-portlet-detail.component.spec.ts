@@ -1,6 +1,6 @@
 import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { DebugElement, Type } from '@angular/core';
+import { DebugElement } from '@angular/core';
 
 import { DotPortletDetailComponent } from './dot-portlet-detail.component';
 import { DotWorkflowTaskModule } from './dot-workflow-task/dot-workflow-task.module';
@@ -102,6 +102,7 @@ describe('DotPortletDetailComponent', () => {
     });
 
     it('should not have dot-workflow-task', () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         spyOnProperty<any>(router, 'parent', 'get').and.returnValue({
             parent: {
                 snapshot: {
@@ -118,6 +119,7 @@ describe('DotPortletDetailComponent', () => {
     });
 
     it('should have dot-workflow-task', () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         spyOnProperty<any>(router, 'parent', 'get').and.returnValue({
             parent: {
                 snapshot: {
@@ -134,6 +136,7 @@ describe('DotPortletDetailComponent', () => {
     });
 
     it('should have dot-contentlets', () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         spyOnProperty<any>(router, 'parent', 'get').and.returnValue({
             parent: {
                 snapshot: {
