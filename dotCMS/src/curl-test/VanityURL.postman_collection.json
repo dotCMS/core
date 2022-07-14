@@ -1,0 +1,129 @@
+{
+	"info": {
+		"_postman_id": "3875c184-d685-419e-9898-2d955324fa1a",
+		"name": "VanityURL",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "4500400"
+	},
+	"item": [
+		{
+			"name": "pre_ImportBundleWithVanityAndPage",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Bundle uploaded sucessfully\", function () {",
+							"    pm.response.to.have.status(200);",
+							"",
+							"    var jsonData = pm.response.json();",
+							"    console.log(jsonData);",
+							"",
+							"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"404bundle.tar.gz\");",
+							"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"type": "text",
+						"value": "application/octet-stream"
+					},
+					{
+						"key": "Content-Disposition",
+						"type": "text",
+						"value": "attachment"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "/Users/danielsilva/Documents/core-release/dotCMS/src/curl-test/resources/VanityURL/404bundle.tar.gz"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/bundle?sync=true",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"bundle"
+					],
+					"query": [
+						{
+							"key": "sync",
+							"value": "true"
+						},
+						{
+							"key": "AUTH_TOKEN",
+							"value": "",
+							"disabled": true
+						}
+					]
+				},
+				"description": "Imports a Bundle that includes:\n\n*   404 page\n*   Vanity URL for 404 page"
+			},
+			"response": []
+		},
+		{
+			"name": "nonExistingURLshouldReturn404",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Should get 404 page\", function () {",
+							"    pm.response.to.have.status(404);",
+							"    var body = pm.response.body;",
+							"",
+							"    pm.expect(pm.response.text(), \"Got wrong page\").to.include(\"Page Not Found\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/thisDoesNotExist",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"thisDoesNotExist"
+					]
+				},
+				"description": "given a request to a non existing url should redirect to a the previously imported 404 page"
+			},
+			"response": []
+		}
+	]
+}
