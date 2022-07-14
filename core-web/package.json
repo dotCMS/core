@@ -41,7 +41,10 @@
     "dep-graph": "nx dep-graph",
     "pretty-quick": "pretty-quick",
     "prepare": "cd .. && node core-web/prepare.js",
-    "test:dotcms-ui": "nx run dotcms-ui:test"
+    "test:dotcms-ui": "nx run dotcms-ui:test",
+    "update": "nx migrate latest",
+    "workspace-generator": "nx workspace-generator",
+    "help": "nx help"
   },
   "private": false,
   "dependencies": {
