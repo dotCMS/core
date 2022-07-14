@@ -13,6 +13,7 @@ import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.Optional;
 import net.bytebuddy.agent.ByteBuddyAgent;
+import org.apache.felix.framework.OSGISystem;
 import org.apache.felix.framework.OSGIUtil;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -98,9 +99,9 @@ public class GenericBundleActivatorTest {
      */
     @Test
     public void test_tika_inits_properly() {
-        BundleContext context = HostActivator.instance().getBundleContext();
+        Bundle[] bundles = OSGISystem.getInstance().getBundles();
 
-        Optional<Bundle> dotTika = Arrays.asList(context.getBundles())
+        Optional<Bundle> dotTika = Arrays.asList(bundles)
                 .stream()
                 .filter(b -> b.getSymbolicName().equals("com.dotcms.tika"))
                 .findFirst();
