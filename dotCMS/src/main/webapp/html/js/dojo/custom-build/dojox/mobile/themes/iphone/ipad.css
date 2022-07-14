@@ -51,6 +51,12 @@
 	margin-top: 30px;
 }
 
+/* dojox.mobile.SearchBox */
+.dj_tablet .mblFilteredRoundRectListSearchBox {
+  padding-left: 30px;
+  padding-right: 30px;
+}
+
 /* dojox.mobile.EdgeToEdgeList */
 /* dojox.mobile.ListItem */
 /* Switch */

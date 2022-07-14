@@ -22,8 +22,9 @@
   line-height: normal;
 }
 .mblListItemSelected {
-  color: white;
+  color: #ffffff;
   background-image: -webkit-gradient(linear, left top, left bottom, from(#048bf4), to(#005ce5));
+  background-image: linear-gradient(to bottom, #048bf4 0%, #005ce5 100%);
 }
 .mblListItemSelected .mblDomButton div {
   border-color: white;
@@ -63,7 +64,9 @@
   margin-bottom: -7px;
   margin-right: 11px;
 }
-.mblListItemRightIcon, .mblListItemRightIcon2, .mblListItemUncheckIcon {
+.mblListItemRightIcon,
+.mblListItemRightIcon2,
+.mblListItemUncheckIcon {
   position: relative;
   float: right;
   line-height: normal;
@@ -108,6 +111,17 @@
   border: 1px solid gray;
   opacity: 0.5;
   -webkit-box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
-  -webkit-border-radius: 0px !important;
+  box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
+  border-radius: 0px !important;
   -moz-border-radius: 0px !important;
+}
+/* iOS 6 specific */
+.dj_ios6 .mblListItemRightText {
+  color: #385487;
+  font-weight: normal;
+}
+.dj_ios6 .mblListItem {
+  /* enables hardware acc. to avoid flickering issues - see #16956 */
+
+  -webkit-perspective: 1000;
 }

@@ -1,12 +1,12 @@
 define(
 "dojox/grid/enhanced/nls/pl/Pagination", ({
-	"descTemplate": "Od ${2} do ${3} z ${1} ${0}",
+	"descTemplate": "${2} - ${3} / ${1}",
 	"firstTip": "Pierwsza strona",
 	"lastTip": "Ostatnia strona",
 	"nextTip": "Następna strona",
 	"prevTip": "Poprzednia strona",
 	"itemTitle": "elementy",
-	"singularItemTitle": "item",
+	"singularItemTitle": "element",
 	"pageStepLabelTemplate": "Strona ${0}",
 	"pageSizeLabelTemplate": "Liczba elementów na stronę: ${0}",
 	"allItemsLabelTemplate": "Wszystkie elementy",
