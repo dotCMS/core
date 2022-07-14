@@ -295,6 +295,6 @@
 </div>
 
 <div id="tailContainer" class="log-files__container" style="display: flex; flex-direction: column;">
-    <iframe id="tailingFrame" src="/html/blank.jsp" style="display:none" class="log-files__iframe"></iframe>
+    <iframe id="tailingFrame" src="/html/blank.jsp" class="log-files__iframe"></iframe>
     <div class="logViewerPrinted" style="flex-grow: 1;"></div>
 </div>

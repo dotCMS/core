@@ -1,25 +1,22 @@
 package com.dotmarketing.servlets.taillog;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.util.regex.Pattern;
-
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.dotcms.repackage.org.apache.commons.io.input.TailerListenerAdapter;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.regex.Pattern;
+import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 public class TailLogServlet extends HttpServlet {
 
@@ -98,7 +95,7 @@ public class TailLogServlet extends HttpServlet {
 				+ "<style type='text/css'>@import '/html/css/dot_admin.css';</style>"
 				+ "<script>"
 				+ "function doS(){"
-				+ "var logEvent=new CustomEvent('logUpdated',{detail:{msg:'log updated'},bubbles:true,cancelable:true});document.body.dispatchEvent(logEvent);"
+				+ "var logEvent=new CustomEvent('logUpdated',{detail:{msg:'log updated'},bubbles:true,cancelable:true});document.body.dispatchEvent(logEvent);console.log('Backend updated', new Date());"
 				+ "}</script></head><body class='tailerBody'>");
 
 		out.flush();
@@ -137,7 +134,9 @@ public class TailLogServlet extends HttpServlet {
                 response.getOutputStream().flush();
                 Thread.sleep(1000);
 			}
+			Logger.warn(this, "Tail Log Servlet Thread is not alive");
 		} catch (Exception e) {
+			Logger.warn(this, "Tail Log Servlet Thread stopped because " + e.getMessage());
 			if (thread != null) {
 				thread.stopTailer();
 			}
