@@ -13,14 +13,18 @@
             "executor": "@nxext/stencil:test",
             "options": {
                 "projectType": "library",
-                "configPath": "libs/dotcms-webcomponents/stencil.config.ts"
+                "configPath": "libs/dotcms-webcomponents/stencil.config.ts",
+                "tsConfig": "libs/dotcms-webcomponents/tsconfig.json",
+                "outputPath": "dist/libs/dotcms-webcomponents"
             }
         },
         "e2e": {
             "executor": "@nxext/stencil:e2e",
             "options": {
                 "projectType": "library",
-                "configPath": "libs/dotcms-webcomponents/stencil.config.ts"
+                "configPath": "libs/dotcms-webcomponents/stencil.config.ts",
+                "tsConfig": "libs/dotcms-webcomponents/tsconfig.json",
+                "outputPath": "dist/libs/dotcms-webcomponents"
             }
         },
         "build": {
