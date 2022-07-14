@@ -36,8 +36,11 @@ function toTitleCase(str) {
 export class DotBlockEditorComponent implements OnInit {
     @Input() lang = DEFAULT_LANG_ID;
     @Input() allowedContentTypes = '';
-    @Input() allowedBlocks = '';
+    @Input() set allowedBlocks(blocks: string) {
+        this._allowedBlocks = ['paragraph', ...blocks.replace(/ /g, '').split(',').filter(Boolean)];
+    }
 
+    _allowedBlocks: string[];
     editor: Editor;
 
     value = ''; // can be HTML or JSON, see https://www.tiptap.dev/api/editor#content
@@ -45,11 +48,17 @@ export class DotBlockEditorComponent implements OnInit {
     constructor(private injector: Injector, public viewContainerRef: ViewContainerRef) {}
 
     ngOnInit() {
+        this.editor = new Editor({
+            extensions: this.setEditorExtensions()
+        });
+    }
+
+    private setEditorExtensions(): Extensions {
         const defaultExtensions: Extensions = [
             DotConfigExtension({
                 lang: this.lang,
                 allowedContentTypes: this.allowedContentTypes,
-                allowedBlocks: this.setAllowedBlocks()
+                allowedBlocks: this._allowedBlocks
             }),
             ImageBlock(this.injector),
             ActionsMenu(this.viewContainerRef),
@@ -72,13 +81,6 @@ export class DotBlockEditorComponent implements OnInit {
                 }
             })
         ];
-
-        this.editor = new Editor({
-            extensions: this.setEditorExtensions(defaultExtensions)
-        });
-    }
-
-    private setEditorExtensions(defaultExtensions: Extensions): Extensions {
         if (this.allowedBlocks) {
             const allowedArray = this.allowedBlocks.split(',');
             console.log(allowedArray);
@@ -129,7 +131,4 @@ export class DotBlockEditorComponent implements OnInit {
         return [StarterKit, ContentletBlock(this.injector), ...defaultExtensions];
     }
 
-    private setAllowedBlocks(): string[] {
-        return ['paragraph', ...this.allowedBlocks.replace(/ /g, '').split(',').filter(Boolean)];
-    }
 }
