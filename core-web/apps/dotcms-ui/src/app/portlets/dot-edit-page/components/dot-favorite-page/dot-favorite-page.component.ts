@@ -2,7 +2,7 @@ import { Observable, Subject, throwError } from 'rxjs';
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { finalize, map, switchMap, take, takeUntil } from 'rxjs/operators';
+import { finalize, map, startWith, switchMap, take, takeUntil } from 'rxjs/operators';
 import { DotCMSTempFile, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
 import { DotWorkflowActionsFireService } from '@dotcms/app/api/services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
@@ -11,22 +11,16 @@ import { DotRole } from '@dotcms/app/shared/models/dot-role/dot-role.model';
 import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotPageRenderState } from '../../shared/models';
 
 export interface DotFavoritePage {
-    isAdmin?: boolean;
-    thumbnail?: Blob;
-    title: string;
-    url: string;
     order: number;
-    deviceHeight?: number;
-    deviceWidth?: number;
     pageRenderedHtml?: string;
-    deviceId?: string;
-    hostId?: string;
-    languageId?: string;
+    pageState: DotPageRenderState;
+    thumbnail?: Blob;
 }
 
-const CMS_OWNER_ROLE_ID = '6b1fa42f-8729-4625-80d1-17e4ef691ce7';
+export const CMS_OWNER_ROLE_ID = '6b1fa42f-8729-4625-80d1-17e4ef691ce7';
 
 @Component({
     selector: 'dot-favorite-page',
@@ -43,8 +37,10 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
     isAdmin: boolean;
 
     imgRatio43 = 1.333;
-    imgWidth = this.config.data.page.deviceWidth || 1024;
-    imgHeight = this.config.data.page.deviceHeight || (this.config.data.page.deviceWidth || 1024) / this.imgRatio43;
+    imgWidth = this.config.data.page.pageState.params.viewAs.device?.cssWidth || 1024;
+    imgHeight =
+        this.config.data.page.pageState.params.viewAs.device?.cssHeight ||
+        (this.config.data.page.pageState.params.viewAs.device?.cssWidth || 1024) / this.imgRatio43;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -62,9 +58,7 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         const { page }: { page: DotFavoritePage } = this.config.data;
         this.pageRenderedHtml = page.pageRenderedHtml;
-        this.isAdmin = page.isAdmin;
-
-        console.log('****page', page)
+        this.isAdmin = page.pageState.user.admin;
 
         this.dotRolesService
             .search()
@@ -75,13 +69,17 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
             });
 
         const url =
-            `${page.url}?language_id=${page.languageId}` +
-            (page.deviceId ? `&device_id=${page.deviceId}` : '') +
-            (page.hostId ? `&host_id=${page.hostId}` : '');
+            `${page.pageState.params.page?.pageURI}?language_id=${page.pageState.params.viewAs.language.id}` +
+            (page.pageState.params.viewAs.device?.identifier
+                ? `&device_id=${page.pageState.params.viewAs.device?.identifier}`
+                : '') +
+            (page.pageState.params.site?.identifier
+                ? `&host_id=${page.pageState.params.site?.identifier}`
+                : '');
 
         const formGroupAttrs = {
-            thumbnail: ['', Validators.required],
-            title: [page.title, Validators.required],
+            thumbnail: [null, Validators.required],
+            title: [page.pageState.params.page?.title, Validators.required],
             url: [url, Validators.required],
             order: [page.order, Validators.required],
             permissions: []
@@ -93,7 +91,8 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
             takeUntil(this.destroy$),
             map(() => {
                 return this.form.valid;
-            })
+            }),
+            startWith(false)
         );
 
         // This is needed to wait until the Web Component is rendered

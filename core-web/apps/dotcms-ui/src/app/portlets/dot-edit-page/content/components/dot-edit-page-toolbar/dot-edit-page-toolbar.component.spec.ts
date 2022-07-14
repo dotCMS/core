@@ -54,6 +54,7 @@ import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
 import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotFormatDateServiceMock } from '@dotcms/app/test/format-date-service.mock';
 import { DialogService } from 'primeng/dynamicdialog';
+import { DotFavoritePageComponent } from '../../../components/dot-favorite-page/dot-favorite-page.component';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -82,7 +83,7 @@ class MockDotLicenseService {
     }
 }
 
-fdescribe('DotEditPageToolbarComponent', () => {
+describe('DotEditPageToolbarComponent', () => {
     let fixtureHost: ComponentFixture<TestHostComponent>;
     let componentHost: TestHostComponent;
     let component: DotEditPageToolbarComponent;
@@ -90,6 +91,7 @@ fdescribe('DotEditPageToolbarComponent', () => {
     let deHost: DebugElement;
     let dotLicenseService: DotLicenseService;
     let dotMessageDisplayService: DotMessageDisplayService;
+    let dotDialogService: DialogService;
 
     beforeEach(
         waitForAsync(() => {
@@ -121,7 +123,8 @@ fdescribe('DotEditPageToolbarComponent', () => {
                         provide: DotMessageService,
                         useValue: new MockDotMessageService({
                             'dot.common.whats.changed': 'Whats',
-                            'dot.common.cancel': 'Cancel'
+                            'dot.common.cancel': 'Cancel',
+                            'favoritePage.dialog.header.add.page': 'Add Favorite Page'
                         })
                     },
                     {
@@ -170,6 +173,7 @@ fdescribe('DotEditPageToolbarComponent', () => {
 
         dotLicenseService = de.injector.get(DotLicenseService);
         dotMessageDisplayService = de.injector.get(DotMessageDisplayService);
+        dotDialogService = de.injector.get(DialogService);
     });
 
     describe('elements', () => {
@@ -309,11 +313,31 @@ fdescribe('DotEditPageToolbarComponent', () => {
         beforeEach(() => {
             spyOn(component.whatschange, 'emit');
             spyOn(dotMessageDisplayService, 'push');
+            spyOn(dotDialogService, 'open');
 
             componentHost.pageState.state.mode = DotPageMode.PREVIEW;
             delete componentHost.pageState.viewAs.persona;
             fixtureHost.detectChanges();
             whatsChangedElem = de.query(By.css('.dot-edit__what-changed-button'));
+        });
+
+        it('should instantiate dialog with DotFavoritePageComponent', () => {
+            de.query(By.css('[data-testId="addFavoritePageButton"]')).nativeElement.click();
+            expect(dotDialogService.open).toHaveBeenCalledWith(DotFavoritePageComponent, {
+                header: 'Add Favorite Page',
+                width: '40rem',
+                data: {
+                    page: {
+                        pageState: mockDotRenderedPageState,
+                        order: 1,
+                        pageRenderedHtml: component.pageRenderedHtml || null
+                    }
+                }
+            });
+        });
+
+        it('should store RenderedHTML value if PREVIEW MODE', () => {
+            expect(component.pageRenderedHtml).toBe(mockDotRenderedPageState.page.rendered);
         });
 
         it("should emit what's change in true", () => {

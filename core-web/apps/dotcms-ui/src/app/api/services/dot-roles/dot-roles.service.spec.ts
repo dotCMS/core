@@ -63,6 +63,17 @@ describe('DotRolesService', () => {
         req.flush({ entity: mockRoles });
     });
 
+    it('should search Roles', () => {
+        const url = '/api/v1/roles/_search';
+        dotRolesService.search().subscribe((res) => {
+            expect(res).toEqual(mockProcessedRoles);
+        });
+
+        const req = httpMock.expectOne(url);
+        expect(req.request.method).toBe('GET');
+        req.flush({ entity: mockProcessedRoles });
+    });
+
     afterEach(() => {
         httpMock.verify();
     });

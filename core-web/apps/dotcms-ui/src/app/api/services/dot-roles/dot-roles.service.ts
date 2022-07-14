@@ -60,6 +60,8 @@ export class DotRolesService {
                         .map((role: DotRole) => {
                             if (role.roleKey === CURRENT_USER_KEY) {
                                 role.name = this.dotMessageService.get('current-user');
+                            } else if (role.user) {
+                                role.name = `${role.name} (${this.dotMessageService.get('user')})`;
                             }
                             return role;
                         })

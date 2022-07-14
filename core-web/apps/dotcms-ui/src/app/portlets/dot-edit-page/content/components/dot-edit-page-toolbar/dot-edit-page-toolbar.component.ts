@@ -13,10 +13,7 @@ import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models';
 import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DialogService } from 'primeng/dynamicdialog';
-import {
-    DotFavoritePage,
-    DotFavoritePageComponent
-} from '../../../components/dot-favorite-page/dot-favorite-page.component';
+import { DotFavoritePageComponent } from '../../../components/dot-favorite-page/dot-favorite-page.component';
 import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
 @Component({
     selector: 'dot-edit-page-toolbar',
@@ -78,27 +75,18 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
      * @memberof DotEditPageToolbarComponent
      */
     addFavoritePage(): void {
-        console.log('***this.pageState', this.pageState)
         this.dialogService.open(DotFavoritePageComponent, {
             header: this.dotMessageService.get('favoritePage.dialog.header.add.page'),
             width: '40rem',
             data: {
                 page: {
-                    isAdmin: this.pageState.user.admin || null,
-                    title: this.pageState.params.page?.title || null,
-                    url: this.pageState.params.page?.pageURI || null,
                     order: 1,
-                    deviceHeight: this.pageState.params.viewAs.device?.cssHeight || null,
-                    deviceWidth: this.pageState.params.viewAs.device?.cssWidth || null,
-                    pageRenderedHtml: this.pageRenderedHtml || null,
-                    deviceId: this.pageState.params.viewAs.device?.identifier || null,
-                    languageId: this.pageState.params.viewAs.language.id || null,
-                    hostId: this.pageState.params.site?.identifier || null
-
-                },
-                onSave: (value: DotFavoritePage) => {
-                    console.log('*** DotFavoritePageComponent Saved!', value);
+                    pageState: this.pageState,
+                    pageRenderedHtml: this.pageRenderedHtml || null
                 }
+                // onSave: (value: DotFavoritePage) => {
+                // console.log('*** DotFavoritePageComponent Saved!', value);
+                // }
             }
         });
     }
