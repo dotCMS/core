@@ -6,7 +6,7 @@ import { pluck } from 'rxjs/operators';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { ContentletFilters } from '../../../models/dot-bubble-menu.model';
+import { ContentletFilters, DEFAULT_LANG_ID } from '../../../models/dot-bubble-menu.model';
 
 @Injectable()
 export class SuggestionsService {
@@ -47,13 +47,21 @@ export class SuggestionsService {
             .pipe(pluck('entity', 'jsonObjectView', 'contentlets'));
     }
 
+    /**
+     *
+     * Get contentlets filtered by urlMap
+     * @param {ContentletFilters}
+     * { filter, currentLanguage = 1 }
+     * @return {*}  {Observable<DotCMSContentlet[]>}
+     * @memberof SuggestionsService
+     */
     getContentletsUrlMap({
-        query,
-        currentLanguage = '1'
-    }: Record<string, string>): Observable<DotCMSContentlet[]> {
+        filter,
+        currentLanguage = DEFAULT_LANG_ID
+    }: ContentletFilters): Observable<DotCMSContentlet[]> {
         return this.http
             .post('/api/content/_search', {
-                query: `+languageId:${currentLanguage} +deleted:false +working:true +(urlmap:*${query}* OR +(basetype:5 AND path:*${query}*))`,
+                query: `+languageId:${currentLanguage} +deleted:false +working:true +(urlmap:*${filter}* OR +(basetype:5 AND path:*${filter}*))`,
                 sort: 'modDate desc',
                 offset: 0,
                 limit: 40

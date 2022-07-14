@@ -4,7 +4,10 @@ import { EditorView } from 'prosemirror-view';
 import tippy, { Instance, Props } from 'tippy.js';
 
 import { ComponentRef } from '@angular/core';
-import { BubbleMenuLinkFormComponent } from '../extensions/components/bubble-menu-link-form/bubble-menu-link-form.component';
+import {
+    BubbleMenuLinkFormComponent,
+    blockLinkMenuForm
+} from '../extensions/components/bubble-menu-link-form/bubble-menu-link-form.component';
 
 // Interface
 import { PluginStorage } from '../extensions/bubble-link-form.extension';
@@ -46,7 +49,7 @@ export class BubbleLinkFormView {
     private scrollElementMap = {
         'editor-suggestion-list': true,
         'editor-input-link': true
-    }
+    };
 
     constructor({
         editor,
@@ -162,7 +165,7 @@ export class BubbleLinkFormView {
         return isOverflow || isNodeImage ? bubbleMenuRect : nodeClientRect;
     }
 
-    addLink({link, blank = false}) {
+    addLink({ link, blank = false }) {
         if (this.isDotImageNode()) {
             this.editor.commands.setImageLink({ href: link });
         } else {
@@ -196,10 +199,10 @@ export class BubbleLinkFormView {
         this.component.changeDetectorRef.detectChanges();
     }
 
-    getLinkProps(): Record<string, unknown> {
+    getLinkProps(): blockLinkMenuForm {
         const { href = '', target } = this.editor.isActive('link')
-        ? this.editor.getAttributes('link')
-        : this.editor.getAttributes('dotImage');
+            ? this.editor.getAttributes('link')
+            : this.editor.getAttributes('dotImage');
         const link = href || this.getLinkSelect();
         const blank = target === '_blank';
         return { link, blank };
@@ -237,10 +240,10 @@ export class BubbleLinkFormView {
     }
 
     private hanlderScroll(e: Event) {
-       const element = e.target as HTMLElement;
+        const element = e.target as HTMLElement;
         // When the text is too long, the input fires the `scroll` event.
         // When that happens, we do not want to hide the tippy.
-        if(this.scrollElementMap[element.id]) {
+        if (this.scrollElementMap[element.id]) {
             return;
         }
         this.tippy?.hide();
