@@ -53,6 +53,7 @@ import { ConfirmationService } from 'primeng/api';
 import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
 import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotFormatDateServiceMock } from '@dotcms/app/test/format-date-service.mock';
+import { DialogService } from 'primeng/dynamicdialog';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -62,6 +63,18 @@ class TestHostComponent {
     @Input() pageState: DotPageRenderState = mockDotRenderedPageState;
 }
 
+@Component({
+    selector: 'dot-icon-button',
+    template: ''
+})
+class MockDotIconButtonComponent {}
+
+@Component({
+    selector: 'dot-global-message',
+    template: ''
+})
+class MockGlobalMessageComponent {}
+
 @Injectable()
 class MockDotLicenseService {
     isEnterprise(): Observable<boolean> {
@@ -69,7 +82,7 @@ class MockDotLicenseService {
     }
 }
 
-describe('DotEditPageToolbarComponent', () => {
+fdescribe('DotEditPageToolbarComponent', () => {
     let fixtureHost: ComponentFixture<TestHostComponent>;
     let componentHost: TestHostComponent;
     let component: DotEditPageToolbarComponent;
@@ -81,7 +94,12 @@ describe('DotEditPageToolbarComponent', () => {
     beforeEach(
         waitForAsync(() => {
             TestBed.configureTestingModule({
-                declarations: [TestHostComponent, DotEditPageToolbarComponent],
+                declarations: [
+                    TestHostComponent,
+                    DotEditPageToolbarComponent,
+                    MockDotIconButtonComponent,
+                    MockGlobalMessageComponent
+                ],
                 imports: [
                     HttpClientTestingModule,
                     ButtonModule,
@@ -135,7 +153,8 @@ describe('DotEditPageToolbarComponent', () => {
                     DotGlobalMessageService,
                     ApiRoot,
                     UserModel,
-                    DotIframeService
+                    DotIframeService,
+                    DialogService
                 ]
             });
         })

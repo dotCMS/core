@@ -80,6 +80,7 @@ import { DotGenerateSecurePasswordService } from '@services/dot-generate-secure-
 import { DotPropertiesService } from '@services/dot-properties/dot-properties.service';
 import { PageModelChangeEventType } from './services/dot-edit-content-html/models';
 import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
+import { mockDotLanguage } from '@dotcms/app/test/dot-language.mock';
 
 @Component({
     selector: 'dot-global-message',
@@ -653,7 +654,7 @@ describe('DotEditContentComponent', () => {
                             },
                             viewAs: {
                                 mode: DotPageMode.EDIT,
-                                language: 1
+                                language: mockDotLanguage
                             }
                         })
                     );
@@ -696,7 +697,7 @@ describe('DotEditContentComponent', () => {
                             },
                             viewAs: {
                                 mode: DotPageMode.EDIT,
-                                language: 1
+                                language: mockDotLanguage
                             }
                         })
                     );
@@ -725,7 +726,7 @@ describe('DotEditContentComponent', () => {
                             },
                             viewAs: {
                                 mode: DotPageMode.EDIT,
-                                language: 1
+                                language: mockDotLanguage
                             }
                         })
                     );
@@ -758,7 +759,7 @@ describe('DotEditContentComponent', () => {
                             },
                             viewAs: {
                                 mode: DotPageMode.EDIT,
-                                language: 1
+                                language: mockDotLanguage
                             }
                         })
                     );
@@ -1388,7 +1389,7 @@ describe('DotEditContentComponent', () => {
                     },
                     viewAs: {
                         mode: DotPageMode.EDIT,
-                        language: 1
+                        language: mockDotLanguage
                     },
                     containers: {
                         ...mockDotRenderedPage().containers,
