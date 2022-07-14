@@ -203,29 +203,32 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
 
     return Extension.create<FloatingMenuOptions>({
         name: 'actionsMenu',
-        defaultOptions: {
-            pluginKey: 'actionsMenu',
-            element: null,
-            suggestion: {
-                char: '/',
-                pluginKey: suggestionKey,
-                allowSpaces: true,
-                startOfLine: true,
-                render: () => {
-                    return {
-                        onStart,
-                        onKeyDown,
-                        onExit
-                    };
-                },
-                items: ({ query }) => {
-                    if (suggestionsComponent) {
-                        suggestionsComponent.instance.filterItems(query);
+
+        addOptions() {
+            return {
+                pluginKey: 'actionsMenu',
+                element: null,
+                suggestion: {
+                    char: '/',
+                    pluginKey: suggestionKey,
+                    allowSpaces: true,
+                    startOfLine: true,
+                    render: () => {
+                        return {
+                            onStart,
+                            onKeyDown,
+                            onExit
+                        };
+                    },
+                    items: ({ query }) => {
+                        if (suggestionsComponent) {
+                            suggestionsComponent.instance.filterItems(query);
+                        }
+                        // suggestions plugin need to return something,
+                        // but we are using the angular suggestionsComponent
+                        // https://tiptap.dev/api/utilities/suggestion
+                        return [];
                     }
-                    // suggestions plugin need to return something,
-                    // but we are using the angular suggestionsComponent
-                    // https://tiptap.dev/api/utilities/suggestion
-                    return [];
                 }
             }
         },
