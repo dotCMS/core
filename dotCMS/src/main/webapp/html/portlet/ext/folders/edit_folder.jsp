@@ -44,20 +44,16 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 
 		var form = document.getElementById(this.formName);
 		form.cmd.value = '<%=com.liferay.portal.util.Constants.ADD%>';
-		val = form.title.value.replace(" ", "");
-		if(val == "" && form.showOnMenu.checked){
-			alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.folder.menu.items")) %>');
-			return false;
-		}
 		if (document.getElementById("titleField")) {
 			var name = document.getElementById("titleField").value;
-			if(typeof String.prototype.trim !== 'function')
+			if(typeof String.prototype.trim !== 'function') {
 				document.getElementById("titleField").value = name.replace(/^\s+|\s+$/g, '');
-			else
+			} else {
 				document.getElementById("titleField").value = name.trim();
-
+			}
 			if (document.getElementById("titleField").value == ""){
 				alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.folder.name.required.url")) %>');
+				dijit.byId('processingDialog').hide();
 				return false;
 			}
 		}
