@@ -4,7 +4,7 @@ import { Injectable, DebugElement } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { DotWorkflowTaskComponent } from './dot-workflow-task.component';
 import { DotWorkflowTaskDetailService } from '@components/dot-workflow-task-detail/services/dot-workflow-task-detail.service';
-import { ComponentFixture, async, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotWorkflowTaskDetailModule } from '@components/dot-workflow-task-detail/dot-workflow-task-detail.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
