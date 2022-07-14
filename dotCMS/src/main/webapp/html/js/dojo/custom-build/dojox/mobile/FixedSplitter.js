@@ -6,8 +6,10 @@ define("dojox/mobile/FixedSplitter", [
 	"dojo/dom-geometry",
 	"dijit/_Contained",
 	"dijit/_Container",
-	"dijit/_WidgetBase"
-], function(array, declare, win, domClass, domGeometry, Contained, Container, WidgetBase){
+	"dijit/_WidgetBase",
+	"dojo/has",
+	"./common" // to ensure proper relayout when resizing/switching orientation (#18684)
+], function(array, declare, win, domClass, domGeometry, Contained, Container, WidgetBase, has){
 
 	// module:
 	//		dojox/mobile/FixedSplitter
@@ -26,9 +28,8 @@ define("dojox/mobile/FixedSplitter", [
 		//		specify a border of a child DOM node with CSS.
 		//
 		//		FixedSplitter has no knowledge of its child widgets.
-		//		dojox/mobile/Container (formerly known as FixedSplitterPane),
-		//		dojox/mobile/Pane, or dojox/mobile/ContentPane can be used as a
-		//		child widget of FixedSplitter.
+		//		dojox/mobile/Container, dojox/mobile/Pane, or dojox/mobile/ContentPane 
+		//		can be used as a child widget of FixedSplitter.
 		//
 		//		- Use dojox/mobile/Container if your content consists of ONLY
 		//		  Dojo widgets.
@@ -80,9 +81,9 @@ define("dojox/mobile/FixedSplitter", [
 			if(!parent || !parent.resize){ // top level widget
 				var _this = this;
 				f = function(){
-					setTimeout(function(){
+					_this.defer(function(){
 						_this.resize();
-					}, 0);
+					});
 				};
 			}
 
@@ -99,6 +100,7 @@ define("dojox/mobile/FixedSplitter", [
 		},
 
 		resize: function(){
+			var paddingTop = domGeometry.getPadExtents(this.domNode).t;
 			var wh = this.orientation === "H" ? "w" : "h", // width/height
 				tl = this.orientation === "H" ? "l" : "t", // top/left
 				props1 = {}, props2 = {},
@@ -121,17 +123,44 @@ define("dojox/mobile/FixedSplitter", [
 				}
 			}
 			var l = (h || domGeometry.getMarginBox(this.domNode)[wh]) - total;
+			if(this.orientation === "V"){
+				l -= paddingTop;
+			}
 			props2[wh] = a[idx] = l;
 			c = children[idx];
 			domGeometry.setMarginBox(c, props2);
 			c.style[this.orientation === "H" ? "height" : "width"] = "";
+			// dojox.mobile mirroring support
+			if(has("dojo-bidi") && (this.orientation=="H" && !this.isLeftToRight())){
+				offset = l;
+				for(i = children.length - 1; i >= 0; i--){
+					c = children[i];
+					props1[tl] = l - offset;
+					domGeometry.setMarginBox(c, props1);
+					if(this.orientation === "H"){
+						c.style.top = paddingTop +"px";
+					}else{
+						c.style.left = "";
+					}
+					offset -= a[i];
+				}
+			}else{
+				if(this.orientation === "V"){
+					offset = offset ? offset + paddingTop : paddingTop;
+				}
 
-			for(i = 0; i < children.length; i++){
-				c = children[i];
-				props1[tl] = offset;
-				domGeometry.setMarginBox(c, props1);
-				c.style[this.orientation === "H" ? "top" : "left"] = "";
-				offset += a[i];
+				for(i = 0; i < children.length; i++){
+					c = children[i];
+					props1[tl] = offset;
+
+					domGeometry.setMarginBox(c, props1);
+					if(this.orientation === "H"){
+						c.style.top = paddingTop +"px";
+					}else{
+						c.style.left = "";
+					}
+					offset += a[i];
+				}
 			}
 
 			array.forEach(this.getChildren(), function(child){

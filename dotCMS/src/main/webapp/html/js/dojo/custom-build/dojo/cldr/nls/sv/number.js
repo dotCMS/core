@@ -2,13 +2,13 @@ define(
 "dojo/cldr/nls/sv/number", //begin v1.x content
 {
 	"scientificFormat": "#E0",
-	"currencyDecimal": ":",
 	"infinity": "∞",
+	"superscriptingExponent": "×",
 	"list": ";",
 	"percentSign": "%",
 	"minusSign": "−",
-	"decimalFormat-short": "000 bn",
-	"nan": "¤¤¤",
+	"decimalFormat-short": "000 bn",
+	"nan": "NaN",
 	"plusSign": "+",
 	"currencyFormat": "#,##0.00 ¤",
 	"perMille": "‰",
@@ -16,7 +16,8 @@ define(
 	"percentFormat": "#,##0 %",
 	"decimalFormat-long": "000 biljoner",
 	"decimalFormat": "#,##0.###",
-	"currencyGroup": ".",
+	"currencyFormat-short": "000 bn ¤",
+	"timeSeparator": ".",
 	"decimal": ",",
 	"exponential": "×10^"
 }

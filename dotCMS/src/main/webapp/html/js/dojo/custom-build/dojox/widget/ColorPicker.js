@@ -99,15 +99,15 @@ define("dojox/widget/ColorPicker", [
 		//		to cause the points to adjust and the values to reflect the current color.
 		value: "#ffffff",
 		
-		_underlay: kernel.moduleUrl("dojox.widget","ColorPicker/images/underlay.png"),
+		_underlay: require.toUrl("dojox/widget/ColorPicker/images/underlay.png"),
 
-		_hueUnderlay: kernel.moduleUrl("dojox.widget","ColorPicker/images/hue.png"),
+		_hueUnderlay: require.toUrl("dojox/widget/ColorPicker/images/hue.png"),
 
-		_pickerPointer: kernel.moduleUrl("dojox.widget","ColorPicker/images/pickerPointer.png"),
+		_pickerPointer: require.toUrl("dojox/widget/ColorPicker/images/pickerPointer.png"),
 
-		_huePickerPointer: kernel.moduleUrl("dojox.widget","ColorPicker/images/hueHandle.png"),
+		_huePickerPointer: require.toUrl("dojox/widget/ColorPicker/images/hueHandle.png"),
 
-		_huePickerPointerAlly: kernel.moduleUrl("dojox.widget","ColorPicker/images/hueHandleA11y.png"),
+		_huePickerPointerAlly: require.toUrl("dojox/widget/ColorPicker/images/hueHandleA11y.png"),
 
 		templateString: template,
 
@@ -214,9 +214,9 @@ define("dojox/widget/ColorPicker", [
 			}, this, lang.hitch(this, this._updateCursorNode), 25, 25));
 		},
 		
-		_setValueAttr: function(value){
+		_setValueAttr: function(value, fireOnChange){
 			if(!this._started){ return; }
-			this.setColor(value, true);
+			this.setColor(value, fireOnChange);
 		},
 		
 		setColor: function(/* String */col, force){
@@ -231,7 +231,7 @@ define("dojox/widget/ColorPicker", [
 		},
 		
 		_setTimer: function(/* dojo/dnd/Mover */mover){
-			if(mover.node != this.cursorNode){ return; }
+			if(mover.node != this.cursorNode && mover.node != this.hueCursorNode){ return; }
 			// FIXME: should I assume this? focus on mouse down so on mouse up
 			FocusManager.focus(mover.node);
 			DOM.setSelectable(this.domNode,false);
@@ -348,7 +348,7 @@ define("dojox/widget/ColorPicker", [
 			}
 		},
 
-		_updateColor: function(){
+		_updateColor: function(fireChange){
 			// summary:
 			//		update the previewNode color, and input values [optional]
 			
@@ -364,7 +364,7 @@ define("dojox/widget/ColorPicker", [
 			;
 			
 			this._updateColorInputs(col);
-			this._updateValue(col, true);
+			this._updateValue(col, fireChange);
 			
 			// update hue, not all the pickers
 			if(h!=this._hue){
@@ -500,8 +500,11 @@ define("dojox/widget/ColorPicker", [
 		_setHuePoint: function(/* Event */evt){
 			// summary:
 			//		set the hue picker handle on relative y coordinates
+
+			//#13268 Fix for IE and Edge, as they don't support evt.layerX/Y
 			var selCenter = this.PICKER_HUE_SELECTOR_H/2;
-			var ypos = evt.layerY - selCenter;
+			var ypos = evt.layerY || (evt.y - evt.target.getBoundingClientRect().top);
+			ypos -= selCenter;
 			if(this.animatePoint){
 				fx.slideTo({
 					node: this.hueCursorNode,
@@ -512,7 +515,7 @@ define("dojox/widget/ColorPicker", [
 				}).play();
 			}else{
 				html.style(this.hueCursorNode, "top", ypos + "px");
-				this._updateColor(false);
+				this._updateColor(true);
 			}
 		},
 		
@@ -523,8 +526,13 @@ define("dojox/widget/ColorPicker", [
 			//	evt.preventDefault();
 			var satSelCenterH = this.PICKER_SAT_SELECTOR_H/2;
 			var satSelCenterW = this.PICKER_SAT_SELECTOR_W/2;
-			var newTop = evt.layerY - satSelCenterH;
-			var newLeft = evt.layerX - satSelCenterW;
+
+			//#13268 Fix for IE and Edge, as they don't support evt.layerX/Y
+
+			var newTop = evt.layerY || (evt.y - evt.target.getBoundingClientRect().top);
+			newTop -= satSelCenterH;
+			var newLeft = evt.layerX || (evt.x - evt.target.getBoundingClientRect().left);
+			newLeft -= satSelCenterW;
 			
 			if(evt){ FocusManager.focus(evt.target); }
 
@@ -541,7 +549,7 @@ define("dojox/widget/ColorPicker", [
 					left: newLeft + "px",
 					top: newTop + "px"
 				});
-				this._updateColor(false);
+				this._updateColor(true);
 			}
 		},
 		

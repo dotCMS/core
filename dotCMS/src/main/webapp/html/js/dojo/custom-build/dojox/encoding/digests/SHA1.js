@@ -1,5 +1,4 @@
-define("dojox/encoding/digests/SHA1", ["./_base"], function(dxd){
-
+define("dojox/encoding/digests/SHA1", ["./_base"], function(base){
 /*
  * A port of Paul Johnstone's SHA1 implementation
  *
@@ -33,14 +32,14 @@ define("dojox/encoding/digests/SHA1", ["./_base"], function(dxd){
 			for(var j=0;j<80;j++){
 				if(j<16){ w[j]=x[i+j]; }
 				else { w[j]=R(w[j-3]^w[j-8]^w[j-14]^w[j-16],1); }
-				var t = dxd.addWords(dxd.addWords(R(a,5),FT(j,b,c,d)),dxd.addWords(dxd.addWords(e,w[j]),KT(j)));
+				var t = base.addWords(base.addWords(R(a,5),FT(j,b,c,d)),base.addWords(base.addWords(e,w[j]),KT(j)));
 				e=d; d=c; c=R(b,30); b=a; a=t;
 			}
-			a=dxd.addWords(a,olda);
-			b=dxd.addWords(b,oldb);
-			c=dxd.addWords(c,oldc);
-			d=dxd.addWords(d,oldd);
-			e=dxd.addWords(e,olde);
+			a=base.addWords(a,olda);
+			b=base.addWords(b,oldb);
+			c=base.addWords(c,oldc);
+			d=base.addWords(d,oldd);
+			e=base.addWords(e,olde);
 		}
 		return [a, b, c, d, e];
 	}
@@ -103,41 +102,19 @@ define("dojox/encoding/digests/SHA1", ["./_base"], function(dxd){
 	};
 
 	//	public function
-	dxd.SHA1=function(/* String */data, /* dojox.encoding.digests.outputTypes? */outputType){
+	base.SHA1=function(/* String */data, /* dojox.encoding.digests.outputTypes? */outputType){
 		// summary:
 		//		Computes the SHA1 digest of the data, and returns the result according to output type.
-		var out=outputType||dxd.outputTypes.Base64;
+		var out=outputType||base.outputTypes.Base64;
 		var wa=core(toWord(data), data.length*chrsz);
 		switch(out){
-			case dxd.outputTypes.Raw:{
+			case base.outputTypes.Raw:{
 				return wa;	//	word[]
 			}
-			case dxd.outputTypes.Hex:{
+			case base.outputTypes.Hex:{
 				return toHex(wa);	//	string
 			}
-			case dxd.outputTypes.String:{
-				return _toString(wa);	//	string
-			}
-			default:{
-				return toBase64(wa);	//	string
-			}
-		}
-	}
-
-	//	make this private, for later use with a generic HMAC calculator.
-	dxd.SHA1._hmac=function(/* string */data, /* string */key, /* dojox.encoding.digests.outputTypes? */outputType){
-		// summary:
-		//		computes the digest of data, and returns the result according to type outputType
-		var out=outputType || dxd.outputTypes.Base64;
-		var wa=hmac(data, key);
-		switch(out){
-			case dxd.outputTypes.Raw:{
-				return wa;	//	word[]
-			}
-			case dxd.outputTypes.Hex:{
-				return toHex(wa);	//	string
-			}
-			case dxd.outputTypes.String:{
+			case base.outputTypes.String:{
 				return _toString(wa);	//	string
 			}
 			default:{
@@ -146,5 +123,27 @@ define("dojox/encoding/digests/SHA1", ["./_base"], function(dxd){
 		}
 	};
 
-	return dxd.SHA1;
+	//	make this private, for later use with a generic HMAC calculator.
+	base.SHA1._hmac=function(/* string */data, /* string */key, /* dojox.encoding.digests.outputTypes? */outputType){
+		// summary:
+		//		computes the digest of data, and returns the result according to type outputType
+		var out=outputType || base.outputTypes.Base64;
+		var wa=hmac(data, key);
+		switch(out){
+			case base.outputTypes.Raw:{
+				return wa;	//	word[]
+			}
+			case base.outputTypes.Hex:{
+				return toHex(wa);	//	string
+			}
+			case base.outputTypes.String:{
+				return _toString(wa);	//	string
+			}
+			default:{
+				return toBase64(wa);	//	string
+			}
+		}
+	};
+
+	return base.SHA1;
 });
