@@ -7,6 +7,27 @@
     padding: 0.5rem 0;
     background: #ffffff;
     font-family: "Roboto", Helvetica, sans-serif, Arial;
+
+    &.link-suggestions ::ng-deep {
+        width: 100%;
+        box-shadow: none;
+        padding: 0;
+
+        .suggestion-list-container {
+            max-height: 20rem;
+        }
+
+        dotcms-suggestions-list-item {
+            padding: 8px;
+
+            dot-contentlet-thumbnail,
+            .icon-wrapper {
+                flex-basis: 64px;
+                height: 64px;
+                width: 64px;
+            }
+        }
+    }
 }
 
 h3 {

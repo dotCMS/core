@@ -1,0 +1,10 @@
+<div *ngIf="link.length">
+    <div class="form-actions">
+        <button class="btn btn-copy" (click)="copyLink()">
+            COPY LINK
+        </button>
+        <button class="btn btn-remove" (click)="removeLink.emit(true)">
+            REMOVE LINK
+        </button>
+    </div>
+</div>

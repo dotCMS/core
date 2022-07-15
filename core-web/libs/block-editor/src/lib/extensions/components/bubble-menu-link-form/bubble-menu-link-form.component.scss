@@ -1,33 +1,5 @@
 @use "libs/dot-primeng-theme-styles/src/scss/variables" as *;
 
-// TODO: REMOVE find a better way to edit styles from the father component
-:host ::ng-deep {
-    dotcms-suggestions.suggestions-styles {
-        display: block;
-        width: 100%;
-        box-shadow: none;
-        padding: 0;
-        font-family: "Roboto", Helvetica, sans-serif, Arial;
-        align-items: flex-start;
-        .suggestion-list-container {
-            max-height: 280px;
-        }
-    
-        dotcms-suggestions-list-item {
-            padding: 8px;
-            .icon-wrapper {
-                flex-basis: 64px;
-                height: 64px;
-                width: 64px;          
-                dot-contentlet-thumbnail {
-                    width: 64px;
-                    height: 64px;
-                }
-            }
-        }
-    }
-}
-
 .form-container {
     background: $white;
     border-radius: $border-radius;
@@ -47,7 +19,6 @@
             align-items: center;
             display: flex;
             flex-direction: row;
-            gap: $spacing-1;
             width: 100%;
         }
     }
@@ -58,7 +29,7 @@
         border: 1px solid #B3B1B8;
         box-sizing: border-box;
         padding: 0.85rem;
-        width: calc(100% - 6rem);
+        width: calc(100% - 5.5rem);
         &:focus {
             outline: none;
         }
@@ -92,54 +63,23 @@
         border: 0;
         border-top: 1px solid $gray-lighter;
         width: 100%;
-        margin: .5rem 0;
-        &.m-0 {
-            margin: 0;
-        }
+        margin: 0;
     }
     
 }
 
-.suggestions,
-.form-actions{
-    align-items: center;
-    display: flex;
-    justify-content: space-between;
-    padding: $spacing-1;
-}
-
-.suggestions {
-    flex-direction: column;
-    padding: 0;
-}
-
 .btn {
     align-items: center;
-    background: $white;
+    background: #576BE8;
     border-radius: $border-radius;
+    border: 1px solid #576BE8;
+    color: $white;
     cursor: pointer;
     display: flex;
     font-weight: bold;
     justify-content: center;
     padding: 0.85rem $spacing-3;
-    width: 180px;
-
-    &.btn-add {
-        width: 5.5rem;
-        background: #576BE8;
-        border: 1px solid #576BE8;
-        color: $white;
-    }
-
-    &.btn-copy { 
-        border: 1px solid #576BE8;
-        color: #576BE8;
-    }
-
-    &.btn-remove {
-        border: 1px solid #EC4B41;
-        color: #EC4B41;
-    }
+    width: 5.5rem;
 }
 
 .truncate {

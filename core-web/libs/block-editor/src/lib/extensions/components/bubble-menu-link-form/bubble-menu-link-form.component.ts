@@ -48,10 +48,15 @@ export class BubbleMenuLinkFormComponent implements OnInit {
     };
 
     private dotLangs: Languages;
+    private minChars = 3;
 
     loading = false;
     items: DotMenuItem[] = [];
     form: FormGroup;
+
+    get showSuggestions() {
+        return this.loading || this.items.length;
+    }
 
     constructor(
         private suggestionService: SuggestionsService,
@@ -73,16 +78,12 @@ export class BubbleMenuLinkFormComponent implements OnInit {
             .get('link')
             .valueChanges.pipe(debounceTime(500))
             .subscribe((link) => {
-                if (link.length < 3) {
+                if (link.length < this.minChars) {
                     this.items = [];
                     return;
                 }
                 this.searchContentlets({ link });
             });
-    }
-
-    onSubmit(form) {
-        this.submitForm.emit(form.value);
     }
 
     /**
@@ -92,7 +93,7 @@ export class BubbleMenuLinkFormComponent implements OnInit {
      */
     setLoading() {
         const link = this.form.get('link').value;
-        this.loading = link.length < 3 || this.items.length ? false : true;
+        this.loading = link.length < this.minChars || this.items.length ? false : true;
     }
 
     /**
@@ -107,13 +108,6 @@ export class BubbleMenuLinkFormComponent implements OnInit {
 
     focusInput() {
         this.input.nativeElement.focus();
-    }
-
-    copyLink() {
-        navigator.clipboard
-            .writeText(this.initialValues.link as string)
-            .then(() => this.hide.emit(true))
-            .catch(() => alert('Could not copy link'));
     }
 
     /**
@@ -145,7 +139,7 @@ export class BubbleMenuLinkFormComponent implements OnInit {
     }
 
     /**
-     * Search contentlets filterd by url
+     * Search contentlets filtered by url
      *
      * @private
      * @param {*} { link = '' }

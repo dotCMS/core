@@ -1,12 +1,11 @@
 <div class="form-container">
-
-    <!-- MENU FORM -->
+    <!-- FORM -->
     <form
         autoComplete="off"
         [formGroup]="form"
         (keydown)="onKeyDownEvent($event)"
         (mousedown)="focusInput()"
-        (ngSubmit)="onSubmit(form)"
+        (ngSubmit)="submitForm.emit(form.value)"
     >
         <div class="form-control">
             <input
@@ -18,14 +17,14 @@
                 formControlName="link"
                 (input)="setLoading()"
             />
-            <button class="btn btn-add" type="submit">ADD</button>
+            <button class="btn" type="submit">ADD</button>
         </div>
 
-        <div class="form-control" *ngIf="initialValues.link">
+        <div class="form-control" *ngIf="initialValues.link.length">
             <div class="label-container">
                 <a class="label-link" [href]="nodeLink" target="_blank">
                     <span class="material-icons">language</span>
-                    <span class="truncate">{{ initialValues.link }}</span>
+                    <span class="truncate">{{ link }}</span>
                 </a>
             </div>
         </div>
@@ -40,31 +39,27 @@
         </div>
     </form>
 
-    <div class="suggestions" *ngIf="loading || items.length">
-        <hr class="divider m-0"/>
-        <dotcms-suggestions
-            #suggestions
-            class="suggestions-styles"
-            [showTitle]="false"
-            [showURL]="showURL"
-            [loading]="loading"
-            [items]="items"
-            [onSelection]="onSelection"
-            >
-        </dotcms-suggestions>
-    </div>
+    <hr class="divider" *ngIf="showSuggestions || initialValues.link"/>
+
+    <!-- Suggestions -->
+    <dotcms-suggestions
+        *ngIf="showSuggestions"
+        #suggestions
+        class="link-suggestions"
+        [showTitle]="false"
+        [showURL]="true"
+        [loading]="loading"
+        [items]="items"
+        [onSelection]="onSelection"
+        >
+    </dotcms-suggestions>
 
     <!-- Form Actions -->
-    <div *ngIf="initialValues.link">
-        <hr class="divider" />
-        <div class="form-actions">
-            <button class="btn btn-copy" (click)="copyLink()">
-                COPY LINK
-            </button>
-            <button class="btn btn-remove" (click)="removeLink.emit(true)">
-                REMOVE LINK
-            </button>
-        </div>
-    </div>
+    <dotcms-form-actions
+        [link]="initialValues.link"
+        (hide)="hide.emit($event)"
+        (removeLink)="removeLink.emit($event)"
+    >
+    </dotcms-form-actions>
 
 </div>

@@ -1,0 +1,31 @@
+@use "libs/dot-primeng-theme-styles/src/scss/variables" as *;
+
+
+.form-actions {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    padding: $spacing-1;
+}
+
+.btn {
+    align-items: center;
+    background: $white;
+    border-radius: $border-radius;
+    cursor: pointer;
+    display: flex;
+    font-weight: bold;
+    justify-content: center;
+    padding: 0.85rem $spacing-3;
+    width: 180px;
+
+    &.btn-copy {
+        border: 1px solid #576be8;
+        color: #576be8;
+    }
+
+    &.btn-remove {
+        border: 1px solid #ec4b41;
+        color: #ec4b41;
+    }
+}

@@ -289,10 +289,10 @@ export const primary = () => ({
                                 : contentletsMock
                         );
                     },
-                    getContentletsUrlMap({ query }) {
+                    getContentletsUrlMap({ filter }) {
 
                         return  of(contentletsMock.filter((item) => 
-                                    item.url.match(new RegExp(query, 'i'))
+                                    item.url.match(new RegExp(filter, 'i'))
                                 ))
                                 .pipe(debounceTime(400));;
                     },
