@@ -1,5 +1,5 @@
 import { Component, Injector, Input, OnInit, ViewContainerRef } from '@angular/core';
-import {Editor, Extensions} from '@tiptap/core';
+import { AnyExtension, Editor } from '@tiptap/core';
 import { HeadingOptions, Level } from '@tiptap/extension-heading';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -36,6 +36,7 @@ function toTitleCase(str) {
 export class DotBlockEditorComponent implements OnInit {
     @Input() lang = DEFAULT_LANG_ID;
     @Input() allowedContentTypes = '';
+
     @Input() set allowedBlocks(blocks: string) {
         this._allowedBlocks = ['paragraph', ...blocks.replace(/ /g, '').split(',').filter(Boolean)];
     }
@@ -45,7 +46,8 @@ export class DotBlockEditorComponent implements OnInit {
 
     value = ''; // can be HTML or JSON, see https://www.tiptap.dev/api/editor#content
 
-    constructor(private injector: Injector, public viewContainerRef: ViewContainerRef) {}
+    constructor(private injector: Injector, public viewContainerRef: ViewContainerRef) {
+    }
 
     ngOnInit() {
         this.editor = new Editor({
@@ -54,9 +56,8 @@ export class DotBlockEditorComponent implements OnInit {
     }
 
 
-
-    private setEditorExtensions(): Extensions {
-        const defaultExtensions: Extensions = [
+    private setEditorExtensions(): AnyExtension[] {
+        const defaultExtensions: AnyExtension[] = [
             DotConfigExtension({
                 lang: this.lang,
                 allowedContentTypes: this.allowedContentTypes,
@@ -69,11 +70,11 @@ export class DotBlockEditorComponent implements OnInit {
             DotBubbleMenuExtension(this.viewContainerRef),
             // Marks Extensions
             Underline,
-            TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'dotImage'] }),
-            Highlight.configure({ HTMLAttributes: { style: 'background: #accef7;' } }),
-            Link.configure({ openOnClick: true }),
+            TextAlign.configure({types: ['heading', 'paragraph', 'listItem', 'dotImage']}),
+            Highlight.configure({HTMLAttributes: {style: 'background: #accef7;'}}),
+            Link.configure({openOnClick: true}),
             Placeholder.configure({
-                placeholder: ({ node }) => {
+                placeholder: ({node}) => {
                     if (node.type.name === 'heading') {
                         return `${toTitleCase(node.type.name)} ${node.attrs.level}`;
                     }
@@ -82,34 +83,30 @@ export class DotBlockEditorComponent implements OnInit {
                 }
             })
         ];
-        if (this.allowedBlocks) {
-            const customExtension: Extensions = [...defaultExtensions];
-            this._allowedBlocks.forEach((block: string) => {
-                switch (block) {
-                    case 'contentlets':
-                        customExtension.push(ContentletBlock(this.injector));
-                        break
-                    case 'dotImage':
-                        customExtension.push(ImageBlock(this.injector));
-                        break
-                }
-            });
+        const customExtensions: Map<string,AnyExtension> = new Map([
+            ['contentlets', ContentletBlock(this.injector)],
+            ['dotImage', ImageBlock(this.injector)]
+        ]);
 
-            return [...customExtension, StarterKit.configure(this.setStarterKitOptions())];
-        }
-
-        return [StarterKit, ...defaultExtensions, ImageBlock(this.injector), ContentletBlock(this.injector)];
+        return [
+            ...defaultExtensions,
+            ...(this.allowedBlocks ?
+                [StarterKit.configure(this.setStarterKitOptions()), ...this.setCustomExtensions(customExtensions)] :
+                [StarterKit, ...customExtensions.values()]),
+        ]
     }
 
-    private setStarterKitOptions() : Partial<StarterKitOptions> {
-        const headingOptions: HeadingOptions = { levels: [], HTMLAttributes: {} };
-        ['heading1', 'heading2', 'heading3',  'heading4',  'heading5',  'heading6'].forEach((heading) => {
-            if (this._allowedBlocks[heading]){
+
+    private setStarterKitOptions(): Partial<StarterKitOptions> {
+        const headingOptions: HeadingOptions = {levels: [], HTMLAttributes: {}};
+        ['heading1', 'heading2', 'heading3', 'heading4', 'heading5', 'heading6'].forEach((heading) => {
+            if (this._allowedBlocks[heading]) {
                 headingOptions.levels.push(+heading.slice(-1) as Level)
             }
         });
 
-        return { heading: headingOptions.levels.length ? headingOptions : false,
+        return {
+            heading: headingOptions.levels.length ? headingOptions : false,
             ...(this._allowedBlocks['orderedList'] ? {} : {orderedList: false}),
             ...(this._allowedBlocks['bulletList'] ? {} : {bulletList: false}),
             ...(this._allowedBlocks['blockquote'] ? {} : {blockquote: false}),
@@ -118,5 +115,11 @@ export class DotBlockEditorComponent implements OnInit {
         };
     }
 
-
+    private setCustomExtensions(customExtensions: Map<string,AnyExtension>): AnyExtension[] {
+        return [
+            ...(this._allowedBlocks['contentlets'] ? [customExtensions['contentlets']] : []),
+            ...(this._allowedBlocks['dotImage'] ? [customExtensions['dotImage']] : [])
+        ]
+    }
 }
+
