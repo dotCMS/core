@@ -37,7 +37,6 @@ const core = __importStar(require("@actions/core"));
 const exec = __importStar(require("@actions/exec"));
 const path = __importStar(require("path"));
 const setup = __importStar(require("./it-setup"));
-// import * as shelljs from 'shelljs'
 /**
  * Based on dbType resolves the ci index
  *
@@ -66,7 +65,8 @@ const DEPS_ENV = {
     postgres: {
         POSTGRES_USER: 'postgres',
         POSTGRES_PASSWORD: 'postgres',
-        POSTGRES_DB: 'dotcms'
+        POSTGRES_DB: 'dotcms',
+        MAX_LOCKS_PER_TRANSACTION: '512'
     }
 };
 exports.COMMANDS = {
@@ -179,7 +179,7 @@ const propertyMap = () => {
  */
 const appendToWorkspace = (folder) => path.join(workspaceRoot, folder);
 /**
- * Resolve paramateres to produce command arguments
+ * Resolve parameters to produce command arguments
  *
  * @param cmd {@link Command} object holding command and arguments
  */

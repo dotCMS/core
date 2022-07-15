@@ -44,17 +44,7 @@ const COMMANDS = {
     gradle: [
         {
             cmd: gradleCmd,
-            args: ['createDistPrep'],
-            workingDir: dotCmsRoot
-        },
-        {
-            cmd: gradleCmd,
-            args: ['compileIntegrationTestJava'],
-            workingDir: dotCmsRoot
-        },
-        {
-            cmd: gradleCmd,
-            args: ['prepareIntegrationTests'],
+            args: ['createDistPrep', 'compileIntegrationTestJava', 'prepareIntegrationTests'],
             workingDir: dotCmsRoot
         }
     ],

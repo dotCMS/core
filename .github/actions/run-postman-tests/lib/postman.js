@@ -38,9 +38,15 @@ const exec = __importStar(require("@actions/exec"));
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const shelljs = __importStar(require("shelljs"));
+// const resolveTomcat = (): string => {
+//   const dotServerFolder = path.join(projectRoot, 'dist', 'dotserver')
+//   const tomcatFolder = shelljs.ls(dotServerFolder).find(folder => folder.startsWith('tomcat-'))
+//   return path.join(dotServerFolder, tomcatFolder || '')
+// }
 const projectRoot = core.getInput('project_root');
-const buildEnv = core.getInput('build_env');
+// const buildEnv = core.getInput('build_env')
 const builtImageName = core.getInput('built_image_name');
+const waitForDeps = core.getInput('wait_for_deps');
 const dbType = core.getInput('db_type');
 const licenseKey = core.getInput('license_key');
 const customStarterUrl = core.getInput('custom_starter_url');
@@ -49,13 +55,10 @@ const exportReport = core.getBooleanInput('export_report');
 const cicdFolder = path.join(projectRoot, 'cicd');
 const resourcesFolder = path.join(cicdFolder, 'resources', 'postman');
 const dockerFolder = path.join(cicdFolder, 'docker');
+const licenseFolder = path.join(dockerFolder, 'license');
 const dotCmsRoot = path.join(projectRoot, 'dotCMS');
-const tomcatFolder = core.getInput('tomcat_folder');
-const tomcatRoot = path.join(projectRoot, 'dist', 'dotserver', tomcatFolder);
-const logsFolder = path.join(tomcatRoot, 'logs');
-const tomcatLogFile = path.join(logsFolder, 'catalina.out');
-const logFile = path.join(logsFolder, 'dotcms.log');
-const licenseFolder = path.join(tomcatRoot, 'webapps', 'ROOT', 'dotsecure', 'license');
+const logFile = path.join(dotCmsRoot, 'dotcms.log');
+const volumes = [licenseFolder, path.join(dockerFolder, 'cms-shared'), path.join(dockerFolder, 'cms-local')];
 const postmanTestsPath = path.join(dotCmsRoot, 'src', 'curl-test');
 const postmanEnvFile = 'postman_environment.json';
 const resultsFolder = path.join(dotCmsRoot, 'build', 'test-results', 'postmanTest');
@@ -63,36 +66,25 @@ const reportFolder = path.join(dotCmsRoot, 'build', 'reports', 'tests', 'postman
 const runtTestsPrefix = 'postman-tests:';
 const PASSED = 'PASSED';
 const FAILED = 'FAILED';
-let dotCmsProcess;
-let logProcess;
 const DEPS_ENV = {
     DOTCMS_IMAGE: builtImageName,
     TEST_TYPE: 'postman',
     DB_TYPE: dbType,
     CUUSTOM_STARTER_FOLDER: customStarterUrl,
-    POSTGRES_USER: 'dotcms',
-    POSTGRES_PASSWORD: 'dotcms',
-    POSTGRES_DB: 'dotcms'
-};
-const DOTCMS_ENV = {
-    databaseType: dbType,
-    CATALINA_OPTS: '-XX:+PrintFlagsFinal',
-    DOT_ES_ENDPOINTS: 'https://localhost:9200',
-    DOT_DOTCMS_DEV_MODE: 'true',
-    DB_MAX_TOTAL: '15',
-    DOT_INDEX_POLICY_SINGLE_CONTENT: 'FORCE',
-    DOT_ASYNC_REINDEX_COMMIT_LISTENERS: 'false',
-    DOT_ASYNC_COMMIT_LISTENERS: 'false',
-    DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS: '600'
+    WAIT_FOR_DEPS: waitForDeps,
+    POSTGRES_USER: 'postgres',
+    POSTGRES_PASSWORD: 'postgres',
+    POSTGRES_DB: 'dotcms',
+    MAX_LOCKS_PER_TRANSACTION: '128'
 };
 /*
- * Run postman tests.
  *
  * @returns a number representing the command exit code
  */
 const runTests = () => __awaiter(void 0, void 0, void 0, function* () {
     setup();
     startDeps();
+    printInfo();
     try {
         return yield runPostmanCollections();
     }
@@ -111,13 +103,26 @@ const runTests = () => __awaiter(void 0, void 0, void 0, function* () {
 });
 exports.runTests = runTests;
 /**
+ * Copies logs from docker volume to standard DotCMS location.
+ */
+const copyOutputs = () => __awaiter(void 0, void 0, void 0, function* () {
+    printInfo();
+    yield execCmd(toCommand('docker', ['cp', 'docker_dotcms-app_1:/srv/dotserver/tomcat-9.0.60/logs/dotcms.log', logFile]));
+    yield execCmd(toCommand('ls', ['-las', dotCmsRoot]));
+});
+/**
  * Sets up everuthing needed to run postman collections.
  */
 const setup = () => {
     installDeps();
     createFolders();
     prepareLicense();
+    printInfo();
 };
+const printInfo = () => __awaiter(void 0, void 0, void 0, function* () {
+    yield execCmd(toCommand('docker', ['images']));
+    yield execCmd(toCommand('docker', ['ps']));
+});
 /**
  * Install necessary dependencies to run the postman collections.
  */
@@ -128,76 +133,65 @@ const installDeps = () => __awaiter(void 0, void 0, void 0, function* () {
         npmArgs.push('newman-reporter-htmlextra');
     }
     yield execCmd(toCommand('npm', npmArgs));
-    if (!fs.existsSync(tomcatRoot) && buildEnv === 'gradle') {
-        core.info(`Tomcat root ${tomcatRoot} does not exist, creating it`);
-        yield execCmd(toCommand('./gradlew', ['clonePullTomcatDist']));
-        if (!tomcatRoot) {
-            throw new Error('Cannot find any Tomcat root folder');
-        }
-    }
+    // if (!fs.existsSync(tomcatRoot) && buildEnv === 'gradle') {
+    //   core.info(`Tomcat root does not exist, creating it`)
+    //   await exec.exec('./gradlew', ['clonePullTomcatDist'])
+    //   tomcatRoot = resolveTomcat()
+    //   if (!tomcatRoot) {
+    //     throw new Error('Cannot find any Tomcat root folder')
+    //   }
+    // }
 });
 /**
  * Start postman depencies: db, ES and DotCMS isntance.
  */
-const startDeps = () => __awaiter(void 0, void 0, void 0, function* () {
+const startDeps = () => {
     // Starting dependencies
     core.info(`
     =======================================
     Starting postman tests dependencies
     =======================================`);
-    execCmdAsync(toCommand('docker-compose', ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, 'up'], dockerFolder, DEPS_ENV), false);
-    yield waitFor(70, 'DotCMS dependencies');
-    startDotCMS();
-});
+    execCmdAsync(toCommand('docker-compose', ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'up'], dockerFolder, DEPS_ENV));
+    //await startDotCMS()
+};
 /**
  * Stop postman depencies: db, ES and DotCMS isntance.
  */
 const stopDeps = () => __awaiter(void 0, void 0, void 0, function* () {
-    yield stopDotCMS();
+    //await stopDotCMS()
     // Stopping dependencies
     core.info(`
     ===================================
     Stopping postman tests dependencies
     ===================================`);
     try {
-        yield execCmd(toCommand('docker-compose', ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, 'down'], dockerFolder, DEPS_ENV));
+        yield execCmd(toCommand('docker-compose', ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'down'], dockerFolder, DEPS_ENV));
     }
     catch (err) {
-        console.error(`Could not stop dependencies gracefully due to: ${err}`);
+        console.error(`Error stopping dependencies: ${err}`);
     }
 });
-const startDotCMS = () => {
-    core.info(`
-    =======================================
-    Starting DotCMS instance
-    =======================================`);
-    dotCmsProcess = execCmdAsync(toCommand(path.join(tomcatRoot, 'bin', 'startup.sh'), [], tomcatRoot, DOTCMS_ENV), true);
-    logProcess = execCmdAsync(toCommand('tail', ['-f', tomcatLogFile]), true);
-    core.info(`Log process: ${logProcess}`);
-};
-const stopDotCMS = () => __awaiter(void 0, void 0, void 0, function* () {
-    core.info(`
-    =======================================
-    Stopping DotCMS instance
-    =======================================`);
-    try {
-        yield execCmd(toCommand(path.join(tomcatRoot, 'bin', 'shutdown.sh'), [], tomcatRoot, DOTCMS_ENV));
-    }
-    catch (err) {
-        core.warning(`Could not stop gracefully DotCMS due to: ${err}`);
-    }
-    finally {
-        tryToKill(dotCmsProcess, 20, 'DotCMS to stop');
-        tryToKill(logProcess, 2, 'DotCMS log to stop');
-    }
-});
+// const startDotCMS = async () => {
+//   core.info(`
+//     =======================================
+//     Starting DotCMS instance
+//     =======================================`)
+//   exec.exec(path.join(tomcatRoot, 'bin', 'startup.sh'))
+// }
+// const stopDotCMS = async () => {
+//   core.info(`
+//     =======================================
+//     Stopping DotCMS instance
+//     =======================================`)
+//   await exec.exec(path.join(tomcatRoot, 'bin', 'shutdown.sh'))
+// }
 /**
  * Run postman tests.
  *
  * @returns an overall ivew of the tests results
  */
 const runPostmanCollections = () => __awaiter(void 0, void 0, void 0, function* () {
-    yield waitFor(160, `DotCMS instance`);
+    yield waitFor(150, `DotCMS instance`);
     // Executes Postman tests
     core.info(`
     ===========================================
@@ -284,8 +278,7 @@ const runPostmanCollection = (collection, normalized) => __awaiter(void 0, void 
         args.push('--reporter-htmlextra-export');
         args.push(reportFile);
     }
-    const rc = yield execCmd(toCommand('newman', args, postmanTestsPath));
-    return rc;
+    return yield execCmd(toCommand('newman', args, postmanTestsPath));
 });
 /*
  * Process results.
@@ -335,8 +328,7 @@ const waitFor = (wait, startLabel, endLabel) => __awaiter(void 0, void 0, void 0
  * Create necessary folders
  */
 const createFolders = () => {
-    shelljs.touch(tomcatLogFile);
-    const folders = [resultsFolder, reportFolder, licenseFolder];
+    const folders = [resultsFolder, reportFolder, ...volumes];
     for (const folder of folders) {
         fs.mkdirSync(folder, { recursive: true });
     }
@@ -408,50 +400,9 @@ const printCmd = (cmd) => {
 };
 const execCmd = (cmd) => __awaiter(void 0, void 0, void 0, function* () {
     printCmd(cmd);
-    return yield exec.exec(cmd.cmd, cmd.args, { cwd: cmd.workingDir, env: cmd.env });
+    return yield exec.exec(cmd.cmd, cmd.args || [], { cwd: cmd.workingDir, env: cmd.env });
 });
-const execCmdAsync = (cmd, useChild) => {
+const execCmdAsync = (cmd) => {
     printCmd(cmd);
-    if (cmd.env) {
-        for (const env of Object.keys(cmd.env)) {
-            shelljs.env[env] = cmd.env[env];
-        }
-    }
-    const args = cmd.args || [];
-    if (useChild) {
-        const cmdStr = [cmd.cmd, ...args].join(' ');
-        const process = shelljs.exec(cmdStr, { async: true });
-        core.info(`Creating process from '${cmdStr}': ${process.pid}`);
-        return process;
-    }
-    exec.exec(cmd.cmd, cmd.args, { cwd: cmd.workingDir, env: cmd.env });
+    exec.exec(cmd.cmd, cmd.args || [], { cwd: cmd.workingDir, env: cmd.env });
 };
-const killProcess = (process, sig) => {
-    if (process) {
-        core.info(`Killing process: ${process.pid}`);
-        sig ? process.kill(sig) : process.kill();
-    }
-    else {
-        core.info('No process found to kill');
-    }
-};
-const tryToKill = (process, wait, label) => __awaiter(void 0, void 0, void 0, function* () {
-    if (!process.killed) {
-        killProcess(process);
-        yield waitFor(wait, label);
-        if (!process.killed) {
-            killProcess(process, 9);
-        }
-    }
-});
-/**
- * Copies logs from docker volume to standard DotCMS location.
- */
-const copyOutputs = () => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        fs.copyFileSync(tomcatLogFile, logFile);
-    }
-    catch (err) {
-        core.error(`Error copying log file: ${err}`);
-    }
-});

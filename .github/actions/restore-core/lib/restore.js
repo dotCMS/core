@@ -35,6 +35,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.restoreLocations = void 0;
 const cache = __importStar(require("@actions/cache"));
 const core = __importStar(require("@actions/core"));
+const exec = __importStar(require("@actions/exec"));
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const EMPTY_LOCATIONS = {
@@ -42,17 +43,25 @@ const EMPTY_LOCATIONS = {
     buildOutput: []
 };
 const BUILD_OUTPUT = 'buildOutput';
+const HOME_FOLDER = path.join('/home', 'runner');
+const GRADLE_FOLDER = path.join(HOME_FOLDER, '.gradle');
+const M2_FOLDER = path.join(HOME_FOLDER, '.m2');
+const PROJECT_ROOT = core.getInput('project_root');
+const DOTCMS_ROOT = path.join(PROJECT_ROOT, 'dotCMS');
 const RESTORE_CONFIGURATION = {
     gradle: {
-        dependencies: ['~/.gradle/caches', '~/.gradle/wrapper'],
-        buildOutput: ['dotCMS/.gradle', 'dotCMS/build/classes', 'dotCMS/build/resources']
+        dependencies: [path.join(GRADLE_FOLDER, 'caches'), path.join(GRADLE_FOLDER, 'wrapper')],
+        buildOutput: [
+            path.join(DOTCMS_ROOT, '.gradle'),
+            path.join(DOTCMS_ROOT, 'build', 'classes'),
+            path.join(DOTCMS_ROOT, 'build', 'resources')
+        ]
     },
     maven: {
-        dependencies: ['~/.m2/repository'],
-        buildOutput: ['dotCMS/target']
+        dependencies: [path.join(M2_FOLDER, 'repository')],
+        buildOutput: [path.join(DOTCMS_ROOT, 'target')]
     }
 };
-const PROJECT_ROOT = core.getInput('project_root');
 const CACHE_FOLDER = path.join(path.dirname(PROJECT_ROOT), 'cache');
 /**
  * Restore previously cached locations.
@@ -83,28 +92,40 @@ const restoreLocations = (cacheMetadata) => __awaiter(void 0, void 0, void 0, fu
         }
         const cacheKey = yield cache.restoreCache(locationMetadata.cacheLocations, locationMetadata.cacheKey);
         core.info(`Locations restored with key ${cacheKey}`);
+        for (const location of locationMetadata.cacheLocations) {
+            ls(location);
+        }
         const type = locationMetadata.type;
         const configLocations = restoreConfig[type];
         if (!configLocations || configLocations.length === 0) {
             core.setFailed(`Could not resolve config locations from ${type}`);
             return Promise.resolve(EMPTY_LOCATIONS);
         }
-        cacheLocations[type] = relocate(type, locationMetadata.cacheLocations, configLocations);
+        cacheLocations[type] = relocate(type, locationMetadata.cacheLocations, configLocations, []);
     }
     return new Promise(resolve => resolve(cacheLocations));
 });
 exports.restoreLocations = restoreLocations;
 /**
- * Once cached locations are restored, for every location type that requires to relocate folders it does
+ * Once cached locations are restored, for every location type that requires to relocate folders it does so.
  *
  * @param type location type (dependencies or buildOutput)
  * @param cacheLocations cache locations arrays
  * @param configLocations config locations extracted from restore configuration
+ * @param rellocatable list of location types that requires rellocating
  * @returns relocated restored locations
  */
-function relocate(type, cacheLocations, configLocations) {
-    if (type !== BUILD_OUTPUT) {
+const relocate = (type, cacheLocations, configLocations, rellocatable) => {
+    const isRellocatable = !!rellocatable.find(r => r === type);
+    if (!isRellocatable) {
         core.info(`Not relocating any cache for ${type}`);
+        for (const location of cacheLocations) {
+            const parent = path.dirname(location);
+            if (!fs.existsSync(parent)) {
+                core.info(`Cache location parent ${parent} does not exist, creating it`);
+                fs.mkdirSync(parent, { recursive: true });
+            }
+        }
         return cacheLocations;
     }
     core.info(`Caches to relocate: ${cacheLocations}`);
@@ -121,11 +142,21 @@ function relocate(type, cacheLocations, configLocations) {
         const newFolder = path.dirname(newLocation);
         if (!fs.existsSync(newFolder)) {
             core.info(`New location folder ${newFolder} does not exist, creating it`);
-            fs.mkdirSync(newFolder);
+            fs.mkdirSync(newFolder, { recursive: true });
         }
         core.info(`Relocating cache from ${location} to ${newLocation}`);
         fs.renameSync(location, newLocation);
+        ls(newLocation);
         return newLocation;
     })
         .filter(location => location !== '');
-}
+};
+const ls = (location) => __awaiter(void 0, void 0, void 0, function* () {
+    core.info(`Listing folder ${location}`);
+    try {
+        yield exec.exec('ls', ['-las', location]);
+    }
+    catch (err) {
+        core.info(`Cannot list folder ${location}`);
+    }
+});
