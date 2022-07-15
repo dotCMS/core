@@ -131,7 +131,6 @@ public class TailLogServlet extends HttpServlet {
                 String write = listener.getOut(true).toString();
 				if (UtilMethods.isSet(write)) {
 					response.getOutputStream().print(write);
-					Logger.info(this, "Calling doS()");
 					response.getOutputStream().print("<script>doS();</script>");
 					response.getOutputStream().flush();
 				}
