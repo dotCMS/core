@@ -24,10 +24,14 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - id: read-cicd-local-env
+        name: Read CICD local library
+        run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
       - id: module-matcher
         name: Module Matcher
         uses: ./.github/actions/module-matcher
         with:
+          build_id: ${{ env.BUILD_ID }}
           current: core-web
   lint:
     runs-on: ubuntu-latest
@@ -126,6 +130,7 @@ jobs:
         env:
           SLACK_WEBHOOK: ${{ secrets.UI_SLACK_WEBHOOK }}
           SLACK_USERNAME: dotBot
+          SLACK_ICON: https://avatars.slack-edge.com/2020-09-21/1362682893351_5b474f175640cf5f5912_72.png
           SLACK_COLOR: ${{ steps.test_run.outputs.color }}
           SLACK_TITLE: "Report: (${{ steps.test_run.outputs.status }})"
           SLACK_MESSAGE: ${{ steps.persist_results.outputs.message }}
