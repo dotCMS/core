@@ -95,7 +95,7 @@ public class TailLogServlet extends HttpServlet {
 				+ "<style type='text/css'>@import '/html/css/dot_admin.css';</style>"
 				+ "<script>"
 				+ "function doS(){"
-				+ "var logEvent=new CustomEvent('logUpdated',{detail:{msg:'log updated'},bubbles:true,cancelable:true});document.body.dispatchEvent(logEvent);console.log('Backend updated', new Date());"
+				+ "var logEvent=new CustomEvent('logUpdated',{detail:{msg:'log updated'},bubbles:true,cancelable:true});document.body.dispatchEvent(logEvent);"
 				+ "}</script></head><body class='tailerBody'>");
 
 		out.flush();
@@ -131,6 +131,7 @@ public class TailLogServlet extends HttpServlet {
                 String write = listener.getOut(true).toString();
 				if (UtilMethods.isSet(write)) {
 					response.getOutputStream().print(write);
+					Logger.info(this, "Calling doS()");
 					response.getOutputStream().print("<script>doS();</script>");
 					response.getOutputStream().flush();
 				}
@@ -139,6 +140,7 @@ public class TailLogServlet extends HttpServlet {
 			Logger.warn(this, "Tail Log Servlet Thread is not alive");
 		} catch (Exception e) {
 			Logger.warn(this, "Tail Log Servlet Thread stopped because " + e.getMessage());
+			e.printStackTrace();
 			if (thread != null) {
 				thread.stopTailer();
 			}
