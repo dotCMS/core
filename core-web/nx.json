@@ -54,10 +54,5 @@
             "style": "scss"
         }
     },
-    "$schema": "./node_modules/nx/schemas/nx-schema.json",
-    "targetDefaults": {
-        "build": {
-            "dependsOn": ["^build"]
-        }
-    }
+    "$schema": "./node_modules/nx/schemas/nx-schema.json"
 }

@@ -106,7 +106,7 @@ jobs:
         id: test_run
         run: |
           cd core-web
-          if ! (nx run dotcms-ui:test) then
+          if ! (nx run-many --target=test --projects=dotcms-ui,dotcms-webcomponents) then
             echo "::set-output name=status::failure";
             echo "::set-output name=color::#ff2400";
             exit 1;

@@ -180,7 +180,6 @@
     "mockdate": "^3.0.5",
     "monaco-editor": "^0.33.0",
     "npm": "^6.14.16",
-    "nx": "14.4.1",
     "postcss": "^8.3.9",
     "postcss-import": "14.1.0",
     "postcss-preset-env": "7.5.0",
