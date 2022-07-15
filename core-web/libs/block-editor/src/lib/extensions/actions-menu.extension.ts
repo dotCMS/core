@@ -21,7 +21,7 @@ import { ActionButtonComponent } from './components/action-button/action-button.
 import { PluginKey } from 'prosemirror-state';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import {CONTENT_SUGGESTION_ID, suggestionOptions, SuggestionPopperModifiers} from '../utils/suggestion.utils';
+import { CONTENT_SUGGESTION_ID, suggestionOptions, SuggestionPopperModifiers } from '../utils/suggestion.utils';
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {

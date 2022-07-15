@@ -7,7 +7,7 @@ import { LoaderComponent, MessageType } from './components/loader/loader.compone
 import { PlaceholderPlugin } from '../plugins/placeholder.plugin';
 import { take } from 'rxjs/operators';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import {IMAGE_BLOCK_NAME} from "./blocks/image-block/image-block.extention";
+import { IMAGE_BLOCK_NAME } from "./blocks/image-block/image-block.extention";
 
 export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerRef) => {
     return Extension.create({
