@@ -62,7 +62,7 @@
 						{
 							"key": "file",
 							"type": "file",
-							"src": "/Users/danielsilva/Documents/core-release/dotCMS/src/curl-test/resources/VanityURL/404bundle.tar.gz"
+							"src": "resources/VanityURL/404bundle.tar.gz"
 						}
 					]
 				},
