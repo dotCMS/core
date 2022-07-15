@@ -19,6 +19,8 @@ jobs:
     outputs:
       module_found: ${{ steps.module-matcher.outputs.module_found }}
     steps:
+      - name: Derive appropriate SHAs for base and head for `nx affected` commands
+        uses: nrwl/nx-set-shas@v2
       - id: fetch-core
         name: Fetch Core repo
         uses: actions/checkout@v3
@@ -27,6 +29,7 @@ jobs:
       - id: read-cicd-local-env
         name: Read CICD local library
         run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
+      - run: npx nx-cloud start-ci-run
       - id: module-matcher
         name: Module Matcher
         uses: ./.github/actions/module-matcher
@@ -121,6 +124,8 @@ jobs:
           chmod +x .cicd/github.sh && source .cicd/github.sh
           persistResults
           echo "::set-output name=message::$(logResults)";
+          npx nx-cloud stop-all-agents
+
       - name: Slack Notification
         if: success() || failure()
         uses: rtCamp/action-slack-notify@v2
@@ -132,3 +137,18 @@ jobs:
           SLACK_TITLE: "Report: (${{ steps.test_run.outputs.status }})"
           SLACK_MESSAGE: ${{ steps.persist_results.outputs.message }}
           SLACK_FOOTER: ${{ env.PULL_REQUEST_URL }}
+  agents:
+    runs-on: ubuntu-latest
+    name: Agent 1
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        agent: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: "16.13.2"
+      - run: yarn install
+      - name: Start Nx Agent ${{ matrix.agent }}
+        run: npx nx-cloud start-agent
