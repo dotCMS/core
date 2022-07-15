@@ -1,6 +1,6 @@
 import { Component, Injector, Input, OnInit, ViewContainerRef } from '@angular/core';
-import { Editor, Extensions } from '@tiptap/core';
-import { HeadingOptions } from '@tiptap/extension-heading';
+import {Editor, Extensions} from '@tiptap/core';
+import { HeadingOptions, Level } from '@tiptap/extension-heading';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 
@@ -53,6 +53,8 @@ export class DotBlockEditorComponent implements OnInit {
         });
     }
 
+
+
     private setEditorExtensions(): Extensions {
         const defaultExtensions: Extensions = [
             DotConfigExtension({
@@ -81,44 +83,9 @@ export class DotBlockEditorComponent implements OnInit {
             })
         ];
         if (this.allowedBlocks) {
-            const allowedArray = this.allowedBlocks.split(',');
-            console.log(allowedArray);
-            const headingOptions: HeadingOptions = { levels: [], HTMLAttributes: {} };
             const customExtension: Extensions = [...defaultExtensions];
-            const starterKitOptions: Partial<StarterKitOptions> = {
-                heading: false,
-                orderedList: false,
-                bulletList: false,
-                blockquote: false,
-                codeBlock: false,
-                horizontalRule: false
-            };
-            allowedArray.forEach((block: string) => {
+            this._allowedBlocks.forEach((block: string) => {
                 switch (block) {
-                    case 'heading1':
-                        headingOptions.levels.push(1);
-                        break;
-                    case 'heading2':
-                        headingOptions.levels.push(2);
-                        break;
-                    case 'heading3':
-                        headingOptions.levels.push(3);
-                        break;
-                    case 'orderedList':
-                        delete starterKitOptions.orderedList;
-                        break;
-                    case 'bulletList':
-                        delete starterKitOptions.bulletList;
-                        break;
-                    case 'blockquote':
-                        delete starterKitOptions.blockquote;
-                        break;
-                    case 'codeBlock':
-                        delete starterKitOptions.codeBlock;
-                        break;
-                    case 'horizontalRule':
-                        delete starterKitOptions.horizontalRule;
-                        break;
                     case 'contentlets':
                         customExtension.push(ContentletBlock(this.injector));
                         break
@@ -127,11 +94,29 @@ export class DotBlockEditorComponent implements OnInit {
                         break
                 }
             });
-            starterKitOptions.heading = headingOptions.levels.length ? headingOptions : false;
-            return [...customExtension, StarterKit.configure(starterKitOptions)];
+
+            return [...customExtension, StarterKit.configure(this.setStarterKitOptions())];
         }
 
         return [StarterKit, ...defaultExtensions, ImageBlock(this.injector), ContentletBlock(this.injector)];
     }
+
+    private setStarterKitOptions() : Partial<StarterKitOptions> {
+        const headingOptions: HeadingOptions = { levels: [], HTMLAttributes: {} };
+        ['heading1', 'heading2', 'heading3',  'heading4',  'heading5',  'heading6'].forEach((heading) => {
+            if (this._allowedBlocks[heading]){
+                headingOptions.levels.push(+heading.slice(-1) as Level)
+            }
+        });
+
+        return { heading: headingOptions.levels.length ? headingOptions : false,
+            ...(this._allowedBlocks['orderedList'] ? {} : {orderedList: false}),
+            ...(this._allowedBlocks['bulletList'] ? {} : {bulletList: false}),
+            ...(this._allowedBlocks['blockquote'] ? {} : {blockquote: false}),
+            ...(this._allowedBlocks['codeBlock'] ? {} : {codeBlock: false}),
+            ...(this._allowedBlocks['horizontalRule'] ? {} : {horizontalRule: false})
+        };
+    }
+
 
 }
