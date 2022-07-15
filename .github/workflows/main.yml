@@ -106,7 +106,7 @@ jobs:
         id: test_run
         run: |
           cd core-web
-          if ! (nx affected:test --exclude=dot-rules,dotcdn,dot-layout-grid,dot-primeng-theme-styles,dotcms-field-elements,dotcms-js,dotcms-models,ui,utils,block-editor,dotcms,dotcms-block-editor --verbose --parallel=5) then
+          if ! (npx nx affected:test --exclude=dot-rules,dotcdn,dot-layout-grid,dot-primeng-theme-styles,dotcms-field-elements,dotcms-js,dotcms-models,ui,utils,block-editor,dotcms,dotcms-block-editor --verbose --parallel=5) then
             echo "::set-output name=status::failure";
             echo "::set-output name=color::#ff2400";
             exit 1;
