@@ -20,6 +20,7 @@ import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Semaphore;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletResponse;
@@ -193,7 +194,7 @@ public class CircuitBreakerUrl {
     }
 
     
-    
+    private final static Lazy<Semaphore> urlSemaphore = Lazy.of(()->new Semaphore(Config.getIntProperty("CIRCUIT_BREAKER_MAX_CONNECTIONS",75)));
     
     
     
@@ -208,30 +209,45 @@ public class CircuitBreakerUrl {
                     })
                     .onFailure(failure -> Logger.warn(this, "Connection attempts failed " + failure.getMessage()))
                     .run(ctx -> {
-                        RequestConfig config = RequestConfig.custom()
-                                .setConnectTimeout(Math.toIntExact(this.timeoutMs))
-                                .setRedirectsEnabled(allowRedirects)
-                                .setConnectionRequestTimeout(Math.toIntExact(this.timeoutMs))
-                                .setSocketTimeout(Math.toIntExact(this.timeoutMs)).build();
-                        try (CloseableHttpClient httpclient = HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
-                            
-                            if(IPUtils.isIpPrivateSubnet(this.request.getURI().getHost()) && !Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false)){
-                                throw new DotRuntimeException("Remote HttpRequests cannot access private subnets.  Set ALLOW_ACCESS_TO_PRIVATE_SUBNETS=true to allow");
+                        boolean aquired = false;
+                        
+                        try {
+                            aquired = urlSemaphore.get().tryAcquire();
+                            if(!aquired) {
+                                Logger.warn(getClass(), "unable to acquire permit for: " + this.request.getURI()  + " for thread: " + Thread.currentThread().getName());
+                                return;
                             }
-                            
-                            HttpResponse innerResponse = httpclient.execute(this.request);
-
-                            this.responseHeaders = innerResponse.getAllHeaders();
-
-                            copyHeaders(innerResponse, response);
-
-                            this.response = innerResponse.getStatusLine().getStatusCode();
-                            
-                            IOUtils.copy(innerResponse.getEntity().getContent(), out);
-                            
-                            // throw an error if the request is bad
-                            if(this.response<200 || this.response>299){
-                                throw new BadRequestException("got invalid response for url: " + this.proxyUrl + " response: " + this.response);
+                        
+                        
+                            RequestConfig config = RequestConfig.custom()
+                                    .setConnectTimeout(Math.toIntExact(this.timeoutMs))
+                                    .setRedirectsEnabled(allowRedirects)
+                                    .setConnectionRequestTimeout(Math.toIntExact(this.timeoutMs))
+                                    .setSocketTimeout(Math.toIntExact(this.timeoutMs)).build();
+                            try (CloseableHttpClient httpclient = HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
+                                
+                                if(IPUtils.isIpPrivateSubnet(this.request.getURI().getHost()) && !Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false)){
+                                    throw new DotRuntimeException("Remote HttpRequests cannot access private subnets.  Set ALLOW_ACCESS_TO_PRIVATE_SUBNETS=true to allow");
+                                }
+                                
+                                HttpResponse innerResponse = httpclient.execute(this.request);
+    
+                                this.responseHeaders = innerResponse.getAllHeaders();
+    
+                                copyHeaders(innerResponse, response);
+    
+                                this.response = innerResponse.getStatusLine().getStatusCode();
+                                
+                                IOUtils.copy(innerResponse.getEntity().getContent(), out);
+                                
+                                // throw an error if the request is bad
+                                if(this.response<200 || this.response>299){
+                                    throw new BadRequestException("got invalid response for url: " + this.proxyUrl + " response: " + this.response);
+                                }
+                            }
+                        }finally {
+                            if(aquired) {
+                                urlSemaphore.get().release();
                             }
                         }
                     });
