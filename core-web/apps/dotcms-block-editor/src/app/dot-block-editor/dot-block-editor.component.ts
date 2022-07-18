@@ -21,6 +21,7 @@ import { Highlight } from '@tiptap/extension-highlight';
 import { Link } from '@tiptap/extension-link';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
+import {bind} from "lodash";
 
 function toTitleCase(str) {
     return str.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {
@@ -97,8 +98,18 @@ export class DotBlockEditorComponent implements OnInit {
     }
 
 
+    /**
+     *
+     * Check if the starter kit keys are part of the _allowedBlocks,
+     * ONLY if is not present will add an attribute with false to disable it. ex. {orderedList: false}
+     * For headings fill the HeadingOptions.
+     */
     private setStarterKitOptions(): Partial<StarterKitOptions> {
+        // These are the keys that meter for the starter kit.
+        const staterKitOptions = ['orderedList', 'bulletList', 'blockquote', 'codeBlock', 'horizontalRule'];
         const headingOptions: HeadingOptions = {levels: [], HTMLAttributes: {}};
+
+        //Heading types supported by default in the editor.
         ['heading1', 'heading2', 'heading3', 'heading4', 'heading5', 'heading6'].forEach((heading) => {
             if (this._allowedBlocks[heading]) {
                 headingOptions.levels.push(+heading.slice(-1) as Level)
@@ -107,11 +118,7 @@ export class DotBlockEditorComponent implements OnInit {
 
         return {
             heading: headingOptions.levels.length ? headingOptions : false,
-            ...(this._allowedBlocks['orderedList'] ? {} : {orderedList: false}),
-            ...(this._allowedBlocks['bulletList'] ? {} : {bulletList: false}),
-            ...(this._allowedBlocks['blockquote'] ? {} : {blockquote: false}),
-            ...(this._allowedBlocks['codeBlock'] ? {} : {codeBlock: false}),
-            ...(this._allowedBlocks['horizontalRule'] ? {} : {horizontalRule: false})
+            ...staterKitOptions.reduce((object, item) => ( {...object, ...(this._allowedBlocks[item] ? {} : {[item]: false})}), {})
         };
     }
 
