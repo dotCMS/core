@@ -112,11 +112,11 @@ function persistWebComponentsTestResults {
   gitConfig
 
   if [[ ! -d dotcicd/test-results ]]; then
-    echo "Cloning ${GITHUB_TEST_RESULTS_REPO} to ${TEST_RESULTS_PATH}"
-    git clone ${GITHUB_TEST_RESULTS_REPO} ${TEST_RESULTS_PATH}
+    echo "Cloning ${GITHUB_TEST_RESULTS_REPO} to ${TEST_RESULTS_WEBCOMPONENTS}"
+    git clone ${GITHUB_TEST_RESULTS_REPO} ${TEST_RESULTS_WEBCOMPONENTS}
   fi
 
-  existsOrCreateAndSwitch ${TEST_RESULTS_PATH}/projects/${DOT_CICD_TARGET}
+  existsOrCreateAndSwitch ${TEST_RESULTS_WEBCOMPONENTS}/projects/${DOT_CICD_TARGET}
 
   git fetch --all
 
