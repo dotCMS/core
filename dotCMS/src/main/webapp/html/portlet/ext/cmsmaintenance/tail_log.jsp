@@ -181,26 +181,27 @@
     function attachLogIframeEvents() {
         var dataLogSourceElem = document.getElementById('tailingFrame');
         var iDoc = dataLogSourceElem.contentWindow || dataLogSourceElem.contentDocument;
+        logRawContent = '';
         iDoc.document.addEventListener("logUpdated", (e) => {
-            updateLogViewerData();
+            updateLogViewerData(e.detail.newContent);
         })
     }
     
     var excludeLogRowsActive = false;
+    var logRawContent = '';
 
-    function updateLogViewerData(){
+    function updateLogViewerData(newContent){
 
         var dataLogSourceElem = document.getElementById('tailingFrame').contentDocument.body;
         var dataLogPrintedElem = document.querySelector('.logViewerPrinted');
         var keywordLogInput = document.querySelector('#keywordLogFilterInput');
-        var contentLogSize = 0;
 
         var debounce = (callback, time = 300, interval) => (...args) => {
             clearTimeout(interval, interval = setTimeout(() => callback(...args), time));
         }
 
         function performMark(callback) {
-            dataLogPrintedElem.innerHTML = dataLogSourceElem.innerHTML;
+            dataLogPrintedElem.innerHTML = logRawContent;
 
             var keyword = keywordLogInput.value;
 
@@ -239,14 +240,11 @@
         }
 
         function initLogViewer() {
-            var domContent = dataLogSourceElem.innerHTML;
             var result = dataLogPrintedElem
+            result.innerHTML += newContent;
+            logRawContent += newContent;
 
-            if (contentLogSize !== domContent.length) {
-                result.innerHTML = domContent;
-                contentLogSize = domContent.length
-                excludeLogRowsActive ? performMark(excludeNoMatchingRows) : performMark();
-            }
+            excludeLogRowsActive ? performMark(excludeNoMatchingRows) : performMark();
 
             if (document.querySelector('#scrollMe').checked) {
                 scrollLogToBottom();
@@ -295,6 +293,6 @@
 </div>
 
 <div id="tailContainer" class="log-files__container" style="display: flex; flex-direction: column;">
-    <iframe id="tailingFrame" src="/html/blank.jsp" class="log-files__iframe"></iframe>
+    <iframe id="tailingFrame" src="/html/blank.jsp" style="display: none;" class="log-files__iframe"></iframe>
     <div class="logViewerPrinted" style="flex-grow: 1;"></div>
 </div>

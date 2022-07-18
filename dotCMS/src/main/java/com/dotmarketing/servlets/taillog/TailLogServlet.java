@@ -94,8 +94,8 @@ public class TailLogServlet extends HttpServlet {
 				+ "<title>dotCMS Log</title>"
 				+ "<style type='text/css'>@import '/html/css/dot_admin.css';</style>"
 				+ "<script>"
-				+ "function doS(){"
-				+ "var logEvent=new CustomEvent('logUpdated',{detail:{msg:'log updated'},bubbles:true,cancelable:true});document.body.dispatchEvent(logEvent);"
+				+ "function doS(newContent){"
+				+ "var logEvent=new CustomEvent('logUpdated',{detail:{msg:'log updated', newContent: newContent},bubbles:true,cancelable:true});document.body.dispatchEvent(logEvent);"
 				+ "}</script></head><body class='tailerBody'>");
 
 		out.flush();
@@ -131,7 +131,7 @@ public class TailLogServlet extends HttpServlet {
                 String write = listener.getOut(true).toString();
 				if (UtilMethods.isSet(write)) {
 					response.getOutputStream().print(write);
-					response.getOutputStream().print("<script>doS();</script>");
+					response.getOutputStream().print("<script>doS('" + write + "');</script>");
 					response.getOutputStream().flush();
 				}
                 Thread.sleep(1000);
