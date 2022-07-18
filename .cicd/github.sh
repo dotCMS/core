@@ -99,7 +99,7 @@ function persistResults {
     fi
   fi
 
-  addResults ./${GITHUB_SHA::8} OUTPUT_FOLDER
+  addResults ./${GITHUB_SHA::8} ${OUTPUT_FOLDER}
   git add .
   git commit -m "Adding tests results for ${GITHUB_SHA::8} from ${CURRENT_BRANCH}"
   git push ${GITHUB_TEST_RESULTS_REMOTE}
@@ -143,7 +143,7 @@ function persistWebComponentsTestResults {
     fi
   fi
 
-  addResults ./${GITHUB_SHA::8} OUTPUT_FOLDER_WEBCOMPONENTS
+  addResults ./${GITHUB_SHA::8} ${OUTPUT_FOLDER_WEBCOMPONENTS}
   git add .
   git commit -m "Adding tests results for ${GITHUB_SHA::8} from ${CURRENT_BRANCH}"
   git push ${GITHUB_TEST_RESULTS_REMOTE}
