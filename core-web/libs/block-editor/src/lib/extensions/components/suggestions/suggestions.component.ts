@@ -47,6 +47,7 @@ export enum ItemsType {
 export class SuggestionsComponent implements OnInit, AfterViewInit {
     @ViewChild('list', { static: false }) list: SuggestionListComponent;
 
+    // Maybe this should be an @Output() instead of @Input();
     @Input() onSelection: (props: SuggestionsCommandProps) => void;
     @Input() items: DotMenuItem[] = [];
     @Input() title = 'Select a block';
@@ -57,7 +58,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
     @Input() showTitle = true;
     @Input() showURL = false;
     @Input() loading = false;
-    @Input() waitForItems = false;
+    @Input() waitForSearch = false;
 
     @Output() clearFilter: EventEmitter<string> = new EventEmitter<string>();
     @Output() goBack: EventEmitter<MouseEvent> = new EventEmitter<MouseEvent>();
@@ -83,7 +84,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
     ) {}
 
     ngOnInit(): void {
-        if (this.items?.length === 0 && !this.waitForItems) {
+        if (this.items?.length === 0 && !this.waitForSearch) {
             // assign the default suggestions options.
             this.items = suggestionOptions;
             this.items.forEach((item) => {
@@ -247,6 +248,43 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
         }
         this.isFilterActive = !!filter.length;
         this.setFirstItemActive();
+    }
+
+    /**
+     * Search contentlets filtered by url
+     *
+     * @private
+     * @param {*} { link = '' }
+     * @memberof BubbleMenuLinkFormComponent
+     */
+    searchContentlets({ link = '' }) {
+        this.loading = true;
+        this.suggestionsService
+            .getContentletsUrlMap({ filter: link })
+            .subscribe((contentlets: DotCMSContentlet[]) => {
+                this.items = contentlets.map((contentlet) => {
+                    const { languageId } = contentlet;
+                    contentlet.language = this.getContentletLanguage(languageId);
+                    return {
+                        label: contentlet.title,
+                        icon: 'contentlet/image',
+                        data: {
+                            contentlet: contentlet
+                        },
+                        command: () => {
+                            this.onSelection({
+                                payload: contentlet,
+                                type: {
+                                    name: 'dotContent'
+                                }
+                            });
+                        }
+                    };
+                });
+                this.loading = false;
+                // Active first result
+                requestAnimationFrame(() => this.setFirstItemActive());
+            });
     }
 
     private loadContentTypes(filter = '') {

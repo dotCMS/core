@@ -8,21 +8,15 @@ import {
     Input
 } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
-import { take, debounceTime } from 'rxjs/operators';
-
-// Services
-import { DotLanguageService, Languages } from '../../services/dot-language/dot-language.service';
-import { SuggestionsService } from '../../services/suggestions/suggestions.service';
+import { debounceTime } from 'rxjs/operators';
 
 // Components
 import {
-    DotMenuItem,
     SuggestionsCommandProps,
     SuggestionsComponent
 } from '../suggestions/suggestions.component';
 
 // Models
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { isValidURL } from '../../../utils/bubble-menu.utils';
 
 export interface blockLinkMenuForm {
@@ -49,20 +43,18 @@ export class BubbleMenuLinkFormComponent implements OnInit {
         blank: true
     };
 
-    private dotLangs: Languages;
     private minChars = 3;
 
+    loading = false;
+    form: FormGroup;
     options = [
         { name: 'New Window', blank: true },
         { name: 'Same Window', blank: false }
     ];
 
-    loading = false;
-    items: DotMenuItem[] = [];
-    form: FormGroup;
-
+    // Getters
     get noResultsTitle() {
-        return `No resutls for: <strong>${this.newLink}</strong>`;
+        return `No resutls for <strong>${this.newLink}</strong>`;
     }
 
     get currentLink() {
@@ -73,21 +65,12 @@ export class BubbleMenuLinkFormComponent implements OnInit {
         return this.form.get('link').value;
     }
 
-    constructor(
-        private suggestionService: SuggestionsService,
-        private dotLanguageService: DotLanguageService,
-        private fb: FormBuilder
-    ) {
+    constructor(private fb: FormBuilder) {
         /* */
     }
 
     ngOnInit() {
         this.form = this.fb.group({ ...this.initialValues });
-
-        this.dotLanguageService
-            .getLanguages()
-            .pipe(take(1))
-            .subscribe((dotLang) => (this.dotLangs = dotLang));
 
         this.form
             .get('link')
@@ -97,7 +80,7 @@ export class BubbleMenuLinkFormComponent implements OnInit {
                 if (link.length < this.minChars || isValidURL(link)) {
                     return;
                 }
-                this.searchContentlets({ link });
+                this.suggestionsComponent?.searchContentlets({ link });
             });
     }
 
@@ -122,6 +105,11 @@ export class BubbleMenuLinkFormComponent implements OnInit {
         this.form.setValue({ link, blank }, { emitEvent: false });
     }
 
+    /**
+     * Set Focus Search Input
+     *
+     * @memberof BubbleMenuLinkFormComponent
+     */
     focusInput() {
         this.input.nativeElement.focus();
     }
@@ -134,7 +122,7 @@ export class BubbleMenuLinkFormComponent implements OnInit {
      * @memberof BubbleMenuLinkFormComponent
      */
     onKeyDownEvent(e: KeyboardEvent) {
-        if (!this.items.length) {
+        if (!this.showSuggestions) {
             return true;
         }
         switch (e.key) {
@@ -154,59 +142,24 @@ export class BubbleMenuLinkFormComponent implements OnInit {
         }
     }
 
+    /**
+     * Reset form value to initials
+     *
+     * @memberof BubbleMenuLinkFormComponent
+     */
     resetForm() {
         this.showSuggestions = false;
         this.setFormValue({ ...this.initialValues });
     }
 
     /**
-     * Search contentlets filtered by url
+     * Set url on selection
      *
-     * @private
-     * @param {*} { link = '' }
+     * @param {SuggestionsCommandProps} { payload: { url } }
      * @memberof BubbleMenuLinkFormComponent
      */
-    private searchContentlets({ link = '' }) {
-        this.suggestionService
-            .getContentletsUrlMap({ filter: link })
-            .subscribe((contentlets: DotCMSContentlet[]) => {
-                this.items = contentlets.map((contentlet) => {
-                    const { languageId } = contentlet;
-                    contentlet.language = this.getContentletLanguage(languageId);
-                    return {
-                        label: contentlet.title,
-                        icon: 'contentlet/image',
-                        data: {
-                            contentlet: contentlet
-                        },
-                        command: () => {
-                            this.onSelection({
-                                payload: contentlet,
-                                type: {
-                                    name: 'dotContent'
-                                }
-                            });
-                        }
-                    };
-                });
-                this.loading = false;
-                // Active first result
-                requestAnimationFrame(() => this.suggestionsComponent?.setFirstItemActive());
-            });
-    }
-
     onSelection({ payload: { url } }: SuggestionsCommandProps) {
         this.setFormValue({ ...this.form.value, link: url });
         this.submitForm.emit(this.form.value);
-    }
-
-    private getContentletLanguage(languageId: number): string {
-        const { languageCode, countryCode } = this.dotLangs[languageId];
-
-        if (!languageCode || !countryCode) {
-            return '';
-        }
-
-        return `${languageCode}-${countryCode}`;
     }
 }

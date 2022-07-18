@@ -46,17 +46,16 @@
     
     <!-- Suggestions -->
     <dotcms-suggestions
-        *ngIf="showSuggestions"
         #suggestions
+        *ngIf="showSuggestions"
         class="link-suggestions"
         (goBack)="resetForm()"
-        [items]="items"
         [loading]="loading"
-        [onSelection]="onSelection"
+        [onSelection]="onSelection.bind(this)"
         [showTitle]="false"
         [showURL]="true"
         [title]="noResultsTitle"
-        [waitForItems]="true"
+        [waitForSearch]="true"
         >
     </dotcms-suggestions>
 
