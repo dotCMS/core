@@ -7,7 +7,7 @@
   },
   "scripts": {
     "ng": "nx",
-    "postinstall": "node ./decorate-angular-cli.js && ngcc --properties es2020 browser module main",
+    "postinstall": "node ./decorate-angular-cli.js && ngcc --properties es2015 browser module main",
     "nx": "nx",
     "start": "ng serve",
     "build": "ng build",
@@ -168,6 +168,7 @@
     "jasmine-spec-reporter": "7.0.0",
     "jest": "27.5.1",
     "jest-cli": "^26.6.3",
+    "jest-html-reporters": "^3.0.10",
     "jest-preset-angular": "11.1.2",
     "karma": "6.3.20",
     "karma-chrome-launcher": "^3.1.0",
