@@ -1,6 +1,6 @@
 /* eslint-disable @angular-eslint/component-selector */
 import { Component, OnInit, forwardRef, ViewChild, OnDestroy } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormGroup, FormBuilder } from '@angular/forms';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormGroup, UntypedFormBuilder } from '@angular/forms';
 
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -46,7 +46,7 @@ interface DotAddClass {
 export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlValueAccessor {
     @ViewChild(NgGrid, { static: true }) ngGrid: NgGrid;
 
-    form: FormGroup;
+    form: UntypedFormGroup;
     value: DotLayoutBody;
     grid: DotLayoutGrid;
 
@@ -85,7 +85,7 @@ export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlVal
         private dotEditLayoutService: DotEditLayoutService,
         private dotMessageService: DotMessageService,
         private dotEventsService: DotEventsService,
-        public fb: FormBuilder
+        public fb: UntypedFormBuilder
     ) {}
 
     ngOnInit() {

@@ -5,7 +5,7 @@ import { DebugElement, Component, Injectable } from '@angular/core';
 
 import { DotPageSelectorComponent } from './dot-page-selector.component';
 import { DotPageAsset, DotPageSelectorService } from './service/dot-page-selector.service';
-import { FormGroup, FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { UntypedFormGroup, UntypedFormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { AutoCompleteModule } from 'primeng/autocomplete';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
 import {
@@ -92,9 +92,9 @@ class MockDotPageSelectorService {
     `
 })
 class FakeFormComponent {
-    form: FormGroup;
+    form: UntypedFormGroup;
 
-    constructor(private fb: FormBuilder) {
+    constructor(private fb: UntypedFormBuilder) {
         /*
             This should go in the ngOnInit but I don't want to detectChanges everytime for
             this fake test component

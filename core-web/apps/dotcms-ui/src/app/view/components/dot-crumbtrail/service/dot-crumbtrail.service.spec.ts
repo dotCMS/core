@@ -157,11 +157,8 @@ describe('DotCrumbtrailService', () => {
     });
 
     it('Should take url from NavegationEnd event', () => {
-        dotNavigationServiceMock.navigationEnd.next({
-            url: '/first_portlet',
-            urlAfterRedirects: '/first_portlet',
-            id: 1
-        });
+        const mockNavigationEnd = new NavigationEnd(1, '/first_portlet', '/first_portlet');
+        dotNavigationServiceMock.navigationEnd.next(mockNavigationEnd);
 
         expect(secondCrumb).toEqual([
             {
@@ -176,11 +173,8 @@ describe('DotCrumbtrailService', () => {
     });
 
     it('Should ignore c prefix', () => {
-        dotNavigationServiceMock.navigationEnd.next({
-            url: '/first_portlet',
-            urlAfterRedirects: '/first_portlet',
-            id: 1
-        });
+        const mockNavigationEnd = new NavigationEnd(1, '/first_portlet', '/first_portlet');
+        dotNavigationServiceMock.navigationEnd.next(mockNavigationEnd);
 
         expect(secondCrumb).toEqual([
             {
@@ -195,11 +189,12 @@ describe('DotCrumbtrailService', () => {
     });
 
     it('Should exclude URL', () => {
-        dotNavigationServiceMock.navigationEnd.next({
-            url: '/content-types-angular/create/content',
-            urlAfterRedirects: '/content-types-angular/create/content',
-            id: 1
-        });
+        const mockNavigationEnd = new NavigationEnd(
+            1,
+            '/content-types-angular/create/content',
+            '/content-types-angular/create/content'
+        );
+        dotNavigationServiceMock.navigationEnd.next(mockNavigationEnd);
 
         expect(secondCrumb).toEqual([
             {
@@ -231,11 +226,12 @@ describe('DotCrumbtrailService', () => {
             }
         };
 
-        dotNavigationServiceMock.navigationEnd.next({
-            url: '/content-types-angular/edit/02853fe9-bd7b-48b4-b19d-058b9dad19a8',
-            urlAfterRedirects: '/content-types-angular/edit/02853fe9-bd7b-48b4-b19d-058b9dad19a8',
-            id: 1
-        });
+        const mockNavigationEnd = new NavigationEnd(
+            1,
+            '/content-types-angular/edit/02853fe9-bd7b-48b4-b19d-058b9dad19a8',
+            '/content-types-angular/edit/02853fe9-bd7b-48b4-b19d-058b9dad19a8'
+        );
+        dotNavigationServiceMock.navigationEnd.next(mockNavigationEnd);
 
         expect(secondCrumb).toEqual([
             {
@@ -276,11 +272,12 @@ describe('DotCrumbtrailService', () => {
             }
         };
 
-        dotNavigationServiceMock.navigationEnd.next({
-            url: '/edit-page/content?url=%2Fabout-us%2Findex&language_id=1',
-            urlAfterRedirects: '/edit-page/content?url=%2Fabout-us%2Findex&language_id=1',
-            id: 1
-        });
+        const mockNavigationEnd = new NavigationEnd(
+            1,
+            '/edit-page/content?url=%2Fabout-us%2Findex&language_id=1',
+            '/edit-page/content?url=%2Fabout-us%2Findex&language_id=1'
+        );
+        dotNavigationServiceMock.navigationEnd.next(mockNavigationEnd);
 
         expect(secondCrumb).toEqual([
             {
@@ -319,11 +316,12 @@ describe('DotCrumbtrailService', () => {
             }
         };
 
-        dotNavigationServiceMock.navigationEnd.next({
-            url: '/apps/google-translate',
-            urlAfterRedirects: '/apps/google-translate',
-            id: 1
-        });
+        const mockNavigationEnd = new NavigationEnd(
+            1,
+            '/apps/google-translate',
+            '/apps/google-translate'
+        );
+        dotNavigationServiceMock.navigationEnd.next(mockNavigationEnd);
 
         expect(secondCrumb).toEqual([
             {
@@ -354,11 +352,12 @@ describe('DotCrumbtrailService', () => {
             }
         };
 
-        dotNavigationServiceMock.navigationEnd.next({
-            url: 'templates/edit/7173cb7a-5d08-4c75-82b3-a7788848c263',
-            urlAfterRedirects: 'templates/edit/7173cb7a-5d08-4c75-82b3-a7788848c263',
-            id: 1
-        });
+        const mockNavigationEnd = new NavigationEnd(
+            1,
+            'templates/edit/7173cb7a-5d08-4c75-82b3-a7788848c263',
+            'templates/edit/7173cb7a-5d08-4c75-82b3-a7788848c263'
+        );
+        dotNavigationServiceMock.navigationEnd.next(mockNavigationEnd);
 
         expect(secondCrumb).toEqual([
             {
@@ -385,11 +384,8 @@ describe('DotCrumbtrailService', () => {
             }
         };
 
-        dotNavigationServiceMock.navigationEnd.next({
-            url: 'templates/new',
-            urlAfterRedirects: 'templates/new',
-            id: 1
-        });
+        const mockNavigationEnd = new NavigationEnd(1, 'templates/new', 'templates/new');
+        dotNavigationServiceMock.navigationEnd.next(mockNavigationEnd);
 
         expect(secondCrumb).toEqual([
             {
