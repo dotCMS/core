@@ -1,11 +1,10 @@
 @use "libs/dot-primeng-theme-styles/src/scss/variables" as *;
 
-
 .form-actions {
     align-items: center;
     display: flex;
     justify-content: space-between;
-    padding: $spacing-1;
+    padding: $spacing-3;
 }
 
 .btn {
@@ -15,6 +14,7 @@
     cursor: pointer;
     display: flex;
     font-weight: bold;
+    height: 40px;
     justify-content: center;
     padding: 0.85rem $spacing-3;
     width: 180px;

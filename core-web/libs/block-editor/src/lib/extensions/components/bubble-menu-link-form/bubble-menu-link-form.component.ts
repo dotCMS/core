@@ -23,6 +23,7 @@ import {
 
 // Models
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { isValidURL } from '../../../utils/bubble-menu.utils';
 
 export interface blockLinkMenuForm {
     link: string;
@@ -42,20 +43,34 @@ export class BubbleMenuLinkFormComponent implements OnInit {
     @Output() removeLink: EventEmitter<boolean> = new EventEmitter(false);
     @Output() submitForm: EventEmitter<{ link: string; blank: boolean }> = new EventEmitter();
 
+    @Input() showSuggestions = false;
     @Input() initialValues: blockLinkMenuForm = {
         link: '',
-        blank: false
+        blank: true
     };
 
     private dotLangs: Languages;
     private minChars = 3;
 
+    options = [
+        { name: 'New Window', blank: true },
+        { name: 'Same Window', blank: false }
+    ];
+
     loading = false;
     items: DotMenuItem[] = [];
     form: FormGroup;
 
-    get showSuggestions() {
-        return this.loading || this.items.length;
+    get noResultsTitle() {
+        return `No resutls for: <strong>${this.newLink}</strong>`;
+    }
+
+    get currentLink() {
+        return this.initialValues.link;
+    }
+
+    get newLink() {
+        return this.form.get('link').value;
     }
 
     constructor(
@@ -78,8 +93,8 @@ export class BubbleMenuLinkFormComponent implements OnInit {
             .get('link')
             .valueChanges.pipe(debounceTime(500))
             .subscribe((link) => {
-                if (link.length < this.minChars) {
-                    this.items = [];
+                // If it's a valid url, do not search
+                if (link.length < this.minChars || isValidURL(link)) {
                     return;
                 }
                 this.searchContentlets({ link });
@@ -92,8 +107,9 @@ export class BubbleMenuLinkFormComponent implements OnInit {
      * @memberof BubbleMenuLinkFormComponent
      */
     setLoading() {
-        const link = this.form.get('link').value;
-        this.loading = link.length < this.minChars || this.items.length ? false : true;
+        const shouldShow = !(this.newLink.length < this.minChars || isValidURL(this.newLink));
+        this.showSuggestions = shouldShow;
+        this.loading = shouldShow;
     }
 
     /**
@@ -138,6 +154,11 @@ export class BubbleMenuLinkFormComponent implements OnInit {
         }
     }
 
+    resetForm() {
+        this.showSuggestions = false;
+        this.setFormValue({ ...this.initialValues });
+    }
+
     /**
      * Search contentlets filtered by url
      *
@@ -174,7 +195,7 @@ export class BubbleMenuLinkFormComponent implements OnInit {
             });
     }
 
-    private onSelection({ payload: { url } }: SuggestionsCommandProps) {
+    onSelection({ payload: { url } }: SuggestionsCommandProps) {
         this.setFormValue({ ...this.form.value, link: url });
         this.submitForm.emit(this.form.value);
     }

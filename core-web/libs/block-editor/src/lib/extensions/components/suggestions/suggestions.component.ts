@@ -57,8 +57,10 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
     @Input() showTitle = true;
     @Input() showURL = false;
     @Input() loading = false;
+    @Input() waitForItems = false;
 
     @Output() clearFilter: EventEmitter<string> = new EventEmitter<string>();
+    @Output() goBack: EventEmitter<MouseEvent> = new EventEmitter<MouseEvent>();
 
     private itemsLoaded: ItemsType;
     private selectedContentType: DotCMSContentType;
@@ -81,7 +83,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
     ) {}
 
     ngOnInit(): void {
-        if (this.items?.length === 0 && !this.loading) {
+        if (this.items?.length === 0 && !this.waitForItems) {
             // assign the default suggestions options.
             this.items = suggestionOptions;
             this.items.forEach((item) => {
@@ -217,6 +219,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
     handleBackButton(event: MouseEvent): void {
         event.preventDefault();
         event.stopPropagation();
+        this.goBack.emit(event);
         // Set the previous load Time to make the right search.
         this.itemsLoaded =
             this.itemsLoaded === ItemsType.CONTENT ? ItemsType.CONTENTTYPE : ItemsType.BLOCK;

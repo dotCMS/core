@@ -16,13 +16,21 @@
                     "apps/dotcms-block-editor/src/favicon.ico",
                     "apps/dotcms-block-editor/src/assets"
                 ],
-                "styles": ["apps/dotcms-block-editor/src/styles.scss"],
+                "styles": [
+                    "libs/dot-primeng-theme-styles/src/scss/styles.scss",
+                    "node_modules/primeicons/primeicons.css",
+                    "node_modules/primeflex/primeflex.css",
+                    "node_modules/primeng/resources/primeng.min.css"
+                ],
                 "scripts": [
                     {
                         "bundleName": "generator-runtime",
                         "input": "node_modules/regenerator-runtime/runtime.js"
                     }
                 ],
+                "stylePreprocessorOptions": {
+                    "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
+                },
                 "vendorChunk": true,
                 "extractLicenses": false,
                 "buildOptimizer": false,

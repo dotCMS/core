@@ -7,12 +7,11 @@
         (mousedown)="focusInput()"
         (ngSubmit)="submitForm.emit(form.value)"
     >
-        <div class="form-control">
+        <div class="search-container">
             <input
                 #input
                 id="editor-input-link"
                 type="text"
-                class="search"
                 placeholder="Paste link or search for pages"
                 formControlName="link"
                 (input)="setLoading()"
@@ -20,43 +19,50 @@
             <button class="btn" type="submit">ADD</button>
         </div>
 
-        <div class="form-control" *ngIf="initialValues.link.length">
-            <div class="label-container">
-                <a class="label-link" [href]="nodeLink" target="_blank">
-                    <span class="material-icons">language</span>
-                    <span class="truncate">{{ link }}</span>
-                </a>
+        <hr class="divider" *ngIf="showSuggestions || currentLink"/>
+
+        <div class="info-container" *ngIf="currentLink">
+            <a class="url-container" [href]="currentLink" target="_blank">
+                <span class="material-icons" [style]="{ fontSize: '32px' }">language</span>
+                <span class="truncate">{{ currentLink }}</span>
+            </a>
+    
+            <div class="dropdown-container">
+                <span [style]="{ fontSize: '12px' }">Open Link in</span>
+                <p-dropdown
+                    *ngIf="currentLink.length"
+                    id="editor-input-link-dropdown"
+                    formControlName="blank"
+                    optionLabel="name"
+                    optionValue="blank"
+                    [options]="options"
+                    [style]="{ width: '100%' }"
+                ></p-dropdown>
             </div>
         </div>
 
-        <div class="form-control">
-            <input
-                id="blank"
-                type="checkbox"
-                formControlName="blank"
-            />
-            <label for="blank">Open in a new tap</label>
-        </div>
     </form>
 
-    <hr class="divider" *ngIf="showSuggestions || initialValues.link"/>
-
+    
     <!-- Suggestions -->
     <dotcms-suggestions
         *ngIf="showSuggestions"
         #suggestions
         class="link-suggestions"
+        (goBack)="resetForm()"
+        [items]="items"
+        [loading]="loading"
+        [onSelection]="onSelection"
         [showTitle]="false"
         [showURL]="true"
-        [loading]="loading"
-        [items]="items"
-        [onSelection]="onSelection"
+        [title]="noResultsTitle"
+        [waitForItems]="true"
         >
     </dotcms-suggestions>
 
     <!-- Form Actions -->
     <dotcms-form-actions
-        [link]="initialValues.link"
+        [link]="currentLink"
         (hide)="hide.emit($event)"
         (removeLink)="removeLink.emit($event)"
     >

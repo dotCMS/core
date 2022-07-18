@@ -27,6 +27,25 @@ export const shouldShowBubbleMenu = ({ editor, state, from, to }: ShouldShowProp
     return true;
 };
 
+/**
+ *  Check if a text is a valid url
+ *
+ * @param {string} nodeText
+ * @return {*} 
+ */
+export const isValidURL = (nodeText: string) => {
+    const pattern = new RegExp(
+        '^(https?:\\/\\/)?' + // protocol
+            '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name
+            '((\\d{1,3}\\.){3}\\d{1,3}))' + // OR ip (v4) address
+            '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
+            '(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
+            '(\\#[-a-z\\d_]*)?$',
+        'i'
+    ); // fragment locator
+    return !!pattern.test(nodeText);
+}
+
 export const getNodePosition = (node: HTMLElement, type: string): DOMRect => {
     const img = node.getElementsByTagName('img')[0];
     // If is a dotImage Node, get the image position

@@ -12,58 +12,52 @@
         align-items: center;
         display: flex;
         flex-direction: column;
-        gap: $spacing-1;
         max-width: 100%;
-        padding: $spacing-1;
-        .form-control {
-            align-items: center;
-            display: flex;
-            flex-direction: row;
-            width: 100%;
-        }
     }
 
-    .search {
-        background: #FFFFFF;
-        border-radius: $border-radius;
-        border: 1px solid #B3B1B8;
-        box-sizing: border-box;
-        padding: 0.85rem;
-        width: calc(100% - 5.5rem);
-        &:focus {
+    .search-container {
+        align-items: center;
+        display: flex;
+        flex-direction: row;
+        padding: $spacing-3;
+        width: 100%;
+        input {
+            background: #FFFFFF;
+            border-radius: 2px 0 0 2px;
+            border: 1px solid #B3B1B8;
+            box-sizing: border-box;
+            padding: 0.85rem;
+            width: calc(100% - 5rem);
             outline: none;
         }
     }
-    
-    .label-container {
+
+    .info-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        padding: $spacing-3;
         width: 100%;
-        cursor: pointer;
-        white-space: nowrap;
-        word-wrap: normal;
 
-        &:hover {
-            background-color: $gray-bg;
-        }
-
-        .label-link {
-            align-items: center;
-            color: $black;
-            display: flex;
-            font-size: $font-size-medium;
-            gap: $spacing-1;
-            height: 100%;
-            justify-content: flex-start;
-            padding: $spacing-1 0;
-            text-decoration: none;
+        .url-container {
+            cursor: pointer;
+            white-space: nowrap;
+            font-size: 16px;
             width: 100%;
+            word-wrap: normal;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            gap: .5rem;
+            color: $black;
         }
-    }
-
-    .divider {
-        border: 0;
-        border-top: 1px solid $gray-lighter;
-        width: 100%;
-        margin: 0;
+    
+        .dropdown-container {
+            display: flex;
+            flex-direction: column;
+            gap: .2rem;
+            min-width: 100%;
+        }
     }
     
 }
@@ -71,7 +65,7 @@
 .btn {
     align-items: center;
     background: #576BE8;
-    border-radius: $border-radius;
+    border-radius: 0 2px 2px 0;
     border: 1px solid #576BE8;
     color: $white;
     cursor: pointer;
@@ -79,11 +73,17 @@
     font-weight: bold;
     justify-content: center;
     padding: 0.85rem $spacing-3;
-    width: 5.5rem;
+    width: 5rem;
+}
+
+.divider {
+    border: 0;
+    border-top: 1px solid $gray-lighter;
+    width: 100%;
+    margin: 0;
 }
 
 .truncate {
-    font-size: 1rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

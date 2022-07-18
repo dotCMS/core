@@ -11,6 +11,7 @@ import {
 
 // Interface
 import { PluginStorage } from '../extensions/bubble-link-form.extension';
+import { isValidURL } from '../utils/bubble-menu.utils';
 
 interface PluginState {
     toggle: boolean;
@@ -48,7 +49,8 @@ export class BubbleLinkFormView {
 
     private scrollElementMap = {
         'editor-suggestion-list': true,
-        'editor-input-link': true
+        'editor-input-link': true,
+        'editor-input-link-dropdown': true,
     };
 
     constructor({
@@ -125,6 +127,7 @@ export class BubbleLinkFormView {
 
     show() {
         this.tippy?.show();
+        this.component.instance.showSuggestions = false;
         // Afther show the component set values
         this.setInputValues();
         this.component.instance.items = [];
@@ -204,7 +207,7 @@ export class BubbleLinkFormView {
             ? this.editor.getAttributes('link')
             : this.editor.getAttributes('dotImage');
         const link = href || this.getLinkSelect();
-        const blank = target === '_blank';
+        const blank = target ? target === '_blank' : true;
         return { link, blank };
     }
 
@@ -213,20 +216,7 @@ export class BubbleLinkFormView {
         const { from, to } = state.selection;
         const text = state.doc.textBetween(from, to, ' ');
 
-        return this.isLink(text) ? text : '';
-    }
-
-    isLink(nodeText: string) {
-        const pattern = new RegExp(
-            '^(https?:\\/\\/)?' + // protocol
-                '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name
-                '((\\d{1,3}\\.){3}\\d{1,3}))' + // OR ip (v4) address
-                '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
-                '(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
-                '(\\#[-a-z\\d_]*)?$',
-            'i'
-        ); // fragment locator
-        return !!pattern.test(nodeText);
+        return isValidURL(text) ? text : '';
     }
 
     isDotImageNode() {
@@ -241,9 +231,10 @@ export class BubbleLinkFormView {
 
     private hanlderScroll(e: Event) {
         const element = e.target as HTMLElement;
+        const parentElement = element?.parentElement?.parentElement;
         // When the text is too long, the input fires the `scroll` event.
         // When that happens, we do not want to hide the tippy.
-        if (this.scrollElementMap[element.id]) {
+        if (this.scrollElementMap[element.id] || this.scrollElementMap[parentElement.id]) {
             return;
         }
         this.tippy?.hide();
