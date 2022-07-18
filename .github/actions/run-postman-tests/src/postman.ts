@@ -24,9 +24,8 @@ const resourcesFolder = path.join(cicdFolder, 'resources', 'postman')
 const dockerFolder = path.join(cicdFolder, 'docker')
 const licenseFolder = path.join(dockerFolder, 'license')
 const dotCmsRoot = path.join(projectRoot, 'dotCMS')
-const logsFolder = path.join(dockerFolder, 'logs')
-const logFile = 'dotcms.log'
-const volumes = [licenseFolder, path.join(dockerFolder, 'cms-shared'), path.join(dockerFolder, 'cms-local'), logsFolder]
+const logFile = path.join(dotCmsRoot, 'dotcms.log')
+const volumes = [licenseFolder, path.join(dockerFolder, 'cms-shared'), path.join(dockerFolder, 'cms-local')]
 const postmanTestsPath = path.join(dotCmsRoot, 'src', 'curl-test')
 const postmanEnvFile = 'postman_environment.json'
 const resultsFolder = path.join(dotCmsRoot, 'build', 'test-results', 'postmanTest')
@@ -40,6 +39,13 @@ export interface PostmanTestsResult {
   testsRunExitCode: number
   testsResultsStatus: string
   skipResultsReport: boolean
+}
+
+export interface Command {
+  cmd: string
+  args?: string[]
+  workingDir?: string
+  env?: {[key: string]: string}
 }
 
 const DEPS_ENV: {[key: string]: string} = {
@@ -60,6 +66,7 @@ const DEPS_ENV: {[key: string]: string} = {
 export const runTests = async (): Promise<PostmanTestsResult> => {
   setup()
   startDeps()
+  printInfo()
 
   try {
     return await runPostmanCollections()
@@ -80,16 +87,11 @@ export const runTests = async (): Promise<PostmanTestsResult> => {
  * Copies logs from docker volume to standard DotCMS location.
  */
 const copyOutputs = async () => {
-  await exec.exec('docker', ['ps'])
-  await exec.exec('docker', ['cp', 'docker_dotcms-app_1:/srv/dotserver/tomcat-9.0.60/logs/dotcms.log', logsFolder])
-  await exec.exec('pwd', [], {cwd: logsFolder})
-  await exec.exec('ls', ['-las', '.'], {cwd: logsFolder})
-
-  try {
-    fs.copyFileSync(path.join(logsFolder, logFile), path.join(dotCmsRoot, logFile))
-  } catch (err) {
-    core.error(`Error copying log file: ${err}`)
-  }
+  printInfo()
+  await execCmd(
+    toCommand('docker', ['cp', 'docker_dotcms-app_1:/srv/dotserver/tomcat-9.0.60/logs/dotcms.log', logFile])
+  )
+  await execCmd(toCommand('ls', ['-las', dotCmsRoot]))
 }
 
 /**
@@ -99,6 +101,12 @@ const setup = () => {
   installDeps()
   createFolders()
   prepareLicense()
+  printInfo()
+}
+
+const printInfo = async () => {
+  await execCmd(toCommand('docker', ['images']))
+  await execCmd(toCommand('docker', ['ps']))
 }
 
 /**
@@ -110,7 +118,7 @@ const installDeps = async () => {
   if (exportReport) {
     npmArgs.push('newman-reporter-htmlextra')
   }
-  await exec.exec('npm', npmArgs)
+  await execCmd(toCommand('npm', npmArgs))
 
   // if (!fs.existsSync(tomcatRoot) && buildEnv === 'gradle') {
   //   core.info(`Tomcat root does not exist, creating it`)
@@ -126,20 +134,19 @@ const installDeps = async () => {
 /**
  * Start postman depencies: db, ES and DotCMS isntance.
  */
-const startDeps = async () => {
+const startDeps = () => {
   // Starting dependencies
   core.info(`
     =======================================
     Starting postman tests dependencies
     =======================================`)
-  // const depProcess = she
-  exec.exec(
-    'docker-compose',
-    ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'up'],
-    {
-      cwd: dockerFolder,
-      env: DEPS_ENV
-    }
+  execCmdAsync(
+    toCommand(
+      'docker-compose',
+      ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'up'],
+      dockerFolder,
+      DEPS_ENV
+    )
   )
 
   //await startDotCMS()
@@ -156,13 +163,13 @@ const stopDeps = async () => {
     Stopping postman tests dependencies
     ===================================`)
   try {
-    await exec.exec(
-      'docker-compose',
-      ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'down'],
-      {
-        cwd: dockerFolder,
-        env: DEPS_ENV
-      }
+    await execCmd(
+      toCommand(
+        'docker-compose',
+        ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'down'],
+        dockerFolder,
+        DEPS_ENV
+      )
     )
   } catch (err) {
     console.error(`Error stopping dependencies: ${err}`)
@@ -224,12 +231,19 @@ const runPostmanCollections = async (): Promise<PostmanTestsResult> => {
   for (const collection of filtered) {
     const normalized = collection.replace(/ /g, '_').replace('.json', '')
     let rc: number
+    const start = new Date().getTime()
+
     try {
       rc = await runPostmanCollection(collection, normalized)
     } catch (err) {
       core.info(`Postman collection run for ${collection} failed due to: ${err}`)
       rc = 127
     }
+
+    const end = new Date().getTime()
+    const duration = (end - start) / 1000
+    core.info(`Collection ${collection} took ${duration} seconds to run`)
+
     collectionRuns.set(collection, rc)
 
     if (exportReport) {
@@ -237,7 +251,9 @@ const runPostmanCollections = async (): Promise<PostmanTestsResult> => {
       htmlResults.push(
         `<tr><td><a href="./${normalized}.html">${collection}</a></td><td style="color: #ffffff; background-color: ${
           passed ? '#28a745' : '#dc3545'
-        }; font-weight: bold;">${passed ? PASSED : FAILED}</td></tr>`
+        }; font-weight: bold;">${passed ? PASSED : FAILED}</td>
+        <td>${duration} seconds</td>
+        </tr>`
       )
     }
   }
@@ -284,11 +300,8 @@ const runPostmanCollection = async (collection: string, normalized: string): Pro
     args.push('--reporter-htmlextra-export')
     args.push(reportFile)
   }
-  const rc = await exec.exec('newman', args, {
-    cwd: postmanTestsPath
-  })
 
-  return rc
+  return await execCmd(toCommand('newman', args, postmanTestsPath))
 }
 
 /*
@@ -348,8 +361,6 @@ const createFolders = () => {
   for (const folder of folders) {
     fs.mkdirSync(folder, {recursive: true})
   }
-
-  shelljs.touch(path.join(dockerFolder, logFile))
 }
 
 /**
@@ -359,7 +370,7 @@ const prepareLicense = async () => {
   const licenseFile = path.join(licenseFolder, 'license.dat')
   core.info(`Adding license to ${licenseFile}`)
   fs.writeFileSync(licenseFile, licenseKey, {encoding: 'utf8', flag: 'a+', mode: 0o777})
-  await exec.exec('ls', ['-las', licenseFile])
+  await execCmd(toCommand('ls', ['-las', licenseFile]))
 }
 
 /**
@@ -404,4 +415,34 @@ const extractFromMessg = (message: string): string[] => {
   }
 
   return extracted
+}
+
+const toCommand = (cmd: string, args?: string[], workingDir?: string, env?: {[key: string]: string}): Command => {
+  return {
+    cmd,
+    args,
+    workingDir,
+    env
+  }
+}
+
+const printCmd = (cmd: Command) => {
+  let message = `Executing cmd: ${cmd.cmd} ${cmd.args?.join(' ') || ''}`
+  if (cmd.workingDir) {
+    message += `\ncwd: ${cmd.workingDir}`
+  }
+  if (cmd.env) {
+    message += `\nenv: ${JSON.stringify(cmd.env, null, 2)}`
+  }
+  core.info(message)
+}
+
+const execCmd = async (cmd: Command): Promise<number> => {
+  printCmd(cmd)
+  return await exec.exec(cmd.cmd, cmd.args || [], {cwd: cmd.workingDir, env: cmd.env})
+}
+
+const execCmdAsync = (cmd: Command) => {
+  printCmd(cmd)
+  exec.exec(cmd.cmd, cmd.args || [], {cwd: cmd.workingDir, env: cmd.env})
 }

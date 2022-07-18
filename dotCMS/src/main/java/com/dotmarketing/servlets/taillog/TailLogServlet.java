@@ -99,7 +99,7 @@ public class TailLogServlet extends HttpServlet {
 				+ "<script>"
 				+ "function doS(){"
 				+ "var logEvent=new CustomEvent('logUpdated',{detail:{msg:'log updated'},bubbles:true,cancelable:true});document.body.dispatchEvent(logEvent);"
-				+ "}</script>" + "</head><body class='tailerBody'>");
+				+ "}</script></head><body class='tailerBody'>");
 
 		out.flush();
 
@@ -131,15 +131,11 @@ public class TailLogServlet extends HttpServlet {
 
 		try {
 			while (thread.isAlive()) {
-				String write = listener.getOut(true).toString();
-				if (write == null || write.length() == 0) {
-					response.getOutputStream().print(" ");
-				} else {
-					response.getOutputStream().print(write);
-					response.getOutputStream().print("<script>doS();</script>");
-				}
-				response.getOutputStream().flush();
-				Thread.sleep(1000);
+                String write = listener.getOut(true).toString();
+                response.getOutputStream().print(write);
+                response.getOutputStream().print("<script>doS();</script>");
+                response.getOutputStream().flush();
+                Thread.sleep(1000);
 			}
 		} catch (Exception e) {
 			if (thread != null) {
