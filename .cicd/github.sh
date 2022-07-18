@@ -59,7 +59,7 @@ function addResults {
 
 
   echo "output: ${output_folder}/* target:${targetFolder}"
-  cp -r "${GITHUB_WORKSPACE}/${output_folder}/." ${targetFolder}/${output_folder}
+  cp -r "${GITHUB_WORKSPACE}/${output_folder}/." ${targetFolder}
 }
 
 
