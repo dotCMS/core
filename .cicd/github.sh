@@ -1,6 +1,7 @@
 #!/bin/bash
 
 TEST_RESULTS="test-results-core-web"
+TEST_RESULTS_WEBCOMPONENTS="test-results-core-web"
 GITHUB="github.com"
 GITHACK="raw.githack.com"
 GITHUB_TEST_RESULTS_PATH="DotCMS/${TEST_RESULTS}"
@@ -16,7 +17,7 @@ fi
 
 DOT_CICD_PATH="./dotcicd"
 OUTPUT_FOLDER="core-web/karma_html"
-OUTPUT_FOLDER_WEBCOMPONENTS="test-reports/dotcms-webcomponents"
+OUTPUT_FOLDER_WEBCOMPONENTS="core-web/test-reports/dotcms-webcomponents"
 
 export GITHUB_TEST_RESULTS_HOST_PATH="${GITHUB}/${GITHUB_TEST_RESULTS_PATH}"
 export GITHUB_TEST_RESULTS_URL="https://${GITHUB_TEST_RESULTS_HOST_PATH}"
@@ -107,7 +108,7 @@ function persistResults {
 }
 
 function persistWebComponentsTestResults {
-  TEST_RESULTS_PATH=${DOT_CICD_PATH}/${TEST_RESULTS}
+  TEST_RESULTS_PATH=${DOT_CICD_PATH}/${TEST_RESULTS_WEBCOMPONENTS}
   gitConfig
 
   if [[ ! -d dotcicd/test-results ]]; then
