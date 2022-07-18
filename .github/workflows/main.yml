@@ -146,7 +146,7 @@ jobs:
             echo "::set-output name=color::#5E7D00";
           fi
       - name: Push Tests to GitHub
-        id: persist_results
+        id: persist_results-2
         if: success() || failure()
         run: |
           chmod +x .cicd/github.sh && source .cicd/github.sh
