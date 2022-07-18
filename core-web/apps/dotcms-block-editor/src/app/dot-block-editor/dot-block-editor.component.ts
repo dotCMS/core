@@ -21,7 +21,6 @@ import { Highlight } from '@tiptap/extension-highlight';
 import { Link } from '@tiptap/extension-link';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
-import {bind} from "lodash";
 
 function toTitleCase(str) {
     return str.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {
@@ -101,8 +100,8 @@ export class DotBlockEditorComponent implements OnInit {
     /**
      *
      * Check if the starter kit keys are part of the _allowedBlocks,
-     * ONLY if is not present will add an attribute with false to disable it. ex. {orderedList: false}
-     * For headings fill the HeadingOptions.
+     * ONLY if is not present will add an attribute with false to disable it. ex. {orderedList: false}.
+     * Exception, headings fill the HeadingOptions or false.
      */
     private setStarterKitOptions(): Partial<StarterKitOptions> {
         // These are the keys that meter for the starter kit.
