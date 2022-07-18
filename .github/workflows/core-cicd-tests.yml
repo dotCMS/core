@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - release-*
+      - commits-22.07
 jobs:
   module-matcher-job:
     name: Module Matcher

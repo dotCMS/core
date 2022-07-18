@@ -149,7 +149,8 @@ const DEPS_ENV = {
     WAIT_FOR_DEPS: waitForDeps,
     POSTGRES_USER: 'postgres',
     POSTGRES_PASSWORD: 'postgres',
-    POSTGRES_DB: 'dotcms'
+    POSTGRES_DB: 'dotcms',
+    MAX_LOCKS_PER_TRANSACTION: '128'
 };
 /*
  *

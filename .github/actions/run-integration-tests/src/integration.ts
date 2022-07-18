@@ -48,7 +48,8 @@ const DEPS_ENV: DatabaseEnvs = {
   postgres: {
     POSTGRES_USER: 'postgres',
     POSTGRES_PASSWORD: 'postgres',
-    POSTGRES_DB: 'dotcms'
+    POSTGRES_DB: 'dotcms',
+    MAX_LOCKS_PER_TRANSACTION: '512'
   }
 }
 
