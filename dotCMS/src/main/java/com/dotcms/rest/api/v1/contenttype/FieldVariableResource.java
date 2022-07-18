@@ -182,7 +182,7 @@ public class FieldVariableResource implements Serializable {
 
 			final List<FieldVariable> fieldVariables = field.fieldVariables();
 
-			response = Response.ok(new ResponseEntityView(new JsonFieldVariableTransformer(fieldVariables).mapList())).build();
+			response = Response.ok(new ResponseEntityView<>(new JsonFieldVariableTransformer(fieldVariables).mapList())).build();
 
 		} catch (NotFoundInDbException e) {
 
@@ -214,7 +214,7 @@ public class FieldVariableResource implements Serializable {
 
 			final List<FieldVariable> fieldVariables = field.fieldVariables();
 
-			response = Response.ok(new ResponseEntityView(new JsonFieldVariableTransformer(fieldVariables).mapList())).build();
+			response = Response.ok(new ResponseEntityView<>(new JsonFieldVariableTransformer(fieldVariables).mapList())).build();
 
 		} catch (NotFoundInDbException e) {
 
@@ -465,7 +465,7 @@ public class FieldVariableResource implements Serializable {
 
 				typeFieldAPI.delete(fieldVariable);
 
-				response = Response.ok(new ResponseEntityView(null)).build();
+				response = Response.ok(new ResponseEntityView<>((String)null)).build();
 			}
 
 		} catch (NotFoundInDbException e) {
@@ -507,7 +507,7 @@ public class FieldVariableResource implements Serializable {
 
 				typeFieldAPI.delete(fieldVariable);
 
-				response = Response.ok(new ResponseEntityView(null)).build();
+				response = Response.ok(new ResponseEntityView<>((String)null)).build();
 			}
 
 		} catch (NotFoundInDbException e) {
