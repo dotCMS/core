@@ -21,6 +21,7 @@ echo
 docker-compose version
 echo
 
+echo "HOME: ${HOME}"
 export DOTCMS_ROOT="${GITHUB_WORKSPACE}/dotCMS"
 echo "DOTCMS_ROOT: ${DOTCMS_ROOT}"
 [[ -f ${DOTCMS_ROOT}/gradlew && -f ${DOTCMS_ROOT}/build.gradle ]] && gradle_env=true
