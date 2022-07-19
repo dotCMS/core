@@ -15,6 +15,8 @@ import com.dotcms.company.CompanyAPI;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+
+import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotmarketing.business.ApiProvider;
@@ -192,7 +194,7 @@ public class ForgotPasswordResourceTest extends UnitTestBase {
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
         assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0).getErrorCode().equals
+        assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals
                 ("the-email-address-you-requested-is-not-registered-in-our-database"));
     }
 
@@ -253,7 +255,7 @@ public class ForgotPasswordResourceTest extends UnitTestBase {
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
         assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0).getErrorCode().equals
+        assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals
                 ("a-new-password-can-only-be-sent-to-an-external-email-address"));
     }
 
@@ -314,7 +316,7 @@ public class ForgotPasswordResourceTest extends UnitTestBase {
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
         assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0).getErrorCode().equals
+        assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals
                 ("please-enter-a-valid-email-address"));
     }
 
