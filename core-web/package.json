@@ -42,7 +42,7 @@
         "dep-graph": "nx dep-graph",
         "help": "nx help",
         "pretty-quick": "pretty-quick",
-        "prepare": "is-ci || cd ../ && pwd && husky install core-web/.husky"
+        "prepare": "cd .. && node core-web/prepare.js"
     },
     "private": false,
     "dependencies": {
