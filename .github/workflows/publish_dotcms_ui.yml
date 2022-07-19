@@ -105,6 +105,12 @@ jobs:
       - name: "Publish to npm"
         run: |
           cd core-web
+
+          ## We need to copy prepare for publish because it will look for it in one-level-down
+          ## core-web folder
+          mkdir dist/apps/core-web
+          cp prepare.js ./dist/apps/core-web/prepare.js
+
           npm set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
           cd dist/apps/dotcms-ui
           if [[ $(basename "${{ github.ref }}") =~ ^release-.* ]]; then
