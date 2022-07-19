@@ -10,6 +10,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -1459,16 +1460,25 @@ public class WorkflowAPITest extends IntegrationTestBase {
             final Contentlet testContentleti = testContentlet;
             runNoLicense(()-> {
 
-                CacheLocator.getWorkFlowCache().clearCache();
-                List<WorkflowAction> foundActions_ = APILocator.getWorkflowAPI()
-                        .findAvailableActions(testContentleti, joeContributor);
-                Assert.assertFalse(foundActions_.isEmpty());
-                Assert.assertEquals(WorkflowAPI.SYSTEM_WORKFLOW_ID, foundActions_.get(0).getSchemeId());
+               final List<WorkflowStep> steps = getSteps(testContentleti);
+
+                Assert.assertFalse(steps.isEmpty());
+                Assert.assertEquals(WorkflowAPI.SYSTEM_WORKFLOW_ID, steps.get(0).getSchemeId());
             });
         } finally {
             contentletAPI.destroy(testContentlet, user, false);
         }
 
+    }
+
+    @WrapInTransaction
+    private List<WorkflowStep>  getSteps (final Contentlet testContentleti) throws DotDataException {
+
+        final WorkFlowFactory workFlowFactory = FactoryLocator.getWorkFlowFactory();
+        final List<WorkflowScheme> schemes = Arrays.asList(workFlowFactory.findSystemWorkflow()) ;
+        CacheLocator.getWorkFlowCache().clearCache();
+        List<WorkflowStep> steps = FactoryLocator.getWorkFlowFactory().findStepsByContentlet(testContentleti, schemes);
+        return steps;
     }
 
     /**
