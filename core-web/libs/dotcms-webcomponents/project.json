@@ -1,4 +1,5 @@
 {
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
     "projectType": "library",
     "generators": {
         "@nxext/stencil:component": {
@@ -6,21 +7,24 @@
             "storybook": true
         }
     },
-    "root": "libs/dotcms-webcomponents",
     "sourceRoot": "libs/dotcms-webcomponents/src",
     "targets": {
         "test": {
             "executor": "@nxext/stencil:test",
             "options": {
                 "projectType": "library",
-                "configPath": "libs/dotcms-webcomponents/stencil.config.ts"
+                "configPath": "libs/dotcms-webcomponents/stencil.config.ts",
+                "tsConfig": "libs/dotcms-webcomponents/tsconfig.json",
+                "outputPath": "dist/libs/dotcms-webcomponents"
             }
         },
         "e2e": {
             "executor": "@nxext/stencil:e2e",
             "options": {
                 "projectType": "library",
-                "configPath": "libs/dotcms-webcomponents/stencil.config.ts"
+                "configPath": "libs/dotcms-webcomponents/stencil.config.ts",
+                "tsConfig": "libs/dotcms-webcomponents/tsconfig.json",
+                "outputPath": "dist/libs/dotcms-webcomponents"
             }
         },
         "build": {

@@ -53,6 +53,7 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
                     new SimpleEntry<>(HSB, HsbImageFilter.class), new SimpleEntry<>(JPEG, JpegImageFilter.class),
                     new SimpleEntry<>(JPG, JpegImageFilter.class), new SimpleEntry<>(PDF, PDFImageFilter.class),
                     new SimpleEntry<>(PNG, PngImageFilter.class), new SimpleEntry<>(RESIZE, ResizeImageFilter.class),
+                    new SimpleEntry<>(SCALE, ScaleImageFilter.class),
                     new SimpleEntry<>(ROTATE, RotateImageFilter.class),
                     new SimpleEntry<>(THUMBNAIL, ThumbnailImageFilter.class),
                     new SimpleEntry<>(THUMB, ThumbnailImageFilter.class),

@@ -11,7 +11,7 @@ import {
 import { DynamicFieldPropertyDirective } from './dynamic-field-property.directive';
 import { FieldPropertyService } from '../../../service';
 import { FieldProperty } from '../field-properties.model';
-import { FormGroup } from '@angular/forms';
+import { UntypedFormGroup } from '@angular/forms';
 import { FieldType } from '@portlets/shared/dot-content-types-edit/components/fields';
 
 @Component({
@@ -20,7 +20,7 @@ import { FieldType } from '@portlets/shared/dot-content-types-edit/components/fi
 })
 class TestComponent {
     property: FieldProperty;
-    group: FormGroup;
+    group: UntypedFormGroup;
 }
 
 class TestFieldPropertyService {
@@ -61,7 +61,7 @@ xdescribe('Directive: DynamicFieldPropertyDirective', () => {
         testComponent = new TestComponent();
 
         propertyName = 'name';
-        group = new FormGroup({});
+        group = new UntypedFormGroup({});
         field = {
             name: 'FieldName',
             clazz: 'testClazz'

@@ -1,6 +1,6 @@
 {
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
     "projectType": "library",
-    "root": "libs/dotcms-js",
     "sourceRoot": "libs/dotcms-js/src",
     "prefix": "",
     "targets": {
