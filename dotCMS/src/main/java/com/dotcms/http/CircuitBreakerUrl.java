@@ -76,8 +76,7 @@ public class CircuitBreakerUrl {
 
     private static final Lazy<Integer> circuitBreakerMaxConnTotal = Lazy.of(()->Config.getIntProperty("CIRCUIT_BREAKER_MAX_CONN_TOTAL",100));
     private static final Lazy<Boolean> allowAccessToPrivateSubnets = Lazy.of(()->Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false));
-    private static final Set<Long> threadIdConnectionCountSet = ConcurrentHashMap.newKeySet();
-
+    private static final CircuitBreakerConnectionControl circuitBreakerConnectionControl = new CircuitBreakerConnectionControl(circuitBreakerMaxConnTotal.get());
     /**
      * 
      * @param proxyUrl
@@ -200,23 +199,13 @@ public class CircuitBreakerUrl {
         });
     }
 
-    
-    
-    
-    
-    
     public void doOut(final HttpServletResponse response) throws IOException {
 
-        if (threadIdConnectionCountSet.size() >= circuitBreakerMaxConnTotal.get()) {
-
-            Logger.info(this, "The maximum number of connections has been reached, size: " +
-                    threadIdConnectionCountSet.size() + ", url: " + this.proxyUrl);
-            throw new RejectedExecutionException("The maximum number of connections has been reached.");
-        }
+        circuitBreakerConnectionControl.check(this.proxyUrl);
 
         try (final OutputStream out = response.getOutputStream()) {
 
-            threadIdConnectionCountSet.add(Thread.currentThread().getId());
+            circuitBreakerConnectionControl.start(Thread.currentThread().getId());
 
             if(verbose) {
 
@@ -264,7 +253,7 @@ public class CircuitBreakerUrl {
             Logger.debug(this.getClass(), ee.getMessage() + " " + toString());
         } finally {
 
-            threadIdConnectionCountSet.remove(Thread.currentThread().getId());
+            circuitBreakerConnectionControl.end(Thread.currentThread().getId());
         }
     }
 
@@ -312,5 +301,33 @@ public class CircuitBreakerUrl {
 
     }
 
+    public static class CircuitBreakerConnectionControl {
 
+        private final int maxConnTotal;
+        private final Set<Long> threadIdConnectionCountSet = ConcurrentHashMap.newKeySet();
+
+        public CircuitBreakerConnectionControl(final int maxConnTotal) {
+            this.maxConnTotal = maxConnTotal;
+        }
+
+        public void check(final String proxyUrl) {
+
+            if (threadIdConnectionCountSet.size() >= maxConnTotal) {
+
+                Logger.info(this, "The maximum number of connections has been reached, size: " +
+                        threadIdConnectionCountSet.size() + ", url: " + proxyUrl);
+                throw new RejectedExecutionException("The maximum number of connections has been reached.");
+            }
+        }
+
+        public void start(final long id) {
+
+            threadIdConnectionCountSet.add(id);
+        }
+
+        public void end(final long id) {
+
+            threadIdConnectionCountSet.remove(id);
+        }
+    }
 }
