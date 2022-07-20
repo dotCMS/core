@@ -1,5 +1,5 @@
-Build started: Fri Dec 15 2017 17:37:00 GMT-0600 (CST)
-Build application version: 1.8.6 (8)
+Build started: Tue Jun 28 2022 18:27:29 GMT-0600 (Central Standard Time)
+Build application version: 1.17.2 (c950c9a)
 Messages:
 info(100) Assumed module uses legacy loader API.
 	module: dojox/jq
@@ -8,15 +8,12 @@ info(100) Assumed module uses legacy loader API.
 	module: dojox/data/StoreExplorer
 	module: dojox/data/restListener
 	module: dojox/drawing/plugins/drawing/Silverlight
-	module: dojox/editor/plugins/ResizeTableColumn
-	module: dojox/editor/plugins/SpellCheck
 	module: dojox/flash/_base
 	module: dojox/help/_base
 	module: dojox/help/console
 	module: dojox/image/Gallery
 	module: dojox/image/SlideShow
 	module: dojox/image/ThumbnailPicker
-	module: dojox/jsonPath/query
 	module: dojox/lang/aspect
 	module: dojox/lang/async
 	module: dojox/lang/docs
@@ -33,14 +30,12 @@ info(100) Assumed module uses legacy loader API.
 	module: dojox/lang/async/timeout
 	module: dojox/lang/async/topic
 	module: dojox/lang/functional/binrec
-	module: dojox/lang/functional/curry
 	module: dojox/lang/functional/linrec
 	module: dojox/lang/functional/listcomp
 	module: dojox/lang/functional/multirec
 	module: dojox/lang/functional/numrec
 	module: dojox/lang/functional/tailrec
 	module: dojox/lang/functional/util
-	module: dojox/lang/functional/zip
 	module: dojox/lang/oo/Decorator
 	module: dojox/lang/oo/Filter
 	module: dojox/lang/oo/aop
@@ -70,7 +65,6 @@ info(100) Assumed module uses legacy loader API.
 	module: dojox/secure/capability
 	module: dojox/secure/fromJson
 	module: dojox/secure/sandbox
-	module: dojox/socket/Reconnect
 	module: dojox/sql/_base
 	module: dojox/sql/_crypto
 	module: dojox/storage/AirDBStorageProvider
@@ -80,11 +74,8 @@ info(100) Assumed module uses legacy loader API.
 	module: dojox/storage/CookieStorageProvider
 	module: dojox/storage/FlashStorageProvider
 	module: dojox/storage/GearsStorageProvider
-	module: dojox/storage/LocalStorageProvider
-	module: dojox/storage/Provider
 	module: dojox/storage/WhatWGStorageProvider
 	module: dojox/storage/_common
-	module: dojox/storage/manager
 	module: dojox/widget/AnalogGauge
 	module: dojox/widget/BarGauge
 	module: dojox/widget/DataPresentation
@@ -130,26 +121,61 @@ info(100) Assumed module uses legacy loader API.
 	module: dojox/xmpp/xmppSession
 	module: dojox/xmpp/widget/ChatSession
 info(103) Optimizing module complete.
-	/Users/morera/dev/dotcms/core/dotCMS/src/main/webapp/html/js/dojo/custom-build/dojo/dojo.js (compile time:1.118s)
-	/Users/morera/dev/dotcms/core/dotCMS/src/main/webapp/html/js/dojo/custom-build/build/build.js (compile time:9.004s)
-info(104) Optimizer messages.
-	/Users/morera/dev/dotcms/core/dotCMS/src/main/webapp/html/js/dojo/custom-build/dojo/dojo.js:
-Done (compile time:1.118s)
-/Users/morera/dev/dotcms/core/dotCMS/src/main/webapp/html/js/dojo/custom-build/build/build.js:
-Done (compile time:9.004s)
-
+	/Users/morera/dev/dotcms/core/dotCMS/src/main/webapp/html/js/dojo/custom-build/dojo/dojo.js (compile time:1.076s)
+	/Users/morera/dev/dotcms/core/dotCMS/src/main/webapp/html/js/dojo/custom-build/build/build.js (compile time:6.348s)
 info(107) Package Version:
-	package: dojo; version: 1.8.6
-	package: dijit; version: 1.8.6
-	package: dojox; version: 1.8.6
+	package: dojo; version: 1.17.2
+	package: dijit; version: 1.17.2
+	package: dojox; version: 1.17.2
 warn(205) Module not tagged as pure AMD yet it contains AMD API applications.
 	module: build/build
 warn(209) Missing or empty package.json.
-	filename: /Users/morera/dev/dojo-release-1.8.6-src/build/package.json
+	filename: /Users/morera/dev/dotcms/core/dotCMS/src/main/webapp/html/js/dojo/src/dojo-release-1.17.2-src/build/package.json
 warn(216) dojo/has plugin resource could not be resolved during build-time.
 	plugin resource id: dojo-firebug?./_firebug/firebug; reference module id: dojo/main
 	plugin resource id: dom-addeventlistener?:./aspect; reference module id: dojo/on
 	plugin resource id: host-browser?dom-addeventlistener?:../on:; reference module id: dojo/request/watch
+	plugin resource id: dojo-bidi?./_BidiMixin; reference module id: dijit/_WidgetBase
+	plugin resource id: dojo-bidi?./bidi/Chart; reference module id: dojox/charting/Chart
+	plugin resource id: dojo-bidi?./bidi/Chart3D; reference module id: dojox/charting/Chart3D
+	plugin resource id: dojo-bidi?../bidi/action2d/ZoomAndPan; reference module id: dojox/charting/action2d/MouseZoomAndPan
+	plugin resource id: dojo-bidi?../bidi/action2d/Tooltip; reference module id: dojox/charting/action2d/Tooltip
+	plugin resource id: dojo-bidi?../bidi/action2d/ZoomAndPan; reference module id: dojox/charting/action2d/TouchZoomAndPan
+	plugin resource id: dojo-bidi?../bidi/axis2d/Default; reference module id: dojox/charting/axis2d/Default
+	plugin resource id: dojo-bidi?../bidi/widget/Chart; reference module id: dojox/charting/widget/Chart
+	plugin resource id: dojo-bidi?../bidi/widget/Legend; reference module id: dojox/charting/widget/Legend
+	plugin resource id: dojo-bidi?./bidi/_BidiMixin; reference module id: dojox/grid/DataGrid
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/Accordion; reference module id: dojox/mobile/Accordion
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/Badge; reference module id: dojox/mobile/Badge
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/Button; reference module id: dojox/mobile/Button
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/Carousel; reference module id: dojox/mobile/Carousel
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/CarouselItem; reference module id: dojox/mobile/CarouselItem
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/FormLayout; reference module id: dojox/mobile/FormLayout
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/Heading; reference module id: dojox/mobile/Heading
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/Icon; reference module id: dojox/mobile/Icon
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/IconItem; reference module id: dojox/mobile/IconItem
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/IconMenu; reference module id: dojox/mobile/IconMenu
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/ListItem; reference module id: dojox/mobile/ListItem
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/ProgressIndicator; reference module id: dojox/mobile/ProgressIndicator
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/Rating; reference module id: dojox/mobile/Rating
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/RoundRectCategory; reference module id: dojox/mobile/RoundRectCategory
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/SimpleDialog; reference module id: dojox/mobile/SimpleDialog
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/SpinWheelSlot; reference module id: dojox/mobile/SpinWheelSlot
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/SwapView; reference module id: dojox/mobile/SwapView
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/Switch; reference module id: dojox/mobile/Switch
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/TabBar; reference module id: dojox/mobile/TabBar
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/TabBarButton; reference module id: dojox/mobile/TabBarButton
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/TextBox; reference module id: dojox/mobile/TextBox
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/ToolBarButton; reference module id: dojox/mobile/ToolBarButton
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/Tooltip; reference module id: dojox/mobile/Tooltip
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/TreeView; reference module id: dojox/mobile/TreeView
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/ValuePickerSlot; reference module id: dojox/mobile/ValuePickerSlot
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/_ComboBoxMenu; reference module id: dojox/mobile/_ComboBoxMenu
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/_StoreListMixin; reference module id: dojox/mobile/_DataListMixin
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/_ItemBase; reference module id: dojox/mobile/_ItemBase
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/_PickerBase; reference module id: dojox/mobile/_PickerBase
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/_StoreListMixin; reference module id: dojox/mobile/_StoreListMixin
+	plugin resource id: dojo-bidi?dojox/mobile/bidi/Scrollable; reference module id: dojox/mobile/scrollable
 	plugin resource id: dojo-parser?:dojo/_base/window; reference module id: dojox/mvc/parserExtension
 	plugin resource id: dojo-mobile-parser?:dojo/parser; reference module id: dojox/mvc/parserExtension
 	plugin resource id: dojo-parser?:dojox/mobile/parser; reference module id: dojox/mvc/parserExtension
@@ -161,13 +187,19 @@ warn(224) A plugin dependency was encountered but there was no build-time plugin
 	module: dojo/request/node; plugin: dojo/node
 	module: dojo/request/node; plugin: dojo/node
 	module: dojo/request/registry; plugin: dojo/request/default
+	module: dijit/Fieldset; plugin: dojo/query
+	module: dijit/RadioMenuItem; plugin: dojo/query
+	module: dijit/Tree; plugin: dojo/query
+	module: dijit/form/_RadioButtonMixin; plugin: dojo/query
 	module: dojox/mobile/DatePicker; plugin: dojox/mobile/_PickerChooser
 	module: dojox/mobile/TimePicker; plugin: dojox/mobile/_PickerChooser
+	module: dojox/store/LocalDB; plugin: dojox/store/db/has
 Layer Contents:
 dojo/dojo:
 	dojo/dojo
 	dojo/main
 	dojo/_base/kernel
+	dojo/global
 	dojo/has
 	dojo/_base/config
 	dojo/sniff
@@ -234,6 +266,7 @@ build/build:
 	dijit/focus
 	dojo/Stateful
 	dojo/window
+	dijit/selection
 	dijit/_base/manager
 	dijit/_base/place
 	dijit/place
@@ -241,6 +274,7 @@ build/build:
 	dijit/_base/popup
 	dijit/popup
 	dijit/BackgroundIframe
+	dojo/touch
 	dijit/_base/scroll
 	dijit/_base/sniff
 	dojo/uacss
@@ -254,14 +288,21 @@ build/build:
 	dijit/_WidgetBase
 	dijit/Destroyable
 	dijit/_TemplatedMixin
-	dojo/touch
-	dojo/string
 	dojo/cache
 	dojo/text
+	dojo/request
+	dojo/request/default
+	dojo/string
+	dijit/_AttachMixin
 	dijit/_WidgetsInTemplateMixin
 	dojo/parser
 	dojo/_base/url
+	dojo/promise/all
 	dojo/date/stamp
+	dojo/json5
+	dojo/json5/parse
+	dojo/json5/util
+	dojo/json5/unicode
 	dijit/CheckedMenuItem
 	dijit/MenuItem
 	dijit/_Widget
@@ -317,7 +358,6 @@ build/build:
 	dijit/form/nls/validate
 	dijit/form/ComboBoxMixin
 	dijit/form/_AutoCompleterMixin
-	dojo/data/util/filter
 	dojo/regexp
 	dijit/form/DataList
 	dojo/store/Memory
@@ -353,11 +393,11 @@ build/build:
 	dojo/cldr/nls/number
 	dijit/form/RadioButton
 	dijit/form/Select
-	dijit/Menu
 	dijit/DropDownMenu
 	dijit/templates/Menu.html
 	dijit/_MenuBase
 	dijit/_KeyNavContainer
+	dijit/_KeyNavMixin
 	dijit/MenuSeparator
 	dijit/templates/MenuSeparator.html
 	dijit/form/templates/Select.html
@@ -366,16 +406,17 @@ build/build:
 	dijit/form/SimpleTextarea
 	dijit/form/TimeTextBox
 	dijit/_TimePicker
-	dijit/templates/TimePicker.html
 	dijit/layout/BorderContainer
 	dojo/cookie
+	dijit/layout/LayoutContainer
 	dijit/layout/_LayoutWidget
 	dijit/layout/TabContainer
 	dijit/layout/_TabContainerBase
-	dijit/layout/templates/TabContainer.html
 	dijit/layout/StackContainer
+	dijit/layout/templates/TabContainer.html
 	dijit/layout/TabController
 	dijit/layout/StackController
+	dijit/Menu
 	dijit/layout/templates/_TabButton.html
 	dijit/layout/ScrollingTabController
 	dijit/layout/templates/ScrollingTabController.html
@@ -389,7 +430,6 @@ build/build:
 	dijit/TooltipDialog
 	dijit/templates/TooltipDialog.html
 	dijit/Tree
-	dojo/DeferredList
 	dijit/templates/TreeNode.html
 	dijit/templates/Tree.html
 	dijit/tree/TreeStoreModel
@@ -408,11 +448,15 @@ build/build:
 	dojox/form/DropDownSelect
 	dojox/form/nls/Uploader
 	dojox/form/Uploader
-	dojox/form/uploader/Base
+	dojox/form/uploader/_Base
+	dojox/form/uploader/_HTML5
+	dojox/form/uploader/_IFrame
+	dojo/request/iframe
+	dojo/NodeList-manipulate
+	dojox/form/uploader/_Flash
 	dojox/form/resources/Uploader.html
 	dojox/form/uploader/FileList
-	dojox/form/uploader/plugins/HTML5
-	dojox/form/uploader/plugins/Flash
+	dojox/form/resources/UploaderFileList.html
 	dojox/grid/_Builder
 	dojox/html/metrics
 	dojox/grid/util
@@ -465,14 +509,14 @@ build/build:
 
 Optimizer Messages:
 /Users/morera/dev/dotcms/core/dotCMS/src/main/webapp/html/js/dojo/custom-build/dojo/dojo.js:
-Done (compile time:1.118s)
+Done (compile time:1.076s)
 /Users/morera/dev/dotcms/core/dotCMS/src/main/webapp/html/js/dojo/custom-build/dojo/dojo.js:
-Done (compile time:1.118s)
+Done (compile time:1.076s)
 /Users/morera/dev/dotcms/core/dotCMS/src/main/webapp/html/js/dojo/custom-build/build/build.js:
-Done (compile time:9.004s)
+Done (compile time:6.348s)
 
 
 Process finished normally
 	errors: 0
-	warnings: 17
-	build time: 10.837 seconds
+	warnings: 63
+	build time: 8.087 seconds

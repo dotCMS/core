@@ -7,7 +7,7 @@ import { DotWorkflowsActionsSelectorFieldComponent } from './dot-workflows-actio
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { By } from '@angular/platform-browser';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflows-actions-selector-field.service';
 import { DotCMSWorkflow } from '@dotcms/dotcms-models';
 import { mockWorkflows } from '@tests/dot-workflow-service.mock';
@@ -27,10 +27,10 @@ import { Dropdown, DropdownModule } from 'primeng/dropdown';
     `
 })
 class FakeFormComponent implements OnInit {
-    form: FormGroup;
+    form: UntypedFormGroup;
     workfows: DotCMSWorkflow[] = [];
 
-    constructor(private fb: FormBuilder) {}
+    constructor(private fb: UntypedFormBuilder) {}
 
     ngOnInit() {
         this.form = this.fb.group({

@@ -78,9 +78,17 @@
         }
 
         document.querySelector('.logViewerPrinted').innerHTML = '';
-        setTimeout(() => {
-            attachLogIframeEvents()
-        }, 100);
+        document.querySelector('#keywordLogFilterInput').value = '';
+
+        var iframeContentInterval = setInterval(() => { 
+            var contentLoaded = document.getElementById('tailingFrame').contentDocument.body?.innerHTML;
+
+            if (contentLoaded) {
+                clearInterval(iframeContentInterval);
+                attachLogIframeEvents()
+            }
+        }, 200);
+
 	}
 
     function disableFollowOnScrollUp() {

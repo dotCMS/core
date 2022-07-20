@@ -1,5 +1,5 @@
 require({cache:{
-'url:dijit/form/templates/CheckBox.html':"<div class=\"dijit dijitReset dijitInline\" role=\"presentation\"\n\t><input\n\t \t${!nameAttrSetting} type=\"${type}\" role=\"${type}\" aria-checked=\"false\" ${checkedAttrSetting}\n\t\tclass=\"dijitReset dijitCheckBoxInput\"\n\t\tdata-dojo-attach-point=\"focusNode\"\n\t \tdata-dojo-attach-event=\"onclick:_onClick\"\n/></div>\n"}});
+'url:dijit/form/templates/CheckBox.html':"<div class=\"dijit dijitReset dijitInline\" role=\"presentation\"\n\t><input\n\t \t${!nameAttrSetting} type=\"${type}\" role=\"${type}\" aria-checked=\"false\" ${checkedAttrSetting}\n\t\tclass=\"dijitReset dijitCheckBoxInput\"\n\t\tdata-dojo-attach-point=\"focusNode\"\n\t \tdata-dojo-attach-event=\"ondijitclick:_onClick\"\n/></div>\n"}});
 define("dijit/form/CheckBox", [
 	"require",
 	"dojo/_base/declare", // declare
@@ -10,7 +10,8 @@ define("dijit/form/CheckBox", [
 	"./ToggleButton",
 	"./_CheckBoxMixin",
 	"dojo/text!./templates/CheckBox.html",
-	"dojo/NodeList-dom" // NodeList.addClass/removeClass
+	"dojo/NodeList-dom", // NodeList.addClass/removeClass
+	"../a11yclick"	// template uses ondijitclick
 ], function(require, declare, domAttr, has, query, ready, ToggleButton, _CheckBoxMixin, template){
 
 	// module:
@@ -79,11 +80,12 @@ define("dijit/form/CheckBox", [
 			// description:
 			//		If the CheckBox is checked, returns the value attribute.
 			//		Otherwise returns false.
-			return (this.checked ? this.value : false);
+			return this.checked && this._get("value");
 		},
 
-		// Override behavior from Button, since we don't have an iconNode
+		// Override behavior from Button, since we don't have an iconNode or valueNode
 		_setIconClassAttr: null,
+		_setNameAttr: "focusNode",
 
 		postMixInProperties: function(){
 			this.inherited(arguments);

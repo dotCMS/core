@@ -130,11 +130,12 @@ define("dojo/window", ["./_base/lang", "./sniff", "./_base/window", "./dom", "./
 				var	doc = node.ownerDocument || baseWindow.doc,	// TODO: why baseWindow.doc?  Isn't node.ownerDocument always defined?
 					body = baseWindow.body(doc),
 					html = doc.documentElement || body.parentNode,
-					isIE = has("ie"),
+					isIE = has("ie") || has("trident"),
 					isWK = has("webkit");
 				// if an untested browser, then use the native method
 				if(node == body || node == html){ return; }
-				if(!(has("mozilla") || isIE || isWK || has("opera") || has("trident")) && ("scrollIntoView" in node)){
+				if(!(has("mozilla") || isIE || isWK || has("opera") || has("trident") || has("edge"))
+						&& ("scrollIntoView" in node)){
 					node.scrollIntoView(false); // short-circuit to native if possible
 					return;
 				}
@@ -148,6 +149,15 @@ define("dojo/window", ["./_base/lang", "./sniff", "./_base/window", "./dom", "./
 						return (isIE <= 6 || (isIE == 7 && backCompat))
 							? false
 							: (has("position-fixed-support") && (style.get(el, 'position').toLowerCase() == "fixed"));
+					},
+					self = this,
+					scrollElementBy = function(el, x, y){
+						if(el.tagName == "BODY" || el.tagName == "HTML"){
+							self.get(el.ownerDocument).scrollBy(x, y);
+						}else{
+							x && (el.scrollLeft += x);
+							y && (el.scrollTop += y);
+						}
 					};
 				if(isFixed(node)){ return; } // nothing to do
 				while(el){
@@ -158,9 +168,11 @@ define("dojo/window", ["./_base/lang", "./sniff", "./_base/window", "./dom", "./
 
 					if(el == scrollRoot){
 						elPos.w = rootWidth; elPos.h = rootHeight;
-						if(scrollRoot == html && isIE && rtl){ elPos.x += scrollRoot.offsetWidth-elPos.w; } // IE workaround where scrollbar causes negative x
-						if(elPos.x < 0 || !isIE || isIE >= 9){ elPos.x = 0; } // older IE can have values > 0
-						if(elPos.y < 0 || !isIE || isIE >= 9){ elPos.y = 0; }
+						if(scrollRoot == html && (isIE || has("trident")) && rtl){
+							elPos.x += scrollRoot.offsetWidth-elPos.w;// IE workaround where scrollbar causes negative x
+						}
+						elPos.x = 0;
+						elPos.y = 0;
 					}else{
 						var pb = geom.getPadBorderExtents(el);
 						elPos.w -= pb.w; elPos.h -= pb.h; elPos.x += pb.l; elPos.y += pb.t;
@@ -201,16 +213,16 @@ define("dojo/window", ["./_base/lang", "./sniff", "./_base/window", "./dom", "./
 					var s, old;
 					if(r * l > 0 && (!!el.scrollLeft || el == scrollRoot || el.scrollWidth > el.offsetHeight)){
 						s = Math[l < 0? "max" : "min"](l, r);
-						if(rtl && ((isIE == 8 && !backCompat) || isIE >= 9)){ s = -s; }
+						if(rtl && ((isIE == 8 && !backCompat) || has("trident") >= 5)){ s = -s; }
 						old = el.scrollLeft;
-						el.scrollLeft += s;
+						scrollElementBy(el, s, 0);
 						s = el.scrollLeft - old;
 						nodePos.x -= s;
 					}
 					if(bot * t > 0 && (!!el.scrollTop || el == scrollRoot || el.scrollHeight > el.offsetHeight)){
 						s = Math.ceil(Math[t < 0? "max" : "min"](t, bot));
 						old = el.scrollTop;
-						el.scrollTop += s;
+						scrollElementBy(el, 0, s);
 						s = el.scrollTop - old;
 						nodePos.y -= s;
 					}

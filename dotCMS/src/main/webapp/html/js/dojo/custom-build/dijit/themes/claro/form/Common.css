@@ -1,7 +1,8 @@
 /* claro/form/Common.css */
 /*========================= common css =========================*/
 /* 'dijitTextBox' refers to 'dijit(TextBox|DateTextBox|CurrencyTextBox|...)' */
-.claro .dijitTextBox, .claro .dijitInputInner {
+.claro .dijitTextBox,
+.claro .dijitInputInner {
   color: #000000;
 }
 .claro .dijitValidationTextBoxError .dijitValidationContainer {
@@ -16,7 +17,7 @@
 }
 .claro .dijitValidationTextBoxError .dijitValidationIcon {
   width: 0;
-  background-color: transparent !important;
+  background-color: transparent;
   /* so the INPUT doesn't obscure the border in rtl+a11y */
 
 }
@@ -25,14 +26,18 @@
  * dijitPlaceHolder is absolutely positioned, so padding set on dijitInputField
  * won't affect it
  */
-.claro .dijitTextArea, .claro .dijitInputField .dijitPlaceHolder {
+.claro .dijitTextArea,
+.claro .dijitInputField .dijitPlaceHolder {
   padding: 2px;
 }
-.claro .dijitSelect .dijitInputField, .claro .dijitTextBox .dijitInputField {
+.claro .dijitSelect .dijitInputField,
+.claro .dijitTextBox .dijitInputField {
   padding: 1px 2px;
 }
-.dj_gecko .claro .dijitTextBox .dijitInputInner, .dj_webkit .claro .dijitTextBox .dijitInputInner {
-  padding: 1px;
+.dj_gecko .claro .dijitTextBox .dijitInputInner,
+.dj_webkit .claro .dijitTextBox .dijitInputInner {
+  padding-left: 1px;
+  padding-right: 1px;
 }
 .claro .dijitSelect,
 .claro .dijitSelect .dijitButtonContents,
@@ -48,7 +53,8 @@
   -moz-transition-duration: 0.35s;
   transition-duration: 0.35s;
 }
-.claro .dijitSelect, .claro .dijitTextBox {
+.claro .dijitSelect,
+.claro .dijitTextBox {
   background-color: #ffffff;
 }
 /* hover */
@@ -108,11 +114,15 @@
 .claro .dijitTextBoxDisabled .dijitButtonNode {
   border-color: #d3d3d3;
 }
-.claro .dijitSelectDisabled, .claro .dijitTextBoxDisabled, .claro .dijitTextBoxDisabled .dijitInputContainer {
+.claro .dijitSelectDisabled,
+.claro .dijitTextBoxDisabled,
+.claro .dijitTextBoxDisabled .dijitInputContainer {
   background-color: #efefef;
   background-image: none;
 }
-.claro .dijitSelectDisabled, .claro .dijitTextBoxDisabled, .claro .dijitTextBoxDisabled .dijitInputInner {
+.claro .dijitSelectDisabled,
+.claro .dijitTextBoxDisabled,
+.claro .dijitTextBoxDisabled .dijitInputInner {
   color: #818181;
 }
 .dj_webkit .claro .dijitDisabled input {
@@ -127,7 +137,8 @@
 }
 /*========================= for special widgets =========================*/
 /* Input boxes with an arrow (for a drop down) */
-.claro .dijitSelect .dijitArrowButtonInner, .claro .dijitComboBox .dijitArrowButtonInner {
+.claro .dijitSelect .dijitArrowButtonInner,
+.claro .dijitComboBox .dijitArrowButtonInner {
   background-image: url("../form/images/commonFormArrows.png");
   background-position: -35px 53%;
   background-repeat: no-repeat;
@@ -145,7 +156,9 @@
 }
 /* Add 1px vertical padding to the <input> where user types and the validation icon,
    to match the 1px border on arrow button */
-.claro .dijitSelectLabel, .claro .dijitTextBox .dijitInputInner, .claro .dijitValidationTextBox .dijitValidationContainer {
+.claro .dijitSelectLabel,
+.claro .dijitTextBox .dijitInputInner,
+.claro .dijitValidationTextBox .dijitValidationContainer {
   padding: 1px 0;
 }
 .claro .dijitComboBox .dijitButtonNode {
@@ -163,10 +176,13 @@
  * will toggle the drop down.   That's either (1) anywhere over the ComboBox or (2) over the arrow
  * button, depending on the openOnClick setting for the widget.
  */
-.claro .dijitComboBoxOpenOnClickHover .dijitButtonNode, .claro .dijitComboBox .dijitDownArrowButtonHover {
+.claro .dijitComboBoxOpenOnClickHover .dijitButtonNode,
+.claro .dijitComboBox .dijitDownArrowButtonHover,
+.claro .dijitComboBoxFocused .dijitArrowButton {
   background-color: #abd6ff;
 }
-.claro .dijitComboBoxOpenOnClickHover .dijitArrowButtonInner, .claro .dijitComboBox .dijitDownArrowButtonHover .dijitArrowButtonInner {
+.claro .dijitComboBoxOpenOnClickHover .dijitArrowButtonInner,
+.claro .dijitComboBox .dijitDownArrowButtonHover .dijitArrowButtonInner {
   background-position: -70px 53%;
 }
 /* Arrow Button change when drop down is open */

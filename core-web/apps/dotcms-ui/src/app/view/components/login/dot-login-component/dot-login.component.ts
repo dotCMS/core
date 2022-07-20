@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { HttpCode, LoggerService, LoginService, User, DotLoginParams } from '@dotcms/dotcms-js';
 import { SelectItem } from 'primeng/api';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { take, takeUntil, tap } from 'rxjs/operators';
 import { Observable, Subject } from 'rxjs';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
@@ -25,7 +25,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 export class DotLoginComponent implements OnInit, OnDestroy {
     message = '';
     isError = false;
-    loginForm: FormGroup;
+    loginForm: UntypedFormGroup;
     languages: SelectItem[] = [];
     loginInfo$: Observable<DotLoginInformation>;
 
@@ -33,7 +33,7 @@ export class DotLoginComponent implements OnInit, OnDestroy {
 
     constructor(
         private loginService: LoginService,
-        private fb: FormBuilder,
+        private fb: UntypedFormBuilder,
         private dotRouterService: DotRouterService,
         private dotLoadingIndicatorService: DotLoadingIndicatorService,
         private loggerService: LoggerService,

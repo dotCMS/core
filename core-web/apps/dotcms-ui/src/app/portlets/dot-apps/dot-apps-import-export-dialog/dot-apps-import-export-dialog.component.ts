@@ -9,7 +9,7 @@ import {
     Output,
     EventEmitter
 } from '@angular/core';
-import { FormGroup, FormBuilder, FormControl, Validators } from '@angular/forms';
+import { UntypedFormGroup, UntypedFormBuilder, UntypedFormControl, Validators } from '@angular/forms';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotAppsService } from '@services/dot-apps/dot-apps.service';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
@@ -37,7 +37,7 @@ export class DotAppsImportExportDialogComponent implements OnChanges, OnDestroy 
     @Output() resolved: EventEmitter<boolean> = new EventEmitter();
     @Output() shutdown: EventEmitter<boolean> = new EventEmitter();
 
-    form: FormGroup;
+    form: UntypedFormGroup;
     dialogActions: DotDialogActions;
     errorMessage: string;
     dialogHeaderKey = '';
@@ -47,7 +47,7 @@ export class DotAppsImportExportDialogComponent implements OnChanges, OnDestroy 
     constructor(
         private dotAppsService: DotAppsService,
         private dotMessageService: DotMessageService,
-        private fb: FormBuilder
+        private fb: UntypedFormBuilder
     ) {}
 
     ngOnChanges(changes: SimpleChanges): void {
@@ -94,14 +94,14 @@ export class DotAppsImportExportDialogComponent implements OnChanges, OnDestroy 
         if (action === dialogAction.EXPORT) {
             this.dialogHeaderKey = 'apps.confirmation.export.header';
             this.form = this.fb.group({
-                password: new FormControl('', Validators.required)
+                password: new UntypedFormControl('', Validators.required)
             });
             this.setExportDialogActions();
         } else if (action === dialogAction.IMPORT) {
             this.dialogHeaderKey = 'apps.confirmation.import.header';
             this.form = this.fb.group({
-                password: new FormControl('', Validators.required),
-                importFile: new FormControl('', Validators.required)
+                password: new UntypedFormControl('', Validators.required),
+                importFile: new UntypedFormControl('', Validators.required)
             });
             this.setImportDialogActions();
         }
