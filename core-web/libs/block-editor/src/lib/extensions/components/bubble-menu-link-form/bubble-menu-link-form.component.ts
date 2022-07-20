@@ -122,7 +122,8 @@ export class BubbleMenuLinkFormComponent implements OnInit {
      * @memberof BubbleMenuLinkFormComponent
      */
     onKeyDownEvent(e: KeyboardEvent) {
-        if (!this.showSuggestions) {
+        const items = this.suggestionsComponent?.items;
+        if (!this.showSuggestions || !items?.length) {
             return true;
         }
         switch (e.key) {

@@ -62,7 +62,8 @@ import { FormActionsComponent } from './extensions/components/bubble-menu-link-f
         ActionButtonComponent,
         BubbleMenuComponent,
         BubbleMenuLinkFormComponent,
-        ReactiveFormsModule
+        ReactiveFormsModule,
+        DropdownModule
     ]
 })
 export class NgxTiptapModule {}
