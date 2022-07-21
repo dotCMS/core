@@ -113,15 +113,14 @@ export class BubbleLinkFormView {
         }
 
         this.tippy = tippy(editorElement, {
-            appendTo: document.body,
+            ...this.tippyOptions,
             duration: 250,
             getReferenceClientRect: null,
             content: this.element,
             interactive: true,
             trigger: 'manual',
             placement: 'bottom-start',
-            hideOnClick: 'toggle',
-            ...this.tippyOptions
+            hideOnClick: 'toggle'
         });
     }
 

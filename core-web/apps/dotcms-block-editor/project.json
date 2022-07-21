@@ -16,12 +16,6 @@
                     "apps/dotcms-block-editor/src/favicon.ico",
                     "apps/dotcms-block-editor/src/assets"
                 ],
-                "styles": [
-                    "libs/dot-primeng-theme-styles/src/scss/styles.scss",
-                    "node_modules/primeicons/primeicons.css",
-                    "node_modules/primeflex/primeflex.css",
-                    "node_modules/primeng/resources/primeng.min.css"
-                ],
                 "scripts": [
                     {
                         "bundleName": "generator-runtime",
@@ -57,12 +51,12 @@
                         {
                             "type": "initial",
                             "maximumWarning": "2mb",
-                            "maximumError": "5mb"
+                            "maximumError": "2mb"
                         },
                         {
                             "type": "anyComponentStyle",
-                            "maximumWarning": "6kb",
-                            "maximumError": "10kb"
+                            "maximumWarning": "150kb",
+                            "maximumError": "150kb"
                         }
                     ]
                 }
