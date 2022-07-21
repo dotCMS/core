@@ -1,5 +1,6 @@
 package com.dotcms.api.client;
 
+import com.dotcms.api.exception.ClientConfigNotFoundException;
 import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

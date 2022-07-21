@@ -6,7 +6,7 @@ import org.immutables.value.Value;
 
 @ValueType
 @Value.Immutable
-@JsonDeserialize(as = CredentialsBean.Builder.class)
+@JsonDeserialize(as = CredentialsBean.class)
 public interface AbstractCredentialsBean {
      String user();
 

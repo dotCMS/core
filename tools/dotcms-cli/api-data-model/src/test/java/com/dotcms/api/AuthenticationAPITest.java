@@ -15,7 +15,6 @@ public class AuthenticationAPITest {
 
     @Test
     public void Test_Get_Token() {
-
         final String userString = "admin@dotCMS.com";
         final String passwordString = "admin";
         authenticationContext.login(userString, passwordString);

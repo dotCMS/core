@@ -1,12 +1,12 @@
 package com.dotcms.cli.command;
 
 import com.dotcms.api.SiteAPI;
+import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.Site;
 import java.util.List;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
-import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.logging.Logger;
 import picocli.CommandLine;
 
@@ -32,12 +32,12 @@ public class SiteCommand implements Runnable {
     Integer pageSize;
 
     @Inject
-    @RestClient
-    SiteAPI siteAPI;
+    RestClientFactory clientFactory;
 
     @Override
     public void run() {
 
+        final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
         final ResponseEntityView<List<Site>> response = siteAPI.getSites(name, archived, live, true, page, pageSize);
         final List<Site> sites = response.entity();
         if (sites.isEmpty()) {

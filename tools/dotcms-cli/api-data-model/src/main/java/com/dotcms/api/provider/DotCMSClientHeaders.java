@@ -14,7 +14,8 @@ import org.jboss.logging.Logger;
 @RequestScoped
 public class DotCMSClientHeaders implements ClientHeadersFactory {
 
-    private static final Logger log = Logger.getLogger(DotCMSClientHeaders.class);
+    @Inject
+    Logger logger;
 
     @Inject
     AuthenticationContext authenticationContext;
@@ -25,7 +26,7 @@ public class DotCMSClientHeaders implements ClientHeadersFactory {
 
         authenticationContext.getToken().ifPresentOrElse(token -> mm2.add("Authorization", "Bearer  " + token),
                 () -> {
-                    log.error("Unable to get a valid token from the authentication context.");
+                    logger.error("Unable to get a valid token from the authentication context.");
                 }
         );
 

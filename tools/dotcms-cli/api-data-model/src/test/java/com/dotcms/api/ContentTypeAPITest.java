@@ -16,24 +16,18 @@ import org.junit.jupiter.api.Test;
 public class ContentTypeAPITest {
 
     @Inject
-    AuthSecurityContext authSecurityContext;
+    AuthenticationContext authenticationContext;
 
     @Inject
     @RestClient
     ContentTypeAPI client;
 
-    @Inject
-    @RestClient
-    AuthenticationAPI authClient;
-
     @Test
     public void Test_Content_Type() {
 
         final String user = "admin@dotcms.com";
-        final ResponseEntityView<TokenEntity> resp = authClient.getToken(
-                APITokenRequest.builder().user(user).password("admin").expirationDays(1).build());
-
-        authSecurityContext.setToken(resp.entity().token(), user);
+        final String passwd= "admin";
+        authenticationContext.login(user, passwd);
 
         final ResponseEntityView<List<ContentType>> response = client.getContentTypes(null, null, null, null, null, null, null );
         Assertions.assertNotNull(response);

@@ -1,8 +1,9 @@
 package com.dotcms.api;
 
 
-import com.dotcms.api.client.CredentialsManager;
 import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.api.client.ServiceManager;
+import com.dotcms.api.exception.ClientConfigNotFoundException;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.authentication.APITokenRequest;
 import com.dotcms.model.authentication.TokenEntity;
@@ -10,7 +11,7 @@ import com.dotcms.model.config.CredentialsBean;
 import com.dotcms.model.config.ServiceBean;
 import io.quarkus.arc.DefaultBean;
 import java.io.IOException;
-import java.util.Map;
+import java.util.List;
 import java.util.Optional;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -22,10 +23,8 @@ import org.jboss.logging.Logger;
 @ApplicationScoped
 public class DefaultAuthenticationContextImpl implements AuthenticationContext {
 
-    private static final Logger logger = Logger.getLogger(AuthSecurityContext.class);
-
     @Inject
-    CredentialsManager credentialsManager;
+    ServiceManager serviceManager;
 
     @Inject
     RestClientFactory clientFactory;
@@ -50,7 +49,7 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
               return Optional.of(token);
             }
             final String userString = optionalUser.get();
-            final Optional<String> optionalToken = loadToken(getServiceKey(userString), userString);
+            final Optional<String> optionalToken = loadToken(getServiceKey(), userString);
             optionalToken.ifPresent(s -> {
                 token = s;
             });
@@ -62,6 +61,12 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
     @Override
     public void login(final String user, final String password) {
 
+        if (serviceManager.services().isEmpty()) {
+            throw new ClientConfigNotFoundException(
+                  "Before a login attempt the tool needs to be configured. Use config command."
+            );
+        }
+
         final AuthenticationAPI api = clientFactory.getClient(AuthenticationAPI.class);
         final ResponseEntityView<TokenEntity> responseEntityView = api.getToken(
                 APITokenRequest.builder().user(user).password(password)
@@ -71,10 +76,9 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
 
     private void saveCredentials(final String user, final String token) {
         try {
-            credentialsManager.persist(
-                    getServiceKey(user),
-                    CredentialsBean.builder().user(user).token(token).build()
-            );
+            final ServiceBean serviceBean = ServiceBean.builder().active(true).name(getServiceKey())
+                    .credentials(CredentialsBean.builder().user(user).token(token).build()).build();
+            serviceManager.persist(serviceBean);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -83,18 +87,21 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
     }
 
     private Optional<String> loadToken(String serviceKey, String user) {
-        final Map<String,ServiceBean> profiles = credentialsManager.services();
-        final ServiceBean bean = profiles.get(serviceKey);
-        if(null != bean){
-            if(user.equals(bean.credentials().user())){
-               return Optional.of(bean.credentials().token());
+
+        final List<ServiceBean> profiles = serviceManager.services();
+        final Optional<ServiceBean> optional = profiles.stream()
+                .filter(serviceBean -> serviceKey.equals(serviceBean.name())).findFirst();
+        if (optional.isPresent()) {
+            final ServiceBean bean = optional.get();
+            if (user.equals(bean.credentials().user())) {
+                return Optional.of(bean.credentials().token());
             }
         }
         return Optional.empty();
     }
 
-    String getServiceKey(String user) {
-        return user + "@" + clientFactory.currentSelectedProfile();
+    String getServiceKey() {
+        return clientFactory.currentSelectedProfile();
     }
 
 }
