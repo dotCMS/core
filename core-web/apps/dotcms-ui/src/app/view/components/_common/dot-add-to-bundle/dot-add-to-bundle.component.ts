@@ -9,7 +9,7 @@ import {
     OnInit,
     OnDestroy
 } from '@angular/core';
-import { FormGroup, FormBuilder, Validators } from '@angular/forms';
+import { UntypedFormGroup, UntypedFormBuilder, Validators } from '@angular/forms';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { LoggerService } from '@dotcms/dotcms-js';
 import { AddToBundleService } from '@services/add-to-bundle/add-to-bundle.service';
@@ -27,7 +27,7 @@ const LAST_BUNDLE_USED = 'lastSelectedBundle';
     styleUrls: ['dot-add-to-bundle.component.scss']
 })
 export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy {
-    form: FormGroup;
+    form: UntypedFormGroup;
     bundle$: Observable<DotBundle[]>;
     placeholder = '';
     dialogShow = false;
@@ -45,7 +45,7 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy
 
     constructor(
         private addToBundleService: AddToBundleService,
-        public fb: FormBuilder,
+        public fb: UntypedFormBuilder,
         private dotMessageService: DotMessageService,
         public loggerService: LoggerService
     ) {}
@@ -152,7 +152,7 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy
         return lastBundle ? bundles.find((bundle) => bundle.name === lastBundle.name) : null;
     }
 
-    private setDialogConfig(form: FormGroup): void {
+    private setDialogConfig(form: UntypedFormGroup): void {
         this.dialogActions = {
             accept: {
                 action: () => {

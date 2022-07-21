@@ -1,7 +1,7 @@
 import { CwModel } from './util/CwModel';
 import { ParameterDefinition } from './util/CwInputModel';
 import { ParameterModel } from './Rule';
-import { FormControl, Validators, ValidatorFn } from '@angular/forms';
+import { UntypedFormControl, Validators, ValidatorFn } from '@angular/forms';
 import { LoggerService } from '@dotcms/dotcms-js';
 import { CustomValidators } from './validation/CustomValidators';
 
@@ -12,12 +12,12 @@ export class ServerSideFieldModel extends CwModel {
 
     private _type: ServerSideTypeModel;
 
-    static createNgControl(model: ServerSideFieldModel, paramName: string): FormControl {
+    static createNgControl(model: ServerSideFieldModel, paramName: string): UntypedFormControl {
         const param = model.parameters[paramName];
         const paramDef = model.parameterDefs[paramName];
         const vFn: Function[] = <ValidatorFn[]>paramDef.inputType.dataType.validators();
         vFn.push(CustomValidators.noDoubleQuotes());
-        const control = new FormControl(
+        const control = new UntypedFormControl(
             model.getParameterValue(param.key),
             Validators.compose(<ValidatorFn[]>vFn)
         );

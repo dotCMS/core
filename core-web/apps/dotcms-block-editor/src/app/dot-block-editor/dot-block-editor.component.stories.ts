@@ -25,7 +25,7 @@ import {
 
 export default {
     title: 'Block Editor'
-};
+}
 
 export const primary = () => ({
     moduleMetadata: {
@@ -634,4 +634,4 @@ export const primary = () => ({
         ]
     },
     component: DotBlockEditorComponent
-});
+    });

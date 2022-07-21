@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { FieldProperty } from '../field-properties.model';
 import { PaginatorService } from '@services/paginator';
-import { FormGroup } from '@angular/forms';
+import { UntypedFormGroup } from '@angular/forms';
 import { DotCMSContentTypeFieldCategories } from '@dotcms/dotcms-models';
 
 /**
@@ -21,7 +21,7 @@ import { DotCMSContentTypeFieldCategories } from '@dotcms/dotcms-models';
 export class CategoriesPropertyComponent implements OnInit {
     categoriesCurrentPage: DotCMSContentTypeFieldCategories[];
     property: FieldProperty;
-    group: FormGroup;
+    group: UntypedFormGroup;
     placeholder: string;
 
     constructor(
