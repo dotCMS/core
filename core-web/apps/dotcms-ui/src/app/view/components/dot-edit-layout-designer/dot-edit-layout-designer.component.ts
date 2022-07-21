@@ -13,7 +13,7 @@ import {
     ChangeDetectorRef
 } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { FormGroup, FormBuilder } from '@angular/forms';
+import { UntypedFormGroup, UntypedFormBuilder } from '@angular/forms';
 
 import * as _ from 'lodash';
 
@@ -78,8 +78,8 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
     @Output()
     updateTemplate: EventEmitter<DotTemplate> = new EventEmitter();
 
-    form: FormGroup;
-    initialFormValue: FormGroup;
+    form: UntypedFormGroup;
+    initialFormValue: UntypedFormGroup;
     themeDialogVisibility = false;
 
     currentTheme: DotTheme;
@@ -95,7 +95,7 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
         private dotHttpErrorManagerService: DotHttpErrorManagerService,
         private dotRouterService: DotRouterService,
         private dotThemesService: DotThemesService,
-        private fb: FormBuilder,
+        private fb: UntypedFormBuilder,
         private cd: ChangeDetectorRef
     ) {}
 

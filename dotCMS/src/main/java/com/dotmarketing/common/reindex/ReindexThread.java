@@ -7,6 +7,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import org.apache.felix.framework.OSGISystem;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.SystemCache;
@@ -309,6 +310,7 @@ public class ReindexThread {
 
 
     public static void unpause() {
+        OSGISystem.getInstance().initializeFramework();
         Logger.infoEvery(ReindexThread.class, "--- ReindexThread Running", 60000);
         cache.get().remove(REINDEX_THREAD_PAUSED);
         final Thread thread = new Thread(getInstance().ReindexThreadRunnable, "ReindexThreadRunnable");

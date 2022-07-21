@@ -7,7 +7,7 @@ import {
     Output,
     ChangeDetectionStrategy
 } from '@angular/core';
-import { FormControl, Validators, FormGroup, FormBuilder } from '@angular/forms';
+import { UntypedFormControl, Validators, UntypedFormGroup, UntypedFormBuilder } from '@angular/forms';
 import { Observable } from 'rxjs';
 
 import {
@@ -249,7 +249,7 @@ class RuleComponent {
     @Output() updateConditionOperator: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
     @Output() openPushPublishDialog: EventEmitter<string> = new EventEmitter(false);
 
-    formModel: FormGroup;
+    formModel: UntypedFormGroup;
     fireOn: any;
     // tslint:disable-next-line:no-unused-variable
     showAddToBundleDialog = false;
@@ -271,7 +271,7 @@ class RuleComponent {
         public resources: I18nService,
         public ruleService: RuleService,
         public apiRoot: ApiRoot,
-        fb: FormBuilder,
+        fb: UntypedFormBuilder,
         private loggerService: LoggerService
     ) {
         this._rsrcCache = {};
@@ -335,12 +335,12 @@ class RuleComponent {
             });
     }
 
-    initFormModel(fb: FormBuilder): void {
+    initFormModel(fb: UntypedFormBuilder): void {
         const vFns = [];
         vFns.push(Validators.required);
         vFns.push(Validators.minLength(3));
         this.formModel = fb.group({
-            name: new FormControl(this.rule ? this.rule.name : '', Validators.compose(vFns))
+            name: new UntypedFormControl(this.rule ? this.rule.name : '', Validators.compose(vFns))
         });
     }
 
@@ -356,7 +356,7 @@ class RuleComponent {
     ngOnChanges(change): void {
         if (change.rule) {
             const rule = this.rule;
-            const ctrl: FormControl = <FormControl>this.formModel.controls['name'];
+            const ctrl: UntypedFormControl = <UntypedFormControl>this.formModel.controls['name'];
             ctrl.patchValue(this.rule.name, {});
 
             ctrl.valueChanges.pipe(debounceTime(250)).subscribe((name: string) => {

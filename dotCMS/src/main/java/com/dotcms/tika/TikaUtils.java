@@ -39,7 +39,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.zip.GZIPOutputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
-import org.apache.felix.framework.OSGIUtil;
+import org.apache.felix.framework.OSGISystem;
 
 public class TikaUtils {
 
@@ -48,60 +48,47 @@ public class TikaUtils {
     private final ObjectMapper objectMapper = DotObjectMapperProvider.createDefaultMapper();
 
     private TikaProxyService tikaService;
-    private Boolean osgiInitialized;
+    private boolean osgiInitialized;
 
     public TikaUtils() throws DotDataException {
 
-        osgiInitialized = OSGIUtil.getInstance().isInitialized();
+        OSGISystem.getInstance().initializeFramework();
+        osgiInitialized = true;
+
+        //Search for the TikaServiceBuilder service instance expose through OSGI
+        TikaServiceBuilder tikaServiceBuilder = null;
         try {
-            if (!osgiInitialized) {
-                Logger.warn(this.getClass(),
-                        "OSGI Framework not initialized, trying to initialize...");
-                OSGIUtil.getInstance().initializeFramework();
-                osgiInitialized = true;
-            }
-        } catch (Exception e) {
-            Logger.error(this.getClass(), "Unable to initialized OSGI Framework", e);
-        }
-
-        if (osgiInitialized) {
-
-            //Search for the TikaServiceBuilder service instance expose through OSGI
-            TikaServiceBuilder tikaServiceBuilder = null;
-            try {
-                tikaServiceBuilder = OSGIUtil.getInstance()
-                        .getService(TikaServiceBuilder.class,
-                                OSGIConstants.BUNDLE_NAME_DOTCMS_TIKA);
-
-                if (null == tikaServiceBuilder) {
-
-                    Logger.error(this.getClass(),
-                            String.format("OSGI Service [%s] not found for bundle [%s]",
-                                    TikaServiceBuilder.class,
-                                    OSGIConstants.BUNDLE_NAME_DOTCMS_TIKA));
-                }
-            } catch (Exception e) {
-                Logger.error(this.getClass(),
-                        String.format("Failure retrieving OSGI Service [%s] in bundle [%s]",
-                                TikaServiceBuilder.class,
-                                OSGIConstants.BUNDLE_NAME_DOTCMS_TIKA),
-                        e);
-            }
+            tikaServiceBuilder = OSGISystem.getInstance()
+                    .getService(TikaServiceBuilder.class,
+                            OSGIConstants.BUNDLE_NAME_DOTCMS_TIKA);
 
             if (null == tikaServiceBuilder) {
-                osgiInitialized = false;
-                return;
-            }
 
-            /*
-            Creating a new instance of the TikaProxyService in order to use the Tika services exposed in OSGI,
-            when the createTikaService method is called a new instance of Tika is also created
-            by the TikaProxyService implementation.
-             */
-            this.tikaService = tikaServiceBuilder.createTikaService();
-        } else {
-            Logger.error(this.getClass(), "OSGI Framework not initialized");
+                Logger.error(this.getClass(),
+                        String.format("OSGI Service [%s] not found for bundle [%s]",
+                                TikaServiceBuilder.class,
+                                OSGIConstants.BUNDLE_NAME_DOTCMS_TIKA));
+            }
+        } catch (Exception e) {
+            Logger.error(this.getClass(),
+                    String.format("Failure retrieving OSGI Service [%s] in bundle [%s]",
+                            TikaServiceBuilder.class,
+                            OSGIConstants.BUNDLE_NAME_DOTCMS_TIKA),
+                    e);
         }
+
+        if (null == tikaServiceBuilder) {
+            osgiInitialized = false;
+            return;
+        }
+
+        /*
+        Creating a new instance of the TikaProxyService in order to use the Tika services exposed in OSGI,
+        when the createTikaService method is called a new instance of Tika is also created
+        by the TikaProxyService implementation.
+         */
+        this.tikaService = tikaServiceBuilder.createTikaService();
+
     }
 
     /**

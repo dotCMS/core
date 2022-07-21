@@ -1,7 +1,7 @@
 import { By } from '@angular/platform-browser';
 import { Component, Input, EventEmitter, Output, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormsModule, FormGroup, ReactiveFormsModule, ControlContainer } from '@angular/forms';
+import { FormsModule, UntypedFormGroup, ReactiveFormsModule, ControlContainer } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
 import { of as observableOf, of } from 'rxjs';
 
@@ -46,7 +46,7 @@ class AdditionalOptionsMockComponent {
     template: ''
 })
 class DotLayoutPropertiesMockComponent {
-    @Input() group: FormGroup;
+    @Input() group: UntypedFormGroup;
 }
 
 @Component({

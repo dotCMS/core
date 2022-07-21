@@ -25,7 +25,7 @@ import {
 
 export default {
     title: 'Block Editor'
-};
+}
 
 const contentletsMock = [
     {
@@ -336,4 +336,4 @@ export const primary = () => ({
         ]
     },
     component: DotBlockEditorComponent
-});
+    });

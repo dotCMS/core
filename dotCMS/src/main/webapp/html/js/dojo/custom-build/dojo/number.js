@@ -86,9 +86,14 @@ number._applyPattern = function(/*Number*/ value, /*String*/ pattern, /*number._
 	}else if(pattern.indexOf('\u00a4') != -1){
 		group = options.customs.currencyGroup || group;//mixins instead?
 		decimal = options.customs.currencyDecimal || decimal;// Should these be mixins instead?
-		pattern = pattern.replace(/\u00a4{1,3}/, function(match){
-			var prop = ["symbol", "currency", "displayName"][match.length-1];
-			return options[prop] || options.currency || "";
+		pattern = pattern.replace(/([\s\xa0\u202f]*)(\u00a4{1,3})([\s\xa0\u202f]*)/, function(match, before, target, after){
+			var prop = ["symbol", "currency", "displayName"][target.length-1],
+				symbol = options[prop] || options.currency || "";
+			// if there is no symbol, also remove surrounding whitespaces
+			if(!symbol){
+				return "";
+			}
+			return before+symbol+after;
 		});
 	}else if(pattern.indexOf('E') != -1){
 		throw new Error("exponential notation not supported");
@@ -243,7 +248,7 @@ number._formatAbsolute = function(/*Number*/ value, /*String*/ pattern, /*number
 		whole = (off > 0) ? whole.slice(0, off) : "";
 		if(groupSize2){
 			groupSize = groupSize2;
-			delete groupSize2;
+			groupSize2 = undefined;
 		}
 	}
 	valueParts[0] = pieces.reverse().join(options.group || ",");
@@ -347,11 +352,17 @@ number._parseInfo = function(/*Object?*/ options){
 
 	if(isCurrency){
 		// substitute the currency symbol for the placeholder in the pattern
-		re = re.replace(/([\s\xa0]*)(\u00a4{1,3})([\s\xa0]*)/g, function(match, before, target, after){
+		re = re.replace(/([\s\xa0\u202f]*)(\u00a4{1,3})([\s\xa0\u202f]*)/g, function(match, before, target, after){
 			var prop = ["symbol", "currency", "displayName"][target.length-1],
 				symbol = dregexp.escapeString(options[prop] || options.currency || "");
-			before = before ? "[\\s\\xa0]" : "";
-			after = after ? "[\\s\\xa0]" : "";
+
+			// if there is no symbol there is no need to take white-spaces into account.
+			if(!symbol){
+				return "";
+			}
+
+			before = before ? "[\\s\\xa0\\u202f]" : "";
+			after = after ? "[\\s\\xa0\\u202f]" : "";
 			if(!options.strict){
 				if(before){before += "*";}
 				if(after){after += "*";}
@@ -364,7 +375,7 @@ number._parseInfo = function(/*Object?*/ options){
 //TODO: substitute localized sign/percent/permille/etc.?
 
 	// normalize whitespace and return
-	return {regexp: re.replace(/[\xa0 ]/g, "[\\s\\xa0]"), group: group, decimal: decimal, factor: factor}; // Object
+	return {regexp: re.replace(/[\xa0\u202f ]/g, "[\\s\\xa0\\u202f]"), group: group, decimal: decimal, factor: factor}; // Object
 };
 
 /*=====
@@ -416,7 +427,7 @@ number.parse = function(/*String*/ expression, /*number.__ParseOptions?*/ option
 	// Transform it to something Javascript can parse as a number.  Normalize
 	// decimal point and strip out group separators or alternate forms of whitespace
 	absoluteMatch = absoluteMatch.
-		replace(new RegExp("["+info.group + "\\s\\xa0"+"]", "g"), "").
+		replace(new RegExp("["+info.group + "\\s\\xa0\\u202f"+"]", "g"), "").
 		replace(info.decimal, ".");
 	// Adjust for negative sign, percent, etc. as necessary
 	return absoluteMatch * info.factor; //Number
@@ -534,6 +545,7 @@ number._integerRegexp = function(/*number.__IntegerRegexpFlags?*/ flags){
 			sep = dregexp.escapeString(sep);
 			if(sep == " "){ sep = "\\s"; }
 			else if(sep == "\xa0"){ sep = "\\s\\xa0"; }
+			else if(sep == "\u202f"){ sep = "\\s\\u202f"; }
 
 			var grp = flags.groupSize, grp2 = flags.groupSize2;
 			//TODO: should we continue to enforce that numbers with separators begin with 1-9?  See #6933

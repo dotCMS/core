@@ -1,131 +1,139 @@
 define("dijit/a11yclick", [
-	"dojo/on",
-	"dojo/_base/array", // array.forEach
 	"dojo/keys", // keys.ENTER keys.SPACE
-	"dojo/_base/declare", // declare
-	"dojo/has", // has("dom-addeventlistener")
-	"dojo/_base/unload", // unload.addOnWindowUnload
-	"dojo/_base/window" // win.doc.addEventListener win.doc.attachEvent win.doc.detachEvent
-], function(on, array, keys, declare, has, unload, win){
+	"dojo/mouse",
+	"dojo/on",
+	"dojo/touch" // touch support for click is now there
+], function(keys, mouse, on, touch){
 
 	// module:
 	//		dijit/a11yclick
 
-	// Keep track of where the last keydown event was, to help avoid generating
-	// spurious ondijitclick events when:
-	// 1. focus is on a <button> or <a>
-	// 2. user presses then releases the ENTER key
-	// 3. onclick handler fires and shifts focus to another node, with an ondijitclick handler
-	// 4. onkeyup event fires, causing the ondijitclick handler to fire
-	var lastKeyDownNode = null;
-	if(has("dom-addeventlistener")){
-		win.doc.addEventListener('keydown', function(evt){
-			lastKeyDownNode = evt.target;
-		}, true);
-	}else{
-		// Fallback path for IE6-8
-		(function(){
-			var keydownCallback = function(evt){
-				lastKeyDownNode = evt.srcElement;
-			};
-			win.doc.attachEvent('onkeydown', keydownCallback);
-			unload.addOnWindowUnload(function(){
-				win.doc.detachEvent('onkeydown', keydownCallback);
-			});
-		})();
-	}
-
-	function clickKey(/*Event*/ e){
-		return (e.keyCode === keys.ENTER || e.keyCode === keys.SPACE) &&
-			!e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey;
-	}
-
-	return function(node, listener){
+	/*=====
+	return {
 		// summary:
-		//		Custom a11yclick (a.k.a. ondijitclick) event
-		//		which triggers on a mouse click, touch, or space/enter keyup.
+		//		Custom press, release, and click synthetic events
+		//		which trigger on a left mouse click, touch, or space/enter keyup.
 
-		if(/input|button/i.test(node.nodeName)){
-			// pass through, the browser already generates click event on SPACE/ENTER key
-			return on(node, "click", listener);
-		}else{
-			// Don't fire the click event unless both the keydown and keyup occur on this node.
-			// Avoids problems where focus shifted to this node or away from the node on keydown,
-			// either causing this node to process a stray keyup event, or causing another node
-			// to get a stray keyup event.
-
-			var handles = [
-				on(node, "keydown", function(e){
-					//console.log(this.id + ": onkeydown, e.target = ", e.target, ", lastKeyDownNode was ", lastKeyDownNode, ", equality is ", (e.target === lastKeyDownNode));
-					if(clickKey(e)){
-						// needed on IE for when focus changes between keydown and keyup - otherwise dropdown menus do not work
-						lastKeyDownNode = e.target;
-
-						// Prevent viewport scrolling on space key in IE<9.
-						// (Reproducible on test_Button.html on any of the first dijit/form/Button examples)
-						e.preventDefault();
-					}
-				}),
-
-				on(node, "keyup", function(e){
-					//console.log(this.id + ": onkeyup, e.target = ", e.target, ", lastKeyDownNode was ", lastKeyDownNode, ", equality is ", (e.target === lastKeyDownNode));
-					if(clickKey(e) && e.target == lastKeyDownNode){	// === breaks greasemonkey
-						//need reset here or have problems in FF when focus returns to trigger element after closing popup/alert
-						lastKeyDownNode = null;
-						on.emit(e.target, "click", {
-							cancelable: true,
-							bubbles: true
-						});
-					}
-				}),
-
-				on(node, "click", function(e){
-					// catch mouse clicks, plus the on.emit() calls from above and below
-					listener.call(this, e);
-				})
-			];
-
-			if(has("touch")){
-				// touchstart-->touchend will automatically generate a click event, but there are problems
-				// on iOS after focus has been programatically shifted (#14604, #14918), so setup a failsafe
-				// if click doesn't fire naturally.
-
-				var clickTimer;
-				handles.push(
-					on(node, "touchend", function(e){
-						var target = e.target;
-						clickTimer = setTimeout(function(){
-							clickTimer = null;
-							on.emit(target, "click", {
-								cancelable: true,
-								bubbles: true
-							});
-						}, 600);
-					}),
-					on(node, "click", function(e){
-						// If browser generates a click naturally, clear the timer to fire a synthetic click event
-						if(clickTimer){
-							clearTimeout(clickTimer);
-						}
-					})
-					// TODO: if the touchstart and touchend were <100ms apart, and then there's another touchstart
-					// event <300ms after the touchend event, then clear the synthetic click timer, because user
-					// is doing a zoom.   Alternately monitor screen.deviceXDPI (or something similar) to see if
-					// zoom level has changed.
-				);
-			}
-
-			return {
-				remove: function(){
-					array.forEach(handles, function(h){ h.remove(); });
-					if(clickTimer){
-						clearTimeout(clickTimer);
-						clickTimer = null;
-					}
-				}
-			};
+		click: function(node, listener){
+			// summary:
+			//		Logical click operation for mouse, touch, or keyboard (space/enter key)
+		},
+		press: function(node, listener){
+			// summary:
+			//		Mousedown (left button), touchstart, or keydown (space or enter) corresponding to logical click operation.
+		},
+		release: function(node, listener){
+			// summary:
+			//		Mouseup (left button), touchend, or keyup (space or enter) corresponding to logical click operation.
+		},
+		move: function(node, listener){
+			// summary:
+			//		Mouse cursor or a finger is dragged over the given node.
 		}
 	};
+	=====*/
 
-	return ret;
+	function clickKey(/*Event*/ e){
+		// Test if this keyboard event should be tracked as the start (if keydown) or end (if keyup) of a click event.
+		// Only track for nodes marked to be tracked, and not for buttons or inputs,
+		// since buttons handle keyboard click natively, and text inputs should not
+		// prevent typing spaces or newlines.
+		if((e.keyCode === keys.ENTER || e.keyCode === keys.SPACE) && !/input|button|textarea/i.test(e.target.nodeName)){
+
+			// Test if a node or its ancestor has been marked with the dojoClick property to indicate special processing
+			for(var node = e.target; node; node = node.parentNode){
+				if(node.dojoClick){ return true; }
+			}
+		}
+	}
+
+	var lastKeyDownNode;
+
+	on(document, "keydown", function(e){
+		//console.log("a11yclick: onkeydown, e.target = ", e.target, ", lastKeyDownNode was ", lastKeyDownNode, ", equality is ", (e.target === lastKeyDownNode));
+		if(clickKey(e)){
+			// needed on IE for when focus changes between keydown and keyup - otherwise dropdown menus do not work
+			lastKeyDownNode = e.target;
+
+			// Prevent viewport scrolling on space key in IE<9.
+			// (Reproducible on test_Button.html on any of the first dijit/form/Button examples)
+			e.preventDefault();
+		}else{
+			lastKeyDownNode = null;
+		}
+	});
+
+	on(document, "keyup", function(e){
+		//console.log("a11yclick: onkeyup, e.target = ", e.target, ", lastKeyDownNode was ", lastKeyDownNode, ", equality is ", (e.target === lastKeyDownNode));
+		if(clickKey(e) && e.target == lastKeyDownNode){	// === breaks greasemonkey
+			//need reset here or have problems in FF when focus returns to trigger element after closing popup/alert
+			lastKeyDownNode = null;
+
+			on.emit(e.target, "click", {
+				cancelable: true,
+				bubbles: true,
+				ctrlKey: e.ctrlKey,
+				shiftKey: e.shiftKey,
+				metaKey: e.metaKey,
+				altKey: e.altKey,
+				_origType: e.type
+			});
+		}
+	});
+
+	// I want to return a hash of the synthetic events, but for backwards compatibility the main return value
+	// needs to be the click event.   Change for 2.0.
+
+	var click = function(node, listener){
+		// Set flag on node so that keydown/keyup above emits click event.
+		// Also enables fast click processing from dojo/touch.
+		node.dojoClick = true;
+
+		return on(node, "click", listener);
+	};
+	click.click = click;	// forward compatibility with 2.0
+
+	click.press =  function(node, listener){
+		var touchListener = on(node, touch.press, function(evt){
+			if(evt.type == "mousedown" && !mouse.isLeft(evt)){
+				// Ignore right click
+				return;
+			}
+			listener(evt);
+		}), keyListener = on(node, "keydown", function(evt){
+			if(evt.keyCode === keys.ENTER || evt.keyCode === keys.SPACE){
+				listener(evt);
+			}
+		});
+		return {
+			remove: function(){
+				touchListener.remove();
+				keyListener.remove();
+			}
+		};
+	};
+
+	click.release =  function(node, listener){
+		var touchListener = on(node, touch.release, function(evt){
+			if(evt.type == "mouseup" && !mouse.isLeft(evt)){
+				// Ignore right click
+				return;
+			}
+			listener(evt);
+		}), keyListener = on(node, "keyup", function(evt){
+			if(evt.keyCode === keys.ENTER || evt.keyCode === keys.SPACE){
+				listener(evt);
+			}
+		});
+		return {
+			remove: function(){
+				touchListener.remove();
+				keyListener.remove();
+			}
+		};
+	};
+
+	click.move = touch.move;	// just for convenience
+
+	return click;
 });

@@ -9,7 +9,7 @@ import {
     OnInit,
     OnDestroy
 } from '@angular/core';
-import { FormGroup, FormBuilder, AbstractControl } from '@angular/forms';
+import { UntypedFormGroup, UntypedFormBuilder, AbstractControl } from '@angular/forms';
 import { DotCMSContentTypeField, DotCMSContentType } from '@dotcms/dotcms-models';
 import { FieldPropertyService } from '../service';
 import { takeUntil } from 'rxjs/operators';
@@ -32,14 +32,14 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
 
     @ViewChild('properties') propertiesContainer;
 
-    form: FormGroup;
+    form: UntypedFormGroup;
     fieldProperties: string[] = [];
     checkboxFields: string[] = ['indexed', 'listed', 'required', 'searchable', 'unique'];
 
     private originalValue: DotCMSContentTypeField;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(private fb: FormBuilder, private fieldPropertyService: FieldPropertyService) {}
+    constructor(private fb: UntypedFormBuilder, private fieldPropertyService: FieldPropertyService) {}
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes.formFieldData?.currentValue && this.formFieldData) {
