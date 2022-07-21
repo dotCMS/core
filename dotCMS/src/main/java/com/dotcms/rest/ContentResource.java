@@ -2,6 +2,7 @@ package com.dotcms.rest;
 
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -10,12 +11,13 @@ import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.util.XStreamFactory;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.workflow.form.FireActionForm;
@@ -58,6 +60,7 @@ import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.DomDriver;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
@@ -106,6 +109,7 @@ import static com.dotmarketing.util.NumberUtil.toInt;
 import static com.dotmarketing.util.NumberUtil.toLong;
 
 @Path("/content")
+@Tag(name = "Content Delivery")
 public class ContentResource {
 
     // set this only from an environmental variable so it cannot be overrriden in our Config class
@@ -775,7 +779,7 @@ public class ContentResource {
             final boolean allCategoriesInfo){
 
         final StringBuilder sb = new StringBuilder();
-        final XStream xstream = new XStream(new DomDriver());
+        final XStream xstream = XStreamFactory.INSTANCE.getInstance();
         xstream.alias("content", Map.class);
         xstream.registerConverter(new MapEntryConverter());
         sb.append("<?xml version=\"1.0\" encoding='UTF-8'?>");
@@ -1018,7 +1022,7 @@ public class ContentResource {
 
 
     private String getXMLContentIds(Contentlet con) {
-        XStream xstream = new XStream(new DomDriver());
+        XStream xstream = XStreamFactory.INSTANCE.getInstance();
         xstream.alias("content", Map.class);
         xstream.registerConverter(new MapEntryConverter());
         StringBuilder sb = new StringBuilder();
@@ -1347,12 +1351,47 @@ public class ContentResource {
         return jsonFields;
     }
 
-    public static JSONObject contentletToJSON(Contentlet con, HttpServletRequest request,
-            HttpServletResponse response, String render, User user, final boolean allCategoriesInfo)
+    /**
+     * Transforms the specified Contentlet object into its JSON representation.
+     *
+     * @param con               The {@link Contentlet} object that will be transformed.
+     * @param request           The current {@link HttpServletRequest} instance.
+     * @param response          The current {@link HttpServletResponse} instance.
+     * @param render            If the rendered HTML version must be included in the response, set to {@code true}.
+     * @param user              The {@link User} performing this action.
+     * @param allCategoriesInfo If information about Categories must be included, set to {@code true}.
+     *
+     * @return The representation of the Contentlet as a {@link JSONObject}.
+     *
+     * @throws JSONException        An error occurred when generating the JSON object.
+     * @throws IOException          An error occurred when generating the printable Contentlet map.
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The specified User does not have the required permissions to perform this action.
+     */
+    public static JSONObject contentletToJSON(final Contentlet con, final HttpServletRequest request,
+            final HttpServletResponse response, final String render, final User user, final boolean allCategoriesInfo)
             throws JSONException, IOException, DotDataException, DotSecurityException {
         return contentletToJSON(con, request, response, render, user, allCategoriesInfo, false);
     }
 
+    /**
+     * Transforms the specified Contentlet object into its JSON representation.
+     *
+     * @param contentlet        The {@link Contentlet} object that will be transformed.
+     * @param request           The current {@link HttpServletRequest} instance.
+     * @param response          The current {@link HttpServletResponse} instance.
+     * @param render            If the rendered HTML version must be included in the response, set to {@code true}.
+     * @param user              The {@link User} performing this action.
+     * @param allCategoriesInfo If information about Categories must be included, set to {@code true}.
+     * @param hydrateRelated
+     *
+     * @return The representation of the Contentlet as a {@link JSONObject}.
+     *
+     * @throws JSONException        An error occurred when generating the JSON object.
+     * @throws IOException          An error occurred when generating the printable Contentlet map.
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The specified User does not have the required permissions to perform this action.
+     */
     public static JSONObject contentletToJSON(Contentlet contentlet, final HttpServletRequest request,
             final HttpServletResponse response, final String render, final User user,
             final boolean allCategoriesInfo, final boolean hydrateRelated)
@@ -1385,6 +1424,8 @@ public class ContentResource {
                         final Collection<?> tags = (Collection<?>) map.get(key);
                         jsonObject.put(key, new JSONArray(tags));
                         // this might be coming from transformers views, so let's try to make them JSONObjects
+                } else if (isStoryBlockField(type, key)) {
+                    jsonObject.put(key, new JSONObject(String.class.cast(map.get(key))));
                 } else if(hydrateRelated) {
                     if(map.get(key) instanceof Map) {
                         jsonObject.put(key, new JSONObject((Map) map.get(key)));
@@ -1435,6 +1476,25 @@ public class ContentResource {
             Logger.error(ContentResource.class, "Error getting field " + key, e);
         }
         return false;
+    }
+
+    /**
+     * Verifies if the specified field in a Content Type is of type {@link StoryBlockField}.
+     *
+     * @param type         The {@link ContentType} containing such a field.
+     * @param fieldVarName The Velocity Variable Name of the field that must be checked.
+     *
+     * @return If the field is of type {@link StoryBlockField}, returns {@code true}.
+     */
+    private static boolean isStoryBlockField(final ContentType type, final String fieldVarName) {
+        try {
+            final com.dotcms.contenttype.model.field.Field field = type.fieldMap().get(fieldVarName);
+            return field != null && field instanceof StoryBlockField;
+        } catch (final Exception e) {
+            Logger.error(ContentResource.class,
+                    String.format("Error checking StoryBlock type on field '%s': %s", fieldVarName, e.getMessage()), e);
+        }
+        return Boolean.FALSE;
     }
 
     public class MapEntryConverter implements Converter {
@@ -2073,7 +2133,7 @@ public class ContentResource {
                 .startsWith("<?XML")) {
             throw new DotSecurityException("Invalid XML");
         }
-        XStream xstream = new XStream(new DomDriver());
+        XStream xstream = XStreamFactory.INSTANCE.getInstance();
         xstream.alias("content", Map.class);
         xstream.registerConverter(new MapEntryConverter());
         Map<String, Object> root = (Map<String, Object>) xstream.fromXML(input);
@@ -2203,4 +2263,5 @@ public class ContentResource {
 
 
     }
+
 }

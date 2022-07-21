@@ -63,11 +63,16 @@ def taskDescription = """
             As snapshot: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/eelic_3.6.jar
             As release: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/eelic_3.6.jar
 
-         starter zip
-            Name convention: starter_timestamp.zip -> starter_20140805.zip
-            As snapshot: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_20140805.zip
-            As release: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_20140805.zip
-
+        Full starter zip
+            Name convention: starter_YYYYMMDD.zip -> starter_20220518.zip
+            As snapshot: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_20220518.zip
+            As release: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_20220518.zip
+        
+        Empty starter zip
+            Name convention: starter_empty_YYYYMMDD.zip -> starter_empty_20220518.zip
+            As snapshot: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_empty_20220518.zip
+            As release: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_empty_20220518.zip
+        
          Ant Tooling jar
             Name convention: ant-tooling_version.jar -> ant-tooling_1.1.jar
             As release: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/ant-tooling/build/libs/ant-tooling_1.1.jar
@@ -120,7 +125,7 @@ ext {
     snapshotRepository = "https://repo.dotcms.com/artifactory/libs-snapshot-local"
     repositoryUrl      = snapshotRepository
 
-    if (gradle.startParameter.taskNames.contains("uploadEnterprise")) {
+    if (gradle.startParameter.taskNames.contains("uploadEnterprise") || gradle.startParameter.taskNames.contains("uploadArchives")) {
         jarName = "ee_$dotcmsReleaseVersion" + ".jar"
         fileToUpload = "src/main/enterprise/build/libs/$jarName"
         artifactGroupId = "com.dotcms.enterprise"
@@ -144,6 +149,9 @@ ext {
         fileToUpload = "$file"
     }
 
+    if (project.hasProperty('groupId')) {
+        artifactGroupId = "$groupId"
+    }
 
     releaseUpload = "false"
     if (project.hasProperty('release')) {

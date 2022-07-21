@@ -1,21 +1,15 @@
 package com.dotcms.browser;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotcms.api.tree.Parentable;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.Treeable;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.comparators.WebAssetMapComparator;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -31,7 +25,6 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.util.AssetsComparator;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
@@ -42,25 +35,24 @@ import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+
+import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+
 /**
- * Default implementation
- * @author jsanca
+ * Default implementation for the {@link BrowserAPI} class.
+ *
+ * @author Jonathan Sanchez
+ * @since Apr 28th, 2020
  */
 public class BrowserAPIImpl implements BrowserAPI {
-
 
     private final UserWebAPI userAPI = WebAPILocator.getUserWebAPI();
     private final FolderAPI folderAPI = APILocator.getFolderAPI();
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+    private final ShortyIdAPI shortyIdAPI = APILocator.getShortyAPI();
 
     /**
      * Returns a collection of contentlets based on diff attributes of the BrowserQuery
@@ -135,7 +127,6 @@ public class BrowserAPIImpl implements BrowserAPI {
         return permissionAPI.filterCollection(returnList,PERMISSION_READ,true, browserQuery.user);
     }
 
-
     @Override
     @CloseDBIfOpened
     public Map<String, Object> getFolderContent(final BrowserQuery browserQuery) throws DotSecurityException, DotDataException {
@@ -155,23 +146,22 @@ public class BrowserAPIImpl implements BrowserAPI {
                 : Collections.emptyList();
 
         for (final Contentlet contentlet : contentlets) {
-
-            Map<String, Object> contentMap = null;
+            Map<String, Object> contentMap;
             if (contentlet.getBaseType().get() == BaseContentType.FILEASSET) {
-
                 final FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
-                contentMap = fileAssetMap(fileAsset, browserQuery.user, browserQuery.showArchived);
+                contentMap = fileAssetMap(fileAsset);
             } else if (contentlet.getBaseType().get() == BaseContentType.DOTASSET) {
-
-                contentMap = dotAssetMap(contentlet, browserQuery.user, browserQuery.showArchived);
+                contentMap = dotAssetMap(contentlet);
             } else if (contentlet.getBaseType().get() == BaseContentType.HTMLPAGE) {
-
                 final HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
-                contentMap = htmlPageMap(page, browserQuery.user, browserQuery.showArchived, browserQuery.languageId);
+                contentMap = htmlPageMap(page);
             } else {
-                contentMap = dotContentMap(contentlet, browserQuery.user, browserQuery.showArchived);
+                contentMap = dotContentMap(contentlet);
             }
-
+            if (browserQuery.showShorties) {
+                contentMap.put("shortyIdentifier", this.shortyIdAPI.shortify(contentlet.getIdentifier()));
+                contentMap.put("shortyInode", this.shortyIdAPI.shortify(contentlet.getInode()));
+            }
             final List<Integer> permissions = permissionAPI.getPermissionIdsFromRoles(contentlet, roles, browserQuery.user);
             final WfData wfdata = new WfData(contentlet, permissions, browserQuery.user, browserQuery.showArchived);
             contentMap.put("wfActionMapList", wfdata.wfActionMapList);
@@ -190,17 +180,14 @@ public class BrowserAPIImpl implements BrowserAPI {
         int maxResults = browserQuery.maxResults;
         // Offsetting
         if (offset < 0) {
-
             offset = 0;
         }
 
         if (maxResults <= 0) {
-
             maxResults = returnList.size() - offset;
         }
 
         if (maxResults + offset > returnList.size()) {
-
             maxResults = returnList.size() - offset;
         }
 
@@ -280,9 +267,9 @@ public class BrowserAPIImpl implements BrowserAPI {
             sqlQuery.append(" and cvi.lang = ? ");
             parameters.add(browserQuery.languageId);
         }
-        if (browserQuery.host != null) {
+        if (browserQuery.site != null) {
             sqlQuery.append(" and id.host_inode = ? ");
-            parameters.add(browserQuery.host.getIdentifier());
+            parameters.add(browserQuery.site.getIdentifier());
         }
         if (browserQuery.folder != null) {
             sqlQuery.append(" and id.parent_path=? ");
@@ -386,29 +373,19 @@ public class BrowserAPIImpl implements BrowserAPI {
         return ImmutableList.of();
     } // getFolders.
 
-    private Map<String,Object> htmlPageMap(final HTMLPageAsset page,
-                                           final User user,
-                                           final boolean showArchived,
-                                           final long languageId) throws DotDataException, DotStateException, DotSecurityException {
+    private Map<String,Object> htmlPageMap(final HTMLPageAsset page) throws DotStateException {
         return new DotTransformerBuilder().webAssetOptions().content(page).build().toMaps().get(0);
     } // htmlPageMap.
 
-    private Map<String,Object> fileAssetMap(final FileAsset fileAsset,
-                                            final User user,
-                                            final boolean showArchived) throws DotDataException, DotStateException, DotSecurityException {
+    private Map<String,Object> fileAssetMap(final FileAsset fileAsset) throws DotStateException {
         return new DotTransformerBuilder().webAssetOptions().content(fileAsset).build().toMaps().get(0);
     } // fileAssetMap.
 
-    private Map<String,Object> dotAssetMap(final Contentlet dotAsset,
-                                           final User user,
-                                           final boolean showArchived) throws DotDataException, DotStateException, DotSecurityException {
-
+    private Map<String,Object> dotAssetMap(final Contentlet dotAsset) throws DotStateException {
         return new DotTransformerBuilder().dotAssetOptions().content(dotAsset).build().toMaps().get(0);
     } // dotAssetMap.
 
-    private Map<String, Object> dotContentMap(final Contentlet dotAsset, final User user, final boolean showArchived)
-            throws DotDataException, DotStateException, DotSecurityException {
-
+    private Map<String, Object> dotContentMap(final Contentlet dotAsset) throws DotStateException {
         return new DotTransformerBuilder().defaultOptions().content(dotAsset).build().toMaps().get(0);
     } // dotAssetMap.
 

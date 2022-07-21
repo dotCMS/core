@@ -4,15 +4,38 @@ import java.io.IOException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.User;
 
 abstract class OSGIBaseAJAX extends AjaxAction {
 
+    public boolean validateUser() {
+        HttpServletRequest req = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        User user = null;
+        try {
+            user = com.liferay.portal.util.PortalUtil.getUser(req);
+            if(user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("dynamic-plugins", user)){
+                throw new DotSecurityException("User does not have access to the Plugin Portlet");
+            }
+            return true;
+        } catch (Exception e) {
+            Logger.error(this, e.getMessage());
+            throw new DotRuntimeException (e.getMessage());
+        }
+    }
+    
+    
+    
+    
 	public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
 		if(System.getProperty(WebKeys.OSGI_ENABLED)==null){

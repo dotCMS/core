@@ -16,14 +16,12 @@ import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
-import com.dotcms.mock.request.DotCMSMockRequest;
-import com.dotcms.mock.request.DotCMSMockRequestWithSession;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.EmptyHttpResponse;
@@ -100,10 +98,14 @@ import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import com.liferay.portal.util.WebKeys;
 import com.liferay.util.HttpHeaders;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Tuple2;
 import java.io.File;
 import java.io.IOException;
@@ -128,6 +130,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -167,6 +170,7 @@ import org.glassfish.jersey.server.JSONP;
  */
 @SuppressWarnings("serial")
 @Path("/v1/workflow")
+@Tag(name = "Workflow")
 public class WorkflowResource {
 
     public  final static String VERSION       = "1.0";
@@ -1005,10 +1009,11 @@ public class WorkflowResource {
     @Path("/actions")
     @JSONP
     @NoCache
+    @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response saveAction(@Context final HttpServletRequest request,
                                      @Context final HttpServletResponse response,
-                               final WorkflowActionForm workflowActionForm) {
+                                final WorkflowActionForm workflowActionForm) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, request, response, true, null);
@@ -1406,10 +1411,18 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Operation(summary = "Fire action by name multipart",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityView.class))),
+                    @ApiResponse(responseCode = "404", description = "Action not found")})
     public final Response fireActionByNameMultipart(@Context final HttpServletRequest request,
                                               @Context final HttpServletResponse response,
                                               @QueryParam("inode")            final String inode,
                                               @QueryParam("identifier")       final String identifier,
+                                              @QueryParam("indexPolicy")      final String indexPolicy,
                                               @DefaultValue("-1") @QueryParam("language")         final String   language,
                                               final FormDataMultiPart multipart) {
 
@@ -1422,7 +1435,7 @@ public class WorkflowResource {
         try {
 
             Logger.debug(this, ()-> "On Fire Action: inode = " + inode +
-                    ", identifier = " + identifier + ", language = " + language);
+                    ", identifier = " + identifier + ", language = " + language + " indexPolicy = " + indexPolicy);
 
             final long languageId = LanguageUtil.getLanguageId(language);
             final PageMode mode = PageMode.get(request);
@@ -1432,6 +1445,10 @@ public class WorkflowResource {
                     (inode, identifier, languageId,
                             ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
                             fireActionForm, initDataObject, mode);
+
+            if (UtilMethods.isSet(indexPolicy)) {
+                contentlet.setIndexPolicy(IndexPolicy.parseIndexPolicy(indexPolicy));
+            }
 
             actionId = this.workflowHelper.getActionIdOnList
                     (fireActionForm.getActionName(), contentlet, initDataObject.getUser());
@@ -1461,9 +1478,18 @@ public class WorkflowResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response fireActionByName(@Context final HttpServletRequest request,
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Operation(summary = "Fire action by name",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityView.class))),
+                    @ApiResponse(responseCode = "400", description = "Action not found")})
+    public final Response fireActionByNameSinglePart(@Context final HttpServletRequest request,
                                      @QueryParam("inode")                        final String inode,
                                      @QueryParam("identifier")                   final String identifier,
+                                     @QueryParam("indexPolicy")                  final String indexPolicy,
                                      @DefaultValue("-1") @QueryParam("language") final String   language,
                                      final FireActionByNameForm fireActionForm) {
 
@@ -1477,7 +1503,7 @@ public class WorkflowResource {
 
             Logger.debug(this, ()-> "On Fire Action: action name = '" + (null != fireActionForm? fireActionForm.getActionName(): StringPool.BLANK)
                     + "', inode = " + inode +
-                    ", identifier = " + identifier + ", language = " + language);
+                    ", identifier = " + identifier + ", language = " + language + " indexPolicy = " + indexPolicy);
             final long languageId = LanguageUtil.getLanguageId(language);
             final PageMode mode = PageMode.get(request);
             //if inode is set we use it to look up a contentlet
@@ -1485,6 +1511,10 @@ public class WorkflowResource {
                     (inode, identifier, languageId,
                             ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
                             fireActionForm, initDataObject, mode);
+
+            if (UtilMethods.isSet(indexPolicy)) {
+                contentlet.setIndexPolicy(IndexPolicy.parseIndexPolicy(indexPolicy));
+            }
 
             actionId = this.workflowHelper.getActionIdOnList
                     (fireActionForm.getActionName(), contentlet, initDataObject.getUser());
@@ -1590,11 +1620,20 @@ public class WorkflowResource {
     @Path("/actions/default/fire/{systemAction}")
     @JSONP
     @NoCache
+    @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response fireActionDefault(@Context final HttpServletRequest request,
+    @Operation(summary = "Fire default action by name",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityView.class))),
+                    @ApiResponse(responseCode = "400", description = "Action not found")})
+    public final Response fireActionDefaultSinglePart(@Context final HttpServletRequest request,
                                      @Context final HttpServletResponse response,
                                      @QueryParam("inode")            final String inode,
                                      @QueryParam("identifier")       final String identifier,
+                                     @QueryParam("indexPolicy")      final String indexPolicy,
                                      @DefaultValue("-1") @QueryParam("language") final String language,
                                      @PathParam("systemAction") final WorkflowAPI.SystemAction systemAction,
                                      final FireActionForm fireActionForm) {
@@ -1607,7 +1646,7 @@ public class WorkflowResource {
         try {
 
             Logger.debug(this, ()-> "On Fire Action: systemAction = " + systemAction + ", inode = " + inode +
-                    ", identifier = " + identifier + ", language = " + language);
+                    ", identifier = " + identifier + ", language = " + language + " indexPolicy = " + indexPolicy);
 
             final PageMode mode   = PageMode.get(request);
             final long languageId = LanguageUtil.getLanguageId(language);
@@ -1616,6 +1655,10 @@ public class WorkflowResource {
                     (inode, identifier, languageId,
                             ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
                             fireActionForm, initDataObject, mode);
+
+            if (UtilMethods.isSet(indexPolicy)) {
+                contentlet.setIndexPolicy(IndexPolicy.parseIndexPolicy(indexPolicy));
+            }
 
             this.checkContentletState (contentlet, systemAction);
 
@@ -1677,7 +1720,15 @@ public class WorkflowResource {
     @JSONP
     @NoCache
     //@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces("application/octet-stream")
+    @Operation(summary = "Fire default action by name on multiple contents",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityView.class))),
+                    @ApiResponse(responseCode = "400", description = "Action not found")})
     public final Response fireMultipleActionDefault(@Context final HttpServletRequest request,
                                                     @Context final HttpServletResponse response,
                                                     @PathParam("systemAction") final WorkflowAPI.SystemAction systemAction,
@@ -2108,13 +2159,41 @@ public class WorkflowResource {
     }
 
     /**
-     * Fires a workflow action by action id, if the contentlet exists could use inode or identifier and optional language.
+     * Exposed under a different path `firemultipart` so Swagger takes it
+     */
+
+    @PUT
+    @Path("/actions/{actionId}/firemultipart")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(summary = "Fire action by ID multipart",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityView.class))),
+                    @ApiResponse(responseCode = "404", description = "Action not found")})
+    public final Response fireActionMultipartNewPath(@Context               final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam ("actionId")         final String actionId,
+            @QueryParam("inode")            final String inode,
+            @QueryParam("identifier")       final String identifier,
+            @QueryParam("indexPolicy")      final String indexPolicy,
+            @DefaultValue("-1") @QueryParam("language") final String   language,
+            final FormDataMultiPart multipart) {
+        return fireActionMultipart(request, response, actionId, inode, identifier, indexPolicy,
+                language, multipart);
+    }
+
+    /**
+     * Fires a workflow action with multi part body
      * @param request    {@link HttpServletRequest}
      * @param inode      {@link String} (Optional) to fire an action over the existing inode.
      * @param identifier {@link String} (Optional) to fire an action over the existing identifier (in combination of language).
      * @param language   {@link String}   (Optional) to fire an action over the existing language (in combination of identifier).
      * @param actionId   {@link String} (Required) action id to fire
-     * @param fireActionForm {@link FireActionForm} Fire Action Form
      * (if an inode is set, this param is not ignored).
      * @return Response
      */
@@ -2122,14 +2201,16 @@ public class WorkflowResource {
     @Path("/actions/{actionId}/fire")
     @JSONP
     @NoCache
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response fireAction(@Context final HttpServletRequest request,
-                                     @Context final HttpServletResponse response,
-                                     @PathParam ("actionId")         final String actionId,
-                                     @QueryParam("inode")            final String inode,
-                                     @QueryParam("identifier")       final String identifier,
-                                     @DefaultValue("-1") @QueryParam("language") final String   language,
-                                     final FireActionForm fireActionForm) {
+    public final Response fireActionMultipart(@Context               final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam ("actionId")         final String actionId,
+            @QueryParam("inode")            final String inode,
+            @QueryParam("identifier")       final String identifier,
+            @QueryParam("indexPolicy")      final String indexPolicy,
+            @DefaultValue("-1") @QueryParam("language") final String   language,
+            final FormDataMultiPart multipart) {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder()
                 .requestAndResponse(request, response)
@@ -2138,16 +2219,21 @@ public class WorkflowResource {
 
         try {
 
-            Logger.debug(this, ()-> "On Fire Action: action Id " + actionId + ", inode = " + inode +
-                    ", identifier = " + identifier + ", language = " + language);
+            Logger.debug(this, ()-> "On Fire Action Multipart: action Id " + actionId + ", inode = " + inode +
+                    ", identifier = " + identifier + ", language = " + language + " indexPolicy = " + indexPolicy);
 
             final long languageId = LanguageUtil.getLanguageId(language);
             final PageMode mode = PageMode.get(request);
+            final FireActionForm fireActionForm = this.processForm (multipart, initDataObject.getUser());
             //if inode is set we use it to look up a contentlet
             final Contentlet contentlet = this.getContentlet
                     (inode, identifier, languageId,
                             ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
                             fireActionForm, initDataObject, mode);
+
+            if (UtilMethods.isSet(indexPolicy)) {
+                contentlet.setIndexPolicy(IndexPolicy.parseIndexPolicy(indexPolicy));
+            }
 
             return fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId, Optional.empty());
         } catch (Exception e) {
@@ -2158,8 +2244,36 @@ public class WorkflowResource {
 
             return ResponseUtil.mapExceptionResponse(e);
         }
-    } // fireAction.
+    } // fire.
 
+    /**
+     * Exposed under a different path `firemultipart` so Swagger takes it
+     */
+    @PUT
+    @Path("/actions/default/firemultipart/{systemAction}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Operation(summary = "Fire default action by name multipart",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityView.class))),
+                    @ApiResponse(responseCode = "400", description = "Action not found")})
+    public final Response fireActionDefaultMultipartNewPath(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @QueryParam("inode")       final String inode,
+            @QueryParam("identifier")  final String identifier,
+            @QueryParam("indexPolicy") final String indexPolicy,
+            @DefaultValue("-1") @QueryParam("language") final String   language,
+            @PathParam("systemAction") final WorkflowAPI.SystemAction systemAction,
+            final FormDataMultiPart multipart) {
+        return fireActionDefaultMultipart(request, response, inode, identifier, indexPolicy, language,
+                systemAction, multipart);
+    }
     /**
      * Fires a workflow with default action with multi part body
      * @param request    {@link HttpServletRequest}
@@ -2176,11 +2290,19 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Operation(summary = "Fire default action",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityView.class))),
+                    @ApiResponse(responseCode = "400", description = "Action not found")})
     public final Response fireActionDefaultMultipart(
                                               @Context final HttpServletRequest request,
                                               @Context final HttpServletResponse response,
                                               @QueryParam("inode")       final String inode,
                                               @QueryParam("identifier")  final String identifier,
+                                              @QueryParam("indexPolicy") final String indexPolicy,
                                               @DefaultValue("-1") @QueryParam("language") final String   language,
                                               @PathParam("systemAction") final WorkflowAPI.SystemAction systemAction,
                                               final FormDataMultiPart multipart) {
@@ -2193,7 +2315,7 @@ public class WorkflowResource {
         try {
 
             Logger.debug(this, ()-> "On Fire Action Multipart: systemAction = " + systemAction + ", inode = " + inode +
-                    ", identifier = " + identifier + ", language = " + language);
+                    ", identifier = " + identifier + ", language = " + language + " indexPolicy = " + indexPolicy);
 
             final long languageId = LanguageUtil.getLanguageId(language);
             final PageMode mode = PageMode.get(request);
@@ -2203,6 +2325,10 @@ public class WorkflowResource {
                     (inode, identifier, languageId,
                             ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
                             fireActionForm, initDataObject, mode);
+
+            if (UtilMethods.isSet(indexPolicy)) {
+                contentlet.setIndexPolicy(IndexPolicy.parseIndexPolicy(indexPolicy));
+            }
 
             this.checkContentletState (contentlet, systemAction);
 
@@ -2244,12 +2370,13 @@ public class WorkflowResource {
     } // fire.
 
     /**
-     * Fires a workflow action with multi part body
+     * Fires a workflow action by action id, if the contentlet exists could use inode or identifier and optional language.
      * @param request    {@link HttpServletRequest}
      * @param inode      {@link String} (Optional) to fire an action over the existing inode.
      * @param identifier {@link String} (Optional) to fire an action over the existing identifier (in combination of language).
      * @param language   {@link String}   (Optional) to fire an action over the existing language (in combination of identifier).
      * @param actionId   {@link String} (Required) action id to fire
+     * @param fireActionForm {@link FireActionForm} Fire Action Form
      * (if an inode is set, this param is not ignored).
      * @return Response
      */
@@ -2257,15 +2384,23 @@ public class WorkflowResource {
     @Path("/actions/{actionId}/fire")
     @JSONP
     @NoCache
+    @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public final Response fireActionMultipart(@Context               final HttpServletRequest request,
-                                              @Context final HttpServletResponse response,
-                                              @PathParam ("actionId")         final String actionId,
-                                              @QueryParam("inode")            final String inode,
-                                              @QueryParam("identifier")       final String identifier,
-                                              @DefaultValue("-1") @QueryParam("language") final String   language,
-                                              final FormDataMultiPart multipart) {
+    @Operation(summary = "Fire action by ID",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityView.class))),
+                    @ApiResponse(responseCode = "404", description = "Action not found")})
+    public final Response fireActionSinglePart(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam ("actionId")         final String actionId,
+            @QueryParam("inode")            final String inode,
+            @QueryParam("identifier")       final String identifier,
+            @QueryParam("indexPolicy")       final String indexPolicy,
+            @DefaultValue("-1") @QueryParam("language") final String   language,
+            final FireActionForm fireActionForm) {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder()
                 .requestAndResponse(request, response)
@@ -2274,18 +2409,20 @@ public class WorkflowResource {
 
         try {
 
-            Logger.debug(this, ()-> "On Fire Action Multipart: action Id " + actionId + ", inode = " + inode +
-                    ", identifier = " + identifier + ", language = " + language);
+            Logger.debug(this, ()-> "On Fire Action: action Id " + actionId + ", inode = " + inode +
+                    ", identifier = " + identifier + ", language = " + language + " indexPolicy = " + indexPolicy);
 
             final long languageId = LanguageUtil.getLanguageId(language);
             final PageMode mode = PageMode.get(request);
-            final FireActionForm fireActionForm = this.processForm (multipart, initDataObject.getUser());
             //if inode is set we use it to look up a contentlet
             final Contentlet contentlet = this.getContentlet
                     (inode, identifier, languageId,
                             ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
                             fireActionForm, initDataObject, mode);
 
+            if (UtilMethods.isSet(indexPolicy)) {
+                contentlet.setIndexPolicy(IndexPolicy.parseIndexPolicy(indexPolicy));
+            }
             return fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId, Optional.empty());
         } catch (Exception e) {
 
@@ -2295,14 +2432,18 @@ public class WorkflowResource {
 
             return ResponseUtil.mapExceptionResponse(e);
         }
-    } // fire.
+    } // fireAction.
 
-    private LinkedHashSet<String> getBinaryFields(final Map<String,Object> mapContent) {
+    private LinkedHashSet<String> getBinaryFields(final Map<String, Object> mapContent) {
 
-        return mapContent.containsKey(BINARY_FIELDS)?
-                ConversionUtils.INSTANCE.convert((JSONArray)mapContent.get(BINARY_FIELDS),
-                        new JsonArrayToLinkedSetConverter<>(Object::toString)):
-                JsonArrayToLinkedSetConverter.EMPTY_LINKED_SET;
+        List array = (List) mapContent.getOrDefault(BINARY_FIELDS, Collections.EMPTY_LIST);
+
+
+        final LinkedHashSet<String> hashSet = new LinkedHashSet<>();
+        array.forEach(a -> hashSet.add(a.toString()));
+
+        return hashSet;
+
     }
 
     private FireActionByNameForm processForm(final FormDataMultiPart multipart, final User user)
@@ -2312,22 +2453,23 @@ public class WorkflowResource {
         final FireActionByNameForm.Builder fireActionFormBuilder = new FireActionByNameForm.Builder();
         final Tuple2<Map<String,Object>, List<File>> multiPartContent =
                 this.multiPartUtils.getBodyMapAndBinariesFromMultipart(multipart);
-        final LinkedHashSet<String> binaryFields = this.getBinaryFields(multiPartContent._1);
+
+        final LinkedHashSet<String> incomingBinaryFields = this.getBinaryFields(multiPartContent._1);
 
         if (multiPartContent._1.containsKey(CONTENTLET)) {
 
-            contentletMap = this.convertoToContentletMap((JSONObject)multiPartContent._1.get(CONTENTLET));
+            contentletMap = this.convertToContentletMap((JSONObject)multiPartContent._1.get(CONTENTLET));
         }
 
-        this.validateMultiPartContent    (contentletMap, binaryFields);
-        this.processFireActionFormValues (fireActionFormBuilder, multiPartContent._1);
-        this.processFiles                (contentletMap, multiPartContent._2, binaryFields, user);
-        fireActionFormBuilder.contentlet (contentletMap);
+        this.validateMultiPartContent(contentletMap, incomingBinaryFields);
+        this.processFireActionFormValues(fireActionFormBuilder, multiPartContent._1);
+        this.processFiles(contentletMap, multiPartContent._2, incomingBinaryFields, user);
+        fireActionFormBuilder.contentlet(contentletMap);
 
         return fireActionFormBuilder.build();
     }
 
-    private Map<String, Object> convertoToContentletMap(final JSONObject contentletJson) throws IOException {
+    private Map<String, Object> convertToContentletMap(final JSONObject contentletJson) throws IOException {
 
         return DotObjectMapperProvider.getInstance().getDefaultObjectMapper().
                 readValue(contentletJson.toString(), Map.class);
@@ -2395,9 +2537,14 @@ public class WorkflowResource {
                 if (fieldsMap.containsKey(fieldName)) {
 
                     final Field field = fieldsMap.get(fieldName);
-                    // if more fields than files passed, set them to null.
                     final File binary = i < binaryFiles.size()? binaryFiles.get(i): null;
-                    contentMap.put(field.variable(), binary);
+                    if(binary != null){
+                        // if we send null in this map the underlying APIs will understand it as if the binary needs to be removed from the map
+                        // Therefore the new version of the contentlet will end up losing pieces of content
+                        // if we want to remove the binary the we need to explicitly set something like image=null in the map
+                        // Not sending the binary will cause no difference.
+                       contentMap.put(field.variable(), binary);
+                    }
                 }
             }
         }

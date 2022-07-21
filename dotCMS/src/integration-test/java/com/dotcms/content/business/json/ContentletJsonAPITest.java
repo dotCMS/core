@@ -29,6 +29,7 @@ import com.dotcms.datagen.TagDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.storage.model.Metadata;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConfigTestHelper;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -39,6 +40,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -48,13 +50,13 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -502,6 +504,7 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
             throws IOException {
         final String resource = ConfigTestHelper.getPathToTestResource(RESOURCE);
         final String resourceAsString = new String(Files.readAllBytes(new File(resource).toPath()));
+        Assert.assertTrue(resourceAsString.contains("unknownProperty"));
         final com.dotcms.content.model.Contentlet immutableFromJson = INSTANCE.get()
                 .immutableFromJson(resourceAsString);
         //Even though we could have this patched and return the new version..
@@ -517,6 +520,44 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
         assertTrue(" I was expecting to find 1 field of type 'Text'.", fields.entrySet().stream()
                 .anyMatch(fieldValueEntry -> "Text".equals(fieldValueEntry.getValue().type())));
 
+    }
+
+    /**
+     * <b>Method to test:</b> {@link ContentletJsonAPI#toMutableContentlet(com.dotcms.content.model.Contentlet)}<br></br>
+     * <b>Given Scenario:</b> A list of mutable {@link Contentlet} is serialized to JSON after being transformed to a list of {@link ImmutableContentlet}.
+     * Then, the JSON was deserialized and results compared<br></br>
+     * <b>ExpectedResult:</b> The mutable contentlets are returned after the serialization/deserialization process
+     * @throws IOException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testSerializeContent() throws IOException, DotDataException, DotSecurityException {
+        final Language language = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentletJsonAPI contentletJsonAPI = APILocator.getContentletJsonAPI();
+
+        //Mutable contentlets are created
+        final Contentlet contentlet1 = TestDataUtils.getGenericContentContent(true, language.getId());
+        final Contentlet contentlet2 = TestDataUtils.getGenericContentContent(true, language.getId());
+
+        //then, we convert the mutable contentlets to immutable
+        final com.dotcms.content.model.Contentlet immutableContentlet1 = contentletJsonAPI.toImmutable(contentlet1);
+        final com.dotcms.content.model.Contentlet immutableContentlet2 = contentletJsonAPI.toImmutable(contentlet2);
+
+        //The immutable content list is serialized
+        final File tempFile = File.createTempFile("testSerializeContent", ".json");
+        ContentletJsonHelper.INSTANCE.get().writeContentletListToFile(
+                CollectionsUtils.list(immutableContentlet1, immutableContentlet2), tempFile);
+
+        //The immutable content list is deserialized
+        final List<com.dotcms.content.model.Contentlet> result = ContentletJsonHelper.INSTANCE.get().readContentletListFromJsonFile(tempFile);
+
+        assertNotNull(result);
+        assertEquals(2, result.size());
+
+        //Immutable contentlets are converted back to mutable and results compared
+        assertEquals(contentlet1.getIdentifier(), contentletJsonAPI.toMutableContentlet(result.get(0)).getIdentifier());
+        assertEquals(contentlet2.getIdentifier(), contentletJsonAPI.toMutableContentlet(result.get(1)).getIdentifier());
     }
 
 }

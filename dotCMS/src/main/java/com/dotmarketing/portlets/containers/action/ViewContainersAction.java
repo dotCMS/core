@@ -25,19 +25,19 @@ import javax.servlet.jsp.PageContext;
 import java.util.List;
 
 /**
- * <a href="ViewQuestionsAction.java.html"><b><i>View Source</i></b></a>
- * 
- * @author Maria Ahues
- * @version $Revision: 1.2 $
- * 
+ * This class handles the communication between the UI and the back-end service that returns information to the user
+ * regarding Containers in dotCMS. The information provided by this service is accessed via DWR.
+ * <p>
+ * For example, the <b>Container</b> portlet uses this class to display Container information to the users, which can
+ * be filtered by specific search criteria.
+ *
+ * @author root
+ * @version 1.0
+ * @since Mar 22, 2012
  */
 public class ViewContainersAction extends DotPortletAction {
 
-	/*
-	 * @see com.liferay.portal.struts.PortletAction#render(com.dotcms.repackage.org.apache.struts.action.ActionMapping,
-	 *      com.dotcms.repackage.org.apache.struts.action.ActionForm, com.dotcms.repackage.javax.portlet.PortletConfig,
-	 *      com.dotcms.repackage.javax.portlet.RenderRequest, com.dotcms.repackage.javax.portlet.RenderResponse)
-	 */
+	@Override
 	public ActionForward render(ActionMapping mapping, ActionForm form,
 			PortletConfig config, RenderRequest req, RenderResponse res)
 			throws Exception {

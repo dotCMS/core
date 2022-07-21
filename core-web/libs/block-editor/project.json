@@ -1,0 +1,57 @@
+{
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "projectType": "library",
+    "sourceRoot": "libs/block-editor/src",
+    "prefix": "dotcms",
+    "targets": {
+        "lint": {
+            "executor": "@nrwl/linter:eslint",
+            "options": {
+                "lintFilePatterns": [
+                    "libs/block-editor/src/**/*.ts",
+                    "libs/block-editor/src/**/*.html"
+                ]
+            },
+            "outputs": ["{options.outputFile}"]
+        },
+        "test": {
+            "executor": "@nrwl/jest:jest",
+            "outputs": ["coverage/libs/block-editor"],
+            "options": {
+                "jestConfig": "libs/block-editor/jest.config.ts",
+                "passWithNoTests": true
+            }
+        },
+        "storybook": {
+            "executor": "@storybook/angular:start-storybook",
+            "options": {
+                "port": 6600,
+                "configDir": "libs/block-editor/.storybook",
+                "browserTarget": "block-editor:build-storybook",
+                "compodoc": false
+            },
+            "configurations": {
+                "ci": {
+                    "quiet": true
+                }
+            }
+        },
+        "build-storybook": {
+            "executor": "@storybook/angular:build-storybook",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "deleteOutputPath": false,
+                "outputDir": "docs/block-editor",
+                "configDir": "libs/block-editor/.storybook",
+                "browserTarget": "block-editor:build-storybook",
+                "compodoc": false
+            },
+            "configurations": {
+                "ci": {
+                    "quiet": true
+                }
+            }
+        }
+    },
+    "tags": []
+}

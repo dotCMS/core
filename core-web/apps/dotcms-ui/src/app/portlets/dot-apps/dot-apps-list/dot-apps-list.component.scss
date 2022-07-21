@@ -1,0 +1,58 @@
+@use "variables" as *;
+
+:host {
+    background: $gray-bg;
+    box-shadow: $md-shadow-4;
+    display: flex;
+    height: 100%;
+    padding: $spacing-4;
+}
+
+.dot-apps__header {
+    border-bottom: 1px solid $gray-light;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 $spacing-4 $spacing-4;
+    width: 100%;
+
+    input {
+        width: 31.42rem;
+    }
+
+    button:first-child {
+        margin-right: $spacing-1;
+    }
+}
+
+.dot-apps__header-actions {
+    display: flex;
+}
+
+.dot-apps__header-info {
+    align-self: center;
+    display: flex;
+    margin-right: $spacing-4;
+
+    dot-icon {
+        margin-right: $spacing-1;
+    }
+}
+
+.dot-apps-configuration__action_import_button {
+    margin-right: $spacing-1;
+}
+
+.dot-apps__body {
+    display: grid;
+    grid-gap: $spacing-4;
+    grid-template-columns: repeat(auto-fill, minmax(23.42rem, 1fr));
+    padding: $spacing-4;
+}
+
+.dot-apps__container {
+    background-color: $white;
+    box-shadow: $md-shadow-4;
+    overflow-y: auto;
+    padding-top: $spacing-4;
+    width: 100%;
+}

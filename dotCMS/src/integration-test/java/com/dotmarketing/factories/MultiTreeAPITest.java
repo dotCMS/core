@@ -5,6 +5,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -889,12 +890,13 @@ public class MultiTreeAPITest extends IntegrationTestBase {
      * */
     @Test
     public void testEmptyContainersInDrawedTemplate() throws DotDataException, DotSecurityException {
-        final Container container = new ContainerDataGen().nextPersisted();
-        FileAssetContainer fileAssetContainer = new ContainerAsFileDataGen().nextPersisted();
+        final Host site = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().site(site).nextPersisted();
+        FileAssetContainer fileAssetContainer = new ContainerAsFileDataGen().host(site).nextPersisted();
         fileAssetContainer = (FileAssetContainer) APILocator.getContainerAPI().find(fileAssetContainer.getInode(), APILocator.systemUser(), false);
 
-        final Container emptyContainer = new ContainerDataGen().nextPersisted();
-        FileAssetContainer emptyFileAssetContainer = new ContainerAsFileDataGen().nextPersisted();
+        final Container emptyContainer = new ContainerDataGen().site(site).nextPersisted();
+        FileAssetContainer emptyFileAssetContainer = new ContainerAsFileDataGen().host(site).nextPersisted();
         emptyFileAssetContainer = (FileAssetContainer) APILocator.getContainerAPI().find(emptyFileAssetContainer.getInode(), APILocator.systemUser(), false);
 
         final TemplateLayout templateLayout = new TemplateLayoutDataGen()
@@ -905,10 +907,11 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 .next();
 
         final Template template = new TemplateDataGen()
+                .host(site)
                 .drawedBody(templateLayout)
                 .nextPersisted();
 
-        final Folder folder = new FolderDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
         final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
 
         createContentAndMultiTree(container, fileAssetContainer, page);

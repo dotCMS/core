@@ -21,6 +21,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
@@ -51,12 +52,12 @@ public class PushNowActionlet extends WorkFlowActionlet {
     private static final long serialVersionUID = 1L;
 
     private static final String ENVIRONMENT_DELIMITER = ",";
-    private static final String ACTIONLET_NAME = "Push Now";
-    private static final String ACTIONLET_DESCRIPTION = "This actionlet will automatically publish the the content " +
+    private static final String ACTIONLET_NAME = "Push/Remove Now";
+    private static final String ACTIONLET_DESCRIPTION = "This actionlet will automatically publish or unpublish the the content " +
             "object to the specified environment(s). Multiple environments can be separated by a comma (',')";
     private static final String PARAM_ENVIRONMENT = "environment";
     private static final String PARAM_FILTER_KEY = "filterKey";
-
+    private static final String PARAM_PUSH_REMOVE = "pushRemove";
     private final PublisherAPI publisherAPI = PublisherAPI.getInstance();
     private final EnvironmentAPI environmentAPI = APILocator.getEnvironmentAPI();
     private final BundleAPI bundleAPI = APILocator.getBundleAPI();
@@ -70,10 +71,21 @@ public class PushNowActionlet extends WorkFlowActionlet {
         params.add(new WorkflowActionletParameter(PARAM_ENVIRONMENT, Try.of(()->LanguageUtil.get("pushNowActionlet.environments.name")).getOrElse("Name of the Environments"), "", true));
         //Filter Param
         final Collection<FilterDescriptor> filterDescriptorMap = Try.of(()->APILocator.getPublisherAPI().getFiltersDescriptorsByRole(APILocator.systemUser())).get();
-        final FilterDescriptor defaultFilter = filterDescriptorMap.stream().filter(filterDescriptor -> filterDescriptor.isDefaultFilter()).findFirst().get();
+        final FilterDescriptor defaultFilter = filterDescriptorMap.stream().filter(
+                FilterDescriptor::isDefaultFilter).findFirst().get();
         final List<MultiKeyValue> multiKeyValueFilterList = new ArrayList<>();
-        filterDescriptorMap.stream().forEach(filterDescriptor -> multiKeyValueFilterList.add(new MultiKeyValue(filterDescriptor.getKey(),filterDescriptor.getTitle())));
+        filterDescriptorMap.forEach(filterDescriptor -> multiKeyValueFilterList.add(new MultiKeyValue(filterDescriptor.getKey(),filterDescriptor.getTitle())));
         params.add(new MultiSelectionWorkflowActionletParameter(PARAM_FILTER_KEY, Try.of(()->LanguageUtil.get("pushNowActionlet.filter")).getOrElse("Name of the Environments"), defaultFilter.getKey(), true,()->multiKeyValueFilterList));
+
+        params.add(new MultiSelectionWorkflowActionletParameter(PARAM_PUSH_REMOVE,
+                        Try.of(() -> LanguageUtil.get("pushNowActionlet.pushRemove.name"))
+                                .getOrElse("Push Remove"), Boolean.toString(false), true,
+                        () -> ImmutableList.of(
+                                new MultiKeyValue(Boolean.toString(false), Boolean.toString(false)),
+                                new MultiKeyValue(Boolean.toString(true), Boolean.toString(true)))
+                )
+        );
+        
         return params;
     }
 
@@ -94,6 +106,10 @@ public class PushNowActionlet extends WorkFlowActionlet {
         final Contentlet contentlet = processor.getContentlet();
         final User user = processor.getUser();
         final String environments = params.get(PARAM_ENVIRONMENT).getValue();
+        final boolean pushRemove = Try.of(()->Boolean.parseBoolean(params.get(PARAM_PUSH_REMOVE).getValue())).getOrElse(false);
+        
+        
+        
         try {
             if (!UtilMethods.isSet(environments)) {
                 Logger.error(this, "There are no Push Publishing environments set to send the bundle.");
@@ -141,14 +157,27 @@ public class PushNowActionlet extends WorkFlowActionlet {
                 }
             }
             // Push Publish now
-            final Date publishDate = new Date();
+            final Date nowDate = new Date();
             identifiers.add(contentlet.getIdentifier());
+            
+            if(pushRemove) {
+                final Bundle bundle = new Bundle(null, null, nowDate, user.getUserId());
+                this.bundleAPI.saveBundle(bundle, finalEnvs);
+                this.publisherAPI.addContentsToUnpublish(identifiers, bundle.getId(), nowDate, user);
+                return;
+            }
+            
+            
+            
+            
+            
+            
             final String filterKey = params.get(PARAM_FILTER_KEY).getValue();
             final FilterDescriptor filterDescriptor = APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey);
             final boolean forcePush = (boolean) filterDescriptor.getFilters().getOrDefault(FilterDescriptor.FORCE_PUSH_KEY,false);
-            final Bundle bundle = new Bundle(null, publishDate, null, user.getUserId(), forcePush,filterDescriptor.getKey());
+            final Bundle bundle = new Bundle(null, nowDate, null, user.getUserId(), forcePush,filterDescriptor.getKey());
             this.bundleAPI.saveBundle(bundle, finalEnvs);
-            this.publisherAPI.addContentsToPublish(identifiers, bundle.getId(), publishDate, user);
+            this.publisherAPI.addContentsToPublish(identifiers, bundle.getId(), nowDate, user);
         } catch (final DotPublisherException e) {
             final String errorMsg = String.format("An error occurred when adding Contentlet with ID '%s' to the " +
                     "bundle for Environments [%s]: %s", contentlet.getIdentifier(), environments, e.getMessage());

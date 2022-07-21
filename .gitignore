@@ -6,10 +6,20 @@ bin/*.sh
 .settings/*
 .project
 .idea/
-.vscode
 *.iml
 *.ipr
 *.iws
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
 
 # none enterprise stuff should make it here #
 #######################################
@@ -56,7 +66,7 @@ dotCMS/classes
 
 # Changes after gradle migration #
 ###############################
-dist/
+/dist/
 dist-output/
 dotCMS/build/
 dotCMS/.gradle/
@@ -78,3 +88,37 @@ docker/tests/integration/backup
 
 dot-cicd/
 tmp/
+
+/node_modules
+/**/node_modules
+node_modules/
+.github/actions/**/lib/
+
+# compiled output
+/core-web/dist
+/core-web/dist-lib
+/core-web/docs
+/core-web/tmp
+/core-web/out-tsc
+/core-web/karma_html
+
+# misc
+/core-web/.angular/cache
+/core-web/.sass-cache
+/core-web/connect.lock
+/core-web/coverage
+/core-web/libpeerconnection.log
+npm-debug.log
+yarn-error.log
+testem.log
+/core-web/typings
+karma_html/
+
+# e2e
+/core-web/e2e/*.js
+/core-web/e2e/*.map
+
+/core-web/storybook
+/core-web/out*/
+dist-docs/
+/core-web/test-reports/

@@ -17,6 +17,7 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import java.io.IOException;
+import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -107,5 +108,61 @@ public class EMAWebInterceptorTest {
         Assert.assertTrue(result.getResponse() instanceof MockHttpCaptureResponse);
         Assert.assertNotEquals(Result.NEXT,result);
     }
+
+    /**
+     * Method to test: {@link EMAWebInterceptor#proxyUrl(Host, HttpServletRequest)}
+     * Given Scenario: overrides the edit mode url by using query string
+     * ExpectedResult: Result.response is an instance of {@link MockHttpCaptureResponse}
+     */
+    @Test
+    public void test_EMAInterceptor_intercept_SecretExistAtHost_ReturnResult_Query_String() throws IOException, DotDataException, DotSecurityException {
+        final String testProxy = "testProxy.com";
+        final Host host = new SiteDataGen().name("EmaSecretAtHostQueryString").nextPersisted();
+        when(request.getParameter("host_id")).thenReturn(host.getIdentifier());
+        when(request.getParameter(EMAWebInterceptor.PROXY_EDIT_MODE_URL_VAR)).thenReturn(testProxy);
+
+        //Create app secret
+        final AppSecrets emaAppSecrets = new AppSecrets.Builder()
+                .withKey(EMAWebInterceptor.EMA_APP_CONFIG_KEY)
+                .withSecret(EMAWebInterceptor.PROXY_EDIT_MODE_URL_VAR,"testValue")
+                .build();
+        APILocator.getAppsAPI().saveSecrets(emaAppSecrets,host,admin);
+
+        final Optional<String> proxyUrlOpt = emaWebInterceptor.proxyUrl(host, request);
+        Assert.assertNotNull(proxyUrlOpt);
+        Assert.assertTrue(proxyUrlOpt.isPresent());
+        Assert.assertEquals(testProxy, proxyUrlOpt.get());
+    }
+
+    /**
+     * Method to test: {@link EMAWebInterceptor#proxyUrl(Host, HttpServletRequest)}
+     * Given Scenario: use a json to rewrite the edit url
+     * ExpectedResult: Result.response is an instance of {@link MockHttpCaptureResponse}
+     */
+    @Test
+    public void test_EMAInterceptor_intercept_SecretExistAtHost_ReturnResult_Json() throws IOException, DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().name("EmaSecretAtHostInJson").nextPersisted();
+        when(request.getParameter("host_id")).thenReturn(host.getIdentifier());
+        when(request.getRequestURI()).thenReturn("/test");
+
+        //Create app secret
+        final AppSecrets emaAppSecrets = new AppSecrets.Builder()
+                .withKey(EMAWebInterceptor.EMA_APP_CONFIG_KEY)
+                .withSecret(EMAWebInterceptor.PROXY_EDIT_MODE_URL_VAR,"{\"rewrites\":[\n" +
+                        "{\n" +
+                        "   \"source\":\"/*\", \"destination\":\"xxxx\"\n" +
+                        "}]\n" +
+                        "}")
+                .build();
+        APILocator.getAppsAPI().saveSecrets(emaAppSecrets,host,admin);
+
+        final Optional<String> proxyUrlOpt = emaWebInterceptor.proxyUrl(host, request);
+        Assert.assertNotNull(proxyUrlOpt);
+        Assert.assertTrue(proxyUrlOpt.isPresent());
+        Assert.assertEquals("xxxx", proxyUrlOpt.get());
+    }
+
+
+
 
 }

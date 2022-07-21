@@ -35,7 +35,7 @@ define("dojox/html/ext-dojo/style", ["dojo/_base/kernel", "dojo/dom-style", "doj
 				}else if(to){
 					return extStyle.getTransformOrigin(node);
 				}else{
-					return arguments.length == 2 ? sget(node, name) : sget(node);
+					return sget.apply(this, arguments);
 				}
 			};
 			DOMStyle.set = function(/*DOMNode|String*/ node, /*String|Object*/ name, /*String?*/ value){
@@ -48,7 +48,7 @@ define("dojox/html/ext-dojo/style", ["dojo/_base/kernel", "dojo/dom-style", "doj
 				}else if(to){
 					return extStyle.setTransformOrigin(n, value);
 				}else{
-					return arguments.length == 3 ? sset(n, name, value) : sset(n, name);
+					return sset.apply(this, arguments);
 				}
 			};
 			// prefixes and property names
@@ -62,10 +62,10 @@ define("dojox/html/ext-dojo/style", ["dojo/_base/kernel", "dojo/dom-style", "doj
 			}
 			if(this.tPropertyName){
 				this.setTransform = function(/*DomNode*/node, /*String*/ transform){
-					return DOMStyle.set(node, this.tPropertyName, transform);
+					return sset(node, this.tPropertyName, transform);
 				};
 				this.getTransform = function(/*DomNode*/node){
-					return DOMStyle.get(node, this.tPropertyName);
+					return sget(node, this.tPropertyName);
 				};
 			}else if(has("ie")){
 				this.setTransform = this._setTransformFilter;

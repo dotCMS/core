@@ -3,8 +3,8 @@ package com.dotmarketing.util;
 import static org.apache.commons.lang.StringUtils.split;
 
 import com.dotcms.repackage.com.google.common.base.CaseFormat;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONObject;
 import com.dotcms.repackage.org.jsoup.Jsoup;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.uuid.shorty.ShortyException;
@@ -65,6 +65,42 @@ public class StringUtils {
     }
 
 
+    public static List<String> splitOnCommasWithQuotes(String importPackage){
+        
+        if(UtilMethods.isEmpty(importPackage)){
+            return   Collections.emptyList();
+         }
+        
+        List<String> tokensList = new ArrayList<String>();
+        boolean inQuotes = false;
+        StringBuilder b = new StringBuilder();
+        for (char c : importPackage.toCharArray()) {
+            switch (c) {
+            case ',':
+                if (inQuotes) {
+                    b.append(c);
+                } else {
+                    tokensList.add(b.toString());
+                    b = new StringBuilder();
+                }
+                break;
+            case '\"':
+                inQuotes = !inQuotes;
+            default:
+                b.append(c);
+            break;
+            }
+        }
+        tokensList.add(b.toString());
+
+        return tokensList;
+        
+    }
+    
+    
+    
+    
+    
 
     public static boolean isJson(String jsonString) {
         if(!jsonString.contains("{") || !jsonString.contains("}")){

@@ -1,5 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
 import static com.dotcms.datagen.TestDataUtils.getCommentsLikeContentType;
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static com.dotcms.datagen.TestDataUtils.relateContentTypes;
@@ -15,27 +16,24 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.*;
-import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.mock.response.MockHttpStatusAndHeadersResponse;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.CollectionsUtils;
-import com.dotcms.util.ConfigTestHelper;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.vanityurl.filters.VanityURLFilter;
 import com.dotcms.vanityurl.model.DefaultVanityUrl;
@@ -52,6 +50,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.contentlet.transform.ContentletTransformer;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -60,7 +59,6 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.io.Files;
@@ -72,6 +70,7 @@ import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -87,7 +86,6 @@ import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.http.HttpStatus;
 
@@ -1017,11 +1015,12 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     }
 
     /**
-<<<<<<< HEAD
      * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}  }
      * When:
-     * - Create a ContentType with a unique field
-     * - Create two Contentlet with the same value in the unique field in the same host
+     * - Create a unique {@link TextField}, with the {@link ESContentletAPIImpl#UNIQUE_PER_SITE_FIELD_VARIABLE_NAME}
+     * {@link com.dotcms.contenttype.model.field.FieldVariable} set to true
+     * - Create a ContentType and add the previous created field to it
+     * - Create two {@link Contentlet} with the same value in the unique field in the same host
      *
      * Should: Throw a RuntimeException with the message: "Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s)."
      * @throws DotDataException
@@ -1029,12 +1028,19 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      */
     @Test
     public void savingFieldWithUniqueFieldInTheSameHost() throws DotDataException, DotSecurityException {
-        final Field uniqueTextField = new FieldDataGen()
-                .unique(true)
-                .type(TextField.class)
-                .next();
 
         final ContentType contentType = new ContentTypeDataGen()
+                .nextPersisted();
+
+        final Field uniqueTextField = new FieldDataGen()
+                .contentTypeId(contentType.id())
+                .unique(true)
+                .type(TextField.class)
+                 .nextPersisted();
+
+        new FieldVariableDataGen()
+                .key(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)
+                .value("true")
                 .field(uniqueTextField)
                 .nextPersisted();
 
@@ -1056,16 +1062,22 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
             throw new AssertionError("DotRuntimeException Expected");
         }catch (DotRuntimeException e) {
-            assertEquals(e.getMessage(), "Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s).");
+            final String expectedMessage = String.format("Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s).\n"
+                    + "List of non valid fields\n"
+                    + "UNIQUE: %s/%s\n\n", uniqueTextField.variable(), uniqueTextField.name());
+
+            assertEquals(expectedMessage, e.getMessage());
         }
     }
 
     /**
      * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}  }
      * When:
-     * - Create a ContentType with a unique field
-     * - Create two Contentlet with the same value in the unique field in the same host
-     * - set the uniquePerSite properties to false
+     *
+     * - Create a unique {@link TextField}, with the {@link ESContentletAPIImpl#UNIQUE_PER_SITE_FIELD_VARIABLE_NAME}
+     * {@link com.dotcms.contenttype.model.field.FieldVariable} set to false
+     * - Create a ContentType and add the previous created field to it
+     * - Create two {@link Contentlet} with the same value in the unique field in the same host
      *
      * Should: Throw a RuntimeException with the message: "Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s)."
      * @throws DotDataException
@@ -1074,42 +1086,44 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     @Test
     public void savingFieldWithUniqueFieldInTheSameHostUniquePerSiteToFalse() throws DotDataException, DotSecurityException {
 
-        final Boolean uniquePerSite = ESContentletAPIImpl.getUniquePerSite();
-        ESContentletAPIImpl.setUniquePerSite(false);
+        final ContentType contentType = new ContentTypeDataGen()
+                .nextPersisted();
+
+        final Field uniqueTextField = new FieldDataGen()
+                .contentTypeId(contentType.id())
+                .unique(true)
+                .type(TextField.class)
+                .nextPersisted();
+
+        new FieldVariableDataGen()
+                .key(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)
+                .value("true")
+                .field(uniqueTextField)
+                .nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType)
+                .host(host)
+                .setProperty(uniqueTextField.variable(), "unique-value")
+                .next();
+
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType)
+                .host(host)
+                .setProperty(uniqueTextField.variable(), "unique-value")
+                .next();
+
+        APILocator.getContentletAPI().checkin(contentlet_1, APILocator.systemUser(), false);
 
         try {
-            final Field uniqueTextField = new FieldDataGen()
-                    .unique(true)
-                    .type(TextField.class)
-                    .next();
+            APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
+            throw new AssertionError("DotRuntimeException Expected");
+        } catch (DotRuntimeException e) {
+            final String expectedMessage = String.format("Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s).\n"
+                    + "List of non valid fields\n"
+                    + "UNIQUE: %s/%s\n\n", uniqueTextField.variable(), uniqueTextField.name());
 
-            final ContentType contentType = new ContentTypeDataGen()
-                    .field(uniqueTextField)
-                    .nextPersisted();
-
-            final Host host = new SiteDataGen().nextPersisted();
-
-            final Contentlet contentlet_1 = new ContentletDataGen(contentType)
-                    .host(host)
-                    .setProperty(uniqueTextField.variable(), "unique-value")
-                    .next();
-
-            final Contentlet contentlet_2 = new ContentletDataGen(contentType)
-                    .host(host)
-                    .setProperty(uniqueTextField.variable(), "unique-value")
-                    .next();
-
-            APILocator.getContentletAPI().checkin(contentlet_1, APILocator.systemUser(), false);
-
-            try {
-                APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
-                throw new AssertionError("DotRuntimeException Expected");
-            } catch (DotRuntimeException e) {
-                assertEquals(e.getMessage(),
-                        "Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s).");
-            }
-        } finally {
-            ESContentletAPIImpl.setUniquePerSite(uniquePerSite);
+            assertEquals(expectedMessage, e.getMessage());
         }
     }
 
@@ -1117,8 +1131,10 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     /**
      * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}  }
      * When:
-     * - Create a {@link ContentType} with a unique field
-     * - Create two  {@link Contentlet} with the same value in the unique field in different hosts
+     * - Create a unique {@link TextField}, with the {@link ESContentletAPIImpl#UNIQUE_PER_SITE_FIELD_VARIABLE_NAME}
+     * {@link com.dotcms.contenttype.model.field.FieldVariable} set to true
+     * - Create a ContentType and add the previous created field to it
+     * - Create two {@link Contentlet} with the same value in the unique field in the different host
      *
      * Should: Save successfully the two {@link Contentlet}
      * @throws DotDataException
@@ -1126,12 +1142,18 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      */
     @Test
     public void savingFieldWithUniqueFieldInDifferentHost() throws DotDataException, DotSecurityException {
+        final ContentType contentType = new ContentTypeDataGen()
+                .nextPersisted();
+
         final Field uniqueTextField = new FieldDataGen()
+                .contentTypeId(contentType.id())
                 .unique(true)
                 .type(TextField.class)
-                .next();
+                .nextPersisted();
 
-        final ContentType contentType = new ContentTypeDataGen()
+        new FieldVariableDataGen()
+                .key(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)
+                .value("true")
                 .field(uniqueTextField)
                 .nextPersisted();
 
@@ -1166,9 +1188,11 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     /**
      * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}  }
      * When:
-     * - Create a {@link ContentType} with a unique field
-     * - Create two  {@link Contentlet} with the same value in the unique field in different hosts
-     * - set the uniquePerSite properties to false
+     *
+     * - Create a unique {@link TextField}, with the {@link ESContentletAPIImpl#UNIQUE_PER_SITE_FIELD_VARIABLE_NAME}
+     * {@link com.dotcms.contenttype.model.field.FieldVariable} set to false
+     * - Create a ContentType and add the previous created field to it
+     * - Create two {@link Contentlet} with the same value in the unique field in the different host
      *
      * Should: Throw a RuntimeException with the message: "Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s)."
      * @throws DotDataException
@@ -1177,46 +1201,45 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     @Test
     public void savingFieldWithUniqueFieldInDifferentHostUniquePerSiteToFalse() throws DotDataException, DotSecurityException {
 
-        final Boolean uniquePerSite = ESContentletAPIImpl.getUniquePerSite();
-        ESContentletAPIImpl.setUniquePerSite(false);
+        final ContentType contentType = new ContentTypeDataGen()
+                .nextPersisted();
+
+        final Field uniqueTextField = new FieldDataGen()
+                .contentTypeId(contentType.id())
+                .unique(true)
+                .type(TextField.class)
+                .nextPersisted();
+
+        new FieldVariableDataGen()
+                .key(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)
+                .value("false")
+                .field(uniqueTextField)
+                .nextPersisted();
+
+        final Host host1 = new SiteDataGen().nextPersisted();
+        final Host host2 = new SiteDataGen().nextPersisted();
+
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType)
+                .host(host1)
+                .setProperty(uniqueTextField.variable(), "unique-value")
+                .next();
+
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType)
+                .host(host2)
+                .setProperty(uniqueTextField.variable(), "unique-value")
+                .next();
+
+        APILocator.getContentletAPI().checkin(contentlet_1, APILocator.systemUser(), false);
 
         try {
+            APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
+            throw new AssertionError("DotRuntimeException Expected");
+        } catch (DotRuntimeException e) {
+            final String expectedMessage = String.format("Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s).\n"
+                    + "List of non valid fields\n"
+                    + "UNIQUE: %s/%s\n\n", uniqueTextField.variable(), uniqueTextField.name());
 
-
-            final Field uniqueTextField = new FieldDataGen()
-                    .unique(true)
-                    .type(TextField.class)
-                    .next();
-
-            final ContentType contentType = new ContentTypeDataGen()
-                    .field(uniqueTextField)
-                    .nextPersisted();
-
-            final Host host1 = new SiteDataGen().nextPersisted();
-            final Host host2 = new SiteDataGen().nextPersisted();
-
-            final Contentlet contentlet_1 = new ContentletDataGen(contentType)
-                    .host(host1)
-                    .setProperty(uniqueTextField.variable(), "unique-value")
-                    .next();
-
-            final Contentlet contentlet_2 = new ContentletDataGen(contentType)
-                    .host(host2)
-                    .setProperty(uniqueTextField.variable(), "unique-value")
-                    .next();
-
-            APILocator.getContentletAPI().checkin(contentlet_1, APILocator.systemUser(), false);
-
-            try {
-                APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
-                throw new AssertionError("DotRuntimeException Expected");
-            } catch (DotRuntimeException e) {
-                assertEquals(e.getMessage(),
-                        "Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s).");
-            }
-        } finally {
-            ESContentletAPIImpl.setUniquePerSite(uniquePerSite);
-
+            assertEquals(expectedMessage, e.getMessage());
         }
     }
 
@@ -1267,6 +1290,271 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         checkFilter(host_2, vanityUrlUpdated, -1);
     }
 
+    /**
+     * Method to test: {@link ESContentletAPIImpl#checkin(Contentlet, User, boolean)}
+     * When:
+     * - Create a ContentType with publish date
+     * - Create two Language
+     * - Create a {@link Contentlet} with the first language and publish date for tomorrow
+     * - Create a {@link Contentlet} with the second language and publish date for after tomorrow
+     * Should: Each {@link Contentlet} be saved and index with the right publish date
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void differentVersionWithDifferentPublishDate() throws DotDataException, DotSecurityException {
+
+        final Language language1 = new LanguageDataGen().nextPersisted();
+        final Language language2 = new LanguageDataGen().nextPersisted();
+
+
+        final Field publishField = new FieldDataGen().defaultValue(null)
+                .type(DateTimeField.class).next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(publishField)
+                .publishDateFieldVarName(publishField.variable())
+                .nextPersisted();
+
+        Contentlet contentlet1 = null;
+        Contentlet contentlet2 = null;
+
+        try {
+
+            final Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.DATE, 1);
+            final Date tomorrow = calendar.getTime();
+
+            calendar.add(Calendar.DATE, 1);
+            final Date afterTomorrow = calendar.getTime();
+
+            contentlet1 = new ContentletDataGen(contentType)
+                    .setProperty(publishField.variable(), tomorrow)
+                    .languageId(language1.getId())
+                    .nextPersisted();
+
+            contentlet2 = ContentletDataGen.checkout(contentlet1);
+            contentlet2.setLanguageId(language2.getId());
+            contentlet2.setProperty(publishField.variable(), afterTomorrow);
+            ContentletDataGen.checkin(contentlet2);
+
+            checkFromElasticSearch(publishField, tomorrow, afterTomorrow, contentlet1);
+            checkFromDataBase(publishField, tomorrow, afterTomorrow, contentlet1);
+        }finally {
+            LanguageDataGen.remove(language1);
+            LanguageDataGen.remove(language2);
+            
+            ContentTypeDataGen.remove(contentType);
+
+            ContentletDataGen.remove(contentlet1);
+            ContentletDataGen.remove(contentlet2);
+        }
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#checkin(Contentlet, User, boolean)}
+     * When:
+     * - Set uniquePublishExpireDate to true
+     * - Create a ContentType with publish date
+     * - Create two Language
+     * - Create a {@link Contentlet} with the first language and publish date for tomorrow
+     * - Create a {@link Contentlet} with the second language and publish date for after tomorrow
+     * Should: Both {@link Contentlet} have after tomorrow as publish date
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void differentVersionWithDifferentPublishDateAndUniquePublishExpireDate() throws DotDataException, DotSecurityException {
+        final boolean uniquePublishExpireDate = ContentletTransformer.isUniquePublishExpireDatePerLanguages();
+        ContentletTransformer.setUniquePublishExpireDatePerLanguages(true);
+
+        try {
+            final Language language1 = new LanguageDataGen().nextPersisted();
+            final Language language2 = new LanguageDataGen().nextPersisted();
+
+            final Field publishField = new FieldDataGen().defaultValue(null)
+                    .type(DateTimeField.class).next();
+
+            final ContentType contentType = new ContentTypeDataGen()
+                    .field(publishField)
+                    .publishDateFieldVarName(publishField.variable())
+                    .nextPersisted();
+
+            final Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.DATE, 1);
+            final Date tomorrow = calendar.getTime();
+
+            calendar.add(Calendar.DATE, 1);
+            final Date afterTomorrow = calendar.getTime();
+
+            final Contentlet contentlet1 = new ContentletDataGen(contentType)
+                    .setProperty(publishField.variable(), tomorrow)
+                    .languageId(language1.getId())
+                    .nextPersisted();
+
+            final Contentlet contentlet2 = ContentletDataGen.checkout(contentlet1);
+            contentlet2.setLanguageId(language2.getId());
+            contentlet2.setProperty(publishField.variable(), afterTomorrow);
+            ContentletDataGen.checkin(contentlet2);
+
+            checkFromElasticSearch(publishField, afterTomorrow, afterTomorrow, contentlet1);
+            checkFromDataBase(publishField, afterTomorrow, afterTomorrow, contentlet1);
+        }finally {
+            ContentletTransformer.setUniquePublishExpireDatePerLanguages(uniquePublishExpireDate);
+        }
+    }
+
+    /**
+     * This method check the contentlet versions from the Data Base, step by step it does the follow:
+     *
+     * - Get all the version to the contentlet from DataBase
+     * - Throw an {@link AssertionError} if the contenlet has not two versions
+     * - Check the value for  <code>field</code>, if the value is different to date1 or date2 throw a {@link AssertionError}
+     */
+    private void checkFromDataBase(Field field, Date date1, Date date2,
+            Contentlet contentlet1) throws DotDataException, DotSecurityException {
+        final List<Versionable> allVersions = APILocator.getVersionableAPI()
+                .findAllVersions(contentlet1.getIdentifier());
+
+        assertEquals(2, allVersions.size());
+        for (Versionable versionable : allVersions) {
+            if (versionable.getInode().equals(contentlet1.getInode())) {
+                assertEquals(date1,
+                        ((Contentlet) versionable).getDateProperty(field.variable()));
+            } else {
+                assertEquals(date2,
+                        ((Contentlet) versionable).getDateProperty(field.variable()));
+            }
+        }
+    }
+
+    /**
+     * This method check the contentlet versions from the Elasticsearch, step by step it does the follow:
+     *
+     * - Get all the version to the contentlet from DataBase
+     * - Throw an {@link AssertionError} if the contenlet has not two versions
+     * - Check the value for  <code>field</code>, if the value is different to date1 or date2 throw a {@link AssertionError}
+     */
+    private void checkFromElasticSearch(final Field field, final Date date1, final Date date2,
+            final Contentlet contentletToCheck) throws DotDataException, DotSecurityException {
+
+        final List<Contentlet> search = APILocator.getContentletAPI()
+                .search("+identifier:" + contentletToCheck.getIdentifier(), 0, 0, null,
+                        APILocator.systemUser(), false);
+
+        assertEquals(2, search.size());
+        for (Contentlet contentlet : search) {
+            if (contentlet.getInode().equals(contentletToCheck.getInode())) {
+                assertEquals(date1, contentlet.getDateProperty(field.variable()));
+            } else {
+                assertEquals(date2, contentlet.getDateProperty(field.variable()));
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#checkin(Contentlet, User, boolean)}
+     * When:
+     * - Set uniquePublishExpireDate to true
+     * - Create a ContentType with expire date
+     * - Create two Language
+     * - Create a {@link Contentlet} with the first language and expire date for tomorrow
+     * - Create a {@link Contentlet} with the second language and expire date for after tomorrow
+     * Should: Both {@link Contentlet} have after tomorrow as expire date
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void differentVersionWithDifferentExpireDateAndUniquePublishExpireDat() throws DotDataException, DotSecurityException {
+
+        final boolean uniquePublishExpireDate = ContentletTransformer.isUniquePublishExpireDatePerLanguages();
+        ContentletTransformer.setUniquePublishExpireDatePerLanguages(true);
+
+        try {
+            final Language language1 = new LanguageDataGen().nextPersisted();
+            final Language language2 = new LanguageDataGen().nextPersisted();
+
+            final Field expireField = new FieldDataGen().defaultValue(null).type(DateTimeField.class).next();
+
+            final ContentType contentType = new ContentTypeDataGen()
+                    .field(expireField)
+                    .expireDateFieldVarName(expireField.variable())
+                    .nextPersisted();
+
+            final Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.DATE, 1);
+            final Date tomorrow = calendar.getTime();
+
+            calendar.add(Calendar.DATE, 1);
+            final Date afterTomorrow = calendar.getTime();
+
+            final Contentlet contentlet1 = new ContentletDataGen(contentType)
+                    .setProperty(expireField.variable(), tomorrow)
+                    .languageId(language1.getId())
+                    .nextPersisted();
+
+            final Contentlet contentlet2 = ContentletDataGen.checkout(contentlet1);
+            contentlet2.setLanguageId(language2.getId());
+            contentlet2.setProperty(expireField.variable(), afterTomorrow);
+            ContentletDataGen.checkin(contentlet2);
+
+            checkFromElasticSearch(expireField, afterTomorrow, afterTomorrow, contentlet1);
+            checkFromDataBase(expireField, afterTomorrow, afterTomorrow, contentlet1);
+        }finally {
+            ContentletTransformer.setUniquePublishExpireDatePerLanguages(uniquePublishExpireDate);
+        }
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#checkin(Contentlet, User, boolean)}
+     * When:
+     * - Create a ContentType with expire date
+     * - Create two Language
+     * - Create a {@link Contentlet} with the first language and expire date for tomorrow
+     * - Create a {@link Contentlet} with the second language and expire date for after tomorrow
+     * Should: Each {@link Contentlet} be saved and index with the right expire date
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void differentVersionWithDifferentExpireDate() throws DotDataException, DotSecurityException {
+
+        final Language language1 = new LanguageDataGen().nextPersisted();
+        final Language language2 = new LanguageDataGen().nextPersisted();
+
+        final Field expireField = new FieldDataGen().defaultValue(null).type(DateTimeField.class).next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(expireField)
+                .expireDateFieldVarName(expireField.variable())
+                .nextPersisted();
+
+        final Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DATE, 1);
+        final Date tomorrow = calendar.getTime();
+
+        calendar.add(Calendar.DATE, 1);
+        final Date afterTomorrow = calendar.getTime();
+
+        final Contentlet contentlet1 = new ContentletDataGen(contentType)
+                .setProperty(expireField.variable(), tomorrow)
+                .languageId(language1.getId())
+                .nextPersisted();
+
+        final Contentlet contentlet2 = ContentletDataGen.checkout(contentlet1);
+        contentlet2.setLanguageId(language2.getId());
+        contentlet2.setProperty(expireField.variable(), afterTomorrow);
+        ContentletDataGen.checkin(contentlet2);
+
+        checkFromElasticSearch(expireField, tomorrow, afterTomorrow, contentlet1);
+
+        checkFromDataBase(expireField, tomorrow, afterTomorrow, contentlet1);
+    }
+
     private void checkFilter(final Host host, final VanityUrl vanityURL, final int statusExpected)
             throws IOException, ServletException {
 
@@ -1299,18 +1587,23 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      */
     @Test
     public void savingFieldWithUniqueFieldInDifferentHostUsingContentTypeHost() throws DotDataException, DotSecurityException {
+        final ContentType contentType = new ContentTypeDataGen()
+                .nextPersisted();
+
         final Field uniqueTextField = new FieldDataGen()
+                .contentTypeId(contentType.id())
                 .unique(true)
                 .type(TextField.class)
-                .next();
+                .nextPersisted();
+
+        new FieldVariableDataGen()
+                .key(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)
+                .value("true")
+                .field(uniqueTextField)
+                .nextPersisted();
 
         final Host host1 = new SiteDataGen().nextPersisted();
         final Host host2 = new SiteDataGen().nextPersisted();
-
-        final ContentType contentType = new ContentTypeDataGen()
-                .host(host2)
-                .field(uniqueTextField)
-                .nextPersisted();
 
         final Contentlet contentlet_1 = new ContentletDataGen(contentType)
                 .host(host1)
@@ -1344,7 +1637,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}  }
      * When:
      * - Create a ContentType with a unique field
-     * - Create two Contentlet with the same value in the unique field in the same host, but one of the contentlet not have the host set
+     * - Create two {@link Contentlet} with the same value in the unique field in the same host, but one of the contentlet not have the host set
      *
      * Should: Throw a RuntimeException with the message: "Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s)."
      * @throws DotDataException
@@ -1383,8 +1676,11 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
             throw new AssertionError("DotRuntimeException Expected");
         } catch (DotRuntimeException e) {
-            assertEquals(e.getMessage(),
-                    "Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s).");
+            final String expectedMessage = String.format("Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s).\n"
+                    + "List of non valid fields\n"
+                    + "UNIQUE: %s/%s\n\n", uniqueTextField.variable(), uniqueTextField.name());
+
+            assertEquals(expectedMessage, e.getMessage());
         }
     }
 

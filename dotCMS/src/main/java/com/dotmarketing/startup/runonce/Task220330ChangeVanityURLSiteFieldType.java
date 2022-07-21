@@ -17,6 +17,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -50,8 +51,6 @@ public class Task220330ChangeVanityURLSiteFieldType implements StartupTask {
    final String GET_FIELD_CONTENTLET = "SELECT structure_inode,field_contentlet FROM field "
             + "WHERE velocity_var_name ='site' AND field_contentlet <> 'system_field' AND structure_inode in (SELECT inode FROM structure WHERE structuretype = 7)";
 
-   final String UPDATE_HOST_INODE = "UPDATE identifier SET host_inode = ? WHERE id = ?";
-
     @Override
     public boolean forceRun() {
         return true;
@@ -59,27 +58,9 @@ public class Task220330ChangeVanityURLSiteFieldType implements StartupTask {
 
     @Override
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
-        try {
-            final List<ContentletHost> contentlets = getContentlets();
+        updateFieldType();
 
-            updateHost(contentlets);
-            updateFieldType();
-
-            CacheLocator.getContentTypeCache2().clearCache();
-        } catch (JsonProcessingException | DotSecurityException e) {
-            Logger.error(Task220330ChangeVanityURLSiteFieldType.class, e.getMessage());
-        }
-    }
-
-    private List<ContentletHost> getContentlets()
-            throws DotDataException, DotSecurityException, JsonProcessingException {
-
-        final List<ContentletHost> result = new ArrayList<>();
-
-        addNotJsonContentlet(result);
-        addJsonContentlet(result);
-
-        return result;
+        CacheLocator.getContentTypeCache2().clearCache();
     }
 
     private void addJsonContentlet(final List<ContentletHost> result)
@@ -99,16 +80,20 @@ public class Task220330ChangeVanityURLSiteFieldType implements StartupTask {
     private void addNotJsonContentlet(final List<ContentletHost> result) throws DotDataException {
         final List<Map<String, Object>> fieldContentlets = getFromQuery(GET_FIELD_CONTENTLET);
         final Map<String, String> fieldContentletsMap = sortByStructure(fieldContentlets);
-        final List<Map<String, Object>> contentletsFromQuery = getFromQuery(
-                getContentletQuery(fieldContentlets));
+        final Optional<String> contentletQueryOptional = getContentletQuery(fieldContentlets);
 
-        for (final Map<String, Object> contentlet : contentletsFromQuery) {
-            final String fieldContentlet = fieldContentletsMap.get(
-                    contentlet.get("structure_inode"));
+        if (contentletQueryOptional.isPresent()) {
+            final List<Map<String, Object>> contentletsFromQuery = getFromQuery(
+                    contentletQueryOptional.get());
 
-            if (UtilMethods.isSet(fieldContentlet)) {
-                result.add(new ContentletHost(contentlet.get("identifier").toString(),
-                        contentlet.get(fieldContentlet).toString()));
+            for (final Map<String, Object> contentlet : contentletsFromQuery) {
+                final String fieldContentlet = fieldContentletsMap.get(
+                        contentlet.get("structure_inode"));
+
+                if (UtilMethods.isSet(fieldContentlet)) {
+                    result.add(new ContentletHost(contentlet.get("identifier").toString(),
+                            contentlet.get(fieldContentlet).toString()));
+                }
             }
         }
     }
@@ -117,16 +102,6 @@ public class Task220330ChangeVanityURLSiteFieldType implements StartupTask {
         final DotConnect dotConnect = new DotConnect();
         dotConnect.setSQL(UPDATE_FIELD_TYPE);
         dotConnect.loadResult();
-    }
-
-    private void updateHost(final List<ContentletHost> contentlets) throws DotDataException {
-        final DotConnect dotConnect = new DotConnect();
-
-        final List<Params> batchParams = contentlets.stream()
-                .map(contentletHost -> new Params(contentletHost.hostInode, contentletHost.contentletIdentifier))
-                .collect(Collectors.toList());
-
-        dotConnect.executeBatch(UPDATE_HOST_INODE, batchParams);
     }
 
     private List<Map<String, Object>> getFromQuery(final  String contentletQuery)
@@ -138,14 +113,16 @@ public class Task220330ChangeVanityURLSiteFieldType implements StartupTask {
         return (List<Map<String, Object>>) dotConnect.loadResults();
     }
 
-    private String getContentletQuery(final List<Map<String, Object>> fieldContentlets) {
+    private Optional<String> getContentletQuery(final List<Map<String, Object>> fieldContentlets) {
         final String fieldContentletsString = fieldContentlets.stream()
                 .map(fields -> fields.get("field_contentlet").toString())
                 .collect(Collectors.toSet())
                 .stream()
                 .collect(Collectors.joining(","));
 
-        return String.format(GET_CONTENTLET_NOT_JSON, fieldContentletsString);
+        return UtilMethods.isSet(fieldContentletsString) ?
+                Optional.of(String.format(GET_CONTENTLET_NOT_JSON, fieldContentletsString)) :
+                Optional.empty();
     }
 
     private Map<String, String> sortByStructure(final  List<Map<String, Object>> fieldContentlets) {

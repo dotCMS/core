@@ -1,0 +1,16 @@
+@keyframes ripple-animation {
+    100% {
+        opacity: 0;
+        transform: scale(1);
+    }
+}
+
+.ripple-effect {
+    border-radius: 50%;
+    position: absolute;
+    transform: scale(0);
+
+    &.animate {
+        animation: ripple-animation 0.4s linear;
+    }
+}

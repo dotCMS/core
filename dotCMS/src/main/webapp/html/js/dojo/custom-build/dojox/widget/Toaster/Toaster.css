@@ -10,7 +10,7 @@
 	color:#fff;
 }
 
-.dijitToasterWarning{ }
+.dijitToasterWarning,
 .dijitToasterError,
 .dijitToasterFatal{
 	font-weight:bold;

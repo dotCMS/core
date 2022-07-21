@@ -21,7 +21,7 @@ import com.dotmarketing.portlets.folders.struts.FolderForm;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
@@ -34,6 +34,7 @@ import java.util.Map;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 /** @author Hibernate CodeGenerator */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
 		Parentable, ManifestItem {
 
@@ -73,6 +74,8 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
 	private Date iDate;
 
 	private String inode;
+
+	private String path;
 
 	@Override
 	public String getOwner() {
@@ -114,13 +117,11 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
 		this.type = type;
 	}
 
-    
-    @JsonIgnore
+
     public Host getHost() {
         return Try.of(()->APILocator.getHostAPI().find(hostId, APILocator.systemUser(), false)).getOrNull();
     }
     
-    @JsonIgnore
     public boolean isSystemFolder() {
         return Try.of(()->FolderAPI.SYSTEM_FOLDER.equals(inode)).getOrElse(false);
     }
@@ -247,7 +248,6 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
 	}
 	public void setIdentifier(String identifier) {
 	   this.identifier = identifier;
-	   setHostId(this.hostId);
 	}
 
 	public void copy (Folder template) {
@@ -359,6 +359,9 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
 	}
 
 	public String getPath() {
+		if (UtilMethods.isSet(this.path)){
+			return this.path;
+		}
 
 		Identifier id = null;
 
@@ -370,7 +373,15 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
 			Logger.debug(this, " This is usually not a problem as it is usually just the identifier not being found" +  e.getMessage(), e);
 		}
 
-		return id!=null?id.getPath():null;
+		if (null != id){
+			this.path = id.getPath();
+		}
+
+		return this.path;
+	}
+
+	public void setPath(final String path) {
+		this.path = path;
 	}
 	
 	public boolean equals(Object o){

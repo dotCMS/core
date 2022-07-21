@@ -22,6 +22,7 @@
 
 package com.liferay.portal.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Iterator;
@@ -39,6 +40,8 @@ import com.liferay.util.Base64;
  * @version $Revision: 1.8 $
  *
  */
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Image extends ImageModel {
 
 	public Image() {
