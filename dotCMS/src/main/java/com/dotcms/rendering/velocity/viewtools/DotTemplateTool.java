@@ -4,6 +4,7 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.Theme;
 import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtil;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
@@ -24,6 +25,11 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 import io.vavr.control.Try;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -35,6 +41,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Created by Jonathan Gamba
@@ -225,6 +232,59 @@ public class DotTemplateTool implements ViewTool {
             layout = DesignTemplateUtil.getDesignParameters(drawedBodyAsString, false);
         }
         return layout;
+    }
+
+    public static Set<ContainerUUID> getTemplateContainers(final String drawedBodyAsString) {
+
+        try {
+            return getContainers(drawedBodyAsString);
+        } catch (IOException e) {
+            return DesignTemplateUtil.getColumnContainersFromVelocity(drawedBodyAsString);
+        }
+    }
+
+    @NotNull
+    private static Set<ContainerUUID>  getContainers(String drawedBodyAsString)
+            throws JsonProcessingException {
+
+        final Set<ContainerUUID> result = new HashSet<>();
+
+        final Map templateLayoutMap = JsonTransformer.mapper.readValue(drawedBodyAsString, Map.class);
+
+        if (UtilMethods.isSet(templateLayoutMap.get("body")) &&
+                UtilMethods.isSet(((Map) templateLayoutMap.get("body")).get("rows"))) {
+
+            final List<Map> rows = (List<Map>) ((Map) templateLayoutMap.get("body")).get("rows");
+            final List<ContainerUUID> containerUUIDS = rows.stream()
+                    .flatMap(row -> getMapStream(row, "columns"))
+                    .flatMap(column -> getMapStream(column, "containers"))
+                    .map(container -> new ContainerUUID(
+                            container.get("identifier").toString(),
+                            container.get("uuid").toString()))
+                    .collect(Collectors.toList());
+            result.addAll(containerUUIDS);
+        }
+
+        if (UtilMethods.isSet(templateLayoutMap.get("sidebar")) &&
+                UtilMethods.isSet(((Map) templateLayoutMap.get("sidebar")).get("sidebar"))) {
+
+            final Map sidebarMap = (Map) templateLayoutMap.get("sidebar");
+            final List<ContainerUUID> sidebarsContainerUUIDS = ((List<Map>) sidebarMap.get("containers"))
+                .stream()
+                .map(container -> new ContainerUUID(container.get("identifier").toString(),
+                        container.get("uuid").toString()))
+                .collect(Collectors.toList());
+
+            result.addAll(sidebarsContainerUUIDS);
+        }
+
+        return result;
+    }
+
+    private static Stream<Map> getMapStream(final Map map, final String key) {
+        return UtilMethods.isSet(map.get(key)) ?
+                ((List<Map>) map.get(key)).stream()
+                : ((List<Map>) Collections.EMPTY_LIST).stream();
     }
 
     private static TemplateLayout getTemplateLayout(Boolean isPreview, String drawedBodyAsString) {

@@ -7,12 +7,14 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.startup.StartupTask;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -99,13 +101,22 @@ public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
     }
 
     private List<String> getRelativePaths(final String drawedBody) {
-        final TemplateLayout templateLayoutFromJSON = DotTemplateTool.getTemplateLayout(drawedBody);
+        final Set<ContainerUUID> templateContainers = DotTemplateTool.getTemplateContainers(
+                drawedBody);
 
-        return templateLayoutFromJSON.getContainersIdentifierOrPath()
+        return getContainersIdentifierOrPath(templateContainers)
                 .stream()
                 .filter((String idOrPath) -> FileAssetContainerUtil.getInstance().isFolderAssetContainerId(idOrPath))
                 .filter((String idOrPath) -> !FileAssetContainerUtil.getInstance().isFullPath(idOrPath))
                 .collect(Collectors.toList());
+    }
+
+    private static Set<String> getContainersIdentifierOrPath(final Set<ContainerUUID> containerUUIDS) {
+
+        return containerUUIDS
+                .stream()
+                .map(ContainerUUID::getIdentifier)
+                .collect(Collectors.toSet());
     }
 
     private List<Map<String, Object>> getAllDrawedTemplates() throws DotDataException {

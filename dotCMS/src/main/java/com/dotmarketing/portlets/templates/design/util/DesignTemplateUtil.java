@@ -21,6 +21,8 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
+import java.util.HashSet;
+import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
@@ -373,8 +375,27 @@ public class DesignTemplateUtil {
     }
 
     /**
-     * Method that will parse and return the containers inside a given html fragment
-     *
+     * Method that will parse and return the containers inside a given html DOM node
+	 *
+	 * Also, if in the code is using a FileContainer by the ID it returns the ABSOLUTE PATH using the default host.
+	 *
+	 * For example if you have to follow velocity code:
+	 *
+	 * <code>
+	 * ...
+	 * #parseContainer('69b3d24d-7e80-4be6-b04a-d352d16493ee','1')
+	 * ...
+	 * </code>
+	 *
+	 * Where '69b3d24d-7e80-4be6-b04a-d352d16493ee' is the ID for a {@link com.dotmarketing.portlets.containers.model.FileAssetContainer}
+	 * in '//demo.dotcms.com/application/containers/default/'.
+	 *
+	 *  And the default host is equals to "demo.dotcms.com" then
+	 *
+	 * it is going to return a {@link ContainerUUID} with
+	 * - {@link ContainerUUID#getUUID()} equals to 1
+	 * - {@link ContainerUUID#getIdentifier()} equals to '//demo.dotcms.com/application/containers/default/'
+	 *
      * @param splitBody
      * @return
      */
@@ -402,6 +423,52 @@ public class DesignTemplateUtil {
 
         return containers;
     }
+
+
+	/**
+	 * Method that will parse and return the containers inside a given Velocity code.
+	 *
+	 * Also, it returns the container ID or path exactly how it is into the code, it means that
+	 * if in the HTML code is using a FileContainer by the ID it returns the ID and not the PATH.
+	 *
+	 * For example if you have to follow velocity code:
+	 *
+	 * <code>
+	 * ...
+	 * #parseContainer('69b3d24d-7e80-4be6-b04a-d352d16493ee','1')
+	 * ...
+	 * </code>
+	 *
+	 * Where '69b3d24d-7e80-4be6-b04a-d352d16493ee' is the ID for a {@link com.dotmarketing.portlets.containers.model.FileAssetContainer}
+	 * in '//demo.dotcms.com/application/containers/default/'.
+	 *
+	 * it is going to return a {@link ContainerUUID} with
+	 * - {@link ContainerUUID#getUUID()} equals to 1
+	 * - {@link ContainerUUID#getIdentifier()} equals to '69b3d24d-7e80-4be6-b04a-d352d16493ee'
+	 *
+	 * @param velocityCOde code
+	 * @return
+	 */
+	public static Set<ContainerUUID> getColumnContainersFromVelocity (final String velocityCOde ) {
+
+		//Getting the containers for this html fragment
+		Set<ContainerUUID> containers = new HashSet<>();
+		Matcher matcher = parseContainerPatter.matcher( velocityCOde );
+
+		while ( matcher.find() ) {
+			String parseContainerArguments = matcher.group();
+
+			if (parseContainerArguments != null) {
+				String[] splitArguments = parseContainerArguments.split("'\\s*,");
+				String id = cleanId(splitArguments[0]);
+				String uuid = splitArguments.length > 1 ? cleanId(splitArguments[1]) : ParseContainer.DEFAULT_UUID_VALUE;
+
+				containers.add(new ContainerUUID(id, uuid));
+			}
+		}
+
+		return containers;
+	}
 
 	/**
 	 * Checks if the identifier is a file asset container, if it is replace the id by the apth
