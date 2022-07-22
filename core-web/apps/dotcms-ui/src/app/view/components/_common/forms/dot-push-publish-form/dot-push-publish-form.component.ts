@@ -15,7 +15,7 @@ import {
 import { catchError, filter, map, take, takeUntil } from 'rxjs/operators';
 import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
 import { Observable, of, Subject } from 'rxjs';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { DotParseHtmlService } from '@services/dot-parse-html/dot-parse-html.service';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
@@ -33,7 +33,7 @@ export class DotPushPublishFormComponent
     implements OnInit, OnDestroy, DotFormModel<DotPushPublishDialogData, DotPushPublishData>
 {
     dateFieldMinDate = new Date();
-    form: FormGroup;
+    form: UntypedFormGroup;
     pushActions: SelectItem[];
     filterOptions: SelectItem[] = null;
     timeZoneOptions: SelectItem[] = null;
@@ -60,7 +60,7 @@ export class DotPushPublishFormComponent
         private dotMessageService: DotMessageService,
         private dotcmsConfigService: DotcmsConfigService,
         private httpErrorManagerService: DotHttpErrorManagerService,
-        public fb: FormBuilder
+        public fb: UntypedFormBuilder
     ) {}
 
     ngOnInit() {

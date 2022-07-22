@@ -43,9 +43,6 @@
   background-image: linear-gradient(rgba(127, 127, 127, 0.2) 0%, rgba(127, 127, 127, 0) 2px);
   background-repeat: repeat-x;
 }
-.claro .dijitSelectFocused, .claro .dijitSelectHover {
-  border-color: #759dc0;
-}
 .claro .dijitSelectHover .dijitArrowButton {
   background-color: #abd6ff;
 }
@@ -81,7 +78,8 @@
   background-position: 0 53%;
 }
 /* Dropdown menu style for select */
-.claro .dijitSelectMenu td.dijitMenuItemIconCell, .claro .dijitSelectMenu td.dijitMenuArrowCell {
+.claro .dijitSelectMenu td.dijitMenuItemIconCell,
+.claro .dijitSelectMenu td.dijitMenuArrowCell {
   /* so that arrow and icon cells from MenuItem are not displayed */
 
   display: none;

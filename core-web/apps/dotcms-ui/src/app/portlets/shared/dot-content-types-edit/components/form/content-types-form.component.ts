@@ -8,7 +8,7 @@ import {
     ViewChild,
     OnDestroy
 } from '@angular/core';
-import { FormGroup, FormBuilder, Validators, FormControl } from '@angular/forms';
+import { UntypedFormGroup, UntypedFormBuilder, Validators, UntypedFormControl } from '@angular/forms';
 
 import { Observable, Subject } from 'rxjs';
 import { take, takeUntil, filter } from 'rxjs/operators';
@@ -56,7 +56,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
 
     canSave = false;
     dateVarOptions: SelectItem[] = [];
-    form: FormGroup;
+    form: UntypedFormGroup;
     nameFieldLabel: string;
     workflowsSelected$: Observable<string[]>;
 
@@ -64,7 +64,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
-        private fb: FormBuilder,
+        private fb: UntypedFormBuilder,
         private dotWorkflowService: DotWorkflowService,
         private dotLicenseService: DotLicenseService,
         private dotMessageService: DotMessageService
@@ -267,10 +267,10 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
 
     private setBaseTypeContentSpecificFields(): void {
         if (this.isBaseTypeContent()) {
-            this.form.addControl('detailPage', new FormControl(this.getProp(this.data.detailPage)));
+            this.form.addControl('detailPage', new UntypedFormControl(this.getProp(this.data.detailPage)));
             this.form.addControl(
                 'urlMapPattern',
-                new FormControl(this.getProp(this.data.urlMapPattern))
+                new UntypedFormControl(this.getProp(this.data.urlMapPattern))
             );
         }
     }

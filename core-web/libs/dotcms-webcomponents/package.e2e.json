@@ -1,8 +1,8 @@
 {
     "name": "dotcms-webcomponents",
     "version": "1",
-    "main": "../../dist/libs/dotcms-webcomponents/dist/index.js",
-    "module": "../../dist/libs/dotcms-webcomponents/dist/index.mjs",
+    "main": "../../dist/libs/dotcms-webcomponents/dist/index.cjs.js",
+    "module": "../../dist/libs/dotcms-webcomponents/dist/index.js",
     "es2015": "../../dist/libs/dotcms-webcomponents/dist/esm/index.mjs",
     "es2017": "../../dist/libs/dotcms-webcomponents/dist/esm/index.mjs",
     "types": "../../dist/libs/dotcms-webcomponents/dist/types/index.d.ts",

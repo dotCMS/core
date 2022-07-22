@@ -8,7 +8,7 @@ import {
     SimpleChanges,
     OnChanges
 } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -44,11 +44,11 @@ export class DotTemplateAdvancedComponent implements OnInit, OnDestroy, OnChange
 
     // `any` because the type of the editor in the ngx-monaco-editor package is not typed
     editor: MonacoEditor;
-    form: FormGroup;
+    form: UntypedFormGroup;
     actions: DotPortletToolbarActions;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(private fb: FormBuilder, private dotMessageService: DotMessageService) {}
+    constructor(private fb: UntypedFormBuilder, private dotMessageService: DotMessageService) {}
 
     ngOnInit(): void {
         this.form = this.fb.group({ body: this.body });

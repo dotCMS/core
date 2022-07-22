@@ -128,7 +128,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
         dependencyProcessor.addProcessor(PusheableAsset.RELATIONSHIP,
                 (relationship) -> processRelationshipDependencies((Relationship) relationship));
 
-        if (publisherFilter.isDependencies()) {
+        if (publisherFilter.isDependencies() && !config.justIncludesUsers()) {
             setLanguageVariables();
         }
     }

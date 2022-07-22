@@ -1,22 +1,25 @@
 define(
 "dojo/cldr/nls/ar/number", //begin v1.x content
 {
-	"group": ",",
-	"percentSign": "%",
-	"exponential": "E",
 	"scientificFormat": "#E0",
-	"percentFormat": "#,##0%",
-	"list": ";",
 	"infinity": "∞",
-	"minusSign": "-",
-	"decimal": ".",
-	"nan": "NaN",
+	"superscriptingExponent": "×",
+	"list": "؛",
+	"percentSign": "‎%‎",
+	"minusSign": "‎-",
+	"decimalFormat-short": "000 ترليون",
+	"nan": "ليس رقمًا",
+	"plusSign": "‎+",
+	"currencyFormat": "¤#,##0.00;(¤#,##0.00)",
 	"perMille": "‰",
-	"decimalFormat": "#,##0.###;#,##0.###-",
-	"currencyFormat": "¤ #,##0.00;¤ #,##0.00-",
-	"plusSign": "+",
-	"decimalFormat-long": "000 تريليون",
-	"decimalFormat-short": "000 ترليو"
+	"group": ",",
+	"percentFormat": "#,##0%",
+	"decimalFormat-long": "000 ترليون",
+	"decimalFormat": "#,##0.###",
+	"currencyFormat-short": "000 ترليون ¤",
+	"timeSeparator": ":",
+	"decimal": ".",
+	"exponential": "E"
 }
 //end v1.x content
 );

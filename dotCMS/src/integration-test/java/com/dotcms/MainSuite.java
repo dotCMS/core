@@ -307,7 +307,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.contentlet.util.ContentletUtilTest.class,
         com.dotmarketing.portlets.contentlet.business.ContentletCheckInTest.class,
         com.dotmarketing.portlets.contentlet.business.ContentletFactoryTest.class,
-        com.dotmarketing.portlets.contentlet.business.HostAPITest.class,
+//        com.dotmarketing.portlets.contentlet.business.HostAPITest.class,
         ContainerStructureFinderStrategyResolverTest.class,
         com.dotmarketing.portlets.contentlet.business.ContentletAPITest.class,
         com.dotmarketing.portlets.contentlet.model.ContentletIntegrationTest.class,
