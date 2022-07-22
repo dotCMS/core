@@ -3,6 +3,10 @@ package com.dotcms.rest;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Defines the signature of the entity view
+ * @param <T>
+ */
 public interface EntityView <T> {
 
     public List<ErrorEntity> getErrors();

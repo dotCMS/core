@@ -166,7 +166,7 @@ public class TagResource {
                         tag.label != null ? tag.label : "unknown"));
             }
         }
-        return Response.ok(new ResponseEntityView(saveFails.build(),
+        return Response.ok(new ResponseEntityView<>(saveFails.build(),
                 ImmutableMap.of(TAGS, toRestTagMap(savedTags.build())))).build();
     }
 
