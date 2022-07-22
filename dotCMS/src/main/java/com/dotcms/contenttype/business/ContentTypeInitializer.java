@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.business;
 
 import com.dotcms.config.DotInitializer;
+import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
@@ -48,7 +49,7 @@ public class ContentTypeInitializer implements DotInitializer {
                 final ImmutableBinaryField screenshotField = ImmutableBinaryField.builder().name("Screenshot").variable("screenshot").build();
                 final ImmutableTextField   titleField      = ImmutableTextField.builder().name("title").variable("title").build();
                 final ImmutableTextField   urlField        = ImmutableTextField.builder().name("url").variable("url").required(true).indexed(true).build();
-                final ImmutableTextField   orderField      = ImmutableTextField.builder().name("order").variable("order").build();
+                final ImmutableTextField   orderField      = ImmutableTextField.builder().name("order").dataType(DataTypes.INTEGER).variable("order").build();
 
                 newFields.add(screenshotField);
                 newFields.add(titleField);
