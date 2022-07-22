@@ -31,11 +31,11 @@ public class LoginCommand implements Runnable {
 
     @Override
     public void run() {
-        output.info(String.format("Logging in as [@|bold, cyan %s|@]. ",user));
+        output.info(String.format("Logging in as [@|bold,cyan %s|@]. ",user));
         try {
             authenticationContext.login(user, password);
-            output.info(String.format(" @|bold,green Successfully logged-in as |@ [@|bold, green %s |@] ", user));
-        }catch (WebApplicationException wae){
+            output.info(String.format("@|bold,green Successfully logged-in as |@ [@|bold,blue %s|@]", user));
+        }catch (Exception wae){
             output.error("Unable to login. ", wae);
         }
     }

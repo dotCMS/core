@@ -1,11 +1,16 @@
 package com.dotcms.api.client;
 
 import com.dotcms.api.exception.ClientConfigNotFoundException;
+import com.dotcms.model.config.ServiceBean;
 import java.net.URI;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import org.jboss.logging.Logger;
 
 /**
  * @author Steve Bolton
@@ -16,16 +21,22 @@ import javax.inject.Inject;
 @ApplicationScoped
 public class RestClientFactory {
 
-    public static final String DEFAULT = "default";
+    public static final String NONE = "none";
+
+    @Inject
+    Logger logger;
 
     /**
      * Thread local variable containing each thread's ID
      */
-    private final ThreadLocal<String> dotCMSInstanceProfile =
-            ThreadLocal.withInitial(() -> DEFAULT);
+    private final ThreadLocal<AtomicReference<String>> instanceProfile =
+            ThreadLocal.withInitial(() -> new AtomicReference<>(NONE));
 
     @Inject
     DotCmsClientConfig clientConfig;
+
+    @Inject
+    ServiceManager serviceManager;
 
     private final Map<String, APIEndpoints> registry = new ConcurrentHashMap<>();
 
@@ -73,8 +84,23 @@ public class RestClientFactory {
         return getClient(currentSelectedProfile(), clazz);
     }
 
-    public String currentSelectedProfile()
-    {
-        return dotCMSInstanceProfile.get();
+    public String currentSelectedProfile() {
+
+        final AtomicReference<String> atomicReference = instanceProfile.get();
+
+        atomicReference.compareAndSet(NONE, serviceSupplier.get());
+
+        return atomicReference.get();
+
     }
+
+    final Supplier<String> serviceSupplier = () -> {
+        final Optional<ServiceBean> selected = serviceManager.selected();
+        //logger.info("Selected profile :: "+selected);
+        return selected.map(
+                        serviceBean -> serviceBean.name().replace("dotcms.client.servers.", ""))
+                .orElse(NONE);
+    };
+
+
 }

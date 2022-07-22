@@ -10,10 +10,12 @@ import com.dotcms.model.authentication.TokenEntity;
 import com.dotcms.model.config.CredentialsBean;
 import com.dotcms.model.config.ServiceBean;
 import io.quarkus.arc.DefaultBean;
+import io.quarkus.runtime.StartupEvent;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
@@ -33,7 +35,7 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
 
     private String token;
 
-    @ConfigProperty(name = "expirationDays", defaultValue = "10")
+    @ConfigProperty(name = "com.dotcms.api.token.expiration", defaultValue = "10")
     Integer expirationDays;
 
     @Override
@@ -60,13 +62,6 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
 
     @Override
     public void login(final String user, final String password) {
-
-        if (serviceManager.services().isEmpty()) {
-            throw new ClientConfigNotFoundException(
-                  "Before a login attempt the tool needs to be configured. Use config command."
-            );
-        }
-
         final AuthenticationAPI api = clientFactory.getClient(AuthenticationAPI.class);
         final ResponseEntityView<TokenEntity> responseEntityView = api.getToken(
                 APITokenRequest.builder().user(user).password(password)
@@ -101,7 +96,22 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
     }
 
     String getServiceKey() {
-        return clientFactory.currentSelectedProfile();
+        final Optional<ServiceBean> selected = serviceManager.selected();
+        if(selected.isEmpty()){
+           throw new RuntimeException("No dotCMS instance has been activated.");
+        }
+        return selected.get().name();
+    }
+
+
+    void onStart(@Observes StartupEvent ev) {
+        serviceManager.selected().ifPresent(serviceBean -> {
+            final CredentialsBean credentials = serviceBean.credentials();
+            if(null != credentials){
+              this.user = credentials.user();
+              this.token = credentials.token();
+            }
+        });
     }
 
 }

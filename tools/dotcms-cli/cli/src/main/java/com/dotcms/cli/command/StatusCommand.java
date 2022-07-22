@@ -1,7 +1,5 @@
 package com.dotcms.cli.command;
 
-import static com.dotcms.cli.common.CommandUtils.instanceSuffix;
-
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.api.UserAPI;
 import com.dotcms.api.client.DotCmsClientConfig;
@@ -55,22 +53,22 @@ public class StatusCommand implements Runnable {
                     InstanceCommand.NAME));
         } else {
             final ServiceBean serviceBean = optional.get();
-            final String suffix = instanceSuffix(serviceBean.name());
+            final String suffix = serviceBean.name();
             final URI uri = clientConfig.servers().get(suffix);
             if (null == serviceBean.credentials()) {
                 output.info(String.format(
-                        "Active profile is [@|bold,underline,blue %s |@]. API is [@|bold,underline,blue %s |@]. @|bold,underline No active user.|@ Please use %s Command ",
+                        "Active instance is [@|bold,underline,blue %s|@] API is [@|bold,underline,blue %s|@] @|bold,underline No active user|@ Use %s Command.",
                         serviceBean.name(), uri, LoginCommand.NAME));
                 return;
             }
 
-            output.info(String.format("Active profile is [ @|bold,underline,blue %s @|]. API is [ @|bold,underline,blue %s |@]. User [@|bold,underline,blue %s |@].",
-                    serviceBean.name(), uri, serviceBean.credentials()));
+            output.info(String.format("Active instance is [@|bold,underline,blue %s|@] API is [@|bold,underline,blue %s|@] User [@|bold,underline,blue %s|@]",
+                    serviceBean.name(), uri, serviceBean.credentials().user()));
 
             final Optional<String> userId = authenticationContext.getUser();
             if (userId.isEmpty()) {
                 output.info(
-                        " @|bold,underline,blue Current profile does not have a logged in user.|@");
+                        "@|bold,underline Current profile does not have a logged in user|@");
             } else {
                 final Optional<String> token = authenticationContext.getToken();
                 if (token.isEmpty()) {

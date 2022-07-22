@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @DefaultBean
 @ApplicationScoped
@@ -22,7 +24,10 @@ public class YamlFactoryServiceManagerImpl implements ServiceManager{
 
     private static final ObjectMapper ymlMapper = new ObjectMapper(new YAMLFactory())
             .findAndRegisterModules();
-    private static final String DOT_PROFILES_YML = "dot-profiles.yml";
+
+    //for testing purposes Override
+    @ConfigProperty(name = "com.dotcms.service.config", defaultValue = "dot-service.yml")
+    String dotServiceYml;
 
     @Override
     public void persist(ServiceBean service) throws IOException {
@@ -40,6 +45,7 @@ public class YamlFactoryServiceManagerImpl implements ServiceManager{
 
     @Override
     public List<ServiceBean> services() {
+        //TODO: make his thread safe
         if(null != cached){
            return cached;
         }
@@ -57,11 +63,21 @@ public class YamlFactoryServiceManagerImpl implements ServiceManager{
         return cached;
     }
 
+    @Override
+    public void clear() {
+        final Path path = filePath();
+        final File yaml = path.toFile();
+        if(yaml.exists()){
+           yaml.delete();
+        }
+        cached = null;
+    }
+
     Path filePath() {
         final Path homeDir = Path.of(System.getProperty("user.home"),".dotcms").toAbsolutePath();
         final File homeDirFile = homeDir.toFile();
         homeDirFile.mkdirs();
-        return Path.of(homeDir.toString(), DOT_PROFILES_YML);
+        return Path.of(homeDir.toString(), dotServiceYml);
     }
 
 

@@ -1,6 +1,5 @@
 package com.dotcms.cli.command;
 
-import static com.dotcms.cli.common.CommandUtils.instanceName;
 import static org.apache.commons.lang3.BooleanUtils.toStringYesNo;
 
 import com.dotcms.api.client.DotCmsClientConfig;
@@ -65,7 +64,7 @@ public class InstanceCommand implements Runnable {
             for (final Map.Entry<String, URI> entry : servers.entrySet()) {
                 final String suffix = entry.getKey();
                 final URI uri = entry.getValue();
-                final boolean active = serviceBeanByName.containsKey(instanceName(suffix));
+                final boolean active = serviceBeanByName.containsKey(suffix) ? serviceBeanByName.get(suffix).active() : false;
                 output.info(String.format(" Profile [@|bold,underline,blue %s|@], Uri [@|bold,underline,blue %s|@], active [@|bold,underline,blue %s|@]. ",
                         suffix, uri, toStringYesNo(active)));
             }
@@ -95,8 +94,8 @@ public class InstanceCommand implements Runnable {
     }
 
     Optional<ServiceBean> get(final String suffix, final List<ServiceBean> services) {
-        final String profileName = instanceName(suffix);
-        return services.stream().filter(serviceBean -> profileName.equals(serviceBean.name())).findFirst();
+        //final String profileName = instanceName(suffix);
+        return services.stream().filter(serviceBean -> suffix.equals(serviceBean.name())).findFirst();
     }
 
     List<ServiceBean> beansList(final Map<String, URI> servers,
@@ -106,8 +105,8 @@ public class InstanceCommand implements Runnable {
             final String suffix = entry.getKey();
             ServiceBean bean = serviceBeanByName.get(suffix);
             if(null == bean){
-               final String profileName = instanceName(suffix);
-               bean = ServiceBean.builder().active(false).name(profileName).credentials(null).build();
+               //final String profileName = instanceName(suffix);
+               bean = ServiceBean.builder().active(false).name(suffix).credentials(null).build();
             }
             beans.add(bean);
 
