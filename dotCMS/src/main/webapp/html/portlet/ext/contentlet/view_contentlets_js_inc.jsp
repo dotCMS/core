@@ -2554,7 +2554,10 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
         function fillQuery (counters) {
                         <%
-                        String restBaseUrl= "/api/content/render/false";
+                        String restBaseUrl="http://"+
+                           APILocator.getHostAPI().find((String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID), user, false).getHostname()+
+                           ((request.getLocalPort()!=80) ? ":"+request.getLocalPort() : "")+
+                           "/api/content/render/false";
 
                         String restBasePostUrl="http://"+
                            APILocator.getHostAPI().find((String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID), user, false).getHostname()+
@@ -2567,7 +2570,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                         var encodedQueryRaw = queryRaw.replace(/'/g, "%27").replace(/"/g, "%22");
                         var queryfield=document.getElementById("luceneQuery");
                         queryfield.value=queryRaw;
-                        var velocityCode = counters["velocityCode"];
+                        var queryFrontend = counters["luceneQueryFrontend"];
                         var relatedQueryByChild = counters["relatedQueryByChild"];
                         var sortBy = counters["sortByUF"];
                         var div = document.getElementById("queryResults");
@@ -2584,7 +2587,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                         div.innerHTML = "<div class='contentViewDialog' style=\"white-space: pre;\">" +
 
                             "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "frontend-query") %></div>"+
-                            "<div class='contentViewQuery'><code>" + velocityCode + "</code></div>";
+                            "<div class='contentViewQuery'><code>#foreach($con in $dotcontent.pull(\"" + queryFrontend + "\",10,\"" + sortBy + "\"))<br/>...<br/>#end</code></div>";
 
                         if (relatedQueryByChild == null){
                             div.innerHTML += "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "The-actual-query-") %></div>"+
@@ -2619,6 +2622,13 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
                             "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "rest-api-call-urlencoded") %></div>"+
                             "<div class='contentViewQuery'><code>"+apicall_urlencode+"</code></div>"+
+
+                            "<div class='contentViewQuery' style='padding:20px;padding-top:10px;color:#333;'>REST API: " +
+	                            "<span class='dot-api-link' " +
+                                "onClick=\"queryContentJSONPost('<%= restBasePostUrl %>', '" + encodedQueryRaw + "', '" + sortBy + "')\">API</span></a>"+
+
+                            "</div>"+
+
 
                             "<b><%= LanguageUtil.get(pageContext, "Ordered-by") %>:</b> " + sortBy +
                             "<ul><li><%= LanguageUtil.get(pageContext, "message.contentlet.hint2") %> " +
