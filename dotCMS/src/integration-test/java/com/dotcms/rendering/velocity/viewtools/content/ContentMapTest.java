@@ -81,8 +81,9 @@ public class ContentMapTest extends IntegrationTestBase {
     }
 
     /**
-     * This test is for issue https://github.com/dotCMS/core/issues/16409
-     * Categories should be pulled in Front End
+     * Method to test: {@link ContentMap#getFieldVariables(String)}
+     * Given Scenario: Creates a field variable over the generic content called format, which value is 'txt'.
+     * ExpectedResult: The ContentMap should retrieve that field variable
      * @throws DotDataException
      * @throws DotSecurityException
      */
