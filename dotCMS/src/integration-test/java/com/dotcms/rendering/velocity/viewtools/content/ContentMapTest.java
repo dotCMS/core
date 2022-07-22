@@ -9,6 +9,8 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -42,6 +44,8 @@ import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+
 import org.apache.velocity.context.Context;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -74,6 +78,48 @@ public class ContentMapTest extends IntegrationTestBase {
         languageAPI    = APILocator.getLanguageAPI();
         defaultHost    = hostAPI.findDefaultHost(user, false);
         relationshipAPI = APILocator.getRelationshipAPI();
+    }
+
+    /**
+     * This test is for issue https://github.com/dotCMS/core/issues/16409
+     * Categories should be pulled in Front End
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testGet_Field_Variable() throws DotDataException, DotSecurityException {
+
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+        final ContentType contentType = contentTypeAPI.find("webPageContent");
+        final Field field = contentType.fieldMap().get("title");
+        final FieldVariable fieldVariable = ImmutableFieldVariable.builder()
+                .fieldId(field.inode())
+                .name("format").key("format").value("txt").userId(APILocator.systemUser().getUserId())
+                .build();
+
+        APILocator.getContentTypeFieldAPI().save(fieldVariable, APILocator.systemUser());
+
+        // Create dummy "News" content
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.inode())
+                .structure(contentType.id())
+                .host(defaultHost);
+
+        contentletDataGen.setProperty("title", "test");
+        contentletDataGen.setProperty("body", "test");
+
+        // Persist dummy "News" contents to ensure at least one result will be returned
+        final Contentlet contentlet = contentletDataGen.nextPersisted();
+        ContentletDataGen.publish(contentlet);
+
+        final Context velocityContext = mock(Context.class);
+
+        final ContentMap contentMap = new ContentMap(contentlet, userAPI.getAnonymousUser(),
+                PageMode.LIVE,defaultHost,velocityContext);
+
+        Map<String, FieldVariable> fieldVariableMap = (Map<String, FieldVariable>) contentMap.getFieldVariables("title");
+
+        Assert.assertNotNull(fieldVariableMap);
+        Assert.assertEquals("txt", fieldVariableMap.get("format").value());
     }
 
     /**
