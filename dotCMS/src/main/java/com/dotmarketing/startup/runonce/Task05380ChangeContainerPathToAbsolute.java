@@ -115,7 +115,7 @@ public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
 
     private List<String> getRelativePaths(final String drawedBody) {
         return  getTemplateContainers(drawedBody).stream()
-                .map(containerUUID -> containerUUID.get("identifier"))
+                .map(containerUUID -> containerUUID.get("identifier").toString())
                 .filter((String idOrPath) -> FileAssetContainerUtil.getInstance().isFolderAssetContainerId(idOrPath))
                 .filter((String idOrPath) -> !FileAssetContainerUtil.getInstance().isFullPath(idOrPath))
                 .collect(Collectors.toList());
@@ -132,7 +132,7 @@ public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
                 .loadObjectResults();
     }
 
-    public static Set<Map<String, String>> getTemplateContainers(final String drawedBodyAsString) {
+    public static Set<Map> getTemplateContainers(final String drawedBodyAsString) {
 
         try {
             return getContainers(drawedBodyAsString);
@@ -141,10 +141,10 @@ public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
         }
     }
 
-    private static Set<Map<String, String>>  getContainers(String drawedBodyAsString)
+    private static Set<Map>  getContainers(String drawedBodyAsString)
             throws JsonProcessingException {
 
-        final Set<Map<String, String>> result = new HashSet<>();
+        final Set<Map> result = new HashSet<>();
 
         final Map templateLayoutMap = JsonTransformer.mapper.readValue(drawedBodyAsString, Map.class);
 
@@ -152,7 +152,7 @@ public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
                 UtilMethods.isSet(((Map) templateLayoutMap.get("body")).get("rows"))) {
 
             final List<Map> rows = (List<Map>) ((Map) templateLayoutMap.get("body")).get("rows");
-            final List<Map<String, String>> containerUUIDS = rows.stream()
+            final List<Map> containerUUIDS = rows.stream()
                     .flatMap(row -> getMapStream(row, "columns"))
                     .flatMap(column -> getMapStream(column, "containers"))
                     .collect(Collectors.toList());
@@ -201,10 +201,10 @@ public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
      * @param velocityCOde code
      * @return
      */
-    public static Set<Map<String, String>> getColumnContainersFromVelocity (final String velocityCOde ) {
+    public static Set<Map> getColumnContainersFromVelocity (final String velocityCOde ) {
 
         //Getting the containers for this html fragment
-        Set<Map<String, String>> containers = new HashSet<>();
+        Set<Map> containers = new HashSet<>();
         Matcher matcher = parseContainerPatter.matcher( velocityCOde );
 
         while ( matcher.find() ) {
