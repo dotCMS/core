@@ -611,9 +611,7 @@ public class ContentletAjax {
 				}
 			}
 			luceneQuery.append(") ");
-			HttpServletRequest request;
-
-
+		
 		} else {
 		    for(int i=0;i<fields.size();i++){
 		        String x = fields.get(i);
