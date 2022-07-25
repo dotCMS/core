@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { FieldProperty } from '../field-properties.model';
-import { FormGroup } from '@angular/forms';
+import { UntypedFormGroup } from '@angular/forms';
 
 export interface RegexTemplate {
     label: string;
@@ -16,7 +16,7 @@ export class RegexCheckPropertyComponent implements OnInit {
     regexCheckTemplates: RegexTemplate[] = [];
 
     property: FieldProperty;
-    group: FormGroup;
+    group: UntypedFormGroup;
 
     constructor(private dotMessageService: DotMessageService) {}
 

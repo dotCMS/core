@@ -1,4 +1,4 @@
-import { FormControl } from '@angular/forms';
+import { UntypedFormControl } from '@angular/forms';
 import { _isValid } from '@services/dot-format-date-service';
 
 const format = {
@@ -14,7 +14,7 @@ const format = {
  * @param FormControl formControl
  * @returns
  */
-export function validateDateDefaultValue(formControl: FormControl) {
+export function validateDateDefaultValue(formControl: UntypedFormControl) {
     const invalidResponse = {
         validateDate: {
             valid: false
@@ -30,7 +30,7 @@ export function validateDateDefaultValue(formControl: FormControl) {
     return valid ? null : invalidResponse;
 }
 
-function isValueValid(formControl: FormControl): boolean {
+function isValueValid(formControl: UntypedFormControl): boolean {
     const clazz: string = formControl.parent.controls['clazz'].value;
     return format[clazz]
         ? _isValid(formControl.value, format[clazz]) ||

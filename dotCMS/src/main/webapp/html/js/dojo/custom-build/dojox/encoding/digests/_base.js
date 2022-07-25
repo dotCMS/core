@@ -1,16 +1,15 @@
 define("dojox/encoding/digests/_base", ["dojo/_base/lang"], function(lang){
-	var d = lang.getObject("dojox.encoding.digests", true);
+	//	These functions are 32-bit word-based.  See _sha-64 for 64-bit word ops.
+	var base = lang.getObject("dojox.encoding.digests", true);
 
-	//TODO: see if it makes sense to meld this into one with the
-	//	crypto base enums
-	d.outputTypes={
+	base.outputTypes={
 		// summary:
 		//		Enumeration for input and output encodings.
 		Base64:0, Hex:1, String:2, Raw:3
 	};
 
 	//	word-based addition
-	d.addWords=function(/* word */a, /* word */b){
+	base.addWords=function(/* word */a, /* word */b){
 		// summary:
 		//		add a pair of words together with rollover
 		var l=(a&0xFFFF)+(b&0xFFFF);
@@ -24,7 +23,7 @@ define("dojox/encoding/digests/_base", ["dojo/_base/lang"], function(lang){
 	var chrsz=8;	//	16 for Unicode
 	var mask=(1<<chrsz)-1;
 
-	d.stringToWord=function(/* string */s){
+	base.stringToWord=function(/* string */s){
 		// summary:
 		//		convert a string to a word array
 		var wa=[];
@@ -34,7 +33,7 @@ define("dojox/encoding/digests/_base", ["dojo/_base/lang"], function(lang){
 		return wa;	//	word[]
 	};
 
-	d.wordToString=function(/* word[] */wa){
+	base.wordToString=function(/* word[] */wa){
 		// summary:
 		//		convert an array of words to a string
 		var s=[];
@@ -44,7 +43,7 @@ define("dojox/encoding/digests/_base", ["dojo/_base/lang"], function(lang){
 		return s.join("");	//	string
 	};
 
-	d.wordToHex=function(/* word[] */wa){
+	base.wordToHex=function(/* word[] */wa){
 		// summary:
 		//		convert an array of words to a hex tab
 		var h="0123456789abcdef", s=[];
@@ -54,7 +53,7 @@ define("dojox/encoding/digests/_base", ["dojo/_base/lang"], function(lang){
 		return s.join("");	//	string
 	};
 
-	d.wordToBase64=function(/* word[] */wa){
+	base.wordToBase64=function(/* word[] */wa){
 		// summary:
 		//		convert an array of words to base64 encoding, should be more efficient
 		//		than using dojox.encoding.base64
@@ -72,5 +71,31 @@ define("dojox/encoding/digests/_base", ["dojo/_base/lang"], function(lang){
 		return s.join("");	//	string
 	};
 
-	return d;
+	//	convert to UTF-8
+	base.stringToUtf8 = function(input){
+		var output = "";
+		var i = -1;
+		var x, y;
+
+		while(++i < input.length){
+			x = input.charCodeAt(i);
+			y = i + 1 < input.length ? input.charCodeAt(i + 1) : 0;
+			if(0xD800 <= x && x <= 0xDBFF && 0xDC00 <= y && y <= 0xDFFF){
+				x = 0x10000 + ((x & 0x03FF) << 10) + (y & 0x03FF);
+				i++;
+			}
+
+			if(x <= 0x7F)
+				output += String.fromCharCode(x);
+			else if(x <= 0x7FF)
+				output += String.fromCharCode(0xC0 | ((x >>> 6) & 0x1F), 0x80 | (x & 0x3F));
+			else if(x <= 0xFFFF)
+				output += String.fromCharCode(0xE0 | ((x >>> 12) & 0x0F), 0x80 | ((x >>> 6) & 0x3F), 0x80 | (x & 0x3F));
+			else if(x <= 0x1FFFFF)
+				output += String.fromCharCode(0xF0 | ((x >>> 18) & 0x07), 0x80 | ((x >>> 12) & 0x3F), 0x80 | ((x >>> 6) & 0x3F), 0x80 | (x & 0x3F));
+		}
+		return output;
+	};
+
+	return base;
 });

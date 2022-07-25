@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormGroup } from '@angular/forms';
+import { UntypedFormGroup } from '@angular/forms';
 import { FieldProperty } from '../field-properties.model';
 import { DATA_TYPE_PROPERTY_INFO } from '../../../service/data-type-property-info';
 
@@ -9,7 +9,7 @@ import { DATA_TYPE_PROPERTY_INFO } from '../../../service/data-type-property-inf
 })
 export class DataTypePropertyComponent implements OnInit {
     property: FieldProperty;
-    group: FormGroup;
+    group: UntypedFormGroup;
     radioInputs: object;
 
     ngOnInit(): void {

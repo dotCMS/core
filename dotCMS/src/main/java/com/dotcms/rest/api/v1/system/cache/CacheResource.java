@@ -118,7 +118,7 @@ public class CacheResource {
 
         Logger.debug(this, ()-> "Showing cache providers, group: " + group);
 
-        return Response.ok(new ResponseEntityView(this.getProviders(group))).build();
+        return Response.ok(new ResponseEntityView<>(this.getProviders(group))).build();
     }
 
     /**
