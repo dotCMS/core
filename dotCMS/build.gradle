@@ -243,6 +243,7 @@ dependencies {
 
     felixsystem group: 'com.dotcms.samlbundle', name: 'com.dotcms.samlbundle', version: '22.03'
 
+    //// starter config
 
     starter group: 'com.dotcms', name: 'starter', version: 'empty_20220627-SNAPSHOT', ext: 'zip'
     //Uncomment this line if you want to download the starter that comes with data
@@ -260,8 +261,8 @@ dependencies {
 
 
     if (!(project.gradle.startParameter.taskNames.contains('deployWarTomcatDev') || project.gradle.startParameter.taskNames.contains('testDev'))) {
+
         implementation group: 'com.dotcms.enterprise', name: 'ee', version: dotcmsReleaseVersion + eeType, changing: true
-        //implementation group: 'com.dotcms.enterprise', name: 'ee', version: 'freddy-SNAPSHOT', changing: true
     }
 }
 
