@@ -3,15 +3,7 @@ package com.dotmarketing.beans;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import com.dotcms.repackage.org.directwebremoting.json.parse.JsonParseException;
-import com.dotcms.rest.api.v1.experiment.ExperimentResource;
-import com.dotcms.rest.api.v1.experiment.ExperimentResource.ExperimentResult;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import java.io.IOException;
-import java.util.Map;
-import javax.ws.rs.core.Response;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -31,13 +23,6 @@ public class HostTest {
     public void isDefaultReturnsFalseWhenNotSet(){
         Host host = new Host();
         assertFalse(host.isDefault());
-    }
-
-    @Test
-    public void isDefaultReturnsFalseWhenNotSet2()
-            throws DotDataException, DotSecurityException, JsonParseException, IOException {
-        ExperimentResource experimentResource =  new ExperimentResource();
-        final Map<String, ExperimentResult> result = experimentResource.result("POC_experiment");
     }
 
     /**

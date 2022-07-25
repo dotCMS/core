@@ -5,7 +5,6 @@ import static org.junit.Assert.assertTrue;
 
 import com.dotcms.publisher.pusher.wrapper.ContentWrapper;
 import com.dotcms.test.util.FileTestUtil;
-import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.XStreamFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.thoughtworks.xstream.XStream;
@@ -13,15 +12,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class ContentHandlerTest {
-
-    @BeforeClass
-    public static void prepare() throws Exception {
-        IntegrationTestInitService.getInstance().init();
-    }
 
     private static final String INPUT_FILE_PATH = "/bundlers-test/file-asset/contentlet.fileAsset.xml";
 
@@ -33,7 +26,6 @@ public class ContentHandlerTest {
      */
     @Test
     public void Test_XStream_Deserializer() throws IOException {
-
         final XStream xStream = XStreamFactory.INSTANCE.getInstance();
 
         final File file = FileTestUtil.getFileInResources(INPUT_FILE_PATH);
@@ -45,4 +37,6 @@ public class ContentHandlerTest {
         final Contentlet contentlet = wrapper.getContent();
         assertTrue(contentlet.isFileAsset());
     }
+
+
 }

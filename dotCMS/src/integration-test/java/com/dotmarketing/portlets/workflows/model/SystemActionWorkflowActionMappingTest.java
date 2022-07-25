@@ -5,7 +5,6 @@ import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.publisher.pusher.wrapper.ContentTypeWrapper;
 import com.dotcms.publisher.pusher.wrapper.WorkflowWrapper;
 import com.dotcms.publishing.DotPrettyPrintWriter;
-import com.dotcms.util.XStreamFactory;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -47,7 +46,7 @@ public class SystemActionWorkflowActionMappingTest {
         Assert.assertTrue("The System Workflow must have system actions",systemActionMappingsDB.size()>0);
         xstreamWriter.marshal(systemActionMappingsDB, xmlWriter);
 
-        final XStream xstreamReader = XStreamFactory.INSTANCE.getInstance();
+        final XStream xstreamReader = new XStream(new DomDriver());
         final List<SystemActionWorkflowActionMapping> systemActionMappingsRecovery =
                 (List<SystemActionWorkflowActionMapping>) xstreamReader.fromXML(writer.toString());
 
@@ -95,7 +94,7 @@ public class SystemActionWorkflowActionMappingTest {
         workflowWrapper.setSystemActionMappings(systemActionMappingsDB);
         xstreamWriter.marshal(workflowWrapper, xmlWriter);
 
-        final XStream xstreamReader = XStreamFactory.INSTANCE.getInstance();
+        final XStream xstreamReader = new XStream(new DomDriver());
         final WorkflowWrapper workflowWrapperRecovery =
                 (WorkflowWrapper) xstreamReader.fromXML(writer.toString());
 

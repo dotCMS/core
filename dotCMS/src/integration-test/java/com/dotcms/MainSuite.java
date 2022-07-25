@@ -180,7 +180,6 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
-        DependencyBundlerTest.class,
         PublishAuditAPITest.class,
         FolderCacheImplIntegrationTest.class,
         StaticPublisherIntegrationTest.class,
@@ -472,6 +471,7 @@ import org.junit.runners.Suite.SuiteClasses;
         ResetPasswordTokenUtilTest.class,
         ContainerBundlerTest.class,
         ContentTypeBundlerTest.class,
+        DependencyBundlerTest.class,
         FolderBundlerTest.class,
         HostBundlerTest.class,
         LinkBundlerTest.class,
@@ -546,12 +546,12 @@ import org.junit.runners.Suite.SuiteClasses;
         Task220330ChangeVanityURLSiteFieldTypeTest.class,
         Task220402UpdateDateTimezonesTest.class,
         Task220413IncreasePublishedPushedAssetIdColTest.class,
+        XStreamFactoryTest.class,
         com.dotcms.util.pagination.ContainerPaginatorTest.class,
         ContentDispositionFileNameParserTest.class,
         SecureFileValidatorTest.class,
         BoundedBufferedReaderTest.class,
         AWSS3PublisherTest.class,
-        XStreamFactoryTest.class,
         ContentWorkflowHandlerTest.class,
         Task220512UpdateNoHTMLRegexValueTest.class,
         MetadataDelegateTest.class,
