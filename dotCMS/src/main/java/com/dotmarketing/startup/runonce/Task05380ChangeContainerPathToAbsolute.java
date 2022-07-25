@@ -1,6 +1,7 @@
 package com.dotmarketing.startup.runonce;
 
 import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotmarketing.util.Constants.CONTAINER_FOLDER_PATH;
 
 import com.dotcms.contenttype.transform.JsonTransformer;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
@@ -35,7 +36,7 @@ import org.apache.commons.lang3.StringUtils;
 public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
 
     private static final Pattern parseContainerPatter = Pattern.compile( "(?<=#parseContainer\\(').*?(?='\\))" );
-
+    private static final String HOST_INDICATOR       = "//";
     final static String GET_TEMPLATES_QUERY = "SELECT contentlet.%s as host_name, template.inode, template.identifier, template.drawed_body, template.body " +
         "FROM identifier " +
             "INNER JOIN template ON identifier.id = template.identifier " +
@@ -116,9 +117,18 @@ public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
     private List<String> getRelativePaths(final String drawedBody) {
         return  getTemplateContainers(drawedBody).stream()
                 .map(containerUUID -> containerUUID.get("identifier").toString())
-                .filter((String idOrPath) -> FileAssetContainerUtil.getInstance().isFolderAssetContainerId(idOrPath))
-                .filter((String idOrPath) -> !FileAssetContainerUtil.getInstance().isFullPath(idOrPath))
+                .filter((String idOrPath) -> isFolderAssetContainerId(idOrPath))
+                .filter((String idOrPath) -> !isFullPath(idOrPath))
                 .collect(Collectors.toList());
+    }
+
+    public boolean isFullPath(final String path) {
+        return path != null && path.startsWith(HOST_INDICATOR);
+    }
+
+    public boolean isFolderAssetContainerId(final String containerPath) {
+
+        return UtilMethods.isSet(containerPath) && containerPath.contains(CONTAINER_FOLDER_PATH);
     }
 
     private List<Map<String, Object>> getAllDrawedTemplates() throws DotDataException {
