@@ -1,6 +1,7 @@
 #!/bin/bash
 
 TEST_RESULTS="test-results-core-web"
+TEST_RESULTS_WEBCOMPONENTS="test-results-core-web"
 GITHUB="github.com"
 GITHACK="raw.githack.com"
 GITHUB_TEST_RESULTS_PATH="DotCMS/${TEST_RESULTS}"
@@ -16,6 +17,8 @@ fi
 
 DOT_CICD_PATH="./dotcicd"
 OUTPUT_FOLDER="core-web/karma_html"
+OUTPUT_FOLDER_WEBCOMPONENTS="core-web/test-reports/dotcms-webcomponents"
+
 export GITHUB_TEST_RESULTS_HOST_PATH="${GITHUB}/${GITHUB_TEST_RESULTS_PATH}"
 export GITHUB_TEST_RESULTS_URL="https://${GITHUB_TEST_RESULTS_HOST_PATH}"
 export GITHACK_TEST_RESULTS_URL="https://${GITHACK}/${GITHUB_TEST_RESULTS_PATH}"
@@ -43,6 +46,8 @@ function gitConfig {
 
 function addResults {
   local results=${1}
+  local output_folder=${2}
+
   if [[ -z "$results" ]]; then
     echo "Cannot add results since its empty, ignoring"
     exit 1
@@ -51,8 +56,10 @@ function addResults {
   local targetFolder=${results}
   mkdir -p ${targetFolder}
   echo "Adding test results to: ${targetFolder}"
-  echo "output: ${OUTPUT_FOLDER}/* target:${targetFolder}"
-  cp -r "${GITHUB_WORKSPACE}/${OUTPUT_FOLDER}/." ${targetFolder}
+
+
+  echo "output: ${output_folder}/* target:${targetFolder}"
+  cp -r "${GITHUB_WORKSPACE}/${output_folder}/." ${targetFolder}
 }
 
 
@@ -93,7 +100,51 @@ function persistResults {
     fi
   fi
 
-  addResults ./${GITHUB_SHA::8}
+  addResults ./${GITHUB_SHA::8} ${OUTPUT_FOLDER}
+  git add .
+  git commit -m "Adding tests results for ${GITHUB_SHA::8} from ${CURRENT_BRANCH}"
+  git push ${GITHUB_TEST_RESULTS_REMOTE}
+  git status
+}
+
+function persistWebComponentsTestResults {
+  TEST_RESULTS_PATH=${DOT_CICD_PATH}/${TEST_RESULTS_WEBCOMPONENTS}
+  gitConfig
+
+  if [[ ! -d dotcicd/test-results ]]; then
+    echo "Cloning ${GITHUB_TEST_RESULTS_REPO} to ${TEST_RESULTS_WEBCOMPONENTS}"
+    git clone ${GITHUB_TEST_RESULTS_REPO} ${TEST_RESULTS_WEBCOMPONENTS}
+  fi
+
+  existsOrCreateAndSwitch ${TEST_RESULTS_WEBCOMPONENTS}/projects/${DOT_CICD_TARGET}
+
+  git fetch --all
+
+  remoteBranch=$(git ls-remote --heads ${GITHUB_TEST_RESULTS_REMOTE_REPO} ${CURRENT_BRANCH} | wc -l | tr -d '[:space:]')
+  localBranch=$(git show-ref --heads ${CURRENT_BRANCH} | wc -l | tr -d '[:space:]')
+
+  if [[ ${remoteBranch} == 1 ]]; then
+    if [[ ${localBranch} == 1 ]]; then
+      git checkout ${CURRENT_BRANCH}
+    else
+       echo "git checkout -b ${CURRENT_BRANCH} --track origin/${CURRENT_BRANCH}"
+      git checkout -b ${CURRENT_BRANCH} --track origin/${CURRENT_BRANCH}
+    fi
+  else
+    git checkout -b ${CURRENT_BRANCH}
+  fi
+
+  if [[ $? != 0 ]]; then
+    echo "Error checking out branch '${CURRENT_BRANCH}', continuing with master"
+    git pull origin master
+  else
+    if [[ ${remoteBranch} == 1 ]]; then
+      echo "git pull origin ${CURRENT_BRANCH}"
+      git pull origin ${CURRENT_BRANCH}
+    fi
+  fi
+
+  addResults ./${GITHUB_SHA::8} ${OUTPUT_FOLDER_WEBCOMPONENTS}
   git add .
   git commit -m "Adding tests results for ${GITHUB_SHA::8} from ${CURRENT_BRANCH}"
   git push ${GITHUB_TEST_RESULTS_REMOTE}

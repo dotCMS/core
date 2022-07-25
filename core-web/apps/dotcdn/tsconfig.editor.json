@@ -3,5 +3,6 @@
     "include": ["**/*.ts"],
     "compilerOptions": {
         "types": ["jasmine", "node"]
-    }
+    },
+    "exclude": ["jest.config.ts"]
 }

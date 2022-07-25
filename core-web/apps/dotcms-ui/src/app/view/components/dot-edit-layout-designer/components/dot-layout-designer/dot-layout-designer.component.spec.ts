@@ -3,8 +3,8 @@
 
 import {
     ControlValueAccessor,
-    FormBuilder,
-    FormGroup,
+    UntypedFormBuilder,
+    UntypedFormGroup,
     FormsModule,
     NG_VALUE_ACCESSOR,
     ReactiveFormsModule
@@ -70,9 +70,9 @@ class TestHostComponent implements OnInit {
     @Input()
     layout: DotLayout;
 
-    form: FormGroup;
+    form: UntypedFormGroup;
 
-    constructor(private fb: FormBuilder) {}
+    constructor(private fb: UntypedFormBuilder) {}
 
     ngOnInit() {
         this.form = this.fb.group({
