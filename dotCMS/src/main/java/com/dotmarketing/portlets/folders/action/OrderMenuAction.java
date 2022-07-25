@@ -750,7 +750,7 @@ public class OrderMenuAction extends DotPortletAction {
 				Folder folder = ((Folder) item);
 				title = folder.getTitle();
 				title = retrieveTitle(title, user);
-				inode = folder.getInode();
+				inode = folder.getIdentifier();
 				if (folder.isShowOnMenu()) {
 					if (!APILocator.getPermissionAPI().doesUserHavePermission(folder, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
 						show = false;

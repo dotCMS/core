@@ -17,7 +17,6 @@ import com.dotmarketing.util.json.JSONObject;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotcms.util.XStreamFactory;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.workflow.form.FireActionForm;
@@ -779,7 +778,7 @@ public class ContentResource {
             final boolean allCategoriesInfo){
 
         final StringBuilder sb = new StringBuilder();
-        final XStream xstream = XStreamFactory.INSTANCE.getInstance();
+        final XStream xstream = new XStream(new DomDriver());
         xstream.alias("content", Map.class);
         xstream.registerConverter(new MapEntryConverter());
         sb.append("<?xml version=\"1.0\" encoding='UTF-8'?>");
@@ -1022,7 +1021,7 @@ public class ContentResource {
 
 
     private String getXMLContentIds(Contentlet con) {
-        XStream xstream = XStreamFactory.INSTANCE.getInstance();
+        XStream xstream = new XStream(new DomDriver());
         xstream.alias("content", Map.class);
         xstream.registerConverter(new MapEntryConverter());
         StringBuilder sb = new StringBuilder();
@@ -2133,7 +2132,7 @@ public class ContentResource {
                 .startsWith("<?XML")) {
             throw new DotSecurityException("Invalid XML");
         }
-        XStream xstream = XStreamFactory.INSTANCE.getInstance();
+        XStream xstream = new XStream(new DomDriver());
         xstream.alias("content", Map.class);
         xstream.registerConverter(new MapEntryConverter());
         Map<String, Object> root = (Map<String, Object>) xstream.fromXML(input);

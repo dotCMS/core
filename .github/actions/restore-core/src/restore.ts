@@ -1,5 +1,6 @@
 import * as cache from '@actions/cache'
 import * as core from '@actions/core'
+import * as exec from '@actions/exec'
 import * as fs from 'fs'
 import * as path from 'path'
 
@@ -31,18 +32,26 @@ interface RestoreConfiguration {
   maven: CacheLocations
 }
 
+const HOME_FOLDER = path.join('/home', 'runner')
+const GRADLE_FOLDER = path.join(HOME_FOLDER, '.gradle')
+const M2_FOLDER = path.join(HOME_FOLDER, '.m2')
+const PROJECT_ROOT = core.getInput('project_root')
+const DOTCMS_ROOT = path.join(PROJECT_ROOT, 'dotCMS')
 const RESTORE_CONFIGURATION: RestoreConfiguration = {
   gradle: {
-    dependencies: ['~/.gradle/caches', '~/.gradle/wrapper'],
-    buildOutput: ['dotCMS/.gradle', 'dotCMS/build/classes', 'dotCMS/build/resources']
+    dependencies: [path.join(GRADLE_FOLDER, 'caches'), path.join(GRADLE_FOLDER, 'wrapper')],
+    buildOutput: [
+      path.join(DOTCMS_ROOT, '.gradle'),
+      path.join(DOTCMS_ROOT, 'build', 'classes'),
+      path.join(DOTCMS_ROOT, 'build', 'resources')
+    ]
   },
   maven: {
-    dependencies: ['~/.m2/repository'],
-    buildOutput: ['dotCMS/target']
+    dependencies: [path.join(M2_FOLDER, 'repository')],
+    buildOutput: [path.join(DOTCMS_ROOT, 'target')]
   }
 }
 
-const PROJECT_ROOT = core.getInput('project_root')
 const CACHE_FOLDER = path.join(path.dirname(PROJECT_ROOT), 'cache')
 
 /**
@@ -78,6 +87,9 @@ export const restoreLocations = async (cacheMetadata: CacheMetadata): Promise<Ca
 
     const cacheKey = await cache.restoreCache(locationMetadata.cacheLocations, locationMetadata.cacheKey)
     core.info(`Locations restored with key ${cacheKey}`)
+    for (const location of locationMetadata.cacheLocations) {
+      ls(location)
+    }
 
     const type = locationMetadata.type as keyof CacheLocations
     const configLocations = restoreConfig[type]
@@ -86,23 +98,37 @@ export const restoreLocations = async (cacheMetadata: CacheMetadata): Promise<Ca
       return Promise.resolve(EMPTY_LOCATIONS)
     }
 
-    cacheLocations[type] = relocate(type, locationMetadata.cacheLocations, configLocations)
+    cacheLocations[type] = relocate(type, locationMetadata.cacheLocations, configLocations, [])
   }
 
   return new Promise<CacheLocations>(resolve => resolve(cacheLocations))
 }
 
 /**
- * Once cached locations are restored, for every location type that requires to relocate folders it does
+ * Once cached locations are restored, for every location type that requires to relocate folders it does so.
  *
  * @param type location type (dependencies or buildOutput)
  * @param cacheLocations cache locations arrays
  * @param configLocations config locations extracted from restore configuration
+ * @param rellocatable list of location types that requires rellocating
  * @returns relocated restored locations
  */
-function relocate(type: string, cacheLocations: string[], configLocations: string[]): string[] {
-  if (type !== BUILD_OUTPUT) {
+const relocate = (
+  type: string,
+  cacheLocations: string[],
+  configLocations: string[],
+  rellocatable: string[]
+): string[] => {
+  const isRellocatable = !!rellocatable.find(r => r === type)
+  if (!isRellocatable) {
     core.info(`Not relocating any cache for ${type}`)
+    for (const location of cacheLocations) {
+      const parent = path.dirname(location)
+      if (!fs.existsSync(parent)) {
+        core.info(`Cache location parent ${parent} does not exist, creating it`)
+        fs.mkdirSync(parent, {recursive: true})
+      }
+    }
     return cacheLocations
   }
 
@@ -121,13 +147,23 @@ function relocate(type: string, cacheLocations: string[], configLocations: strin
       const newFolder = path.dirname(newLocation)
       if (!fs.existsSync(newFolder)) {
         core.info(`New location folder ${newFolder} does not exist, creating it`)
-        fs.mkdirSync(newFolder)
+        fs.mkdirSync(newFolder, {recursive: true})
       }
 
       core.info(`Relocating cache from ${location} to ${newLocation}`)
       fs.renameSync(location, newLocation)
+      ls(newLocation)
 
       return newLocation
     })
     .filter(location => location !== '')
+}
+
+const ls = async (location: string) => {
+  core.info(`Listing folder ${location}`)
+  try {
+    await exec.exec('ls', ['-las', location])
+  } catch (err) {
+    core.info(`Cannot list folder ${location}`)
+  }
 }

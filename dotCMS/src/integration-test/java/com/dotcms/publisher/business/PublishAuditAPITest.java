@@ -26,11 +26,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -327,7 +324,8 @@ public class PublishAuditAPITest {
         final Contentlet contentlet_4 = new ContentletDataGen(contentType).nextPersisted();
 
         final Bundle bundle = new BundleDataGen()
-                .addAssets(list(contentType, contentlet_1,contentlet_2, contentlet_3, contentlet_4))
+                .addAssets(
+                        list(contentType, contentlet_1, contentlet_2, contentlet_3, contentlet_4))
                 .nextPersisted();
 
         final PublishAuditStatus publishAuditStatus = new PublishAuditStatus(bundle.getId());
@@ -343,124 +341,48 @@ public class PublishAuditAPITest {
         publishAuditStatus.setStatusPojo(publishAuditHistory);
         publishAuditAPI.insertPublishAuditStatus(publishAuditStatus);
 
-        PublishAuditStatus publishAuditStatusFromDB = publishAuditAPI.getPublishAuditStatus(publishAuditStatus.getBundleId(), 0);
+        PublishAuditStatus publishAuditStatusFromDB = publishAuditAPI.getPublishAuditStatus(bundle.getId(), 0);
         final PublishAuditHistory statusPojo = publishAuditStatusFromDB.getStatusPojo();
         assertTrue(statusPojo.getAssets().isEmpty());
     }
 
-    private PublishAuditStatus createPublishAuditStatus(Map<String, String> assetsMap, Object... assets) {
-        final Bundle bundle = new BundleDataGen()
-                .addAssets(List.of(assets))
-                .nextPersisted();
-
-        final PublishAuditStatus publishAuditStatus = new PublishAuditStatus(bundle.getId());
-
-        final PublishAuditHistory publishAuditHistory = new PublishAuditHistory();
-        publishAuditHistory.setAssets(assetsMap);
-        publishAuditStatus.setStatusPojo(publishAuditHistory);
-
-        try {
-            publishAuditAPI.insertPublishAuditStatus(publishAuditStatus);
-        } catch (DotPublisherException e) {
-            throw new RuntimeException(e);
-        }
-
-        return publishAuditStatus;
-    }
-
     /**
      * Method to test: {@link PublishAuditAPI#getAllPublishAuditStatus(int, int, int)}
-     * When: Crate 4 PublishAuditStatus with: 5 assets, 2 assets, 1 assets, 0 assets and Call the methods with limitAssets equals to 2
-     * Should: Return just two o less assets foe each {@link PublishAuditHistory}
+     * When: Call the methods with limitAssets equals to 1
+     * Should: Return just one assets foe each {@link PublishAuditHistory}
      *
      * @throws DotPublisherException
      */
     @Test
     public void allThePublishAuditHistoryWithOneAssets() throws DotPublisherException {
-        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
-        final Contentlet contentlet_1 = new ContentletDataGen(contentType).nextPersisted();
-        final Contentlet contentlet_2 = new ContentletDataGen(contentType).nextPersisted();
-        final Contentlet contentlet_3 = new ContentletDataGen(contentType).nextPersisted();
-        final Contentlet contentlet_4 = new ContentletDataGen(contentType).nextPersisted();
-
-        final Map<String, String> assetMap_1 = map(
-                contentType.id(), PusheableAsset.CONTENT_TYPE.toString(),
-                contentlet_1.getIdentifier(), PusheableAsset.CONTENTLET.toString(),
-                contentlet_2.getIdentifier(), PusheableAsset.CONTENTLET.toString(),
-                contentlet_3.getIdentifier(), PusheableAsset.CONTENTLET.toString(),
-                contentlet_4.getIdentifier(), PusheableAsset.CONTENTLET.toString()
-        );
-
-        final PublishAuditStatus publishAuditStatus_1 = createPublishAuditStatus(assetMap_1,
-                contentType, contentlet_1, contentlet_2, contentlet_3, contentlet_4);
-
-        final Map<String, String> assetMap_2 = map(
-                contentType.id(), PusheableAsset.CONTENT_TYPE.toString(),
-                contentlet_1.getIdentifier(), PusheableAsset.CONTENTLET.toString()
-        );
-
-        final PublishAuditStatus publishAuditStatus_2 = createPublishAuditStatus(assetMap_2,
-                contentType, contentlet_1);
-
-        final Map<String, String> assetMap_3 = map(
-                contentType.id(), PusheableAsset.CONTENT_TYPE.toString()
-        );
-
-        final PublishAuditStatus publishAuditStatus_3 = createPublishAuditStatus(assetMap_3,
-                contentType);
-
-        final PublishAuditStatus publishAuditStatus_4 = createPublishAuditStatus(map());
-
         final List<PublishAuditStatus> allPublishAuditStatus = publishAuditAPI
                 .getAllPublishAuditStatus(-1, 0, -1);
 
-        final List<String> bundleIDs = list(publishAuditStatus_1.getBundleId(),
-                publishAuditStatus_2.getBundleId(),
-                publishAuditStatus_3.getBundleId(), publishAuditStatus_4.getBundleId());
+        final List<String> emptyBundles = allPublishAuditStatus.stream()
+                .filter(publishAuditStatus -> publishAuditStatus.getStatusPojo().getAssets()
+                        .isEmpty())
+                .map(publishAuditStatus -> publishAuditStatus.getBundleId())
+                .collect(Collectors.toList());
 
-        final List<PublishAuditStatus> publishAuditStatuses = filter(allPublishAuditStatus, bundleIDs);
-        assertEquals(4, publishAuditStatuses.size());
-
-        for (PublishAuditStatus publishAuditStatus : publishAuditStatuses) {
-            if (publishAuditStatus.getBundleId().equals(publishAuditStatus_1.getBundleId())) {
-                assertEquals(5, publishAuditStatus.getStatusPojo().getAssets().size());
-            } else if (publishAuditStatus.getBundleId().equals(publishAuditStatus_2.getBundleId())) {
-                assertEquals(2, publishAuditStatus.getStatusPojo().getAssets().size());
-            } else if (publishAuditStatus.getBundleId().equals(publishAuditStatus_3.getBundleId())) {
-                assertEquals(1, publishAuditStatus.getStatusPojo().getAssets().size());
-            } else if (publishAuditStatus.getBundleId().equals(publishAuditStatus_4.getBundleId())) {
-                assertEquals(0, publishAuditStatus.getStatusPojo().getAssets().size());
-            } else {
-                throw new AssertionError("Not Expected");
-            }
-        }
+        final List<String> justOneAssets = allPublishAuditStatus.stream()
+                .filter(publishAuditStatus -> publishAuditStatus.getStatusPojo().getAssets().size() == 1)
+                .map(publishAuditStatus -> publishAuditStatus.getBundleId())
+                .collect(Collectors.toList());
 
         final List<PublishAuditStatus> allPublishAuditStatusWithAssetsLimit = publishAuditAPI
                 .getAllPublishAuditStatus(-1, 0, 2);
 
-        final List<PublishAuditStatus> publishAuditStatuses_2 = filter(allPublishAuditStatusWithAssetsLimit, bundleIDs);
+        assertFalse(allPublishAuditStatusWithAssetsLimit.isEmpty());
 
-        assertEquals(4, publishAuditStatuses.size());
-
-        for (PublishAuditStatus publishAuditStatus : publishAuditStatuses_2) {
-            if (publishAuditStatus.getBundleId().equals(publishAuditStatus_1.getBundleId())) {
-                assertEquals(2, publishAuditStatus.getStatusPojo().getAssets().size());
-            } else if (publishAuditStatus.getBundleId().equals(publishAuditStatus_2.getBundleId())) {
-                assertEquals(2, publishAuditStatus.getStatusPojo().getAssets().size());
-            } else if (publishAuditStatus.getBundleId().equals(publishAuditStatus_3.getBundleId())) {
-                assertEquals(1, publishAuditStatus.getStatusPojo().getAssets().size());
-            } else if (publishAuditStatus.getBundleId().equals(publishAuditStatus_4.getBundleId())) {
-                assertEquals(0, publishAuditStatus.getStatusPojo().getAssets().size());
-            } else {
-                throw new AssertionError("Not Expected");
-            }
-        }
-
-    }
-
-    private List<PublishAuditStatus> filter(List<PublishAuditStatus> allPublishAuditStatus, List<String> bundleIDs) {
-        return allPublishAuditStatus.stream()
-                .filter(publishAuditStatus -> bundleIDs.contains(publishAuditStatus.getBundleId()))
-                .collect(Collectors.toList());
+        allPublishAuditStatusWithAssetsLimit
+                .forEach(publishAuditStatus -> {
+                    if (emptyBundles.contains(publishAuditStatus.getBundleId())) {
+                        assertTrue(publishAuditStatus.getStatusPojo().getAssets().isEmpty());
+                    } else if (justOneAssets.contains(publishAuditStatus.getBundleId())) {
+                        assertEquals(1, publishAuditStatus.getStatusPojo().getAssets().size());
+                    } else {
+                        assertEquals(2, publishAuditStatus.getStatusPojo().getAssets().size());
+                    }
+                });
     }
 }

@@ -24,9 +24,8 @@ const resourcesFolder = path.join(cicdFolder, 'resources', 'postman')
 const dockerFolder = path.join(cicdFolder, 'docker')
 const licenseFolder = path.join(dockerFolder, 'license')
 const dotCmsRoot = path.join(projectRoot, 'dotCMS')
-const logsFolder = path.join(dockerFolder, 'logs')
-const logFile = 'dotcms.log'
-const volumes = [licenseFolder, path.join(dockerFolder, 'cms-shared'), path.join(dockerFolder, 'cms-local'), logsFolder]
+const logFile = path.join(dotCmsRoot, 'dotcms.log')
+const volumes = [licenseFolder, path.join(dockerFolder, 'cms-shared'), path.join(dockerFolder, 'cms-local')]
 const postmanTestsPath = path.join(dotCmsRoot, 'src', 'curl-test')
 const postmanEnvFile = 'postman_environment.json'
 const resultsFolder = path.join(dotCmsRoot, 'build', 'test-results', 'postmanTest')
@@ -87,17 +86,12 @@ export const runTests = async (): Promise<PostmanTestsResult> => {
 /**
  * Copies logs from docker volume to standard DotCMS location.
  */
-const copyOutputs = () => {
+const copyOutputs = async () => {
   printInfo()
-  execCmd(toCommand('docker', ['cp', 'docker_dotcms-app_1:/srv/dotserver/tomcat-9.0.60/logs/dotcms.log', logsFolder]))
-  execCmd(toCommand('pwd', [], logsFolder))
-  execCmd(toCommand('ls', ['-las', '.'], logsFolder))
-
-  try {
-    fs.copyFileSync(path.join(logsFolder, logFile), path.join(dotCmsRoot, logFile))
-  } catch (err) {
-    core.error(`Error copying log file: ${err}`)
-  }
+  await execCmd(
+    toCommand('docker', ['cp', 'docker_dotcms-app_1:/srv/dotserver/tomcat-9.0.60/logs/dotcms.log', logFile])
+  )
+  await execCmd(toCommand('ls', ['-las', dotCmsRoot]))
 }
 
 /**
@@ -110,21 +104,21 @@ const setup = () => {
   printInfo()
 }
 
-const printInfo = () => {
-  execCmd(toCommand('docker', ['images']))
-  execCmd(toCommand('docker', ['ps']))
+const printInfo = async () => {
+  await execCmd(toCommand('docker', ['images']))
+  await execCmd(toCommand('docker', ['ps']))
 }
 
 /**
  * Install necessary dependencies to run the postman collections.
  */
-const installDeps = () => {
+const installDeps = async () => {
   core.info('Installing newman')
   const npmArgs = ['install', '--location=global', 'newman']
   if (exportReport) {
     npmArgs.push('newman-reporter-htmlextra')
   }
-  execCmd(toCommand('npm', npmArgs))
+  await execCmd(toCommand('npm', npmArgs))
 
   // if (!fs.existsSync(tomcatRoot) && buildEnv === 'gradle') {
   //   core.info(`Tomcat root does not exist, creating it`)
@@ -161,7 +155,7 @@ const startDeps = () => {
 /**
  * Stop postman depencies: db, ES and DotCMS isntance.
  */
-const stopDeps = () => {
+const stopDeps = async () => {
   //await stopDotCMS()
   // Stopping dependencies
   core.info(`
@@ -169,7 +163,7 @@ const stopDeps = () => {
     Stopping postman tests dependencies
     ===================================`)
   try {
-    execCmd(
+    await execCmd(
       toCommand(
         'docker-compose',
         ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'down'],
@@ -283,7 +277,7 @@ const runPostmanCollections = async (): Promise<PostmanTestsResult> => {
  * @param normalized normalized collection
  * @returns promise with process return code
  */
-const runPostmanCollection = (collection: string, normalized: string): Promise<number> => {
+const runPostmanCollection = async (collection: string, normalized: string): Promise<number> => {
   core.info(`Running Postman collection: ${collection}`)
   const resultFile = path.join(resultsFolder, `${normalized}.xml`)
   const page = `${normalized}.html`
@@ -307,7 +301,7 @@ const runPostmanCollection = (collection: string, normalized: string): Promise<n
     args.push(reportFile)
   }
 
-  return execCmd(toCommand('newman', args, postmanTestsPath))
+  return await execCmd(toCommand('newman', args, postmanTestsPath))
 }
 
 /*
@@ -367,18 +361,16 @@ const createFolders = () => {
   for (const folder of folders) {
     fs.mkdirSync(folder, {recursive: true})
   }
-
-  shelljs.touch(path.join(dockerFolder, logFile))
 }
 
 /**
  * Creates license folder and file with appropiate key.
  */
-const prepareLicense = () => {
+const prepareLicense = async () => {
   const licenseFile = path.join(licenseFolder, 'license.dat')
   core.info(`Adding license to ${licenseFile}`)
   fs.writeFileSync(licenseFile, licenseKey, {encoding: 'utf8', flag: 'a+', mode: 0o777})
-  execCmd(toCommand('ls', ['-las', licenseFile]))
+  await execCmd(toCommand('ls', ['-las', licenseFile]))
 }
 
 /**
