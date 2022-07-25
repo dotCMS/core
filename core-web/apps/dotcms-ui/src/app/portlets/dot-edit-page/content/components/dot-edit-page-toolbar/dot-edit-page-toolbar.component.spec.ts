@@ -328,7 +328,6 @@ describe('DotEditPageToolbarComponent', () => {
                 data: {
                     page: {
                         pageState: mockDotRenderedPageState,
-                        order: 1,
                         pageRenderedHtml: component.pageRenderedHtml || null
                     }
                 }

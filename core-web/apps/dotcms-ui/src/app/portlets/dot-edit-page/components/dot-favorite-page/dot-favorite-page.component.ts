@@ -1,92 +1,54 @@
-import { Observable, Subject, throwError } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { FormGroup, FormBuilder, Validators } from '@angular/forms';
+import { FormGroup, Validators, UntypedFormBuilder } from '@angular/forms';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { finalize, map, startWith, switchMap, take, takeUntil } from 'rxjs/operators';
-import { DotCMSTempFile, DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
-import { DotWorkflowActionsFireService } from '@dotcms/app/api/services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
-import { DotRolesService } from '@dotcms/app/api/services/dot-roles/dot-roles.service';
+import { map, startWith, takeUntil } from 'rxjs/operators';
 import { DotRole } from '@dotcms/app/shared/models/dot-role/dot-role.model';
-import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
-import { HttpErrorResponse } from '@angular/common/http';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotPageRenderState } from '../../shared/models';
+import { DotFavoritePageState, DotFavoritePageStore } from './store/dot-favorite-page.store';
 
-export interface DotFavoritePage {
-    order: number;
+export interface DotFavoritePageProps {
     pageRenderedHtml?: string;
     pageState: DotPageRenderState;
-    thumbnail?: Blob;
 }
 
-export const CMS_OWNER_ROLE_ID = '6b1fa42f-8729-4625-80d1-17e4ef691ce7';
-const IMG_RATIO_43 = 1.333;
+export interface DotFavoritePageFormData {
+    currentUserRoleId: string;
+    thumbnail?: string;
+    title: string;
+    url: string;
+    order: number;
+    permissions?: DotRole[];
+}
 
 @Component({
     selector: 'dot-favorite-page',
-    templateUrl: 'dot-favorite-page.component.html'
+    templateUrl: 'dot-favorite-page.component.html',
+    providers: [DotFavoritePageStore]
 })
 export class DotFavoritePageComponent implements OnInit, OnDestroy {
     form: FormGroup;
     isFormValid$: Observable<boolean>;
-    pageThumbnail: string;
-    roleOptions: DotRole[];
-    currentUserRole: DotRole;
-
     pageRenderedHtml: string;
-    isAdmin: boolean;
 
-    imgWidth = this.config.data.page.pageState.params.viewAs.device?.cssWidth || 1024;
-    imgHeight =
-        this.config.data.page.pageState.params.viewAs.device?.cssHeight ||
-        (this.config.data.page.pageState.params.viewAs.device?.cssWidth || 1024) / IMG_RATIO_43;
+    vm$: Observable<DotFavoritePageState> = this.store.vm$;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         private ref: DynamicDialogRef,
         private config: DynamicDialogConfig,
-        private fb: FormBuilder,
-        private dotMessageService: DotMessageService,
-        private httpErrorManagerService: DotHttpErrorManagerService,
-        private dotTempFileUploadService: DotTempFileUploadService,
-        private dotWorkflowActionsFireService: DotWorkflowActionsFireService,
-        private dotRolesService: DotRolesService
-    ) {}
+        private fb: UntypedFormBuilder,
+        private store: DotFavoritePageStore
+    ) {
+        this.store.setInitialStateData(this.config.data.page);
+        this.pageRenderedHtml = this.config.data.page.pageRenderedHtml;
+    }
 
     ngOnInit(): void {
-        const { page }: { page: DotFavoritePage } = this.config.data;
-        this.pageRenderedHtml = page.pageRenderedHtml;
-        this.isAdmin = page.pageState.user.admin;
+        const { page }: { page: DotFavoritePageProps } = this.config.data;
 
-        this.dotRolesService
-            .search()
-            .pipe(take(1))
-            .subscribe((roles: DotRole[]) => {
-                this.currentUserRole = roles.find((item: DotRole) => item.name === 'Current User');
-                this.roleOptions = roles.filter((item: DotRole) => item.name !== 'Current User');
-            });
-
-        const url =
-            `${page.pageState.params.page?.pageURI}?language_id=${page.pageState.params.viewAs.language.id}` +
-            (page.pageState.params.viewAs.device?.identifier
-                ? `&device_id=${page.pageState.params.viewAs.device?.identifier}`
-                : '') +
-            (page.pageState.params.site?.identifier
-                ? `&host_id=${page.pageState.params.site?.identifier}`
-                : '');
-
-        const formGroupAttrs = {
-            thumbnail: [null, Validators.required],
-            title: [page.pageState.params.page?.title, Validators.required],
-            url: [url, Validators.required],
-            order: [page.order, Validators.required],
-            permissions: []
-        };
-
-        this.form = this.fb.group(formGroupAttrs);
-
+        this.form = this.fb.group(this.setupForm(page));
         this.isFormValid$ = this.form.valueChanges.pipe(
             takeUntil(this.destroy$),
             map(() => {
@@ -95,16 +57,25 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
             startWith(false)
         );
 
+        this.store.currentUserRoleId$
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((currentUserRoleId: string) => {
+                this.form.get('currentUserRoleId').setValue(currentUserRoleId);
+            });
+
+        this.store.closeDialog$.pipe(takeUntil(this.destroy$)).subscribe((closeDialog: boolean) => {
+            if (closeDialog) {
+                this.ref.close(true);
+            }
+        });
+
         // This is needed to wait until the Web Component is rendered
         setTimeout(() => {
             const dotHtmlToImageElement = document.querySelector('dot-html-to-image');
             dotHtmlToImageElement.addEventListener('pageThumbnail', (event: CustomEvent) => {
-                this.form.setValue({
-                    ...this.form.getRawValue(),
-                    thumbnail: event.detail
-                });
+                this.form.get('thumbnail').setValue(event.detail);
             });
-        }, 0);
+        }, 100);
     }
 
     /**
@@ -113,55 +84,7 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
      * @memberof DotFavoritePageComponent
      */
     onSave(): void {
-        const formValue = this.form.value;
-        const file = new File([formValue.thumbnail], 'image.png');
-        const individualPermissions = {
-            READ: []
-        };
-        individualPermissions.READ = formValue.permissions
-            ? formValue.permissions.map((role: DotRole) => role.id)
-            : [];
-        individualPermissions.READ.push(this.currentUserRole.id, CMS_OWNER_ROLE_ID);
-
-        this.dotTempFileUploadService
-            .upload(file)
-            .pipe(
-                switchMap(([{ id, image }]: DotCMSTempFile[]) => {
-                    if (!image) {
-                        return throwError(
-                            this.dotMessageService.get('favoritePage.dialog.error.tmpFile.upload')
-                        );
-                    }
-
-                    return this.dotWorkflowActionsFireService.publishContentletAndWaitForIndex<DotCMSContentlet>(
-                        'Screenshot',
-                        {
-                            screenshot: id,
-                            title: formValue.title,
-                            url: formValue.url,
-                            order: formValue.order
-                        },
-                        individualPermissions
-                    );
-                }),
-                take(1),
-                finalize(() => {
-                    // this will be refactored on next PR
-                    // this.loading = false;
-                })
-            )
-            .subscribe(
-                () => {
-                    this.config.data?.onSave?.(this.form.value);
-                    this.ref.close(false);
-                    // this will be refactored on next PR
-                    // this.asset = asset;
-                    // this.propagateChange(this.asset.identifier);
-                },
-                (error: HttpErrorResponse) => {
-                    this.httpErrorManagerService.handle(error);
-                }
-            );
+        this.store.saveFavoritePage(this.form.value);
     }
 
     /**
@@ -176,5 +99,25 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
+    }
+
+    private setupForm(page: DotFavoritePageProps) {
+        const url =
+            `${page.pageState.params.page?.pageURI}?language_id=${page.pageState.params.viewAs.language.id}` +
+            (page.pageState.params.viewAs.device?.identifier
+                ? `&device_id=${page.pageState.params.viewAs.device?.identifier}`
+                : '') +
+            (page.pageState.params.site?.identifier
+                ? `&host_id=${page.pageState.params.site?.identifier}`
+                : '');
+
+        return {
+            currentUserRoleId: ['', Validators.required],
+            thumbnail: [null, Validators.required],
+            title: [page.pageState.params.page?.title, Validators.required],
+            url: [url, Validators.required],
+            order: [1, Validators.required],
+            permissions: []
+        };
     }
 }

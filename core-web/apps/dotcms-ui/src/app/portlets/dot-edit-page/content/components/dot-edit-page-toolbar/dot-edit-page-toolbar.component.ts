@@ -80,14 +80,9 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
             width: '40rem',
             data: {
                 page: {
-                    order: 1,
                     pageState: this.pageState,
                     pageRenderedHtml: this.pageRenderedHtml || null
                 }
-                // onSave: (value: DotFavoritePage) => {
-                // this will be refactored on next PR
-                // console.log('*** DotFavoritePageComponent Saved!', value);
-                // }
             }
         });
     }
