@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
+import com.google.common.collect.ImmutableMap;
 import org.apache.commons.collections.map.LRUMap;
 import org.apache.commons.lang.StringUtils;
 
@@ -65,8 +66,7 @@ public class DotConnect {
 
     boolean forceQuery = false;
 
-    private static Map<Class, StatementObjectSetter> statementSetterHandlerMap =
-            map(DotTimezonedTimestamp.class, DotConnect::setTimestampWithTimezone);
+    private static final Map<Class<?>, StatementObjectSetter> statementSetterHandlerMap = customStatementObjectSetterMap();
 
     public DotConnect() {
         Logger.debug(this, "------------ DotConnect() --------------------");
@@ -606,14 +606,7 @@ public class DotConnect {
 
                 // statement.setMaxRows(maxRows);
                 Logger.debug(this, "SQL = " + statement.toString());
-                for (int i = 0; i < paramList.size(); i++) {
-                    Object param = paramList.get(i);
-                    if (param != null && statementSetterHandlerMap.containsKey(param.getClass())) {
-                        statementSetterHandlerMap.get(param.getClass()).execute(statement, i + 1, param);
-                    } else {
-                        statement.setObject(i + 1, paramList.get(i));
-                    }
-                }
+                setParams(statement, paramList.toArray());
                 if (!starter.toLowerCase().trim().contains("select")) { // if it is NOT a read operation
                     beforeQueryExecution = System.nanoTime();
                     statement.execute();
@@ -692,6 +685,9 @@ public class DotConnect {
                                     objvars.put(x, rs.getString(x));
                                 } else if (DbConnectionFactory.isOracle() && rs.getObject(x) instanceof oracle.sql.TIMESTAMP) {
                                     objvars.put(x, new Date(((oracle.sql.TIMESTAMP) rs.getObject(x)).timeValue().getTime()));
+                                } else  if (DbConnectionFactory.isMsSql() && rs.getObject(x) instanceof microsoft.sql.DateTimeOffset){
+                                    microsoft.sql.DateTimeOffset timeOffset = (microsoft.sql.DateTimeOffset)rs.getObject(x);
+                                    objvars.put(x, timeOffset.getTimestamp());
                                 } else {
                                     objvars.put(x, rs.getObject(x));
                                 }
@@ -703,6 +699,9 @@ public class DotConnect {
                                     objvars.put(x, rs.getString(x));
                                 } else if (DbConnectionFactory.isOracle() && rs.getObject(x) instanceof oracle.sql.TIMESTAMP) {
                                     objvars.put(x, new Date(((oracle.sql.TIMESTAMP) rs.getObject(x)).timestampValue().getTime()));
+                                } else  if (DbConnectionFactory.isMsSql() && rs.getObject(x) instanceof microsoft.sql.DateTimeOffset){
+                                    microsoft.sql.DateTimeOffset timeOffset = (microsoft.sql.DateTimeOffset)rs.getObject(x);
+                                    objvars.put(x, timeOffset.getTimestamp());
                                 } else {
                                     objvars.put(x, rs.getObject(x));
                                 }
@@ -785,9 +784,6 @@ public class DotConnect {
 
     /**
      * Returns the correct bit AND operation syntax for a particular RDBMS
-     * 
-     * @param elements
-     * @return result
      */
 
     public static String bitAND(String op1, String op2) {
@@ -813,9 +809,6 @@ public class DotConnect {
 
     /**
      * Returns the correct bit OR operation syntax for a particular RDBMS
-     * 
-     * @param elements
-     * @return result
      */
 
     public static String bitOR(String op1, String op2) {
@@ -847,9 +840,6 @@ public class DotConnect {
 
     /**
      * Returns the correct bit XOR operation syntax for a particular RDBMS
-     * 
-     * @param elements
-     * @return result
      */
 
     public static String bitXOR(String op1, String op2) {
@@ -881,9 +871,6 @@ public class DotConnect {
 
     /**
      * Returns the correct bit XOR operation syntax for a particular RDBMS
-     * 
-     * @param elements
-     * @return result
      */
 
     public static String bitNOT(String op1) {
@@ -1099,11 +1086,36 @@ public class DotConnect {
         return results;
     } // executeBatch.
 
+    /**
+     * Sets the "params" contained in the Params Wrapper object
+     * Calling the underlying setParameter method that considers StatementSetters
+     * @param preparedStatement
+     * @param params
+     * @throws SQLException
+     */
     private void setParams(final PreparedStatement preparedStatement, final Params params) throws SQLException {
-
+        final List<Object> list = new ArrayList<>();
         for (int i = 0; i < params.size(); ++i) {
+            list.add(params.get(i));
+        }
+        setParams(preparedStatement, list.toArray());
+    }
 
-            preparedStatement.setObject(i + 1, params.get(i));
+    /**
+     * Only one setParams method holds the actual logic.
+     * This one applies any custom setter created to handle special parameter assignment
+     * @param preparedStatement
+     * @param params
+     * @throws SQLException
+     */
+    private void setParams(final PreparedStatement preparedStatement, final Object... params) throws SQLException {
+        for (int i = 0; i < params.length; ++i) {
+            final Object param = params[i];
+            if (param != null && statementSetterHandlerMap.containsKey(param.getClass())) {
+                statementSetterHandlerMap.get(param.getClass()).execute(preparedStatement, i + 1, param);
+            } else {
+                preparedStatement.setObject(i + 1, param);
+            }
         }
     }
 
@@ -1128,22 +1140,12 @@ public class DotConnect {
         }
     }
 
-    private void setParams(final PreparedStatement preparedStatement, final Object... params) throws SQLException {
-
-        for (int i = 0; i < params.length; ++i) {
-
-            preparedStatement.setObject(i + 1, params[i]);
-        }
-    }
-
     /**
      * Executes an update operation for a preparedStatement, returns the number of affected rows. If the
      * connection is get from a transaction context, will used it. Otherwise will create and handle an
      * atomic transaction.
      * 
      * @param preparedStatement String
-     * @param logException when an exception occurs, whether or not to log the exception as Error in log
-     *        file
      * @param parameters Object array of parameters for the preparedStatement (if it does not have any,
      *        can be null). Not any checking of them
      * @return int rows affected
@@ -1237,17 +1239,36 @@ public class DotConnect {
 
     } // executeUpdate.
 
-    private static void setTimestampWithTimezone(PreparedStatement statement, int parameterIndex, Object timestamp) {
+    /**
+     * Creates the Map with custom Statement Object Setters
+     * @return the read only map
+     */
+    static Map<Class<?>, StatementObjectSetter> customStatementObjectSetterMap() {
+        final StatementObjectSetter dateSetter = new TimestampTimeZoneAware();
+        return ImmutableMap.of(java.util.Date.class, dateSetter, java.sql.Date.class, dateSetter,
+                java.sql.Timestamp.class, dateSetter);
+    }
 
-        final DotTimezonedTimestamp dotTimezonedTimestamp = (DotTimezonedTimestamp) timestamp;
-        final Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(dotTimezonedTimestamp.getTimezone()));
+    static class TimestampTimeZoneAware implements StatementObjectSetter {
 
-        try {
-            statement.setTimestamp(parameterIndex, dotTimezonedTimestamp.getTimestamp(), calendar);
-        } catch (SQLException e) {
-            Logger.error(DotConnect.class,
-                    "Error setting Timestamp to PreparedStatement. " + "Parameter Index " + parameterIndex + "; Timestamp: " + timestamp,
-                    e);
+        @Override
+        public void execute(PreparedStatement statement, int parameterIndex, Object parameter) {
+            if (parameter instanceof Date) {
+                try {
+                    Logger.debug(TimestampTimeZoneAware.class, String.format(
+                            "Setting param %s with index %d through StatementObjectSetter",
+                            parameter, parameterIndex));
+                    final Date date = (Date) parameter;
+                    final Calendar utc = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+                    final Timestamp timestamp = new Timestamp(date.getTime());
+                    statement.setTimestamp(parameterIndex, timestamp, utc);
+                } catch (SQLException e) {
+                    Logger.error(DotConnect.class,
+                            "Error setting Date to PreparedStatement. " + "Parameter Index "
+                                    + parameterIndex + "; Date: " + parameter,
+                            e);
+                }
+            }
         }
     }
 

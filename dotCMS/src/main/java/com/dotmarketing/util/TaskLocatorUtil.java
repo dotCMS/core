@@ -348,6 +348,7 @@ public class TaskLocatorUtil {
 		ret.add(Task00050LoadAppsSecrets.class);
 		//UT that were backported to LTS
 		ret.add(Task220401CreateClusterLockTable.class);
+		ret.add(Task220402UpdateDateTimezones.class);
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 

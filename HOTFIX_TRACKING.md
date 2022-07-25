@@ -25,3 +25,4 @@ This maintenance release includes the following code fixes:
 17. https://github.com/dotCMS/core/issues/22430 : Do not cache bad shorty DB results #22430
 18. https://github.com/dotCMS/core/issues/22137 : Page with show_on_menu selected breaks Reorder Nav #22137
 19. https://github.com/dotCMS/core/issues/22237 : Limited User Can't Open Page if it has a content that doesn't have permissions over #22237
+20. https://github.com/dotCMS/core/issues/21169 : Change datatype of date fields in MSSQL #21169

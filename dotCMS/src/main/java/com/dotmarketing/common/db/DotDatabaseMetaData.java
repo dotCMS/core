@@ -546,19 +546,24 @@ public class DotDatabaseMetaData {
     }
 
     public void dropIndex(final String tableName, final String indexName) throws SQLException {
+        dropIndex(DbConnectionFactory.getConnection(), tableName, indexName);
+    }
+
+    public void dropIndex(final Connection connection,
+                          final String tableName, final String indexName) throws SQLException {
         final DbType dbType = DbType.getDbType(DbConnectionFactory.getDBType());
 
         if(dbType == DbType.MYSQL){
-            new DotConnect().executeStatement(String.format("%s %s %s %s",ALTER_TABLE,tableName,DROP_INDEX,indexName));
+            new DotConnect().executeStatement(String.format("%s %s %s %s",ALTER_TABLE,tableName,DROP_INDEX,indexName), connection);
             return;
         }
 
         if(dbType == DbType.MSSQL){
-            new DotConnect().executeStatement(String.format("%s %s.%s",DROP_INDEX, tableName, indexName));
+            new DotConnect().executeStatement(String.format("%s %s.%s",DROP_INDEX, tableName, indexName),connection);
             return;
         }
 
-        new DotConnect().executeStatement(String.format("%s %s",DROP_INDEX, indexName));
+        new DotConnect().executeStatement(String.format("%s %s",DROP_INDEX, indexName),connection);
 
     }
 
@@ -581,6 +586,14 @@ public class DotDatabaseMetaData {
         }
 
         throw new DotDataException("Unknown database type.");
+    }
+
+    public List<String> getIndices(final String tableName) throws DotDataException {
+        final DotConnect dotConnect = new DotConnect();
+        if (DbConnectionFactory.isMsSql()) {
+            return getIndicesMSSQL(tableName, dotConnect);
+        }
+        throw new UnsupportedOperationException("This Operation isn't supported for the current database type");
     }
 
     /**
@@ -675,18 +688,15 @@ public class DotDatabaseMetaData {
             + " WHERE tables.name = '%s'";
 
     private List<String> getConstraintsMSSQL(final String tableName, final DotConnect dotConnect) throws DotDataException {
-        //unique constraints are stored as indices
-        dotConnect.setSQL(String.format(MS_SQL_INDEX, tableName));
-        final List<Map> indexMeta = dotConnect.loadResults();
 
         dotConnect.setSQL(String.format(MS_SQL_CONSTRAINTS,tableName));
         final List<Map> constraintsMeta = dotConnect.loadResults();
-
-        return Stream.concat(
-                indexMeta.stream().map(map -> map.get("index_name").toString()),
-                constraintsMeta.stream().map(map -> map.get("name").toString())
-        ).collect(Collectors.toList());
-
+        return constraintsMeta.stream().map(map -> map.get("name").toString()).collect(Collectors.toList());
+    }
+    private List<String> getIndicesMSSQL(final String tableName, final DotConnect dotConnect) throws DotDataException {
+        dotConnect.setSQL(String.format(MS_SQL_INDEX, tableName));
+        final List<Map> indexMeta = dotConnect.loadResults();
+        return indexMeta.stream().map(map -> map.get("index_name").toString()).collect(Collectors.toList());
     }
 
 } // E:O:F:DotDatabaseMetaData.

@@ -56,8 +56,8 @@ public class DBTimeZoneCheck {
             }
             TimeZone.setDefault(testingTimeZone);
 
-            if (!DbConnectionFactory.isPostgres()) {
-                Logger.info(DBTimeZoneCheck.class, "Database is not postgres, so ignoring timezone check");
+            if (!DbConnectionFactory.isPostgres() || DbConnectionFactory.isMsSql()) {
+                Logger.info(DBTimeZoneCheck.class, "Database is not postgres nor MSSQL, so ignoring timezone check");
                 return true;
             }
 
