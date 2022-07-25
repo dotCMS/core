@@ -33,7 +33,8 @@ public class ContentHandlerTest {
      */
     @Test
     public void Test_XStream_Deserializer() throws IOException {
-        final XStream xStream = XStreamFactory.INSTANCE.getInstanceNoThrowOnUnmappedProperties();
+
+        final XStream xStream = XStreamFactory.INSTANCE.getInstance();
 
         final File file = FileTestUtil.getFileInResources(INPUT_FILE_PATH);
         ContentWrapper wrapper;

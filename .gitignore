@@ -91,6 +91,8 @@ tmp/
 
 /node_modules
 /**/node_modules
+node_modules/
+.github/actions/**/lib/
 
 # compiled output
 /core-web/dist
@@ -119,3 +121,4 @@ karma_html/
 /core-web/storybook
 /core-web/out*/
 dist-docs/
+/core-web/test-reports/

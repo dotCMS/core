@@ -565,7 +565,8 @@ public class ESMappingAPITest {
         assertEquals(320, contentletMap.get("metadata.width"));
         assertEquals(235, contentletMap.get("metadata.height"));
         assertEquals(true, contentletMap.get("metadata.isimage"));
-        assertTrue( contentletMap.get("metadata.content").toString().trim().equals(NO_METADATA));
+        assertNotNull(contentletMap.get("metadata.content"));
+        assertTrue( NO_METADATA.equals(contentletMap.get("metadata.content").toString().trim()));
 
     }
 

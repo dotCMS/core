@@ -53,6 +53,8 @@ import com.dotcms.publisher.business.PublishQueueElementTransformerTest;
 import com.dotcms.publisher.receiver.BundlePublisherTest;
 import com.dotcms.publisher.util.DependencyManagerTest;
 import com.dotcms.publisher.util.DependencyModDateUtilTest;
+import com.dotcms.publishing.BundlerUtilTest;
+import com.dotcms.publishing.BundlerUtilTest;
 import com.dotcms.publishing.PublisherFilterImplTest;
 import com.dotcms.publishing.PushPublishFiltersInitializerTest;
 import com.dotcms.publishing.job.SiteSearchJobImplTest;
@@ -306,7 +308,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.contentlet.util.ContentletUtilTest.class,
         com.dotmarketing.portlets.contentlet.business.ContentletCheckInTest.class,
         com.dotmarketing.portlets.contentlet.business.ContentletFactoryTest.class,
-        com.dotmarketing.portlets.contentlet.business.HostAPITest.class,
+//        com.dotmarketing.portlets.contentlet.business.HostAPITest.class,
         ContainerStructureFinderStrategyResolverTest.class,
         com.dotmarketing.portlets.contentlet.business.ContentletAPITest.class,
         com.dotmarketing.portlets.contentlet.model.ContentletIntegrationTest.class,
@@ -554,7 +556,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task220512UpdateNoHTMLRegexValueTest.class,
         MetadataDelegateTest.class,
         Task220401CreateClusterLockTableTest.class,
-        Task220606UpdatePushNowActionletNameTest.class
+        Task220606UpdatePushNowActionletNameTest.class,
+        BundlerUtilTest.class
 })
 public class MainSuite {
 

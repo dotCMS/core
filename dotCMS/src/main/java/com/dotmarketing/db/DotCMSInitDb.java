@@ -10,14 +10,14 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.servlets.InitServlet;
 import com.dotmarketing.startup.runonce.Task210321RemoveOldMetadataFiles;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.starter.ImportStarterUtil;
 import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.ImportStarterUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.PasswordGenerator;
-import com.dotmarketing.util.UserUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -28,6 +28,7 @@ import java.io.File;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import org.apache.commons.lang.StringUtils;
+import org.apache.felix.framework.OSGISystem;
 import org.apache.felix.framework.OSGIUtil;
 
 public class DotCMSInitDb {
@@ -96,16 +97,15 @@ public class DotCMSInitDb {
         DbConnectionFactory.closeAndCommit();
 
         removeAnyOldMetadata();
-
         MaintenanceUtil.flushCache();
+        
         ReindexThread.startThread();
 
         ContentletAPI conAPI = APILocator.getContentletAPI();
         Logger.info(DotCMSInitDb.class, "Building Initial Index");
 
 
-        // Initializing felix
-        OSGIUtil.getInstance().initializeFramework();
+
 
         // Reindexing the recently added content
         conAPI.refreshAllContent();

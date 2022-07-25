@@ -13,7 +13,8 @@ const routes: Routes = [
     },
     {
         path: '',
-        redirectTo: '/c/content'
+        redirectTo: '/c/content',
+        pathMatch: 'full'
     }
 ];
 

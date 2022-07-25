@@ -3,7 +3,7 @@ import { ComponentFixture, waitForAsync, TestBed } from '@angular/core/testing';
 import { DebugElement, Component, Input } from '@angular/core';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { FormGroup, FormControl, NgControl, ReactiveFormsModule } from '@angular/forms';
+import { UntypedFormGroup, UntypedFormControl, NgControl, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
 import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
@@ -52,7 +52,7 @@ describe('NamePropertyComponent', () => {
     );
 
     it('should have a form', () => {
-        const group = new FormGroup({});
+        const group = new UntypedFormGroup({});
         comp.group = group;
         const divForm: DebugElement = fixture.debugElement.query(By.css('div'));
 
@@ -61,8 +61,8 @@ describe('NamePropertyComponent', () => {
     });
 
     it('should have a input', () => {
-        comp.group = new FormGroup({
-            name: new FormControl('')
+        comp.group = new UntypedFormGroup({
+            name: new UntypedFormControl('')
         });
 
         fixture.detectChanges();
@@ -73,8 +73,8 @@ describe('NamePropertyComponent', () => {
     });
 
     it('should have a field-message', () => {
-        comp.group = new FormGroup({
-            name: new FormControl('')
+        comp.group = new UntypedFormGroup({
+            name: new UntypedFormControl('')
         });
 
         fixture.detectChanges();
@@ -93,8 +93,8 @@ describe('NamePropertyComponent', () => {
     });
 
     it('should have copy variable button', () => {
-        comp.group = new FormGroup({
-            name: new FormControl('')
+        comp.group = new UntypedFormGroup({
+            name: new UntypedFormControl('')
         });
 
         comp.property = {

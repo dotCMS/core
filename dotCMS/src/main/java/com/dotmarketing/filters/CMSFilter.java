@@ -60,7 +60,7 @@ public class CMSFilter implements Filter {
         final HttpServletResponse response = (HttpServletResponse) res;
         final Host site = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
         final long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
-        
+
         // Set the request/response in the thread local.
         this.requestThreadLocal.setRequest(request);
         this.responseThreadLocal.setResponse(response);

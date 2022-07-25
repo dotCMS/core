@@ -1,6 +1,6 @@
 {
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
     "projectType": "library",
-    "root": "libs/dot-layout-grid",
     "sourceRoot": "libs/dot-layout-grid/src",
     "prefix": "",
     "targets": {

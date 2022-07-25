@@ -5,12 +5,14 @@ import { ESContent } from '@dotcms/app/shared/models/dot-es-content/dot-es-conte
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 import { ComponentStore } from '@ngrx/component-store';
 import { LazyLoadEvent } from 'primeng/api';
-import { Observable } from 'rxjs';
-import { map, take } from 'rxjs/operators';
+import { forkJoin, Observable } from 'rxjs';
+import { map, take, debounceTime } from 'rxjs/operators';
+import { DotContentTypeService } from '@services/dot-content-type';
 
 export interface DotPaletteState {
     contentlets: DotCMSContentlet[] | DotCMSContentType[];
     contentTypes: DotCMSContentType[];
+    allowedContent: string[];
     filter: string;
     languageId: string;
     totalRecords: number;
@@ -29,6 +31,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
     private isFormContentType: boolean;
     private itemsPerPage = 25;
     private contentTypeVarName: string;
+    private initialContent: DotCMSContentType[];
 
     readonly vm$ = this.state$;
 
@@ -75,11 +78,16 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
         };
     });
 
+    readonly setAllowedContent = this.updater((state: DotPaletteState, data: string[]) => {
+        return { ...state, allowedContent: data };
+    });
+
     // EFFECTS
-    readonly loadContentTypes = this.effect((data$: Observable<DotCMSContentType[]>) => {
+    readonly loadContentTypes = this.effect((data$: Observable<string[]>) => {
         return data$.pipe(
-            map((data) => {
-                this.setContentTypes(data);
+            map((allowedContent) => {
+                this.setAllowedContent(allowedContent);
+                this.getContenttypesData();
             })
         );
     });
@@ -94,6 +102,29 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                     this.paginationService.filter = value;
                 }
                 this.getContentletsData({ first: 0 });
+            })
+        );
+    });
+
+    readonly filterContentTypes = this.effect((filterValue$: Observable<string>) => {
+        return filterValue$.pipe(
+            debounceTime(400),
+            map((value: string) => {
+                const query = value.trim();
+
+                if (query && query.length < 3) {
+                    return;
+                }
+
+                this.setFilter(query);
+
+                // If it's empty, set the inital contentTypes;
+                if(!query) {
+                    this.setContentTypes(this.initialContent);
+                } else  {
+                    this.getContenttypesData();
+                }
+
             })
         );
     });
@@ -117,12 +148,14 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
     });
 
     constructor(
+        private dotContentTypeService: DotContentTypeService,
         public paginatorESService: DotESContentService,
         public paginationService: PaginatorService
     ) {
         super({
             contentlets: null,
             contentTypes: null,
+            allowedContent: [],
             filter: '',
             languageId: '1',
             totalRecords: 0,
@@ -173,6 +206,58 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
     }
 
     /**
+     * Request contenttypes data with filter params.
+     *
+     * @memberof DotPaletteStore
+     */
+    getContenttypesData(): void {
+        this.setLoading();
+        this.state$.pipe(take(1)).subscribe(({ filter, allowedContent }) => {
+            if(allowedContent && allowedContent.length) {
+                forkJoin([
+                    this.dotContentTypeService.filterContentTypes(filter, allowedContent.join(',')),
+                    this.dotContentTypeService.getContentTypes({ filter, page: 40, type: 'WIDGET' })
+                ])
+                    .pipe(take(1))
+                    .subscribe((results: DotCMSContentType[][] ) => {
+                        const [ allowContent, widgets ] = results;
+
+                        // Some pages bring widgets in the CONTENT_PALETTE_HIDDEN_CONTENT_TYPES, and others don't.
+                        // However, all pages allow widgets, so we make a request just to get them.
+                        // Full comment here: https://github.com/dotCMS/core/pull/22573#discussion_r921263060
+                        // This filter is used to prevent widgets from being repeated.
+                        const contentLets = allowContent.filter((item) => item.baseType !== 'WIDGET');
+
+                        // Merge both array and order them by name
+                        const contentTypes = [...contentLets, ...widgets].sort(
+                            (a, b) => a.name.localeCompare(b.name)
+                        ).slice(0, 40);
+    
+                        this.loadContentypes(contentTypes);
+                    });
+            } else {
+                this.dotContentTypeService.getContentTypes({ filter, page: 40, type: 'WIDGET' })
+                    .pipe(take(1))
+                    .subscribe((data: DotCMSContentType[]) => this.loadContentypes(data));
+            }
+        });
+    }
+
+    /**
+     *
+     *
+     * @param {DotCMSContentType[]} contentTypes
+     * @memberof DotPaletteStore
+     */
+    loadContentypes(contentTypes:  DotCMSContentType[]): void {
+        this.setLoaded();
+        this.setContentTypes(contentTypes);
+        if(!this.initialContent) {
+            this.initialContent = contentTypes;
+        };
+    }
+
+    /**
      * Sets value to show/hide components, clears filter value and starts loding data
      *
      * @param string [variableName]
@@ -183,5 +268,6 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
         this.setViewContentlet(viewContentlet);
         this.setFilter('');
         this.loadContentlets(variableName);
+        this.setContentTypes(this.initialContent);
     }
 }
