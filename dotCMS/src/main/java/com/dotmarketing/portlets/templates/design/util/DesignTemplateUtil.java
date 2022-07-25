@@ -424,52 +424,6 @@ public class DesignTemplateUtil {
         return containers;
     }
 
-
-	/**
-	 * Method that will parse and return the containers inside a given Velocity code.
-	 *
-	 * Also, it returns the container ID or path exactly how it is into the code, it means that
-	 * if in the HTML code is using a FileContainer by the ID it returns the ID and not the PATH.
-	 *
-	 * For example if you have to follow velocity code:
-	 *
-	 * <code>
-	 * ...
-	 * #parseContainer('69b3d24d-7e80-4be6-b04a-d352d16493ee','1')
-	 * ...
-	 * </code>
-	 *
-	 * Where '69b3d24d-7e80-4be6-b04a-d352d16493ee' is the ID for a {@link com.dotmarketing.portlets.containers.model.FileAssetContainer}
-	 * in '//demo.dotcms.com/application/containers/default/'.
-	 *
-	 * it is going to return a {@link ContainerUUID} with
-	 * - {@link ContainerUUID#getUUID()} equals to 1
-	 * - {@link ContainerUUID#getIdentifier()} equals to '69b3d24d-7e80-4be6-b04a-d352d16493ee'
-	 *
-	 * @param velocityCOde code
-	 * @return
-	 */
-	public static Set<ContainerUUID> getColumnContainersFromVelocity (final String velocityCOde ) {
-
-		//Getting the containers for this html fragment
-		Set<ContainerUUID> containers = new HashSet<>();
-		Matcher matcher = parseContainerPatter.matcher( velocityCOde );
-
-		while ( matcher.find() ) {
-			String parseContainerArguments = matcher.group();
-
-			if (parseContainerArguments != null) {
-				String[] splitArguments = parseContainerArguments.split("'\\s*,");
-				String id = cleanId(splitArguments[0]);
-				String uuid = splitArguments.length > 1 ? cleanId(splitArguments[1]) : ParseContainer.DEFAULT_UUID_VALUE;
-
-				containers.add(new ContainerUUID(id, uuid));
-			}
-		}
-
-		return containers;
-	}
-
 	/**
 	 * Checks if the identifier is a file asset container, if it is replace the id by the apth
 	 * @param containerId String could be a path or an id (file asset id or db container id)

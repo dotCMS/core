@@ -1,19 +1,20 @@
 package com.dotmarketing.startup.runonce;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotcms.contenttype.transform.JsonTransformer;
-import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.Params;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
-import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
-import com.dotmarketing.portlets.templates.design.util.DesignTemplateUtil;
 import com.dotmarketing.startup.StartupTask;
 
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.liferay.util.StringPool;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,14 +22,19 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Change all the relative path into the template by absolute path, resolving them with the template's host
  * @since 5.3.7
  */
 public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
+
+    private static final Pattern parseContainerPatter = Pattern.compile( "(?<=#parseContainer\\(').*?(?='\\))" );
 
     final static String GET_TEMPLATES_QUERY = "SELECT contentlet.%s as host_name, template.inode, template.identifier, template.drawed_body, template.body " +
         "FROM identifier " +
@@ -108,19 +114,11 @@ public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
     }
 
     private List<String> getRelativePaths(final String drawedBody) {
-        final Set<ContainerUUID> templateContainers = getTemplateContainers(drawedBody);
-
-        return getContainersIdentifierOrPath(templateContainers)
+        return  getTemplateContainers(drawedBody).stream()
+                .map(containerUUID -> containerUUID.get("identifier"))
                 .filter((String idOrPath) -> FileAssetContainerUtil.getInstance().isFolderAssetContainerId(idOrPath))
                 .filter((String idOrPath) -> !FileAssetContainerUtil.getInstance().isFullPath(idOrPath))
                 .collect(Collectors.toList());
-    }
-
-    private static Stream<String> getContainersIdentifierOrPath(final Set<ContainerUUID> containerUUIDS) {
-
-        return containerUUIDS
-                .stream()
-                .map(ContainerUUID::getIdentifier);
     }
 
     private List<Map<String, Object>> getAllDrawedTemplates() throws DotDataException {
@@ -134,19 +132,19 @@ public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
                 .loadObjectResults();
     }
 
-    public static Set<ContainerUUID> getTemplateContainers(final String drawedBodyAsString) {
+    public static Set<Map<String, String>> getTemplateContainers(final String drawedBodyAsString) {
 
         try {
             return getContainers(drawedBodyAsString);
         } catch (IOException e) {
-            return DesignTemplateUtil.getColumnContainersFromVelocity(drawedBodyAsString);
+            return getColumnContainersFromVelocity(drawedBodyAsString);
         }
     }
 
-    private static Set<ContainerUUID>  getContainers(String drawedBodyAsString)
+    private static Set<Map<String, String>>  getContainers(String drawedBodyAsString)
             throws JsonProcessingException {
 
-        final Set<ContainerUUID> result = new HashSet<>();
+        final Set<Map<String, String>> result = new HashSet<>();
 
         final Map templateLayoutMap = JsonTransformer.mapper.readValue(drawedBodyAsString, Map.class);
 
@@ -154,12 +152,9 @@ public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
                 UtilMethods.isSet(((Map) templateLayoutMap.get("body")).get("rows"))) {
 
             final List<Map> rows = (List<Map>) ((Map) templateLayoutMap.get("body")).get("rows");
-            final List<ContainerUUID> containerUUIDS = rows.stream()
+            final List<Map<String, String>> containerUUIDS = rows.stream()
                     .flatMap(row -> getMapStream(row, "columns"))
                     .flatMap(column -> getMapStream(column, "containers"))
-                    .map(container -> new ContainerUUID(
-                            container.get("identifier").toString(),
-                            container.get("uuid").toString()))
                     .collect(Collectors.toList());
             result.addAll(containerUUIDS);
         }
@@ -168,11 +163,7 @@ public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
                 UtilMethods.isSet(((Map) templateLayoutMap.get("sidebar")).get("sidebar"))) {
 
             final Map sidebarMap = (Map) templateLayoutMap.get("sidebar");
-            final List<ContainerUUID> sidebarsContainerUUIDS = ((List<Map>) sidebarMap.get("containers"))
-                    .stream()
-                    .map(container -> new ContainerUUID(container.get("identifier").toString(),
-                            container.get("uuid").toString()))
-                    .collect(Collectors.toList());
+            final List<Map<String, String>> sidebarsContainerUUIDS = ((List<Map<String, String>>) sidebarMap.get("containers"));
 
             result.addAll(sidebarsContainerUUIDS);
         }
@@ -184,5 +175,54 @@ public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
         return UtilMethods.isSet(map.get(key)) ?
                 ((List<Map>) map.get(key)).stream()
                 : ((List<Map>) Collections.EMPTY_LIST).stream();
+    }
+
+    /**
+     * Method that will parse and return the containers inside a given Velocity code.
+     *
+     * Also, it returns the container ID or path exactly how it is into the code, it means that
+     * if in the HTML code is using a FileContainer by the ID it returns the ID and not the PATH.
+     *
+     * For example if you have to follow velocity code:
+     *
+     * <code>
+     * ...
+     * #parseContainer('69b3d24d-7e80-4be6-b04a-d352d16493ee','1')
+     * ...
+     * </code>
+     *
+     * Where '69b3d24d-7e80-4be6-b04a-d352d16493ee' is the ID for a {@link com.dotmarketing.portlets.containers.model.FileAssetContainer}
+     * in '//demo.dotcms.com/application/containers/default/'.
+     *
+     * it is going to return a {@link Map} with
+     * - "uuid" equals to 1
+     * - "identifier" equals to '69b3d24d-7e80-4be6-b04a-d352d16493ee'
+     *
+     * @param velocityCOde code
+     * @return
+     */
+    public static Set<Map<String, String>> getColumnContainersFromVelocity (final String velocityCOde ) {
+
+        //Getting the containers for this html fragment
+        Set<Map<String, String>> containers = new HashSet<>();
+        Matcher matcher = parseContainerPatter.matcher( velocityCOde );
+
+        while ( matcher.find() ) {
+            String parseContainerArguments = matcher.group();
+
+            if (parseContainerArguments != null) {
+                String[] splitArguments = parseContainerArguments.split("'\\s*,");
+                String id = cleanId(splitArguments[0]);
+                String uuid = splitArguments.length > 1 ? cleanId(splitArguments[1]) : ParseContainer.DEFAULT_UUID_VALUE;
+
+                containers.add(map("identifier", id, "uuid", uuid));
+            }
+        }
+
+        return containers;
+    }
+
+    private static String cleanId(final String identifier) {
+        return StringUtils.remove(identifier, StringPool.APOSTROPHE);
     }
 }
