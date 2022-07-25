@@ -220,8 +220,16 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                 ])
                     .pipe(take(1))
                     .subscribe((results: DotCMSContentType[][] ) => {
+                        const [ allowContent, widgets ] = results;
+
+                        // Some pages bring widgets in the CONTENT_PALETTE_HIDDEN_CONTENT_TYPES, and others don't.
+                        // However, all pages allow widgets, so we make a request just to get them.
+                        // Full comment here: https://github.com/dotCMS/core/pull/22573#discussion_r921263060
+                        // This filter is used to prevent widgets from being repeated.
+                        const contentLets = allowContent.filter((item) => item.baseType !== 'WIDGET');
+
                         // Merge both array and order them by name
-                        const contentTypes = [...results[0], ...results[1]].sort(
+                        const contentTypes = [...contentLets, ...widgets].sort(
                             (a, b) => a.name.localeCompare(b.name)
                         ).slice(0, 40);
     
