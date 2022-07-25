@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.htmlpageasset.business.render;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.api.v1.experiment.ExperimentFactory;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
@@ -46,6 +47,7 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Context;
+import org.jetbrains.annotations.NotNull;
 
 
 /**
@@ -55,7 +57,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
     private String scriptJitsu = "<script src=\"//localhost:8080/s/lib.js\"\n"
             + "        data-key=\"js.ch1gesoxtyetqm3bsk3jdp.9xwkm0flad8dcj0wtmsmr\"\n"
-            + "        data-init-only=\"false\"\n"
+            + "        data-init-only=\"true\"\n"
             + "        defer></script>\n"
             + "<script>window.jitsu = window.jitsu || (function(){(window.jitsuQ = window.jitsuQ || []).push(arguments);})</script>\n"
             + "\n";
@@ -292,6 +294,11 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setLive(htmlPageUrl.hasLive())
                 .getPageHTML(context.getPageMode());
 
+        return ExperimentFactory.isAnyExperimentRunning() ? injectExperimentJSCode(pageHTML) : pageHTML;
+    }
+
+    @NotNull
+    private String injectExperimentJSCode(String pageHTML) {
         return pageHTML.replace("<head>", "<head>" + scriptJitsu + scriptMetricts);
     }
 

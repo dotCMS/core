@@ -5,36 +5,32 @@ import static com.dotcms.util.CollectionsUtils.map;
 
 import com.dotcms.repackage.org.directwebremoting.json.parse.JsonParseException;
 import com.dotcms.rest.RestClientBuilder;
+import com.dotcms.rest.api.v1.contenttype.CopyContentTypeForm;
 import com.dotcms.util.JsonUtil;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
-import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonAppend;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -44,105 +40,105 @@ import org.apache.commons.lang.RandomStringUtils;
 @Path("/v1/experiment")
 public class ExperimentResource {
 
-    List<Map> variants = list(
-            map(
-                "name", "Original",
-                "url",
-                "/blog?language_id=1&host_id=48190c8c-42c4-46af-8d1a-0cd5db894797&redirect=true",
-                "traffic_percentage", 50,
-                "traffic_percentage_sum", 50
-            ),
-            map(
-                "name", "Red_Title",
-                "url",
-                "/blog?language_id=4809665&host_id=48190c8c-42c4-46af-8d1a-0cd5db894797&redirect=true",
-                "traffic_percentage", 25,
-                "traffic_percentage_sum", 75
-            ),
-            map(
-                "name", "Blue_Title",
-                "url",
-                "/blog?language_id=4789229&host_id=48190c8c-42c4-46af-8d1a-0cd5db894797&redirect=true",
-                "traffic_percentage", 25,
-                "traffic_percentage_sum", 100
-            )
-    );
-
-    private boolean uniquePerVisitor = true;
-    private int lookBackWindowMinutes = 10;
+    public static final String EXPERIMENT_COOKIE_NAME = "experiment";
+    public static final String LOOK_BACK_WINDOW_COOKIE_NAME = "lookBackWindowCookie";
 
     @GET
     @Produces({MediaType.APPLICATION_JSON})
-    public Response loadJson(@Context final HttpServletRequest request,
+    public ExperimentSelected triggerExperiment(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response)
             throws DotSecurityException, DotDataException {
 
-        final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost();
-        final List<Rule> rules = APILocator.getRulesAPI().getAllRulesByParent(
-                currentHost.getIdentifier(), APILocator.systemUser());
+        final List<Experiment> runningExperiments = ExperimentFactory.getRunningExperiments();
+        final Experiment experiment = runningExperiments.isEmpty() ? null : pickOneExperiment(runningExperiments);
 
-        final Optional<Rule> ruleExperiment = rules.stream()
-                .filter(rule -> rule.getName().equals("Rule Experiment")).findFirst();
+        final ExperimentSelected experimentSelected = new ExperimentSelected();
 
-        final Map mapResponse = new HashMap<>();
+        if (UtilMethods.isSet(experiment) && checkRules(experiment, request, response)) {
 
-        if (ruleExperiment.isPresent()) {
-            ruleExperiment.get().checkValid();
-            boolean evaluate = ruleExperiment.get().evaluate(request, response);
+            final boolean shouldRunExperiment = shouldRunExperiment(experiment);
+            setCookies(response, experiment, shouldRunExperiment);
 
-            if (evaluate) {
-                final String experimentName = "POC_experiment";
+            if (shouldRunExperiment) {
+                final ExperimentVariant experimentVariant = pickUpVarriant(experiment, response);
+                experimentSelected.variant = new VariantSelected(
+                        experimentVariant.getVariant().getName(), experiment.getVariantURL(experimentVariant));
+                experimentSelected.url = experiment.getURL();
+            } else {
+                experimentSelected.name = "NONE";
+            }
+        } else {
+            experimentSelected.name = "NONE";
+        }
 
-                final Cookie experimentCookie = new Cookie("experiment", experimentName);
-                experimentCookie.setMaxAge(uniquePerVisitor ? -1 : lookBackWindowMinutes * 60);
-                response.addCookie(experimentCookie);
+        return experimentSelected;
+    }
 
-                final Cookie lookBackWindowCookie = new Cookie("lookBackWindowCookie", RandomStringUtils.randomAlphanumeric(20));
-                lookBackWindowCookie.setMaxAge(lookBackWindowMinutes * 60);
-                response.addCookie(lookBackWindowCookie);
+    private ExperimentVariant pickUpVarriant(final Experiment experiment,
+            HttpServletResponse response) {
+        final int randomValue = (int) (Math.random() * 100);
+        double acum = 0;
 
-                mapResponse.put("metrics", map(
-                        "click", list(
-                                map(
-                                        "page", "/blog",
-                                        "query_selector", "a"
-                                )
-                        )
-                ));
+        for (final ExperimentVariant variant : experiment.getVariants().getAll()) {
+            acum += variant.getTrafficPercentage();
 
-                final int random = (int) (Math.random() * 100);
-                Map variantSelected = null;
-
-                for (Map variant : variants) {
-                    if (random < Integer.parseInt(
-                            variant.get("traffic_percentage_sum").toString())) {
-                        variantSelected = variant;
-                        response.addCookie(new Cookie("variant", variant.get("name").toString()));
-                        break;
-                    }
-                }
-
-                mapResponse.put("experiment",
-                        map(
-                            "experiment_name", experimentName,
-                            "url", "/blog",
-                            "variant", variantSelected
-                        )
-                );
-
-
+            if (randomValue < acum) {
+                response.addCookie(
+                        new Cookie("variant", variant.getVariant().getName()));
+                return variant;
             }
         }
 
-        return Response.ok(mapResponse).build();
+        throw new RuntimeException();
+    }
+
+    private void setCookies(final HttpServletResponse response, final Experiment experiment,
+            final boolean shouldRunExperiment) {
+
+        final Cookie experimentCookie = new Cookie(
+                EXPERIMENT_COOKIE_NAME, shouldRunExperiment ? experiment.getName() : "NONE");
+        experimentCookie.setMaxAge(experiment.getUniquePerVisitor() ? -1 : experiment.getLookBackWindowMinutes() * 60);
+        response.addCookie(experimentCookie);
+
+        if (shouldRunExperiment) {
+            final Cookie lookBackWindowCookie = new Cookie(LOOK_BACK_WINDOW_COOKIE_NAME,
+                    RandomStringUtils.randomAlphanumeric(20));
+            lookBackWindowCookie.setMaxAge(experiment.getLookBackWindowMinutes() * 60);
+            response.addCookie(lookBackWindowCookie);
+        }
+    }
+
+    private boolean shouldRunExperiment(final Experiment experiment) {
+        final int randomValue = (int) (Math.random() * experiment.getTraffic());
+        return randomValue < experiment.getTraffic();
+    }
+
+    private boolean checkRules(final Experiment experiment,
+            HttpServletRequest request, HttpServletResponse response) {
+        final Collection<Rule> rules = experiment.getTargeting();
+
+        for (final Rule rule : rules) {
+            rule.checkValid();
+
+            if (!rule.evaluate(request, response)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private Experiment pickOneExperiment(final List<Experiment> experiments) {
+        final int randomValue = (int) (Math.random() * experiments.size());
+        return experiments.get(randomValue);
     }
 
 
     private final String scriptInit = "var experiment_data = localStorage.getItem('experiment_data');\n"
-            + "console.log('experiment_data', experiment_data);\n"
+            + "console.log('experiment_data in localStorage', experiment_data);\n"
             + "var isInExperiment = document.cookie.includes('lookBackWindowCookie');"
             + "\n"
-            + "if (isInExperiment && !!experiment_data && window.location.href.includes(JSON.parse(experiment_data).experiment.url)){\n"
+            + "if (isInExperiment && !!experiment_data && window.location.href.includes(JSON.parse(experiment_data).url)){\n"
             + "        console.log('Trigger init event...');\n"
             + "        const event = new CustomEvent('init_custom', { detail: JSON.parse(experiment_data) });\n"
             + "        window.dispatchEvent(event);\n"
@@ -151,7 +147,7 @@ public class ExperimentResource {
             + "        fetch('http://localhost:8080/api/v1/experiment')\n"
             + "          .then(response => response.json())     \n"
             + "          .then(data => {\n"
-            + "             console.log('data', data);\n"
+            + "             console.log('You are in a experiment: ', data);\n"
             + "              if (data.experiment) {\n"
             + "                localStorage.setItem('experiment_data', JSON.stringify(data));\n"
             + "                \n"
@@ -180,59 +176,58 @@ public class ExperimentResource {
             + "});\n"
             + "\n"
             + "Promise.all([initEvent, loadEvent]).then(function(data) {\n"
-            + "    console.log('metrics_enabled', data[0].detail.metrics.click);\n"
-            + "    \n"
-            + "    var click_config = data[0].detail.metrics.click;\n"
-            + "    var page_click_config;\n"
-            + "    \n"
-            + "    console.log('click_config', click_config);\n"
-            + "    \n"
-            + "    for (var i = 0; i < click_config.length; i++){\n"
-            + "        console.log('window.location.href', window.location.href);\n"
-            + "        console.log('click_config[i].page', click_config[i].page);\n"
-            + "        if (window.location.href.includes(click_config[i].page)){\n"
-            + "            page_click_config = click_config[i];\n"
-            + "        }\n"
-            + "    }\n"
-            + "    console.log('page_click_config', page_click_config);\n"
-            + "    if (page_click_config) {\n"
-            + "        console.log('Listener click events in', page_click_config.query_selector);\n"
-            + "        var as = document.querySelectorAll(page_click_config.query_selector);\n"
-            + "        \n"
-            + "        var experiment = localStorage.getItem('experiment');\n"
-            + "        var variant = localStorage.getItem('variant');\n"
-            + "        console.log(\"variant\", variant);\n"
-            + "        for (var i = 0; i < as.length; i++){\n"
-            + "            console.log(\"a link\", as[i]);\n"
-            + "            as[i].addEventListener('click', (event) => {\n"
-            + "                var target = event.target;\n"
-            + "                jitsu('track', 'click', {\n"
-            + "                  target: {\n"
-            + "                    name: event.target.name,\n"
-            + "                    class: event.target.classList,\n"
-            + "                    id: event.target.id,\n"
-            + "                    tag: event.target.tagName,\n"
-            + "                  },\n"
-            + "                });\n"
-            + "            });\n"
-            + "        }\n"
-            + "    }\n"
+            + "%s"
             + "});";
 
     @GET()
     @Path("/js/experiments.js")
     @Produces({"application/javascript"})
-    public Response loadJS(@Context final HttpServletRequest request,
+    public String loadJS(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response)
             throws DotSecurityException, DotDataException {
-        return Response.ok( scriptTraffic + scriptMetricts + scriptInit).build();
+
+        final Optional<Cookie> experimentCookie = getExperimentCookie(request);
+
+        if (experimentCookie.isPresent()) {
+            final Optional<Experiment> experiment = ExperimentFactory.getExperiment(experimentCookie.get().getValue());
+
+            if (!experiment.isPresent()) {
+                throw new NotFoundException();
+            }
+
+            final Collection<AnalyticEvent> events = experiment.get().getEvents();
+            final StringBuffer metricsJsCode = new StringBuffer();
+
+            for (final AnalyticEvent event : events) {
+                final AnalyticEventTypeHandler analyticEventTypeHandler = AnalyticEventTypeHandlerManager.INSTANCE.get(
+                        event.getEventKey());
+
+                final String jsCode = analyticEventTypeHandler.getJSCode(event.getParameters());
+                metricsJsCode.append(jsCode);
+            }
+            return scriptTraffic + String.format(scriptMetricts, metricsJsCode) + scriptInit;
+        } else {
+            throw new IllegalStateException();
+        }
 
     }
 
+    private Optional<Cookie> getExperimentCookie(HttpServletRequest request) {
+        final Cookie[] cookies = request.getCookies();
+
+        for (Cookie cookie : cookies) {
+            if (cookie.getName().equals(EXPERIMENT_COOKIE_NAME)) {
+                return Optional.of(cookie);
+            }
+        }
+
+        return Optional.empty();
+    }
+
     @GET
-    @Path("/result/{id}")
+    @Path("/result/{key}")
     @Produces({MediaType.APPLICATION_JSON})
-    public Map<String, ExperimentResult> result(@PathParam("id") final String experimentID)
+    public Map<String, ExperimentResult> result(@PathParam("key") final String experimentKey)
             throws DotSecurityException, DotDataException, JsonParseException, IOException {
         final String numberOfVisitors = " {\n"
                 + "        \"query\": {\n"
@@ -256,7 +251,7 @@ public class ExperimentResource {
                 + "            {\n"
                 + "                \"member\": \"Events.experimentName\",\n"
                 + "                \"operator\": \"equals\",\n"
-                + "                \"values\": [\""  + experimentID + "\"]\n"
+                + "                \"values\": [\""  + experimentKey + "\"]\n"
                 + "            }    \n"
                 + "        ]\n"
                 + "    }\n"
@@ -279,6 +274,12 @@ public class ExperimentResource {
 
         return variants;
 
+    }
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void save(final ExperimentForm experimentForm) throws DotDataException {
+        ExperimentFactory.save(experimentForm);
     }
 
     private ArrayList<Map<String, String>> requestToCubeJS(String query) throws IOException {
@@ -334,6 +335,24 @@ public class ExperimentResource {
         @JsonProperty
         public int getDedupedConversionsRate(){
             return (getDedupedConversions() / numberOfVisitors) * 100;
+        }
+    }
+
+     private static class ExperimentSelected {
+        String name;
+        String url;
+        VariantSelected variant;
+
+
+    }
+
+    private static class VariantSelected {
+        private String name;
+        private String url;
+
+        public VariantSelected(String name, String url) {
+            this.name = name;
+            this.url = url;
         }
     }
 }

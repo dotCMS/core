@@ -19,8 +19,12 @@ public class JsonUtil {
         return JSON_MAPPER.readValue(getJsonFileContentAsString(path), Map.class);
     }
 
-    public static Map<String, Object> toMap(final String json) throws IOException {
+    public static <K, T> Map<K, T> toMap(final String json) throws IOException {
         return JSON_MAPPER.readValue(json, Map.class);
+    }
+
+    public static String toJson(final Object object) throws IOException {
+        return JSON_MAPPER.writeValueAsString(object);
     }
 
     public static String getJsonFileContentAsString(final String path) throws IOException {
