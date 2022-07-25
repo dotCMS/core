@@ -234,59 +234,6 @@ public class DotTemplateTool implements ViewTool {
         return layout;
     }
 
-    public static Set<ContainerUUID> getTemplateContainers(final String drawedBodyAsString) {
-
-        try {
-            return getContainers(drawedBodyAsString);
-        } catch (IOException e) {
-            return DesignTemplateUtil.getColumnContainersFromVelocity(drawedBodyAsString);
-        }
-    }
-
-    @NotNull
-    private static Set<ContainerUUID>  getContainers(String drawedBodyAsString)
-            throws JsonProcessingException {
-
-        final Set<ContainerUUID> result = new HashSet<>();
-
-        final Map templateLayoutMap = JsonTransformer.mapper.readValue(drawedBodyAsString, Map.class);
-
-        if (UtilMethods.isSet(templateLayoutMap.get("body")) &&
-                UtilMethods.isSet(((Map) templateLayoutMap.get("body")).get("rows"))) {
-
-            final List<Map> rows = (List<Map>) ((Map) templateLayoutMap.get("body")).get("rows");
-            final List<ContainerUUID> containerUUIDS = rows.stream()
-                    .flatMap(row -> getMapStream(row, "columns"))
-                    .flatMap(column -> getMapStream(column, "containers"))
-                    .map(container -> new ContainerUUID(
-                            container.get("identifier").toString(),
-                            container.get("uuid").toString()))
-                    .collect(Collectors.toList());
-            result.addAll(containerUUIDS);
-        }
-
-        if (UtilMethods.isSet(templateLayoutMap.get("sidebar")) &&
-                UtilMethods.isSet(((Map) templateLayoutMap.get("sidebar")).get("sidebar"))) {
-
-            final Map sidebarMap = (Map) templateLayoutMap.get("sidebar");
-            final List<ContainerUUID> sidebarsContainerUUIDS = ((List<Map>) sidebarMap.get("containers"))
-                .stream()
-                .map(container -> new ContainerUUID(container.get("identifier").toString(),
-                        container.get("uuid").toString()))
-                .collect(Collectors.toList());
-
-            result.addAll(sidebarsContainerUUIDS);
-        }
-
-        return result;
-    }
-
-    private static Stream<Map> getMapStream(final Map map, final String key) {
-        return UtilMethods.isSet(map.get(key)) ?
-                ((List<Map>) map.get(key)).stream()
-                : ((List<Map>) Collections.EMPTY_LIST).stream();
-    }
-
     private static TemplateLayout getTemplateLayout(Boolean isPreview, String drawedBodyAsString) {
         TemplateLayout layout;
         try {

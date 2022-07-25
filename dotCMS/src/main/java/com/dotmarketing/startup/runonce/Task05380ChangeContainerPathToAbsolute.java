@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.contenttype.transform.JsonTransformer;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.Params;
@@ -8,14 +9,20 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
+import com.dotmarketing.portlets.templates.design.util.DesignTemplateUtil;
 import com.dotmarketing.startup.StartupTask;
 
+import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Change all the relative path into the template by absolute path, resolving them with the template's host
@@ -101,22 +108,19 @@ public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
     }
 
     private List<String> getRelativePaths(final String drawedBody) {
-        final Set<ContainerUUID> templateContainers = DotTemplateTool.getTemplateContainers(
-                drawedBody);
+        final Set<ContainerUUID> templateContainers = getTemplateContainers(drawedBody);
 
         return getContainersIdentifierOrPath(templateContainers)
-                .stream()
                 .filter((String idOrPath) -> FileAssetContainerUtil.getInstance().isFolderAssetContainerId(idOrPath))
                 .filter((String idOrPath) -> !FileAssetContainerUtil.getInstance().isFullPath(idOrPath))
                 .collect(Collectors.toList());
     }
 
-    private static Set<String> getContainersIdentifierOrPath(final Set<ContainerUUID> containerUUIDS) {
+    private static Stream<String> getContainersIdentifierOrPath(final Set<ContainerUUID> containerUUIDS) {
 
         return containerUUIDS
                 .stream()
-                .map(ContainerUUID::getIdentifier)
-                .collect(Collectors.toSet());
+                .map(ContainerUUID::getIdentifier);
     }
 
     private List<Map<String, Object>> getAllDrawedTemplates() throws DotDataException {
@@ -128,5 +132,57 @@ public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
         return new DotConnect()
                 .setSQL(String.format(GET_TEMPLATES_QUERY,hostNameColumnName))
                 .loadObjectResults();
+    }
+
+    public static Set<ContainerUUID> getTemplateContainers(final String drawedBodyAsString) {
+
+        try {
+            return getContainers(drawedBodyAsString);
+        } catch (IOException e) {
+            return DesignTemplateUtil.getColumnContainersFromVelocity(drawedBodyAsString);
+        }
+    }
+
+    private static Set<ContainerUUID>  getContainers(String drawedBodyAsString)
+            throws JsonProcessingException {
+
+        final Set<ContainerUUID> result = new HashSet<>();
+
+        final Map templateLayoutMap = JsonTransformer.mapper.readValue(drawedBodyAsString, Map.class);
+
+        if (UtilMethods.isSet(templateLayoutMap.get("body")) &&
+                UtilMethods.isSet(((Map) templateLayoutMap.get("body")).get("rows"))) {
+
+            final List<Map> rows = (List<Map>) ((Map) templateLayoutMap.get("body")).get("rows");
+            final List<ContainerUUID> containerUUIDS = rows.stream()
+                    .flatMap(row -> getMapStream(row, "columns"))
+                    .flatMap(column -> getMapStream(column, "containers"))
+                    .map(container -> new ContainerUUID(
+                            container.get("identifier").toString(),
+                            container.get("uuid").toString()))
+                    .collect(Collectors.toList());
+            result.addAll(containerUUIDS);
+        }
+
+        if (UtilMethods.isSet(templateLayoutMap.get("sidebar")) &&
+                UtilMethods.isSet(((Map) templateLayoutMap.get("sidebar")).get("sidebar"))) {
+
+            final Map sidebarMap = (Map) templateLayoutMap.get("sidebar");
+            final List<ContainerUUID> sidebarsContainerUUIDS = ((List<Map>) sidebarMap.get("containers"))
+                    .stream()
+                    .map(container -> new ContainerUUID(container.get("identifier").toString(),
+                            container.get("uuid").toString()))
+                    .collect(Collectors.toList());
+
+            result.addAll(sidebarsContainerUUIDS);
+        }
+
+        return result;
+    }
+
+    private static Stream<Map> getMapStream(final Map map, final String key) {
+        return UtilMethods.isSet(map.get(key)) ?
+                ((List<Map>) map.get(key)).stream()
+                : ((List<Map>) Collections.EMPTY_LIST).stream();
     }
 }
