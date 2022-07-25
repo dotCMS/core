@@ -21,6 +21,7 @@ export interface DotFavoritePage {
 }
 
 export const CMS_OWNER_ROLE_ID = '6b1fa42f-8729-4625-80d1-17e4ef691ce7';
+const IMG_RATIO_43 = 1.333;
 
 @Component({
     selector: 'dot-favorite-page',
@@ -36,11 +37,10 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
     pageRenderedHtml: string;
     isAdmin: boolean;
 
-    imgRatio43 = 1.333;
     imgWidth = this.config.data.page.pageState.params.viewAs.device?.cssWidth || 1024;
     imgHeight =
         this.config.data.page.pageState.params.viewAs.device?.cssHeight ||
-        (this.config.data.page.pageState.params.viewAs.device?.cssWidth || 1024) / this.imgRatio43;
+        (this.config.data.page.pageState.params.viewAs.device?.cssWidth || 1024) / IMG_RATIO_43;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -146,7 +146,7 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
                 }),
                 take(1),
                 finalize(() => {
-                    console.log('=== publicado');
+                    // this will be refactored on next PR
                     // this.loading = false;
                 })
             )
@@ -154,6 +154,7 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
                 () => {
                     this.config.data?.onSave?.(this.form.value);
                     this.ref.close(false);
+                    // this will be refactored on next PR
                     // this.asset = asset;
                     // this.propagateChange(this.asset.identifier);
                 },

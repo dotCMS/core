@@ -86,7 +86,8 @@ export class DotDeviceSelectorComponent implements OnInit, OnChanges {
                 name: message,
                 cssHeight: '',
                 cssWidth: '',
-                inode: '0'
+                inode: '0',
+                identifier: ''
             },
             ...devices
         ];

@@ -1,5 +1,5 @@
 export interface DotDevice {
-    identifier?: string;
+    identifier: string;
     cssHeight: string;
     cssWidth: string;
     name: string;

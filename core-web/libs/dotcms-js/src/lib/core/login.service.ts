@@ -350,7 +350,7 @@ export interface CurrentUser {
 
 export interface User {
     active?: boolean;
-    admin?: boolean;
+    admin: boolean;
     actualCompanyId?: string;
     birthday?: number; // Timestamp
     comments?: string;

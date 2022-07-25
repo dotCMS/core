@@ -35,6 +35,7 @@ describe('DotDeviceSelectorComponent', () => {
     let de: DebugElement;
 
     const defaultDevice: DotDevice = {
+        identifier: '',
         name: 'Desktop',
         cssHeight: '',
         cssWidth: '',

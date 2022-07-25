@@ -121,5 +121,4 @@ karma_html/
 /core-web/storybook
 /core-web/out*/
 dist-docs/
-/core-web/test-reports/
-/core-web/libs/dotcms-webcomponents/test-reports/
+**/test-reports/
