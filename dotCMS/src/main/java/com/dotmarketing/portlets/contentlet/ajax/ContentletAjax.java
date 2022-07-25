@@ -10,6 +10,7 @@ import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.enterprise.FormAJAXProxy;
 import com.dotcms.keyvalue.model.KeyValue;
+import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.util.LogTime;
 import com.dotmarketing.beans.Host;
@@ -129,6 +130,8 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
  *
  */
 public class ContentletAjax {
+
+	private static String VELOCITY_CODE_TEMPLATE = "#foreach($con in $dotcontent.pull(\"%s\",10,\"%s\"))<br/>%s<br/>#end";
 
 	private static final String CONTENT_TYPES_INODE_SEPARATOR = ",";
 
@@ -578,6 +581,7 @@ public class ContentletAjax {
 		Map<String, Object> lastSearchMap = new HashMap<String, Object>();
 
 		List<String> relatedIdentifiers = new ArrayList();
+		List<RelationshipFieldData> relationshipFields = new ArrayList();
 		final StringBuilder relatedQueryByChild = new StringBuilder();
 
 		if (UtilMethods.isSet(sess)) {
@@ -692,6 +696,7 @@ public class ContentletAjax {
                                     Collectors.toList());
                         }
 
+						relationshipFields.add(new RelationshipFieldData(fieldName, fieldValue));
                         continue;
                     }
                 }
@@ -970,18 +975,17 @@ public class ContentletAjax {
 
 		luceneQuery.append(" +working:true");
         final String luceneQueryToShow= luceneQuery.toString().replaceAll("\\s+", " ");
-		//filter related content
-        if (!relatedIdentifiers.isEmpty()) {
-            luceneQuery.append(" +identifier:(")
-                    .append(String.join(" OR ", relatedIdentifiers)).append(") ");
-        }
 
 		//Executing the query
 		long before = System.currentTimeMillis();
 		PaginatedArrayList <ContentletSearch> hits = new PaginatedArrayList <>();
 		long totalHits=0;
 		try{
-			hits =(PaginatedArrayList)conAPI.searchIndex(luceneQuery.toString(), perPage, offset, finalSort, currentUser, false);
+			final String luceneQueryTOElasticSearch = relatedIdentifiers.isEmpty() ?
+					luceneQuery.toString() :
+					appendRelatedIdentifierToQuery(luceneQuery.toString(), relatedIdentifiers);
+
+			hits =(PaginatedArrayList)conAPI.searchIndex(luceneQueryTOElasticSearch, perPage, offset, finalSort, currentUser, false);
 
 			totalHits = hits.getTotalResults();
 		}catch (Exception pe) {
@@ -1055,7 +1059,14 @@ public class ContentletAjax {
 			.replaceAll("\\+working:[a-zA-Z]*","").replaceAll("\\s+", " ").trim();
 
 		counters.put("luceneQueryRaw", luceneQueryToShow);
-		counters.put("luceneQueryFrontend", luceneQueryToShow2.replace("\"","\\${esc.quote}"));
+
+		final String luceneQueryFormatted = luceneQueryToShow2.replace("\"","\\${esc.quote}");
+		final String velocityCode = String.format(VELOCITY_CODE_TEMPLATE,
+				luceneQueryFormatted,
+				finalSort,
+				UtilMethods.isSet(relationshipFields) ? getRelationshipVelocityCode(relationshipFields) : "...");
+
+		counters.put("velocityCode", velocityCode);
         counters.put("relatedQueryByChild",
                 relatedQueryByChild.length() > 0 ? relatedQueryByChild.toString() : null);
 		counters.put("sortByUF", finalSort);
@@ -1085,6 +1096,40 @@ public class ContentletAjax {
 		Logger.debug(ContentletAjax.class, "searchContentletsByUser: Time to process results= " + (after - before) + " ms.");
 
 		return results;
+	}
+
+	private String appendRelatedIdentifierToQuery(final String luceneQuery,
+			final List<String> relatedIdentifiers) {
+
+		Preconditions.checkArgument(UtilMethods.isSet(relatedIdentifiers), "relatedIdentifiers can not be empty or null");
+		final StringBuffer result = new StringBuffer(luceneQuery);
+
+		return result.append(" +identifier:(")
+				.append(String.join(" OR ", relatedIdentifiers)).append(") ")
+				.toString();
+	}
+
+	private String getRelationshipVelocityCode(final List<RelationshipFieldData> relationshipFields) {
+		final String setCodeTemplate = "<span style='margin-left: 20px'>"
+				+ "#set( $related_%s = $dotcontent.pullRelatedField( \"$con.identifier\", \"%s\", \"+identifier:%s\") )"
+				+ "</span>";
+		final String conditionCodeTemplate = "!$related_%s.isEmpty()";
+		final String velocityCodeTemplate = "<span style='margin-left: 20px'>#if (%s)</span><br>"
+				+ "<span style='margin-left: 40px'>...</span><br>"
+				+ "<span style='margin-left: 20px'>#end</span>";
+
+		final String setCode = relationshipFields.stream()
+				.map(relationshipField -> String.format(setCodeTemplate,
+						relationshipField.fieldName.replaceAll("\\.", StringPool.BLANK),
+						relationshipField.fieldName,
+						relationshipField.fieldValue))
+				.collect(Collectors.joining("\n"));
+
+		final String conditionCode = relationshipFields.stream()
+				.map(relationshipField -> String.format(conditionCodeTemplate, relationshipField.fieldName.replaceAll("\\.", StringPool.BLANK)))
+				.collect(Collectors.joining(" && "));
+
+		return setCode + "<br>" + String.format(velocityCodeTemplate, conditionCode);
 	}
 
 	private void addContentMapsToResults(String structureInode, int perPage, User currentUser,
@@ -2613,5 +2658,14 @@ public class ContentletAjax {
 		return builder.build();
 	}
 
+	private class RelationshipFieldData {
+		String fieldName;
+		String fieldValue;
+
+		public RelationshipFieldData(String fieldName, String fieldValue) {
+			this.fieldName = fieldName;
+			this.fieldValue = fieldValue;
+		}
+	}
 }
 

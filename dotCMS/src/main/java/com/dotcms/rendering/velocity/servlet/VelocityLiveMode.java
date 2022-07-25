@@ -175,11 +175,15 @@ public class VelocityLiveMode extends VelocityModeHandler {
                 HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
                     this.getTemplate(htmlPage, mode).merge(context, tmpOut);
                 // We should only cache if status == 200
-                if (null != cacheKey && response.getStatus() == 200) {
+                if (null != cacheKey) {
                     final String trimmedPage = tmpOut.toString().trim();
                     out.write(trimmedPage.getBytes());
-                    synchronized (cacheKey.intern()) {
-                        CacheLocator.getBlockPageCache().add(htmlPage, trimmedPage, cacheParameters);
+
+                    if(response.getStatus() == 200) {
+                        synchronized (cacheKey.intern()) {
+                            CacheLocator.getBlockPageCache()
+                                    .add(htmlPage, trimmedPage, cacheParameters);
+                        }
                     }
                 }
             }
