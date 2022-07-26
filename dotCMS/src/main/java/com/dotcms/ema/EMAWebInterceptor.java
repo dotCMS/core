@@ -13,11 +13,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.RegEX;
-import com.dotmarketing.util.StringUtils;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableMap;
@@ -39,17 +35,20 @@ import java.util.Optional;
  * then proxies the remote response back to the dotCMS admin, which allows dotCMS
  * to render the EDIT_MODE request in context.
  *
- * More info on how EMA works https://github.com/dotcms-plugins/com.dotcms.ema#dotcms-edit-mode-anywhere---ema
+ * More info on how EMA works:
+ * <a href="https://github.com/dotcms-plugins/com.dotcms.ema#dotcms-edit-mode-anywhere---ema">dotCMS Edit Mode Anywhere - EMA</a>
  */
-public class EMAWebInterceptor  implements WebInterceptor {
+public class EMAWebInterceptor implements WebInterceptor {
 
     public  static final String      PROXY_EDIT_MODE_URL_VAR = "proxyEditModeURL";
     public  static final String      INCLUDE_RENDERED_VAR = "includeRendered";
+    public static final String AUTHENTICATION_TOKEN_VAR = "authenticationToken";
     private static final String      API_CALL                = "/api/v1/page/render";
     public static final String EMA_APP_CONFIG_KEY = "dotema-config";
     private static final ProxyTool   proxy                   = new ProxyTool();
 
     public static final String EMA_REQUEST_ATTR = "EMA_REQUEST";
+    public static final String EMA_AUTH_HEADER = "X-EMA-AUTH";
 
     @Override
     public String[] getFilters() {
@@ -92,31 +91,25 @@ public class EMAWebInterceptor  implements WebInterceptor {
                 final MockHttpCaptureResponse mockResponse = (MockHttpCaptureResponse)response;
                 final String postJson                      = new String(mockResponse.getBytes());
                 final JSONObject json                      = new JSONObject(postJson);
+                final Optional<String> authTokenOpt = getEmaAppParameter(currentHost, AUTHENTICATION_TOKEN_VAR);
                 final Map<String, String> params           = ImmutableMap.of("dotPageData", postJson);
+                if (authTokenOpt.isPresent()) {
+                    params.put("token", authTokenOpt.get());
+                }
                 
                 Logger.info(this.getClass(), "Proxying Request --> " + proxyUrl.get());
 
                 final StringBuilder responseStringBuilder = new StringBuilder();
                 final ProxyResponse pResponse = proxy.sendPost(proxyUrl.get(), params);
-
-                if (pResponse.getResponseCode() == 200) {
+                final String authTokenFromEma = this.getHeaderValue(pResponse.getHeaders(), EMA_AUTH_HEADER);
+                if (authTokenOpt.isPresent() && (UtilMethods.isNotSet(authTokenFromEma) || !authTokenOpt.get().equals(authTokenFromEma))) {
+                    responseStringBuilder.append(this.generateErrorPage("Invalid Authentication Token",
+                            proxyUrl.get(), pResponse));
+                } else if (pResponse.getResponseCode() == 200) {
                     responseStringBuilder.append(new String(pResponse.getResponse(), StandardCharsets.UTF_8.name()));
-                }else {
-                    responseStringBuilder.append("<html><body>")
-                    .append("<h3>Unable to connect with the rendering engine</h3>")
-                    .append("<br><div style='display:inline-block;width:80px'>Trying: </div><b>" + proxyUrl.get()  + "</b>")
-                    .append("<br><div style='display:inline-block;width:80px'>Got:</div><b>" + pResponse.getStatus() + "</b>")
-                    .append("<hr>")
-                    .append("<h4>Headers</h4>")
-                    .append("<table border=1 style='min-width:500px'>");
-
-                    for(final Header header : pResponse.getHeaders()) {
-                        responseStringBuilder.append("<tr><td style='font-weight:bold;padding:5px;'><pre>" + header.getName() + "</pre></td><td><pre>" + header.getValue() + "</td></tr>");
-                    }
-                    responseStringBuilder.append("</table>")
-                    .append("<p>The Json Payload, POSTing as Content-Type:'application/x-www-form-urlencoded' with form param <b>dotPageData</b>, has been printed in the logs.</p>")
-                    .append("</body></html>");
-
+                } else {
+                    responseStringBuilder.append(this.generateErrorPage("Unable to connect with the rendering engine"
+                            , proxyUrl.get(), pResponse));
                 }
 
                 json.getJSONObject("entity").getJSONObject("page").put("rendered", responseStringBuilder.toString());
@@ -125,7 +118,7 @@ public class EMAWebInterceptor  implements WebInterceptor {
 
                 response.getWriter().write(json.toString());
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
 
             final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
             Logger.warnAndDebug(this.getClass(), "Error on site: " +
@@ -181,8 +174,9 @@ public class EMAWebInterceptor  implements WebInterceptor {
             }
 
             return proxyUrlOpt;
-        } catch (Exception e) {
-            Logger.error(this, e.getMessage());
+        } catch (final Exception e) {
+            Logger.error(this, String.format("An error occurred when generating the Proxy URL for Site '%s': %s",
+                    currentHost, e.getMessage()));
             return Optional.empty();
         } finally {
             if(UtilMethods.isSet(appSecrets)){
@@ -210,7 +204,7 @@ public class EMAWebInterceptor  implements WebInterceptor {
 
     protected boolean isRequestURIMath(final String source, final String requestURI) {
 
-        String uftUri = null;
+        String uftUri;
 
         try {
 
@@ -229,8 +223,7 @@ public class EMAWebInterceptor  implements WebInterceptor {
      * @return true if the configuration exists, false if does not
      */
     private boolean existsConfiguration(final String hostId) {
-        final List hosts = Host.SYSTEM_HOST.equals(hostId) ?
-                Arrays.asList(hostId):  Arrays.asList(Host.SYSTEM_HOST, hostId);
+        final List<String> hosts = Host.SYSTEM_HOST.equals(hostId) ? List.of(hostId) : Arrays.asList(Host.SYSTEM_HOST, hostId);
         return !APILocator.getAppsAPI().filterSitesForAppKey(EMA_APP_CONFIG_KEY,
                 hosts, APILocator.systemUser()).isEmpty();
     }
@@ -258,5 +251,66 @@ public class EMAWebInterceptor  implements WebInterceptor {
         return proxyURL;
     }
 
+    /**
+     *
+     * @param site
+     * @param paramKey
+     * @return
+     */
+    protected Optional<String> getEmaAppParameter(final Host site, final String paramKey) {
+        final AppSecrets appSecrets;
+        try {
+            appSecrets =
+                    APILocator.getAppsAPI().getSecrets(EMA_APP_CONFIG_KEY, true, site, APILocator.systemUser()).get();
+            return appSecrets.getSecrets().containsKey(paramKey) ?
+                           Optional.ofNullable(appSecrets.getSecrets().get(paramKey).getString()) : Optional.empty();
+        } catch (final DotDataException | DotSecurityException e) {
+            Logger.error(this, String.format("An error occurred when accessing EMA parameters for site '%s': %s",
+                    site, e.getMessage()), e);
+        }
+        return Optional.empty();
+    }
+
+    /**
+     *
+     * @param headers
+     * @param emaAuthHeaderName
+     * @return
+     */
+    private String getHeaderValue(final Header[] headers, final String emaAuthHeaderName) {
+        final Optional<Header> headerOpt =
+                Arrays.stream(headers).filter(header -> emaAuthHeaderName.equals(header.getName())).findFirst();
+        if (headerOpt.isPresent()) {
+            return headerOpt.get().getValue();
+        }
+        return null;
+    }
+
+    /**
+     *
+     * @param errorMsg
+     * @param proxyUrl
+     * @param pResponse
+     * @return
+     */
+    protected String generateErrorPage(final String errorMsg, final String proxyUrl, final ProxyResponse pResponse) {
+        final StringBuilder responseStringBuilder = new StringBuilder();
+        responseStringBuilder.append("<html><body><h3>").append(errorMsg).append("</h3>")
+                .append("<br><div style='display:inline-block;width:80px'>Trying:</div><b>").append(proxyUrl).append("</b>")
+                .append("<br><div style='display:inline-block;width:80px'>Got:</div><b>").append(pResponse.getStatus()).append("</b>")
+                .append("<hr>")
+                .append("<h4>Headers</h4>")
+                .append("<table border=1 style='min-width:500px'>");
+
+        for (final Header header : pResponse.getHeaders()) {
+            responseStringBuilder.append("<tr><td style='font-weight:bold;padding:5px;'><pre>")
+                    .append(header.getName()).append("</pre></td><td><pre>").append(header.getValue()).append("</td></tr>");
+        }
+        responseStringBuilder.append("</table>")
+                .append("<p>The Json Payload, POSTing as Content-Type:'application/x-www-form-urlencoded' with form " +
+                                "param <b>dotPageData</b>, has been printed in the logs.</p>")
+                .append("</body></html>");
+        return responseStringBuilder.toString();
+    }
 
 }

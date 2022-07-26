@@ -21,31 +21,31 @@ export class AppComponent implements OnInit {
 
     ngOnInit() {
         this.dotCmsConfigService
-            .getConfig()
-            .pipe(
-                take(1),
-                map((config: ConfigParams) => {
-                    return {
-                        buildDate: config.releaseInfo?.buildDate,
-                        colors: config.colors,
-                        navBar: config.logos?.navBar
-                    };
-                })
-            )
-            .subscribe(
-                ({
-                    buildDate,
-                    colors,
-                    navBar
-                }: {
-                    buildDate: string;
-                    colors: DotUiColors;
-                    navBar: string;
-                }) => {
-                    this.dotMessageService.init({ buildDate });
-                    this.dotNavLogoService.setLogo(navBar);
-                    this.dotUiColors.setColors(document.querySelector('html'), colors);
-                }
-            );
+        .getConfig()
+        .pipe(
+            take(1),
+            map((config: ConfigParams) => {
+                return {
+                    buildDate: config.releaseInfo?.buildDate,
+                    colors: config.colors,
+                    navBar: config.logos?.navBar
+                };
+            })
+        )
+        .subscribe(
+            ({
+                 buildDate,
+                 colors,
+                 navBar
+             }: {
+                buildDate: string;
+                colors: DotUiColors;
+                navBar: string;
+            }) => {
+                this.dotMessageService.init({ buildDate });
+                this.dotNavLogoService.setLogo(navBar);
+                this.dotUiColors.setColors(document.querySelector('html'), colors);
+            }
+        );
     }
 }

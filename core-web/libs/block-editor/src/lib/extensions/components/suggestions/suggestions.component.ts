@@ -90,18 +90,6 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
                         : this.onSelection({ type: { name: item.id } });
                 };
             });
-
-            this.items = [
-                {
-                    label: 'Contentlets',
-                    icon: 'receipt',
-                    command: () => {
-                        this.clearFilter.emit(ItemsType.CONTENTTYPE);
-                        this.loadContentTypes();
-                    }
-                },
-                ...this.items
-            ];
         }
         this.initialItems = this.items;
         this.itemsLoaded = ItemsType.BLOCK;
@@ -112,6 +100,26 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
     }
 
     ngAfterViewInit() {
+        this.setFirstItemActive();
+    }
+
+    /**
+     * Add the Contentlets item to the suggestions that is not present by default.
+     *
+     * @memberof SuggestionsComponent
+     */
+    addCContentletItem() {
+        this.items = [
+            {
+                label: 'Contentlets',
+                icon: 'receipt',
+                command: () => {
+                    this.clearFilter.emit(ItemsType.CONTENTTYPE);
+                    this.loadContentTypes();
+                }
+            },
+            ...this.items
+        ];
         this.setFirstItemActive();
     }
 
