@@ -1,11 +1,5 @@
 package com.dotcms.business.bytebuddy;
 
-import static net.bytebuddy.matcher.ElementMatchers.isAnnotatedWith;
-import static net.bytebuddy.matcher.ElementMatchers.isMethod;
-import static net.bytebuddy.matcher.ElementMatchers.nameStartsWith;
-import java.lang.instrument.Instrumentation;
-import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.logging.log4j.Level;
 import com.dotcms.business.CloseDB;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -14,11 +8,15 @@ import com.dotmarketing.util.Logger;
 import net.bytebuddy.agent.ByteBuddyAgent;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
-import net.bytebuddy.description.annotation.AnnotationDescription;
-import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.matcher.ElementMatchers;
 import net.bytebuddy.utility.JavaModule;
+
+import java.lang.annotation.Annotation;
+import java.lang.instrument.Instrumentation;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static net.bytebuddy.matcher.ElementMatchers.*;
 
 /**
  * Initializes ByteBuddy to handle transactional annotations. This replaces AspectJ functionality
@@ -56,71 +54,57 @@ public class ByteBuddyFactory {
             @Override
             public ClassFileLocator classFileLocator(final ClassLoader classLoader, final JavaModule module) {
                 return new ClassFileLocator.Compound(ClassFileLocator.ForClassLoader.of(classLoader),
-                                ClassFileLocator.ForClassLoader.of(this.getClass().getClassLoader()));
+                        ClassFileLocator.ForClassLoader.of(this.getClass().getClassLoader()));
             }
         };
 
         try {
-            AgentBuilder builder = new AgentBuilder.Default().ignore(nameStartsWith("net.bytebuddy."))
-                            .ignore(nameStartsWith("com.dotcms.repackage."))
-                            .ignore(nameStartsWith("com.dotcms.business.bytebuddy"))
-                            // .ignore(nameEndsWith("LocalTransactionAndCloseDBIfOpenedFactoryTest"))
-                            // .ignore(nameEndsWith("FolderAPITest"))
-                            .disableClassFormatChanges().with(AgentBuilder.InitializationStrategy.Minimal.INSTANCE)
-                            .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
-                            .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION);
+            AgentBuilder.RedefinitionListenable.WithoutBatchStrategy builder = new AgentBuilder.Default()
+                    .with(bootFallbackLocationStrategy)
+                    // Filtering by package name is quicker than by annotation
+                    .ignore(nameStartsWith("net.bytebuddy."))
+                    .ignore(nameStartsWith("com.dotcms.repackage."))
+                    .ignore(nameStartsWith("com.dotcms.business.bytebuddy"))
+                    .disableClassFormatChanges()
+                    .with(AgentBuilder.InitializationStrategy.Minimal.INSTANCE)
+                    .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
+                    .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION);
 
             /*
              * We do not use Config class for this as we do not want to load classes that may need
              * transformation or require annotation processing.
              */
             if (Boolean.parseBoolean(System.getenv("DOTCMS_BYTEBUDDY_DEBUG"))) {
-                builder = ((AgentBuilder.RedefinitionListenable) builder)
-                                .with(AgentBuilder.RedefinitionStrategy.Listener.StreamWriting.toSystemError())
-                                .with(AgentBuilder.Listener.StreamWriting.toSystemError().withTransformationsOnly())
-                                .with(AgentBuilder.InstallationListener.StreamWriting.toSystemError());
+                builder.with(AgentBuilder.RedefinitionStrategy.Listener.StreamWriting.toSystemError())
+                        .with(AgentBuilder.Listener.StreamWriting.toSystemError().withTransformationsOnly())
+                        .with(AgentBuilder.InstallationListener.StreamWriting.toSystemError());
             }
 
-            builder.with(bootFallbackLocationStrategy).type(ElementMatchers.nameStartsWith("com.dotcms"))
-                            .or(ElementMatchers.nameStartsWith("com.dotmarketing"))
-                            .or(ElementMatchers.nameStartsWith("com.liferay"))
-                            .transform(new AgentBuilder.Transformer.ForAdvice()
-                                            .withExceptionHandler(Advice.ExceptionHandler.Default.RETHROWING)
-                                            .advice(isMethod().and(isAnnotatedWith(CloseDB.class)),
-                                                            CloseDBAdvice.class.getName()))
+            builder.type(ElementMatchers.declaresMethod(
+                            isAnnotatedWith(WrapInTransaction.class)
+                                    .or(isAnnotatedWith(CloseDB.class))
+                                    .or(isAnnotatedWith(CloseDBIfOpened.class))
+                                    .or(isAnnotatedWith(LogTime.class))
+                    ))
 
-                            .transform(new AgentBuilder.Transformer.ForAdvice()
-                                            .withExceptionHandler(Advice.ExceptionHandler.Default.RETHROWING)
-                                            .advice(isMethod().and(isAnnotatedWith(CloseDBIfOpened.class)),
-                                                            CloseDBIfOpenedAdvice.class.getName()))
+                    .transform(getAdvice(WrapInTransaction.class, WrapInTransactionAdvice.class))
+                    .transform(getAdvice(CloseDB.class, CloseDBAdvice.class))
+                    .transform(getAdvice(CloseDBIfOpened.class, CloseDBIfOpenedAdvice.class))
+                    .transform(getAdvice(LogTime.class, LogTimeAdvice.class))
 
-                            .transform(new AgentBuilder.Transformer.ForAdvice()
-
-                                            .withExceptionHandler(Advice.ExceptionHandler.Default.RETHROWING)
-                                            .advice(isMethod().and(isAnnotatedWith(WrapInTransaction.class)),
-                                                            WrapInTransactionAdvice.class.getName()))
-
-
-                            .transform(new AgentBuilder.Transformer.ForAdvice().advice(
-                                            isMethod().and(ByteBuddyFactory::checkLogLevelRequired),
-                                            LogTimeAdvice.class.getName()))
-
-                            .installOn(inst);
+                    .installOn(inst);
             Logger.info(ByteBuddyFactory.class, "ByteBuddy Initialized");
         } catch (Exception e) {
             Logger.error(ByteBuddyFactory.class, "Error Initializing ByteBuddy", e);
         }
 
+
     }
 
-    private static boolean checkLogLevelRequired(final MethodDescription target) {
-        boolean result = false;
-        AnnotationDescription.Loadable<LogTime> time = target.getDeclaredAnnotations().ofType(LogTime.class);
-        if (time != null) {
-            String level = time.getValue("loggingLevel").resolve(String.class);
-            String declaringType = target.getDeclaringType().toString();
-            result = (Logger.isDebugEnabled(declaringType) || Level.INFO.toString().equals(level));
-        }
-        return result;
+    private static AgentBuilder.Transformer.ForAdvice getAdvice(Class<? extends Annotation> annotation, Class<?> advice) {
+        return new AgentBuilder.Transformer.ForAdvice()
+                .withExceptionHandler(Advice.ExceptionHandler.Default.RETHROWING)
+                .advice(isMethod().and(isAnnotatedWith(annotation)),
+                        advice.getName());
     }
 }
