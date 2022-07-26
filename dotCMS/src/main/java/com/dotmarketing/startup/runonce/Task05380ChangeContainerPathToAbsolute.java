@@ -170,7 +170,7 @@ public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
         }
 
         if (UtilMethods.isSet(templateLayoutMap.get("sidebar")) &&
-                UtilMethods.isSet(((Map) templateLayoutMap.get("sidebar")).get("sidebar"))) {
+                UtilMethods.isSet(((Map) templateLayoutMap.get("sidebar")).get("containers"))) {
 
             final Map sidebarMap = (Map) templateLayoutMap.get("sidebar");
             final List<Map<String, String>> sidebarsContainerUUIDS = ((List<Map<String, String>>) sidebarMap.get("containers"));
