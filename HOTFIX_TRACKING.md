@@ -27,3 +27,4 @@ This maintenance release includes the following code fixes:
 19. https://github.com/dotCMS/core/issues/22237 : Limited User Can't Open Page if it has a content that doesn't have permissions over #22237
 20. https://github.com/dotCMS/core/issues/21169 : Change datatype of date fields in MSSQL #21169
 21. https://github.com/dotCMS/core/issues/22381 : Update Date/Times before adding Timezone to date fields #22381
+22. https://github.com/dotCMS/core/issues/22475 : Update SSL conf for docker build #22475
