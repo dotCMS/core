@@ -28,3 +28,4 @@ This maintenance release includes the following code fixes:
 20. https://github.com/dotCMS/core/issues/21169 : Change datatype of date fields in MSSQL #21169
 21. https://github.com/dotCMS/core/issues/22381 : Update Date/Times before adding Timezone to date fields #22381
 22. https://github.com/dotCMS/core/issues/22475 : Update SSL conf for docker build #22475
+23. https://github.com/dotCMS/core/issues/22198 : We are changing the relationship selection once that you create the field #22198
