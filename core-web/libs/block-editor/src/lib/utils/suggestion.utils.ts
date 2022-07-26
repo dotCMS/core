@@ -82,3 +82,5 @@ export const SuggestionPopperModifiers = [
         }
     }
 ];
+
+export const CONTENT_SUGGESTION_ID = 'contentlets';
