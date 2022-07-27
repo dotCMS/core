@@ -24,7 +24,7 @@ inputs:
   wait_for_deps:
     description: 'Time to wait before starting DotCMS instance to let dependencies load'
     required: true
-    default: '30'
+    default: '60'
   license_key:
     description: 'License key to use'
     required: true
