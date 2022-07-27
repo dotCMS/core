@@ -1,24 +1,28 @@
 import {
+    AfterViewChecked,
+    ChangeDetectionStrategy,
+    ChangeDetectorRef,
     Component,
     EventEmitter,
-    Input,
-    Output,
     HostBinding,
-    OnInit,
+    Input,
     OnChanges,
+    OnInit,
+    Output,
     SimpleChanges
 } from '@angular/core';
 import { DotDevicesService } from '@services/dot-devices/dot-devices.service';
 import { DotDevice } from '@models/dot-device/dot-device.model';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { map, take, flatMap, filter, toArray } from 'rxjs/operators';
+import { filter, flatMap, map, take, toArray } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-device-selector',
     templateUrl: './dot-device-selector.component.html',
-    styleUrls: ['./dot-device-selector.component.scss']
+    styleUrls: ['./dot-device-selector.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotDeviceSelectorComponent implements OnInit, OnChanges {
+export class DotDeviceSelectorComponent implements OnInit, OnChanges, AfterViewChecked {
     @Input() value: DotDevice;
     @Output() selected = new EventEmitter<DotDevice>();
     @HostBinding('class.disabled') disabled: boolean;
@@ -28,8 +32,14 @@ export class DotDeviceSelectorComponent implements OnInit, OnChanges {
 
     constructor(
         private dotDevicesService: DotDevicesService,
-        private dotMessageService: DotMessageService
+        private dotMessageService: DotMessageService,
+        private readonly cd: ChangeDetectorRef
     ) {}
+
+    // Due the @input value change before change detection has been run/or completed.
+    ngAfterViewChecked() {
+        this.cd.detectChanges();
+    }
 
     ngOnInit() {
         this.loadOptions();
