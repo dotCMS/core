@@ -33,6 +33,10 @@ import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotPaletteModule } from '@dotcms/app/portlets/dot-edit-page/components/dot-palette/dot-palette.module';
 import { DotIconModule } from '@dotcms/ui';
 import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
+import { DialogService, DynamicDialogModule } from "primeng/dynamicdialog";
+import {
+    DotEditBlockEditorModule
+} from "@portlets/dot-edit-page/content/components/dot-edit-block-editor/dot-edit-block-editor.module";
 
 const routes: Routes = [
     {
@@ -62,7 +66,9 @@ const routes: Routes = [
         DotEditPageStateControllerModule,
         DotOverlayMaskModule,
         DotPaletteModule,
-        DotIconModule
+        DotIconModule,
+        DynamicDialogModule,
+        DotEditBlockEditorModule
     ],
     exports: [DotEditContentComponent],
     providers: [
@@ -78,7 +84,8 @@ const routes: Routes = [
         IframeOverlayService,
         DotCustomEventHandlerService,
         DotWorkflowActionsFireService,
-        DotLicenseService
+        DotLicenseService,
+        DialogService
     ]
 })
 export class DotEditContentModule {}

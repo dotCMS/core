@@ -1,4 +1,4 @@
-import { Component, Injector, Input, OnInit, ViewContainerRef } from '@angular/core';
+import {Component, Injector, Input, OnInit, ViewContainerRef, ViewEncapsulation} from '@angular/core';
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
