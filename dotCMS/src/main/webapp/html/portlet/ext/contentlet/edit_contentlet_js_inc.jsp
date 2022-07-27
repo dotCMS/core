@@ -368,7 +368,7 @@
     }
 
 
-    function persistContent(isAutoSave, publish){
+    async function persistContent(isAutoSave, publish){
 
         window.onbeforeunload=true;
         var isAjaxFileUploading = false;
@@ -412,6 +412,8 @@
         window.scrollTo(0,0);	// To show lightbox effect(IE) and save content errors.
         dijit.byId('savingContentDialog').show();
 
+        // Check if the relations HTML have been loaded.
+        await waitForRelation(relationsName);
 
 
         if(isAutoSave && isContentSaving){
@@ -421,6 +423,7 @@
         var fmData = new Array();
 
         fmData = getFormData("fm","<%= com.dotmarketing.util.WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR %>");
+
         if(isInodeSet(currentContentletInode)){
             isCheckin = false;
             isAutoSave=false;
@@ -653,9 +656,7 @@
 
         if (data["contentletIdentifier"]) {
             if (ngEditContentletEvents) {
-                // This is needed to wait for re-index on update, since we are saving with ContentletAjax.saveContent
-                setTimeout(()=>{
-                    ngEditContentletEvents.next({
+                ngEditContentletEvents.next({
                     name: 'save',
                     data: {
                         identifier: data.contentletIdentifier,
@@ -663,7 +664,6 @@
                         type: null
                     }
                 });
-                },3000);
             }
 
             if((data["referer"] != null && data["referer"] != '' && !data["contentletLocked"])) {
@@ -809,7 +809,6 @@
         executeWfAction: function(wfId, popupable, showpush){
             this.wfActionId = wfId;
             if(popupable){
-
                 var inode = (currentContentletInode != undefined && currentContentletInode.length > 0)
                     ? currentContentletInode
                     :workingContentletInode;

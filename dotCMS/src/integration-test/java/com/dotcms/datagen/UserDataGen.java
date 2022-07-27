@@ -27,7 +27,7 @@ public class UserDataGen extends AbstractDataGen<User> {
     private String password = String.valueOf(currentTime);
     private String skinIdentifier = UUIDGenerator.generateUuid();
     private String companyId = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany().getCompanyId();
-    private Map<String, String> additionalInfo = new HashMap<>();
+    private Map<String, Object> additionalInfo = new HashMap<>();
 
     private List<Role> roles = new ArrayList<>();
 

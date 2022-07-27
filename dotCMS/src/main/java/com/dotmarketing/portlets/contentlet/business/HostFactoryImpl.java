@@ -52,6 +52,7 @@ import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 
 import static com.dotmarketing.db.DbConnectionFactory.getDBFalse;
 import static com.dotmarketing.db.DbConnectionFactory.getDBTrue;
@@ -320,7 +321,6 @@ public class HostFactoryImpl implements HostFactory {
         return systemHost;
     }
 
-    @WrapInTransaction
     @Override
     public synchronized Host createSystemHost() throws DotDataException, DotSecurityException {
         final User systemUser = APILocator.systemUser();
@@ -378,6 +378,176 @@ public class HostFactoryImpl implements HostFactory {
         return site;
     }
 
+    @WrapInTransaction
+    private Boolean innerDeleteHost(final Host site, final User user, final boolean respectFrontendRoles) {
+        try {
+            deleteHost(site, user, respectFrontendRoles);
+            HibernateUtil.addCommitListener
+                    (() -> generateNotification(site, user));
+        } catch (Exception e) {
+            // send notification
+            try {
+
+                APILocator.getNotificationAPI().generateNotification(
+                        new I18NMessage("notification.hostapi.delete.error.title"), // title = Host Notification
+                        new I18NMessage("notifications_host_deletion_error", site.getHostname(), e.getMessage()),
+                        null, // no actions
+                        NotificationLevel.ERROR,
+                        NotificationType.GENERIC,
+                        user.getUserId(),
+                        user.getLocale()
+                );
+
+            } catch (final DotDataException e1) {
+                Logger.error(HostAPIImpl.class, String.format("An error occurred when saving Site Deletion " +
+                        "Notification for site '%s': %s", site, e.getMessage()), e);
+            }
+            final String errorMsg = String.format("An error occurred when User '%s' tried to delete Site " +
+                    "'%s': %s", user.getUserId(), site, e.getMessage());
+            Logger.error(HostAPIImpl.class, errorMsg, e);
+            throw new DotRuntimeException(errorMsg, e);
+        }
+
+        return Boolean.TRUE;
+    }
+
+    private void generateNotification(final Host site, final User user) {
+        try {
+
+            APILocator.getNotificationAPI().generateNotification(
+                    new I18NMessage("message.host.delete.title"), // title = Host Notification
+                    new I18NMessage("message.host.delete",
+                            "Site deleted: " + site, site.getHostname()),
+                    null, // no actions
+                    NotificationLevel.INFO,
+                    NotificationType.GENERIC,
+                    user.getUserId(),
+                    user.getLocale());
+        } catch (Exception e) {
+
+            Logger.debug(this, e.getMessage(), e);
+        }
+    }
+
+    public void deleteHost(final Host site, final User user, final boolean respectFrontendRoles) throws Exception {
+        if(site != null){
+            siteCache.remove(site);
+        }
+
+        final DotConnect dc = new DotConnect();
+
+        // Remove Links
+        MenuLinkAPI linkAPI = APILocator.getMenuLinkAPI();
+        List<Link> links = linkAPI.findLinks(user, true, null, site.getIdentifier(), null, null, null, 0, -1, null);
+        for (Link link : links) {
+            linkAPI.delete(link, user, respectFrontendRoles);
+        }
+
+        // Remove Contentlet
+        ContentletAPI contentAPI = APILocator.getContentletAPI();
+        contentAPI.deleteByHost(site, APILocator.systemUser(), respectFrontendRoles);
+
+        // Remove Folders
+        FolderAPI folderAPI = APILocator.getFolderAPI();
+        List<Folder> folders = folderAPI.findFoldersByHost(site, user, respectFrontendRoles);
+        for (Folder folder : folders) {
+            folderAPI.delete(folder, user, respectFrontendRoles);
+        }
+
+        // Remove Templates
+        TemplateAPI templateAPI = APILocator.getTemplateAPI();
+        List<Template> templates = templateAPI.findTemplatesAssignedTo(site, true);
+        for (Template template : templates) {
+            dc.setSQL("delete from template_containers where template_id = ?");
+            dc.addParam(template.getIdentifier());
+            dc.loadResult();
+
+            templateAPI.delete(template, user, respectFrontendRoles);
+        }
+
+        // Remove Containers
+        ContainerAPI containerAPI = APILocator.getContainerAPI();
+        List<Container> containers = containerAPI.findContainers(user, true, null, site.getIdentifier(), null, null, null, 0, -1, null);
+        for (Container container : containers) {
+            containerAPI.delete(container, user, respectFrontendRoles);
+        }
+
+        // Remove Structures
+        List<ContentType> types = APILocator.getContentTypeAPI(user, respectFrontendRoles).search(" host = '" + site.getIdentifier() + "'");
+
+        for (ContentType type : types) {
+            List<Contentlet> structContent = contentAPI.findByStructure(new StructureTransformer(type).asStructure(), APILocator.systemUser(), false, 0, 0);
+            for (Contentlet c : structContent) {
+                //We are deleting a site/host, we don't need to validate anything.
+                c.setProperty(Contentlet.DONT_VALIDATE_ME, true);
+                contentAPI.delete(c, user, respectFrontendRoles);
+            }
+
+            ContentTypeAPI contentTypeAPI = APILocator
+                    .getContentTypeAPI(user, respectFrontendRoles);
+            //Validate if are allow to delete this content type
+            if (!type.system() && !type.defaultType()) {
+                contentTypeAPI.delete(type);
+            } else {
+                //If we can not delete it we need to change the host to SYSTEM_HOST
+                ContentType clonedContentType = ContentTypeBuilder.builder(type)
+                        .host(findSystemHost(user, false).getIdentifier()).build();
+                contentTypeAPI.save(clonedContentType);
+            }
+
+        }
+
+        // wipe bad old containers
+        dc.setSQL("delete from container_structures where exists (select * from identifier where host_inode=? and container_structures.container_id=id)");
+        dc.addParam(site.getIdentifier());
+        dc.loadResult();
+
+        Inode.Type[] assets = {Inode.Type.CONTAINERS, Inode.Type.TEMPLATE, Inode.Type.LINKS};
+        for(Inode.Type asset : assets) {
+            dc.setSQL("select inode from "+asset.getTableName()+" where exists (select * from identifier where host_inode=? and id="+asset.getTableName()+".identifier)");
+            dc.addParam(site.getIdentifier());
+            for(Map row : (List<Map>)dc.loadResults()) {
+                dc.setSQL("delete from "+asset.getVersionTableName()+" where working_inode=? or live_inode=?");
+                dc.addParam(row.get("inode"));
+                dc.addParam(row.get("inode"));
+                dc.loadResult();
+
+                dc.setSQL("delete from "+asset.getTableName()+" where inode=?");
+                dc.addParam(row.get("inode"));
+                dc.loadResult();
+            }
+        }
+
+        //Remove Tags
+        APILocator.getTagAPI().deleteTagsByHostId(site.getIdentifier());
+
+        // Double-check that ALL contentlets are effectively removed
+        // before using dotConnect to kill bad identifiers
+        List<Contentlet> remainingContenlets = contentAPI
+                .findContentletsByHost(site, user, respectFrontendRoles);
+        if (remainingContenlets != null
+                && remainingContenlets.size() > 0) {
+            contentAPI.deleteByHost(site, user, respectFrontendRoles);
+        }
+
+        // kill bad identifiers pointing to the host
+        dc.setSQL("delete from identifier where host_inode=?");
+        dc.addParam(site.getIdentifier());
+        dc.loadResult();
+
+        // Remove Host
+        Contentlet c = contentAPI.find(site.getInode(), user, respectFrontendRoles);
+        contentAPI.delete(c, user, respectFrontendRoles);
+
+        try {
+            APILocator.getAppsAPI().removeSecretsForSite(site, APILocator.systemUser());
+        } catch (final Exception e) {
+            Logger.warn(HostAPIImpl.class, String.format("An error occurred when removing secrets for site " +
+                    "'%s': %s", site, e.getMessage()), e);
+        }
+        flushAllCaches(site);
+    }
+
     @Override
     public Optional<Future<Boolean>> delete(final Host site, final User user, final boolean respectFrontendRoles,
                                             final boolean runAsSeparatedThread) {
@@ -385,178 +555,12 @@ public class HostFactoryImpl implements HostFactory {
 
         class DeleteHostThread implements Callable<Boolean> {
 
-            @WrapInTransaction
             @Override
             public Boolean call() {
-
-                try {
-                    deleteHost();
-                    HibernateUtil.addCommitListener
-                            (() -> generateNotification());
-                } catch (Exception e) {
-                    // send notification
-                    try {
-
-                        APILocator.getNotificationAPI().generateNotification(
-                                new I18NMessage("notification.hostapi.delete.error.title"), // title = Host Notification
-                                new I18NMessage("notifications_host_deletion_error", site.getHostname(), e.getMessage()),
-                                null, // no actions
-                                NotificationLevel.ERROR,
-                                NotificationType.GENERIC,
-                                user.getUserId(),
-                                user.getLocale()
-                        );
-
-                    } catch (final DotDataException e1) {
-                        Logger.error(HostAPIImpl.class, String.format("An error occurred when saving Site Deletion " +
-                                "Notification for site '%s': %s", site, e.getMessage()), e);
-                    }
-                    final String errorMsg = String.format("An error occurred when User '%s' tried to delete Site " +
-                            "'%s': %s", user.getUserId(), site, e.getMessage());
-                    Logger.error(HostAPIImpl.class, errorMsg, e);
-                    throw new DotRuntimeException(errorMsg, e);
-                }
-
-                return Boolean.TRUE;
-            }
-
-            private void generateNotification() {
-                try {
-
-                    APILocator.getNotificationAPI().generateNotification(
-                            new I18NMessage("message.host.delete.title"), // title = Host Notification
-                            new I18NMessage("message.host.delete",
-                                    "Site deleted: " + site, site.getHostname()),
-                            null, // no actions
-                            NotificationLevel.INFO,
-                            NotificationType.GENERIC,
-                            user.getUserId(),
-                            user.getLocale());
-                } catch (Exception e) {
-
-                    Logger.debug(this, e.getMessage(), e);
-                }
-            }
-
-            public void deleteHost() throws Exception {
-                if(site != null){
-                    siteCache.remove(site);
-                }
-
-                final DotConnect dc = new DotConnect();
-
-                // Remove Links
-                MenuLinkAPI linkAPI = APILocator.getMenuLinkAPI();
-                List<Link> links = linkAPI.findLinks(user, true, null, site.getIdentifier(), null, null, null, 0, -1, null);
-                for (Link link : links) {
-                    linkAPI.delete(link, user, respectFrontendRoles);
-                }
-
-                // Remove Contentlet
-                ContentletAPI contentAPI = APILocator.getContentletAPI();
-                contentAPI.deleteByHost(site, APILocator.systemUser(), respectFrontendRoles);
-
-                // Remove Folders
-                FolderAPI folderAPI = APILocator.getFolderAPI();
-                List<Folder> folders = folderAPI.findFoldersByHost(site, user, respectFrontendRoles);
-                for (Folder folder : folders) {
-                    folderAPI.delete(folder, user, respectFrontendRoles);
-                }
-
-                // Remove Templates
-                TemplateAPI templateAPI = APILocator.getTemplateAPI();
-                List<Template> templates = templateAPI.findTemplatesAssignedTo(site, true);
-                for (Template template : templates) {
-                    dc.setSQL("delete from template_containers where template_id = ?");
-                    dc.addParam(template.getIdentifier());
-                    dc.loadResult();
-
-                    templateAPI.delete(template, user, respectFrontendRoles);
-                }
-
-                // Remove Containers
-                ContainerAPI containerAPI = APILocator.getContainerAPI();
-                List<Container> containers = containerAPI.findContainers(user, true, null, site.getIdentifier(), null, null, null, 0, -1, null);
-                for (Container container : containers) {
-                    containerAPI.delete(container, user, respectFrontendRoles);
-                }
-
-                // Remove Structures
-                List<ContentType> types = APILocator.getContentTypeAPI(user, respectFrontendRoles).search(" host = '" + site.getIdentifier() + "'");
-
-                for (ContentType type : types) {
-                    List<Contentlet> structContent = contentAPI.findByStructure(new StructureTransformer(type).asStructure(), APILocator.systemUser(), false, 0, 0);
-                    for (Contentlet c : structContent) {
-                        //We are deleting a site/host, we don't need to validate anything.
-                        c.setProperty(Contentlet.DONT_VALIDATE_ME, true);
-                        contentAPI.delete(c, user, respectFrontendRoles);
-                    }
-
-                    ContentTypeAPI contentTypeAPI = APILocator
-                            .getContentTypeAPI(user, respectFrontendRoles);
-                    //Validate if are allow to delete this content type
-                    if (!type.system() && !type.defaultType()) {
-                        contentTypeAPI.delete(type);
-                    } else {
-                        //If we can not delete it we need to change the host to SYSTEM_HOST
-                        ContentType clonedContentType = ContentTypeBuilder.builder(type)
-                                .host(findSystemHost(user, false).getIdentifier()).build();
-                        contentTypeAPI.save(clonedContentType);
-                    }
-
-                }
-
-                // wipe bad old containers
-                dc.setSQL("delete from container_structures where exists (select * from identifier where host_inode=? and container_structures.container_id=id)");
-                dc.addParam(site.getIdentifier());
-                dc.loadResult();
-
-                Inode.Type[] assets = {Inode.Type.CONTAINERS, Inode.Type.TEMPLATE, Inode.Type.LINKS};
-                for(Inode.Type asset : assets) {
-                    dc.setSQL("select inode from "+asset.getTableName()+" where exists (select * from identifier where host_inode=? and id="+asset.getTableName()+".identifier)");
-                    dc.addParam(site.getIdentifier());
-                    for(Map row : (List<Map>)dc.loadResults()) {
-                        dc.setSQL("delete from "+asset.getVersionTableName()+" where working_inode=? or live_inode=?");
-                        dc.addParam(row.get("inode"));
-                        dc.addParam(row.get("inode"));
-                        dc.loadResult();
-
-                        dc.setSQL("delete from "+asset.getTableName()+" where inode=?");
-                        dc.addParam(row.get("inode"));
-                        dc.loadResult();
-                    }
-                }
-
-                //Remove Tags
-                APILocator.getTagAPI().deleteTagsByHostId(site.getIdentifier());
-
-                // Double-check that ALL contentlets are effectively removed
-                // before using dotConnect to kill bad identifiers
-                List<Contentlet> remainingContenlets = contentAPI
-                        .findContentletsByHost(site, user, respectFrontendRoles);
-                if (remainingContenlets != null
-                        && remainingContenlets.size() > 0) {
-                    contentAPI.deleteByHost(site, user, respectFrontendRoles);
-                }
-
-                // kill bad identifiers pointing to the host
-                dc.setSQL("delete from identifier where host_inode=?");
-                dc.addParam(site.getIdentifier());
-                dc.loadResult();
-
-                // Remove Host
-                Contentlet c = contentAPI.find(site.getInode(), user, respectFrontendRoles);
-                contentAPI.delete(c, user, respectFrontendRoles);
-
-                try {
-                    APILocator.getAppsAPI().removeSecretsForSite(site, APILocator.systemUser());
-                } catch (final Exception e) {
-                    Logger.warn(HostAPIImpl.class, String.format("An error occurred when removing secrets for site " +
-                            "'%s': %s", site, e.getMessage()), e);
-                }
-                flushAllCaches(site);
+                return innerDeleteHost(site, user, respectFrontendRoles);
             }
         }
+
         final DeleteHostThread deleteHostThread = new DeleteHostThread();
 
         if(runAsSeparatedThread) {

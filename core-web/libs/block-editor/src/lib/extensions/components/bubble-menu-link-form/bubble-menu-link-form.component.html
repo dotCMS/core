@@ -1,0 +1,36 @@
+<div class="form-container">
+    <form
+        autoComplete="off"
+        (mousedown)="focusInput()"
+        (submit)="addLink()"
+    >
+        <input
+            name="link" 
+            placeholder="Type or Paste Link"
+            type="text"
+            [(ngModel)]="newLink"
+            #input
+        />
+        <button class="btn btn-add" click="addLink()">ADD</button>
+    </form>
+    <div class="card-container" *ngIf="nodeLink">
+        <div class="card-header">
+            <span class="linked-to">LINKED TO</span>
+            <div class="link-container">
+                <a class="link" [href]="nodeLink" target="_blank">
+                    <span class="material-icons">language</span>
+                    {{ nodeLink.length > 50 ? (nodeLink | slice:0:50 ) + '...' : nodeLink}}
+                </a>
+            </div>
+        </div>
+        <div class="card-footer">
+            <button class="btn btn-copy" (click)="copyLink()">
+                COPY LINK
+            </button>
+            <button class="btn btn-remove" (click)="removeLink.emit(true)">
+                REMOVE LINK
+            </button>
+        </div>
+    </div>
+
+</div>

@@ -11,6 +11,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.PortletContext;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
@@ -129,8 +130,11 @@ public class PortletAPIImpl implements PortletAPI {
             throw new DotDataValidationException("You must specify at least one baseType or Content Type");
         }
 
-        final HashMap<String,String> newMap=new HashMap<>();
-        newMap.putAll(portlet.getInitParams());
+        if(contentTypes.stream().anyMatch(Host.HOST_VELOCITY_VAR_NAME::equalsIgnoreCase)){
+            throw new DotDataValidationException("Invalid attempt to save Portlet for restricted Content Type Host. ");
+        }
+
+        final HashMap<String, String> newMap = new HashMap<>(portlet.getInitParams());
         newMap.put("portletSource", "db");
 
         //cleaning up whitespaces from content types and base types

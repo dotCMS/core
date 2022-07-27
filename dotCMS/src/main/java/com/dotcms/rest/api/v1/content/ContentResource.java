@@ -1,55 +1,49 @@
 package com.dotcms.rest.api.v1.content;
 
-import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.RESTParams;
-import com.dotcms.rest.ResourceResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
-import com.dotcms.rest.api.v1.template.TemplateHelper;
-import com.dotcms.rest.exception.ForbiddenException;
+import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.util.DotPreconditions;
-import com.dotcms.util.PaginationUtil;
-import com.dotcms.util.pagination.TemplatePaginator;
-import com.dotcms.workflow.form.FireActionForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.business.VersionableAPI;
-import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.templates.business.TemplateAPI;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONException;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
-import javax.ws.rs.PUT;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -58,9 +52,11 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Version 1 of the Content resource, to interact and retrieve contentlets
@@ -231,5 +227,86 @@ public class ContentResource {
 
         DotPreconditions.notNull(contentlet, ()-> "contentlet-was-not-found", DoesNotExistException.class);
         return contentlet;
+    }
+
+    /**
+     * Will return a Contentlet objects. If you are building large pulls and depending on the types
+     * of fields on the content this can get expensive especially with large data sets.<br />
+     * EXAMPLE:<br /> /api/v1/content/related<br />
+     *
+     * {
+     *     "identifier":"d66309a7378bbad381fda3accd7b2e80",
+     *     "fieldVariable":"myRelationship",
+     *     "condition":"+title:child5",
+     *     "orderBy":"title desc"
+     * }
+     * The method will figure out language, working and
+     * live for you if not passed in with the condition Returns empty List if no results are found
+     * @param request  - Http Request
+     * @param response - Http Response
+     * @param pullRelatedForm {@link PullRelatedForm}
+     * @return Returns empty List if no results are found
+     */
+    @POST
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Path("related")
+    @Operation(summary = "Pull Related Content",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityView.class))),
+                    @ApiResponse(responseCode = "404", description = "Contentlet not found"),
+                    @ApiResponse(responseCode = "400", description = "Contentlet does not have a relationship field")})
+    public Response pullRelated(@Context final HttpServletRequest request,
+                               @Context final HttpServletResponse response,
+                               final PullRelatedForm pullRelatedForm) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).requiredAnonAccess(AnonymousAccess.READ).init();
+
+        Logger.debug(this, ()-> "Requesting pull related parents for the contentletIdentifier: " + pullRelatedForm.getIdentifier() +
+                ", relationshipFieldVariable: " + pullRelatedForm.getFieldVariable() + ", luceneCondition: " + pullRelatedForm.getCondition() +
+                ", limit: " + pullRelatedForm.getLimit() + ", offset: " + pullRelatedForm.getOffset() + ", orderby: " + pullRelatedForm.getOrderBy());
+
+        final User user = initData.getUser();
+        final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
+        final long langId = UtilMethods.isSet(pullRelatedForm.getCondition())
+                && pullRelatedForm.getCondition().contains("languageId") ? -1 : language.getId();
+        final String tmDate = request.getSession (false) != null?
+                (String) request.getSession (false).getAttribute("tm_date"):null;
+        final PageMode mode = PageMode.get(request);
+        final boolean editOrPreviewMode = !mode.showLive;
+        final Contentlet contentlet = APILocator.getContentletAPI().
+                findContentletByIdentifier(pullRelatedForm.getIdentifier(), mode.showLive, langId, user, mode.respectAnonPerms);
+
+        if (null ==  contentlet || !InodeUtils.isSet(contentlet.getIdentifier())) {
+
+            Logger.debug(this, ()-> "The identifier:" + pullRelatedForm.getIdentifier() + " does not exists");
+            throw new DoesNotExistException("The identifier:" + pullRelatedForm.getIdentifier() + " does not exists");
+        }
+
+        final Field field = contentlet.getContentType().fieldMap().get(pullRelatedForm.getFieldVariable());
+        if (field instanceof RelationshipField) {
+
+            final Relationship relationship = APILocator.getRelationshipAPI().getRelationshipFromField(field, user);
+            final boolean pullParents = APILocator.getRelationshipAPI().isParentField(relationship, field);
+            final List<Contentlet> retrievedContentlets = ContentUtils.getPullResults(relationship,
+                    pullRelatedForm.getIdentifier(),
+                    pullRelatedForm.getCondition() != null?
+                            pullRelatedForm.getCondition():
+                            ContentUtils.addDefaultsToQuery(pullRelatedForm.getCondition(), editOrPreviewMode, request),
+                    pullRelatedForm.getLimit(), pullRelatedForm.getOffset(), pullRelatedForm.getOrderBy(),
+                    user, tmDate, pullParents, langId, editOrPreviewMode? null : true);
+
+            return Response.ok(new ResponseEntityView(retrievedContentlets.stream()
+                        .map(contentItem -> WorkflowHelper.getInstance().contentletToMap(contentItem)).collect(Collectors.toList())
+                    )).build();
+        }
+
+        Logger.debug(this, ()-> "The field:" + pullRelatedForm.getFieldVariable() + " is not a relationship");
+        throw new IllegalArgumentException("The field:" + pullRelatedForm.getFieldVariable() + " is not a relationship");
     }
 }

@@ -7,14 +7,14 @@ jobs:
     name: Release Process Automation
     runs-on: ubuntu-latest
     env:
-      DOT_CICD_BRANCH: master
+      DOT_CICD_BRANCH: release-22.07
       GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
       REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
       REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      NODE_VERSION: 12
+      NODE_VERSION: "16.13"
       DEBUG: true
     steps:
       - name: GITHUB CONTEXT
@@ -44,11 +44,25 @@ jobs:
             DRY_RUN='true'
           fi
 
+          RELEASE_NAME="${{ github.event.release.name }}"
+          if [[ -n "${RELEASE_NAME}" && "${RELEASE_NAME^^}" =~ [[:blank:]].?LTS$ ]]; then
+            IS_LTS=true
+            RELEASE_LABEL=lts
+          fi
+          if [[ "${IS_RELEASE}" == 'true' && "${IS_LTS}" != 'true' ]]; then
+            ALSO_LATEST='true'
+          else
+            ALSO_LATEST='false'
+          fi
+
           echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
           echo "EE_BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
           echo "BUILD_HASH=${BUILD_HASH}" >> $GITHUB_ENV
           echo "DOTCMS_VERSION=${DOTCMS_VERSION}" >> $GITHUB_ENV
           echo "IS_RELEASE=${IS_RELEASE}" >> $GITHUB_ENV
+          echo "IS_LTS=${IS_LTS}" >> $GITHUB_ENV
+          echo "RELEASE_LABEL=${RELEASE_LABEL}" >> $GITHUB_ENV
+          echo "ALSO_LATEST=${ALSO_LATEST}" >> $GITHUB_ENV
       - name: Prepare dot-cicd
         run: |
           sh -c "$(curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/${DOT_CICD_BRANCH}/seed/install-dot-cicd.sh)"
@@ -61,8 +75,9 @@ jobs:
         with:
           version: ${{ env.DOTCMS_VERSION }}
           hash: ${{ env.BUILD_HASH }}
+          label: ${{ env.RELEASE_LABEL }}
           update_stable: ${{ env.IS_RELEASE }}
-          also_latest: ${{ env.IS_RELEASE }}
+          also_latest: ${{ env.ALSO_LATEST }}
       - name: Publish docker image
         id: publish-docker-image
         uses: dotcms/publish-docker-image-action@main
@@ -76,15 +91,15 @@ jobs:
           dry_run: ${{ env.DRY_RUN }}
         if: success()
       - name: Slack Notification
-        uses: rtCamp/action-slack-notify@master
+        uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
-          SLACK_USERNAME: dotcms-bot
+          SLACK_USERNAME: dotBot
           SLACK_TITLE: "Important news!"
           SLACK_MSG_AUTHOR: " "
           MSG_MINIMAL: true
           SLACK_FOOTER: ""
           SLACK_ICON: https://avatars.slack-edge.com/temp/2021-12-08/2830145934625_e4e464d502865ff576e4.png
-          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS - dotCMS ${{ env.BUILD_ID }} :rocket:"
-#       For testing purposes remember to switch webhook channel to an account that can be used for testing
+          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS - ${{ env.BUILD_ID }} :rocket:"
+        #       For testing purposes remember to switch webhook channel to an account that can be used for testing
         if: success() && env.DRY_RUN != 'true'

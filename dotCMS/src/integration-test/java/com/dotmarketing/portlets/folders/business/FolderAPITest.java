@@ -1443,7 +1443,41 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 		assertTrue(folderAPI.exists(folder.getInode()));
 		assertTrue(folderAPI.exists(folder.getIdentifier()));
 	}
-	
-	
-}
 
+	/**
+	 * <ul>
+	 *     <li>Method to test: {@link FolderAPI#save(Folder, User, boolean)}</li>
+	 *     <li>Given Scenario: When creating a new Folder, if the required {@code title} property is missing, then use
+	 *     the {@code name (URL)} property for it.</li>
+	 *     <li>ExpectedResult: Whether the {@code title} is missing or not, the save method must not fail to create the
+	 *     folder.</li>
+	 * </ul>
+	 */
+	@Test
+	public void createFolderWithoutAndWithoutTitle() throws DotDataException, DotSecurityException {
+		// Initialization
+		Folder testFolderOne = null;
+		Folder testFolderTwo = null;
+
+		try {
+			final Host defautSite = hostAPI.findDefaultHost(user, false);
+
+			// Test data generation
+			testFolderOne = new FolderDataGen().title("").name("my-test-folder-" + System.currentTimeMillis()).site(defautSite).nextPersisted();
+			testFolderTwo = new FolderDataGen().title("My Test Folder").name("my-test-folder-" + System.currentTimeMillis() + 100L).site(defautSite).nextPersisted();
+
+			// Assertions
+			assertNotNull("Failed to create a Folder without title. Default mechanism failed!", testFolderOne);
+			assertNotNull("Failed to create a Folder with title!", testFolderTwo);
+		} finally {
+			// Cleanup
+			if (null != testFolderOne) {
+				folderAPI.delete(testFolderOne, user, false);
+			}
+			if (null != testFolderTwo) {
+				folderAPI.delete(testFolderTwo, user, false);
+			}
+		}
+	}
+
+}

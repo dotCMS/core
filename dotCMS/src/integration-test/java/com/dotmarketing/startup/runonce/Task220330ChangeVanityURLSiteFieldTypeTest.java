@@ -45,8 +45,8 @@ public class Task220330ChangeVanityURLSiteFieldTypeTest {
 
     /**
      * Method to test: {@link Task220330ChangeVanityURLSiteFieldType#executeUpgrade}
-     * When: you hace a Vanity URl COntent Type with the site field as a {@link CustomField}
-     * Should: CHange the field type to {@link HostFolderField}
+     * When: you have a Vanity URl Content Type with the site field as a {@link CustomField}
+     * Should: Change the field type to {@link HostFolderField}
      *
      * @throws DotDataException
      * @throws DotSecurityException
@@ -90,6 +90,7 @@ public class Task220330ChangeVanityURLSiteFieldTypeTest {
                     .setProperty(ACTION_FIELD_VAR, 301)
                     .setProperty(ORDER_FIELD_VAR, 0)
                     .setProperty("site", host.getIdentifier())
+                    .host(host)
                     .nextPersistedAndPublish();
 
             Config.setProperty(SAVE_CONTENTLET_AS_JSON, true);
@@ -100,6 +101,7 @@ public class Task220330ChangeVanityURLSiteFieldTypeTest {
                     .setProperty(ACTION_FIELD_VAR, 301)
                     .setProperty(ORDER_FIELD_VAR, 0)
                     .setProperty("site", host.getIdentifier())
+                    .host(host)
                     .nextPersistedAndPublish();
 
             final Task220330ChangeVanityURLSiteFieldType task = new Task220330ChangeVanityURLSiteFieldType();
@@ -132,6 +134,21 @@ public class Task220330ChangeVanityURLSiteFieldTypeTest {
         } finally {
             Config.setProperty(SAVE_CONTENTLET_AS_JSON, defaultValue);
         }
+    }
+
+    /**
+     * Method to test: {@link Task220330ChangeVanityURLSiteFieldType#executeUpgrade()}
+     * When: The {@link Task220330ChangeVanityURLSiteFieldType} is ru twice the second time is fail because the
+     * {@link Task220330ChangeVanityURLSiteFieldType#GET_CONTENTLET_NOT_JSON} has a wrong sintax
+     * Should: Should not fail and not execute the SQL query
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void runTUTwice() throws DotDataException {
+        final Task220330ChangeVanityURLSiteFieldType task = new Task220330ChangeVanityURLSiteFieldType();
+        task.executeUpgrade();
+        task.executeUpgrade();
     }
 
     private void assertContentlet(Host host, Contentlet vanityURL_1) {

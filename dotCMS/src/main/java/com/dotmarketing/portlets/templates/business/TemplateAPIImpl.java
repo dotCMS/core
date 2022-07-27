@@ -8,30 +8,11 @@ import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.rendering.velocity.services.TemplateLoader;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.system.event.local.model.Subscriber;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.Inode;
-import com.dotmarketing.beans.SiteCreatedEvent;
-import com.dotmarketing.beans.Tree;
-import com.dotmarketing.beans.VersionInfo;
-import com.dotmarketing.beans.WebAsset;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.BaseWebAssetAPI;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.beans.*;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
-import com.dotmarketing.business.Theme;
-import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotDataValidationException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.InvalidLicenseException;
-import com.dotmarketing.exception.WebAssetException;
+import com.dotmarketing.exception.*;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.TreeFactory;
@@ -45,47 +26,27 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
-import com.dotmarketing.portlets.templates.design.bean.Sidebar;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutColumn;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
+import com.dotmarketing.portlets.templates.design.bean.*;
 import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
+import com.dotmarketing.portlets.templates.model.SystemTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.ActivityLogger;
-import com.dotmarketing.util.Constants;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PaginatedArrayList;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
-import com.mysql.cj.log.Log;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.io.IOUtils;
 
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_EDIT;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
-
 public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, DotInitializer {
 
-	private static final String SYSTEM_TEMPLATE_NAME = "System Template";
 	private static final String LAYOUT_FILE_NAME     = "com/dotmarketing/portlets/templates/business/layout.json";
 
 	private final  PermissionAPI    permissionAPI          = APILocator.getPermissionAPI();
@@ -95,42 +56,36 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 	private final  Lazy<VersionableAPI> versionableAPI     = Lazy.of(()->APILocator.getVersionableAPI());
 	private final  Lazy<HTMLPageAssetAPI> htmlPageAssetAPI = Lazy.of(()->APILocator.getHTMLPageAssetAPI());
 	private final  HostAPI          hostAPI                = APILocator.getHostAPI();
-	private final  Template         systemTemplate         = new Template();
+	private final  Lazy<Template>   systemTemplate         = Lazy.of(() -> new SystemTemplate());
 
 	@Override
 	public Template systemTemplate() {
-
-		return this.systemTemplate;
+		return this.systemTemplate.get();
 	}
 
 	@Override
 	public void init() {
-
-		Logger.debug(this, ()-> "Init the system template");
-		final String userId         = APILocator.systemUser().getUserId();
-		this.systemTemplate.setIdentifier(Template.SYSTEM_TEMPLATE);
-		this.systemTemplate.setInode(Template.SYSTEM_TEMPLATE);
-		this.systemTemplate.setOwner(userId);
-		this.systemTemplate.setModUser(userId);
-		this.systemTemplate.setModDate(new Date());
-		this.systemTemplate.setTheme(Theme.SYSTEM_THEME);
-		this.systemTemplate.setTitle(SYSTEM_TEMPLATE_NAME);
-		this.systemTemplate.setFriendlyName(SYSTEM_TEMPLATE_NAME);
-		this.systemTemplate.setDrawed(true);
-		this.systemTemplate.setDrawedBody(this.readLayout());
+		Logger.debug(this, ()-> "Initializing the System Template");
+		this.systemTemplate.get().setDrawedBody(this.readLayout());
 	}
 
+	/**
+	 * Reads the Velocity code of the System Template from the appropriate {@link #LAYOUT_FILE_NAME} file. This is the
+	 * boilerplate that will be used to render the System Container on a page.
+	 *
+	 * @return The Velocity code for the System Template.
+	 */
 	private String readLayout () {
 
 		final ClassLoader loader = Thread.currentThread().getContextClassLoader();
 		final URL resourceURL    = loader.getResource(LAYOUT_FILE_NAME);
 		try {
 
-			Logger.debug(this, ()-> "Reading system template layout");
+			Logger.debug(this, ()-> "Reading System Template layout");
 			return IOUtils.toString(resourceURL, UtilMethods.getCharsetConfiguration());
-		} catch (Exception e) {
-
-			Logger.error(this, e.getMessage(), e);
+		} catch (final Exception e) {
+			Logger.error(this,
+					String.format("An error occurred when reading System Template code: %s", e.getMessage()), e);
 			return "{\n" +
 					"  \"body\":{\n" +
 					"    \"rows\":[\n" +
@@ -143,7 +98,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 					"            \"width\":12,\n" +
 					"            \"containers\":[\n" +
 					"              {\n" +
-					"                \"identifier\":\"//default/application/containers/system/\",\n" +
+					"                \"identifier\":\"" + Container.SYSTEM_CONTAINER + "\",\n" +
 					"                \"uuid\":\"1\"\n" +
 					"              }\n" +
 					"            ]\n" +
@@ -360,7 +315,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
 
 			Logger.info(this, "System template can not be published");
-			throw new IllegalArgumentException("System template can not be published");
+			return;
 		}
 
 		Logger.debug(this, ()-> "Publishing the template: " + template.getIdentifier());
@@ -830,10 +785,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 		Logger.debug(this, ()-> "Calling getContainersInTemplate: template: " + template.getIdentifier());
 		if (Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
-
-			return new ImmutableList.Builder<Container>().add( // todo: do replace this with the system container as soon as it gets migrate to the velocity
-					this.containerAPI.getWorkingContainerByFolderPath("/application/containers/system", this.hostAPI.findDefaultHost(user, respectFrontendRoles) , user, respectFrontendRoles))
-					.build();
+			return new ImmutableList.Builder<Container>().add(this.containerAPI.systemContainer()).build();
 		}
 
         final List<Container> containers = new ArrayList<>();

@@ -1,0 +1,36 @@
+{
+    "projectType": "library",
+    "root": "libs/dotcms",
+    "sourceRoot": "libs/dotcms/src",
+    "prefix": "dotcms",
+    "targets": {
+        "build": {
+            "executor": "@angular-devkit/build-ng-packagr:build",
+            "options": {
+                "tsConfig": "libs/dotcms/tsconfig.lib.json",
+                "project": "libs/dotcms/ng-package.json"
+            },
+            "configurations": {
+                "production": {
+                    "tsConfig": "libs/dotcms/tsconfig.lib.prod.json"
+                }
+            }
+        },
+        "lint": {
+            "executor": "@nrwl/linter:eslint",
+            "options": {
+                "lintFilePatterns": ["libs/dotcms/src/**/*.ts", "libs/dotcms/src/**/*.html"]
+            },
+            "outputs": ["{options.outputFile}"]
+        },
+        "test": {
+            "executor": "@nrwl/jest:jest",
+            "outputs": ["coverage/libs/dotcms"],
+            "options": {
+                "jestConfig": "libs/dotcms/jest.config.js",
+                "passWithNoTests": true
+            }
+        }
+    },
+    "tags": []
+}

@@ -25,6 +25,7 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.mockito.Mockito;
 
 import static com.dotmarketing.portlets.rules.conditionlet.Conditionlet.COMPARISON_KEY;
 import static com.dotmarketing.portlets.rules.conditionlet.DateTimeConditionlet.DATE_TIME_1_KEY;
@@ -176,7 +177,7 @@ public class DateTimeConditionletTest extends UnitTestBase {
         }
 
         TestCase withRequestIpAddress(String mockIpAddress) throws IOException, GeoIp2Exception {
-            when(request.getHeader("X-Forwarded-For")).thenReturn(mockIpAddress);
+            when(request.getRemoteAddr()).thenReturn(mockIpAddress);
             return this;
         }
 

@@ -66,6 +66,20 @@ import com.dotcms.rest.api.v1.vtl.VTLResource;
 import com.dotcms.rest.personas.PersonasResourcePortlet;
 import com.dotcms.rest.servlet.ReloadableServletContainer;
 import com.google.common.collect.ImmutableSet;
+import com.liferay.portal.util.ReleaseInfo;
+import io.swagger.v3.jaxrs2.integration.resources.AcceptHeaderOpenApiResource;
+import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeIn;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
+import io.swagger.v3.oas.annotations.info.Contact;
+import io.swagger.v3.oas.annotations.info.Info;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import io.swagger.v3.oas.annotations.security.SecurityScheme;
+import io.swagger.v3.oas.annotations.servers.Server;
+import io.swagger.v3.oas.annotations.servers.ServerVariable;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 
 import java.util.Map;
@@ -81,9 +95,27 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since Dec 5, 2013
  *
  */
+
+@OpenAPIDefinition(
+		info = @Info(
+				title = "dotCMS REST API",
+				version = "3"),
+		servers = @Server(
+						description = "dotCMS Server",
+						url = "/api"),
+		tags = {
+				@Tag(name = "Workflow"),
+				@Tag(name = "Page"),
+				@Tag(name = "Content Type"),
+				@Tag(name = "Content Delivery"),
+				@Tag(name = "Bundle"),
+				@Tag(name = "Navigation")
+		}
+)
+
 public class DotRestApplication extends javax.ws.rs.core.Application {
 
-
+	private static final String RELEASE_VERSION = ReleaseInfo.getVersion();
 	/**
 	 * these are system resources and should never change
 	 */
@@ -106,7 +138,6 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 			.add(com.dotcms.rest.api.v1.notification.NotificationResource.class)
 			.add(com.dotcms.rest.IntegrityResource.class)
 			.add(com.dotcms.rest.LicenseResource.class)
-			.add(com.dotcms.rest.WorkflowResource.class)
 			.add(com.dotcms.rest.RestExamplePortlet.class)
 			.add(com.dotcms.rest.elasticsearch.ESContentResourcePortlet.class)
 			.add(PersonaResource.class)
@@ -176,6 +207,8 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 			.add(CacheResource.class)
 			.add(JVMInfoResource.class)
 			.add(FormResource.class)
+			.add(OpenApiResource.class)
+			.add(AcceptHeaderOpenApiResource.class)
 			.build();
 
 

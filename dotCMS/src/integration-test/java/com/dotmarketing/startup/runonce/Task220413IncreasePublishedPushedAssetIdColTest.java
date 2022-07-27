@@ -8,6 +8,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.UUID;
@@ -27,57 +28,68 @@ public class Task220413IncreasePublishedPushedAssetIdColTest {
      * Tests Task220413IncreasePublishedPushedAssetIdCol by inserting to published_pushed_assets with an assetId with
      * greater capacity that it can hold.
      * An exception is expected to be thrown.
-     *
-     * @throws DotDataException
      */
     @Test(expected = DotDataException.class)
-    public void test_upgradeTask_noCapacity() throws DotDataException {
-        rollbackToOriginal();
-        insertPublishedAsset(ASSET_ID);
+    public void test_upgradeTask_noCapacity() throws DotDataException, SQLException {
+        Connection conn = DbConnectionFactory.getConnection();
+        try {
+            conn.setAutoCommit(true);
+            rollbackToOriginal();
+
+            insertPublishedAsset(ASSET_ID);
+        } finally {
+            conn = DbConnectionFactory.getConnection();
+            conn.setAutoCommit(false);
+            conn.close();
+        }
     }
 
     /**
      * Tests Task220413IncreasePublishedPushedAssetIdCol by inserting to published_pushed_assets with an assetId with
      * greater capacity that it used to hold.
-     *
-     * @throws DotDataException
      */
     @Test
-    public void test_upgradeTask() throws DotDataException {
-        final Task220413IncreasePublishedPushedAssetIdCol task = new Task220413IncreasePublishedPushedAssetIdCol();
-        assertTrue(task.forceRun());
-
-        task.executeUpgrade();
-
+    public void test_upgradeTask() throws DotDataException, SQLException {
         try {
-            insertPublishedAsset(ASSET_ID);
-        } catch (DotDataException e) {
-            Assert.fail();
+            rollbackToOriginal();
+
+            final Task220413IncreasePublishedPushedAssetIdCol task = new Task220413IncreasePublishedPushedAssetIdCol();
+            assertTrue(task.forceRun());
+
+            task.executeUpgrade();
+
+            try {
+                insertPublishedAsset(ASSET_ID);
+            } catch (DotDataException e) {
+                Assert.fail();
+            }
+        } finally {
+            final Connection conn = DbConnectionFactory.getConnection();
+            conn.setAutoCommit(false);
+            conn.close();
         }
     }
 
-    private void rollbackToOriginal() throws DotDataException {
-        try {
-            DbConnectionFactory.getConnection().setAutoCommit(true);
-        } catch (SQLException e) {
-            throw new DotDataException(e.getMessage(), e);
+    private void rollbackToOriginal() throws SQLException, DotDataException {
+        final DotConnect dotConnect = new DotConnect();
+        if (DbConnectionFactory.isMsSql()) {
+            dotConnect.executeStatement("SET TRANSACTION ISOLATION LEVEL READ COMMITTED");
+            dotConnect.executeStatement("DROP INDEX idx_pushed_assets_3 ON publishing_pushed_assets");
+        } else {
+            dotConnect.executeStatement("DROP INDEX idx_pushed_assets_3");
         }
 
-        final DotConnect dotConnect = new DotConnect();
-        try {
-            dotConnect
-                    .setSQL("DELETE FROM publishing_pushed_assets")
-                    .loadResult();
-            dotConnect
-                    .setSQL(Task220413IncreasePublishedPushedAssetIdCol.resolveAlterCommand(36))
-                    .loadResult();
-        } catch (DotDataException e){
-            //Nah.
-        }
+        dotConnect
+                .setSQL("DELETE FROM publishing_pushed_assets WHERE asset_type = 'OSGI'")
+                .loadResult();
+        dotConnect
+                .setSQL(Task220413IncreasePublishedPushedAssetIdCol.resolveAlterCommand(36))
+                .loadResult();
+        dotConnect.executeStatement("CREATE INDEX idx_pushed_assets_3 ON publishing_pushed_assets (asset_id, environment_id)");
     }
 
     private void insertPublishedAsset(final String assetId) throws DotDataException {
-        new DotConnect().setSQL("INSERT INTO public.publishing_pushed_assets(" +
+        new DotConnect().setSQL("INSERT INTO publishing_pushed_assets(" +
                         "bundle_id, asset_id, asset_type, push_date, environment_id, endpoint_ids, publisher)" +
                         "VALUES (?, ?, ?, ?, ?, ?, ?)")
                 .addParam(UUID.randomUUID())

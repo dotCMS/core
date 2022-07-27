@@ -1,0 +1,12 @@
+@use "variables" as *;
+
+.form__field-variable {
+    font-size: $label-font-size;
+    color: $label-color;
+    margin-top: $spacing-1;
+    display: flex;
+
+    dot-copy-link {
+        margin-left: $spacing-1;
+    }
+}

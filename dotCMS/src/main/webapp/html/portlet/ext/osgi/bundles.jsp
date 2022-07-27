@@ -124,22 +124,26 @@
 			<div>
 				<!-- <input name="bundleUpload" multiple="false" type="file" data-dojo-type="dojox.form.Uploader" label="Select Bundle" id="bundleUpload" showProgress="true"/>&nbsp;&nbsp;&nbsp; -->
 				<!-- <span id="uploadFileName"></span> -->
-				<input type="file" name="bundleUpload" size="40">
+				<input type="file" name="bundleUpload" size="40" accept="application/java-archive">
 				<button dojoType="dijit.form.Button" onClick='bundles.add()' iconClass="uploadIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-Upload-Bundle")%></button>
 			</div>
 		</form>
 	</div>
 </div>
 
-<div id="packagesOSGIDialog" dojoType="dijit.Dialog" disableCloseButton="true" title="<%=LanguageUtil.get(pageContext, "OSGI-extra-packages")%>" style="display: none;">
+<div id="packagesOSGIDialog" style="min-width:40%;min-height:500px" dojoType="dijit.Dialog" disableCloseButton="true" title="<%=LanguageUtil.get(pageContext, "OSGI-extra-packages")%>" style="display: none;">
     <div style="padding:30px 15px;">
         <form id="modifyPackagesForm" name="modifyPackagesForm" method="post">
             <input type="hidden" name="cmd" value="modifyPackages">
-            <div style="height: 400px;">
-                <textarea dojoType="dijit.form.SimpleTextarea" id="packages" name="packages" style="width:350px; height: 390px!important; overflow-y: scroll!important;"></textarea>
-            </div>
             <div>
-                <button dojoType="dijit.form.Button" onClick='bundles.modifyExtraPackages()' iconClass="saveIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-modify-packages")%></button>
+                <textarea dojoType="dijit.form.SimpleTextarea" id="packages" name="packages" style="min-width:350px; min-height:500px!important; overflow-y: scroll!important;font-family:monospace;" spellcheck="false"></textarea>
+            </div>
+            <div style="padding:10px;">
+             
+                <a href="javascript:bundles.resetExtraPackages()"><%=LanguageUtil.get(pageContext, "OSGI-Reset-Packages")%></a>
+                <div style="float:right">
+                    <button dojoType="dijit.form.Button" onClick='bundles.modifyExtraPackages()' iconClass="saveIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-modify-packages")%></button>
+                </div>
             </div>
         </form>
     </div>
@@ -203,7 +207,10 @@
                                 if (sendingEndpoints) {
                                     popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"sServerIcon\" onClick=\"javascript:bundles.remotePublishBundle('" + bundleData.jarFile + "');\"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>";
                                 }
+                                
                                 popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"bundleIcon\" onClick=\"javascript:bundles.addToBundlePlugin('" + bundleData.jarFile + "');\"><%=LanguageUtil.get(pageContext, "Add-To-Bundle") %></div>";
+                                popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"bundleIcon\" onClick=\"javascript:bundles.processBundle('" + bundleData.jarFile + "');\"><%=LanguageUtil.get(pageContext, "Process-Exports") %></div>";
+                               
                                 popupMenus += "</div>";
                             }
                         }

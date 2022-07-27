@@ -1,40 +1,49 @@
 package com.dotcms.publishing;
-import static com.dotmarketing.util.UtilMethods.isNotSet;
-import static com.dotmarketing.util.UtilMethods.isSet;
 
 import com.dotmarketing.exception.DotDataValidationException;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.annotations.VisibleForTesting;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+
+import static com.dotmarketing.util.UtilMethods.isNotSet;
+import static com.dotmarketing.util.UtilMethods.isSet;
 
 /**
- * This bean to read data from the yml file that stores the Push Publishing Filters
- * The Key will be set from the fileName.
- * The file might look like this:
- * title: (arbitrary title for the exclude filter)
- * defaultFilter: true|false
- * roles: [ list of roles that can access the filter]
- * filters:
- * 	excludeDependencyQuery:   ( lucene query that dependent content is checked against to exclude)
- * 	excludeQuery:             (lucene query that added content is checked against to exclude)
- * 	excludeDependencyClasses: [ list of classes that should never be pushed as dependencies]
- * 	excludeClasses:           [ list of classes that should never be pushed]
- * 	forcePush:              true|false . (basically, force push - should the push history be consulted when pushing?  Defaults to false)
- * 	dependencies:             true|false, defaults to true
- * 	relationships:            true|false, defaults to true
+ * This class represents the YML file that stores data about a specific Push Publishing Filter. The filter key will be
+ * set based on the fileName. Such a file might look like this:
+ * <ul>
+ *     <li>title: Arbitrary title for the "exclude" filter</li>
+ *     <li>defaultFilter: true|false</li>
+ *     <li>roles: List of roles that can access the filter</li>
+ *     <li>filters:</li>
+ *     <ul>
+ *       <li>excludeDependencyQuery:   Lucene query that dependent content is checked against to exclude</li>
+ *       <li>excludeQuery:             Lucene query that added content is checked against to exclude</li>
+ *       <li>excludeDependencyClasses: List of classes that should never be pushed as dependencies</li>
+ *       <li>excludeClasses:           List of classes that should never be pushed</li>
+ *       <li>forcePush:                true|false . (basically, force push - should the push history be consulted when
+ *                                     pushing? Defaults to false)</li>
+ *       <li>dependencies:             true|false, defaults to true</li>
+ *       <li>relationships:            true|false, defaults to true</li>
+ *     </ul>
+ * </ul>
+ *
+ * @author Erick Gonzalez
+ * @since Mar 6th, 2020
  */
-
-public class FilterDescriptor {
+public class FilterDescriptor implements Comparable<FilterDescriptor> {
 
     private String key;
     private final String title;
     private final boolean defaultFilter;
     private final String roles;
     private final Map<String,Object> filters;
+
     public static final String DEPENDENCIES_KEY = "dependencies";
     public static final String RELATIONSHIPS_KEY = "relationships";
     public static final String EXCLUDE_CLASSES_KEY = "excludeClasses";
@@ -150,8 +159,6 @@ public class FilterDescriptor {
             }
         }
 
-
-
         if(!errors.isEmpty()){
             throw new DotDataValidationException(errors.size() + " error(s): " + String.join(" , ", errors));
         }
@@ -168,4 +175,11 @@ public class FilterDescriptor {
                 ", filters{" + this.filters + "}" +
                 '}';
     }
+
+    @Override
+    public int compareTo(@NotNull final FilterDescriptor o) {
+        // Order PP Filters based on their title, in ascending order
+        return this.title.compareTo(o.getTitle());
+    }
+
 }

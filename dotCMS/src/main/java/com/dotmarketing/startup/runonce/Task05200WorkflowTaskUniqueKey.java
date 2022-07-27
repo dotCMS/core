@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Task05200WorkflowTaskUniqueKey implements StartupTask {
 
@@ -28,8 +29,14 @@ public class Task05200WorkflowTaskUniqueKey implements StartupTask {
 
     @Override
     public boolean forceRun() {
+        final DotDatabaseMetaData dotDatabaseMetaData = new DotDatabaseMetaData();
         try {
-           return new DotDatabaseMetaData().getConstraints(TABLE_NAME).stream().map(String::toLowerCase).noneMatch(s -> s.equals(CONSTRAINT_NAME));
+            final List<String> constraints = dotDatabaseMetaData.getConstraints(TABLE_NAME);
+            if (DbConnectionFactory.isMsSql()) {
+                //This is necessary since MS-SQL might store certain constraints as indices
+                constraints.addAll(dotDatabaseMetaData.getIndices(TABLE_NAME));
+            }
+            return constraints.stream().map(String::toLowerCase).noneMatch(s -> s.equals(CONSTRAINT_NAME));
         } catch (DotDataException e) {
            throw  new DotRuntimeException(e);
         }

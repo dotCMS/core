@@ -20,6 +20,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.hostvariable.model.HostVariable;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRenderedBuilder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
@@ -35,7 +36,10 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.velocity.context.Context;
@@ -155,6 +159,9 @@ public class HTMLPageAssetRenderedBuilder {
             final Context velocityContext  = pageRenderUtil
                     .addAll(VelocityUtil.getInstance().getContext(request, response));
             velocityContext.put("parseJSON", parseJSON);
+            final List<HostVariable> hostVariables = APILocator.getHostVariableAPI().getVariablesForHost(this.site.getIdentifier(), user, false);
+            velocityContext.put("host_variable", null != hostVariables?
+                    hostVariables.stream().collect(Collectors.toMap(HostVariable::getKey, HostVariable::getValue)) : Collections.emptyMap());
             final Collection<? extends ContainerRaw> containers = new ContainerRenderedBuilder(
                     pageRenderUtil.getContainersRaw(), velocityContext, mode)
                     .build();

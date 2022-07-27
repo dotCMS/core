@@ -7,6 +7,8 @@ import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.Map;
 
 import com.dotmarketing.business.APILocator;
@@ -27,6 +29,7 @@ import com.liferay.portal.model.User;
  *
  * @author  maria
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public abstract class WebAsset extends Inode implements Permissionable, Versionable,Treeable, Ruleable {
 
 
@@ -247,6 +250,7 @@ public abstract class WebAsset extends Inode implements Permissionable, Versiona
 	 * @throws DotDataException 
 	 * @throws DotStateException 
 	 */
+	@JsonIgnore
 	public Map<String, Object> getMap () throws DotStateException, DotDataException, DotSecurityException {
 		
 		Map<String, Object> map = super.getMap();

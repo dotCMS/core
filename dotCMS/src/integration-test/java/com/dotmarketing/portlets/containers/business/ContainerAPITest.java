@@ -1,13 +1,8 @@
 package com.dotmarketing.portlets.containers.business;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotmarketing.beans.ContainerStructure;
@@ -24,13 +19,24 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.beanutils.BeanUtils;
 import org.junit.Test;
 
-public class ContainerAPITest extends ContentletBaseTest {
+import java.util.ArrayList;
+import java.util.List;
 
+import static org.junit.Assert.*;
+
+/**
+ * This class will test operations related with interacting with Containers.
+ *
+ * @author Jorge Urdaneta
+ * @since Aug 31st, 2012
+ */
+public class ContainerAPITest extends ContentletBaseTest {
 
     @Test
     public void save() throws Exception {
@@ -221,4 +227,201 @@ public class ContainerAPITest extends ContentletBaseTest {
                 .withContentType(contentType, "$!{body}")
                 .nextPersisted();
     }
+
+    /**
+     * Method to test: {@link ContainerAPI#save(Container, List, Host, User, boolean)}
+     *
+     * Given Scenario: Trying to save the System Container.
+     *
+     * Expected Result: An IllegalArgumentException must be thrown as the system Container cannot be saved.
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void savingSystemContainer() throws DotDataException, DotSecurityException {
+        final User systemUser = APILocator.systemUser();
+
+        final Container systemContainer = containerAPI.systemContainer();
+        containerAPI.save(systemContainer, new ArrayList<>(), defaultHost, systemUser, false);
+    }
+
+    /**
+     * Method to test: {@link ContainerAPI#copy(Container, Host, User, boolean)}
+     *
+     * Given Scenario: Trying to copy the System Container.
+     *
+     * Expected Result: An IllegalArgumentException must be thrown as the system Container cannot be copied.
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void copyingSystemContainer() throws DotDataException, DotSecurityException {
+        final User systemUser = APILocator.systemUser();
+
+        final Container systemContainer = containerAPI.systemContainer();
+        containerAPI.copy(systemContainer, defaultHost, systemUser, false);
+    }
+
+    /**
+     * Method to test: {@link ContainerAPI#delete(Container, User, boolean)}
+     *
+     * Given Scenario: Trying to delete the System Container.
+     *
+     * Expected Result: An IllegalArgumentException must be thrown as the system Container cannot be deleted.
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void deletingSystemContainer() throws DotDataException, DotSecurityException {
+        // Initialization
+        final User systemUser = APILocator.systemUser();
+
+        // Test data generation
+        final Container systemContainer = containerAPI.systemContainer();
+        containerAPI.delete(systemContainer, systemUser, false);
+
+        // Assertions
+        // See expected exception in this method's signature
+    }
+
+    /**
+     * Method to test: {@link ContainerAPI#getParentHost(Container, User, boolean)}
+     *
+     * Given Scenario: Checking that the System Container belongs to the System Host only.
+     *
+     * Expected Result: Getting the parent Site from System Container must always point to System Host.
+     */
+    @Test
+    public void gettingParentHostFromSystemContainer() throws DotDataException, DotSecurityException {
+        // Initialization
+        final User systemUser = APILocator.systemUser();
+        final Container systemContainer = containerAPI.systemContainer();
+
+        // Test data generation
+        final Host parentSite = containerAPI.getParentHost(systemContainer, systemUser, false);
+
+        // Assertions
+        assertEquals("System Container must always belong to System Host!", Host.SYSTEM_HOST,
+                parentSite.getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link ContainerAPI#findContainers(User, ContainerAPI.SearchParams)}
+     *
+     * Given Scenario: Searching for all Containers, making sure that the System Container is NOT returned.
+     *
+     * Expected Result: The System Container must NOT be returned.
+     */
+    @Test
+    public void findContainersWithoutSystemContainer() throws DotDataException, DotSecurityException {
+        // Initialization
+        final boolean showSystemContainer = Boolean.FALSE;
+        final ContainerAPI.SearchParams searchParams = ContainerAPI.SearchParams.newBuilder()
+                .includeArchived(false)
+                .includeSystemContainer(showSystemContainer).build();
+        final List<Container> allContainers = containerAPI.findContainers(user, searchParams);
+
+        // Test data generation
+        Container systemContainer =
+                allContainers.stream().filter(container -> Container.SYSTEM_CONTAINER.equals(container.getIdentifier()))
+                        .findFirst().orElse(null);
+
+        // Assertions
+        assertTrue("System Container must NOT be returned in this test", null == systemContainer);
+    }
+
+    /**
+     * Method to test: {@link ContainerAPI#findContainers(User, ContainerAPI.SearchParams)}
+     *
+     * Given Scenario: Searching for all Containers, making sure that the System Container IS returned.
+     *
+     * Expected Result: The System Container MUST be returned.
+     */
+    @Test
+    public void findContainersWithSystemContainer() throws DotDataException, DotSecurityException {
+        // Initialization
+        final boolean showSystemContainer = Boolean.TRUE;
+        final ContainerAPI.SearchParams searchParams = ContainerAPI.SearchParams.newBuilder()
+                .includeArchived(false)
+                .includeSystemContainer(showSystemContainer).build();
+        final List<Container> allContainers = containerAPI.findContainers(user, searchParams);
+
+        // Test data generation
+        Container systemContainer =
+                allContainers.stream().filter(container -> Container.SYSTEM_CONTAINER.equals(container.getIdentifier()))
+                        .findFirst().orElse(null);
+
+        // Assertions
+        assertTrue("System Container MUST be returned in this test", null != systemContainer);
+    }
+
+    /**
+     * Method to test: {@link ContainerAPI#findContainers(User, ContainerAPI.SearchParams)}
+     *
+     * Given Scenario: Creating a Container, and then deleting it.
+     *
+     * Expected Result: The total Container count must be different.
+     */
+    @Test
+    public void compareCountDeletedContainer() throws DotDataException, DotSecurityException {
+        // Initialization
+        final ContentType contentGenericContentType = APILocator.getContentTypeAPI(user).find("webPageContent");
+        final Container container = new ContainerDataGen()
+                .title("My Test Container-" + System.currentTimeMillis())
+                .withContentType(contentGenericContentType, "").nextPersisted();
+        final boolean showSystemContainer = Boolean.FALSE;
+        try {
+            final ContainerAPI.SearchParams searchParams = ContainerAPI.SearchParams.newBuilder()
+                    .includeArchived(false)
+                    .includeSystemContainer(showSystemContainer).build();
+            List<Container> allContainers = containerAPI.findContainers(user, searchParams);
+            final int originalCount = allContainers.size();
+
+            // Test data generation
+            containerAPI.delete(container, user, false);
+            allContainers = containerAPI.findContainers(user, searchParams);
+
+            // Assertions
+            assertTrue("Total Container count MUST be lower than the original count",
+                    originalCount > allContainers.size());
+        } finally {
+            if (null != container) {
+                containerAPI.delete(container, user, false);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link ContainerAPI#findContainers(User, ContainerAPI.SearchParams)}
+     *
+     * Given Scenario: Searching for all Containers that reference a specific test Content Type.
+     *
+     * Expected Result: Only one Container must be returned.
+     */
+    @Test
+    public void findContainerUsedBySpecificContentType() throws DotDataException, DotSecurityException {
+        // Initialization
+        final ContentType testContentType = new ContentTypeDataGen()
+                .name("My Test CT-" + System.currentTimeMillis())
+                .nextPersisted();
+
+        final Container container = new ContainerDataGen()
+                .title("My Test Container-" + System.currentTimeMillis())
+                .withContentType(testContentType, "").nextPersisted();
+        final boolean showSystemContainer = Boolean.FALSE;
+        try {
+            // Test data generation
+            final ContainerAPI.SearchParams searchParams = ContainerAPI.SearchParams.newBuilder()
+                    .includeArchived(false)
+                    .includeSystemContainer(showSystemContainer)
+                    .contentTypeIdOrVar(testContentType.id()).build();
+            final List<Container> allContainers = containerAPI.findContainers(user, searchParams);
+            final int originalCount = allContainers.size();
+
+            // Assertions
+            assertEquals("There must only be ONE Container using the test Content Type", 1, originalCount);
+        } finally {
+            if (null != testContentType) {
+                contentTypeAPI.delete(testContentType);
+            }
+            if (null != container) {
+                containerAPI.delete(container, user, false);
+            }
+        }
+    }
+
 }

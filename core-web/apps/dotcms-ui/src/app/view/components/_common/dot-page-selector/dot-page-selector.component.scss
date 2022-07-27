@@ -1,0 +1,49 @@
+@use "variables" as *;
+@import "mixins";
+
+:host {
+    position: relative;
+    display: block;
+
+    ::ng-deep {
+        .p-autocomplete-panel {
+            width: auto !important;
+        }
+
+        .p-autocomplete-list-item {
+            white-space: nowrap;
+        }
+
+        .p-autocomplete-input {
+            // important because p-autocomplete can add inline styles.
+            padding-right: $spacing-9 !important;
+        }
+    }
+
+    dot-field-helper {
+        @include dot-field-helper-on-input;
+    }
+
+    .p-info{
+        margin-top: $spacing-1;
+    }
+}
+
+.dot-page-selector__item {
+    display: flex;
+    max-width: 380px;
+
+    span {
+        @include truncate-text;
+        text-align: left;
+    }
+
+    &-host,
+    &-url {
+        flex-basis: 50%;
+    }
+
+    &-host {
+        padding-left: $spacing-1;
+    }
+}

@@ -5,7 +5,7 @@ import com.dotcms.cache.DotJSONCache;
 import com.dotcms.cache.DotJSONCacheFactory;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.exception.DotToolException;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
+import com.dotmarketing.util.json.JSONException;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.PATCH;
 import com.dotcms.rest.WebResource;

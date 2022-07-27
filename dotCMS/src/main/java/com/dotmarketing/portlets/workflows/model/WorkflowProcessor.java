@@ -14,6 +14,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -114,7 +116,12 @@ public class WorkflowProcessor {
 	}
 
 	public List<WorkflowHistory> getHistory() {
-		return history;
+	    if(this.history!=null) {
+	        return this.history;
+	    }
+	    this.history = Try.of(()-> getWorkflowAPI().findWorkflowHistory(task)).getOrElse(ArrayList::new);
+	    return this.history;
+
 	}
 
 	public void setHistory(List<WorkflowHistory> history) {
@@ -182,9 +189,6 @@ public class WorkflowProcessor {
                 scheme = getWorkflowAPI().findScheme(action.getSchemeId());
             }
 
-			if(task != null && UtilMethods.isSet(task.getId())){
-				history = getWorkflowAPI().findWorkflowHistory(task);
-			}
 
 			this.actionsContext = actionsContext;
 

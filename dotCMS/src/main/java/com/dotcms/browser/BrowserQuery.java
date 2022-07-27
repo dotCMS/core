@@ -1,21 +1,16 @@
 package com.dotcms.browser;
 
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.Theme;
-import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import javax.annotation.Nonnull;
 import com.dotcms.api.tree.Parentable;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.Theme;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -29,38 +24,49 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 
+import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+/**
+ * This class abstracts all the different querying and filtering criteria used to return results to the
+ * {@code Site Browser} portlet in dotCMS. This operation can get increasingly complex as more filtering parameters are
+ * used to return information, so a Query Builder approach is a lot simpler and more scalable.
+ *
+ * @author Jonathan Sanchez
+ * @since Apr 28th, 2020
+ */
 @JsonDeserialize(builder = BrowserQuery.Builder.class)
 public class BrowserQuery {
-
 
     private static final int MAX_FETCH_PER_REQUEST = Config.getIntProperty("BROWSER_MAX_FETCH_PER_REQUEST", 300);
     final User user;
     final String  filter, sortBy;
     final int offset, maxResults;
-    final boolean showWorking, showArchived, showFolders, sortByDesc, showLinks,showMenuItemsOnly,showContent;
+    final boolean showWorking, showArchived, showFolders, sortByDesc, showLinks,showMenuItemsOnly,showContent, showShorties;
     final long languageId;
     final String luceneQuery;
     final Set<BaseContentType> baseTypes;
-    final Host host;
+    final Host site;
     final Folder folder;
     final Parentable directParent;
     final Role[] roles;
     final List<String> extensions, mimeTypes;
 
-
     @Override
     public String toString() {
-        return "BrowserQuery {user:" + user + ", host:" + host+ ", folder:" + folder + ", filter:" + filter + ", sortBy:" + sortBy
+        return "BrowserQuery {user:" + user + ", site:" + site + ", folder:" + folder + ", filter:" + filter + ", sortBy:" + sortBy
                 + ", offset:" + offset + ", maxResults:" + maxResults + ", showWorking:" + showWorking + ", showArchived:"
                 + showArchived + ", showFolders:" + showFolders + ", sortByDesc:" + sortByDesc + ", showLinks:"
-                + showLinks + ", showContent:" + showContent + ", languageId:" + languageId + ", luceneQuery:" + luceneQuery
+                + showLinks + ", showContent:" + showContent + ", showShorties:" + showShorties + ", languageId:" + languageId + ", luceneQuery:" + luceneQuery
                 + ", baseTypes:" + baseTypes + "}";
     }
 
     private BrowserQuery(final Builder builder) {
-
         this.user = builder.user == null ? APILocator.systemUser() : builder.user;
-        final Tuple2<Host, Folder> hostAndFolder = getParents(builder.hostFolderId,this.user, builder.hostIdSystemFolder);
+        final Tuple2<Host, Folder> siteAndFolder = getParents(builder.hostFolderId,this.user, builder.hostIdSystemFolder);
         this.filter = builder.filter;
         this.luceneQuery = builder.luceneQuery.toString();
         this.sortBy = UtilMethods.isEmpty(builder.sortBy) ? "moddate" : builder.sortBy;
@@ -70,6 +76,7 @@ public class BrowserQuery {
         this.showArchived = builder.showArchived;
         this.showFolders = builder.showFolders;
         this.showContent = builder.showContent;
+        this.showShorties = builder.showShorties;
         this.mimeTypes     = builder.mimeTypes;
         this.extensions    = builder.extensions;
         this.sortByDesc = UtilMethods.isEmpty(builder.sortBy) ? true : builder.sortByDesc;
@@ -80,17 +87,14 @@ public class BrowserQuery {
                 : ImmutableSet.copyOf(builder.baseTypes);
         this.languageId = builder.languageId;
         this.showMenuItemsOnly = builder.showMenuItemsOnly;
-        this.host=hostAndFolder._1;
-        this.folder=hostAndFolder._2;
-        this.directParent = this.folder.isSystemFolder() ? host : folder;
+        this.site = siteAndFolder._1;
+        this.folder= siteAndFolder._2;
+        this.directParent = this.folder.isSystemFolder() ? site : folder;
         this.roles= Try.of(()->APILocator.getRoleAPI().loadRolesForUser(user.getUserId()).toArray(new Role[0])).getOrElse(new Role[0]);
-
     }
-
 
     @CloseDBIfOpened
     private Tuple2<Host, Folder> getParents(final String parentId, final User user, final String hostIdSystemFolder) {
-
         boolean respectFrontEndPermissions = PageMode.get().respectAnonPerms;
         //check if the parentId exists
         final Identifier identifier = Try.of(() -> APILocator.getIdentifierAPI().findFromInode(parentId)).getOrNull();
@@ -104,15 +108,12 @@ public class BrowserQuery {
         // gets folder parent
         final Folder folder = Try.of(() -> APILocator.getFolderAPI().find(parentId, user, respectFrontEndPermissions)).toJavaOptional()
                 .orElse(APILocator.getFolderAPI().findSystemFolder());
-
-
-        final Host host = folder.isSystemFolder()
+        final Host site = folder.isSystemFolder()
                 ? null != hostIdSystemFolder ? Try.of(() -> APILocator.getHostAPI().find(hostIdSystemFolder, user, respectFrontEndPermissions)).getOrNull()
                 :  Try.of(() -> WebAPILocator.getHostWebAPI().getCurrentHost()).getOrNull()
                 : Try.of(() -> APILocator.getHostAPI().find(folder.getHostId(), user, respectFrontEndPermissions)).getOrNull();
 
-        return Tuple.of(host, folder);
-
+        return Tuple.of(site, folder);
     }
 
     /**
@@ -121,7 +122,6 @@ public class BrowserQuery {
      *
      * @return created builder
      */
-
     public static Builder builder() {
         return new Builder();
     }
@@ -132,7 +132,6 @@ public class BrowserQuery {
      * @param browserQuery to initialize the builder with
      * @return created builder
      */
-
     public static Builder from(BrowserQuery browserQuery) {
         return new Builder(browserQuery);
     }
@@ -140,7 +139,6 @@ public class BrowserQuery {
     /**
      * Builder to build {@link BrowserQuery}.
      */
-
     public static final class Builder {
 
         private User user;
@@ -151,6 +149,7 @@ public class BrowserQuery {
         private boolean showWorking = true;
         private boolean showArchived = false;
         private boolean showContent = true;
+        private boolean showShorties = false;
         private boolean showFolders = false;
         private boolean sortByDesc = false;
         private boolean showLinks = false;
@@ -169,7 +168,7 @@ public class BrowserQuery {
         private Builder(BrowserQuery browserQuery) {
             this.user = browserQuery.user;
             this.hostFolderId = browserQuery.folder.isSystemFolder()
-                    ? browserQuery.host.getIdentifier()
+                    ? browserQuery.site.getIdentifier()
                     : browserQuery.folder.getInode();
             this.filter = browserQuery.filter;
             if (browserQuery.luceneQuery != null) {
@@ -188,6 +187,7 @@ public class BrowserQuery {
             this.mimeTypes = browserQuery.mimeTypes;
             this.extensions = browserQuery.extensions;
             this.showContent = browserQuery.showContent;
+            this.showShorties = browserQuery.showShorties;
         }
 
         public Builder withUser(@Nonnull User user) {
@@ -201,7 +201,6 @@ public class BrowserQuery {
         }
 
         public Builder withFilter(@Nonnull String filter) {
-
             if (UtilMethods.isSet(filter)) {
                 luceneQuery.append(StringPool.SPACE).append(filter);
             }
@@ -250,6 +249,18 @@ public class BrowserQuery {
 
         public Builder showContent(@Nonnull boolean showContent) {
             this.showContent = showContent;
+            return this;
+        }
+
+        /**
+         * Determines if the Shorty IDs of a given dotCMS object must be included in the result set.
+         *
+         * @param showShorties If Shorty IDs are required, set to {@code true}.
+         *
+         * @return The current Builder instance.
+         */
+        public Builder showShorties(@Nonnull boolean showShorties) {
+            this.showShorties = showShorties;
             return this;
         }
 
@@ -304,9 +315,10 @@ public class BrowserQuery {
             return this;
         }
 
-
         public BrowserQuery build() {
             return new BrowserQuery(this);
         }
+
     }
+
 }

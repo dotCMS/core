@@ -18,9 +18,11 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
@@ -29,8 +31,11 @@ import com.liferay.portal.model.User;
 import static org.junit.Assert.assertEquals;
 
 import com.liferay.portal.util.WebKeys;
+import io.vavr.control.Try;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -423,6 +428,93 @@ public class ShortyIdApiTest {
         assert (dbQueries3 == dbQueries2 + fourOhFours.size());
     }
 
+    final List<Connection> connections = new ArrayList<>();
+    
+    
+    private void exhaustDBConnections() {
+        DbConnectionFactory.closeSilently();
+        int i=0;
+        // exhaust connections
+        while (true && ++i < 1000) {
+            try {
+                Connection connection = DbConnectionFactory.getDataSource().getConnection();
+                connection.prepareCall("select 1").execute();
+                connections.add(connection);
+            }
+            catch(SQLException sql) {
+                break;
+            }
+        }
+    }
+    
+    
+    private void releaseDBConnections() {
+        connections.forEach(c->Try.run (()->c.close()));
+        connections.clear();
+        DbConnectionFactory.closeSilently();
+    }
+    
+    
+    
+    @Test
+    public void test404CacheWhenDBDown() throws DotDataException, DotSecurityException {
+        ShortyIdAPI api = APILocator.getShortyAPI();
+        
+        final ContentType contentGenericType = APILocator.getContentTypeAPI(APILocator.systemUser()).find("webPageContent");
+
+        
+        
+        
+        final Contentlet con = new ContentletDataGen(contentGenericType.id())
+                        .setProperty("title", "TestContent test404CacheWhenDBDown").setProperty("body", "TestBody")
+                        .nextPersisted();
+
+        
+
+        final String shortyInode = api.shortify(con.getInode());;
+        final String shortyIdentifier = api.shortify(con.getIdentifier());;
+        Optional<ShortyId> shorty = null;
+
+        try {
+
+            exhaustDBConnections();
+
+            // no shorty when the db is exhausted
+            shorty = api.getShorty(shortyInode);
+            assert (!shorty.isPresent());
+
+            // no shorty when the db is exhausted
+            shorty = api.getShorty(shortyIdentifier);
+            assert (!shorty.isPresent());
+            
+
+        } finally {
+            releaseDBConnections();
+        }
+        
+        
+
+
+        // shorty Identifier now works when the db works
+        shorty = api.getShorty(shortyIdentifier);
+        assert (shorty.isPresent());
+        assert (shortyIdentifier.equals(shorty.get().shortId));
+        assert (con.getIdentifier().equals(shorty.get().longId));
+        
+        
+        // shorty Inode now works when the db works
+        shorty = api.getShorty(shortyInode);
+        assert (shorty.isPresent());
+        assert (shortyInode.equals(shorty.get().shortId));
+        assert (con.getInode().equals(shorty.get().longId));
+        
+        
+        
+    }
+    
+    
+    
+    
     @Test
     public void testIdentifier404CacheInvalidation() throws Exception{
         

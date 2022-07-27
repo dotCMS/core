@@ -39,6 +39,12 @@ public class FolderHelper {
         this.folderAPI = APILocator.getFolderAPI();
     }
 
+    public boolean deleteFolder(final Folder folder, final User user) throws DotDataException, DotSecurityException {
+
+        this.folderAPI.delete(folder, user, false);
+        return true;
+    }
+
     private static class SingletonHolder {
         private static final FolderHelper INSTANCE = new FolderHelper();
     }
