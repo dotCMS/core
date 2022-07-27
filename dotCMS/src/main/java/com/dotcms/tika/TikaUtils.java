@@ -39,7 +39,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.zip.GZIPOutputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
-import org.apache.felix.framework.OSGISystem;
+import org.apache.felix.framework.OSGIUtil;
 
 public class TikaUtils {
 
@@ -48,47 +48,60 @@ public class TikaUtils {
     private final ObjectMapper objectMapper = DotObjectMapperProvider.createDefaultMapper();
 
     private TikaProxyService tikaService;
-    private boolean osgiInitialized;
+    private Boolean osgiInitialized;
 
     public TikaUtils() throws DotDataException {
 
-        OSGISystem.getInstance().initializeFramework();
-        osgiInitialized = true;
-
-        //Search for the TikaServiceBuilder service instance expose through OSGI
-        TikaServiceBuilder tikaServiceBuilder = null;
+        osgiInitialized = OSGIUtil.getInstance().isInitialized();
         try {
-            tikaServiceBuilder = OSGISystem.getInstance()
-                    .getService(TikaServiceBuilder.class,
-                            OSGIConstants.BUNDLE_NAME_DOTCMS_TIKA);
-
-            if (null == tikaServiceBuilder) {
-
-                Logger.error(this.getClass(),
-                        String.format("OSGI Service [%s] not found for bundle [%s]",
-                                TikaServiceBuilder.class,
-                                OSGIConstants.BUNDLE_NAME_DOTCMS_TIKA));
+            if (!osgiInitialized) {
+                Logger.warn(this.getClass(),
+                        "OSGI Framework not initialized, trying to initialize...");
+                OSGIUtil.getInstance().initializeFramework();
+                osgiInitialized = true;
             }
         } catch (Exception e) {
-            Logger.error(this.getClass(),
-                    String.format("Failure retrieving OSGI Service [%s] in bundle [%s]",
-                            TikaServiceBuilder.class,
-                            OSGIConstants.BUNDLE_NAME_DOTCMS_TIKA),
-                    e);
+            Logger.error(this.getClass(), "Unable to initialized OSGI Framework", e);
         }
 
-        if (null == tikaServiceBuilder) {
-            osgiInitialized = false;
-            return;
+        if (osgiInitialized) {
+
+            //Search for the TikaServiceBuilder service instance expose through OSGI
+            TikaServiceBuilder tikaServiceBuilder = null;
+            try {
+                tikaServiceBuilder = OSGIUtil.getInstance()
+                        .getService(TikaServiceBuilder.class,
+                                OSGIConstants.BUNDLE_NAME_DOTCMS_TIKA);
+
+                if (null == tikaServiceBuilder) {
+
+                    Logger.error(this.getClass(),
+                            String.format("OSGI Service [%s] not found for bundle [%s]",
+                                    TikaServiceBuilder.class,
+                                    OSGIConstants.BUNDLE_NAME_DOTCMS_TIKA));
+                }
+            } catch (Exception e) {
+                Logger.error(this.getClass(),
+                        String.format("Failure retrieving OSGI Service [%s] in bundle [%s]",
+                                TikaServiceBuilder.class,
+                                OSGIConstants.BUNDLE_NAME_DOTCMS_TIKA),
+                        e);
+            }
+
+            if (null == tikaServiceBuilder) {
+                osgiInitialized = false;
+                return;
+            }
+
+            /*
+            Creating a new instance of the TikaProxyService in order to use the Tika services exposed in OSGI,
+            when the createTikaService method is called a new instance of Tika is also created
+            by the TikaProxyService implementation.
+             */
+            this.tikaService = tikaServiceBuilder.createTikaService();
+        } else {
+            Logger.error(this.getClass(), "OSGI Framework not initialized");
         }
-
-        /*
-        Creating a new instance of the TikaProxyService in order to use the Tika services exposed in OSGI,
-        when the createTikaService method is called a new instance of Tika is also created
-        by the TikaProxyService implementation.
-         */
-        this.tikaService = tikaServiceBuilder.createTikaService();
-
     }
 
     /**
@@ -158,7 +171,7 @@ public class TikaUtils {
      */
     @Deprecated
     public Map<String, Object> generateMetaDataForce(final Contentlet contentlet, final File binaryField,
-                                                     final String fieldVariableName, final Set<String> metadataFields) {
+            final String fieldVariableName, final Set<String> metadataFields) {
 
         return this.generateMetaData(contentlet, binaryField, fieldVariableName, metadataFields, true);
     }
@@ -178,22 +191,22 @@ public class TikaUtils {
      */
     @Deprecated
     public Map<String, Object> generateMetaData(final Contentlet contentlet, final File binaryField,
-                                                final String fieldVariableName, final Set<String> metadataFields) {
+            final String fieldVariableName, final Set<String> metadataFields) {
 
         return this.generateMetaData(contentlet, binaryField, fieldVariableName, metadataFields, false);
     }
 
     @CloseDBIfOpened
     private Map<String, Object> generateMetaData(final Contentlet contentlet, final File binaryField, final String fieldVariableName,
-                                                 final Set<String> metadataFields, final boolean force) {
+            final Set<String> metadataFields, final boolean force) {
 
         //See if we have content metadata file
         Map<String, Object> metaDataMap = Collections.emptyMap();
         final String fileName           = fieldVariableName + "-metadata.json";
-        
+
         // creates something like /1/2/12421124-15652532-235325-12312/fileAsset-metadata.json
         final File contentMetaFile =
-                        APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode(), fileName);
+                APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode(), fileName);
 
         /*
         If we want to force the parse of the file and the generation of the metadata file
@@ -349,8 +362,8 @@ public class TikaUtils {
      * This one does everything on memory, means forceMemory is always true and the file system cache has to be performed on upper layers
      */
     private Map<String, Object> getForcedMetaDataMap(final File binFile,
-                                               final Set<String> metadataFields,
-                                               final int maxLength) {
+            final Set<String> metadataFields,
+            final int maxLength) {
 
         final Map<String, Object> metaMap = this.getForcedMetaDataMap(binFile, maxLength);
 
@@ -366,7 +379,7 @@ public class TikaUtils {
      * This one does everything on memory, means forceMemory is always true and the file system cache has to be performed on upper layers
      */
     public Map<String, Object> getForcedMetaDataMap(final File binFile,
-                                                    final int maxLength) {
+            final int maxLength) {
 
         if (!osgiInitialized) {
             Logger.error(this.getClass(),
