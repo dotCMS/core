@@ -3,7 +3,6 @@ package com.dotcms.api;
 
 import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.api.client.ServiceManager;
-import com.dotcms.api.exception.ClientConfigNotFoundException;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.authentication.APITokenRequest;
 import com.dotcms.model.authentication.TokenEntity;
@@ -18,7 +17,6 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.jboss.logging.Logger;
 
 
 @DefaultBean
@@ -61,7 +59,7 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
     }
 
     @Override
-    public void login(final String user, final String password) {
+    public void login(final String user, final char[] password) {
         final AuthenticationAPI api = clientFactory.getClient(AuthenticationAPI.class);
         final ResponseEntityView<TokenEntity> responseEntityView = api.getToken(
                 APITokenRequest.builder().user(user).password(password)

@@ -10,7 +10,7 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = APITokenRequest.Builder.class)
 public interface AbstractAPITokenRequest {
     String user();
-    String password();
+    char[] password();
 
     @Nullable
     Integer expirationDays();

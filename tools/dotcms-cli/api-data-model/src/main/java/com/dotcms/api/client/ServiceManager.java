@@ -7,7 +7,7 @@ import java.util.Optional;
 
 public interface ServiceManager {
 
-    void persist(ServiceBean service) throws IOException;
+    ServiceManager persist(ServiceBean service) throws IOException;
 
     List<ServiceBean> services();
 
@@ -16,6 +16,6 @@ public interface ServiceManager {
                 .findFirst();
     }
 
-    void clear();
+    ServiceManager removeAll();
 
 }

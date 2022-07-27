@@ -12,13 +12,12 @@ import java.net.URI;
 import java.util.Optional;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
-import javax.ws.rs.WebApplicationException;
 import picocli.CommandLine;
 
 @ActivateRequestContext
 @CommandLine.Command(
         name = StatusCommand.NAME,
-        header = "Provide User login and dotCMS profile Status.",
+        header = "@|bold,green Provide User login and dotCMS profile Status.|@ @|bold No additional params are expected.|@ ",
         description = {
 
         })
@@ -80,7 +79,7 @@ public class StatusCommand implements Runnable {
                         final User user = userAPI.getCurrent();
                         output.info(String.format("You're currently logged in as %s.",
                                 user.email()));
-                    } catch (WebApplicationException wae) {
+                    } catch (Exception wae) {
                         output.error(
                                 "Unable to get current user from API. Token could have expired. Please login again!",
                                 wae);

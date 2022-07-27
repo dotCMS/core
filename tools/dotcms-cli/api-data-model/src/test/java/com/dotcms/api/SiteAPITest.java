@@ -1,11 +1,14 @@
 package com.dotcms.api;
 
+import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.api.client.ServiceManager;
 import com.dotcms.model.ResponseEntityView;
+import com.dotcms.model.config.ServiceBean;
 import com.dotcms.model.site.Site;
 import io.quarkus.test.junit.QuarkusTest;
+import java.io.IOException;
 import java.util.List;
 import javax.inject.Inject;
-import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -16,16 +19,19 @@ public class SiteAPITest {
     AuthenticationContext authenticationContext;
 
     @Inject
-    @RestClient
-    SiteAPI siteAPI;
+    RestClientFactory clientFactory;
+
+    @Inject
+    ServiceManager serviceManager;
 
     @Test
-    public void Test_Get_Sites() {
+    public void Test_Get_Sites() throws IOException {
+
+        serviceManager.removeAll().persist(ServiceBean.builder().name("default").active(true).build());
         final String user = "admin@dotcms.com";
-        final String passwd= "admin";
+        final char[] passwd= "admin".toCharArray();
         authenticationContext.login(user, passwd);
-        final ResponseEntityView<List<Site>> sitesResponse = siteAPI.getSites(null, false, true, true, 1,
-                10);
+        final ResponseEntityView<List<Site>> sitesResponse = clientFactory.getClient(SiteAPI.class).getSites(null, false, true, true, 1, 10);
         Assertions.assertNotNull(sitesResponse);
     }
 

@@ -25,12 +25,12 @@ public class YamlFactoryServiceManagerImpl implements ServiceManager{
     private static final ObjectMapper ymlMapper = new ObjectMapper(new YAMLFactory())
             .findAndRegisterModules();
 
-    //for testing purposes Override
+    //for testing purposes Overridable
     @ConfigProperty(name = "com.dotcms.service.config", defaultValue = "dot-service.yml")
     String dotServiceYml;
 
     @Override
-    public void persist(ServiceBean service) throws IOException {
+    public ServiceManager persist(ServiceBean service) throws IOException {
         final List<ServiceBean> beans = services();
         final List<ServiceBean> merged = mergeServiceBeans(beans, service);
         try (OutputStream outputStream = Files.newOutputStream(filePath())) {
@@ -39,6 +39,7 @@ public class YamlFactoryServiceManagerImpl implements ServiceManager{
             throw new RuntimeException(e);
         }
         cached = null;
+        return this;
     }
 
     private List<ServiceBean> cached;
@@ -64,13 +65,14 @@ public class YamlFactoryServiceManagerImpl implements ServiceManager{
     }
 
     @Override
-    public void clear() {
+    public ServiceManager removeAll() {
         final Path path = filePath();
         final File yaml = path.toFile();
         if(yaml.exists()){
            yaml.delete();
         }
         cached = null;
+        return this;
     }
 
     Path filePath() {

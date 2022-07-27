@@ -22,10 +22,10 @@ class RestClientFactoryTest {
     @Test
     public void Config_Test() {
         final AuthenticationAPI authenticationApi = apiClientFactory.getClient(AuthenticationAPI.class);
-        APITokenRequest request = APITokenRequest.builder().user("admin@dotcms.com").password("admin").expirationDays(1).build();
+        APITokenRequest request = APITokenRequest.builder().user("admin@dotcms.com").password("admin".toCharArray()).expirationDays(1).build();
         ResponseEntityView<TokenEntity> tokenResponse = authenticationApi.getToken(request);
         JsonObject token = JWT.parse(tokenResponse.entity().token());
-        System.out.println("token="+token.encodePrettily());
+        //System.out.println("token="+token.encodePrettily());
         JsonPath path = JsonPath.from(token.encode());
         Assertions.assertEquals("HS256", path.getString("header.alg"));
     }

@@ -19,7 +19,9 @@ public class ServiceManagerTest {
     @Test
     public void Test_Persist_Then_Recover() throws IOException {
 
-        final ServiceBean serviceBeanDefault = ServiceBean.builder().name("dotcms.client.servers.default")
+        serviceManager.removeAll();
+
+        final ServiceBean serviceBeanDefault = ServiceBean.builder().name("default")
                 .active(false)
                 .credentials(
                         CredentialsBean.builder().user("admin")
@@ -27,7 +29,7 @@ public class ServiceManagerTest {
                 .build();
         serviceManager.persist(serviceBeanDefault);
 
-        final ServiceBean serviceBeanDemo1 = ServiceBean.builder().name("dotcms.client.servers.demo1")
+        final ServiceBean serviceBeanDemo1 = ServiceBean.builder().name("demo1")
                 .active(false)
                 .credentials(
                         CredentialsBean.builder().user("admin")
@@ -35,7 +37,7 @@ public class ServiceManagerTest {
                 .build();
         serviceManager.persist(serviceBeanDemo1);
 
-        final ServiceBean serviceBeanDemo2 = ServiceBean.builder().name("dotcms.client.servers.demo2")
+        final ServiceBean serviceBeanDemo2 = ServiceBean.builder().name("demo2")
                 .active(false)
                 .credentials(
                         CredentialsBean.builder().user("admin")
@@ -57,7 +59,7 @@ public class ServiceManagerTest {
 
         //Now test adding a dupe
 
-        final ServiceBean serviceBeanDemoDupe = ServiceBean.builder().name("dotcms.client.servers.demo2")
+        final ServiceBean serviceBeanDemoDupe = ServiceBean.builder().name("demo2")
                 .active(false)
                 .credentials(
                         CredentialsBean.builder().user("admin")
@@ -70,7 +72,7 @@ public class ServiceManagerTest {
         //Test there should be only one active bean
         Assertions.assertEquals(1, serviceBeansAfterDupeWasAdded.stream().filter(ServiceBean::active).count());
 
-        final ServiceBean activeBean = ServiceBean.builder().name("dotcms.client.servers.demo2")
+        final ServiceBean activeBean = ServiceBean.builder().name("demo2")
                 .active(true)
                 .credentials(
                         CredentialsBean.builder().user("admin")

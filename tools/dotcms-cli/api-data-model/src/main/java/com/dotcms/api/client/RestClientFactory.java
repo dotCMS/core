@@ -29,8 +29,7 @@ public class RestClientFactory {
     /**
      * Thread local variable containing each thread's ID
      */
-    private final ThreadLocal<AtomicReference<String>> instanceProfile =
-            ThreadLocal.withInitial(() -> new AtomicReference<>(NONE));
+    private final AtomicReference<String> instanceProfile = new AtomicReference<>(NONE);
 
     @Inject
     DotCmsClientConfig clientConfig;
@@ -85,21 +84,13 @@ public class RestClientFactory {
     }
 
     public String currentSelectedProfile() {
-
-        final AtomicReference<String> atomicReference = instanceProfile.get();
-
-        atomicReference.compareAndSet(NONE, serviceSupplier.get());
-
-        return atomicReference.get();
-
+        instanceProfile.compareAndSet(NONE, serviceSupplier.get());
+        return instanceProfile.get();
     }
 
     final Supplier<String> serviceSupplier = () -> {
         final Optional<ServiceBean> selected = serviceManager.selected();
-        //logger.info("Selected profile :: "+selected);
-        return selected.map(
-                        serviceBean -> serviceBean.name().replace("dotcms.client.servers.", ""))
-                .orElse(NONE);
+        return selected.map(ServiceBean::name).orElse(NONE);
     };
 
 

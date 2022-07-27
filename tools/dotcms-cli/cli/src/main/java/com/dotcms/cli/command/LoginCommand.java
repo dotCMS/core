@@ -5,13 +5,12 @@ import com.dotcms.api.AuthenticationContext;
 import com.dotcms.cli.common.OutputOptionMixin;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
-import javax.ws.rs.WebApplicationException;
 import picocli.CommandLine;
 
 @ActivateRequestContext
 @CommandLine.Command(
         name = LoginCommand.NAME,
-        description = "Login Command Expects a user in --user and a password in --password. Both are mandatory params."
+        description = "@|bold,green Once a profile is selected. Use this command to open a session|@ Expects a user in @|bold,cyan --user -u|@ and a password @|bold,cyan --password -p|@ @|bold Both are mandatory params.|@"
 )
 public class LoginCommand implements Runnable {
 
@@ -23,8 +22,8 @@ public class LoginCommand implements Runnable {
     @CommandLine.Option(names = {"-u", "--user"}, description = "User name", defaultValue = "admin@dotcms.com", required = true, interactive = true )
     String user;
 
-    @CommandLine.Option(names = {"-p", "--password"}, arity = "0..1", description = "Passphrase", interactive = true, required = true )
-    String password;
+    @CommandLine.Option(names = {"-p", "--password"}, arity = "0..1", description = "Passphrase", required = true, interactive = true )
+    char[] password;
 
     @Inject
     AuthenticationContext authenticationContext;

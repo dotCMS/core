@@ -1,5 +1,6 @@
 package com.dotcms.cli.command;
 
+import com.dotcms.api.client.ServiceManager;
 import io.quarkus.picocli.runtime.PicocliCommandLineFactory;
 import io.quarkus.test.junit.QuarkusTest;
 import java.io.PrintWriter;
@@ -17,9 +18,14 @@ public class StatusCommandTest {
     @Inject
     PicocliCommandLineFactory factory;
 
+    @Inject
+    ServiceManager serviceManager;
+
     @Test
     @Order(1)
     public void Test_Command_Status_No_Profiles()  {
+
+        serviceManager.removeAll();
 
         final CommandLine commandLine = factory.create();
         final StringWriter writer = new StringWriter();

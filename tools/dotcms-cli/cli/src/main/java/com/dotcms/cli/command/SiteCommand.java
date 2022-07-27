@@ -11,7 +11,7 @@ import org.jboss.logging.Logger;
 import picocli.CommandLine;
 
 @ActivateRequestContext
-@CommandLine.Command(name = "site", description = "Retrieves Sites info.")
+@CommandLine.Command(name = "site", description = "@|bold,green Retrieves Sites info.|@ Option params @|bold,cyan -n|@ to filter by name. @|bold,cyan -a|@ Shows archived sites. @|bold,cyan -l|@ Shows live Sites. @|bold,cyan -p|@ (Page) @|bold,cyan -ps|@ (PageSize) Can be used combined for pagination.")
 public class SiteCommand implements Runnable {
 
     private static final Logger logger = Logger.getLogger(SiteCommand.class);

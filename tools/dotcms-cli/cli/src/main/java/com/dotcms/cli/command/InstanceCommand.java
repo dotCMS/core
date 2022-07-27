@@ -21,7 +21,8 @@ import picocli.CommandLine;
 @ActivateRequestContext
 @CommandLine.Command(
         name = InstanceCommand.NAME,
-        header = "Use to activate/switch dotCMS instance.",
+        header = "@|bold,green Prints a list of available dotCMS instances.|@ "
+                + "Use to activate/switch dotCMS instance. @|bold,cyan -a  --activate|@ followed by the profile name.",
         description = {
 
         }
@@ -65,11 +66,11 @@ public class InstanceCommand implements Runnable {
                 final String suffix = entry.getKey();
                 final URI uri = entry.getValue();
                 final boolean active = serviceBeanByName.containsKey(suffix) ? serviceBeanByName.get(suffix).active() : false;
-                output.info(String.format(" Profile [@|bold,underline,blue %s|@], Uri [@|bold,underline,blue %s|@], active [@|bold,underline,blue %s|@]. ",
-                        suffix, uri, toStringYesNo(active)));
-            }
+                final String color = active ? "green" : "blue";
 
-            //TODO: add an `add` option to write into a local .env file
+                output.info(String.format(" Profile [@|bold,underline,%s %s|@], Uri [@|bold,underline,%s %s|@], active [@|bold,underline,%s %s|@]. ",
+                        color, suffix, color, uri, color, toStringYesNo(active)));
+            }
 
             if (null != activate) {
 
@@ -94,7 +95,6 @@ public class InstanceCommand implements Runnable {
     }
 
     Optional<ServiceBean> get(final String suffix, final List<ServiceBean> services) {
-        //final String profileName = instanceName(suffix);
         return services.stream().filter(serviceBean -> suffix.equals(serviceBean.name())).findFirst();
     }
 

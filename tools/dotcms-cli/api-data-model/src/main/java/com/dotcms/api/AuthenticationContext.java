@@ -8,6 +8,6 @@ public interface AuthenticationContext {
 
     Optional<String> getToken();
 
-    void login(String user, String password);
+    void login(String user, char[] password);
 
 }
