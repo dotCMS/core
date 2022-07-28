@@ -32,7 +32,7 @@ public class StatusCommandTest {
         try(PrintWriter out = new PrintWriter(writer)){
           commandLine.setOut(out);
           Assertions.assertNotNull(commandLine);
-          final int status = commandLine.execute("status");
+          final int status = commandLine.execute(StatusCommand.NAME);
           Assertions.assertEquals(0, status);
           Assertions.assertTrue(writer.toString().contains("No active profile is configured Please use instance Command."));
         }

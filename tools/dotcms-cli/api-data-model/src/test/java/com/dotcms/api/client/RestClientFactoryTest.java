@@ -35,7 +35,7 @@ class RestClientFactoryTest {
         final AuthenticationAPI authenticationApi = apiClientFactory.getClient(AuthenticationAPI.class);
         APITokenRequest request = APITokenRequest.builder().user("admin@DOTcms.com").password("admin".toCharArray()).expirationDays(1).build();
         ResponseEntityView<TokenEntity> tokenResponse = authenticationApi.getToken(request);
-        JsonObject token = JWT.parse(tokenResponse.entity().token());
+        JsonObject token = JWT.parse(new String(tokenResponse.entity().token()));
         JsonPath path = JsonPath.from(token.encode());
         Assertions.assertEquals("HS256", path.getString("header.alg"));
     }

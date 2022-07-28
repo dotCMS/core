@@ -33,7 +33,7 @@ public class AuthenticationAPITest {
         authenticationContext.login(userString, passwordString);
         final Optional<String> user = authenticationContext.getUser();
         Assertions.assertTrue(user.isPresent());
-        final Optional<String> token = authenticationContext.getToken();
+        final Optional<char[]> token = authenticationContext.getToken();
         Assertions.assertTrue(token.isPresent());
     }
 }

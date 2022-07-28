@@ -10,6 +10,6 @@ import org.immutables.value.Value;
 public interface AbstractCredentialsBean {
      String user();
 
-     String token();
+     char[] token();
 
 }

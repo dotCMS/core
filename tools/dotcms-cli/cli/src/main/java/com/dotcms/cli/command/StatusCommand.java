@@ -69,7 +69,7 @@ public class StatusCommand implements Runnable {
                 output.info(
                         "@|bold,underline Current profile does not have a logged in user|@");
             } else {
-                final Optional<String> token = authenticationContext.getToken();
+                final Optional<char[]> token = authenticationContext.getToken();
                 if (token.isEmpty()) {
                     output.error(String.format("I did not find a valid token for saved user %s. Please login again." ,
                             userId.get()));

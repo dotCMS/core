@@ -6,7 +6,7 @@ public interface AuthenticationContext {
 
     Optional<String> getUser() ;
 
-    Optional<String> getToken();
+    Optional<char[]> getToken();
 
     void login(String user, char[] password);
 

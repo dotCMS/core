@@ -31,7 +31,7 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
 
     private String user;
 
-    private String token;
+    private char[] token;
 
     @ConfigProperty(name = "com.dotcms.api.token.expiration", defaultValue = "10")
     Integer expirationDays;
@@ -42,14 +42,14 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
     }
 
     @Override
-    public Optional<String> getToken() {
+    public Optional<char[]> getToken() {
         final Optional<String> optionalUser = getUser();
         if (optionalUser.isPresent()) {
             if(null != token){
               return Optional.of(token);
             }
             final String userString = optionalUser.get();
-            final Optional<String> optionalToken = loadToken(getServiceKey(), userString);
+            final Optional<char[]> optionalToken = loadToken(getServiceKey(), userString);
             optionalToken.ifPresent(s -> {
                 token = s;
             });
@@ -67,7 +67,7 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
         saveCredentials(user, responseEntityView.entity().token());
     }
 
-    private void saveCredentials(final String user, final String token) {
+    private void saveCredentials(final String user, final char[] token) {
         try {
             final ServiceBean serviceBean = ServiceBean.builder().active(true).name(getServiceKey())
                     .credentials(CredentialsBean.builder().user(user).token(token).build()).build();
@@ -79,14 +79,14 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
         this.token = token;
     }
 
-    private Optional<String> loadToken(String serviceKey, String user) {
+    private Optional<char[]> loadToken(String serviceKey, String user) {
 
         final List<ServiceBean> profiles = serviceManager.services();
         final Optional<ServiceBean> optional = profiles.stream()
                 .filter(serviceBean -> serviceKey.equals(serviceBean.name())).findFirst();
         if (optional.isPresent()) {
             final ServiceBean bean = optional.get();
-            if (user.equals(bean.credentials().user())) {
+            if (bean.credentials() != null  && user.equals(bean.credentials().user())) {
                 return Optional.of(bean.credentials().token());
             }
         }
