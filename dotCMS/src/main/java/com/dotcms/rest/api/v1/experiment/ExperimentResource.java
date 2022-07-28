@@ -5,7 +5,6 @@ import static com.dotcms.util.CollectionsUtils.map;
 
 import com.dotcms.repackage.org.directwebremoting.json.parse.JsonParseException;
 import com.dotcms.rest.RestClientBuilder;
-import com.dotcms.rest.api.v1.contenttype.CopyContentTypeForm;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -19,7 +18,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -27,6 +25,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -60,7 +59,7 @@ public class ExperimentResource {
             setCookies(response, experiment, shouldRunExperiment);
 
             if (shouldRunExperiment) {
-                final ExperimentVariant experimentVariant = pickUpVarriant(experiment, response);
+                final ExperimentVariant experimentVariant = pickUpVariant(experiment, response);
                 experimentSelected.variant = new VariantSelected(
                         experimentVariant.getVariant().getName(), experiment.getVariantURL(experimentVariant));
                 experimentSelected.url = experiment.getURL();
@@ -74,7 +73,7 @@ public class ExperimentResource {
         return experimentSelected;
     }
 
-    private ExperimentVariant pickUpVarriant(final Experiment experiment,
+    private ExperimentVariant pickUpVariant(final Experiment experiment,
             HttpServletResponse response) {
         final int randomValue = (int) (Math.random() * 100);
         double acum = 0;
@@ -183,8 +182,7 @@ public class ExperimentResource {
     @Path("/js/experiments.js")
     @Produces({"application/javascript"})
     public String loadJS(@Context final HttpServletRequest request,
-            @Context final HttpServletResponse response)
-            throws DotSecurityException, DotDataException {
+            @Context final HttpServletResponse response) {
 
         final Optional<Cookie> experimentCookie = getExperimentCookie(request);
 
@@ -209,7 +207,6 @@ public class ExperimentResource {
         } else {
             throw new IllegalStateException();
         }
-
     }
 
     private Optional<Cookie> getExperimentCookie(HttpServletRequest request) {
@@ -294,6 +291,20 @@ public class ExperimentResource {
         final Map<String, Object> map = JsonUtil.toMap(response);
         final ArrayList<Map<String, String>> data = (ArrayList<Map<String, String>>) map.get("data");
         return data;
+    }
+
+    @PUT
+    @Path("/result/{key}/start")
+    @Produces({MediaType.APPLICATION_JSON})
+    public void start(@PathParam("key") final String experimentKey) {
+        ExperimentFactory.start(experimentKey);
+    }
+
+    @PUT
+    @Path("/result/{key}/stop")
+    @Produces({MediaType.APPLICATION_JSON})
+    public void stop(@PathParam("key") final String experimentKey) {
+        ExperimentFactory.stop(experimentKey);
     }
 
     public static class ExperimentResult {

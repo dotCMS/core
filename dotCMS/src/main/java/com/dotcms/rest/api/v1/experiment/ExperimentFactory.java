@@ -25,8 +25,8 @@ import org.jetbrains.annotations.NotNull;
 
 public class ExperimentFactory {
 
-    private static final String IS_ANY_RUNNING_EXPERIMENT_QUERY = "SELECT count(*) FROM experiment WHERE STATUS = 'RUNNING'";
-    private static final String GET_RUNNING_EXPERIMENT_QUERY = "SELECT * FROM experiment WHERE STATUS = 'RUNNING'";
+    private static final String IS_ANY_RUNNING_EXPERIMENT_QUERY = "SELECT count(*) FROM experiment WHERE STATUS = %s";
+    private static final String GET_RUNNING_EXPERIMENT_QUERY = "SELECT * FROM experiment WHERE STATUS = %s";
     private static final String GET_EXPERIMENT_BY_KEY_QUERY = "SELECT * FROM experiment WHERE key = ?";
     private static final String GET_RULES_BY_EXPERIMENT_QUERY = "SELECT rule_id FROM experiment_rules WHERE experiment_key = ?";
     private static final String GET_VARIANT_BY_EXPERIMENT_QUERY = "SELECT * FROM experiment_variant, variant WHERE experiment_variant.variant_key = variant.key AND experiment_variant.experiment_key = ?";
@@ -36,12 +36,14 @@ public class ExperimentFactory {
     private static final String INSERT_EXPERIMENT_VARIANT_QUERY = "INSERT INTO experiment_variant (experiment_key, variant_key, traffic_percentage, original) VALUES (?, ?, ?, ?)";
     private static final String INSERT_VARIANT_QUERY = "INSERT INTO experiment_variant (name, key, domain) VALUES (?, ?, ?)";
     private static final String INSERT_EVENTS_TO_TRACK_QUERY = "INSERT INTO events_to_track (experiment_key, event_key, parameters) VALUES (?, ?, ?)";
+    private static final String UPDATE_EXPERIMENT_STATUS_QUERY = "UPDATE experiment set status = %s WHERE key  %s";
 
     public static boolean isAnyExperimentRunning() {
 
         try {
             return new DotConnect()
                     .setSQL(IS_ANY_RUNNING_EXPERIMENT_QUERY)
+                    .addParam(ExperimentStatus.RUNNING)
                     .loadObjectResults()
                     .stream()
                     .map(result -> (Long) result.get("count"))
@@ -57,6 +59,7 @@ public class ExperimentFactory {
 
             final List<Map<String, Object>> experimentsMap = new DotConnect()
                     .setSQL(GET_RUNNING_EXPERIMENT_QUERY)
+                    .addParam(ExperimentStatus.RUNNING)
                     .loadObjectResults();
 
             return experimentsMap.stream()
@@ -183,7 +186,7 @@ public class ExperimentFactory {
         dotConnect.setSQL(INSERT_EXPERIMENT_QUERY)
             .addParam(experimentForm.getName())
             .addParam(experimentForm.getKey())
-            .addParam(ExperimentStatus.STOP)
+            .addParam(ExperimentStatus.STOPPED.toString())
             .addParam(experimentForm.isUniquePerVisitor())
             .addParam(experimentForm.getLookBackWindowMinutes())
             .addParam(experimentForm.getPageInode())
@@ -228,6 +231,27 @@ public class ExperimentFactory {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    public static void start(final String experimentKey) {
+        updateStatus(experimentKey, ExperimentStatus.RUNNING);
+    }
+
+    public static void stop(final String experimentKey) {
+        updateStatus(experimentKey, ExperimentStatus.STOPPED);
+    }
+
+    private static void updateStatus(final String experimentKey, final ExperimentStatus experimentStatus) {
+        final DotConnect dotConnect = new DotConnect();
+
+        try {
+            dotConnect.setSQL(UPDATE_EXPERIMENT_STATUS_QUERY)
+                    .addParam(experimentStatus)
+                    .addParam(experimentKey)
+                    .loadResult();
+        } catch (DotDataException e) {
+            throw new RuntimeException(e);
         }
     }
 }

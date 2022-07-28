@@ -89,7 +89,7 @@ public class Experiment {
     }
 
     public enum ExperimentStatus {
-        START,
-        STOP
+        RUNNING,
+        STOPPED
     }
 }
