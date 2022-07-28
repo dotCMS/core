@@ -104,7 +104,7 @@ public class ExperimentFactory {
                         try {
                             return new AnalyticEvent(
                                         AnalyticEventType.valueOf(map.get("event_key").toString()),
-                                        JsonUtil.toMap(map.get("parameters").toString())
+                                        JsonUtil.toList(map.get("parameters").toString())
                                     );
                         } catch (IOException e) {
                             return null;
