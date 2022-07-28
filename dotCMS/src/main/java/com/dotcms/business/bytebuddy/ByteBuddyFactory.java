@@ -3,17 +3,23 @@ package com.dotcms.business.bytebuddy;
 import com.dotcms.business.CloseDB;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.util.LogTime;
 import com.dotmarketing.util.Logger;
 import net.bytebuddy.agent.ByteBuddyAgent;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
+import net.bytebuddy.description.NamedElement;
+import net.bytebuddy.description.annotation.AnnotationSource;
+import net.bytebuddy.description.type.TypeDefinition;
 import net.bytebuddy.dynamic.ClassFileLocator;
+import net.bytebuddy.dynamic.DynamicType;
+import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.matcher.ElementMatchers;
 import net.bytebuddy.utility.JavaModule;
 
 import java.lang.annotation.Annotation;
 import java.lang.instrument.Instrumentation;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static net.bytebuddy.matcher.ElementMatchers.*;
@@ -28,6 +34,24 @@ import static net.bytebuddy.matcher.ElementMatchers.*;
 public class ByteBuddyFactory {
 
     private static final AtomicBoolean agentLoaded = new AtomicBoolean(false);
+    private static final Map<Class<? extends Annotation>, Class<?>> adviceMap = Map.of(
+            WrapInTransaction.class, WrapInTransactionAdvice.class,
+            CloseDB.class, CloseDBAdvice.class,
+            CloseDBIfOpened.class, CloseDBIfOpenedAdvice.class
+    );
+
+
+    private static final Set<String> packageIgnore = Set.of(
+            "com.dotcms.repackage.",
+            "net.bytebuddy.",
+            "sun.reflect."
+    );
+
+    private static final Set<String> packageWhitelist = Set.of(
+            "com.dotcms",
+            "com.dotmarketing",
+            "com.liferay"
+    );
 
     static {
         init();
@@ -58,39 +82,36 @@ public class ByteBuddyFactory {
             }
         };
 
+        ElementMatcher.Junction<NamedElement> selectByName = ElementMatchers.none();
+        for (String packageElement : packageWhitelist)
+            selectByName = selectByName.or(nameStartsWith(packageElement));
+
+        ElementMatcher.Junction<NamedElement> ignoresByName = ElementMatchers.none();
+        for (String packageElement : packageIgnore)
+            ignoresByName = ignoresByName.or(nameStartsWith(packageElement));
+
+
+        // will filter by name first and then by annotation
+        ElementMatcher.Junction<TypeDefinition> classMatcher = selectByName.and(hasAnnotatedMethods());
+
         try {
-            AgentBuilder.RedefinitionListenable.WithoutBatchStrategy builder = new AgentBuilder.Default()
+            new AgentBuilder.Default()
                     .with(bootFallbackLocationStrategy)
                     // Filtering by package name is quicker than by annotation
-                    .ignore(nameStartsWith("net.bytebuddy."))
-                    .ignore(nameStartsWith("com.dotcms.repackage."))
-                    .ignore(nameStartsWith("com.dotcms.business.bytebuddy"))
+                    .ignore(ignoresByName)
+                    .or(isSynthetic())
                     .disableClassFormatChanges()
+                    .with(new ByteBuddyLogListener())
                     .with(AgentBuilder.InitializationStrategy.Minimal.INSTANCE)
-                    .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
-                    .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION);
-
-            /*
-             * We do not use Config class for this as we do not want to load classes that may need
-             * transformation or require annotation processing.
-             */
-            if (Boolean.parseBoolean(System.getenv("DOTCMS_BYTEBUDDY_DEBUG"))) {
-                builder.with(AgentBuilder.RedefinitionStrategy.Listener.StreamWriting.toSystemError())
-                        .with(AgentBuilder.Listener.StreamWriting.toSystemError().withTransformationsOnly())
-                        .with(AgentBuilder.InstallationListener.StreamWriting.toSystemError());
-            }
-
-            builder.type(ElementMatchers.declaresMethod(
-                            isAnnotatedWith(WrapInTransaction.class)
-                                    .or(isAnnotatedWith(CloseDB.class))
-                                    .or(isAnnotatedWith(CloseDBIfOpened.class))
-                                    .or(isAnnotatedWith(LogTime.class))
-                    ))
-
-                    .transform(getAdvice(WrapInTransaction.class, WrapInTransactionAdvice.class))
-                    .transform(getAdvice(CloseDB.class, CloseDBAdvice.class))
-                    .transform(getAdvice(CloseDBIfOpened.class, CloseDBIfOpenedAdvice.class))
-                    .transform(getAdvice(LogTime.class, LogTimeAdvice.class))
+                    .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
+                    .type(classMatcher)
+                    .transform((builder, typeDescription, classLoader, module) -> {
+                        DynamicType.Builder<?> newBuilder = builder;
+                        for (Map.Entry<Class<? extends Annotation>, Class<?>> entry : adviceMap.entrySet()) {
+                            newBuilder = getAdvice(entry.getKey(), entry.getValue()).transform(newBuilder, typeDescription, classLoader, module);
+                        }
+                        return newBuilder;
+                    })
 
                     .installOn(inst);
             Logger.info(ByteBuddyFactory.class, "ByteBuddy Initialized");
@@ -101,7 +122,16 @@ public class ByteBuddyFactory {
 
     }
 
-    private static AgentBuilder.Transformer.ForAdvice getAdvice(Class<? extends Annotation> annotation, Class<?> advice) {
+    private static ElementMatcher.Junction<TypeDefinition> hasAnnotatedMethods() {
+        ElementMatcher.Junction<AnnotationSource> methodMatcher = ElementMatchers.none();
+        for (Class<? extends Annotation> annotation : adviceMap.keySet()) {
+            methodMatcher = methodMatcher.or(isAnnotatedWith(annotation));
+        }
+        return declaresMethod(methodMatcher);
+    }
+
+
+    private static AgentBuilder.Transformer getAdvice(Class<? extends Annotation> annotation, Class<?> advice) {
         return new AgentBuilder.Transformer.ForAdvice()
                 .withExceptionHandler(Advice.ExceptionHandler.Default.RETHROWING)
                 .advice(isMethod().and(isAnnotatedWith(annotation)),
