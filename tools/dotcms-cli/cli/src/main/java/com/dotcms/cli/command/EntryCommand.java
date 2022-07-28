@@ -8,9 +8,11 @@ import picocli.CommandLine.Command;
 @TopCommand
 @Command(
         name = "dotCMS", mixinStandardHelpOptions = true, showAtFileInUsageHelp = true,
-        version = {"dotCMS-cli 2.0", "picocli " + CommandLine.VERSION}, header = "dotCMS-cli tool",
+        version = {"dotCMS-cli 2.0", "picocli " + CommandLine.VERSION},
+        description = {},
+        header = "dotCMS cli tool",
         subcommands = {
-                LoginCommand.class, StatusCommand.class, SiteCommand.class
+           LoginCommand.class, StatusCommand.class, InstanceCommand.class, SiteCommand.class
         }
 )
 public class EntryCommand {
