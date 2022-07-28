@@ -24,8 +24,6 @@ public class AuthenticationContextTest {
 
     @Test
     public void Test_Login_Default() throws IOException {
-        serviceManager.removeAll().persist(ServiceBean.builder().name("default").active(true).build());
-
         final String userString = "admin@dotCMS.com";
         final char[] pwdString = "admin".toCharArray();
         authenticationContext.login(userString, pwdString);
