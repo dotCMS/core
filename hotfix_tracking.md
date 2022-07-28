@@ -330,3 +330,7 @@ This maintenance release includes the following code fixes:
 
 168. https://github.com/dotCMS/core/issues/22478 : NormalizationFilter does not set javax.servlet.forward.request_uri #22478
 169. https://github.com/dotCMS/core/issues/22498 : Normalization filter is too aggressive #22498
+
+**Release-5.3.8.14**
+
+170. https://github.com/dotCMS/core/issues/21652 : [WebP] : Image file using the WebP filter loads with white background in Safari #21652

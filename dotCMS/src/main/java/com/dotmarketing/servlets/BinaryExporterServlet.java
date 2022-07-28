@@ -373,7 +373,7 @@ public class BinaryExporterServlet extends HttpServlet {
 
       if(params.get("quality_q")!=null) {
       	final UserAgent userAgent = new UserAgent(req.getHeader("user-agent"));
-        if(userAgent.getBrowser() == Browser.SAFARI || userAgent.getOperatingSystem().getGroup() == OperatingSystem.IOS){
+        if(isBrowserSafariAndVersionBelow14(userAgent)){
           params.put("jpeg_q", params.get("quality_q"));
           params.put("jpeg_p",  new String[] {"1"});
         }else {
@@ -667,6 +667,12 @@ public class BinaryExporterServlet extends HttpServlet {
 		}
 		
 	}
+
+	private boolean isBrowserSafariAndVersionBelow14(final UserAgent userAgent) {
+		return userAgent.getBrowser() == Browser.SAFARI
+				&& Integer.parseInt(userAgent.getBrowserVersion().getMajorVersion())<14;
+	}
+
 
 	private Contentlet getContentletLiveVersion(String assetInode, User user, long lang) throws DotDataException, DotSecurityException {
 		Contentlet content;
