@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -21,6 +22,10 @@ public class JsonUtil {
 
     public static <K, T> Map<K, T> toMap(final String json) throws IOException {
         return JSON_MAPPER.readValue(json, Map.class);
+    }
+
+    public static <T> List<T> toList(final String json) throws IOException {
+        return JSON_MAPPER.readValue(json, List.class);
     }
 
     public static String toJson(final Object object) throws IOException {

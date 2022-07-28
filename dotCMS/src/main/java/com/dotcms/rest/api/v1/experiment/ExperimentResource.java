@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -167,10 +168,11 @@ public class ExperimentResource {
             final StringBuffer metricsJsCode = new StringBuffer();
 
             for (final AnalyticEvent event : events) {
-                final AnalyticEventTypeHandler analyticEventTypeHandler = AnalyticEventTypeHandlerManager.INSTANCE.get(
-                        event.getEventKey());
+                final String jsCodeTemplate = AnalyticEventTypeHandlerManager
+                        .INSTANCE.getJsCodeTemplate(event.getEventKey());
 
-                final String jsCode = analyticEventTypeHandler.getJSCode(event.getParameters());
+                final String querySelector= QuerySelectorUtil.INSTANCE.getQuerySelector(event.getParameters());
+                String jsCode  = jsCodeTemplate.replaceAll("$\\{querySelector}", querySelector);
                 metricsJsCode.append(jsCode);
             }
 
