@@ -5,6 +5,7 @@ import com.dotcms.model.config.ServiceBean;
 import io.quarkus.test.junit.QuarkusTest;
 import java.io.IOException;
 import javax.inject.Inject;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
@@ -15,6 +16,11 @@ public class AuthenticationContextTest {
 
     @Inject
     ServiceManager serviceManager;
+
+    @BeforeEach
+    public void setupTest() throws IOException {
+        serviceManager.removeAll().persist(ServiceBean.builder().name("default").active(true).build());
+    }
 
     @Test
     public void Test_Login_Default() throws IOException {

@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
@@ -16,10 +17,14 @@ public class ServiceManagerTest {
     @Inject
     ServiceManager serviceManager;
 
+    @BeforeEach
+    public void setupTest() throws IOException {
+        serviceManager.removeAll().persist(ServiceBean.builder().name("default").active(true).build());
+    }
+
     @Test
     public void Test_Persist_Then_Recover() throws IOException {
 
-        serviceManager.removeAll();
 
         final ServiceBean serviceBeanDefault = ServiceBean.builder().name("default")
                 .active(false)
