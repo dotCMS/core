@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.experiment;
 
+import static com.dotmarketing.util.FileUtil.getFileContentFromResourceContext;
+
 import com.dotcms.repackage.org.directwebremoting.json.parse.JsonParseException;
 import com.dotcms.rest.RestClientBuilder;
 import com.dotcms.util.JsonUtil;
@@ -54,12 +56,6 @@ public class ExperimentResource {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private String getFileContentFromResourceContext(final String path) throws IOException {
-        final ClassLoader classLoader = this.getClass().getClassLoader();
-        final URL initFileURL = classLoader.getResource(path);
-        return new String (FileUtil.getBytes(new File(initFileURL.getPath())));
     }
 
     @GET

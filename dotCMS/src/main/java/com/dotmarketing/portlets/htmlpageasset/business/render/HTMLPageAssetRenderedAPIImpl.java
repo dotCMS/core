@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render;
 
+import static com.dotmarketing.util.FileUtil.getFileContentFromResourceContext;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -42,6 +44,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 
+import java.io.IOException;
 import java.util.Optional;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
@@ -55,15 +58,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
-    private String scriptJitsu = "<script src=\"//localhost:8080/s/lib.js\"\n"
-            + "        data-key=\"js.ch1gesoxtyetqm3bsk3jdp.9xwkm0flad8dcj0wtmsmr\"\n"
-            + "        data-init-only=\"true\"\n"
-            + "        defer></script>\n"
-            + "<script>window.jitsu = window.jitsu || (function(){(window.jitsuQ = window.jitsuQ || []).push(arguments);})</script>\n"
-            + "\n";
-
-    private String scriptMetricts = "<script src=\"//localhost:8080/api/v1/experiment/js/experiments.js\"></script>\n";
-
+    private String EXPERIMENT_SCRIPT;
     private final HostWebAPI hostWebAPI;
     private final HTMLPageAssetAPI htmlPageAssetAPI;
     private final LanguageAPI languageAPI;
@@ -82,6 +77,13 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 APILocator.getURLMapAPI(),
                 WebAPILocator.getLanguageWebAPI()
         );
+
+        try {
+            EXPERIMENT_SCRIPT = getFileContentFromResourceContext("/experiment/html/experiment_head.html")
+                    .replaceAll("$\\{jitsu_key}", "js.ch1gesoxtyetqm3bsk3jdp.9xwkm0flad8dcj0wtmsmr");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @VisibleForTesting
@@ -299,7 +301,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
     @NotNull
     private String injectExperimentJSCode(String pageHTML) {
-        return pageHTML.replace("<head>", "<head>" + scriptJitsu + scriptMetricts);
+        return pageHTML.replace("<head>", "<head>" + EXPERIMENT_SCRIPT);
     }
 
     private HTMLPageUrl getHtmlPageAsset(final PageContext context, final Host host, final HttpServletRequest request)
