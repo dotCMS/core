@@ -1,8 +1,5 @@
 package com.dotcms.rest.api.v1.experiment;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.repackage.org.directwebremoting.json.parse.JsonParseException;
 import com.dotcms.rest.RestClientBuilder;
 import com.dotcms.util.JsonUtil;
@@ -11,7 +8,10 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.liferay.util.FileUtil;
+import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -41,6 +41,26 @@ public class ExperimentResource {
 
     public static final String EXPERIMENT_COOKIE_NAME = "experiment";
     public static final String LOOK_BACK_WINDOW_COOKIE_NAME = "lookBackWindowCookie";
+
+    private final String SCRIPT_INIT;
+    private final String SCRIPT_TRAFFIC;
+    private final String SCRIPT_METRICTS;
+
+    public ExperimentResource(){
+        try {
+            SCRIPT_INIT = getFileContentFromResourceContext("/experiment/js/init_script.js");
+            SCRIPT_TRAFFIC = getFileContentFromResourceContext("/experiment/js/init_traffic.js");;
+            SCRIPT_METRICTS = getFileContentFromResourceContext("/experiment/js/init_metricts.js");;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private String getFileContentFromResourceContext(final String path) throws IOException {
+        final ClassLoader classLoader = this.getClass().getClassLoader();
+        final URL initFileURL = classLoader.getResource(path);
+        return new String (FileUtil.getBytes(new File(initFileURL.getPath())));
+    }
 
     @GET
     @Produces({MediaType.APPLICATION_JSON})
@@ -132,52 +152,6 @@ public class ExperimentResource {
         return experiments.get(randomValue);
     }
 
-
-    private final String scriptInit = "var experiment_data = localStorage.getItem('experiment_data');\n"
-            + "console.log('experiment_data in localStorage', experiment_data);\n"
-            + "var isInExperiment = document.cookie.includes('lookBackWindowCookie');"
-            + "\n"
-            + "if (isInExperiment && !!experiment_data && window.location.href.includes(JSON.parse(experiment_data).url)){\n"
-            + "        console.log('Trigger init event...');\n"
-            + "        const event = new CustomEvent('init_custom', { detail: JSON.parse(experiment_data) });\n"
-            + "        window.dispatchEvent(event);\n"
-            + "} else if (!experiment_data) {\n"
-            + "        console.log('Getting init data...');\n"
-            + "        fetch('http://localhost:8080/api/v1/experiment')\n"
-            + "          .then(response => response.json())     \n"
-            + "          .then(data => {\n"
-            + "             console.log('You are in a experiment: ', data);\n"
-            + "              if (data.experiment) {\n"
-            + "                localStorage.setItem('experiment_data', JSON.stringify(data));\n"
-            + "                \n"
-            + "                console.log('Trigger init event...');\n"
-            + "                const event = new CustomEvent('init_custom', { detail: data });\n"
-            + "                window.dispatchEvent(event);\n"
-            + "              } \n"
-            + "           });\n"
-            + "}\n";
-
-    private final String scriptTraffic = "console.log('traffic_scripts');\n"
-            + "\n"
-            + "window.addEventListener(\"init_custom\", function (event) {\n"
-            + "    console.log('traffic init_custom', event.detail.experiment.variant);\n"
-            + "    \n"
-            + "    if (!window.location.href.includes('redirect=true')) {\n"
-            + "        window.location = event.detail.experiment.variant.url;\n"
-            + "    }\n"
-            + "});";
-
-    private final String scriptMetricts = "var initEvent = new Promise(function(resolve) {\n"
-            + "    window.addEventListener(\"init_custom\",resolve,false);\n"
-            + "});\n"
-            + "var loadEvent = new Promise(function(resolve) {\n"
-            + "    window.addEventListener(\"load\", resolve, false);\n"
-            + "});\n"
-            + "\n"
-            + "Promise.all([initEvent, loadEvent]).then(function(data) {\n"
-            + "%s"
-            + "});";
-
     @GET()
     @Path("/js/experiments.js")
     @Produces({"application/javascript"})
@@ -203,7 +177,10 @@ public class ExperimentResource {
                 final String jsCode = analyticEventTypeHandler.getJSCode(event.getParameters());
                 metricsJsCode.append(jsCode);
             }
-            return scriptTraffic + String.format(scriptMetricts, metricsJsCode) + scriptInit;
+
+            return SCRIPT_TRAFFIC +
+                    SCRIPT_METRICTS.replaceAll("$\\{dinamycCodeHere}", metricsJsCode.toString()) +
+                    SCRIPT_INIT;
         } else {
             throw new IllegalStateException();
         }
