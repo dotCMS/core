@@ -527,7 +527,8 @@ describe('DotEditContentComponent', () => {
                                         cssHeight: '100',
                                         cssWidth: '100',
                                         name: 'Watch',
-                                        inode: '1234'
+                                        inode: '1234',
+                                        identifier: 'abc'
                                     }
                                 }
                             })

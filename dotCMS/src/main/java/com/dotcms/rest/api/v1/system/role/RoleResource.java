@@ -393,7 +393,6 @@ public class RoleResource implements Serializable {
 		}
 
 		return Response.ok(new ResponseEntityView<>(rootRolesView)).build();
-
 	}
 
 	/**

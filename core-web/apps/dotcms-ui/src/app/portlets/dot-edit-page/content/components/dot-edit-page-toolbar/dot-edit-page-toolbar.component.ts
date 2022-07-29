@@ -45,7 +45,7 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
     }
 
     ngOnChanges(): void {
-        this.updateRenderedHtml();
+        this.pageRenderedHtml = this.updateRenderedHtml();
 
         this.showWhatsChanged =
             this.pageState.state.mode === DotPageMode.PREVIEW &&
@@ -80,21 +80,16 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
             width: '40rem',
             data: {
                 page: {
-                    order: 1,
                     pageState: this.pageState,
                     pageRenderedHtml: this.pageRenderedHtml || null
                 }
-                // onSave: (value: DotFavoritePage) => {
-                // console.log('*** DotFavoritePageComponent Saved!', value);
-                // }
             }
         });
     }
 
-    private updateRenderedHtml(): void {
-        this.pageRenderedHtml =
-            this.pageState?.params.viewAs.mode === DotPageMode.PREVIEW
-                ? this.pageState.params.page.rendered
-                : this.pageRenderedHtml;
+    private updateRenderedHtml(): string {
+        return this.pageState?.params.viewAs.mode === DotPageMode.PREVIEW
+            ? this.pageState.params.page.rendered
+            : this.pageRenderedHtml;
     }
 }

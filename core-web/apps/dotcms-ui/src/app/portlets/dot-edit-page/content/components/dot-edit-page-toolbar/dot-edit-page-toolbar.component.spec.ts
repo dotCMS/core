@@ -1,4 +1,4 @@
-import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement, Component, Input, Injectable } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
@@ -93,7 +93,7 @@ describe('DotEditPageToolbarComponent', () => {
     let dotMessageDisplayService: DotMessageDisplayService;
     let dotDialogService: DialogService;
 
-    beforeEach(waitForAsync(() => {
+    beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [
                 TestHostComponent,
@@ -159,7 +159,7 @@ describe('DotEditPageToolbarComponent', () => {
                 DialogService
             ]
         });
-    }));
+    });
 
     beforeEach(() => {
         fixtureHost = TestBed.createComponent(TestHostComponent);
@@ -328,7 +328,6 @@ describe('DotEditPageToolbarComponent', () => {
                 data: {
                     page: {
                         pageState: mockDotRenderedPageState,
-                        order: 1,
                         pageRenderedHtml: component.pageRenderedHtml || null
                     }
                 }

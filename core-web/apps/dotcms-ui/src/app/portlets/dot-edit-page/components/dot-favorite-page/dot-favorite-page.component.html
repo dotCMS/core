@@ -3,6 +3,7 @@
     [saveButtonDisabled]="(isFormValid$ | async) === false"
     (cancel)="onCancel()"
     (save)="onSave()"
+    *ngIf="vm$ | async as vm"
 >
     <form class="p-fluid" [formGroup]="form" data-testId="form" *ngIf="form">
         <div class="field" data-testId="thumbnailField">
@@ -11,8 +12,8 @@
             }}</label>
             <dot-html-to-image
                 [value]="pageRenderedHtml"
-                [width]="imgWidth"
-                [height]="imgHeight"
+                [width]="vm.imgWidth"
+                [height]="vm.imgHeight"
             ></dot-html-to-image>
         </div>
         <div class="field" data-testId="titleField">
@@ -45,11 +46,13 @@
                 [field]="form.get('order')"
             ></dot-field-validation-message>
         </div>
-        <div class="field" data-testId="shareWithField" *ngIf="isAdmin">
-            <label for="permissions" class="p-label-input-required">{{ 'favoritePage.dialog.field.shareWith' | dm }}</label>
+        <div class="field" data-testId="shareWithField" *ngIf="vm.isAdmin">
+            <label for="permissions" class="p-label-input-required">{{
+                'favoritePage.dialog.field.shareWith' | dm
+            }}</label>
             <p-multiSelect
                 id="permissions"
-                [options]="roleOptions"
+                [options]="vm.roleOptions"
                 formControlName="permissions"
                 optionLabel="name"
                 appendTo="body"

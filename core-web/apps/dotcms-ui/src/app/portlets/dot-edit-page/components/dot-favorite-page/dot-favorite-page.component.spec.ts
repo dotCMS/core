@@ -2,31 +2,23 @@ import { Component, Input, Output, EventEmitter, DebugElement } from '@angular/c
 import { ComponentFixture, getTestBed, TestBed } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
-
 import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { By } from '@angular/platform-browser';
 import { DotFavoritePageComponent } from './dot-favorite-page.component';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotAlertConfirmService } from '@dotcms/app/api/services/dot-alert-confirm';
-import { ConfirmationService } from 'primeng/api';
 import { LoginServiceMock, mockUser } from '@dotcms/app/test/login-service.mock';
 import { CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms-js';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { MockDotRouterService } from '@tests/dot-router-service.mock';
-import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotWorkflowActionsFireService } from '@dotcms/app/api/services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
-import { DotRolesService } from '@dotcms/app/api/services/dot-roles/dot-roles.service';
 import { DotPageRender } from '@dotcms/app/shared/models/dot-page/dot-rendered-page.model';
 import { mockDotRenderedPage } from '@dotcms/app/test/dot-page-render.mock';
 import { DotPageRenderState } from '../../shared/models';
 import { MultiSelectModule } from 'primeng/multiselect';
-import { mockProcessedRoles } from '@dotcms/app/api/services/dot-roles/dot-roles.service.spec';
 import { of } from 'rxjs';
-import { mockDotCMSTempFile } from '@components/dot-add-persona-dialog/dot-create-persona-form/dot-create-persona-form.component.spec';
+import { DotFavoritePageStore } from './store/dot-favorite-page.store';
 @Component({
     selector: 'dot-form-dialog',
     template: '<ng-content></ng-content>',
@@ -61,19 +53,38 @@ const mockRenderedPageState = new DotPageRenderState(
     new DotPageRender(mockDotRenderedPage())
 );
 
+const storeMock = {
+    get currentUserRoleId$() {
+        return of('1');
+    },
+    saveFavoritePage: jasmine.createSpy(),
+    get closeDialog$() {
+        return of(false);
+    },
+    setLoading: jasmine.createSpy(),
+    setLoaded: jasmine.createSpy(),
+    setInitialStateData: jasmine.createSpy(),
+    vm$: of({
+        roleOptions: [],
+        currentUserRoleId: '',
+        isAdmin: true,
+        imgWidth: 1024,
+        imgHeight: 768.192048012003,
+        loading: false,
+        closeDialog: false
+    })
+};
+
 describe('DotFavoritePageComponent', () => {
     let fixture: ComponentFixture<DotFavoritePageComponent>;
     let de: DebugElement;
     let component: DotFavoritePageComponent;
     let injector: TestBed;
-    let dotRolesService: DotRolesService;
-    let dotTempFileUploadService: DotTempFileUploadService;
-    let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
-    let dialogConfig: DynamicDialogConfig;
     let dialogRef: DynamicDialogRef;
+    let store: DotFavoritePageStore;
 
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
+    beforeEach(() => {
+        TestBed.configureTestingModule({
             declarations: [
                 DotFavoritePageComponent,
                 DotMessagePipe,
@@ -88,12 +99,6 @@ describe('DotFavoritePageComponent', () => {
                 HttpClientTestingModule
             ],
             providers: [
-                DotHttpErrorManagerService,
-                DotAlertConfirmService,
-                ConfirmationService,
-                DotTempFileUploadService,
-                DotWorkflowActionsFireService,
-                DotRolesService,
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
@@ -104,6 +109,7 @@ describe('DotFavoritePageComponent', () => {
                     provide: DotMessageService,
                     useValue: messageServiceMock
                 },
+
                 {
                     provide: DynamicDialogRef,
                     useValue: {
@@ -118,14 +124,14 @@ describe('DotFavoritePageComponent', () => {
                                 order: 1,
                                 pageState: mockRenderedPageState,
                                 pageRenderedHtml: '<p>test</p>'
-                            },
-                            onSave: jasmine.createSpy(),
-                            onCancel: jasmine.createSpy()
+                            }
                         }
                     }
                 }
             ]
         }).compileComponents();
+        TestBed.overrideProvider(DotFavoritePageStore, { useValue: storeMock });
+        store = TestBed.inject(DotFavoritePageStore);
     });
 
     beforeEach(() => {
@@ -134,17 +140,7 @@ describe('DotFavoritePageComponent', () => {
         component = fixture.componentInstance;
         injector = getTestBed();
 
-        dotRolesService = injector.inject(DotRolesService);
-        dotTempFileUploadService = injector.inject(DotTempFileUploadService);
-        dotWorkflowActionsFireService = injector.inject(DotWorkflowActionsFireService);
-        dialogConfig = injector.inject(DynamicDialogConfig);
         dialogRef = injector.inject(DynamicDialogRef);
-
-        spyOn(dotRolesService, 'search').and.returnValue(of(mockProcessedRoles));
-        spyOn(dotTempFileUploadService, 'upload').and.returnValue(of([mockDotCMSTempFile]));
-        spyOn(dotWorkflowActionsFireService, 'publishContentletAndWaitForIndex').and.returnValue(
-            of(null)
-        );
 
         fixture.detectChanges();
     });
@@ -245,26 +241,17 @@ describe('DotFavoritePageComponent', () => {
     });
 
     describe('form', () => {
-        it('should get value from config', () => {
+        it('should get value from config and set initial data on store', () => {
             expect(component.form.value).toEqual({
+                currentUserRoleId: '1',
                 thumbnail: null,
                 title: 'A title',
                 url: '/an/url/test?language_id=1',
                 order: 1,
                 permissions: null
             });
-        });
 
-        it('should set roles data', () => {
-            expect(component.currentUserRole).toEqual({
-                id: '1',
-                name: 'Current User',
-                user: false,
-                roleKey: 'CMS Anonymous'
-            });
-            expect(component.roleOptions).toEqual([
-                { id: '2', name: 'Some Role (User)', user: true, roleKey: 'roleKey1' }
-            ]);
+            expect(store.setInitialStateData).toHaveBeenCalled();
         });
 
         it('should be invalid by default', () => {
@@ -276,6 +263,7 @@ describe('DotFavoritePageComponent', () => {
 
             expect(component.form.valid).toBe(true);
             expect(component.form.value).toEqual({
+                currentUserRoleId: '1',
                 thumbnail: 'test',
                 title: 'A title',
                 url: '/an/url/test?language_id=1',
@@ -286,36 +274,11 @@ describe('DotFavoritePageComponent', () => {
     });
 
     describe('dot-form-dialog', () => {
-        it('should call save from config', () => {
-            component.form
-                .get('thumbnail')
-                .setValue(
-                    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAAXNSR0IArs4c6QAAAXlJREFUaEPVktuNwjAQRWNaWApBFAGUBBVASUARaAvZbQGQI4EScJx53JvY/vHfeM45Dg3xHH//N3H8YfVzZT0TWIPj3NPt7xzv/Xq5Y71DA2jt3++XdvHFYsuqQAOI9h/NYxv3D024sCpQAHr2X3+HVIEC0LX/2p9VAQ6QtE+sAAdI2WdWgAJk7ZMqQAFy9lkVYAAi+4QKMACJfUYFCIDKPrgCBEBjH13BDWCyD6zgBrDYR1ZwAbjsgyq4ADz2URXMABD7gApmAIR9RAUTANS+s4IJAGnfW0ENQLHvqKAGYNj3VFABUO0bK6gAmPatFcQAk9g3VBADTGHfUkEEMKl9ZQURwJT2tRVGAWaxr6gwCjCHfU2FLMCs9oUVsgBz2pdWGAQowr6gwiBACfYlFZIARdkfqZAEKMn+WIUvgCLtZyp8AZRoP1ehB1C0/YEKPYCS7Q9VeANUYT9R4Q1Qg/1UhRagKvsfFVqAmux/VghV2u9UCDXa71Z4AkPtR8QJFVfWAAAAAElFTkSuQmCC'
-                );
+        it('should call save functionality in store', () => {
             const dialog = de.query(By.css('[data-testId="dialogForm"]'));
             dialog.triggerEventHandler('save', {});
-            const file = new File(
-                [
-                    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAAXNSR0IArs4c6QAAAXlJREFUaEPVktuNwjAQRWNaWApBFAGUBBVASUARaAvZbQGQI4EScJx53JvY/vHfeM45Dg3xHH//N3H8YfVzZT0TWIPj3NPt7xzv/Xq5Y71DA2jt3++XdvHFYsuqQAOI9h/NYxv3D024sCpQAHr2X3+HVIEC0LX/2p9VAQ6QtE+sAAdI2WdWgAJk7ZMqQAFy9lkVYAAi+4QKMACJfUYFCIDKPrgCBEBjH13BDWCyD6zgBrDYR1ZwAbjsgyq4ADz2URXMABD7gApmAIR9RAUTANS+s4IJAGnfW0ENQLHvqKAGYNj3VFABUO0bK6gAmPatFcQAk9g3VBADTGHfUkEEMKl9ZQURwJT2tRVGAWaxr6gwCjCHfU2FLMCs9oUVsgBz2pdWGAQowr6gwiBACfYlFZIARdkfqZAEKMn+WIUvgCLtZyp8AZRoP1ehB1C0/YEKPYCS7Q9VeANUYT9R4Q1Qg/1UhRagKvsfFVqAmux/VghV2u9UCDXa71Z4AkPtR8QJFVfWAAAAAElFTkSuQmCC'
-                ],
-                'image.png'
-            );
-            expect(dotTempFileUploadService.upload).toHaveBeenCalledWith(file);
-            expect(
-                dotWorkflowActionsFireService.publishContentletAndWaitForIndex
-            ).toHaveBeenCalledWith(
-                'Screenshot',
-                {
-                    screenshot: 'temp-file_123',
-                    title: 'A title',
-                    url: '/an/url/test?language_id=1',
-                    order: 1
-                },
-                { READ: ['1', '6b1fa42f-8729-4625-80d1-17e4ef691ce7'] }
-            );
 
-            expect(dialogConfig.data.onSave).toHaveBeenCalledTimes(1);
-            expect(dialogRef.close).toHaveBeenCalledWith(false);
+            expect(store.saveFavoritePage).toHaveBeenCalledWith(component.form.getRawValue());
         });
 
         it('should call cancel from config', () => {

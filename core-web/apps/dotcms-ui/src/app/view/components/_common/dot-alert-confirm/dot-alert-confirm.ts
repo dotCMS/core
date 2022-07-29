@@ -6,8 +6,7 @@ import { Subject } from 'rxjs';
 
 @Component({
     selector: 'dot-alert-confirm',
-    templateUrl: './dot-alert-confirm.html',
-    styleUrls: ['./dot-alert-confirm.scss']
+    templateUrl: './dot-alert-confirm.html'
 })
 export class DotAlertConfirmComponent implements OnInit, OnDestroy {
     @ViewChild('cd') cd: ConfirmDialog;
