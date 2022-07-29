@@ -76,6 +76,7 @@ import com.dotcms.rest.api.v1.apps.AppsResourceTest;
 import com.dotcms.rest.api.v1.apps.view.AppsInterpolationTest;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtilTest;
 import com.dotcms.rest.api.v1.folder.FolderResourceTest;
+import com.dotcms.rest.api.v1.menu.MenuResourceTest;
 import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
 import com.dotcms.rest.api.v1.system.ConfigurationHelperTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
@@ -557,7 +558,8 @@ import org.junit.runners.Suite.SuiteClasses;
         MetadataDelegateTest.class,
         Task220401CreateClusterLockTableTest.class,
         Task220606UpdatePushNowActionletNameTest.class,
-        BundlerUtilTest.class
+        BundlerUtilTest.class,
+        MenuResourceTest.class
 })
 public class MainSuite {
 
