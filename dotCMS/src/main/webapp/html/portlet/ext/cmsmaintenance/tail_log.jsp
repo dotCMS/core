@@ -187,7 +187,6 @@
     var attachedFilterLogEvents = false;
     var excludeLogRowsActive = false;
     var logRawContent = '';
-    var logViewerMarkedText = false;
 
     var dataLogPrintedElem = null;
     var keywordLogInput = null;
@@ -229,12 +228,6 @@
             excludeLogRowsActive = true;
             performLogViewerMark(excludeNoMatchingRows);
         } else if (!ignoredKeys.includes(event.key)) {
-
-            // if previously the rows were excluded when filtering then a copy of the whole content needs to be restablished
-            if (excludeLogRowsActive) {
-                dataLogPrintedElem.innerHTML = logRawContent;
-            }
-
             excludeLogRowsActive = false;
             performLogViewerMark();
         }
@@ -245,25 +238,16 @@
         dataLogPrintedElem.innerHTML += newContent;
         logRawContent += newContent;
 
-        excludeLogRowsActive ? performLogViewerMark(excludeNoMatchingRows) : performLogViewerMark();
+        excludeLogRowsActive & keywordLogInput.value.length > 2 ? 
+            performLogViewerMark(excludeNoMatchingRows) : performLogViewerMark();
 
         if (document.querySelector('#scrollMe').checked) {
             scrollLogToBottom();
         }
     }
 
-    // Function that cleans the log content from SPAN Html Tag used for highlight
-    function removeLogViewerKeywordMatchHighlight(log) {
-        logViewerMarkedText = false;
-        return log.replaceAll(highlightTagBegin, '').replaceAll(highlightTagEnd, '');
-    }
-
     // Function that adds to the log content SPAN Html Tags used for highlight
     function addLogViewerKeywordMatchHighlight(log, keyword) {
-
-        // if log content was previously highlighted(dirty) then we need to clean it first
-        if (logViewerMarkedText) { log = removeLogViewerKeywordMatchHighlight(log); }
-        
         for (let index = 0, len = log.length; index < len; index++) {
             index = log.toLocaleLowerCase().indexOf(keyword, index);
             
@@ -276,19 +260,15 @@
                 index = index + highlightTagBegin.length + keyword.length
                 // Add ending SPAN tag
                 log = log.slice(0, index) + highlightTagEnd + log.slice(index);
-
-                // Flag to mark the log content as highlighted(dirty)
-                logViewerMarkedText = true;
             }
         }
 
         return log;
-
     }
 
     function performLogViewerMark(callback) {
-        var keyword = keywordLogInput.value;
-        var log = dataLogPrintedElem.innerHTML;
+        var keyword = keywordLogInput.value.toLowerCase();
+        var log = logRawContent;
 
         // If keyword is greater than 2 characters, then filtering is applied
         if (keyword && keyword.length > 2) {
@@ -297,7 +277,6 @@
             if (callback) {
                 log = callback(log);
             }
-
         }
 
         dataLogPrintedElem.innerHTML = log;
@@ -305,8 +284,7 @@
 
     // Function that gets called when pressed "Enter" key to exclude no matching rows
     function excludeNoMatchingRows(log) {
-        // The "splitParam" can change depending if it's comming from a DOM Element or a JS variable
-        var splitParam = excludeLogRowsActive ? '<br>' : '<br />';
+        var splitParam = '<br />';
         var filteredData = log.split(splitParam);
         var excludedRows = filteredData.filter((row) => row.indexOf('highlighKeywordtMatchLogViewer') !== -1)
         var joined = excludedRows.join(splitParam) + splitParam;
