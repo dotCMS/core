@@ -129,17 +129,15 @@ public class TailLogServlet extends HttpServlet {
 		try {
 			while (thread.isAlive()) {
                 String write = listener.getOut(true).toString();
-				if (UtilMethods.isSet(write)) {
-					response.getOutputStream().print(write);
-					response.getOutputStream().print("<script>doS('" + write + "');</script>");
-					response.getOutputStream().flush();
-				}
+				response.getOutputStream().print(write);
+				response.getOutputStream().print("<script>doS('" + write + "');</script>");
+				response.getOutputStream().flush();
                 Thread.sleep(1000);
 			}
 			Logger.warn(this, "Tail Log Servlet Thread is not alive");
 		} catch (Exception e) {
 			Logger.warn(this, "Tail Log Servlet Thread stopped because " + e.getMessage());
-			e.printStackTrace();
+			
 			if (thread != null) {
 				thread.stopTailer();
 			}
