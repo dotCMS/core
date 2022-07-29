@@ -1,6 +1,7 @@
 package com.dotcms.publishing;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.config.DotInitializer;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
@@ -48,7 +49,7 @@ import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.MOD_
  * @author Jason Tesser
  * @since Mar 23rd, 2012
  */
-public class PublisherAPIImpl implements PublisherAPI {
+public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
 
     private final PublishAuditAPI publishAuditAPI = PublishAuditAPI.getInstance();
     private final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
@@ -207,8 +208,13 @@ public class PublisherAPIImpl implements PublisherAPI {
         }
     }
 
+    /**
+     * Initializes the data structures containing the Push Publishing Filter Descriptors. This method will access the
+     * location that Filter Descriptors live in, loads them and validates them so that they can be accessed by dotCMS
+     * or any User with the appropriate permissions.
+     */
     @Override
-    public void initializeFilterDescriptors() {
+    public void init() {
         try {
             final File basePath = new File(PUBLISHING_FILTERS_FOLDER.get());
             if (!basePath.exists()) {
@@ -335,7 +341,7 @@ public class PublisherAPIImpl implements PublisherAPI {
         }
         final File filterPathFile = new File(new File(PUBLISHING_FILTERS_FOLDER.get()), filterKey);
         if (FileUtils.deleteQuietly(filterPathFile)) {
-            this.initializeFilterDescriptors();
+            this.init();
             return Boolean.TRUE;
         }
         return Boolean.FALSE;
@@ -345,7 +351,7 @@ public class PublisherAPIImpl implements PublisherAPI {
     public void upsertFilterDescriptor(FilterDescriptor filterDescriptor) {
         final File filterPathFile = new File(new File(PUBLISHING_FILTERS_FOLDER.get()), filterDescriptor.getKey());
         YamlUtil.write(filterPathFile, filterDescriptor);
-        this.initializeFilterDescriptors();
+        this.init();
     }
 
     @Override
@@ -359,7 +365,7 @@ public class PublisherAPIImpl implements PublisherAPI {
                         filterPathFile.getAbsolutePath(), e.getMessage()));
             }
         }
-        this.initializeFilterDescriptors();
+        this.init();
     }
 
     /**
@@ -404,11 +410,11 @@ public class PublisherAPIImpl implements PublisherAPI {
      */
     private FilterDescriptor createFilterFromFile(final Path path) {
         final String fileName = path.getFileName().toString();
-        Logger.info(PushPublishFiltersInitializer.class, "Loading Push Publish Filter: " + fileName);
+        Logger.info(this, "Loading Push Publish Filter: " + fileName);
         try {
             final FilterDescriptor filterDescriptor = YamlUtil.parse(path, FilterDescriptor.class);
             filterDescriptor.setKey(fileName);
-            Logger.info(PushPublishFiltersInitializer.class, filterDescriptor.toString());
+            Logger.info(this, filterDescriptor.toString());
             filterDescriptor.validate();
             return filterDescriptor;
         } catch (final Exception e) {

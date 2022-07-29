@@ -64,13 +64,6 @@ public interface PublisherAPI {
     public PublishStatus publish ( PublisherConfig config, PublishStatus status) throws DotPublishingException;
 
     /**
-     * Initializes the data structures containing the Push Publishing Filter Descriptors. This method will access the
-     * location that Filter Descriptors live in, loads them and validates them so that they can be accessed by dotCMS
-     * or any User with the appropriate permissions.
-     */
-    void initializeFilterDescriptors();
-
-    /**
      * Loads the Filter Descriptor specified in the given path and saves it in the system.
      *
      * @param path The {@link Path} representing the location of the Filter Descriptor.

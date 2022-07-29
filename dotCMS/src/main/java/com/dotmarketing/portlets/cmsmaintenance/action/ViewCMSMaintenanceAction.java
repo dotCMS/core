@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.cmsmaintenance.action;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.publishing.PushPublishFiltersInitializer;
+import com.dotcms.config.DotInitializer;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -187,7 +187,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 				_flush(cacheToFlush);
 				//Reloads PushPublishing Filters if all cache or system cache is flushed
 				if(isAllCachesFlush || cacheToFlush.equalsIgnoreCase("system")){
-					APILocator.getPublisherAPI().initializeFilterDescriptors();
+					DotInitializer.class.cast(APILocator.getPublisherAPI()).init();
 				}
 				message = isAllCachesFlush ? "message.cmsmaintenance.cache.flushallcache" : "message.cmsmaintenance.cache.flushcache";
 			} else {
