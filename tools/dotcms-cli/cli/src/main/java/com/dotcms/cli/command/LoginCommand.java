@@ -1,47 +1,41 @@
 package com.dotcms.cli.command;
 
 
-import com.dotcms.api.AuthSecurityContext;
-import com.dotcms.api.AuthenticationAPI;
-import com.dotcms.model.ResponseEntityView;
-import com.dotcms.model.authentication.APITokenRequest;
-import com.dotcms.model.authentication.TokenEntity;
+import com.dotcms.api.AuthenticationContext;
+import com.dotcms.cli.common.OutputOptionMixin;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
-import javax.ws.rs.WebApplicationException;
-import org.eclipse.microprofile.rest.client.inject.RestClient;
-import org.jboss.logging.Logger;
 import picocli.CommandLine;
 
 @ActivateRequestContext
-@CommandLine.Command(name = "login", description = "Login Command Expects a user and a password.")
+@CommandLine.Command(
+        name = LoginCommand.NAME,
+        description = "@|bold,green Once a profile is selected. Use this command to open a session|@ Expects a user in @|bold,cyan --user -u|@ and a password @|bold,cyan --password -p|@ @|bold Both are mandatory params.|@"
+)
 public class LoginCommand implements Runnable {
 
-    private static final Logger logger = Logger.getLogger(LoginCommand.class);
+    static final String NAME = "login";
+
+    @CommandLine.Mixin(name = "output")
+    protected OutputOptionMixin output;
 
     @CommandLine.Option(names = {"-u", "--user"}, description = "User name", defaultValue = "admin@dotcms.com", required = true, interactive = true )
     String user;
 
-    @CommandLine.Option(names = {"-p", "--password"}, arity = "0..1", description = "Passphrase", interactive = true, required = true )
-    String password;
+    @CommandLine.Option(names = {"-p", "--password"}, arity = "0..1", description = "Passphrase", required = true, interactive = true )
+    char[] password;
 
     @Inject
-    @RestClient
-    AuthenticationAPI client;
-
-    @Inject
-    AuthSecurityContext authSecurityContext;
+    AuthenticationContext authenticationContext;
 
     @Override
     public void run() {
-        logger.info(String.format("Logging in as %s. ",user));
-        final APITokenRequest tokenRequest = APITokenRequest.builder().user(user).password(password).expirationDays(10).build();
+        output.info(String.format("Logging in as [@|bold,cyan %s|@]. ",user));
         try {
-            final ResponseEntityView<TokenEntity> response = client.getToken(tokenRequest);
-            authSecurityContext.setToken(response.entity().token(), user);
-            logger.info(String.format("Successfully logged-in as %s. ", user));
-        }catch (WebApplicationException wae){
-            logger.error("Unable to login. ", wae);
+            authenticationContext.login(user, password);
+            output.info(String.format("@|bold,green Successfully logged-in as |@ [@|bold,blue %s|@]", user));
+        }catch (Exception wae){
+            output.error("Unable to login. ", wae);
         }
     }
 }

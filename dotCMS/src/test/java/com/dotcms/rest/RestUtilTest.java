@@ -50,7 +50,7 @@ public abstract class RestUtilTest extends UnitTestBase {
         assertNotNull(ResponseEntityView.class.cast(response.getEntity()).getErrors());
         assertTrue(ResponseEntityView.class.cast(response.getEntity()).getErrors().size() > 0);
         assertNotNull(ResponseEntityView.class.cast(response.getEntity()).getErrors().get(0));
-        assertTrue(ResponseEntityView.class.cast(response.getEntity()).getErrors().get(0).getErrorCode().equals
+        assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response.getEntity()).getErrors().get(0)).getErrorCode().equals
                 (errorCodeExpected));
 
     }
