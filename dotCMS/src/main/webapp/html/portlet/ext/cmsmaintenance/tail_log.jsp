@@ -46,7 +46,6 @@
 
 
 %>
-<script src='/html/js/hrJS/hrJS.custom.min.js'></script>
 <style>
     #Logging #tailContainer {
         height: 100%;
