@@ -64,32 +64,12 @@
         padding: 1rem;
         white-space: pre;
     }
+    .highlighKeywordtMatchLogViewer{
+        background-color: yellow;
+        color: #000;
+    }
 </style>
 <script type="text/javascript">
-
-	function reloadTail(){
-		var x = dijit.byId("fileName").getValue();
-        if(x) {
-		    dojo.byId("tailingFrame").src='/dotTailLogServlet/?fileName='+x;
-            disableFollowOnScrollUp();
-            dijit.byId("downloadLog").attr("disabled", false);
-        } else {
-            dijit.byId("downloadLog").attr("disabled", true);
-        }
-
-        document.querySelector('.logViewerPrinted').innerHTML = '';
-        document.querySelector('#keywordLogFilterInput').value = '';
-
-        var iframeContentInterval = setInterval(() => { 
-            var contentLoaded = document.getElementById('tailingFrame').contentDocument.body?.innerHTML;
-
-            if (contentLoaded) {
-                clearInterval(iframeContentInterval);
-                attachLogIframeEvents()
-            }
-        }, 200);
-
-	}
 
     function disableFollowOnScrollUp() {
         var iframe = dojo.byId('tailingFrame');
@@ -117,14 +97,12 @@
 	}
 
 	dojo.ready(function(){
-
 		<%if(request.getParameter("fileName")!= null){
 			String selectedFileNameStr = com.dotmarketing.util.UtilMethods.xmlEscape(request.getParameter("fileName")).replace(logPath + File.separator, "");
 			selectedFileNameStr = selectedFileNameStr.replace("\\", "\\\\");
 		%>
 		dijit.byId("fileName").attr("displayedValue","<%=selectedFileNameStr%>");
 		<%}%>
-
 	});
 
     /**
@@ -175,88 +153,170 @@
 
     };
 
+	function reloadTail(){
+		var x = dijit.byId("fileName").getValue();
+        if(x) {
+		    dojo.byId("tailingFrame").src='/dotTailLogServlet/?fileName='+x;
+            disableFollowOnScrollUp();
+            dijit.byId("downloadLog").attr("disabled", false);
+        } else {
+            dijit.byId("downloadLog").attr("disabled", true);
+        }
+
+        // Reset values from Log Viewer container and input filter value
+        document.querySelector('.logViewerPrinted').innerHTML = '';
+        document.querySelector('#keywordLogFilterInput').value = '';
+
+        // Wait until the Iframe has loaded so the binding of events can be applied
+        var iframeContentInterval = setInterval(() => { 
+            var contentLoaded = document.getElementById('tailingFrame').contentDocument.body?.innerHTML;
+
+            if (contentLoaded) {
+                clearInterval(iframeContentInterval);
+                attachLogIframeEvents()
+            }
+        }, 200);
+
+        
+	}
+
     /**********************/
     /* Log Viewer - BEGIN */
 
+    var highlightTagBegin = '<span class="highlighKeywordtMatchLogViewer">';
+    var highlightTagEnd = "</span>";
+    var attachedFilterLogEvents = false;
+    var excludeLogRowsActive = false;
+    var logRawContent = '';
+    var logViewerMarkedText = false;
+
+    var dataLogPrintedElem = null;
+    var keywordLogInput = null;
+
     function attachLogIframeEvents() {
+        if (!attachedFilterLogEvents) {
+            var debounce = (callback, time = 300, interval) => (...args) => {
+                clearTimeout(interval, interval = setTimeout(() => callback(...args), time));
+            }
+
+            dataLogPrintedElem = document.querySelector('.logViewerPrinted');
+
+            keywordLogInput = document.querySelector('#keywordLogFilterInput');
+            keywordLogInput.addEventListener("keyup", debounce(filterLog, 300));
+
+            // Flag to avoid binding multiple debounce events on filter input
+            attachedFilterLogEvents = true;
+        }
+
+        logRawContent = '';
+
         var dataLogSourceElem = document.getElementById('tailingFrame');
         var iDoc = dataLogSourceElem.contentWindow || dataLogSourceElem.contentDocument;
-        logRawContent = '';
+
         iDoc.document.addEventListener("logUpdated", (e) => {
-            updateLogViewerData(e.detail.newContent);
+            // Only triggering if "newContent" has a value, cuz there can be calls from BE with empty data
+            // for the purpose of just to keep the connection alive
+            if (e.detail.newContent.length > 0) {
+                updateLogViewerData(e.detail.newContent);
+            }
         })
     }
     
-    var excludeLogRowsActive = false;
-    var logRawContent = '';
+    // Function called on every fiter keydown event
+    function filterLog(event) {
+        const ignoredKeys = ["ArrowLeft", "ArrowUp", "ArrowDown", "ArrowRight"];
 
-    function updateLogViewerData(newContent){
+        if (event.key === 'Enter') {
+            excludeLogRowsActive = true;
+            performLogViewerMark(excludeNoMatchingRows);
+        } else if (!ignoredKeys.includes(event.key)) {
 
-        var dataLogSourceElem = document.getElementById('tailingFrame').contentDocument.body;
-        var dataLogPrintedElem = document.querySelector('.logViewerPrinted');
-        var keywordLogInput = document.querySelector('#keywordLogFilterInput');
-
-        var debounce = (callback, time = 300, interval) => (...args) => {
-            clearTimeout(interval, interval = setTimeout(() => callback(...args), time));
-        }
-
-        function performMark(callback) {
-            dataLogPrintedElem.innerHTML = logRawContent;
-
-            var keyword = keywordLogInput.value;
-
-            if (keyword && keyword.length > 2) {
-                new HR(".logViewerPrinted", {
-                    highlight: [keyword]
-                }).hr();
-                
-                if (callback) {
-                    callback();
-                }
+            // if previously the rows were excluded when filtering then a copy of the whole content needs to be restablished
+            if (excludeLogRowsActive) {
+                dataLogPrintedElem.innerHTML = logRawContent;
             }
+
+            excludeLogRowsActive = false;
+            performLogViewerMark();
         }
-
-        function excludeNoMatchingRows() {
-            var filteredData = dataLogPrintedElem.innerHTML.split('<br>');
-            var excludedRows = filteredData.filter((row) => row.includes('data-hr'))
-            dataLogPrintedElem.innerHTML = excludedRows.join('<br>');
-        }
-
-        function filterLog(event) {
-            const ignoredKeys = ["ArrowLeft", "ArrowUp", "ArrowDown", "ArrowRight"];
-
-            if (event.key === 'Enter') {
-                excludeLogRowsActive = true;
-                performMark(excludeNoMatchingRows);
-            } else if (!ignoredKeys.includes(event.key)) {
-                excludeLogRowsActive = false;
-                performMark();
-            }
-        }
-
-        function scrollLogToBottom() {
-            var dataLogPrintedElem = document.querySelector('.logViewerPrinted');
-            dataLogPrintedElem.scrollTop = dataLogPrintedElem.scrollHeight;
-        }
-
-        function initLogViewer() {
-            var result = dataLogPrintedElem
-            result.innerHTML += newContent;
-            logRawContent += newContent;
-
-            excludeLogRowsActive ? performMark(excludeNoMatchingRows) : performMark();
-
-            if (document.querySelector('#scrollMe').checked) {
-                scrollLogToBottom();
-            }
-        }
-
-        keywordLogInput.removeEventListener("keyup", debounce(filterLog, 300));
-        keywordLogInput.addEventListener("keyup", debounce(filterLog, 300));
-
-        initLogViewer()
     }
 
+    // Function that gets called on every new log update
+    function updateLogViewerData(newContent) {
+        dataLogPrintedElem.innerHTML += newContent;
+        logRawContent += newContent;
+
+        excludeLogRowsActive ? performLogViewerMark(excludeNoMatchingRows) : performLogViewerMark();
+
+        if (document.querySelector('#scrollMe').checked) {
+            scrollLogToBottom();
+        }
+    }
+
+    // Function that cleans the log content from SPAN Html Tag used for highlight
+    function removeLogViewerKeywordMatchHighlight(log) {
+        logViewerMarkedText = false;
+        return log.replaceAll(highlightTagBegin, '').replaceAll(highlightTagEnd, '');
+    }
+
+    // Function that adds to the log content SPAN Html Tags used for highlight
+    function addLogViewerKeywordMatchHighlight(log, keyword) {
+
+        // if log content was previously highlighted(dirty) then we need to clean it first
+        if (logViewerMarkedText) { log = removeLogViewerKeywordMatchHighlight(log); }
+        
+        for (let index = 0, len = log.length; index < len; index++) {
+            index = log.toLocaleLowerCase().indexOf(keyword, index);
+            
+            if (index === -1) {
+                break;
+            }else{
+                // If keyword match found, add initial SPAN tag
+                log = log.slice(0, index) + highlightTagBegin + log.slice(index);
+                // move index to last position of keyword match
+                index = index + highlightTagBegin.length + keyword.length
+                // Add ending SPAN tag
+                log = log.slice(0, index) + highlightTagEnd + log.slice(index);
+
+                // Flag to mark the log content as highlighted(dirty)
+                logViewerMarkedText = true;
+            }
+        }
+
+        return log;
+
+    }
+
+    function performLogViewerMark(callback) {
+        var keyword = keywordLogInput.value;
+        var log = dataLogPrintedElem.innerHTML;
+
+        // If keyword is greater than 2 characters, then filtering is applied
+        if (keyword && keyword.length > 2) {
+            log = addLogViewerKeywordMatchHighlight(log, keyword);
+            
+            if (callback) {
+                log = callback(log);
+            }
+
+        }
+
+        dataLogPrintedElem.innerHTML = log;
+    }
+
+    // Function that gets called when pressed "Enter" key to exclude no matching rows
+    function excludeNoMatchingRows(log) {
+        // The "splitParam" can change depending if it's comming from a DOM Element or a JS variable
+        var splitParam = excludeLogRowsActive ? '<br>' : '<br />';
+        var filteredData = log.split(splitParam);
+        var excludedRows = filteredData.filter((row) => row.indexOf('highlighKeywordtMatchLogViewer') !== -1)
+        var joined = excludedRows.join(splitParam) + splitParam;
+        return joined;
+    }
+
+    function scrollLogToBottom() {
+        dataLogPrintedElem.scrollTop = dataLogPrintedElem.scrollHeight;
+    }
 
     /* Log Viewer - END */
     /********************/
@@ -293,6 +353,6 @@
 </div>
 
 <div id="tailContainer" class="log-files__container" style="display: flex; flex-direction: column;">
-    <iframe id="tailingFrame" src="/html/blank.jsp" style="display: none;" class="log-files__iframe"></iframe>
+    <iframe id="tailingFrame" src="/html/blank.jsp" style="display: none" class="log-files__iframe"></iframe>
     <div class="logViewerPrinted" style="flex-grow: 1;"></div>
 </div>
