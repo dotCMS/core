@@ -21,8 +21,8 @@ import com.dotcms.LicenseTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.BlockPageCache;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.PageCacheParameters;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -94,8 +94,8 @@ public class PublishFactoryTest extends IntegrationTestBase {
             final String languageId = String.valueOf(languageAPI.getDefaultLanguage().getId());
             final String userId = systemUser.getUserId();
 
-            final BlockPageCache.PageCacheParameters
-                cacheParameters = new BlockPageCache.PageCacheParameters(userId, languageId, "", "", "");
+            final PageCacheParameters
+                cacheParameters = new PageCacheParameters(userId, languageId, "", "", "");
 
             final String dummyText = "This is dummy text";
 
