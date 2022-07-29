@@ -12,6 +12,7 @@ import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.content.model.hydration.MetadataDelegateTest;
+import com.dotcms.contenttype.business.ContentTypeInitializerTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.csspreproc.CSSCacheTest;
@@ -557,7 +558,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task220401CreateClusterLockTableTest.class,
         Task220606UpdatePushNowActionletNameTest.class,
         BundlerUtilTest.class,
-        AWSS3PublisherTest.class
+        AWSS3PublisherTest.class,
+        ContentTypeInitializerTest.class
 })
 public class MainSuite {
 
