@@ -1,10 +1,16 @@
 package com.dotcms.api.client;
 
+import com.dotcms.api.exception.ClientConfigNotFoundException;
+import com.dotcms.model.config.ServiceBean;
 import java.net.URI;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import org.jboss.logging.Logger;
 
 /**
  * @author Steve Bolton
@@ -15,16 +21,21 @@ import javax.inject.Inject;
 @ApplicationScoped
 public class RestClientFactory {
 
-    public static final String DEFAULT = "default";
+    public static final String NONE = "none";
+
+    @Inject
+    Logger logger;
 
     /**
      * Thread local variable containing each thread's ID
      */
-    private final ThreadLocal<String> dotCMSInstanceProfile =
-            ThreadLocal.withInitial(() -> DEFAULT);
+    private final AtomicReference<String> instanceProfile = new AtomicReference<>(NONE);
 
     @Inject
     DotCmsClientConfig clientConfig;
+
+    @Inject
+    ServiceManager serviceManager;
 
     private final Map<String, APIEndpoints> registry = new ConcurrentHashMap<>();
 
@@ -69,15 +80,18 @@ public class RestClientFactory {
      * @param <T>
      */
     public <T> T getClient(final Class<T> clazz) {
-        return getClient(dotCMSInstanceProfile.get(), clazz);
+        return getClient(currentSelectedProfile(), clazz);
     }
 
-    /**
-     * We should be able to tell this class what profile we're currently looking at.
-     * @param profile
-     */
-    public void setProfile(final String profile) {
-        dotCMSInstanceProfile.set(profile);
+    public String currentSelectedProfile() {
+        instanceProfile.compareAndSet(NONE, serviceSupplier.get());
+        return instanceProfile.get();
     }
+
+    final Supplier<String> serviceSupplier = () -> {
+        final Optional<ServiceBean> selected = serviceManager.selected();
+        return selected.map(ServiceBean::name).orElse(NONE);
+    };
+
 
 }
