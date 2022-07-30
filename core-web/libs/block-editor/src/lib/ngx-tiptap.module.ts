@@ -7,7 +7,7 @@ import { DraggableDirective } from './draggable.directive';
 import { NodeViewContentDirective } from './node-view-content.directive';
 
 import { MenuModule } from 'primeng/menu';
-import { DropdownModule } from 'primeng/dropdown';
+import { CheckboxModule } from 'primeng/checkbox';
 import { CommonModule } from '@angular/common';
 import { CardModule } from 'primeng/card';
 import { ContentletBlockComponent } from './extensions/blocks/contentlet-block/contentlet-block.component';
@@ -31,7 +31,7 @@ import { SuggestionLoadingItemComponent } from './extensions/components/suggesti
 import { FormActionsComponent } from './extensions/components/bubble-menu-link-form/components/form-actions/form-actions.component';
 
 @NgModule({
-    imports: [CommonModule, FormsModule, ReactiveFormsModule, CardModule, MenuModule, DropdownModule],
+    imports: [CommonModule, FormsModule, ReactiveFormsModule, CardModule, MenuModule, CheckboxModule],
     declarations: [
         EditorDirective,
         BubbleMenuDirective,
@@ -63,7 +63,7 @@ import { FormActionsComponent } from './extensions/components/bubble-menu-link-f
         BubbleMenuComponent,
         BubbleMenuLinkFormComponent,
         ReactiveFormsModule,
-        DropdownModule
+        CheckboxModule
     ]
 })
 export class NgxTiptapModule {}

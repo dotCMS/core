@@ -52,11 +52,18 @@
             color: $black;
         }
     
-        .dropdown-container {
+        .field-checkbox {
             display: flex;
-            flex-direction: column;
             gap: .2rem;
             min-width: 100%;
+
+            .checkbox-container {
+                cursor: pointer;
+                width: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
         }
     }
     

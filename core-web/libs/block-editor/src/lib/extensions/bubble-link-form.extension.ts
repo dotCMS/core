@@ -15,12 +15,6 @@ export interface PluginStorage {
 }
 
 declare module '@tiptap/core' {
-    interface Commands<ReturnType> {
-        bubbleLinkForm: {
-            toogleLinkForm: () => ReturnType;
-        };
-    }
-
     interface Storage {
         bubbleLinkForm: PluginStorage;
     }
@@ -39,17 +33,6 @@ export const BubbleLinkFormExtension = (viewContainerRef: ViewContainerRef) => {
         addStorage() {
             return {
                 show: true
-            };
-        },
-
-        addCommands() {
-            return {
-                toogleLinkForm:
-                    () =>
-                    ({ commands }) => {
-                        this.storage.show = !this.storage.show;
-                        return commands.setHighlight();
-                    }
             };
         },
 

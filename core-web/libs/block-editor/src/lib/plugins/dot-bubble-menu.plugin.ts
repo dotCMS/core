@@ -25,6 +25,7 @@ import {
     popperModifiers
 } from '../utils/bubble-menu.utils';
 import { findParentNode } from '../utils/prosemirror.utils';
+import { LINK_FORM_PLUGIN_KEY } from '../extensions/bubble-link-form.extension';
 
 export const DotBubbleMenuPlugin = (options: DotBubbleMenuPluginProps) => {
     const component = options.component.instance;
@@ -104,6 +105,8 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         document.body.addEventListener('scroll', this.hanlderScroll.bind(this), true);
         document.body.addEventListener('mouseup', this.showMenu.bind(this), true);
         document.body.addEventListener('keyup', this.showMenu.bind(this), true);
+
+        this.editor.off('blur', this.blurHandler);
     }
 
     showMenu() {
@@ -179,6 +182,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
         this.updateComponent();
         this.setMenuItems(doc, from);
+        this.show();
     }
 
     /* @Overrrider */
@@ -188,9 +192,6 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
         this.element.removeEventListener('mousedown', this.mousedownHandler, { capture: true });
         this.view.dom.removeEventListener('dragstart', this.dragstartHandler);
-
-        this.editor.off('focus', this.focusHandler);
-        this.editor.off('blur', this.blurHandler);
 
         this.component.instance.command.unsubscribe();
         this.component.instance.toggleChangeTo.unsubscribe();
@@ -281,7 +282,12 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                 }
                 break;
             case 'link':
-                this.editor.commands.toogleLinkForm();
+                // eslint-disable-next-line
+                const { open = true } = LINK_FORM_PLUGIN_KEY.getState(this.editor.state);
+                this.editor.commands.setHighlight();
+                this.editor.view.dispatch(
+                    this.editor.state.tr.setMeta(LINK_FORM_PLUGIN_KEY, { open: !open, fromClick: false })
+                );
                 break;
             case 'deleteNode':
                 if (this.selectionNodesCount > 1) {

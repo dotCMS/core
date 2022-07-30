@@ -35,7 +35,7 @@ export class BubbleMenuLinkFormComponent implements OnInit {
 
     @Output() hide: EventEmitter<boolean> = new EventEmitter(false);
     @Output() removeLink: EventEmitter<boolean> = new EventEmitter(false);
-    @Output() submitForm: EventEmitter<{ link: string; blank: boolean }> = new EventEmitter();
+    @Output() submitForm: EventEmitter<blockLinkMenuForm> = new EventEmitter();
 
     @Input() showSuggestions = false;
     @Input() initialValues: blockLinkMenuForm = {
@@ -82,6 +82,16 @@ export class BubbleMenuLinkFormComponent implements OnInit {
                 }
                 this.suggestionsComponent?.searchContentlets({ link });
             });
+        this.form
+            .get('blank')
+            .valueChanges.subscribe((blank) =>
+                this.submitForm.emit({ link: this.currentLink, blank })
+            );
+    }
+
+    saveNode(data: blockLinkMenuForm) {
+        this.submitForm.emit(data);
+        this.hide.emit(true);
     }
 
     /**

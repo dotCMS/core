@@ -4,8 +4,7 @@
         autoComplete="off"
         [formGroup]="form"
         (keydown)="onKeyDownEvent($event)"
-        (mousedown)="focusInput()"
-        (ngSubmit)="submitForm.emit(form.value)"
+        (ngSubmit)="saveNode(form.value)"
     >
         <div class="search-container">
             <input
@@ -27,17 +26,15 @@
                 <span class="truncate">{{ currentLink }}</span>
             </a>
     
-            <div class="dropdown-container">
-                <span [style]="{ fontSize: '12px' }">Open Link in</span>
-                <p-dropdown
-                    *ngIf="currentLink.length"
-                    id="editor-input-link-dropdown"
-                    formControlName="blank"
-                    optionLabel="name"
-                    optionValue="blank"
-                    [options]="options"
-                    [style]="{ width: '100%' }"
-                ></p-dropdown>
+            <div class="field-checkbox">
+                <div class="checkbox-container">
+                    <p-checkbox
+                        id="editor-input-checkbox"
+                        formControlName="blank"
+                        [binary]="true"
+                    ></p-checkbox>
+                </div>
+                <label for="editor-input-checkbox">Open link in new window</label>
             </div>
         </div>
 

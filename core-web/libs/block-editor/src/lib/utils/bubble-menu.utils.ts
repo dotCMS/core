@@ -1,5 +1,10 @@
 import { isTextSelection } from '@tiptap/core';
 import { BubbleMenuItem, ShouldShowProps } from '@dotcms/block-editor';
+import { LINK_FORM_PLUGIN_KEY } from '../extensions/bubble-link-form.extension';
+
+const hideBubbleMenuOn = {
+    dotContent: true
+}
 
 /**
  * Determine when the bubble menu can or cannot be displayed.
@@ -9,6 +14,7 @@ import { BubbleMenuItem, ShouldShowProps } from '@dotcms/block-editor';
  */
 export const shouldShowBubbleMenu = ({ editor, state, from, to }: ShouldShowProps) => {
     const { doc, selection } = state;
+    const { view } = editor;
     const { empty } = selection;
 
     // Current selected node
@@ -19,11 +25,21 @@ export const shouldShowBubbleMenu = ({ editor, state, from, to }: ShouldShowProp
     // So we check also for an empty text size.
     const isEmptyTextBlock = !doc.textBetween(from, to).length && isTextSelection(state.selection);
 
+    const {open: isFormOpen = false, fromClick } = LINK_FORM_PLUGIN_KEY.getState(state);
+
     // If it's empty or the current node is type dotContent, it will not open.
-    if (!editor.isFocused || empty || isEmptyTextBlock || node?.type.name == 'dotContent') {
+    if (!isFormOpen && (!view.hasFocus() || empty || isEmptyTextBlock)) {
         return false;
     }
 
+    if(fromClick) {
+        return false;
+    }
+
+    if( hideBubbleMenuOn[node?.type.name]) {
+        return false;
+    }
+    
     return true;
 };
 

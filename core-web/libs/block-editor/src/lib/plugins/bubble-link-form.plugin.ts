@@ -10,11 +10,12 @@ import {
 } from '../extensions/components/bubble-menu-link-form/bubble-menu-link-form.component';
 
 // Interface
-import { PluginStorage } from '../extensions/bubble-link-form.extension';
+import { PluginStorage, LINK_FORM_PLUGIN_KEY } from '../extensions/bubble-link-form.extension';
 import { isValidURL } from '../utils/bubble-menu.utils';
 
 interface PluginState {
-    toggle: boolean;
+    open: boolean;
+    fromClick: boolean;
 }
 
 export interface BubbleLinkFormProps {
@@ -50,7 +51,7 @@ export class BubbleLinkFormView {
     private scrollElementMap = {
         'editor-suggestion-list': true,
         'editor-input-link': true,
-        'editor-input-link-dropdown': true,
+        'editor-input-checkbox': true
     };
 
     constructor({
@@ -87,7 +88,7 @@ export class BubbleLinkFormView {
         const prev = this.pluginKey.getState(prevState);
 
         // Check that the current plugin state is different to previous plugin state.
-        if (next.toggle === prev.toggle) {
+        if (next.open === prev.open) {
             this.detectLinkFormChanges();
             return;
         }
@@ -112,12 +113,13 @@ export class BubbleLinkFormView {
             return;
         }
 
-        this.tippy = tippy(editorElement, {
+        this.tippy = tippy(editorElement.parentElement, {
             ...this.tippyOptions,
             duration: 250,
             getReferenceClientRect: null,
             content: this.element,
             interactive: true,
+            maxWidth: '100%',
             trigger: 'manual',
             placement: 'bottom-start',
             hideOnClick: 'toggle'
@@ -135,6 +137,9 @@ export class BubbleLinkFormView {
 
     hide() {
         this.tippy?.hide();
+        this.editor.view.dispatch(
+            this.editor.state.tr.setMeta(LINK_FORM_PLUGIN_KEY, { open: false })
+        );
         // After show the component focus editor
         this.editor.view.focus();
         this.editor.commands.unsetHighlight();
@@ -153,7 +158,8 @@ export class BubbleLinkFormView {
         // Get Editor Container Position
         const { element: editorElement } = this.editor.options;
         const editorClientRect = editorElement.parentElement.getBoundingClientRect();
-        const bubbleMenuRect = document.querySelector('#bubble-menu').getBoundingClientRect();
+        const domRect =
+            document.querySelector('#bubble-menu')?.getBoundingClientRect() || nodeClientRect;
 
         // Check for an overflow in the content
         const isOverflow = editorClientRect.bottom < nodeClientRect.bottom;
@@ -163,16 +169,15 @@ export class BubbleLinkFormView {
         const isNodeImage = node.type.name === 'dotImage';
 
         // If there is an overflow, use bubble menu position as a reference.
-        return isOverflow || isNodeImage ? bubbleMenuRect : nodeClientRect;
+        return isOverflow || isNodeImage ? domRect : nodeClientRect;
     }
 
-    addLink({ link, blank = false }) {
+    setLinkValues({ link, blank = false }) {
         if (this.isDotImageNode()) {
             this.editor.commands.setImageLink({ href: link });
         } else {
             this.editor.commands.setLink({ href: link, target: blank ? '_blank' : '_top' });
         }
-        this.hide();
     }
 
     removeLink() {
@@ -193,7 +198,7 @@ export class BubbleLinkFormView {
     setComponentEvents() {
         this.component.instance.hide.subscribe(() => this.hide());
         this.component.instance.removeLink.subscribe(() => this.removeLink());
-        this.component.instance.submitForm.subscribe((event) => this.addLink(event));
+        this.component.instance.submitForm.subscribe((event) => this.setLinkValues(event));
     }
 
     detectLinkFormChanges() {
@@ -240,27 +245,102 @@ export class BubbleLinkFormView {
 }
 
 export const bubbleLinkFormPlugin = (options: BubbleLinkFormProps) => {
+    let lastNode;
     return new Plugin({
         key: options.pluginKey as PluginKey,
         view: (view) => new BubbleLinkFormView({ view, ...options }),
         state: {
             init(): PluginState {
                 return {
-                    toggle: true
+                    open: false,
+                    fromClick: false
                 };
             },
 
-            apply(transaction: Transaction): PluginState {
-                const transactionMeta = transaction.getMeta(options.pluginKey);
-                if (transactionMeta) {
+            apply(
+                transaction: Transaction,
+                value: PluginState,
+                oldState: EditorState
+            ): PluginState {
+                const { open, fromClick } = transaction.getMeta(LINK_FORM_PLUGIN_KEY) || {};
+                const state = LINK_FORM_PLUGIN_KEY.getState(oldState);
+                const existFromClick = typeof fromClick === 'boolean';
+
+                if (typeof open === 'boolean') {
                     return {
-                        toggle: options.storage.show
+                        open,
+                        fromClick: existFromClick ? fromClick : state.fromClick
                     };
                 }
 
-                return {
-                    toggle: options.storage.show
-                };
+                // keep the old state in case we do not receive a new one.
+                return state || value;
+            }
+        },
+        props: {
+            handleClickOn(view: EditorView, pos: number, node) {
+                const editor = options.editor;
+
+                // same node here
+                if (!editor.isActive('link')) {
+                    return;
+                }
+
+                if (JSON.stringify(lastNode) === JSON.stringify(node)) {
+                    editor
+                        .chain()
+                        .setTextSelection(pos)
+                        .unsetHighlight()
+                        .command(({ tr }) => {
+                            tr.setMeta(LINK_FORM_PLUGIN_KEY, { open: false, fromClick: false });
+                            return true;
+                        })
+                        .run();
+                    return;
+                }
+
+                const $pos = view.state.doc?.resolve(pos);
+                const to = pos - $pos?.textOffset;
+                if ($pos.index() < $pos?.parent.childCount) {
+                    lastNode = node;
+                    const from = to + $pos?.parent.child($pos.index()).nodeSize;
+                    editor
+                        .chain()
+                        .setTextSelection({ to, from })
+                        .setHighlight()
+                        .command(({ tr }) => {
+                            tr.setMeta(LINK_FORM_PLUGIN_KEY, { open: true, fromClick: true });
+                            return true;
+                        })
+                        .run();
+                }
+                return true;
+            },
+
+            handleDoubleClickOn(view: EditorView, pos: number) {
+                const editor = options.editor;
+
+                // same node here
+                if (!editor.isActive('link')) {
+                    return;
+                }
+
+                const $pos = view.state.doc?.resolve(pos);
+                const to = pos - $pos?.textOffset;
+
+                if ($pos.index() < $pos?.parent.childCount) {
+                    const from = to + $pos?.parent.child($pos.index()).nodeSize;
+                    editor
+                        .chain()
+                        .setTextSelection({ to, from })
+                        .setHighlight()
+                        .command(({ tr }) => {
+                            tr.setMeta(LINK_FORM_PLUGIN_KEY, { open: true, fromClick: true });
+                            return true;
+                        })
+                        .run();
+                }
+                return true;
             }
         }
     });
