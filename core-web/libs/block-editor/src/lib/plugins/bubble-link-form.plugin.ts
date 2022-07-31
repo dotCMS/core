@@ -6,15 +6,16 @@ import tippy, { Instance, Props } from 'tippy.js';
 import { ComponentRef } from '@angular/core';
 import {
     BubbleMenuLinkFormComponent,
-    blockLinkMenuForm
+    NodeProps
 } from '../extensions/components/bubble-menu-link-form/bubble-menu-link-form.component';
 
 // Interface
-import { PluginStorage, LINK_FORM_PLUGIN_KEY } from '../extensions/bubble-link-form.extension';
+import { LINK_FORM_PLUGIN_KEY } from '../extensions/bubble-link-form.extension';
 import { isValidURL } from '../utils/bubble-menu.utils';
+import { openFormLinkOnclik } from '../extensions/components/bubble-menu-link-form/utils/index';
 
 interface PluginState {
-    open: boolean;
+    isOpen: boolean;
     fromClick: boolean;
 }
 
@@ -23,7 +24,6 @@ export interface BubbleLinkFormProps {
     editor: Editor;
     element: HTMLElement;
     tippyOptions?: Partial<Props>;
-    storage: PluginStorage;
     component?: ComponentRef<BubbleMenuLinkFormComponent>;
 }
 
@@ -46,8 +46,6 @@ export class BubbleLinkFormView {
 
     public component?: ComponentRef<BubbleMenuLinkFormComponent>;
 
-    public storage: PluginStorage;
-
     private scrollElementMap = {
         'editor-suggestion-list': true,
         'editor-input-link': true,
@@ -60,7 +58,6 @@ export class BubbleLinkFormView {
         view,
         tippyOptions = {},
         pluginKey,
-        storage,
         component
     }: BubbleLinkFormViewProps) {
         this.editor = editor;
@@ -74,7 +71,6 @@ export class BubbleLinkFormView {
         this.element.style.visibility = 'visible';
         this.pluginKey = pluginKey;
         this.component = component;
-        this.storage = storage;
 
         this.editor.on('focus', this.focusHandler);
         this.setComponentEvents();
@@ -88,20 +84,26 @@ export class BubbleLinkFormView {
         const prev = this.pluginKey.getState(prevState);
 
         // Check that the current plugin state is different to previous plugin state.
-        if (next.open === prev.open) {
+        if (next.isOpen === prev.isOpen) {
             this.detectLinkFormChanges();
             return;
         }
 
         this.createTooltip();
-
-        this.tippy?.state.isVisible ? this.hide() : this.show();
+        next.isOpen ? this.show() : this.hide();
         this.detectLinkFormChanges();
     }
 
     focusHandler = () => {
-        if (this.tippy?.state.isVisible) {
-            this.hide();
+        const { state } = this.editor;
+        const { to } = state.selection;
+        const { fromClick } = LINK_FORM_PLUGIN_KEY.getState(state);
+
+        if (fromClick) {
+            this.editor.commands.closeLinkForm();
+            requestAnimationFrame(() => this.editor.commands.setTextSelection(to));
+        } else {
+            this.editor.commands.closeLinkForm();
         }
     };
 
@@ -137,12 +139,8 @@ export class BubbleLinkFormView {
 
     hide() {
         this.tippy?.hide();
-        this.editor.view.dispatch(
-            this.editor.state.tr.setMeta(LINK_FORM_PLUGIN_KEY, { open: false })
-        );
         // After show the component focus editor
         this.editor.view.focus();
-        this.editor.commands.unsetHighlight();
     }
 
     setTippyPosition(): DOMRect {
@@ -166,26 +164,24 @@ export class BubbleLinkFormView {
 
         // Check if the node is a dotImage
         const node = doc?.nodeAt(from);
-        const isNodeImage = node.type.name === 'dotImage';
+        const isNodeImage = node?.type.name === 'dotImage';
 
         // If there is an overflow, use bubble menu position as a reference.
         return isOverflow || isNodeImage ? domRect : nodeClientRect;
     }
 
     setLinkValues({ link, blank = false }) {
-        if (this.isDotImageNode()) {
-            this.editor.commands.setImageLink({ href: link });
-        } else {
-            this.editor.commands.setLink({ href: link, target: blank ? '_blank' : '_top' });
+        if (link.length > 0) {
+            this.isDotImageNode()
+                ? this.editor.commands.setImageLink({ href: link })
+                : this.editor.commands.setLink({ href: link, target: blank ? '_blank' : '_top' });
         }
     }
 
     removeLink() {
-        if (this.isDotImageNode()) {
-            this.editor.commands.unsetImageLink();
-        } else {
-            this.editor.commands.unsetLink();
-        }
+        this.isDotImageNode()
+            ? this.editor.commands.unsetImageLink()
+            : this.editor.commands.unsetLink();
         this.hide();
     }
 
@@ -198,14 +194,14 @@ export class BubbleLinkFormView {
     setComponentEvents() {
         this.component.instance.hide.subscribe(() => this.hide());
         this.component.instance.removeLink.subscribe(() => this.removeLink());
-        this.component.instance.submitForm.subscribe((event) => this.setLinkValues(event));
+        this.component.instance.setNodeProps.subscribe((event) => this.setLinkValues(event));
     }
 
     detectLinkFormChanges() {
         this.component.changeDetectorRef.detectChanges();
     }
 
-    getLinkProps(): blockLinkMenuForm {
+    getLinkProps(): NodeProps {
         const { href = '', target } = this.editor.isActive('link')
             ? this.editor.getAttributes('link')
             : this.editor.getAttributes('dotImage');
@@ -252,7 +248,7 @@ export const bubbleLinkFormPlugin = (options: BubbleLinkFormProps) => {
         state: {
             init(): PluginState {
                 return {
-                    open: false,
+                    isOpen: false,
                     fromClick: false
                 };
             },
@@ -262,14 +258,14 @@ export const bubbleLinkFormPlugin = (options: BubbleLinkFormProps) => {
                 value: PluginState,
                 oldState: EditorState
             ): PluginState {
-                const { open, fromClick } = transaction.getMeta(LINK_FORM_PLUGIN_KEY) || {};
+                const { isOpen, fromClick } = transaction.getMeta(LINK_FORM_PLUGIN_KEY) || {};
                 const state = LINK_FORM_PLUGIN_KEY.getState(oldState);
-                const existFromClick = typeof fromClick === 'boolean';
+                const openFromClick = typeof fromClick === 'boolean';
 
-                if (typeof open === 'boolean') {
+                if (typeof isOpen === 'boolean') {
                     return {
-                        open,
-                        fromClick: existFromClick ? fromClick : state.fromClick
+                        isOpen,
+                        fromClick: openFromClick ? fromClick : state.fromClick
                     };
                 }
 
@@ -278,42 +274,35 @@ export const bubbleLinkFormPlugin = (options: BubbleLinkFormProps) => {
             }
         },
         props: {
+            handleDOMEvents: {
+                mousedown(view, event) {
+                    const editor = options.editor;
+                    const { clientX: left, clientY: top } = event;
+                    const { pos } = view.posAtCoords({ left, top });
+                    const { isOpen, fromClick } = LINK_FORM_PLUGIN_KEY.getState(editor.state);
+
+                    if (isOpen && fromClick) {
+                        editor.chain().unsetHighlight().setTextSelection(pos).run();
+                    }
+                }
+            },
             handleClickOn(view: EditorView, pos: number, node) {
                 const editor = options.editor;
 
-                // same node here
-                if (!editor.isActive('link')) {
-                    return;
-                }
-
-                if (JSON.stringify(lastNode) === JSON.stringify(node)) {
-                    editor
-                        .chain()
-                        .setTextSelection(pos)
-                        .unsetHighlight()
-                        .command(({ tr }) => {
-                            tr.setMeta(LINK_FORM_PLUGIN_KEY, { open: false, fromClick: false });
-                            return true;
-                        })
-                        .run();
-                    return;
-                }
-
-                const $pos = view.state.doc?.resolve(pos);
-                const to = pos - $pos?.textOffset;
-                if ($pos.index() < $pos?.parent.childCount) {
+                if (!editor.isActive('link') || !pos) {
                     lastNode = node;
-                    const from = to + $pos?.parent.child($pos.index()).nodeSize;
-                    editor
-                        .chain()
-                        .setTextSelection({ to, from })
-                        .setHighlight()
-                        .command(({ tr }) => {
-                            tr.setMeta(LINK_FORM_PLUGIN_KEY, { open: true, fromClick: true });
-                            return true;
-                        })
-                        .run();
+                    return;
                 }
+
+                // If we click again in the node, when the form is open
+                // We hide the form and enable editing.
+                if (JSON.stringify(lastNode) === JSON.stringify(node)) {
+                    editor.chain().setTextSelection(pos).closeLinkForm().run();
+                    return;
+                }
+
+                openFormLinkOnclik({ editor, view, pos });
+                lastNode = node;
                 return true;
             },
 
@@ -325,21 +314,7 @@ export const bubbleLinkFormPlugin = (options: BubbleLinkFormProps) => {
                     return;
                 }
 
-                const $pos = view.state.doc?.resolve(pos);
-                const to = pos - $pos?.textOffset;
-
-                if ($pos.index() < $pos?.parent.childCount) {
-                    const from = to + $pos?.parent.child($pos.index()).nodeSize;
-                    editor
-                        .chain()
-                        .setTextSelection({ to, from })
-                        .setHighlight()
-                        .command(({ tr }) => {
-                            tr.setMeta(LINK_FORM_PLUGIN_KEY, { open: true, fromClick: true });
-                            return true;
-                        })
-                        .run();
-                }
+                openFormLinkOnclik({ editor, view, pos });
                 return true;
             }
         }

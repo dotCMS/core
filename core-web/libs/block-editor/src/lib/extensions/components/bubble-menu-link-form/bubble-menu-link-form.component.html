@@ -4,7 +4,7 @@
         autoComplete="off"
         [formGroup]="form"
         (keydown)="onKeyDownEvent($event)"
-        (ngSubmit)="saveNode(form.value)"
+        (ngSubmit)="submitForm()"
     >
         <div class="search-container">
             <input
@@ -60,7 +60,7 @@
     <dotcms-form-actions
         [link]="currentLink"
         (hide)="hide.emit($event)"
-        (removeLink)="removeLink.emit($event)"
+        (remove)="removeLink.emit($event)"
     >
     </dotcms-form-actions>
 

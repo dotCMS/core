@@ -283,11 +283,10 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                 break;
             case 'link':
                 // eslint-disable-next-line
-                const { open = true } = LINK_FORM_PLUGIN_KEY.getState(this.editor.state);
-                this.editor.commands.setHighlight();
-                this.editor.view.dispatch(
-                    this.editor.state.tr.setMeta(LINK_FORM_PLUGIN_KEY, { open: !open, fromClick: false })
-                );
+                const { isOpen } = LINK_FORM_PLUGIN_KEY.getState(this.editor.state);
+                isOpen
+                    ? this.editor.view.focus()
+                    : this.editor.commands.openLinkForm({ fromClick: false });
                 break;
             case 'deleteNode':
                 if (this.selectionNodesCount > 1) {

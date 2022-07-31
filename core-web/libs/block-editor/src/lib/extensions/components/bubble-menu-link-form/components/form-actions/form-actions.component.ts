@@ -6,12 +6,12 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
     styleUrls: ['./form-actions.component.scss']
 })
 export class FormActionsComponent {
-    @Output() removeLink: EventEmitter<boolean> = new EventEmitter(false);
+    @Output() remove: EventEmitter<boolean> = new EventEmitter(false);
     @Output() hide: EventEmitter<boolean> = new EventEmitter(false);
 
     @Input() link = '';
 
-    copyLink() {
+    copy() {
         navigator.clipboard
             .writeText(this.link)
             .then(() => this.hide.emit(true))

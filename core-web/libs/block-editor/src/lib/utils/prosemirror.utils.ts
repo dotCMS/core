@@ -1,5 +1,6 @@
 import { ResolvedPos } from 'prosemirror-model';
 import { NodeTypes } from '@dotcms/block-editor';
+import { EditorView } from 'prosemirror-view';
 
 /**
  * Get the parent node of the ResolvedPos sent
@@ -23,4 +24,20 @@ export const findParentNode = (
     } while (depth > 0 && parent);
 
     return parent;
+};
+
+/**
+ *
+ *
+ * @param {ResolvedPos} selectionStart
+ * @param {number} pos
+ * @return {*}
+ */
+export const textNodeRange = (selectionStart: ResolvedPos, pos: number) => {
+    const to = pos - selectionStart?.textOffset;
+    const from =
+        selectionStart.index() < selectionStart?.parent.childCount
+            ? to + selectionStart?.parent.child(selectionStart.index()).nodeSize
+            : to;
+    return { to, from };
 };

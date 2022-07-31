@@ -19,7 +19,7 @@ import {
 // Models
 import { isValidURL } from '../../../utils/bubble-menu.utils';
 
-export interface blockLinkMenuForm {
+export interface NodeProps {
     link: string;
     blank: boolean;
 }
@@ -35,22 +35,17 @@ export class BubbleMenuLinkFormComponent implements OnInit {
 
     @Output() hide: EventEmitter<boolean> = new EventEmitter(false);
     @Output() removeLink: EventEmitter<boolean> = new EventEmitter(false);
-    @Output() submitForm: EventEmitter<blockLinkMenuForm> = new EventEmitter();
+    @Output() setNodeProps: EventEmitter<NodeProps> = new EventEmitter();
 
     @Input() showSuggestions = false;
-    @Input() initialValues: blockLinkMenuForm = {
+    @Input() initialValues: NodeProps = {
         link: '',
         blank: true
     };
 
     private minChars = 3;
-
     loading = false;
     form: FormGroup;
-    options = [
-        { name: 'New Window', blank: true },
-        { name: 'Same Window', blank: false }
-    ];
 
     // Getters
     get noResultsTitle() {
@@ -85,12 +80,12 @@ export class BubbleMenuLinkFormComponent implements OnInit {
         this.form
             .get('blank')
             .valueChanges.subscribe((blank) =>
-                this.submitForm.emit({ link: this.currentLink, blank })
+                this.setNodeProps.emit({ link: this.currentLink, blank })
             );
     }
 
-    saveNode(data: blockLinkMenuForm) {
-        this.submitForm.emit(data);
+    submitForm() {
+        this.setNodeProps.emit(this.form.value);
         this.hide.emit(true);
     }
 
@@ -108,10 +103,10 @@ export class BubbleMenuLinkFormComponent implements OnInit {
     /**
      *
      *
-     * @param {blockLinkMenuForm} { link, blank }
+     * @param {NodeProps} { link, blank }
      * @memberof BubbleMenuLinkFormComponent
      */
-    setFormValue({ link, blank }: blockLinkMenuForm) {
+    setFormValue({ link, blank }: NodeProps) {
         this.form.setValue({ link, blank }, { emitEvent: false });
     }
 
@@ -133,13 +128,17 @@ export class BubbleMenuLinkFormComponent implements OnInit {
      */
     onKeyDownEvent(e: KeyboardEvent) {
         const items = this.suggestionsComponent?.items;
+
+        if (e.key === 'Escape') {
+            this.hide.emit(true);
+            return true;
+        }
+
         if (!this.showSuggestions || !items?.length) {
             return true;
         }
+
         switch (e.key) {
-            case 'Escape':
-                this.hide.emit(true);
-                break;
             case 'Enter':
                 this.suggestionsComponent?.execCommand();
                 // prevent submit form
@@ -171,6 +170,6 @@ export class BubbleMenuLinkFormComponent implements OnInit {
      */
     onSelection({ payload: { url } }: SuggestionsCommandProps) {
         this.setFormValue({ ...this.form.value, link: url });
-        this.submitForm.emit(this.form.value);
+        this.submitForm();
     }
 }

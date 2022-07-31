@@ -4,7 +4,7 @@ import { LINK_FORM_PLUGIN_KEY } from '../extensions/bubble-link-form.extension';
 
 const hideBubbleMenuOn = {
     dotContent: true
-}
+};
 
 /**
  * Determine when the bubble menu can or cannot be displayed.
@@ -17,6 +17,8 @@ export const shouldShowBubbleMenu = ({ editor, state, from, to }: ShouldShowProp
     const { view } = editor;
     const { empty } = selection;
 
+    const { isOpen, fromClick } = LINK_FORM_PLUGIN_KEY.getState(state);
+
     // Current selected node
     const node = editor.state.doc.nodeAt(editor.state.selection.from);
 
@@ -25,21 +27,15 @@ export const shouldShowBubbleMenu = ({ editor, state, from, to }: ShouldShowProp
     // So we check also for an empty text size.
     const isEmptyTextBlock = !doc.textBetween(from, to).length && isTextSelection(state.selection);
 
-    const {open: isFormOpen = false, fromClick } = LINK_FORM_PLUGIN_KEY.getState(state);
-
     // If it's empty or the current node is type dotContent, it will not open.
-    if (!isFormOpen && (!view.hasFocus() || empty || isEmptyTextBlock)) {
+    if (!isOpen && (!view.hasFocus() || empty || isEmptyTextBlock || hideBubbleMenuOn[node?.type.name])) {
         return false;
     }
 
-    if(fromClick) {
+    if (isOpen && fromClick) {
         return false;
     }
 
-    if( hideBubbleMenuOn[node?.type.name]) {
-        return false;
-    }
-    
     return true;
 };
 
@@ -47,7 +43,7 @@ export const shouldShowBubbleMenu = ({ editor, state, from, to }: ShouldShowProp
  *  Check if a text is a valid url
  *
  * @param {string} nodeText
- * @return {*} 
+ * @return {*}
  */
 export const isValidURL = (nodeText: string) => {
     const pattern = new RegExp(
@@ -60,7 +56,7 @@ export const isValidURL = (nodeText: string) => {
         'i'
     ); // fragment locator
     return !!pattern.test(nodeText);
-}
+};
 
 export const getNodePosition = (node: HTMLElement, type: string): DOMRect => {
     const img = node.getElementsByTagName('img')[0];

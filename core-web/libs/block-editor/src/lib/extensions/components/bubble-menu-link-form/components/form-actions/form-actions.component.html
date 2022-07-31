@@ -1,9 +1,9 @@
 <div *ngIf="link.length">
     <div class="form-actions">
-        <button class="btn btn-copy" (click)="copyLink()">
+        <button class="btn btn-copy" (click)="copy()">
             COPY LINK
         </button>
-        <button class="btn btn-remove" (click)="removeLink.emit(true)">
+        <button class="btn btn-remove" (click)="remove.emit(true)">
             REMOVE LINK
         </button>
     </div>

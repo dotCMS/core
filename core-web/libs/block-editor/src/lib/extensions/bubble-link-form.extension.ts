@@ -10,15 +10,16 @@ export interface BubbleLinkFormOptions {
     tippyOptions?: Partial<Props>;
     element: HTMLElement | null;
 }
-export interface PluginStorage {
-    show: boolean;
-}
 
 declare module '@tiptap/core' {
-    interface Storage {
-        bubbleLinkForm: PluginStorage;
+    interface Commands<ReturnType> {
+        bubbleLinkForm: {
+            openLinkForm: ({ fromClick }) => ReturnType;
+            closeLinkForm: () => ReturnType;
+        };
     }
 }
+
 export const LINK_FORM_PLUGIN_KEY = new PluginKey('addLink');
 
 export const BubbleLinkFormExtension = (viewContainerRef: ViewContainerRef) => {
@@ -30,9 +31,30 @@ export const BubbleLinkFormExtension = (viewContainerRef: ViewContainerRef) => {
             pluginKey: LINK_FORM_PLUGIN_KEY
         },
 
-        addStorage() {
+        addCommands() {
             return {
-                show: true
+                openLinkForm:
+                    ({ fromClick }) =>
+                    ({ chain }) => {
+                        return chain()
+                            .setHighlight()
+                            .command(({ tr }) => {
+                                tr.setMeta(LINK_FORM_PLUGIN_KEY, { isOpen: true, fromClick });
+                                return true;
+                            })
+                            .run();
+                    },
+                closeLinkForm:
+                    () =>
+                    ({ chain }) => {
+                        return chain()
+                            .unsetHighlight()
+                            .command(({ tr }) => {
+                                tr.setMeta(LINK_FORM_PLUGIN_KEY, { isOpen: false, fromClick: false });
+                                return true;
+                            })
+                            .run();
+                    }
             };
         },
 
@@ -46,7 +68,6 @@ export const BubbleLinkFormExtension = (viewContainerRef: ViewContainerRef) => {
                     editor: this.editor,
                     element: component.location.nativeElement,
                     tippyOptions: this.options.tippyOptions,
-                    storage: this.storage,
                     component: component
                 })
             ];
