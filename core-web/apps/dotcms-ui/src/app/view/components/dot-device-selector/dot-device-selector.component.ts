@@ -1,5 +1,4 @@
 import {
-    AfterViewChecked,
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
@@ -22,7 +21,7 @@ import { filter, flatMap, map, take, toArray } from 'rxjs/operators';
     styleUrls: ['./dot-device-selector.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotDeviceSelectorComponent implements OnInit, OnChanges, AfterViewChecked {
+export class DotDeviceSelectorComponent implements OnInit, OnChanges {
     @Input() value: DotDevice;
     @Output() selected = new EventEmitter<DotDevice>();
     @HostBinding('class.disabled') disabled: boolean;
@@ -35,11 +34,6 @@ export class DotDeviceSelectorComponent implements OnInit, OnChanges, AfterViewC
         private dotMessageService: DotMessageService,
         private readonly cd: ChangeDetectorRef
     ) {}
-
-    // Due the @input value change before change detection has been run/or completed.
-    ngAfterViewChecked() {
-        this.cd.detectChanges();
-    }
 
     ngOnInit() {
         this.loadOptions();
@@ -86,6 +80,9 @@ export class DotDeviceSelectorComponent implements OnInit, OnChanges, AfterViewC
                 () => {
                     this.disabled = true;
                     this.placeholder = 'No devices';
+                },
+                () => {
+                    this.cd.detectChanges();
                 }
             );
     }
