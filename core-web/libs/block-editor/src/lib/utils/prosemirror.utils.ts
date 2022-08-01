@@ -27,7 +27,8 @@ export const findParentNode = (
 };
 
 /**
- *
+ * This logic was made byt the creator of ProseMirror.
+ * See the full comment here: https://github.com/ProseMirror/prosemirror/issues/505#issuecomment-266131409
  *
  * @param {ResolvedPos} selectionStart
  * @param {number} pos
@@ -41,3 +42,17 @@ export const textNodeRange = (selectionStart: ResolvedPos, pos: number) => {
             : to;
     return { to, from };
 };
+
+
+/**
+ *
+ * Get the block editor click position based on mouse event.
+ * @param {EditorView} view
+ * @param {MouseEvent} event
+ * @return {*} 
+ */
+export const getPosAtDocCoords = (view: EditorView, event: MouseEvent) => {
+    const { clientX: left, clientY: top } = event;
+    const { pos } = view.posAtCoords({ left, top });
+    return pos;
+}

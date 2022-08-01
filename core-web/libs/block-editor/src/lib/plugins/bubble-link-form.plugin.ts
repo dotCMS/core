@@ -1,9 +1,9 @@
+import { ComponentRef } from '@angular/core';
 import { Editor, posToDOMRect } from '@tiptap/core';
 import { EditorState, Plugin, PluginKey, Transaction } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import tippy, { Instance, Props } from 'tippy.js';
 
-import { ComponentRef } from '@angular/core';
 import {
     BubbleMenuLinkFormComponent,
     NodeProps
@@ -11,12 +11,15 @@ import {
 
 // Interface
 import { LINK_FORM_PLUGIN_KEY } from '../extensions/bubble-link-form.extension';
+
+// Utils
+import { getPosAtDocCoords } from '../utils/prosemirror.utils';
 import { isValidURL } from '../utils/bubble-menu.utils';
 import { openFormLinkOnclik } from '../extensions/components/bubble-menu-link-form/utils/index';
 
 interface PluginState {
     isOpen: boolean;
-    fromClick: boolean;
+    openOnClick: boolean;
 }
 
 export interface BubbleLinkFormProps {
@@ -97,9 +100,9 @@ export class BubbleLinkFormView {
     focusHandler = () => {
         const { state } = this.editor;
         const { to } = state.selection;
-        const { fromClick } = LINK_FORM_PLUGIN_KEY.getState(state);
+        const { openOnClick } = LINK_FORM_PLUGIN_KEY.getState(state);
 
-        if (fromClick) {
+        if (openOnClick) {
             this.editor.commands.closeLinkForm();
             requestAnimationFrame(() => this.editor.commands.setTextSelection(to));
         } else {
@@ -121,10 +124,18 @@ export class BubbleLinkFormView {
             getReferenceClientRect: null,
             content: this.element,
             interactive: true,
-            maxWidth: '100%',
+            maxWidth: 'none',
             trigger: 'manual',
             placement: 'bottom-start',
-            hideOnClick: 'toggle'
+            hideOnClick: 'toggle',
+            popperOptions: {
+                modifiers: [
+                    {
+                        name: 'flip',
+                        options: { fallbackPlacements: ['right'] }
+                    }
+                ]
+            }
         });
     }
 
@@ -231,12 +242,12 @@ export class BubbleLinkFormView {
     private hanlderScroll(e: Event) {
         const element = e.target as HTMLElement;
         const parentElement = element?.parentElement?.parentElement;
-        // When the text is too long, the input fires the `scroll` event.
+        // If text is too long, the input fires the `scroll` event.
         // When that happens, we do not want to hide the tippy.
         if (this.scrollElementMap[element.id] || this.scrollElementMap[parentElement.id]) {
             return;
         }
-        this.tippy?.hide();
+        this.hide();
     }
 }
 
@@ -249,7 +260,7 @@ export const bubbleLinkFormPlugin = (options: BubbleLinkFormProps) => {
             init(): PluginState {
                 return {
                     isOpen: false,
-                    fromClick: false
+                    openOnClick: false
                 };
             },
 
@@ -258,14 +269,13 @@ export const bubbleLinkFormPlugin = (options: BubbleLinkFormProps) => {
                 value: PluginState,
                 oldState: EditorState
             ): PluginState {
-                const { isOpen, fromClick } = transaction.getMeta(LINK_FORM_PLUGIN_KEY) || {};
+                const { isOpen, openOnClick } = transaction.getMeta(LINK_FORM_PLUGIN_KEY) || {};
                 const state = LINK_FORM_PLUGIN_KEY.getState(oldState);
-                const openFromClick = typeof fromClick === 'boolean';
 
                 if (typeof isOpen === 'boolean') {
                     return {
                         isOpen,
-                        fromClick: openFromClick ? fromClick : state.fromClick
+                        openOnClick
                     };
                 }
 
@@ -277,11 +287,12 @@ export const bubbleLinkFormPlugin = (options: BubbleLinkFormProps) => {
             handleDOMEvents: {
                 mousedown(view, event) {
                     const editor = options.editor;
-                    const { clientX: left, clientY: top } = event;
-                    const { pos } = view.posAtCoords({ left, top });
-                    const { isOpen, fromClick } = LINK_FORM_PLUGIN_KEY.getState(editor.state);
+                    const pos = getPosAtDocCoords(view, event);
+                    const { isOpen, openOnClick } = LINK_FORM_PLUGIN_KEY.getState(editor.state);
 
-                    if (isOpen && fromClick) {
+                    // Prevent to open the bubble Menu
+                    // After closing the link form on click.
+                    if (isOpen && openOnClick) {
                         editor.chain().unsetHighlight().setTextSelection(pos).run();
                     }
                 }
@@ -294,8 +305,8 @@ export const bubbleLinkFormPlugin = (options: BubbleLinkFormProps) => {
                     return;
                 }
 
-                // If we click again in the node, when the form is open
-                // We hide the form and enable editing.
+                // If we click again in the same link node,
+                // We close the form and enable editing.
                 if (JSON.stringify(lastNode) === JSON.stringify(node)) {
                     editor.chain().setTextSelection(pos).closeLinkForm().run();
                     return;

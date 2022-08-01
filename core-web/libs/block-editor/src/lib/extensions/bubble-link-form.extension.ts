@@ -14,7 +14,7 @@ export interface BubbleLinkFormOptions {
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         bubbleLinkForm: {
-            openLinkForm: ({ fromClick }) => ReturnType;
+            openLinkForm: ({ openOnClick }) => ReturnType;
             closeLinkForm: () => ReturnType;
         };
     }
@@ -34,12 +34,12 @@ export const BubbleLinkFormExtension = (viewContainerRef: ViewContainerRef) => {
         addCommands() {
             return {
                 openLinkForm:
-                    ({ fromClick }) =>
+                    ({ openOnClick }) =>
                     ({ chain }) => {
                         return chain()
                             .setHighlight()
                             .command(({ tr }) => {
-                                tr.setMeta(LINK_FORM_PLUGIN_KEY, { isOpen: true, fromClick });
+                                tr.setMeta(LINK_FORM_PLUGIN_KEY, { isOpen: true, openOnClick });
                                 return true;
                             })
                             .run();
@@ -50,7 +50,7 @@ export const BubbleLinkFormExtension = (viewContainerRef: ViewContainerRef) => {
                         return chain()
                             .unsetHighlight()
                             .command(({ tr }) => {
-                                tr.setMeta(LINK_FORM_PLUGIN_KEY, { isOpen: false, fromClick: false });
+                                tr.setMeta(LINK_FORM_PLUGIN_KEY, { isOpen: false, openOnClick: false });
                                 return true;
                             })
                             .run();

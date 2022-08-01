@@ -25,7 +25,7 @@ import {
 
 export default {
     title: 'Block Editor'
-}
+};
 
 const contentletsMock = [
     {
@@ -285,17 +285,19 @@ export const primary = () => ({
 
                         return of(
                             filter
-                                ? contentletsMock.filter((item) => item.title.match(new RegExp(filter, 'i')))
+                                ? contentletsMock.filter((item) =>
+                                      item.title.match(new RegExp(filter, 'i'))
+                                  )
                                 : contentletsMock
                         );
                     },
                     getContentletsUrlMap({ filter }) {
-
-                        return  of(contentletsMock.filter((item) => 
-                                    item.url.match(new RegExp(filter, 'i'))
-                                ))
-                                .pipe(debounceTime(400));;
-                    },
+                        return of(contentletsMock ||
+                            contentletsMock.filter((item) =>
+                                item.url.match(new RegExp(filter, 'i'))
+                            )
+                        ).pipe(debounceTime(400));
+                    }
                 }
             },
             {
@@ -336,4 +338,4 @@ export const primary = () => ({
         ]
     },
     component: DotBlockEditorComponent
-    });
+});

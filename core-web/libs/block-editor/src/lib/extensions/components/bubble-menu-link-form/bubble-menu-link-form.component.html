@@ -20,7 +20,7 @@
 
         <hr class="divider" *ngIf="showSuggestions || currentLink"/>
 
-        <div class="info-container" *ngIf="currentLink">
+        <div class="info-container" *ngIf="currentLink && !showSuggestions">
             <a class="url-container" [href]="currentLink" target="_blank">
                 <span class="material-icons" [style]="{ fontSize: '32px' }">language</span>
                 <span class="truncate">{{ currentLink }}</span>

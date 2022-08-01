@@ -12,6 +12,6 @@ export const openFormLinkOnclik = ({ editor, view, pos }) => {
     editor
         .chain()
         .setTextSelection(range)
-        .openLinkForm({ fromClick: true })
+        .openLinkForm({ openOnClick: true })
         .run();
 }

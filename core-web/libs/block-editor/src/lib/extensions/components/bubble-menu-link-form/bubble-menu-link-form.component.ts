@@ -84,13 +84,18 @@ export class BubbleMenuLinkFormComponent implements OnInit {
             );
     }
 
+    /**
+     *
+     *
+     * @memberof BubbleMenuLinkFormComponent
+     */
     submitForm() {
         this.setNodeProps.emit(this.form.value);
         this.hide.emit(true);
     }
 
     /**
-     *
+     *`
      *
      * @memberof BubbleMenuLinkFormComponent
      */

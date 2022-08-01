@@ -286,7 +286,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                 const { isOpen } = LINK_FORM_PLUGIN_KEY.getState(this.editor.state);
                 isOpen
                     ? this.editor.view.focus()
-                    : this.editor.commands.openLinkForm({ fromClick: false });
+                    : this.editor.commands.openLinkForm({ openOnClick: false });
                 break;
             case 'deleteNode':
                 if (this.selectionNodesCount > 1) {
@@ -371,7 +371,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
     createChangeToTooltip() {
         const { element: editorElement } = this.editor.options;
 
-        if (this.tippyChangeTo || !editorElement) {
+        if (this.tippyChangeTo) {
             return;
         }
 

@@ -17,7 +17,7 @@ export const shouldShowBubbleMenu = ({ editor, state, from, to }: ShouldShowProp
     const { view } = editor;
     const { empty } = selection;
 
-    const { isOpen, fromClick } = LINK_FORM_PLUGIN_KEY.getState(state);
+    const { isOpen, openOnClick } = LINK_FORM_PLUGIN_KEY.getState(state);
 
     // Current selected node
     const node = editor.state.doc.nodeAt(editor.state.selection.from);
@@ -32,7 +32,7 @@ export const shouldShowBubbleMenu = ({ editor, state, from, to }: ShouldShowProp
         return false;
     }
 
-    if (isOpen && fromClick) {
+    if (isOpen && openOnClick) {
         return false;
     }
 
