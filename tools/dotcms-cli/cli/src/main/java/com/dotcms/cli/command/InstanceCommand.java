@@ -12,11 +12,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import picocli.CommandLine;
+import picocli.CommandLine.ExitCode;
 
 @ActivateRequestContext
 @CommandLine.Command(
@@ -27,7 +29,7 @@ import picocli.CommandLine;
 
         }
 )
-public class InstanceCommand implements Runnable {
+public class InstanceCommand implements Callable<Integer> {
 
     static final String NAME = "instance";
 
@@ -40,11 +42,25 @@ public class InstanceCommand implements Runnable {
     @Inject
     ServiceManager serviceManager;
 
-    @CommandLine.Option(names = {"-a", "--activate"}, description = "Activate a profile by entering it's name.", arity = "1")
-    String activate;
+    //https://github.com/remkop/picocli/issues/947
+    //This combination should give me one or both but at least one selection needs to be made
+    static class RequireOneOrBothNotNoneGroup {
+
+        @CommandLine.Option(names = {"-l", "--list"}, description = "Prints out a list of available params.")
+        Boolean list;
+
+        @CommandLine.Option(names = {"-a", "--activate"}, description = "Activate a profile by entering it's name.")
+        String activate;
+    }
+
+    //setting exclusive=false on the group makes the options mutually dependent
+    //setting multiplicity = "1" on the group makes the group mandatory
+    //both options are non-required in the group (this is the default, you can also explicitly say required = false)
+    @CommandLine.ArgGroup(multiplicity = "1", exclusive = false)
+    RequireOneOrBothNotNoneGroup options;
 
     @Override
-    public void run() {
+    public Integer call() {
 
         final Map<String, URI> servers = clientConfig.servers();
 
@@ -60,25 +76,31 @@ public class InstanceCommand implements Runnable {
                     .collect(Collectors.toMap(ServiceBean::name, Function.identity(),
                             (serviceBean1, serviceBean2) -> serviceBean1));
 
-            output.info("Available registered dotCMS servers.");
+            if (Boolean.TRUE.equals(options.list)) {
 
-            for (final Map.Entry<String, URI> entry : servers.entrySet()) {
-                final String suffix = entry.getKey();
-                final URI uri = entry.getValue();
-                final boolean active = serviceBeanByName.containsKey(suffix) ? serviceBeanByName.get(suffix).active() : false;
-                final String color = active ? "green" : "blue";
+                output.info("Available registered dotCMS servers.");
 
-                output.info(String.format(" Profile [@|bold,underline,%s %s|@], Uri [@|bold,underline,%s %s|@], active [@|bold,underline,%s %s|@]. ",
-                        color, suffix, color, uri, color, toStringYesNo(active)));
+                for (final Map.Entry<String, URI> entry : servers.entrySet()) {
+                    final String suffix = entry.getKey();
+                    final URI uri = entry.getValue();
+                    final boolean active =
+                            serviceBeanByName.containsKey(suffix) ? serviceBeanByName.get(suffix)
+                                    .active() : false;
+                    final String color = active ? "green" : "blue";
+
+                    output.info(String.format(
+                            " Profile [@|bold,underline,%s %s|@], Uri [@|bold,underline,%s %s|@], active [@|bold,underline,%s %s|@]. ",
+                            color, suffix, color, uri, color, toStringYesNo(active)));
+                }
             }
 
-            if (null != activate) {
+            if (null != options.activate) {
 
                 final List<ServiceBean> beans = beansList(servers, serviceBeanByName);
-                Optional<ServiceBean> optional = get(activate, beans);
+                Optional<ServiceBean> optional = get(options.activate, beans);
                 if (optional.isEmpty()) {
                     // The selected option is not valid
-                    output.info(String.format(" The Selected instance [@|bold,blue %s|@] @|bold,underline does not exist!|@", activate));
+                    output.info(String.format(" The Selected instance [@|bold,blue %s|@] @|bold,underline does not exist!|@", options.activate));
                 } else {
                     ServiceBean serviceBean = optional.get();
                     serviceBean = serviceBean.withActive(true);
@@ -91,7 +113,7 @@ public class InstanceCommand implements Runnable {
             }
         }
 
-
+      return ExitCode.OK;
     }
 
     Optional<ServiceBean> get(final String suffix, final List<ServiceBean> services) {
