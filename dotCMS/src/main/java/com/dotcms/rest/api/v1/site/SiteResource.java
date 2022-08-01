@@ -21,7 +21,9 @@ import com.dotcms.util.pagination.SitePaginator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.util.HostNameComparator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -29,6 +31,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.hostvariable.model.HostVariable;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.job.HostCopyOptions;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.RegEX;
@@ -47,8 +50,10 @@ import io.vavr.control.Try;
 import java.io.File;
 import java.io.Serializable;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -971,6 +976,77 @@ public class SiteResource implements Serializable {
         }
     }
 
+    /**
+     * Returns the complete list of Site Variables associated to the specified Site ID.
+     * @param httpServletRequest
+     * @param httpServletResponse
+     * @param newSiteForm
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws PortalException
+     * @throws SystemException
+     * @throws ParseException
+     * @throws SchedulerException
+     * @throws ClassNotFoundException
+     */
+    @GET
+    @Path("/variable/{siteId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(summary = "Save a Site Variable",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseHostVariableEntityView.class))),
+                    @ApiResponse(responseCode = "404", description = "When the site id does not exists")})
+    public Response getHostVariables(@Context final HttpServletRequest httpServletRequest,
+                                     @Context final HttpServletResponse httpServletResponse,
+                                     @PathParam("siteId")  final String siteId)
+            throws DotDataException, DotSecurityException, LanguageException {
+
+        final User loggedInUser = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .requiredPortlet("sites")
+                .init().getUser();
+        final PageMode pageMode = PageMode.get(httpServletRequest);
+        final boolean respectFrontendRoles = pageMode.respectAnonPerms;
+
+        Logger.debug(this, () -> "Getting the site variables, for site: " + siteId);
+
+        final Host host = this.siteHelper.getSite(loggedInUser, siteId);
+        if (null == host || !InodeUtils.isSet(host.getIdentifier())) {
+
+            throw new NotFoundException("The site id: " + siteId + " does not exists");
+        }
+
+        final List<SiteVariableView> resultList = new ArrayList<>();
+        final List<HostVariable> siteVariableList = APILocator.getHostVariableAPI().getVariablesForHost(siteId, loggedInUser, respectFrontendRoles);
+        for (final HostVariable variable : siteVariableList) {
+
+            String lastModifierFullName = "Unknown";
+
+            try {
+                final User variableLastModifier = WebAPILocator.getUserWebAPI().loadUserById(variable.getLastModifierId(),
+                        APILocator.systemUser(), false);
+                if (null != variableLastModifier) {
+
+                    lastModifierFullName = variableLastModifier.getFullName();
+                }
+            } catch (final NoSuchUserException e) {
+                // The modifier user does not exist anymore. So just default its name to "Unknown"
+            }
+
+            resultList.add(new SiteVariableView(variable.getId(), variable.getHostId(), variable.getName(), variable.getKey(),
+                    variable.getValue(), variable.getLastModifierId(), variable.getLastModDate(), lastModifierFullName));
+        }
+
+        return Response.ok(new ResponseSiteVariablesEntityView(resultList)).build();
+    }
     /**
      * Updates a site
      * @param httpServletRequest
