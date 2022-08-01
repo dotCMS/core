@@ -216,6 +216,11 @@
             // for the purpose of just to keep the connection alive
             if (e.detail.newContent.length > 0) {
                 updateLogViewerData(e.detail.newContent);
+
+                var jsScriptTags = document.getElementById('tailingFrame').contentDocument.body?.querySelectorAll('script')
+                for (var i = 0, total = jsScriptTags.length; i < total; i++) {
+                    jsScriptTags[i].parentNode.removeChild(jsScriptTags[i]);
+                }
             }
         })
     }
@@ -236,10 +241,13 @@
     // Function that gets called on every new log update
     function updateLogViewerData(newContent) {
         dataLogPrintedElem.innerHTML += newContent;
+        // console.log('newContent', newContent)
         logRawContent += newContent;
 
-        excludeLogRowsActive & keywordLogInput.value.length > 2 ? 
+        if (keywordLogInput.value.length > 2) {
+            excludeLogRowsActive ? 
             performLogViewerMark(excludeNoMatchingRows) : performLogViewerMark();
+        }
 
         if (document.querySelector('#scrollMe').checked) {
             scrollLogToBottom();
@@ -280,6 +288,7 @@
         }
 
         dataLogPrintedElem.innerHTML = log;
+        // console.log('end log', log)
     }
 
     // Function that gets called when pressed "Enter" key to exclude no matching rows
@@ -292,7 +301,7 @@
     }
 
     function scrollLogToBottom() {
-        dataLogPrintedElem.scrollTop = dataLogPrintedElem.scrollHeight;
+        // dataLogPrintedElem.scrollTop = dataLogPrintedElem.scrollHeight;
     }
 
     /* Log Viewer - END */
@@ -330,6 +339,6 @@
 </div>
 
 <div id="tailContainer" class="log-files__container" style="display: flex; flex-direction: column;">
-    <iframe id="tailingFrame" src="/html/blank.jsp" style="display: none" class="log-files__iframe"></iframe>
+    <iframe id="tailingFrame" src="/html/blank.jsp" style="display: block" class="log-files__iframe"></iframe>
     <div class="logViewerPrinted" style="flex-grow: 1;"></div>
 </div>
