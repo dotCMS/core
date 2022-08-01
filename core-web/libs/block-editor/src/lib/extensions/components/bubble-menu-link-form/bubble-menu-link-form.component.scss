@@ -16,19 +16,15 @@
     }
 
     .search-container {
-        align-items: center;
-        display: flex;
-        flex-direction: row;
         padding: $spacing-3;
         width: 100%;
-        input {
-            background: #FFFFFF;
-            border-radius: 2px 0 0 2px;
-            border: 1px solid #B3B1B8;
-            box-sizing: border-box;
-            padding: 0.85rem;
-            width: calc(100% - 5rem);
-            outline: none;
+        input[type="text"] {
+            background: $white;
+            border: 1px solid $gray-light;
+            &:focus {
+                outline: none;
+                box-shadow: none;
+            }
         }
     }
 
@@ -42,7 +38,7 @@
         .url-container {
             cursor: pointer;
             white-space: nowrap;
-            font-size: 16px;
+            font-size: 1rem;
             width: 100%;
             word-wrap: normal;
             display: flex;
@@ -67,20 +63,6 @@
         }
     }
     
-}
-
-.btn {
-    align-items: center;
-    background: #576BE8;
-    border-radius: 0 2px 2px 0;
-    border: 1px solid #576BE8;
-    color: $white;
-    cursor: pointer;
-    display: flex;
-    font-weight: bold;
-    justify-content: center;
-    padding: 0.85rem $spacing-3;
-    width: 5rem;
 }
 
 .divider {

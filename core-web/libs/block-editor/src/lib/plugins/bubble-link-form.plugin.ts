@@ -17,6 +17,8 @@ import { getPosAtDocCoords } from '../utils/prosemirror.utils';
 import { isValidURL } from '../utils/bubble-menu.utils';
 import { openFormLinkOnclik } from '../extensions/components/bubble-menu-link-form/utils/index';
 
+import isEqual from 'lodash.isequal';
+
 interface PluginState {
     isOpen: boolean;
     openOnClick: boolean;
@@ -237,6 +239,10 @@ export class BubbleLinkFormView {
     destroy() {
         this.tippy?.destroy();
         this.editor.off('focus', this.focusHandler);
+        this.component.instance.hide.unsubscribe();
+        this.component.instance.removeLink.unsubscribe();
+        this.component.instance.setNodeProps.unsubscribe();
+        this.component.destroy();
     }
 
     private hanlderScroll(e: Event) {
@@ -307,7 +313,7 @@ export const bubbleLinkFormPlugin = (options: BubbleLinkFormProps) => {
 
                 // If we click again in the same link node,
                 // We close the form and enable editing.
-                if (JSON.stringify(lastNode) === JSON.stringify(node)) {
+                if (isEqual(lastNode, node)) {
                     editor.chain().setTextSelection(pos).closeLinkForm().run();
                     return;
                 }

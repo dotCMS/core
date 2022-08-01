@@ -292,8 +292,7 @@ export const primary = () => ({
                         );
                     },
                     getContentletsUrlMap({ filter }) {
-                        return of(contentletsMock ||
-                            contentletsMock.filter((item) =>
+                        return of(contentletsMock.filter((item) =>
                                 item.url.match(new RegExp(filter, 'i'))
                             )
                         ).pipe(debounceTime(400));

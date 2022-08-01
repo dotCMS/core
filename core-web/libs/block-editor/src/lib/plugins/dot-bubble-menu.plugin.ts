@@ -195,6 +195,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
         this.component.instance.command.unsubscribe();
         this.component.instance.toggleChangeTo.unsubscribe();
+
         this.component.destroy();
         this.changeTo.destroy();
 

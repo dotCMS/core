@@ -6,16 +6,28 @@
         (keydown)="onKeyDownEvent($event)"
         (ngSubmit)="submitForm()"
     >
-        <div class="search-container">
-            <input
-                #input
-                id="editor-input-link"
-                type="text"
-                placeholder="Paste link or search for pages"
-                formControlName="link"
-                (input)="setLoading()"
-            />
-            <button class="btn" type="submit">ADD</button>
+        <div class="p-inputgroup search-container">
+
+            <div class="p-inputgroup">
+                <input
+                    #input
+                    id="editor-input-link"
+                    pInputText
+                    type="text"
+                    placeholder="Paste link or search for pages"
+                    formControlName="link"
+                    (input)="setLoading()"
+                />
+                <button
+                    pButton
+                    type="submit"
+                    label="ADD"
+                    class="p-button"
+                    [style]="{width: '5rem', padding: '.75rem 1rem', borderRadius: '0 2px 2px 0'}"
+                ></button>   
+            </div>
+
+
         </div>
 
         <hr class="divider" *ngIf="showSuggestions || currentLink"/>

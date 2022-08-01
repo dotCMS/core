@@ -9,9 +9,9 @@ export const DEFAULT_LANG_ID = 1;
 export type DotConfigKeys = 'lang';
 
 export interface ContentletFilters {
-    contentType?: string;
+    contentType: string;
     filter: string;
-    currentLanguage?: number;
+    currentLanguage: number;
 }
 
 export enum NodeTypes {

@@ -85,7 +85,7 @@ export class BubbleMenuLinkFormComponent implements OnInit {
     }
 
     /**
-     *
+     * Submit node props and close link form.
      *
      * @memberof BubbleMenuLinkFormComponent
      */
@@ -106,7 +106,7 @@ export class BubbleMenuLinkFormComponent implements OnInit {
     }
 
     /**
-     *
+     * Set Form values without emit `valueChanges` event.
      *
      * @param {NodeProps} { link, blank }
      * @memberof BubbleMenuLinkFormComponent

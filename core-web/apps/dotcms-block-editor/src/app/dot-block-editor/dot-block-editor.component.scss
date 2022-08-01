@@ -13,14 +13,16 @@
 :host {
     position: relative;
     font-family: 'Roboto', sans-serif;
+    height: 500px;
+    display: block;
 
     .editor-wrapper {
         border-radius: 4px;
-        height: 500px;
+        height: 100%;
         overflow: hidden;
         position: relative;
-        outline: $gray-light solid 1px;
         resize: vertical;
+        outline: $gray-light solid 1px;
     }
 
     // If a child is focused, set this style to the parent

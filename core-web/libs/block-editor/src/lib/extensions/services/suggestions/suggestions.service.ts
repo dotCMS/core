@@ -47,18 +47,18 @@ export class SuggestionsService {
             .pipe(pluck('entity', 'jsonObjectView', 'contentlets'));
     }
 
+
     /**
-     *
      * Get contentlets filtered by urlMap
-     * @param {ContentletFilters}
-     * { filter, currentLanguage = 1 }
+     *
+     * @param {*} { filter, currentLanguage = DEFAULT_LANG_ID }
      * @return {*}  {Observable<DotCMSContentlet[]>}
      * @memberof SuggestionsService
      */
     getContentletsUrlMap({
         filter,
         currentLanguage = DEFAULT_LANG_ID
-    }: ContentletFilters): Observable<DotCMSContentlet[]> {
+    }): Observable<DotCMSContentlet[]> {
         return this.http
             .post('/api/content/_search', {
                 query: `+languageId:${currentLanguage} +deleted:false +working:true +(urlmap:*${filter}* OR +(basetype:5 AND path:*${filter}*))`,

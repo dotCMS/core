@@ -261,6 +261,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
         this.loading = true;
         this.suggestionsService
             .getContentletsUrlMap({ filter: link })
+            .pipe(take(1))
             .subscribe((contentlets: DotCMSContentlet[]) => {
                 this.items = contentlets.map((contentlet) => {
                     const { languageId } = contentlet;

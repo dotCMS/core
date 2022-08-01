@@ -432,17 +432,17 @@
 
 .p-button.p-button-outlined {
     background-color: transparent;
-    color: #2196f3;
+    color: $brand-primary;
     border: 1px solid;
 }
 .p-button.p-button-outlined:enabled:hover {
     background: rgba(33, 150, 243, 0.04);
-    color: #2196f3;
+    color: $brand-primary;
     border: 1px solid;
 }
 .p-button.p-button-outlined:enabled:active {
     background: rgba(33, 150, 243, 0.16);
-    color: #2196f3;
+    color: $brand-primary;
     border: 1px solid;
 }
 .p-button.p-button-outlined.p-button-plain {
