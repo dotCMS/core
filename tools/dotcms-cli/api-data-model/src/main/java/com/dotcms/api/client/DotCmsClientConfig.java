@@ -7,7 +7,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 
 /**
- * Bean mean to collect rest client configurations
+ * Bean meant to collect rest client configurations
  */
 @ConfigMapping(prefix = "dotcms.client")
 public interface DotCmsClientConfig {

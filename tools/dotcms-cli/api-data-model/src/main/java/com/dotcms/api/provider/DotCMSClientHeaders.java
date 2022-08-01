@@ -1,6 +1,6 @@
 package com.dotcms.api.provider;
 
-import com.dotcms.api.AuthSecurityContext;
+import com.dotcms.api.AuthenticationContext;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.ws.rs.core.MultivaluedMap;
@@ -9,23 +9,24 @@ import org.jboss.logging.Logger;
 
 
 /**
- * Microprofile Provided that injexcts the authentication header into every api-request.
+ * Microprofile Provided that injects the authentication header into every api-request.
  */
 @RequestScoped
 public class DotCMSClientHeaders implements ClientHeadersFactory {
 
-    private static final Logger log = Logger.getLogger(DotCMSClientHeaders.class);
+    @Inject
+    Logger logger;
 
     @Inject
-    AuthSecurityContext ctx;
+    AuthenticationContext authenticationContext;
 
     @Override
     public MultivaluedMap<String, String> update(MultivaluedMap<String, String> mm1,
             MultivaluedMap<String, String> mm2) {
 
-        ctx.getToken().ifPresentOrElse(token -> mm2.add("Authorization", "Bearer  " + token),
+        authenticationContext.getToken().ifPresentOrElse(token -> mm2.add("Authorization", "Bearer  " + new String(token)),
                 () -> {
-                    log.error("Unable to get a valid token from the authentication context.");
+                    logger.error("Unable to get a valid token from the authentication context.");
                 }
         );
 
