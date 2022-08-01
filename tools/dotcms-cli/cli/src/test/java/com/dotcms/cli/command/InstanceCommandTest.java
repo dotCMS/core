@@ -99,7 +99,7 @@ public class InstanceCommandTest {
 
         final Optional<ServiceBean> active = serviceManager.selected();
         Assertions.assertTrue(active.isPresent());
-        //Lets activate demo since we know is an included profile
+        //Let's activate demo since we know is an included profile
         final String newProfile = "demo";
         serviceManager.persist(ServiceBean.builder().name(newProfile).active(false).build());
         final Optional<ServiceBean> inactive = serviceManager.services().stream()
