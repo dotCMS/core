@@ -55,15 +55,22 @@ public class LoginCommandTest {
     @Order(2)
     public void Test_Command_Login_With_Params_Expect_Successful_Login()  {
         final String user = "admin@dotCMS.com";
-        final String passwd = "admin";
-        final CommandLine commandLine = factory.create();
-        final StringWriter writer = new StringWriter();
-        try(PrintWriter out = new PrintWriter(writer)){
-            commandLine.setOut(out);
-            final int status = commandLine.execute(LoginCommand.NAME,String.format("--user=%s",user),String.format("--password=%s",passwd));
-            Assertions.assertEquals(ExitCode.OK, status);
-            final String output = writer.toString();
-            Assertions.assertTrue(output.contains(String.format("Successfully logged-in as [%s]",user)));
+
+        final String [][] options = {
+                {"--user=admin@dotCMS.com","--password=admin"},
+                {"-u=admin@dotCMS.com","-p=admin"}
+        };
+
+        for (final String [] option:options) {
+            final CommandLine commandLine = factory.create();
+            final StringWriter writer = new StringWriter();
+            try(PrintWriter out = new PrintWriter(writer)){
+                commandLine.setOut(out);
+                final int status = commandLine.execute(LoginCommand.NAME,option[0],option[1]);
+                Assertions.assertEquals(ExitCode.OK, status);
+                final String output = writer.toString();
+                Assertions.assertTrue(output.contains(String.format("Successfully logged-in as [%s]",user)));
+            }
         }
     }
 
@@ -74,18 +81,26 @@ public class LoginCommandTest {
     @Test
     @Order(3)
     public void Test_Command_Login_With_Params_Expect_Login_Reject()  {
-        final String user = "admin@dotCMS.com";
-        final String passwd = "lol";
-        final CommandLine commandLine = factory.create();
-        final StringWriter writer = new StringWriter();
-        try(PrintWriter out = new PrintWriter(writer)){
-            commandLine.setErr(out);
-            final int status = commandLine.execute(LoginCommand.NAME,String.format("--user=%s",user),String.format("--password=%s",passwd));
-            Assertions.assertEquals(ExitCode.SOFTWARE, status);
-            final String output = writer.toString();
-            Assertions.assertTrue(output.contains("[ERROR]"));
-            Assertions.assertTrue(output.contains("Unable to login."));
+
+        final String [][] options = {
+                {"--user=admin@dotCMS.com","--password=lol"},
+                {"-u=admin@dotCMS.com","-p=lol"}
+        };
+
+        for (final String [] option:options) {
+
+            final CommandLine commandLine = factory.create();
+            final StringWriter writer = new StringWriter();
+            try(PrintWriter out = new PrintWriter(writer)){
+                commandLine.setErr(out);
+                final int status = commandLine.execute(LoginCommand.NAME,option[0],option[1]);
+                Assertions.assertEquals(ExitCode.SOFTWARE, status);
+                final String output = writer.toString();
+                Assertions.assertTrue(output.contains("[ERROR]"));
+                Assertions.assertTrue(output.contains("Unable to login."));
+            }
         }
+
     }
 
 
