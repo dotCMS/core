@@ -13,11 +13,16 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableMap;
 import org.apache.http.Header;
+import org.apache.http.HttpStatus;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -93,9 +98,6 @@ public class EMAWebInterceptor implements WebInterceptor {
                 final JSONObject json                      = new JSONObject(postJson);
                 final Optional<String> authTokenOpt = getEmaAppParameter(currentHost, AUTHENTICATION_TOKEN_VAR);
                 final Map<String, String> params           = ImmutableMap.of("dotPageData", postJson);
-                if (authTokenOpt.isPresent()) {
-                    params.put("token", authTokenOpt.get());
-                }
                 
                 Logger.info(this.getClass(), "Proxying Request --> " + proxyUrl.get());
 
@@ -105,7 +107,7 @@ public class EMAWebInterceptor implements WebInterceptor {
                 if (authTokenOpt.isPresent() && (UtilMethods.isNotSet(authTokenFromEma) || !authTokenOpt.get().equals(authTokenFromEma))) {
                     responseStringBuilder.append(this.generateErrorPage("Invalid Authentication Token",
                             proxyUrl.get(), pResponse));
-                } else if (pResponse.getResponseCode() == 200) {
+                } else if (pResponse.getResponseCode() == HttpStatus.SC_OK) {
                     responseStringBuilder.append(new String(pResponse.getResponse(), StandardCharsets.UTF_8.name()));
                 } else {
                     responseStringBuilder.append(this.generateErrorPage("Unable to connect with the rendering engine"
@@ -252,18 +254,22 @@ public class EMAWebInterceptor implements WebInterceptor {
     }
 
     /**
+     * Returns a given parameter from a specific Site.
      *
-     * @param site
-     * @param paramKey
-     * @return
+     * @param site     The dotCMS Site whose parameter will be retrieved.
+     * @param paramKey The parameter being requested, using its key.
+     *
+     * @return An {@link Optional} object containing the value of the specified parameter, or an empty optional if it
+     * doesn't exist.
      */
     protected Optional<String> getEmaAppParameter(final Host site, final String paramKey) {
         final AppSecrets appSecrets;
         try {
             appSecrets =
                     APILocator.getAppsAPI().getSecrets(EMA_APP_CONFIG_KEY, true, site, APILocator.systemUser()).get();
-            return appSecrets.getSecrets().containsKey(paramKey) ?
-                           Optional.ofNullable(appSecrets.getSecrets().get(paramKey).getString()) : Optional.empty();
+            return appSecrets.getSecrets().containsKey(paramKey) &&
+                           UtilMethods.isSet(appSecrets.getSecrets().get(paramKey).getString())
+                           ? Optional.of(appSecrets.getSecrets().get(paramKey).getString()) : Optional.empty();
         } catch (final DotDataException | DotSecurityException e) {
             Logger.error(this, String.format("An error occurred when accessing EMA parameters for site '%s': %s",
                     site, e.getMessage()), e);
@@ -272,10 +278,12 @@ public class EMAWebInterceptor implements WebInterceptor {
     }
 
     /**
+     * Returns the value of a specific Header from the list of Headers.
      *
-     * @param headers
-     * @param emaAuthHeaderName
-     * @return
+     * @param headers           The name-value array of {@link Header} objects that will be traversed.
+     * @param emaAuthHeaderName The name of the Header that is being requested.
+     *
+     * @return The value of the Header, or {@code null} if it doesn't exist.
      */
     private String getHeaderValue(final Header[] headers, final String emaAuthHeaderName) {
         final Optional<Header> headerOpt =
@@ -287,11 +295,13 @@ public class EMAWebInterceptor implements WebInterceptor {
     }
 
     /**
+     * Generates an appropriate response to the client in the form of HTML code explaining why the EMA request failed.
      *
-     * @param errorMsg
-     * @param proxyUrl
-     * @param pResponse
-     * @return
+     * @param errorMsg  The human-readable error message.
+     * @param proxyUrl  The URL that is being used to proxy the Edit Mode.
+     * @param pResponse The object containing important information on the HTTP Headers present in the current response.
+     *
+     * @return The HTML code with the error message and related information.
      */
     protected String generateErrorPage(final String errorMsg, final String proxyUrl, final ProxyResponse pResponse) {
         final StringBuilder responseStringBuilder = new StringBuilder();
