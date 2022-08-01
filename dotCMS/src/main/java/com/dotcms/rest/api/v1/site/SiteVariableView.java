@@ -2,6 +2,10 @@ package com.dotcms.rest.api.v1.site;
 
 import java.util.Date;
 
+/**
+ * Site variable View
+ * @author jsanca
+ */
 public class SiteVariableView {
 
     private final String id;

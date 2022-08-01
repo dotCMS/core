@@ -995,12 +995,12 @@ public class SiteResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(summary = "Save a Site Variable",
+    @Operation(summary = "Retrieve the Site Variables for a site",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseHostVariableEntityView.class))),
+                                    schema = @Schema(implementation = ResponseSiteVariablesEntityView.class))),
                     @ApiResponse(responseCode = "404", description = "When the site id does not exists")})
     public Response getHostVariables(@Context final HttpServletRequest httpServletRequest,
                                      @Context final HttpServletResponse httpServletResponse,
