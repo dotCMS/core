@@ -4,7 +4,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.publisher.pusher.wrapper.ContentWrapper;
+import com.dotcms.security.apps.SecretsStore;
 import com.dotcms.test.util.FileTestUtil;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.XStreamFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.thoughtworks.xstream.XStream;
@@ -12,11 +14,18 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class ContentHandlerTest {
 
     private static final String INPUT_FILE_PATH = "/bundlers-test/file-asset/contentlet.fileAsset.xml";
+
+
+    @BeforeClass
+    public static void prepare() throws Exception {
+        IntegrationTestInitService.getInstance().init();
+    }
 
     /**
      * Test-Method: {@Link ContentHandler#newXStreamInstance}
@@ -26,7 +35,7 @@ public class ContentHandlerTest {
      */
     @Test
     public void Test_XStream_Deserializer() throws IOException {
-        final XStream xStream = XStreamFactory.INSTANCE.getInstance();
+        final XStream xStream = ContentHandler.newXStreamInstance();
 
         final File file = FileTestUtil.getFileInResources(INPUT_FILE_PATH);
         ContentWrapper wrapper;
