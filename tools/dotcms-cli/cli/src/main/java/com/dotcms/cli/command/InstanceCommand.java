@@ -64,11 +64,10 @@ public class InstanceCommand implements Callable<Integer> {
 
         final Map<String, URI> servers = clientConfig.servers();
 
-        output.info("@|bold,underline,green dotCMS profiles|@");
-
         if (servers.isEmpty()) {
             output.error(
                     "No dotCMS instances are configured. They should be included in the application.properties or via .env file.");
+            return ExitCode.SOFTWARE;
         } else {
 
             final List<ServiceBean> services = serviceManager.services();
@@ -100,14 +99,16 @@ public class InstanceCommand implements Callable<Integer> {
                 Optional<ServiceBean> optional = get(options.activate, beans);
                 if (optional.isEmpty()) {
                     // The selected option is not valid
-                    output.info(String.format(" The Selected instance [@|bold,blue %s|@] @|bold,underline does not exist!|@", options.activate));
+                    output.error(String.format(" The instance name [%s] does not march any configured server! Use --list option. ", options.activate));
+                    return ExitCode.SOFTWARE;
                 } else {
                     ServiceBean serviceBean = optional.get();
                     serviceBean = serviceBean.withActive(true);
                     try {
                         serviceManager.persist(serviceBean);
+                        output.info(String.format(" The instance name [@|bold,underline,green %s|@] is now the active profile.",options.activate));
                     } catch (IOException e) {
-                        throw new RuntimeException(e);
+                        output.error("Unable to persist the new selected service ",e);
                     }
                 }
             }
@@ -127,7 +128,6 @@ public class InstanceCommand implements Callable<Integer> {
             final String suffix = entry.getKey();
             ServiceBean bean = serviceBeanByName.get(suffix);
             if(null == bean){
-               //final String profileName = instanceName(suffix);
                bean = ServiceBean.builder().active(false).name(suffix).credentials(null).build();
             }
             beans.add(bean);
