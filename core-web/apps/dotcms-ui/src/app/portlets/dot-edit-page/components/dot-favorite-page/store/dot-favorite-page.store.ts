@@ -25,12 +25,6 @@ export interface DotFavoritePageState {
     closeDialog: boolean;
 }
 
-export const enum LoadingState {
-    INIT = 'INIT',
-    LOADING = 'LOADING',
-    LOADED = 'LOADED'
-}
-
 export const CMS_OWNER_ROLE_ID = '6b1fa42f-8729-4625-80d1-17e4ef691ce7';
 const IMG_RATIO_43 = 1.333;
 
@@ -42,25 +36,12 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
     public readonly closeDialog$ = this.select(({ closeDialog }) => closeDialog);
     public readonly currentUserRoleId$ = this.select(({ currentUserRoleId }) => currentUserRoleId);
 
-    // UPDATERS
-    readonly setLoading = this.updater((state: DotFavoritePageState) => {
-        return {
-            ...state,
-            loading: LoadingState.LOADING === LoadingState.LOADING
-        };
-    });
-
-    readonly setLoaded = this.updater((state: DotFavoritePageState) => {
-        return {
-            ...state,
-            loading: !(LoadingState.LOADED === LoadingState.LOADED)
-        };
-    });
-
     // EFFECTS
     readonly saveFavoritePage = this.effect((data$: Observable<DotFavoritePageFormData>) => {
         return data$.pipe(
             switchMap((formData: DotFavoritePageFormData) => {
+                this.patchState({ loading: true });
+
                 const file = new File([formData.thumbnail], 'image.png');
                 const individualPermissions = {
                     READ: []
@@ -94,7 +75,7 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
                     take(1),
                     tapResponse(
                         () => {
-                            this.patchState({ closeDialog: true });
+                            this.patchState({ closeDialog: true, loading: false });
                         },
                         (error: HttpErrorResponse) => {
                             this.dotHttpErrorManagerService.handle(error);
@@ -139,16 +120,14 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
             isAdmin: propsData.isAdmin,
             imgWidth: propsData.imgWidth,
             imgHeight: propsData.imgHeight,
-            loading: false,
-            closeDialog: false
+            loading: true,
+            closeDialog: false,
+            pageRenderedHtml: props.pageRenderedHtml
         });
-
-        this.setLoading();
 
         forkJoin([this.dotRolesService.search(), this.dotCurrentUser.getCurrentUser()])
             .pipe(take(1))
             .subscribe(([roles, currentUser]: [DotRole[], DotCurrentUser]): void => {
-                console.log(roles, currentUser);
                 this.patchState({
                     loading: false,
                     currentUserRoleId: currentUser.roleId,

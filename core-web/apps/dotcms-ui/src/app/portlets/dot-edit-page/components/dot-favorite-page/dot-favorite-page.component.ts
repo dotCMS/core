@@ -1,5 +1,5 @@
 import { Observable, Subject } from 'rxjs';
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
 import { FormGroup, Validators, UntypedFormBuilder } from '@angular/forms';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { map, startWith, takeUntil } from 'rxjs/operators';
@@ -26,10 +26,9 @@ export interface DotFavoritePageFormData {
     templateUrl: 'dot-favorite-page.component.html',
     providers: [DotFavoritePageStore]
 })
-export class DotFavoritePageComponent implements OnInit, OnDestroy {
+export class DotFavoritePageComponent implements OnInit, AfterViewInit, OnDestroy {
     form: FormGroup;
     isFormValid$: Observable<boolean>;
-    pageRenderedHtml: string;
 
     vm$: Observable<DotFavoritePageState> = this.store.vm$;
 
@@ -42,7 +41,6 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
         private store: DotFavoritePageStore
     ) {
         this.store.setInitialStateData(this.config.data.page);
-        this.pageRenderedHtml = this.config.data.page.pageRenderedHtml;
     }
 
     ngOnInit(): void {
@@ -68,14 +66,13 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
                 this.ref.close(true);
             }
         });
+    }
 
-        // This is needed to wait until the Web Component is rendered
-        setTimeout(() => {
-            const dotHtmlToImageElement = document.querySelector('dot-html-to-image');
-            dotHtmlToImageElement.addEventListener('pageThumbnail', (event: CustomEvent) => {
-                this.form.get('thumbnail').setValue(event.detail);
-            });
-        }, 100);
+    ngAfterViewInit(): void {
+        const dotHtmlToImageElement = document.querySelector('dot-html-to-image');
+        dotHtmlToImageElement.addEventListener('pageThumbnail', (event: CustomEvent) => {
+            this.form.get('thumbnail').setValue(event.detail.file);
+        });
     }
 
     /**

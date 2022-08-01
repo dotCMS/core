@@ -114,6 +114,7 @@ describe('DotFavoritePageStore', () => {
             imgWidth: 1024,
             imgHeight: 768.192048012003,
             loading: false,
+            pageRenderedHtml: '<p>test</p>',
             closeDialog: false
         };
 
@@ -135,21 +136,6 @@ describe('DotFavoritePageStore', () => {
     it('should have currentUserRoleId$ Selector', () => {
         dotFavoritePageStore.currentUserRoleId$.subscribe((data) => {
             expect(data).toEqual(CurrentUserDataMock.roleId);
-        });
-    });
-
-    // Updaters
-    it('should update setLoading', () => {
-        dotFavoritePageStore.setLoading();
-        dotFavoritePageStore.state$.subscribe((state) => {
-            expect(state.loading).toEqual(true);
-        });
-    });
-
-    it('should update setLoaded', () => {
-        dotFavoritePageStore.setLoaded();
-        dotFavoritePageStore.state$.subscribe((state) => {
-            expect(state.loading).toEqual(false);
         });
     });
 

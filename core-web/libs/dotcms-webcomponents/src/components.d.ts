@@ -2036,7 +2036,12 @@ declare namespace LocalJSX {
     }
     interface DotHtmlToImage {
         height?: string;
-        onPageThumbnail?: (event: DotHtmlToImageCustomEvent<File>) => void;
+        onPageThumbnail?: (
+            event: DotHtmlToImageCustomEvent<{
+                file: File;
+                error?: string;
+            }>
+        ) => void;
         value?: string;
         width?: string;
     }

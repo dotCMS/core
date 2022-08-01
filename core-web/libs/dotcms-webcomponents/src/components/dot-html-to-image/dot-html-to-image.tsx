@@ -16,7 +16,10 @@ export class DotHtmlToImage {
     @Prop({ reflect: false, mutable: true })
     width = '';
 
-    @Event() pageThumbnail: EventEmitter<File>;
+    @Event() pageThumbnail: EventEmitter<{
+        file: File;
+        error?: string;
+    }>;
     @State() previewImg: string;
 
     iframeId = `iframe_${Math.floor(Date.now() / 1000).toString()}`;
@@ -36,7 +39,10 @@ export class DotHtmlToImage {
                 }, '*')
             });
         }).catch(function (error) {
-            console.error('oops, something went wrong!', error);
+            window.parent.postMessage({
+                iframeId: '${this.iframeId}',
+                error
+            }, '*')
         });
     ;`;
 
@@ -70,6 +76,11 @@ export class DotHtmlToImage {
         window.addEventListener('message', (event) => {
             if (event.data.iframeId !== this.iframeId) return;
 
+            if (event.data.error) {
+                this.pageThumbnail.emit({ file: null, error: event.data.error });
+                return;
+            }
+
             const { previewImg, fileObj } = event.data;
             this.previewImg = previewImg;
 
@@ -78,7 +89,7 @@ export class DotHtmlToImage {
             img.style.width = '100%';
             iframe.parentElement.appendChild(img);
 
-            this.pageThumbnail.emit(fileObj);
+            this.pageThumbnail.emit({ file: fileObj });
         });
     }
 
