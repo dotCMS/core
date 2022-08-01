@@ -16,39 +16,42 @@ import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.DotLambdas;
-import com.dotcms.util.I18NUtil;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.SitePaginator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.util.HostNameComparator;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.hostvariable.model.HostVariable;
 import com.dotmarketing.quartz.QuartzUtils;
-import com.dotmarketing.quartz.SimpleScheduledTask;
 import com.dotmarketing.quartz.job.HostCopyOptions;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.vavr.control.Try;
 import java.io.File;
 import java.io.Serializable;
 import java.text.ParseException;
-import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -69,7 +72,6 @@ import javax.ws.rs.core.Response;
 import org.apache.commons.lang.StringUtils;
 import org.glassfish.jersey.server.JSONP;
 import org.quartz.SchedulerException;
-import org.quartz.SimpleTrigger;
 
 /**
  * This resource provides all the different end-points associated to information
@@ -846,6 +848,127 @@ public class SiteResource implements Serializable {
 
         return Response.ok(new ResponseEntityView(
                 this.toView(this.siteHelper.save(newSite, user, pageMode.respectAnonPerms)))).build();
+    }
+
+    /**
+     * Saves a Site Variable in the specified Site.
+     * @param httpServletRequest
+     * @param httpServletResponse
+     * @param newSiteForm
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws PortalException
+     * @throws SystemException
+     * @throws ParseException
+     * @throws SchedulerException
+     * @throws ClassNotFoundException
+     */
+    @PUT
+    @Path("/variable")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(summary = "Save a Site Variable",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseHostVariableEntityView.class))),
+                    @ApiResponse(responseCode = "400", description = "When a required value is not sent")})
+    public Response saveHostVariable(@Context final HttpServletRequest httpServletRequest,
+                               @Context final HttpServletResponse httpServletResponse,
+                              final SiteVariableForm siteVariableForm)
+            throws DotDataException, DotSecurityException, LanguageException {
+
+        final User user = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .requiredPortlet("sites")
+                .init().getUser();
+        final PageMode pageMode = PageMode.get(httpServletRequest);
+
+        Logger.debug(this, ()-> "Saving the site variable: " + siteVariableForm);
+
+        verifySite(siteVariableForm);
+
+        final String id     = siteVariableForm.getId();
+        final String key    = siteVariableForm.getKey().trim();
+        final String value  = UtilMethods.escapeDoubleQuotes(siteVariableForm.getValue().trim());
+        final String name   = UtilMethods.escapeDoubleQuotes(siteVariableForm.getName().trim());
+        final String siteId = siteVariableForm.getSiteId();
+
+        if (!UtilMethods.isSet(key)) {
+
+            throw new IllegalArgumentException(LanguageUtil.get(user, "message.hostvariables.key.required"));
+        }
+
+        if (RegEX.contains(key, "[^A-Za-z0-9]")) {
+
+            throw new IllegalArgumentException(LanguageUtil.get(user, "message.hostvariables.exist.error.regex"));
+        }
+
+        final List<HostVariable> variables = APILocator.getHostVariableAPI().getVariablesForHost(siteId, user, pageMode.respectAnonPerms);
+        HostVariable siteVariable = null;
+
+        for (final HostVariable next : variables) {
+
+            if (next.getKey().equals(key) && !next.getId().equals(id)) {
+
+                throw new IllegalArgumentException(LanguageUtil.get(user, "message.hostvariables.exist.error.key"));
+            }
+
+            if(UtilMethods.isSet(id) && next.getId().equals(id)) {
+
+                siteVariable = next;
+            }
+        }
+
+        if (null == siteVariable) {
+
+            siteVariable = new HostVariable();
+        }
+
+        siteVariable.setId(id);
+        siteVariable.setHostId(siteId);
+        siteVariable.setName(name);
+        siteVariable.setKey(key);
+        siteVariable.setValue(value);
+        siteVariable.setLastModifierId(user.getUserId());
+        siteVariable.setLastModDate(new Date());
+
+        APILocator.getHostVariableAPI().save(siteVariable, user, pageMode.respectAnonPerms);
+
+        return Response.ok(new ResponseHostVariableEntityView(siteVariable)).build();
+    }
+
+    private void verifySite(SiteVariableForm siteVariableForm) {
+
+        if (!UtilMethods.isSet(siteVariableForm)) {
+
+            throw new IllegalArgumentException("Body with the Site Variable is required");
+        }
+
+        if (!UtilMethods.isSet(siteVariableForm.getSiteId())) {
+
+            throw new IllegalArgumentException("The siteId is required");
+        }
+
+        if (!UtilMethods.isSet(siteVariableForm.getName())) {
+
+            throw new IllegalArgumentException("The Name is required");
+        }
+
+        if (!UtilMethods.isSet(siteVariableForm.getKey())) {
+
+            throw new IllegalArgumentException("The Key is required");
+        }
+
+        if (!UtilMethods.isSet(siteVariableForm.getValue())) {
+
+            throw new IllegalArgumentException("The Value is required");
+        }
     }
 
     /**
