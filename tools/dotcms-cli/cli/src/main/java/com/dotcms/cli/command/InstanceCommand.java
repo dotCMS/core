@@ -109,6 +109,7 @@ public class InstanceCommand implements Callable<Integer> {
                         output.info(String.format(" The instance name [@|bold,underline,green %s|@] is now the active profile.",options.activate));
                     } catch (IOException e) {
                         output.error("Unable to persist the new selected service ",e);
+                        return ExitCode.SOFTWARE;
                     }
                 }
             }
