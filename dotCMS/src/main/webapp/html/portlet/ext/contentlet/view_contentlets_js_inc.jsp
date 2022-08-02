@@ -2553,14 +2553,8 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
         }
 
         function fillQuery (counters) {
-                        <%
-                        String restBaseUrl= "/api/content/render/false";
-
-                        String restBasePostUrl="http://"+
-                           APILocator.getHostAPI().find((String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID), user, false).getHostname()+
-                           ((request.getLocalPort()!=80) ? ":"+request.getLocalPort() : "")+
-                           "/api/content/_search";
-                        %>
+                        var restBaseUrl = location.protocol + '//' + location.host + '/api/content/render/false';
+                        var restBasePostUrl = location.protocol + '//' + location.host + '/api/content/_search';
 
 
                         queryRaw = counters["luceneQueryRaw"];
@@ -2571,10 +2565,10 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                         var relatedQueryByChild = counters["relatedQueryByChild"];
                         var sortBy = counters["sortByUF"];
                         var div = document.getElementById("queryResults");
-                        var apicall="<%= restBaseUrl %>/query/"+queryRaw+"/orderby/"+sortBy;
+                        var apicall=restBaseUrl + "/query/"+queryRaw+"/orderby/"+sortBy;
                         var test_api_xml_link="/api/content/render/false/type/xml/query/"+encodeURI(queryRaw)+"/orderby/"+encodeURI(sortBy);
                         var test_api_json_link="/api/content/render/false/type/json/query/"+encodeURI(queryRaw)+"/orderby/"+encodeURI(sortBy);
-                        var apicall_urlencode="<%= restBaseUrl %>/query/"+encodeURI(queryRaw)+"/orderby/"+encodeURI(sortBy);
+                        var apicall_urlencode=restBaseUrl + "/query/"+encodeURI(queryRaw)+"/orderby/"+encodeURI(sortBy);
 
                         var expiredInodes = counters["expiredInodes"];
                         dojo.byId("expiredInodes").value=expiredInodes;
@@ -2608,7 +2602,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                                 "}" +
                             "</style>" +
                             "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "rest-api-call-post") %></div>"+
-                            "<div class='contentViewQuery'><code>" + "curl -XPOST '<%= restBasePostUrl %>' \\<br/>" +
+                            "<div class='contentViewQuery'><code>" + "curl -XPOST '" + restBasePostUrl + "' \\<br/>" +
                             "-H 'Content-Type: application/json' \\<br/>" +
                             "-d '{<br/>" +
                             "<span style='margin-left: 20px'>\"query\": \"" + queryRaw + "\",</span><br/>" +
