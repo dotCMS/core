@@ -1,0 +1,10 @@
+import { Component } from '@angular/core';
+
+@Component({
+    selector: 'dotcms-suggestion-loading-list',
+    templateUrl: './suggestion-loading-list.component.html',
+    styleUrls: ['./suggestion-loading-list.component.scss']
+})
+export class SuggestionLoadingListComponent {
+    items = Array(4).fill(0);
+}

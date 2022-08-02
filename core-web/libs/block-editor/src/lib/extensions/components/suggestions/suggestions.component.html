@@ -3,8 +3,9 @@
     *ngIf="items.length; else isFilterActive ? noResults : emptyBlock"
     class="inherited-styles"
 >
-    <h3 *ngIf="showTitle">{{ title }}</h3>
+    <h3 *ngIf="!urlItem">{{ title }}</h3>
 
+    <!-- TODO: instace list-items inside list -->
     <dotcms-suggestion-list class="suggestion-list-container" id="editor-suggestion-list" #list>
         <dotcms-suggestions-list-item
             *ngFor="let item of items; let i = index"
@@ -15,18 +16,14 @@
             [label]="item.label"
             [url]="item.icon"
             [data]="item.data"
-            [showURL]="showURL"
+            [urlItem]="urlItem"
         >
         </dotcms-suggestions-list-item>
     </dotcms-suggestion-list>
 </div>
 
-<div class="suggestion-list-container" *ngIf="loading">
-    <dotcms-suggestion-loading-item
-     *ngFor="let item of loadingItems"
-    >
-    </dotcms-suggestion-loading-item>
-</div>
+<!-- TODO: Move this to a custom `page-suggestions` -->
+<dotcms-suggestion-loading-list *ngIf="loading"></dotcms-suggestion-loading-list>
 
 <ng-template #emptyBlock>
     <div class="empty" *ngIf="!loading">

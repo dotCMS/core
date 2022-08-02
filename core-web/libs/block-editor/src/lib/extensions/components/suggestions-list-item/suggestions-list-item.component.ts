@@ -18,7 +18,7 @@ export class SuggestionsListItemComponent implements FocusableOption, OnInit {
     @Input() command: () => void;
     @Input() label = '';
     @Input() url = '';
-    @Input() showURL = false;
+    @Input() urlItem = false;
     @Input() data = null;
 
     icon = false;

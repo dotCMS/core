@@ -25,6 +25,7 @@
                 "stylePreprocessorOptions": {
                     "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
                 },
+                "allowedCommonJsDependencies": ["lodash.isequal"],
                 "vendorChunk": true,
                 "extractLicenses": false,
                 "buildOptimizer": false,

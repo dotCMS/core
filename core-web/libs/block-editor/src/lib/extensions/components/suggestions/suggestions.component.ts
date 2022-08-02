@@ -45,6 +45,7 @@ export enum ItemsType {
     styleUrls: ['./suggestions.component.scss']
 })
 export class SuggestionsComponent implements OnInit, AfterViewInit {
+    // TODO: Move all the logic related to the list to its component
     @ViewChild('list', { static: false }) list: SuggestionListComponent;
 
     // Maybe this should be an @Output() instead of @Input();
@@ -55,10 +56,9 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
     @Input() isOpen = false;
     @Input() currentLanguage = DEFAULT_LANG_ID;
     @Input() allowedContentTypes = '';
-    @Input() showTitle = true;
-    @Input() showURL = false;
+
     @Input() loading = false;
-    @Input() waitForSearch = false;
+    @Input() urlItem = false;
 
     @Output() clearFilter: EventEmitter<string> = new EventEmitter<string>();
     @Output() goBack: EventEmitter<MouseEvent> = new EventEmitter<MouseEvent>();
@@ -70,7 +70,6 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
     private initialItems: DotMenuItem[];
 
     isFilterActive = false;
-    loadingItems = Array(4).fill(0);
 
     @HostListener('mousemove', ['$event'])
     onMousemove() {
@@ -84,7 +83,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
     ) {}
 
     ngOnInit(): void {
-        if (this.items?.length === 0 && !this.waitForSearch) {
+        if (this.items?.length === 0 && !this.loading) {
             // assign the default suggestions options.
             this.items = suggestionOptions;
             this.items.forEach((item) => {
@@ -250,6 +249,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
         this.setFirstItemActive();
     }
 
+    // MOVE THIS TO LINK FORM COMPONENT
     /**
      * Search contentlets filtered by url
      *

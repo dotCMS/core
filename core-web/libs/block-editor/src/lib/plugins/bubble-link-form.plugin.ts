@@ -1,4 +1,5 @@
 import { ComponentRef } from '@angular/core';
+import { Subject } from 'rxjs';
 import { Editor, posToDOMRect } from '@tiptap/core';
 import { EditorState, Plugin, PluginKey, Transaction } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
@@ -18,6 +19,7 @@ import { isValidURL } from '../utils/bubble-menu.utils';
 import { openFormLinkOnclik } from '../extensions/components/bubble-menu-link-form/utils/index';
 
 import isEqual from 'lodash.isequal';
+import { takeUntil } from 'rxjs/operators';
 
 interface PluginState {
     isOpen: boolean;
@@ -56,6 +58,8 @@ export class BubbleLinkFormView {
         'editor-input-link': true,
         'editor-input-checkbox': true
     };
+
+    private $destroy = new Subject<boolean>();
 
     constructor({
         editor,
@@ -123,7 +127,7 @@ export class BubbleLinkFormView {
         this.tippy = tippy(editorElement.parentElement, {
             ...this.tippyOptions,
             duration: 250,
-            getReferenceClientRect: null,
+            getReferenceClientRect: () => this.setTippyPosition(),
             content: this.element,
             interactive: true,
             maxWidth: 'none',
@@ -134,7 +138,7 @@ export class BubbleLinkFormView {
                 modifiers: [
                     {
                         name: 'flip',
-                        options: { fallbackPlacements: ['right'] }
+                        options: { fallbackPlacements: ['top-start'] }
                     }
                 ]
             }
@@ -147,7 +151,6 @@ export class BubbleLinkFormView {
         // Afther show the component set values
         this.setInputValues();
         this.component.instance.focusInput();
-        this.tippy?.setProps({ getReferenceClientRect: () => this.setTippyPosition() });
     }
 
     hide() {
@@ -205,9 +208,16 @@ export class BubbleLinkFormView {
     }
 
     setComponentEvents() {
-        this.component.instance.hide.subscribe(() => this.hide());
-        this.component.instance.removeLink.subscribe(() => this.removeLink());
-        this.component.instance.setNodeProps.subscribe((event) => this.setLinkValues(event));
+        this.component.instance.hide.pipe(takeUntil(this.$destroy)).subscribe(() => this.hide());
+        this.component.instance.openSuggestions
+            .pipe(takeUntil(this.$destroy))
+            .subscribe(() => this.tippy.popperInstance.update());
+        this.component.instance.removeLink
+            .pipe(takeUntil(this.$destroy))
+            .subscribe(() => this.removeLink());
+        this.component.instance.setNodeProps
+            .pipe(takeUntil(this.$destroy))
+            .subscribe((event) => this.setLinkValues(event));
     }
 
     detectLinkFormChanges() {
@@ -232,16 +242,14 @@ export class BubbleLinkFormView {
     }
 
     isDotImageNode() {
-        const { type } = this.editor.state.doc.nodeAt(this.editor.state.selection.from);
-        return type.name === 'dotImage';
+        const { type } = this.editor.state.doc.nodeAt(this.editor.state.selection.from) || {};
+        return type?.name === 'dotImage';
     }
 
     destroy() {
         this.tippy?.destroy();
         this.editor.off('focus', this.focusHandler);
-        this.component.instance.hide.unsubscribe();
-        this.component.instance.removeLink.unsubscribe();
-        this.component.instance.setNodeProps.unsubscribe();
+        this.$destroy.next(true);
         this.component.destroy();
     }
 

@@ -1,13 +1,12 @@
 <div class="form-container">
     <!-- FORM -->
     <form
-        autoComplete="off"
+        autocomplete="off"
         [formGroup]="form"
         (keydown)="onKeyDownEvent($event)"
         (ngSubmit)="submitForm()"
     >
         <div class="p-inputgroup search-container">
-
             <div class="p-inputgroup">
                 <input
                     #input
@@ -23,21 +22,19 @@
                     type="submit"
                     label="ADD"
                     class="p-button"
-                    [style]="{width: '5rem', padding: '.75rem 1rem', borderRadius: '0 2px 2px 0'}"
-                ></button>   
+                    [style]="{ width: '5rem', padding: '.75rem 1rem', borderRadius: '0 2px 2px 0' }"
+                ></button>
             </div>
-
-
         </div>
 
-        <hr class="divider" *ngIf="showSuggestions || currentLink"/>
+        <hr class="divider" *ngIf="showSuggestions || currentLink" />
 
         <div class="info-container" *ngIf="currentLink && !showSuggestions">
             <a class="url-container" [href]="currentLink" target="_blank">
                 <span class="material-icons" [style]="{ fontSize: '32px' }">language</span>
                 <span class="truncate">{{ currentLink }}</span>
             </a>
-    
+
             <div class="field-checkbox">
                 <div class="checkbox-container">
                     <p-checkbox
@@ -49,10 +46,8 @@
                 <label for="editor-input-checkbox">Open link in new window</label>
             </div>
         </div>
-
     </form>
 
-    
     <!-- Suggestions -->
     <dotcms-suggestions
         #suggestions
@@ -61,11 +56,9 @@
         (goBack)="resetForm()"
         [loading]="loading"
         [onSelection]="onSelection.bind(this)"
-        [showTitle]="false"
-        [showURL]="true"
+        [urlItem]="true"
         [title]="noResultsTitle"
-        [waitForSearch]="true"
-        >
+    >
     </dotcms-suggestions>
 
     <!-- Form Actions -->
@@ -75,5 +68,4 @@
         (remove)="removeLink.emit($event)"
     >
     </dotcms-form-actions>
-
 </div>

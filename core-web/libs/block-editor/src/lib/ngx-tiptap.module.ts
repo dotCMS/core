@@ -29,7 +29,7 @@ import { BubbleMenuComponent } from './extensions/components/bubble-menu/bubble-
 import { BubbleMenuButtonComponent } from './extensions/components/bubble-menu-button/bubble-menu-button.component';
 import { BubbleMenuLinkFormComponent } from './extensions/components/bubble-menu-link-form/bubble-menu-link-form.component';
 import { ContentletStatePipe } from './extensions/pipes/contentlet-state/contentlet-state.pipe';
-import { SuggestionLoadingItemComponent } from './extensions/components/suggestion-loading-item/suggestion-loading-item.component';
+import { SuggestionLoadingListComponent } from './extensions/components/suggestion-loading-list/suggestion-loading-list.component';
 import { FormActionsComponent } from './extensions/components/bubble-menu-link-form/components/form-actions/form-actions.component';
 
 @NgModule({
@@ -60,7 +60,7 @@ import { FormActionsComponent } from './extensions/components/bubble-menu-link-f
         BubbleMenuButtonComponent,
         BubbleMenuLinkFormComponent,
         ContentletStatePipe,
-        SuggestionLoadingItemComponent,
+        SuggestionLoadingListComponent,
         FormActionsComponent
     ],
     providers: [SuggestionsService, DotImageService, LoggerService, StringUtils],

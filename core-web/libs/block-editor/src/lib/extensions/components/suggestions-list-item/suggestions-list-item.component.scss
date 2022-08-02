@@ -10,11 +10,6 @@
     align-items: center;
 }
 
-.url-label {
-    color: $gray-light;
-    font-size: 0.9rem;
-}
-
 .icon-wrapper {
     align-items: center;
     border: solid 1px lightgrey;
@@ -33,19 +28,26 @@
         height: 42px;
     }
 
-    &.dot-contentlet{
+    &.dot-contentlet {
         width: 42px;
         height: 42px;
         flex-basis: 42px;
     }
 
-
+    &.url-item {
+        &,
+        dot-contentlet-thumbnail {
+            flex-basis: 64px;
+            height: 64px;
+            width: 64px;
+        }
+    }
 }
 
 .data-wrapper {
     overflow: hidden;
 
-    >span {
+    > span {
         overflow: hidden;
         display: block;
         white-space: nowrap;
@@ -53,10 +55,16 @@
         margin-bottom: 4px;
     }
 
+    .url {
+        color: $gray-light;
+        font-size: 0.9rem;
+    }
+
     .state {
         margin-top: $spacing-1;
         display: flex;
         align-items: flex-end;
+
         dot-state-icon {
             margin-right: $spacing-1;
         }
