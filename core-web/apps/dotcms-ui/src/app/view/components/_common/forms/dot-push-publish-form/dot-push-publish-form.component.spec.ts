@@ -69,6 +69,12 @@ const mockFilters: DotPushPublishFilter[] = [
     { defaultFilter: false, key: 'key3', title: 'A - Tittle' }
 ];
 
+const optionsLabels: SelectItem[] = [
+    { label: 'Title default', value: 'key1' },
+    { label: 'Title key2', value: 'key2' },
+    { label: 'A - Tittle', value: 'key3' }
+];
+
 const mockPushActions: SelectItem[] = [
     {
         label: 'Push',
@@ -167,7 +173,7 @@ describe('DotPushPublishFormComponent', () => {
             By.css('p-dropdown')
         ).componentInstance;
 
-        expect(filterDropDown.options).toEqual(mockFilters);
+        expect(filterDropDown.options).toEqual(optionsLabels);
     });
 
     it('should set 1 previous day as a minDate for Publish Date', () => {
