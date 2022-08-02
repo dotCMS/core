@@ -35,7 +35,7 @@ public class ContainersDataFetcher implements DataFetcher<List<ContainerRaw>> {
             final HTMLPageAsset pageAsset = APILocator.getHTMLPageAssetAPI()
                     .fromContentlet(page);
 
-            final Host site = APILocator.getHostAPI().find(page.getHost(), user, false);
+            final Host site = APILocator.getHostAPI().find(page.getHost(), user, true);
             PageRenderUtil pageRenderUtil = new PageRenderUtil(pageAsset, user, mode,
                     Long.parseLong(languageId), site);
 

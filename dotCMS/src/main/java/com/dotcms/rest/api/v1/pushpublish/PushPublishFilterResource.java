@@ -96,7 +96,7 @@ public class PushPublishFilterResource {
         if (UtilMethods.isSet(list)) {
             Collections.sort(list);
         }
-        return Response.ok(new ResponseEntityView(list)).build();
+        return Response.ok(new ResponseEntityView<>(list)).build();
     }
 
     /**
@@ -225,7 +225,7 @@ public class PushPublishFilterResource {
         new PushPublishFiltersInitializer().init();
         final List<String> filterNames = APILocator.getPublisherAPI()
                 .getFiltersDescriptorsByRole(user).stream().map(filter -> filter.getKey()).collect(Collectors.toList());
-        return Response.ok(new ResponseEntityView(filterNames)).build();
+        return Response.ok(new ResponseEntityView<>(filterNames)).build();
     }
 
     /**
@@ -290,7 +290,7 @@ public class PushPublishFilterResource {
         final List<String> filterNames = APILocator.getPublisherAPI()
                 .getFiltersDescriptorsByRole(user).stream().map(filter -> filter.getKey()).collect(Collectors.toList());
 
-        return Response.ok(new ResponseEntityView(filterNames)).build();
+        return Response.ok(new ResponseEntityView<>(filterNames)).build();
     }
 
     /**
@@ -361,7 +361,7 @@ public class PushPublishFilterResource {
         new PushPublishFiltersInitializer().init();
         final List<String> filterNames = APILocator.getPublisherAPI()
                 .getFiltersDescriptorsByRole(user).stream().map(filter -> filter.getKey()).collect(Collectors.toList());
-        return Response.ok(new ResponseEntityView(filterNames)).build();
+        return Response.ok(new ResponseEntityView<>(filterNames)).build();
     }
 
     /**
@@ -425,7 +425,7 @@ public class PushPublishFilterResource {
         final List<String> filterNames = APILocator.getPublisherAPI()
                 .getFiltersDescriptorsByRole(user).stream().map(filter -> filter.getKey()).collect(Collectors.toList());
 
-        return Response.ok(new ResponseEntityView(filterNames)).build();
+        return Response.ok(new ResponseEntityView<>(filterNames)).build();
     }
 
     /**
@@ -477,7 +477,7 @@ public class PushPublishFilterResource {
             final List<String> filterNames = APILocator.getPublisherAPI()
                     .getFiltersDescriptorsByRole(user).stream().map(filter -> filter.getKey()).collect(Collectors.toList());
 
-            return Response.ok(new ResponseEntityView(filterNames)).build();
+            return Response.ok(new ResponseEntityView<>(filterNames)).build();
         }
 
         return Response.status(Response.Status.EXPECTATION_FAILED).
