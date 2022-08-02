@@ -115,12 +115,17 @@ function editPage(url, languageId) {
    </div>
 <%} %>
 
+<script>
+isContLocked=<%=(isContLocked && contentEditable)%>;
 
 
+</script>
 
 <%if(!wfActionsAll.isEmpty()){%>
 <div class="content-edit-actions">
 
+    
+    
 		<%if(isContLocked && (contentEditable || isUserCMSAdmin)) {%>
 			<%if(contentEditable){ %>
 			    <a onClick="unlockContent('<%=contentlet.getInode() %>');" id="unlockContentButton">

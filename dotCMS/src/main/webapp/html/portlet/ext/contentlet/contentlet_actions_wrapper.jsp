@@ -76,9 +76,9 @@ if (isLocked) {
 
 	toggleLockedMessage(<%=isLocked%>, "<%=userLocked%>", "<%=lockedSince%>");
 
-	<%if(SessionMessages.contains(session, "message")){%>
-		showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext,  (String) SessionMessages.get(session, "message"))%>", false);
-	<%}%>
+	<%if(SessionMessages.contains(session, "message")){
+	   SessionMessages.clear(request);
+	}%>
 	<%if(SessionMessages.contains(session, "error")){%>
 		showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext,  (String) SessionMessages.get(session, "error"))%>", false);
 	<%}%>

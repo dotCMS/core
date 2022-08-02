@@ -20,7 +20,7 @@
     var isContentAutoSaving = false;
     var isContentSaving = false;
     var doesUserCancelledEdit = false;
-
+    var isContLocked=<%=isContentEditable%> || workingContentletInode==""
     // We define this variable when we load this page from an iframe in the ng edit page
     var ngEditContentletEvents;
 
@@ -360,11 +360,17 @@
     }
 
     function saveContent(isAutoSave){
+    
+        let isContentLocked = isContLocked != undefined && isContLocked;
+        console.log("isContentLocked: " + isContentLocked);
         if(isAutoSave && !_hasUserChanged){
-        console.log("no changes have been made, skipping autosave");
+            console.log("no changes have been made, skipping autosave");
             return;
         }
-        persistContent(isAutoSave, false);
+
+        if(isContentLocked){
+            persistContent(isAutoSave, false);
+        }
     }
 
 
@@ -373,6 +379,7 @@
         window.onbeforeunload=true;
         let isAjaxFileUploading = false;
         let alertFileAssetSize = false;
+
         let size = 0;
         let maxSizeForAlert = <%= Config.getIntProperty("UPLOAD_FILE_ASSET_MAX_SIZE",30) %>
             dojo.query(".fajaxUpName").forEach(function(node, index, arr){

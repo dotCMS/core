@@ -549,6 +549,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			    if(isAutoSave) {
 			        currentContentlet.setLowIndexPriority(true);
 			        currentContentlet.setProperty(Contentlet.DONT_VALIDATE_ME, true);
+			        currentContentlet.setProperty(Contentlet.DISABLE_WORKFLOW, true);
 			        this.conAPI.saveDraft(currentContentlet, contentletRelationships, categories, null, user, false);
 			        
 			        return;
