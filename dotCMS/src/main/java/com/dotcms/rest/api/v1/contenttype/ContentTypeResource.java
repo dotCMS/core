@@ -277,7 +277,7 @@ public class ContentTypeResource implements Serializable {
 				}
 			}
 
-			response = Response.ok(new ResponseEntityView<>(retTypes)).build();
+			response = Response.ok(new ResponseEntityView(retTypes)).build();
 		} catch (IllegalArgumentException e) {
 			Logger.error(this, e.getMessage(), e);
 			response = ExceptionMapperUtil
@@ -672,7 +672,7 @@ public class ContentTypeResource implements Serializable {
 
 		try {
 			final List<BaseContentTypesView> types = contentTypeHelper.getTypes(request);
-			response = Response.ok(new ResponseEntityView<>(types)).build();
+			response = Response.ok(new ResponseEntityView(types)).build();
 		} catch (Exception e) { // this is an unknown error, so we report as a 500.
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);

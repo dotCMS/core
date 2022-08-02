@@ -1,92 +1,48 @@
 package com.dotcms.cli.command;
 
-import com.dotcms.api.AuthenticationContext;
-import com.dotcms.api.UserAPI;
-import com.dotcms.api.client.DotCmsClientConfig;
-import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.api.client.ServiceManager;
-import com.dotcms.cli.common.OutputOptionMixin;
-import com.dotcms.model.config.ServiceBean;
+
+import com.dotcms.api.AuthSecurityContext;
 import com.dotcms.model.user.User;
-import java.net.URI;
+import com.dotcms.api.UserAPI;
 import java.util.Optional;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
+import javax.ws.rs.WebApplicationException;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.jboss.logging.Logger;
 import picocli.CommandLine;
 
 @ActivateRequestContext
-@CommandLine.Command(
-        name = StatusCommand.NAME,
-        header = "@|bold,green Provide User login and dotCMS profile Status.|@ @|bold No additional params are expected.|@ ",
-        description = {
-
-        })
+@CommandLine.Command(name = "status", description = "Login Status.")
 public class StatusCommand implements Runnable {
 
-    static final String NAME = "status";
-
-    @CommandLine.Mixin(name = "output")
-    protected OutputOptionMixin output;
+    private static final Logger logger = Logger.getLogger(StatusCommand.class);
 
     @Inject
-    RestClientFactory clientFactory;
+    @RestClient
+    UserAPI usersClient;
 
     @Inject
-    AuthenticationContext authenticationContext;
-
-    @Inject
-    ServiceManager serviceManager;
-
-    @Inject
-    DotCmsClientConfig clientConfig;
+    AuthSecurityContext authSecurityContext;
 
     @Override
     public void run() {
-
-        final Optional<ServiceBean> optional = serviceManager.services().stream()
-                .filter(ServiceBean::active).findFirst();
-
-        if (optional.isEmpty()) {
-            output.info(String.format(
-                    " @|bold,underline,cyan No active profile is configured|@ Please use %s Command.",
-                    InstanceCommand.NAME));
+        logger.info("We're set to the API at "+ authSecurityContext.getDotCMSAPIHost());
+        final Optional<String> userId = authSecurityContext.getUser();
+        if (userId.isEmpty()) {
+            logger.info("You're NOT logged in.");
         } else {
-            final ServiceBean serviceBean = optional.get();
-            final String suffix = serviceBean.name();
-            final URI uri = clientConfig.servers().get(suffix);
-            if (null == serviceBean.credentials()) {
-                output.info(String.format(
-                        "Active instance is [@|bold,underline,blue %s|@] API is [@|bold,underline,blue %s|@] @|bold,underline No active user|@ Use %s Command.",
-                        serviceBean.name(), uri, LoginCommand.NAME));
-                return;
-            }
-
-            output.info(String.format("Active instance is [@|bold,underline,blue %s|@] API is [@|bold,underline,blue %s|@] User [@|bold,underline,blue %s|@]",
-                    serviceBean.name(), uri, serviceBean.credentials().user()));
-
-            final Optional<String> userId = authenticationContext.getUser();
-            if (userId.isEmpty()) {
-                output.info(
-                        "@|bold,underline Current profile does not have a logged in user|@");
+            final Optional<String> token = authSecurityContext.getToken();
+            if (token.isPresent()) {
+               try {
+                   final User user = usersClient.getCurrent();
+                   logger.info("You're currently logged in as " + user.email());
+               }catch (WebApplicationException wae){
+                   logger.error("Unable to get current user from API. Token could have expired. Please login again!", wae);
+               }
             } else {
-                final Optional<char[]> token = authenticationContext.getToken();
-                if (token.isEmpty()) {
-                    output.error(String.format("I did not find a valid token for saved user %s. Please login again." ,
-                            userId.get()));
-                } else {
-                    try {
-                        final UserAPI userAPI = clientFactory.getClient(UserAPI.class);
-                        final User user = userAPI.getCurrent();
-                        output.info(String.format("You're currently logged in as %s.",
-                                user.email()));
-                    } catch (Exception wae) {
-                        output.error(
-                                "Unable to get current user from API. Token could have expired. Please login again!",
-                                wae);
-                    }
-                }
+                logger.info("I did not find a valid token saved for saved user "+userId.get());
             }
         }
     }
-
 }

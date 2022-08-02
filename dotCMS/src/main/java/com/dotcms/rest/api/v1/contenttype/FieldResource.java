@@ -81,7 +81,7 @@ public class FieldResource implements Serializable {
 			}
 
 			final List<Field> contentTypeFields = fieldAPI.byContentTypeId(typeId);
-			response = Response.ok(new ResponseEntityView<>(new JsonFieldTransformer(contentTypeFields).mapList())).build();
+			response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(contentTypeFields).mapList())).build();
 		} catch (DotStateException e) {
 
 			response = ExceptionMapperUtil.createResponse(null, "Field is not valid ("+ e.getMessage() +")");
@@ -162,7 +162,7 @@ public class FieldResource implements Serializable {
 		try {
 			List<Field> fields = fapi.byContentTypeId(tapi.find(typeId).id());
 
-			response = Response.ok(new ResponseEntityView<>(new JsonFieldTransformer(fields).mapList())).build();
+			response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(fields).mapList())).build();
 
 		} catch (NotFoundInDbException e) {
 
@@ -411,8 +411,7 @@ public class FieldResource implements Serializable {
 			Field field = fieldAPI.find(fieldId);
 			fieldAPI.delete(field, user);
 
-			String responseString = null;
-			response = Response.ok(new ResponseEntityView<>(responseString)).build();
+			response = Response.ok(new ResponseEntityView(null)).build();
 
 		} catch (NotFoundInDbException e) {
 
@@ -449,7 +448,7 @@ public class FieldResource implements Serializable {
 
 			fapi.delete(field, user);
 
-			response = Response.ok(new ResponseEntityView<>((String)null)).build();
+			response = Response.ok(new ResponseEntityView(null)).build();
 
 		} catch (NotFoundInDbException e) {
 

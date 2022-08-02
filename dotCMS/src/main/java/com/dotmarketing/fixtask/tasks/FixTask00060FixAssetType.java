@@ -1,6 +1,7 @@
 package com.dotmarketing.fixtask.tasks;
 
 import com.dotcms.util.CloseUtils;
+import com.dotcms.util.XStreamFactory;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -142,7 +143,7 @@ public class FixTask00060FixAssetType implements FixTask {
     @Override
     public List<Map<String, String>> getModifiedData() {
         if (modifiedData.size() > 0) {
-            XStream _xstream = new XStream(new DomDriver());
+            XStream _xstream = XStreamFactory.INSTANCE.getInstance();
             Date date = new Date();
             SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
             String lastmoddate = sdf.format(date);

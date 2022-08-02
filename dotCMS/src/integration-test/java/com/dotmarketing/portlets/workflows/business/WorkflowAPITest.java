@@ -10,7 +10,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -1347,7 +1346,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
      * Test the find findAvailableActions methods
      */
     @Test
-    public void findAvailableActions() throws Exception {
+    public void findAvailableActions() throws DotDataException, DotSecurityException {
 
         /*
         Need to do the test checking with different user the actions displayed. We need to specify
@@ -1456,29 +1455,11 @@ public class WorkflowAPITest extends IntegrationTestBase {
             assertNotNull(foundActions);
             assertFalse(foundActions.isEmpty());
             assertEquals(foundActions.size(), 5);
-            ////
-            final Contentlet testContentleti = testContentlet;
-            runNoLicense(()-> {
 
-               final List<WorkflowStep> steps = getSteps(testContentleti);
-
-                Assert.assertFalse(steps.isEmpty());
-                Assert.assertEquals(WorkflowAPI.SYSTEM_WORKFLOW_ID, steps.get(0).getSchemeId());
-            });
         } finally {
             contentletAPI.destroy(testContentlet, user, false);
         }
 
-    }
-
-    @WrapInTransaction
-    private List<WorkflowStep>  getSteps (final Contentlet testContentleti) throws DotDataException {
-
-        final WorkFlowFactory workFlowFactory = FactoryLocator.getWorkFlowFactory();
-        final List<WorkflowScheme> schemes = Arrays.asList(workFlowFactory.findSystemWorkflow()) ;
-        CacheLocator.getWorkFlowCache().clearCache();
-        List<WorkflowStep> steps = FactoryLocator.getWorkFlowFactory().findStepsByContentlet(testContentleti, schemes);
-        return steps;
     }
 
     /**

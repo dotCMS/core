@@ -275,7 +275,7 @@ public class WorkflowResource {
                                     .stream().filter(not(WorkflowScheme::isArchived)).collect(CollectionsUtils.toImmutableList())):
                     this.workflowHelper.findSchemes(showArchived);
 
-            return Response.ok(new ResponseEntityView<>(schemes)).build(); // 200
+            return Response.ok(new ResponseEntityView(schemes)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),"Exception on findSchemes exception message: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
@@ -302,7 +302,7 @@ public class WorkflowResource {
                     ()->"Getting the workflow actionlets");
 
             final List<WorkFlowActionlet> actionlets = this.workflowAPI.findActionlets();
-            return Response.ok(new ResponseEntityView<>(actionlets)).build(); // 200
+            return Response.ok(new ResponseEntityView(actionlets)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),"Exception on findActionlets exception message: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
@@ -335,7 +335,7 @@ public class WorkflowResource {
             DotPreconditions.notNull(action, ()->"Action: " + actionId + ", does not exists", NotFoundInDbException.class);
 
             final List<WorkflowActionClass> actionClasses = this.workflowAPI.findActionClasses(action);
-            return Response.ok(new ResponseEntityView<>(actionClasses)).build(); // 200
+            return Response.ok(new ResponseEntityView(actionClasses)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),"Exception on findActionletsByAction exception message: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
@@ -402,7 +402,7 @@ public class WorkflowResource {
         try {
             Logger.debug(this, "Getting the workflow steps for the scheme: " + schemeId);
             final List<WorkflowStep> steps = this.workflowHelper.findSteps(schemeId);
-            return Response.ok(new ResponseEntityView<>(steps)).build(); // 200
+            return Response.ok(new ResponseEntityView(steps)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),"Exception on findStepsByScheme exception message: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
@@ -440,7 +440,7 @@ public class WorkflowResource {
 
             final List<WorkflowAction> actions = this.workflowHelper.findAvailableActions(inode, initDataObject.getUser(),
                     LISTING.equalsIgnoreCase(renderMode)?WorkflowAPI.RenderMode.LISTING:WorkflowAPI.RenderMode.EDITING);
-            return Response.ok(new ResponseEntityView<>(actions.stream()
+            return Response.ok(new ResponseEntityView(actions.stream()
                     .map(this::toWorkflowActionView).collect(Collectors.toList()))).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
@@ -747,7 +747,7 @@ public class WorkflowResource {
         try {
             Logger.debug(this, "Getting the workflow actions for the step: " + stepId);
             final List<WorkflowAction> actions = this.workflowHelper.findActions(stepId, user);
-            return Response.ok(new ResponseEntityView<>(actions)).build(); // 200
+            return Response.ok(new ResponseEntityView(actions)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on findActionsByStep, stepId: " + stepId +
@@ -776,7 +776,7 @@ public class WorkflowResource {
         try {
             Logger.debug(this, "Getting the workflow actions: " + schemeId);
             final List<WorkflowAction> actions = this.workflowHelper.findActionsByScheme(schemeId, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView<>(actions)).build(); // 200
+            return Response.ok(new ResponseEntityView(actions)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on findActionsByScheme, schemeId: " + schemeId +
@@ -811,7 +811,7 @@ public class WorkflowResource {
             Logger.debug(this, ()->"Getting the actions for the schemes: " + workflowSchemesForm.getSchemes()
                     + " and system action: " + systemAction);
 
-            return Response.ok(new ResponseEntityView<>(
+            return Response.ok(new ResponseEntityView(
                     this.workflowHelper.findActions(
                             workflowSchemesForm.getSchemes(), systemAction, initDataObject.getUser())))
                     .build(); // 200
@@ -845,7 +845,7 @@ public class WorkflowResource {
             Logger.debug(this, "Getting the system actions for the scheme: " + schemeId);
             final List<SystemActionWorkflowActionMapping> systemActions =
                     this.workflowAPI.findSystemActionsByScheme(this.workflowAPI.findScheme(schemeId), initDataObject.getUser());
-            return Response.ok(new ResponseEntityView<>(systemActions)).build(); // 200
+            return Response.ok(new ResponseEntityView(systemActions)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on findSystemActionsByScheme, schemeId: " + schemeId +
@@ -878,7 +878,7 @@ public class WorkflowResource {
             final ContentType contentType = APILocator.getContentTypeAPI(user).find(contentTypeVarOrId);
             final List<SystemActionWorkflowActionMapping> systemActions =
                     this.workflowHelper.findSystemActionsByContentType(contentType, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView<>(systemActions)).build(); // 200
+            return Response.ok(new ResponseEntityView(systemActions)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on findSystemActionsByContentType, content type: " + contentTypeVarOrId +
@@ -911,7 +911,7 @@ public class WorkflowResource {
             final WorkflowAction workflowAction = this.workflowHelper.findAction(workflowActionId, user);
             final List<SystemActionWorkflowActionMapping> systemActions =
                     this.workflowAPI.findSystemActionsByWorkflowAction(workflowAction, user);
-            return Response.ok(new ResponseEntityView<>(systemActions)).build(); // 200
+            return Response.ok(new ResponseEntityView(systemActions)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on getSystemActionsReferredByWorkflowAction, workflowActionId: " + workflowActionId +
@@ -2967,7 +2967,7 @@ public class WorkflowResource {
                     () -> "Getting the available workflow schemes default action for the ContentType: "
                             + contentTypeId );
             final List<WorkflowDefaultActionView> actions = this.workflowHelper.findAvailableDefaultActionsByContentType(contentTypeId, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView<>(actions)).build(); // 200
+            return Response.ok(new ResponseEntityView(actions)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on find Available Default Actions exception message: " + e.getMessage(), e);
@@ -3002,7 +3002,7 @@ public class WorkflowResource {
                             + schemeIds);
             final List<WorkflowDefaultActionView> actions = this.workflowHelper
                     .findAvailableDefaultActionsBySchemes(schemeIds, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView<>(actions)).build(); // 200
+            return Response.ok(new ResponseEntityView(actions)).build(); // 200
         } catch (Exception e) {
 
             Logger.error(this.getClass(),
@@ -3037,7 +3037,7 @@ public class WorkflowResource {
             final List<WorkflowDefaultActionView> actions = this.workflowHelper
                     .findInitialAvailableActionsByContentType(contentTypeId,
                             initDataObject.getUser());
-            return Response.ok(new ResponseEntityView<>(actions)).build(); // 200
+            return Response.ok(new ResponseEntityView(actions)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on findInitialAvailableActionsByContentType, content type id: "

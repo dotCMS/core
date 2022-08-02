@@ -13,6 +13,6 @@ class DotCmsClientConfigTest {
 
     @Test
     public void testDefault() {
-       Assertions.assertEquals("http://localhost:8080/api",config.servers().get("default").toString());
+       Assertions.assertEquals("https://demo.dotcms.com/api",config.servers().get("default").toString());
     }
 }

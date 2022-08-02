@@ -1,39 +1,45 @@
 package com.dotcms.api;
 
 
-import com.dotcms.api.client.ServiceManager;
-import com.dotcms.model.config.ServiceBean;
+import com.dotcms.model.ResponseEntityView;
+import com.dotcms.model.authentication.APITokenRequest;
+import com.dotcms.model.authentication.TokenEntity;
 import io.quarkus.test.junit.QuarkusTest;
-import java.io.IOException;
 import java.util.Optional;
 import javax.inject.Inject;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
 public class AuthenticationAPITest {
 
     @Inject
-    ServiceManager  serviceManager;
+    @RestClient
+    AuthenticationAPI client;
 
     @Inject
-    AuthenticationContext authenticationContext;
-
-    @BeforeEach
-    public void setupTest() throws IOException {
-        serviceManager.removeAll().persist(ServiceBean.builder().name("default").active(true).build());
-    }
+    AuthSecurityContext authSecurityContext;
 
     @Test
     public void Test_Get_Token() {
+
         final String userString = "admin@dotCMS.com";
-        final char[] passwordString = "admin".toCharArray();
-        authenticationContext.login(userString, passwordString);
-        final Optional<String> user = authenticationContext.getUser();
+        final String passwordString = "admin12345678";
+
+        final ResponseEntityView<TokenEntity> tokenResponse = client.getToken(
+                APITokenRequest.builder()
+                        .user(userString)
+                        .password(passwordString)
+                        .expirationDays(1).build()
+        );
+
+        Assertions.assertNotNull(tokenResponse);
+        authSecurityContext.setToken(tokenResponse.toString(), userString);
+        final Optional<String> user = authSecurityContext.getUser();
         Assertions.assertTrue(user.isPresent());
-        final Optional<char[]> token = authenticationContext.getToken();
+        final Optional<String> token = authSecurityContext.getToken();
         Assertions.assertTrue(token.isPresent());
+        Assertions.assertEquals(token.get(),tokenResponse.toString());
     }
 }

@@ -91,7 +91,7 @@ public class LoggerResource {
             throw new DotSecurityException("User is not admin");
         }
 
-        return Response.ok(new ResponseEntityView<>(Logger.getCurrentLoggers()
+        return Response.ok(new ResponseEntityView(Logger.getCurrentLoggers()
                 .stream().map(this::toView).collect(Collectors.toList()))).build();
 
     }
@@ -150,7 +150,7 @@ public class LoggerResource {
                                     new ChangeLoggerLevelEvent(
                                             changeLoggerForm.getName(), changeLoggerForm.getLevel()
                                     )))).onFailure(e -> Logger.error(LoggerResource.this, e.getMessage()));
-            return Response.ok(new ResponseEntityView<>(loggerViewList)).build();
+            return Response.ok(new ResponseEntityView(loggerViewList)).build();
         }
 
         throw new DoesNotExistException("Loggers: " + Arrays.toString(loggerNames) + " do not exists");

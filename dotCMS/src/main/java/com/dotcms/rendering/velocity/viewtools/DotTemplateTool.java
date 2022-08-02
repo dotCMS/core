@@ -4,7 +4,6 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.Theme;
 import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtil;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
@@ -25,11 +24,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 import io.vavr.control.Try;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -41,7 +35,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Created by Jonathan Gamba

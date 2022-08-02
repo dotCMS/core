@@ -16,8 +16,7 @@ const dotEditPage: Routes = [
         children: [
             {
                 path: '',
-                redirectTo: './content',
-                pathMatch: 'full'
+                redirectTo: './content'
             },
             {
                 loadChildren: () =>

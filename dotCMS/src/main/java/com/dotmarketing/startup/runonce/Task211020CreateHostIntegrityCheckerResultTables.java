@@ -18,7 +18,7 @@ public class Task211020CreateHostIntegrityCheckerResultTables extends AbstractJD
             " local_live_inode VARCHAR(36)," +
             " remote_working_inode VARCHAR(36)," +
             " remote_live_inode VARCHAR(36)," +
-            " language_id INT8," +
+            " language_id int8," +
             " host VARCHAR(255)," +
             " PRIMARY KEY (local_working_inode, language_id, endpoint_id)" +
             ");\n";

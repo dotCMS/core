@@ -8,7 +8,6 @@ import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -18,7 +17,6 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
-import java.util.Optional;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -58,27 +56,6 @@ public class Task05380ChangeContainerPathToAbsoluteTest {
                 "</div>" +
             "</body>" +
         "</html>";
-
-    final String bodyWithID =
-            "<html>" +
-                    "<head>" +
-                        "#dotParse('%s/application/themes/landing-page/html_head.vtl')" +
-                        "<link rel=\"stylesheet\" type=\"text/css\" href=\"/html/css/template/reset-fonts-grids.css\" />" +
-                    "</head>" +
-                    "<body>" +
-                        "<div id=\"resp-template\" name=\"globalContainer\">" +
-                            "<div id=\"hd-template\">" +
-                                "#dotParse('%1$s/application/themes/landing-page/header.vtl')" +
-                            "</div>" +
-                            "<div id=\"bd-template\">" +
-                                "<div id=\"yui-main-template\">" +
-                                    "<div class=\"yui-b-template\" id=\"splitBody0\">" +
-                                        "#parseContainer('%s','1')" +
-                                    "</div>" +
-                                "</div>" +
-                            "</div>" +
-                    "</body>" +
-            "</html>";
 
     final String jsonDrawBody = "{" +
             "\"title\": \"layout_test\"," +
@@ -147,7 +124,7 @@ public class Task05380ChangeContainerPathToAbsoluteTest {
                                 "<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>" +
                             "</span>" +
                             "<div style=\"display: none;\" title=\"container_69b3d24d-7e80-4be6-b04a-d352d16493ee\" id=\"splitBody0_div_69b3d24d-7e80-4be6-b04a-d352d16493ee_1562770692396\">" +
-                                "#parseContainer('%s','1')\n" +
+                                "#parseContainer('%s/application/containers/default/','1')\n" +
                             "</div>" +
                         "</div>" +
                     "</div>" +
@@ -334,7 +311,7 @@ public class Task05380ChangeContainerPathToAbsoluteTest {
         try {
             Config.setProperty(SAVE_CONTENTLET_AS_JSON, false);
             final Host host = new SiteDataGen().nextPersisted();
-            final String layout = String.format(legacyHTMLLayout , "/application/containers/default/");
+            final String layout = String.format(legacyHTMLLayout, "");
 
             final Contentlet theme = new ThemeDataGen().nextPersisted();
             final Template template = new TemplateDataGen()
@@ -365,7 +342,7 @@ public class Task05380ChangeContainerPathToAbsoluteTest {
     @Test
     public void whenLegacyTemplateLayoutHasAbsolutePath() throws DotDataException {
         final Host host = new SiteDataGen().nextPersisted();
-        final String layout = String.format(legacyHTMLLayout, "//" + host.getHostname() + "/application/containers/default/");
+        final String layout = String.format(legacyHTMLLayout, "//" + host.getHostname());
 
         final Contentlet theme = new ThemeDataGen().nextPersisted();
         final Template template = new TemplateDataGen()
@@ -508,7 +485,7 @@ public class Task05380ChangeContainerPathToAbsoluteTest {
         final Host host = new SiteDataGen().nextPersisted();
         final Host anotherHost = new SiteDataGen().nextPersisted();
 
-        final String layout = String.format(legacyHTMLLayout, "//" + anotherHost.getHostname() + "/application/containers/default/");
+        final String layout = String.format(legacyHTMLLayout, "//" + anotherHost.getHostname());
         final String testBody = String.format(body, "//" + anotherHost.getHostname());
 
         final Contentlet theme = new ThemeDataGen().nextPersisted();
@@ -527,44 +504,6 @@ public class Task05380ChangeContainerPathToAbsoluteTest {
         task05380ChangeContainerPathToAbsolute.executeUpgrade();
 
         checkTemplateFromDataBase(anotherHost, template);
-    }
-
-    /**
-     * Method to Test: {@link Task05380ChangeContainerPathToAbsolute#executeUpgrade()}
-     * When: Legacy TemplateLayout using a parseContainer directive with the fFile cContainer's id
-     * Should: the layout should not change
-     */
-    @Test
-    public void whenLegacyTemplateLayoutHasIDContainer() throws IOException, DotDataException, DotSecurityException {
-
-        final Host defaultHost = APILocator.getHostAPI()
-                .findDefaultHost(APILocator.systemUser(), false);
-        final Optional<Container> container = APILocator.getContainerAPI()
-                .findContainer("/application/containers/default/", APILocator.systemUser(), false,
-                        false);
-        final Identifier identifier = APILocator.getIdentifierAPI()
-                .find(defaultHost, "/application/containers/default/container.vtl");
-
-        final String layout = String.format(legacyHTMLLayout, identifier.getId());
-        final String testBody = String.format(bodyWithID, "//" + defaultHost.getHostname(), identifier.getId());
-
-        final Contentlet theme = new ThemeDataGen().nextPersisted();
-        final Template template = new TemplateDataGen()
-                .title("template_test_" + System.currentTimeMillis())
-                .theme(theme)
-                .drawedBody(layout)
-                .body(testBody)
-                .host(defaultHost)
-                .nextPersisted();
-
-
-        final Task05380ChangeContainerPathToAbsolute task05380ChangeContainerPathToAbsolute =
-                new Task05380ChangeContainerPathToAbsolute();
-
-        task05380ChangeContainerPathToAbsolute.executeUpgrade();
-        final Template template1FromDB = APILocator.getTemplateAPI()
-                .find(template.getInode(), APILocator.systemUser(), false);
-        assertTrue(template1FromDB.getDrawedBody().contains("#parseContainer('" + identifier.getId() + "','1')"));
     }
 
     private void checkTemplateLayout(final String layout) throws IOException {

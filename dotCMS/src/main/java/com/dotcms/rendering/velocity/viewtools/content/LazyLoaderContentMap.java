@@ -89,8 +89,4 @@ public class LazyLoaderContentMap {
 
         return load().getContentObject();
     }
-
-    public Object getFieldVariables(String fieldVariableName) {
-        return load().getFieldVariables(fieldVariableName);
-    }
 }

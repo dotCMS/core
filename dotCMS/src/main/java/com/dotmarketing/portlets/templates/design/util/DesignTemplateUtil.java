@@ -21,8 +21,6 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
-import java.util.HashSet;
-import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
@@ -375,27 +373,8 @@ public class DesignTemplateUtil {
     }
 
     /**
-     * Method that will parse and return the containers inside a given html DOM node
-	 *
-	 * Also, if in the code is using a FileContainer by the ID it returns the ABSOLUTE PATH using the default host.
-	 *
-	 * For example if you have to follow velocity code:
-	 *
-	 * <code>
-	 * ...
-	 * #parseContainer('69b3d24d-7e80-4be6-b04a-d352d16493ee','1')
-	 * ...
-	 * </code>
-	 *
-	 * Where '69b3d24d-7e80-4be6-b04a-d352d16493ee' is the ID for a {@link com.dotmarketing.portlets.containers.model.FileAssetContainer}
-	 * in '//demo.dotcms.com/application/containers/default/'.
-	 *
-	 *  And the default host is equals to "demo.dotcms.com" then
-	 *
-	 * it is going to return a {@link ContainerUUID} with
-	 * - {@link ContainerUUID#getUUID()} equals to 1
-	 * - {@link ContainerUUID#getIdentifier()} equals to '//demo.dotcms.com/application/containers/default/'
-	 *
+     * Method that will parse and return the containers inside a given html fragment
+     *
      * @param splitBody
      * @return
      */

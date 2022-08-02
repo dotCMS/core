@@ -13,8 +13,7 @@ const contentTypesRoutes: Routes = [
     },
     {
         path: 'create',
-        redirectTo: '',
-        pathMatch: 'full'
+        redirectTo: ''
     },
     {
         loadChildren: () =>
@@ -28,8 +27,7 @@ const contentTypesRoutes: Routes = [
     },
     {
         path: 'edit',
-        redirectTo: '',
-        pathMatch: 'full'
+        redirectTo: ''
     },
     {
         loadChildren: () =>

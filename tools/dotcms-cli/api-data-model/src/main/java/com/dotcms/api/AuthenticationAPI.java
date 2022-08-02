@@ -19,6 +19,7 @@ import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
  *
  */
 @Path("/v1/authentication")
+@RegisterRestClient(configKey="legacy-api")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tags(

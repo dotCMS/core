@@ -973,18 +973,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				this.deleteWorkflowTask(this.findWorkFlowTaskById(workflowTaskId));
 			}
 
-			// if it is the community license, has a diff workflow of the system workflow instead of removing the steps, use the first steps of the system workflow
-			if ((LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) && null != workflowTaskId && !WorkflowAPI.SYSTEM_WORKFLOW_ID.equals(workflowTaskId)) {
-
-				steps.clear();
-				final List<WorkflowStep> schemeSteps = this.findSteps(this.findSystemWorkflow());
-				if(UtilMethods.isSet(schemeSteps)){
-					final WorkflowStep step = schemeSteps.get(0);
-					steps.add(step);
-				}
-			} else {
-				steps = Collections.emptyList();
-			}
+            steps = Collections.emptyList();
 		}
 
         cache.addSteps(contentlet, steps);

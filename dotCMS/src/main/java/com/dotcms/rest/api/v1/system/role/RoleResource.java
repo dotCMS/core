@@ -222,7 +222,7 @@ public class RoleResource implements Serializable {
 		final Role role              = roleAPI.loadRoleById(roleId);
 		final LayoutAPI layoutAPI    = APILocator.getLayoutAPI();
 
-		return Response.ok(new ResponseEntityView<>(
+		return Response.ok(new ResponseEntityView(
 				layoutAPI.loadLayoutsForRole(role)
 		)).build();
 	}
@@ -282,7 +282,7 @@ public class RoleResource implements Serializable {
 			}
 		}
 
-		return Response.ok(new ResponseEntityView<>(
+		return Response.ok(new ResponseEntityView(
 				null != roleNameToFilter? this.filterRoleList(roleNameToFilter, roleList):roleList)).build();
 	}
 
@@ -377,7 +377,7 @@ public class RoleResource implements Serializable {
 					.forEach(role -> rootRolesView.add(new RoleView(role, new ArrayList<>())));
 		}
 
-		return Response.ok(new ResponseEntityView<>(rootRolesView)).build();
+		return Response.ok(new ResponseEntityView(rootRolesView)).build();
 
 	}
 }

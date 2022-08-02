@@ -1,16 +1,10 @@
 package com.dotcms.api.client;
 
-import com.dotcms.api.exception.ClientConfigNotFoundException;
-import com.dotcms.model.config.ServiceBean;
 import java.net.URI;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import org.jboss.logging.Logger;
 
 /**
  * @author Steve Bolton
@@ -21,21 +15,16 @@ import org.jboss.logging.Logger;
 @ApplicationScoped
 public class RestClientFactory {
 
-    public static final String NONE = "none";
-
-    @Inject
-    Logger logger;
+    public static final String DEFAULT = "default";
 
     /**
      * Thread local variable containing each thread's ID
      */
-    private final AtomicReference<String> instanceProfile = new AtomicReference<>(NONE);
+    private final ThreadLocal<String> dotCMSInstanceProfile =
+            ThreadLocal.withInitial(() -> DEFAULT);
 
     @Inject
     DotCmsClientConfig clientConfig;
-
-    @Inject
-    ServiceManager serviceManager;
 
     private final Map<String, APIEndpoints> registry = new ConcurrentHashMap<>();
 
@@ -80,18 +69,15 @@ public class RestClientFactory {
      * @param <T>
      */
     public <T> T getClient(final Class<T> clazz) {
-        return getClient(currentSelectedProfile(), clazz);
+        return getClient(dotCMSInstanceProfile.get(), clazz);
     }
 
-    public String currentSelectedProfile() {
-        instanceProfile.compareAndSet(NONE, serviceSupplier.get());
-        return instanceProfile.get();
+    /**
+     * We should be able to tell this class what profile we're currently looking at.
+     * @param profile
+     */
+    public void setProfile(final String profile) {
+        dotCMSInstanceProfile.set(profile);
     }
-
-    final Supplier<String> serviceSupplier = () -> {
-        final Optional<ServiceBean> selected = serviceManager.selected();
-        return selected.map(ServiceBean::name).orElse(NONE);
-    };
-
 
 }

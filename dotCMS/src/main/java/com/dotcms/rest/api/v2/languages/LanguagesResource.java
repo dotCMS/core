@@ -135,7 +135,7 @@ public class LanguagesResource {
                 languageAPI.getLanguages();
 
         return Response.ok(
-                new ResponseEntityView<>(languages.stream()
+                new ResponseEntityView(languages.stream()
                         .map(instanceLanguageView())
                         .collect(Collectors.toList())))
                 .build();

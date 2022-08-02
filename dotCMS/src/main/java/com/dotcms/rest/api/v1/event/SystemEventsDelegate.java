@@ -176,7 +176,7 @@ public class SystemEventsDelegate implements Delegate<AppContext> {
     private void doMarshall (final AppContext context, final List<SystemEvent> newEvents) {
 
         final AsyncResponse asyncResponse = context.getAttribute(RESPONSE);
-        final String json = this.marshalUtils.marshal(new ResponseEntityView<>(newEvents));
+        final String json = this.marshalUtils.marshal(new ResponseEntityView(newEvents));
         final Response response = Response.ok(json).build();
 
         asyncResponse.resume(response);

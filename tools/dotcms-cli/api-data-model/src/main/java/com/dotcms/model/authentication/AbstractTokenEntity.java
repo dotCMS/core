@@ -8,5 +8,5 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonDeserialize(as = TokenEntity.class)
 public interface AbstractTokenEntity {
-    char[] token();
+    String token();
 }

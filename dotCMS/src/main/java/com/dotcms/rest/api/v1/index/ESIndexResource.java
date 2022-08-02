@@ -496,7 +496,7 @@ public class ESIndexResource {
 
             //Creating an utility response object
 
-            return Response.ok(new ResponseEntityView<>(APILocator.getContentletIndexAPI().listDotCMSIndices())).build();
+            return Response.ok(new ResponseEntityView(APILocator.getContentletIndexAPI().listDotCMSIndices())).build();
         } catch (Exception e) {
             Logger.error(this.getClass(),"Exception trying to list indices: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
@@ -580,7 +580,7 @@ public class ESIndexResource {
         
         final InitDataObject init = auth(request, response);
 
-        return Response.ok(new ResponseEntityView<>(IndexResourceHelper.getInstance().indexStatsList())).build();
+        return Response.ok(new ResponseEntityView(IndexResourceHelper.getInstance().indexStatsList())).build();
 
     }
     

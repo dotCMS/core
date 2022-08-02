@@ -71,7 +71,6 @@ import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockAsyncResponse;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.EmptyHttpResponse;
-import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -2038,7 +2037,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final int statusCode2 = response2.getStatus();
             assertEquals(Status.BAD_REQUEST.getStatusCode(), statusCode2);
             final ResponseEntityView errorEntityView = ResponseEntityView.class.cast(response2.getEntity());
-            assertEquals(1, errorEntityView.getErrors().stream().filter(errorEntity -> "required".equals(ErrorEntity.class.cast(errorEntity).getErrorCode())).count());
+            assertEquals(1, errorEntityView.getErrors().stream().filter(errorEntity -> "required".equals(errorEntity.getErrorCode())).count());
 
         } finally {
             if (null != contentType) {

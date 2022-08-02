@@ -116,7 +116,7 @@ public class EventsResource implements Serializable {
 
                 systemEvents = appContext.getAttribute(SystemEventsDelegate.RESULT);
 
-                response = Response.ok(marshalUtils.marshal(new ResponseEntityView<>(systemEvents))).build();
+                response = Response.ok(marshalUtils.marshal(new ResponseEntityView(systemEvents))).build();
             }
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
 

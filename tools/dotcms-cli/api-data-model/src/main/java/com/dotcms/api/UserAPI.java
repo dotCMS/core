@@ -19,6 +19,7 @@ import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
  * Entry point to dotCMS User Rest API
  */
 @Path("/v1/users")
+@RegisterRestClient(configKey="legacy-api")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tags(
