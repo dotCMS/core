@@ -328,7 +328,7 @@ public class SiteResource implements Serializable {
 
         Logger.debug(this, ()-> "Finding all site thumbnails...");
 
-        return Response.ok(new ResponseEntityView(hosts.stream().filter(DotLambdas.not(Host::isSystemHost))
+        return Response.ok(new ResponseEntityView<>(hosts.stream().filter(DotLambdas.not(Host::isSystemHost))
                 .sorted(hostNameComparator).map(host -> this.toSiteMap(user, contentletAPI, host))
                 .collect(Collectors.toList()))).build();
     }

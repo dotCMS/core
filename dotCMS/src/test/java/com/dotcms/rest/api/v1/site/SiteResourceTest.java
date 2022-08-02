@@ -79,7 +79,7 @@ public class SiteResourceTest extends UnitTestBase {
         final PaginatedArrayList<Host> hosts = getSites();
         final PaginationUtil paginationUtil = mock(PaginationUtil.class);
 
-        final Response responseExpected = Response.ok(new ResponseEntityView(hosts)).build();
+        final Response responseExpected = Response.ok(new ResponseEntityView<>(hosts)).build();
 
         Config.CONTEXT = context;
 

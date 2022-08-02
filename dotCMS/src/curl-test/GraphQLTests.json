@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "ead8e3ca-8da2-4bf2-8b71-26e230805c7d",
+		"_postman_id": "46555e34-c7c4-4b3b-87ad-867ead614816",
 		"name": "GraphQL",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "4500400"
@@ -1582,6 +1582,81 @@
 							"mode": "graphql",
 							"graphql": {
 								"query": "{\n  page(url: \"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\") {\n    containers {\n      archived\n      categoryId\n      deleted\n      friendlyName\n      host {\n        hostName\n      }\n      iDate\n      idate\n      identifier\n      inode\n      languageId\n      live\n      locked\n      maxContentlets\n      modDate\n      modUser {\n        userId\n      }\n      name\n      new\n      notes\n      owner {\n        userId\n      }\n      parentPermissionable {\n        hostName\n      }\n      path\n      permissionId\n      permissionType\n      postLoop\n      preLoop\n      showOnMenu\n      sortOrder\n      source\n      staticify\n      title\n      type\n      useDiv\n      versionId\n      versionType\n      working\n    }\n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_ContainersFieldSuccess_WhenANONUser",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'Page' includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var containers = jsonData.data.page.containers;",
+									"",
+									"    var container1 = containers[0];",
+									"",
+									"    // containers fields",
+									"    pm.expect(container1.identifier, 'FAILED:[container1.identifier]').equal(\"69b3d24d-7e80-4be6-b04a-d352d16493ee\");",
+									"    pm.expect(container1.modDate, 'FAILED:[container1.rendered]').not.null;",
+									"    pm.expect(container1.modDate, 'FAILED:[container1.rendered.render]').not.null;",
+									"   });",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\") {\n    url\n    containers {\n      identifier\n      rendered {\n        uuid\n        render\n      }\n    }\n}\n}",
 								"variables": ""
 							}
 						},
