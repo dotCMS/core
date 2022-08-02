@@ -49,7 +49,7 @@ public class InstanceCommand implements Callable<Integer> {
         @CommandLine.Option(names = {"-l", "--list"}, description = "Prints out a list of available params.")
         Boolean list;
 
-        @CommandLine.Option(names = {"-a", "--activate"}, description = "Activate a profile by entering it's name.")
+        @CommandLine.Option(names = {"-a", "--activate"}, arity = "1", description = "Activate a profile by entering it's name.")
         String activate;
     }
 
@@ -99,7 +99,7 @@ public class InstanceCommand implements Callable<Integer> {
                 Optional<ServiceBean> optional = get(options.activate, beans);
                 if (optional.isEmpty()) {
                     // The selected option is not valid
-                    output.error(String.format(" The instance name [%s] does not march any configured server! Use --list option. ", options.activate));
+                    output.error(String.format(" The instance name [%s] does not match any configured server! Use --list option. ", options.activate));
                     return ExitCode.SOFTWARE;
                 } else {
                     ServiceBean serviceBean = optional.get();

@@ -21,10 +21,10 @@ public class LoginCommand implements Callable<Integer> {
     @CommandLine.Mixin(name = "output")
     protected OutputOptionMixin output;
 
-    @CommandLine.Option(names = {"-u", "--user"}, arity = "0..1", description = "User name", required = true, interactive = true )
+    @CommandLine.Option(names = {"-u", "--user"}, arity = "1", description = "User name", required = true )
     String user;
 
-    @CommandLine.Option(names = {"-p", "--password"}, arity = "0..1", description = "Passphrase", required = true, interactive = true )
+    @CommandLine.Option(names = {"-p", "--password"}, arity = "0..1", description = "Passphrase", required = true, interactive = true, echo = false )
     char[] password;
 
     @Inject

@@ -42,7 +42,7 @@ public class LoginCommandTest {
             final int status = commandLine.execute(LoginCommand.NAME);
             Assertions.assertEquals(ExitCode.USAGE, status);
             final String output = writer.toString();
-            Assertions.assertTrue(output.contains("Missing required options: '--user', '--password'"));
+            Assertions.assertTrue(output.contains("Missing required options:"));
             Assertions.assertTrue(output.contains("Once a profile is selected. Use this command to open a session Expects a user"));
         }
     }

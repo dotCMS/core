@@ -102,7 +102,7 @@ public class InstanceCommandTest {
                 Assertions.assertEquals(ExitCode.SOFTWARE, status);
                 final String output = writer.toString();
                 Assertions.assertTrue(output.contains(String.format(
-                        "The instance name [%s] does not march any configured server! Use --list option.",
+                        "The instance name [%s] does not match any configured server! Use --list option.",
                         instance)));
             }
         }
