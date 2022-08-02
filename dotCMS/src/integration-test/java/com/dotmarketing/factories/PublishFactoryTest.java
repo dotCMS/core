@@ -94,11 +94,12 @@ public class PublishFactoryTest extends IntegrationTestBase {
             final String languageId = String.valueOf(languageAPI.getDefaultLanguage().getId());
             final String userId = systemUser.getUserId();
 
-            final PageCacheParameters
-                cacheParameters = new PageCacheParameters(userId, languageId, "", "", "");
+            PageCacheParameters
+                cacheParameters = new PageCacheParameters(page.getInode(), userId, languageId);
 
             final String dummyText = "This is dummy text";
 
+            
             //Adding page to block cache.
             CacheLocator.getBlockPageCache().add(page, dummyText, cacheParameters);
 
@@ -110,9 +111,13 @@ public class PublishFactoryTest extends IntegrationTestBase {
             Assert.assertNotNull(cachedPageText);
             Assert.assertEquals("Cached text should be the same than dummy text", dummyText, cachedPageText);
 
+            
             //Publish Page.
             PublishFactory.publishHTMLPage(page, Lists.newArrayList(), systemUser, false);
 
+            cacheParameters = new PageCacheParameters(page.getInode(), userId, languageId);
+            
+            
             cachedPageText = CacheLocator.getBlockPageCache().get(page, cacheParameters);
 
             //Page should be out of the cache after publish.
