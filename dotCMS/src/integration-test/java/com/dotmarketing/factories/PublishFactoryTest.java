@@ -114,10 +114,7 @@ public class PublishFactoryTest extends IntegrationTestBase {
             
             //Publish Page.
             PublishFactory.publishHTMLPage(page, Lists.newArrayList(), systemUser, false);
-            
-            // get live page again
-            page = (HTMLPageAsset) APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(page.getIdentifier(), page.getLanguageId(), true, systemUser, false);
-            
+
             cacheParameters = new PageCacheParameters(page.getInode(), userId, languageId);
             
             
