@@ -9,6 +9,7 @@ import { DotContentletEditorService } from '@components/dot-contentlet-editor/se
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { Title } from '@angular/platform-browser';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
 
 @Component({
     selector: 'dot-edit-page-main',
@@ -29,7 +30,8 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
         private dotPageStateService: DotPageStateService,
         private dotRouterService: DotRouterService,
         private dotCustomEventHandlerService: DotCustomEventHandlerService,
-        private titleService: Title
+        private titleService: Title,
+        private dotEventsService: DotEventsService
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
@@ -54,7 +56,8 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
                 const newTitle = page.title;
                 const currentTitle = this.titleService.getTitle().split(' - ');
                 // This is the second part of the title, what comes after the `-`.
-                const subtTitle = currentTitle.length > 1 ? currentTitle[currentTitle.length - 1] : '';
+                const subtTitle =
+                    currentTitle.length > 1 ? currentTitle[currentTitle.length - 1] : '';
                 this.titleService.setTitle(`${newTitle}${subtTitle ? ` - ${subtTitle}` : ''}`);
                 this.pageUrl = page.pageURI;
                 this.languageId = page.languageId.toString();
@@ -62,6 +65,8 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
         );
 
         this.subscribeIframeCloseAction();
+
+        this.dotEventsService.listen('edit-block-editor');
     }
 
     ngOnDestroy(): void {

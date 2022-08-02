@@ -33,12 +33,9 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
 import { DotPage } from '@dotcms/app/shared/models/dot-page/dot-page.model';
 import { DotAddContentTypePayload } from './models/dot-contentlets-events.model';
 import { DotIframeEditEvent } from '@dotcms/dotcms-models';
-import {editor} from "monaco-editor";
-import {Editor} from "@tiptap/core";
-import {DialogService} from "primeng/dynamicdialog";
-import {
-    DotEditBlockEditorComponent
-} from "@portlets/dot-edit-page/content/components/dot-edit-block-editor/dot-edit-block-editor.component";
+import { editor } from 'monaco-editor';
+import { Editor } from '@tiptap/core';
+import { DialogService } from 'primeng/dynamicdialog';
 
 export enum DotContentletAction {
     EDIT,
@@ -511,29 +508,30 @@ export class DotEditContentHtmlService {
         }
     }
 
-
-
     private injectInlineBlockEditor(): void {
-
         const doc = this.getEditPageDocument();
         const blockEditorWrapper: HTMLDivElement = doc.querySelector('.block-editor-wrapper');
         if (blockEditorWrapper) {
             const BLOCK_EDITOR_URL = `/html/dotcms-block-editor.js`;
-            const blockEditorScript = this.dotDOMHtmlUtilService.creatExternalScriptElement(BLOCK_EDITOR_URL);
+            const blockEditorScript =
+                this.dotDOMHtmlUtilService.creatExternalScriptElement(BLOCK_EDITOR_URL);
             doc.body.append(blockEditorScript);
-            const blockEditorContent : HTMLDivElement = blockEditorWrapper.querySelector('.block-editor-wrapper__content');
+            const blockEditorContent: HTMLDivElement = blockEditorWrapper.querySelector(
+                '.block-editor-wrapper__content'
+            );
             const blockElement = document.createElement('dotcms-block-editor');
             blockElement.setAttribute('lang', blockEditorWrapper.dataset.lang);
-            blockEditorWrapper.style['pointer-events'] = "all";
+            blockEditorWrapper.style['pointer-events'] = 'all';
             blockEditorWrapper.append(blockElement);
-            setTimeout(()=> {
-                const block: any = blockEditorWrapper.querySelector('dotcms-block-editor .ProseMirror');
+            setTimeout(() => {
+                const block: any = blockEditorWrapper.querySelector(
+                    'dotcms-block-editor .ProseMirror'
+                );
                 const editor: Editor = block.editor;
                 editor.commands.setContent(JSON.parse(blockEditorWrapper.dataset.content));
 
                 console.log('block', block);
-            },100);
-
+            }, 100);
 
             blockEditorWrapper.addEventListener('click', (event) => {
                 console.log('click');
@@ -541,7 +539,6 @@ export class DotEditContentHtmlService {
                 //block.style.display = "block";
                 //blockEditorWrapper.remove
             });
-
         }
     }
 
@@ -764,13 +761,12 @@ export class DotEditContentHtmlService {
                 this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe();
             },
             'edit-block-editor': (event) => {
-                this.dialogService.open(DotEditBlockEditorComponent, {
-                    data: event,
-                    width: '100%',
-                    height: '100%',
-                    showHeader: false,
-
-                })
+                // this.dialogService.open(DotEditBlockEditorComponent, {
+                //     data: event,
+                //     width: '100%',
+                //     height: '100%',
+                //     showHeader: false
+                // });
                 console.log('edit-block-editor', event);
             }
         };
