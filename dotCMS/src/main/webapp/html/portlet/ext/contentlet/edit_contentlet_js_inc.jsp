@@ -259,11 +259,8 @@
 
 
 
-    <% if(Config.getIntProperty("CONTENT_AUTOSAVE_INTERVAL",0) > 0){%>
-    // http://jira.dotmarketing.net/browse/DOTCMS-2273
-    var autoSaveInterval = <%= Config.getIntProperty("CONTENT_AUTOSAVE_INTERVAL",0) %>;
-    setInterval("saveContent(true)",autoSaveInterval);
-    <%}%>
+
+    setInterval("saveContent(true)",5000);
 
 
     function getFormData(formId,nameValueSeparator){ // Returns form data as name value pairs with nameValueSeparator.
@@ -363,7 +360,10 @@
     }
 
     function saveContent(isAutoSave){
-
+        if(isAutoSave && !_hasUserChanged){
+        console.log("no changes have been made, skipping autosave");
+            return;
+        }
         persistContent(isAutoSave, false);
     }
 
@@ -371,10 +371,10 @@
     async function persistContent(isAutoSave, publish){
 
         window.onbeforeunload=true;
-        var isAjaxFileUploading = false;
-        var alertFileAssetSize = false;
-        var size = 0;
-        var maxSizeForAlert = <%= Config.getIntProperty("UPLOAD_FILE_ASSET_MAX_SIZE",30) %>
+        let isAjaxFileUploading = false;
+        let alertFileAssetSize = false;
+        let size = 0;
+        let maxSizeForAlert = <%= Config.getIntProperty("UPLOAD_FILE_ASSET_MAX_SIZE",30) %>
             dojo.query(".fajaxUpName").forEach(function(node, index, arr){
                 FileAssetAjax.getFileUploadStatus(node.id,{callback: function(fileStats) {
                     if(fileStats!=null){
@@ -383,7 +383,7 @@
                 }, async:false});
 
             });
-        var maxSize = document.getElementById("maxSizeFileLimit");
+        let maxSize = document.getElementById("maxSizeFileLimit");
         if(maxSize) {
             size = maxSize.value;
 
@@ -409,18 +409,22 @@
         if(isContentAutoSaving){ // To avoid concurrent auto and normal saving.
             return;
         }
-        window.scrollTo(0,0);	// To show lightbox effect(IE) and save content errors.
-        dijit.byId('savingContentDialog').show();
-
+        if(isAutoSave && isContentSaving){
+            return;
+        }
+        
+        
+        if(!isAutoSave){
+            window.scrollTo(0,0);	// To show lightbox effect(IE) and save content errors.
+            dijit.byId('savingContentDialog').show();
+        }
         // Check if the relations HTML have been loaded.
         await waitForRelation(relationsName);
 
 
-        if(isAutoSave && isContentSaving){
-            return;
-        }
-        var textAreaData = "";
-        var fmData = new Array();
+
+        let textAreaData = "";
+        let fmData = new Array();
 
         fmData = getFormData("fm","<%= com.dotmarketing.util.WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR %>");
 
@@ -553,7 +557,14 @@
 
 
     function saveContentCallback(data){
-        isContentAutoSaving = false;
+    
+        let autoSave = isContentAutoSaving;
+    
+        if(autoSave){
+            isContentAutoSaving = false;
+        }
+    
+        
         dojo.byId("subcmd").value= "";
 
         if(data["contentletInode"] != null && isInodeSet(data["contentletInode"])){

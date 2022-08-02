@@ -545,6 +545,18 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				}
 			} else {
 
+			    
+			    if(isAutoSave) {
+			        currentContentlet.setLowIndexPriority(true);
+			        currentContentlet.setProperty(Contentlet.DONT_VALIDATE_ME, true);
+			        this.conAPI.saveDraft(currentContentlet, contentletRelationships, categories, null, user, false);
+			        
+			        return;
+			    }
+			    
+			    
+			    
+			    
 				Logger.warn(this, "Calling Save Web Asset: " + currentContentlet.getIdentifier() +
 								", without an action.");
 				if (currentContentlet.isHost()) {
