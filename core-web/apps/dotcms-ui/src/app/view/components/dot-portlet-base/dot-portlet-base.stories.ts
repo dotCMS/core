@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { moduleMetadata } from '@storybook/angular';

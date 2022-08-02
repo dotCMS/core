@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';

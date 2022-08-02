@@ -37,13 +37,14 @@
                     }
                 ],
                 "@typescript-eslint/no-explicit-any": ["error"],
-                "one-var": ["error", { "var": "never", "let": "never", "const": "never" }],
                 "@typescript-eslint/no-unused-vars": [
                     "error",
                     {
                         "argsIgnorePattern": "^_"
                     }
-                ]
+                ],
+                "one-var": ["error", { "var": "never", "let": "never", "const": "never" }],
+                "no-console": ["error", { "allow": ["warn", "error"] }]
             }
         },
         {
