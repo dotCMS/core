@@ -545,7 +545,6 @@ import org.junit.runners.Suite.SuiteClasses;
         Task220330ChangeVanityURLSiteFieldTypeTest.class,
         Task220402UpdateDateTimezonesTest.class,
         Task220413IncreasePublishedPushedAssetIdColTest.class,
-        Task220404RemoveCalendarReminderTest.class,
         com.dotcms.util.pagination.ContainerPaginatorTest.class,
         ContentDispositionFileNameParserTest.class,
         SecureFileValidatorTest.class,

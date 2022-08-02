@@ -7,7 +7,6 @@ import com.dotcms.publisher.pusher.wrapper.ContentWrapper;
 import com.dotcms.security.apps.SecretsStore;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotcms.util.XStreamFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.thoughtworks.xstream.XStream;
 import java.io.File;
