@@ -1,6 +1,7 @@
 package com.dotmarketing.util;
 
 import com.dotmarketing.exception.DotRuntimeException;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import org.apache.commons.io.IOUtils;
 
@@ -54,28 +55,51 @@ public class RuntimeUtils {
      * @return optional wrapping the result of running the process
      */
     public static Optional<String> runProcessAndGetOutput(final String... commands) {
+        final TerminalOutput commandOutput = runProcessAndGetOutput(false, true, commands);
+        return UtilMethods.isSet(commandOutput.output()) ? Optional.of(commandOutput.output()) : Optional.empty();
+    }
+
+    /**
+     *
+     * @param commands
+     * @return
+     */
+    public static TerminalOutput runProcessAndGetOutputWithError(final String... commands) {
+        return runProcessAndGetOutput(true, false, commands);
+    }
+
+    protected static TerminalOutput runProcessAndGetOutput(final boolean returnErrors, final boolean formatOutput, final String... commands) {
+        final TerminalOutput terminalOutput = new TerminalOutput();
         final Process process = Try.of(() -> runProcess(commands)).getOrNull();
         if (process == null) {
             Logger.warn(
                     RuntimeUtils.class,
                     String.format("Cannot run process for provided command %s", String.join(" ", commands)));
-            return Optional.empty();
+            return terminalOutput;
         }
 
         try {
             final String input = Try.of(() -> IOUtils.toString(
                             process.getInputStream(),
                             Charset.defaultCharset()))
-                    .getOrNull();
-
-            if (Try.of(process::waitFor).getOrElse(1) != 0) {
-                return Optional.empty();
+                                         .getOrNull();
+            final int exitValue = Try.of(process::waitFor).getOrElse(1);
+            terminalOutput.exitValue(exitValue);
+            if (!returnErrors && exitValue != 0) {
+                terminalOutput.output(StringPool.BLANK);
+                return terminalOutput;
             }
-
-            return Optional.ofNullable(UtilMethods.isSet(input) ? input.replace(System.lineSeparator(), "") : null);
+            if (formatOutput) {
+                //return Optional.ofNullable(UtilMethods.isSet(input) ? input.replace(System.lineSeparator(), "") : null);
+                terminalOutput.output(UtilMethods.isSet(input) ? input.replace(System.lineSeparator(), "") : null);
+                return terminalOutput;
+            } else {
+                terminalOutput.output(UtilMethods.isSet(input) ? input : null);
+            }
+            return terminalOutput;
         } catch (Exception e) {
             Logger.error(RuntimeUtils.class, String.format("Error running commands %s", String.join(" ", commands)), e);
-            return Optional.empty();
+            return terminalOutput;
         } finally {
             process.destroy();
         }
@@ -101,6 +125,46 @@ public class RuntimeUtils {
     private static Process runProcess(final String... commands) {
         final ProcessBuilder processBuilder = buildProcess(commands);
         return Try.of(processBuilder::start).getOrElseThrow(DotRuntimeException::new);
+    }
+
+    /**
+     *
+     */
+    public static class TerminalOutput {
+
+        private int exitValue;
+        private String output;
+
+        public TerminalOutput() {
+            this(-1, StringPool.BLANK);
+        }
+
+        public TerminalOutput(final int exitValue, final String output) {
+            this.exitValue = exitValue;
+            this.output = output;
+        }
+
+        public int exitValue() {
+            return exitValue;
+        }
+
+        public void exitValue(int exitValue) {
+            this.exitValue = exitValue;
+        }
+
+        public String output() {
+            return output;
+        }
+
+        public void output(String output) {
+            this.output = output;
+        }
+
+        @Override
+        public String toString() {
+            return "TerminalOutput{" + "exitValue=" + exitValue + ", output='" + output + '\'' + '}';
+        }
+
     }
 
 }
