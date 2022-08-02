@@ -35,7 +35,7 @@ export class BubbleMenuLinkFormComponent implements OnInit {
 
     @Output() hide: EventEmitter<boolean> = new EventEmitter(false);
     @Output() removeLink: EventEmitter<boolean> = new EventEmitter(false);
-    @Output() openSuggestions: EventEmitter<boolean> = new EventEmitter(false);
+    @Output() isSuggestionOpen: EventEmitter<boolean> = new EventEmitter(false);
     @Output() setNodeProps: EventEmitter<NodeProps> = new EventEmitter();
 
     @Input() showSuggestions = false;
@@ -106,7 +106,7 @@ export class BubbleMenuLinkFormComponent implements OnInit {
         this.loading = shouldShow;
         if (shouldShow) {
             // Wait for the suggestions to appear in the DOM
-            requestAnimationFrame(() => this.openSuggestions.emit(true));
+            requestAnimationFrame(() => this.isSuggestionOpen.emit(true));
         }
     }
 
