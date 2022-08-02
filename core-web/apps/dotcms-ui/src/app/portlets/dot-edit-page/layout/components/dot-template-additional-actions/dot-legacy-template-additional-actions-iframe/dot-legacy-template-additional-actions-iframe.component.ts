@@ -21,6 +21,7 @@ export class DotLegacyTemplateAdditionalActionsComponent implements OnInit {
                 const tabName = resp[0].tabName;
                 const templateId = resp[0].id;
                 const portletId = resp[1];
+
                 return observableOf(
                     // tslint:disable-next-line:max-line-length
                     `c/portal/layout?p_l_id=${portletId}&p_p_id=templates&p_p_action=1&p_p_state=maximized&p_p_mode=view&_templates_struts_action=%2Fext%2Ftemplates%2Fedit_template&_templates_cmd=edit&inode=${templateId}&drawed=false&selectedTab=${tabName}`

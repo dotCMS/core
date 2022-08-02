@@ -33,6 +33,7 @@ const FloatLabelTemplate = `
 const Template: Story<{ checked: boolean }> = (props: { checked: boolean }) => {
     console.log(props);
     const template = FloatLabelTemplate;
+
     return {
         props,
         template

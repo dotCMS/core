@@ -296,6 +296,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         this.dotGlobalMessageService.loading(
             this.dotMessageService.get('dot.common.message.saving')
         );
+
         return this.dotEditPageService
             .save(this.pageStateInternal.page.identifier, this.getPersonalizedModel(model) || model)
             .pipe(
@@ -305,6 +306,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 }),
                 catchError((error: HttpErrorResponse) => {
                     this.httpErrorManagerService.handle(error);
+
                     return of('error');
                 })
             );
@@ -321,6 +323,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 };
             });
         }
+
         return null;
     }
 
@@ -407,6 +410,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 this.reload(null);
             }
         };
+
         return eventsHandlerMap[event];
     }
 
@@ -451,6 +455,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             if (this.isEnterpriseLicense) {
                 this.setAllowedContent(pageState);
             }
+
             this.dotEditContentHtmlService.initEditMode(pageState, this.iframe);
             this.isEditMode = true;
         } else {

@@ -5,6 +5,7 @@ import { DotLayoutGridRow } from './dot-layout-grid-row.model';
 import { DotContainerColumnBox } from './dot-container-column-box.model';
 
 export const DOT_LAYOUT_GRID_MAX_COLUMNS = 12;
+
 const DOT_LAYOUT_GRID_DEFAULT_EMPTY_GRID_ROWS: Record<
     string,
     boolean | number | { [key: string]: string }
@@ -54,6 +55,7 @@ export class DotLayoutGrid {
                 containers: <DotContainerColumnBox[]>[]
             }
         ];
+
         return new DotLayoutGrid(defaultBox, ['']);
     }
 
@@ -162,9 +164,11 @@ export class DotLayoutGrid {
         if (rowArray[0].row !== index + 1) {
             return rowArray.map((container) => {
                 container.config.row = index + 1;
+
                 return container;
             });
         }
+
         return rowArray;
     }
 }

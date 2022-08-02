@@ -76,6 +76,7 @@ class MockCellEditorComponent implements AfterContentInit {
                 case 'input':
                     this.inputTemplate = item.template;
                     break;
+
                 case 'output':
                     this.outputTemplate = item.template;
                     break;

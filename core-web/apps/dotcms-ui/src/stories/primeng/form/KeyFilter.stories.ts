@@ -59,6 +59,7 @@ const Template: Story<{
     inputValue: string;
 }> = (props: { ccRegex: RegExp; inputValue: string }) => {
     const template = KeyFilterTemplate;
+
     return {
         props,
         template

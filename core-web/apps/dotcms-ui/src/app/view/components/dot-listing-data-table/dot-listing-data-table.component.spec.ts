@@ -85,6 +85,7 @@ class TestHostComponent {
         return items.map((item) => {
             item.disableInteraction =
                 item.variable === 'Host' || item.identifier === 'SYSTEM_TEMPLATE';
+
             return item;
         });
     }
@@ -289,6 +290,7 @@ describe('DotListingDataTableComponent', () => {
                             item[hostComponent.columns[cellIndex].fieldName]
                         );
                     }
+
                     if (cellIndex === 3) {
                         const anchor = cells[cellIndex].querySelector('a');
                         expect(anchor.textContent).toContain(
@@ -309,6 +311,7 @@ describe('DotListingDataTableComponent', () => {
         const dotStringFormatPipe = new DotStringFormatPipe();
         const itemsWithFormat = items.map((item) => {
             item.field3 = 1496178801000;
+
             return item;
         });
         setRequestSpy(itemsWithFormat);

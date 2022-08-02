@@ -78,6 +78,7 @@ export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAcce
         if (value) {
             this.selectedEnvironmentIds = value;
         }
+
         this.selectedEnvironments = [];
     }
 

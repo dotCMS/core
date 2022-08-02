@@ -54,7 +54,8 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
                 const newTitle = page.title;
                 const currentTitle = this.titleService.getTitle().split(' - ');
                 // This is the second part of the title, what comes after the `-`.
-                const subtTitle = currentTitle.length > 1 ? currentTitle[currentTitle.length - 1] : '';
+                const subtTitle =
+                    currentTitle.length > 1 ? currentTitle[currentTitle.length - 1] : '';
                 this.titleService.setTitle(`${newTitle}${subtTitle ? ` - ${subtTitle}` : ''}`);
                 this.pageUrl = page.pageURI;
                 this.languageId = page.languageId.toString();
@@ -79,6 +80,7 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
         if (this.customEventsHandler[$event.detail.name]) {
             this.customEventsHandler[$event.detail.name]($event);
         }
+
         this.dotCustomEventHandlerService.handle($event);
     }
 

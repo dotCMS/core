@@ -37,6 +37,7 @@ export class DotAppsListComponent implements OnInit, OnDestroy {
                 if (resolverData.isEnterpriseLicense) {
                     this.getApps(resolverData.apps);
                 }
+
                 this.canAccessPortlet = resolverData.isEnterpriseLicense;
             });
     }

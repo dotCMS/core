@@ -82,6 +82,7 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
                 filter((site: Site) => {
                     if (currentHost === null) {
                         currentHost = site?.hostname;
+
                         return false;
                     }
 
@@ -154,6 +155,7 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
                     ...this.setUnPublishAndArchiveTemplateOptions(template)
                 ];
             }
+
             options = [...options, ...this.setCopyTemplateOptions(template)];
         }
 
@@ -205,6 +207,7 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
         return templates.map((template) => {
             template.disableInteraction =
                 template.identifier.includes('/') || template.identifier === 'SYSTEM_TEMPLATE';
+
             return template;
         });
     }
@@ -350,6 +353,7 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
                 }
             });
         }
+
         return options;
     }
 
@@ -379,6 +383,7 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
                 }
             });
         }
+
         return options;
     }
 
@@ -408,6 +413,7 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
                 }
             });
         }
+
         return bulkOptions;
     }
 
@@ -462,6 +468,7 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
                 }
             });
         }
+
         return options;
     }
 
@@ -529,6 +536,7 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
         } else {
             this.showToastNotification(this.dotMessageService.get(messageKey));
         }
+
         this.listing.clearSelection();
         this.listing.loadCurrentPage();
     }
