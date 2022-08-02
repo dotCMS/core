@@ -15,7 +15,7 @@ export class DotEventsService {
      * Method to register a listener of a specif event.
      *
      * @param string eventName
-     * @returns Observable<DotEvent>
+     * @returns Observable<DotEvent<T>>
      */
     listen<T>(eventName: string): Observable<DotEvent<T>> {
         // TODO: need to make this method to support multiple events
@@ -25,7 +25,8 @@ export class DotEventsService {
     /**
      * Method to notify subscribers of a specific event.
      *
-     * @param DotEvent dotEvent
+     * @param string name
+     * @param <T> data
      */
     notify<T>(name: string, data?: T): void {
         this.subject.next({
