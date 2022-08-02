@@ -32,8 +32,8 @@ public class InstanceCommandTest {
     }
 
     /**
-     * Scenario: If we do not pass the required params Expected: Instance expects at least one param
-     * or both
+     * Scenario: If we do not pass the required params
+     * Expected: Instance expects at least one param or both
      */
     @Test
     @Order(1)
@@ -50,6 +50,10 @@ public class InstanceCommandTest {
         }
     }
 
+    /**
+     * Scenario: Only pass the param list
+     * Expected: We should be able to see the list of available instances
+     */
     @Test
     @Order(2)
     public void Test_Command_Instance_Pass_Only_List_Param() {
@@ -70,6 +74,10 @@ public class InstanceCommandTest {
         }
     }
 
+    /**
+     * Scenario: -a or --activate expects an argument We're not passing it here.
+     * Expected: We should get the USAGE code
+     */
     @Test
     @Order(3)
     public void Test_Command_Instance_Pass_Activate_Param_No_Profile() {
@@ -87,6 +95,10 @@ public class InstanceCommandTest {
         }
     }
 
+    /**
+     * Scenario: -a or --activate expects an argument We're passing an invalid value here
+     * Expected: Error Code 1. Software error
+     */
     @Test
     @Order(4)
     public void Test_Command_Instance_Pass_Activate_Param_Include_Invalid_Instance() {
@@ -108,6 +120,11 @@ public class InstanceCommandTest {
         }
     }
 
+    /**
+     * Scenario: -a or --activate expects an argument We're passing a valid instance
+     * Expected: Success code
+     * @throws IOException
+     */
     @Test
     @Order(5)
     public void Test_Command_Instance_Pass_Activate_Param_Include_Valid_Instance()

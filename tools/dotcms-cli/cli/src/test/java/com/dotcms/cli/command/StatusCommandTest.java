@@ -83,6 +83,11 @@ public class StatusCommandTest {
         }
     }
 
+    /**
+     * Scenario: In this scenario we want to see our status but the selected profile has expired credentials
+     * Expected: We should get informed and get an Exit code 1
+     * @throws IOException
+     */
     @Test
     public void Test_Command_Status_Default_Profile_Invalid_Credentials() throws IOException {
 
@@ -109,7 +114,11 @@ public class StatusCommandTest {
         }
     }
 
-
+    /**
+     * Scenario: In this scenario we want to see our status using a valid profile and credentials
+     * Expected: Only in this case we should expect success exit code
+     * @throws IOException
+     */
     @Test
     public void Test_Command_Status_Valid_Profile_And_User() throws IOException {
 
