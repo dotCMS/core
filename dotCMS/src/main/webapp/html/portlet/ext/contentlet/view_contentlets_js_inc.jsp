@@ -2552,9 +2552,14 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
         }
 
+
+        function getRestBasePostUrl(){
+             return location.protocol + '//' + location.host + '/api/content/_search';
+        }
+
         function fillQuery (counters) {
                         var restBaseUrl = location.protocol + '//' + location.host + '/api/content/render/false';
-                        var restBasePostUrl = location.protocol + '//' + location.host + '/api/content/_search';
+                        var restBasePostUrl = getRestBasePostUrl();
 
 
                         queryRaw = counters["luceneQueryRaw"];
@@ -2613,6 +2618,11 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
                             "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "rest-api-call-urlencoded") %></div>"+
                             "<div class='contentViewQuery'><code>"+apicall_urlencode+"</code></div>"+
+
+                            "<div class='contentViewQuery' style='padding:20px;padding-top:10px;color:#333;'>REST API: " +
+                            "<span class='dot-api-link' " +
+                            "onClick=\"queryContentJSONPost(getRestBasePostUrl(), '" + encodedQueryRaw + "', '" + sortBy + "')\">API</span></a>"+
+                            "</div>"+
 
                             "<b><%= LanguageUtil.get(pageContext, "Ordered-by") %>:</b> " + sortBy +
                             "<ul><li><%= LanguageUtil.get(pageContext, "message.contentlet.hint2") %> " +
