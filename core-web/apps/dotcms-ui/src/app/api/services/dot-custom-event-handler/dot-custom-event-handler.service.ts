@@ -11,6 +11,7 @@ import { DotContentletEditorService } from '@components/dot-contentlet-editor/se
 import { DotNavLogoService } from '@services/dot-nav-logo/dot-nav-logo.service';
 import { DotGenerateSecurePasswordService } from '@services/dot-generate-secure-password/dot-generate-secure-password.service';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { DotContentCompareEvent } from '@components/dot-content-compare/dot-content-compare.component';
 
 export const COMPARE_CUSTOM_EVENT = 'compare-contentlet';
 
@@ -123,6 +124,9 @@ export class DotCustomEventHandlerService {
     }
 
     private openCompareDialog($event: CustomEvent): void {
-        this.dotEventsService.notify(COMPARE_CUSTOM_EVENT, $event.detail.data);
+        this.dotEventsService.notify<DotContentCompareEvent>(
+            COMPARE_CUSTOM_EVENT,
+            $event.detail.data
+        );
     }
 }
