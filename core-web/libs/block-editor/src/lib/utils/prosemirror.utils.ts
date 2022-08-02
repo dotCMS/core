@@ -18,6 +18,7 @@ export const findParentNode = (
             if (Array.isArray(NodesTypesToFind) && NodesTypesToFind.includes(parent.type.name)) {
                 break;
             }
+
             depth--;
         }
     } while (depth > 0 && parent);

@@ -136,12 +136,14 @@ export class FloatingActionsView {
 
         if (!prev?.open && (!empty || !isActive)) {
             this.hide();
+
             return;
         }
 
         // Hide is Parent node is not the editor
         if (!prev?.open && this.invalidNodes.includes(nodeType)) {
             this.hide();
+
             return;
         }
 
@@ -230,6 +232,7 @@ export const FloatingActionsPlugin = (options: FloatingActionsPluginProps) => {
                 if (!open) {
                     return false;
                 }
+
                 return options.render().onKeyDown({ event, range, view });
             }
         }
