@@ -1,33 +1,35 @@
 package com.dotcms.csspreproc;
 
-
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.util.List;
-
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.MessageType;
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.csspreproc.dartsass.DartSassCompiler;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.RuntimeUtils;
+import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
 import com.liferay.util.FileUtil;
 
-import io.bit3.jsass.Options;
-import io.bit3.jsass.Output;
-import io.bit3.jsass.OutputStyle;
+import java.io.File;
+import java.io.IOException;
 import java.util.Optional;
 
+/**
+ *
+ */
 public class DotLibSassCompiler extends DotCSSCompiler {
-
 
     final boolean live;
 
@@ -77,17 +79,10 @@ public class DotLibSassCompiler extends DotCSSCompiler {
                 throw new RuntimeException(errorMsg);
             }
             final File compileDestinationFile = new File(compileTargetFile.getAbsoluteFile() + ".css");
-            final URI inputFile = compileTargetFile.toURI();
-            final URI outputFile = compileDestinationFile.toURI();
-
-            final io.bit3.jsass.Compiler compiler = new io.bit3.jsass.Compiler();
-            final Options options = new Options();
-            final int SASS_OUTPUTSTYLE_ORDINAL = Config.getIntProperty("LIBSASS_OUTPUTSTYLE", OutputStyle.COMPRESSED.ordinal());
-            options.setOutputStyle(OutputStyle.values()[SASS_OUTPUTSTYLE_ORDINAL]);
-            final Output out = compiler.compileFile(inputFile, outputFile, options);
-
-            this.output = out.getCss().getBytes();
-
+            final DartSassCompiler compiler = new DartSassCompiler(compileTargetFile, compileDestinationFile);
+            final Optional<String> out = compiler.compile();
+            handleOutput(compiler.terminalOutput());
+            this.output = out.get().getBytes();
         } catch (final Exception ex) {
             final String errorMsg = "Unable to compile SASS code in " + inputHost.getHostname() + ":" + inputURI + " live:" + inputLive;
             Logger.error(this, errorMsg, ex);
@@ -96,10 +91,34 @@ public class DotLibSassCompiler extends DotCSSCompiler {
           DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
             FileUtil.deltree(compileDir);
           });
-
-
         }
+    }
 
+    /**
+     *
+     * @param terminalOutput
+     */
+    private void handleOutput(final RuntimeUtils.TerminalOutput terminalOutput) {
+        if (0 == terminalOutput.exitValue() && UtilMethods.isSet(terminalOutput.output())) {
+            Logger.warn(this, terminalOutput.output());
+            notifyUI(terminalOutput.output(), MessageSeverity.WARNING);
+        } else if (UtilMethods.isSet(terminalOutput.output())) {
+            Logger.error(this, terminalOutput.output());
+            notifyUI(terminalOutput.output(), MessageSeverity.ERROR);
+        }
+    }
+
+    /**
+     *
+     * @param message
+     * @param severity
+     */
+    private void notifyUI(final String message, final MessageSeverity severity) {
+        final SystemMessageBuilder messageBuilder =
+                new SystemMessageBuilder().setMessage(UtilMethods.htmlLineBreak(message)).setType(MessageType.SIMPLE_MESSAGE).setSeverity(severity).setLife(10000);
+        final String loggedInUserID =
+                WebAPILocator.getUserWebAPI().getLoggedInUser(HttpServletRequestThreadLocal.INSTANCE.getRequest()).getUserId();
+        SystemMessageEventUtil.getInstance().pushMessage(messageBuilder.create(), ImmutableList.of(loggedInUserID));
     }
 
     @Override
