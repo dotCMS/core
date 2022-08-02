@@ -43,7 +43,6 @@ export class DotCustomEventHandlerService {
                 'edit-page': this.goToEditPage.bind(this),
                 'edit-contentlet': this.editContentlet.bind(this),
                 'edit-task': this.editTask.bind(this),
-                'edit-block-editor': this.editBlockEditor.bind(this),
                 'create-contentlet': this.createContentlet.bind(this),
                 'company-info-updated': this.setPersonalization.bind(this),
                 'push-publish': this.pushPublishDialog.bind(this),
@@ -53,10 +52,6 @@ export class DotCustomEventHandlerService {
                 'compare-contentlet': this.openCompareDialog.bind(this)
             };
         }
-    }
-
-    editBlockEditor(event): void {
-        console.log('evento---', event);
     }
 
     /**
@@ -93,7 +88,6 @@ export class DotCustomEventHandlerService {
     }
 
     private editContentlet($event: CustomEvent): void {
-        console.log('SABO------');
         this.dotRouterService.goToEditContentlet($event.detail.data.inode);
     }
 

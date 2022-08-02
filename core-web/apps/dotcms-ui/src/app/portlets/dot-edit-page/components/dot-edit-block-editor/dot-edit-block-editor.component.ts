@@ -1,4 +1,4 @@
-import { Component, Injector, OnInit, ViewContainerRef } from '@angular/core';
+import { Component, Injector, Input, OnInit, ViewContainerRef } from '@angular/core';
 
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
@@ -6,6 +6,7 @@ import {
     ActionsMenu,
     BubbleLinkFormExtension,
     ContentletBlock,
+    DEFAULT_LANG_ID,
     DotBubbleMenuExtension,
     DragHandler,
     ImageBlock,
@@ -23,15 +24,13 @@ import Placeholder from '@tiptap/extension-placeholder';
     styleUrls: ['./dot-edit-block-editor.component.scss']
 })
 export class DotEditBlockEditorComponent implements OnInit {
-    data: any = {};
+    @Input() data;
     editor: Editor;
     value = '';
 
     constructor(private injector: Injector, public viewContainerRef: ViewContainerRef) {}
 
     ngOnInit(): void {
-        // this.data = this.config.data;
-
         this.editor = new Editor({
             extensions: [
                 StarterKit,
@@ -69,7 +68,7 @@ export class DotEditBlockEditorComponent implements OnInit {
     private setEditorStorageData() {
         console.log('TODO: setupt storage');
         this.editor.storage.dotConfig = {
-            lang: this.data.lang,
+            lang: this.data?.lang | DEFAULT_LANG_ID,
             allowedContentTypes: ''
         };
         // this.editor.storage.dotConfig = {

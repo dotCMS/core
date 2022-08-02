@@ -1,6 +1,8 @@
 <router-outlet></router-outlet>
 <dot-edit-page-nav [pageState]="pageState$ | async"></dot-edit-page-nav>
 <dot-edit-contentlet (custom)="onCustomEvent($event)"></dot-edit-contentlet>
-<p-sidebar [visible]="true" position="right">
-    <dot-edit-block-editor></dot-edit-block-editor>
+<p-sidebar [visible]="blockEditorData" position="right">
+    <dot-edit-block-editor *ngIf="blockEditorData"  [data]="blockEditorData"></dot-edit-block-editor>
 </p-sidebar>
+
+

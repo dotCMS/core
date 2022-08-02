@@ -36,6 +36,7 @@ import { DotIframeEditEvent } from '@dotcms/dotcms-models';
 import { editor } from 'monaco-editor';
 import { Editor } from '@tiptap/core';
 import { DialogService } from 'primeng/dynamicdialog';
+import { INLINE_EDIT_BLOCK_EDITOR_SCRIPTS } from '@portlets/dot-edit-page/content/services/html/libraries/inline-ediit-block-editor.js';
 
 export enum DotContentletAction {
     EDIT,
@@ -488,6 +489,10 @@ export class DotEditContentHtmlService {
             const tinyMceScript = this.dotDOMHtmlUtilService.creatExternalScriptElement(TINYMCE);
             const tinyMceInitScript: HTMLScriptElement =
                 this.dotDOMHtmlUtilService.createInlineScriptElement(INLINE_TINYMCE_SCRIPTS);
+            const blockEditorScript: HTMLScriptElement =
+                this.dotDOMHtmlUtilService.createInlineScriptElement(
+                    INLINE_EDIT_BLOCK_EDITOR_SCRIPTS
+                );
 
             this.dotLicenseService
                 .isEnterprise()
@@ -500,6 +505,7 @@ export class DotEditContentHtmlService {
 
                     doc.body.append(tinyMceInitScript);
                     doc.body.append(tinyMceScript);
+                    doc.body.append(blockEditorScript);
 
                     editModeNodes.forEach((node) => {
                         node.classList.add('dotcms__inline-edit-field');
@@ -510,35 +516,50 @@ export class DotEditContentHtmlService {
 
     private injectInlineBlockEditor(): void {
         const doc = this.getEditPageDocument();
-        const blockEditorWrapper: HTMLDivElement = doc.querySelector('.block-editor-wrapper');
+        const blockEditorWrapper: HTMLDivElement = doc.querySelector('[block-editor]');
         if (blockEditorWrapper) {
-            const BLOCK_EDITOR_URL = `/html/dotcms-block-editor.js`;
-            const blockEditorScript =
-                this.dotDOMHtmlUtilService.creatExternalScriptElement(BLOCK_EDITOR_URL);
-            doc.body.append(blockEditorScript);
-            const blockEditorContent: HTMLDivElement = blockEditorWrapper.querySelector(
-                '.block-editor-wrapper__content'
-            );
-            const blockElement = document.createElement('dotcms-block-editor');
-            blockElement.setAttribute('lang', blockEditorWrapper.dataset.lang);
-            blockEditorWrapper.style['pointer-events'] = 'all';
-            blockEditorWrapper.append(blockElement);
-            setTimeout(() => {
-                const block: any = blockEditorWrapper.querySelector(
-                    'dotcms-block-editor .ProseMirror'
+            const blockEditorScript: HTMLScriptElement =
+                this.dotDOMHtmlUtilService.createInlineScriptElement(
+                    INLINE_EDIT_BLOCK_EDITOR_SCRIPTS
                 );
-                const editor: Editor = block.editor;
-                editor.commands.setContent(JSON.parse(blockEditorWrapper.dataset.content));
+            this.dotLicenseService
+                .isEnterprise()
+                .pipe(
+                    take(1),
+                    filter((isEnterprise: boolean) => isEnterprise === true)
+                )
+                .subscribe(() => {
+                    // We have elements in the DOM and we're on enterprise plan
+                    doc.body.append(blockEditorScript);
+                });
 
-                console.log('block', block);
-            }, 100);
-
-            blockEditorWrapper.addEventListener('click', (event) => {
-                console.log('click');
-                //blockEditorContent.style.display = "none";
-                //block.style.display = "block";
-                //blockEditorWrapper.remove
-            });
+            // const BLOCK_EDITOR_URL = `/html/dotcms-block-editor.js`;
+            // const blockEditorScript =
+            //     this.dotDOMHtmlUtilService.creatExternalScriptElement(BLOCK_EDITOR_URL);
+            // doc.body.append(blockEditorScript);
+            // const blockEditorContent: HTMLDivElement = blockEditorWrapper.querySelector(
+            //     '.block-editor-wrapper__content'
+            // );
+            // const blockElement = document.createElement('dotcms-block-editor');
+            // blockElement.setAttribute('lang', blockEditorWrapper.dataset.lang);
+            // blockEditorWrapper.style['pointer-events'] = 'all';
+            // blockEditorWrapper.append(blockElement);
+            // setTimeout(() => {
+            //     const block: any = blockEditorWrapper.querySelector(
+            //         'dotcms-block-editor .ProseMirror'
+            //     );
+            //     const editor: Editor = block.editor;
+            //     editor.commands.setContent(JSON.parse(blockEditorWrapper.dataset.content));
+            //
+            //     console.log('block', block);
+            // }, 100);
+            //
+            // blockEditorWrapper.addEventListener('click', (event) => {
+            //     console.log('click');
+            //     //blockEditorContent.style.display = "none";
+            //     //block.style.display = "block";
+            //     //blockEditorWrapper.remove
+            // });
         }
     }
 

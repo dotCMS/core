@@ -10,6 +10,8 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { Title } from '@angular/platform-browser';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { DotEvent } from '@models/dot-event/dot-event';
+import { DotGlobalMessage } from '@models/dot-global-message/dot-global-message.model';
 
 @Component({
     selector: 'dot-edit-page-main',
@@ -18,6 +20,7 @@ import { DotEventsService } from '@services/dot-events/dot-events.service';
 })
 export class DotEditPageMainComponent implements OnInit, OnDestroy {
     pageState$: Observable<DotPageRenderState>;
+    blockEditorData;
     private pageUrl: string;
     private languageId: string;
     private pageIsSaved = false;
@@ -67,6 +70,14 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
         this.subscribeIframeCloseAction();
 
         this.dotEventsService.listen('edit-block-editor');
+
+        this.dotEventsService
+            .listen('edit-block-editor')
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((event) => {
+                debugger;
+                this.blockEditorData = event.data;
+            });
     }
 
     ngOnDestroy(): void {
