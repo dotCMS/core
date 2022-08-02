@@ -47405,9 +47405,9 @@ try {
         class n {
           constructor(t) {
             (this.fb = t),
-              (this.openSuggestions = new Te(!1)),
               (this.hide = new Te(!1)),
               (this.removeLink = new Te(!1)),
+              (this.openSuggestions = new Te(!1)),
               (this.setNodeProps = new Te()),
               (this.showSuggestions = !1),
               (this.initialValues = { link: "", blank: !0 }),
@@ -47494,9 +47494,9 @@ try {
               initialValues: "initialValues",
             },
             outputs: {
-              openSuggestions: "openSuggestions",
               hide: "hide",
               removeLink: "removeLink",
+              openSuggestions: "openSuggestions",
               setNodeProps: "setNodeProps",
             },
             decls: 11,

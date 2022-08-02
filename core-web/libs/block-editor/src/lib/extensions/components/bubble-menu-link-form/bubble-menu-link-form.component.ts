@@ -105,6 +105,7 @@ export class BubbleMenuLinkFormComponent implements OnInit {
         this.showSuggestions = shouldShow;
         this.loading = shouldShow;
         if (shouldShow) {
+            // Wait for the suggestions to appear in the DOM
             requestAnimationFrame(() => this.openSuggestions.emit(true));
         }
     }

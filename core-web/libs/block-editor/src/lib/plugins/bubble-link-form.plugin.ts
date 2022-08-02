@@ -209,12 +209,14 @@ export class BubbleLinkFormView {
 
     setComponentEvents() {
         this.component.instance.hide.pipe(takeUntil(this.$destroy)).subscribe(() => this.hide());
-        this.component.instance.openSuggestions
-            .pipe(takeUntil(this.$destroy))
-            .subscribe(() => this.tippy.popperInstance.update());
         this.component.instance.removeLink
             .pipe(takeUntil(this.$destroy))
             .subscribe(() => this.removeLink());
+        // Update tippy manually when the suggestions are open.
+        // Therefore, the tippy is not going to be cut when it does not have enough space.
+        this.component.instance.openSuggestions
+            .pipe(takeUntil(this.$destroy))
+            .subscribe(() => this.tippy.popperInstance.update());
         this.component.instance.setNodeProps
             .pipe(takeUntil(this.$destroy))
             .subscribe((event) => this.setLinkValues(event));
