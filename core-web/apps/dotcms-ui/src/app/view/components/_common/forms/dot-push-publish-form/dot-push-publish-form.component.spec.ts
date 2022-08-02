@@ -33,7 +33,10 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
 import { CalendarModule } from 'primeng/calendar';
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
-import { DotcmsConfigServiceMock, mockDotTimeZones } from '@dotcms/app/test/dot-timezone-service.mock';
+import {
+    DotcmsConfigServiceMock,
+    mockDotTimeZones
+} from '@dotcms/app/test/dot-timezone-service.mock';
 
 const messageServiceMock = new MockDotMessageService({
     'contenttypes.content.push_publish.action.push': 'Push',
@@ -64,12 +67,6 @@ const mockFilters: DotPushPublishFilter[] = [
     { defaultFilter: true, key: 'key1', title: 'Title default' },
     { defaultFilter: false, key: 'key2', title: 'Title key2' },
     { defaultFilter: false, key: 'key3', title: 'A - Tittle' }
-];
-
-const mockSortedFilters: SelectItem[] = [
-    { label: 'A - Tittle', value: 'key3' },
-    { label: 'Title default', value: 'key1' },
-    { label: 'Title key2', value: 'key2' }
 ];
 
 const mockPushActions: SelectItem[] = [
@@ -155,8 +152,9 @@ describe('DotPushPublishFormComponent', () => {
         spyOn(dotPushPublishFiltersService, 'get').and.returnValue(of(mockFilters));
         hostComponent.data = mockPublishFormData;
         fixture.detectChanges();
-        pushPublishForm = fixture.debugElement.query(By.css('dot-push-publish-form'))
-            .componentInstance;
+        pushPublishForm = fixture.debugElement.query(
+            By.css('dot-push-publish-form')
+        ).componentInstance;
         pushActionsSelect = fixture.debugElement.query(By.css('p-selectButton')).componentInstance;
     });
 
@@ -165,17 +163,20 @@ describe('DotPushPublishFormComponent', () => {
     });
 
     it('should load filters on load', () => {
-        const filterDropDown: Dropdown = fixture.debugElement.query(By.css('p-dropdown'))
-            .componentInstance;
+        const filterDropDown: Dropdown = fixture.debugElement.query(
+            By.css('p-dropdown')
+        ).componentInstance;
 
-        expect(filterDropDown.options).toEqual(mockSortedFilters);
+        expect(filterDropDown.options).toEqual(mockFilters);
     });
 
     it('should set 1 previous day as a minDate for Publish Date', () => {
         const publishDateInputCalendar = fixture.debugElement.query(
             By.css('[data-testid="publishDateInputCalendar"]')
         );
-        expect(publishDateInputCalendar.componentInstance._minDate).toBe(pushPublishForm.dateFieldMinDate);
+        expect(publishDateInputCalendar.componentInstance._minDate).toBe(
+            pushPublishForm.dateFieldMinDate
+        );
     });
 
     it('should load timezones local label and list on load, also TimeZone dropdown must be hidden', () => {
@@ -231,9 +232,8 @@ describe('DotPushPublishFormComponent', () => {
     });
 
     it('should pass assetIdentifier to dot-push-publish-env-selector', () => {
-        const pushPublishEnvSelectorComponent: PushPublishEnvSelectorComponent = fixture.debugElement.query(
-            By.css('dot-push-publish-env-selector')
-        ).componentInstance;
+        const pushPublishEnvSelectorComponent: PushPublishEnvSelectorComponent =
+            fixture.debugElement.query(By.css('dot-push-publish-env-selector')).componentInstance;
 
         expect(pushPublishEnvSelectorComponent.assetIdentifier).toEqual(
             mockPublishFormData.assetIdentifier
@@ -277,8 +277,9 @@ describe('DotPushPublishFormComponent', () => {
             fixture.detectChanges();
             hostComponent.data = { removeOnly: true, ...mockPublishFormData };
             fixture.detectChanges();
-            pushPublishForm = fixture.debugElement.query(By.css('dot-push-publish-form'))
-                .componentInstance;
+            pushPublishForm = fixture.debugElement.query(
+                By.css('dot-push-publish-form')
+            ).componentInstance;
             expect(pushPublishForm.pushActions[2].disabled).toEqual(true);
         });
 
@@ -287,8 +288,9 @@ describe('DotPushPublishFormComponent', () => {
             fixture.detectChanges();
             hostComponent.data = { restricted: true, ...mockPublishFormData };
             fixture.detectChanges();
-            pushPublishForm = fixture.debugElement.query(By.css('dot-push-publish-form'))
-                .componentInstance;
+            pushPublishForm = fixture.debugElement.query(
+                By.css('dot-push-publish-form')
+            ).componentInstance;
             expect(pushPublishForm.pushActions[1].disabled).toEqual(true);
             expect(pushPublishForm.pushActions[2].disabled).toEqual(true);
         });
@@ -298,8 +300,9 @@ describe('DotPushPublishFormComponent', () => {
             fixture.detectChanges();
             hostComponent.data = { cats: true, ...mockPublishFormData };
             fixture.detectChanges();
-            pushPublishForm = fixture.debugElement.query(By.css('dot-push-publish-form'))
-                .componentInstance;
+            pushPublishForm = fixture.debugElement.query(
+                By.css('dot-push-publish-form')
+            ).componentInstance;
             expect(pushPublishForm.pushActions[1].disabled).toEqual(true);
             expect(pushPublishForm.pushActions[2].disabled).toEqual(true);
         });
@@ -316,8 +319,9 @@ describe('DotPushPublishFormComponent', () => {
         fixture.detectChanges();
         hostComponent.data = mockCustomCode;
         fixture.detectChanges();
-        pushPublishForm = fixture.debugElement.query(By.css('dot-push-publish-form'))
-            .componentInstance;
+        pushPublishForm = fixture.debugElement.query(
+            By.css('dot-push-publish-form')
+        ).componentInstance;
 
         expect(dotParseHtmlService.parse).toHaveBeenCalledWith(
             mockCustomCode.customCode,
