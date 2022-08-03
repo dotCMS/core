@@ -727,6 +727,7 @@ export class DotEditContentHtmlService {
                 }
             },
             inlineEdit: (contentlet: DotInlineEditContent) => {
+                debugger;
                 if (contentlet.eventType === 'focus') {
                     this.handleTinyMCEOnFocusEvent(contentlet);
                 }

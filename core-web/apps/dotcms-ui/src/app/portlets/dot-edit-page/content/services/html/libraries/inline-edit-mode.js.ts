@@ -33,7 +33,7 @@ export const INLINE_TINYMCE_SCRIPTS = `
                 e.stopImmediatePropagation();
                 ed.destroy(false);
             }
-
+    
             window.contentletEvents.next({
                 name: "inlineEdit",
                 data,

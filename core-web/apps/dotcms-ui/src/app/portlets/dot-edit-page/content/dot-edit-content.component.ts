@@ -142,13 +142,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                     this.reorderMenuUrl = '';
                     this.reload(null);
                 },
-                'edit-block-editor': (data) => {
+                'edit-block-editor': (element) => {
                     debugger;
-                    this.dotEventsService.notify(EDIT_BLOCK_EDITOR_CUSTOM_EVENT, {
-                        ...data,
-                        content: JSON.parse(data.content)
-                    });
-                    console.log('---test--here--');
+                    this.dotEventsService.notify(EDIT_BLOCK_EDITOR_CUSTOM_EVENT, element);
                 }
             };
         }

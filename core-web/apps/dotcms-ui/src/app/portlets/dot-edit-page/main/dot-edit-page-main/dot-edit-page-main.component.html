@@ -1,8 +1,29 @@
 <router-outlet></router-outlet>
 <dot-edit-page-nav [pageState]="pageState$ | async"></dot-edit-page-nav>
 <dot-edit-contentlet (custom)="onCustomEvent($event)"></dot-edit-contentlet>
-<p-sidebar [visible]="blockEditorData" position="right">
-    <dot-edit-block-editor *ngIf="blockEditorData"  [data]="blockEditorData"></dot-edit-block-editor>
+<p-sidebar #sidebar blockScroll="true" [visible]="!!blockEditorData" position="right">
+    <div class="container">
+        <dot-edit-block-editor #blockEditor *ngIf="blockEditorData"  [data]="blockEditorData"></dot-edit-block-editor>
+    </div>
+    <footer>
+        <button
+                pButton
+                class="p-button-secondary"
+                data-testid="cancelBtn"
+                type="button"
+                [label]="'Cancel' | dm"
+                (click)="blockEditorData = null"
+        ></button>
+        <button
+                pButton
+                data-testid="saveBtn"
+                type="button"
+                (click)="saveEditorChanges()"
+                [label]="'Save' | dm"
+
+        ></button>
+
+    </footer>
 </p-sidebar>
 
 

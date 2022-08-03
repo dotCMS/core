@@ -1,7 +1,7 @@
 import { Observable, Subject, merge } from 'rxjs';
 
-import { pluck, takeUntil, tap } from 'rxjs/operators';
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { pluck, take, takeUntil, tap } from 'rxjs/operators';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { DotPageRenderState } from '../../shared/models/dot-rendered-page-state.model';
 import { DotPageStateService } from '../../content/services/dot-page-state/dot-page-state.service';
@@ -10,8 +10,8 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { Title } from '@angular/platform-browser';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { DotEvent } from '@models/dot-event/dot-event';
-import { DotGlobalMessage } from '@models/dot-global-message/dot-global-message.model';
+import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
+import { DotEditBlockEditorComponent } from '@portlets/dot-edit-page/components/dot-edit-block-editor/dot-edit-block-editor.component';
 
 @Component({
     selector: 'dot-edit-page-main',
@@ -19,8 +19,10 @@ import { DotGlobalMessage } from '@models/dot-global-message/dot-global-message.
     styleUrls: ['./dot-edit-page-main.component.scss']
 })
 export class DotEditPageMainComponent implements OnInit, OnDestroy {
+    @ViewChild('blockEditor') blockEditor: DotEditBlockEditorComponent;
     pageState$: Observable<DotPageRenderState>;
     blockEditorData;
+    private editElement: HTMLDivElement;
     private pageUrl: string;
     private languageId: string;
     private pageIsSaved = false;
@@ -34,7 +36,8 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
         private dotRouterService: DotRouterService,
         private dotCustomEventHandlerService: DotCustomEventHandlerService,
         private titleService: Title,
-        private dotEventsService: DotEventsService
+        private dotEventsService: DotEventsService,
+        private dotWorkflowActionsFireService: DotWorkflowActionsFireService
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
@@ -69,14 +72,16 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
 
         this.subscribeIframeCloseAction();
 
-        this.dotEventsService.listen('edit-block-editor');
-
         this.dotEventsService
-            .listen('edit-block-editor')
+            .listen<HTMLDivElement>('edit-block-editor')
             .pipe(takeUntil(this.destroy$))
             .subscribe((event) => {
                 debugger;
-                this.blockEditorData = event.data;
+                this.blockEditorData = {
+                    ...event.data.dataset,
+                    content: JSON.parse(event.data.dataset.content)
+                };
+                this.editElement = event.data;
             });
     }
 
@@ -96,6 +101,20 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
             this.customEventsHandler[$event.detail.name]($event);
         }
         this.dotCustomEventHandlerService.handle($event);
+    }
+
+    saveEditorChanges(): void {
+        this.dotWorkflowActionsFireService
+            .saveContentlet({
+                [this.blockEditorData.fieldName]: JSON.stringify(this.blockEditor.editor.getJSON()),
+                inode: this.blockEditorData.iode
+            })
+            .pipe(take(1))
+            .subscribe(() => {
+                const customEvent = new CustomEvent('ng-event', { detail: { name: 'in-iframe' } });
+                window.top.document.dispatchEvent(customEvent);
+                this.blockEditorData = null;
+            });
     }
 
     private subscribeIframeCloseAction(): void {
