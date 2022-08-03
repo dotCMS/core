@@ -190,6 +190,7 @@
     var dataLogPrintedElem = null;
     var keywordLogInput = null;
     var logViewerFiltering = false;
+    var logViewerDirty = false;
 
     // TEMP - BEGIN
     function countLogViewerLines() {
@@ -236,6 +237,7 @@
         const ignoredKeys = ["ArrowLeft", "ArrowUp", "ArrowDown", "ArrowRight"];
 
         var log = document.getElementById('tailingFrame').contentDocument.body?.innerHTML;
+        logViewerDirty = false;
 
         // If keyword is greater than 2 characters, then filtering is applied
         logViewerFiltering = keywordLogInput.value.length > 2;
@@ -248,8 +250,11 @@
             log = performLogViewerMark(log);
         }
 
-        dataLogPrintedElem.innerHTML = null;
-        dataLogPrintedElem.insertAdjacentHTML('beforeend', log);
+        // If previously the logviewer has any highlight or shown excluded any rows, then content is set
+        if (logViewerDirty) {
+            dataLogPrintedElem.innerHTML = null;
+            dataLogPrintedElem.insertAdjacentHTML('beforeend', log);
+        }
         
     }
 
@@ -282,6 +287,8 @@
         if (callback) {
             log = callback(log);
         }
+
+        logViewerDirty = true;
 
         return log;
     }
