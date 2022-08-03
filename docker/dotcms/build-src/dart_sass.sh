@@ -4,9 +4,7 @@ set -e
 
 dartSassLatest=$1
 arch=$(uname -m)
-if [[ "$arch" != 'arm64' ]]; then
-  arc='x64'
-fi
+[[ "$arch" == 'x86_64' ]] && arch='x64'
 
 fileName='dart-sass.tar.gz'
 wget https://github.com/sass/dart-sass/releases/download/$dartSassLatest/dart-sass-$dartSassLatest-linux-$arch.tar.gz -O $fileName
