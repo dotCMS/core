@@ -126,11 +126,20 @@ public class TailLogServlet extends HttpServlet {
 
 		thread.start();
 
+        short keepAliveWriteCounter = 60;
+
 		try {
 			while (thread.isAlive()) {
+                --keepAliveWriteCounter;
+
                 String write = listener.getOut(true).toString();
-				// response.getOutputStream().print(write);
-				response.getOutputStream().print("<script>doS('" + write + "');</script>");
+                if (UtilMethods.isSet(write)) {
+    				response.getOutputStream().print("<p style=\"margin:0\">" + write + "</p>");
+    				response.getOutputStream().print("<script>doS('" + write + "');</script>");
+                }else if (keepAliveWriteCounter == 0) {
+    				response.getOutputStream().print(" ");
+                    keepAliveWriteCounter = 60;
+                }
 				response.getOutputStream().flush();
                 Thread.sleep(1000);
 			}

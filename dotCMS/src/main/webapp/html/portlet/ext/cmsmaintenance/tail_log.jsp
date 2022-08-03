@@ -186,10 +186,46 @@
     var highlightTagEnd = "</span>";
     var attachedFilterLogEvents = false;
     var excludeLogRowsActive = false;
-    var logRawContent = '';
 
     var dataLogPrintedElem = null;
     var keywordLogInput = null;
+
+    // TIMER - START
+    var startDate;
+    var endDate;
+    var timeOutId;
+    function startStopTimer() {
+
+        if (!timeOutId) {
+            startDate = new Date();
+            console.log('*** Start Timer', startDate)
+        }else{
+            clearTimeout(timeOutId);
+        }
+
+        timeOutId = setTimeout(() => {
+            endDate = new Date();
+            console.log('=== End Timer', startDate)
+
+            var timeDiff = endDate - startDate;
+            console.log('=== Time taken: ', timeDiff);
+
+            timeOutId = null;
+        }, 1010);
+    }
+    // TIMER - END
+
+    // TEMP - BEGIN
+    function countLogViewerLines() {
+        var splitParam = '<br>';
+        var linesCount = dataLogPrintedElem.innerHTML.split(splitParam).length;
+        document.querySelector('.logViewerLinesCount').value = linesCount;
+    }
+
+    function updateLogViewer() {
+        // Trigger Manually
+    }
+    // TEMP - END
 
     function attachLogIframeEvents() {
         if (!attachedFilterLogEvents) {
@@ -206,8 +242,6 @@
             attachedFilterLogEvents = true;
         }
 
-        logRawContent = '';
-
         var dataLogSourceElem = document.getElementById('tailingFrame');
         var iDoc = dataLogSourceElem.contentWindow || dataLogSourceElem.contentDocument;
 
@@ -215,6 +249,7 @@
             // Only triggering if "newContent" has a value, cuz there can be calls from BE with empty data
             // for the purpose of just to keep the connection alive
             if (e.detail.newContent.length > 0) {
+                // console.log('***e.detail.newContent', e.detail.newContent)
                 updateLogViewerData(e.detail.newContent);
 
                 var jsScriptTags = document.getElementById('tailingFrame').contentDocument.body?.querySelectorAll('script')
@@ -229,25 +264,31 @@
     function filterLog(event) {
         const ignoredKeys = ["ArrowLeft", "ArrowUp", "ArrowDown", "ArrowRight"];
 
-        if (event.key === 'Enter') {
+        var log = document.getElementById('tailingFrame').contentDocument.body?.innerHTML;
+
+        if (event.key === 'Enter' && keywordLogInput.value.length > 2) {
             excludeLogRowsActive = true;
-            performLogViewerMark(excludeNoMatchingRows);
-        } else if (!ignoredKeys.includes(event.key)) {
+            log = performLogViewerMark(log, excludeNoMatchingRows);
+        } else if (!ignoredKeys.includes(event.key) && keywordLogInput.value.length > 2) {
             excludeLogRowsActive = false;
-            performLogViewerMark();
+            log = performLogViewerMark(log);
         }
+
+        // if (keywordLogInput.value.length > 2) {
+            dataLogPrintedElem.innerHTML = '';
+            dataLogPrintedElem.insertAdjacentHTML('beforeend', log);
+        // }
+        
     }
 
     // Function that gets called on every new log update
     function updateLogViewerData(newContent) {
-        dataLogPrintedElem.innerHTML += newContent;
-        // console.log('newContent', newContent)
-        logRawContent += newContent;
-
         if (keywordLogInput.value.length > 2) {
             excludeLogRowsActive ? 
-            performLogViewerMark(excludeNoMatchingRows) : performLogViewerMark();
+            newContent = performLogViewerMark(newContent, excludeNoMatchingRows) : newContent = performLogViewerMark(newContent);
         }
+
+        dataLogPrintedElem.insertAdjacentHTML('beforeend', '<p style="margin:0">' + newContent + '</p>');
 
         if (document.querySelector('#scrollMe').checked) {
             scrollLogToBottom();
@@ -256,44 +297,50 @@
 
     // Function that adds to the log content SPAN Html Tags used for highlight
     function addLogViewerKeywordMatchHighlight(log, keyword) {
-        for (let index = 0, len = log.length; index < len; index++) {
-            index = log.toLocaleLowerCase().indexOf(keyword, index);
+
+        var regEx = new RegExp( keyword, "ig");
+
+        log = log.replaceAll(regEx, highlightTagBegin + keyword + highlightTagEnd);
+
+        // for (let index = 0, len = log.length; index < len; index++) {
+        //     index = log.indexOf(keyword, index);
             
-            if (index === -1) {
-                break;
-            }else{
-                // If keyword match found, add initial SPAN tag
-                log = log.slice(0, index) + highlightTagBegin + log.slice(index);
-                // move index to last position of keyword match
-                index = index + highlightTagBegin.length + keyword.length
-                // Add ending SPAN tag
-                log = log.slice(0, index) + highlightTagEnd + log.slice(index);
+        //     if (index === -1) {
+        //         break;
+        //     }else{
+        //         // If keyword match found, add initial SPAN tag
+        //         log = log.slice(0, index) + highlightTagBegin + log.slice(index);
+        //         // move index to last position of keyword match
+        //         index = index + highlightTagBegin.length + keyword.length
+        //         // Add ending SPAN tag
+        //         log = log.slice(0, index) + highlightTagEnd + log.slice(index);
+        //     }
+        // }
+
+        return log;
+    }
+
+    function performLogViewerMark(newContent, callback) {
+        var keyword = keywordLogInput.value.toLowerCase();
+        var log = '';
+
+        // If keyword is greater than 2 characters, then filtering is applied
+        if (keyword && keyword.length > 2) {
+            console.log('**** llego')
+            log = addLogViewerKeywordMatchHighlight(newContent, keyword);
+            
+            if (callback) {
+                console.log('**** llego callback')
+                log = callback(log);
             }
         }
 
         return log;
     }
 
-    function performLogViewerMark(callback) {
-        var keyword = keywordLogInput.value.toLowerCase();
-        var log = logRawContent;
-
-        // If keyword is greater than 2 characters, then filtering is applied
-        if (keyword && keyword.length > 2) {
-            log = addLogViewerKeywordMatchHighlight(log, keyword);
-            
-            if (callback) {
-                log = callback(log);
-            }
-        }
-
-        dataLogPrintedElem.innerHTML = log;
-        // console.log('end log', log)
-    }
-
     // Function that gets called when pressed "Enter" key to exclude no matching rows
     function excludeNoMatchingRows(log) {
-        var splitParam = '<br />';
+        var splitParam = '<br>';
         var filteredData = log.split(splitParam);
         var excludedRows = filteredData.filter((row) => row.indexOf('highlighKeywordtMatchLogViewer') !== -1)
         var joined = excludedRows.join(splitParam) + splitParam;
@@ -301,7 +348,7 @@
     }
 
     function scrollLogToBottom() {
-        // dataLogPrintedElem.scrollTop = dataLogPrintedElem.scrollHeight;
+        dataLogPrintedElem.scrollTop = dataLogPrintedElem.scrollHeight;
     }
 
     /* Log Viewer - END */
@@ -328,6 +375,8 @@
             <input dojoType="dijit.form.TextBox" id="keywordLogFilterInput" placeholder="<%=com.liferay.portal.language.LanguageUtil.get(pageContext, "Filter")%>" type="text" style="width: 200px">
         </div>
     </div>
+            <button onClick="updateLogViewer()">UPDATE LOG</button>
+            <input class="logViewerLinesCount" onClick="countLogViewerLines()" />
     <div class="portlet-toolbar__actions-secondary">
         <button dojoType="dijit.form.Button" onClick="doPopup()" value="popup" name="popup">
             <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"popup") %>
@@ -339,6 +388,6 @@
 </div>
 
 <div id="tailContainer" class="log-files__container" style="display: flex; flex-direction: column;">
-    <iframe id="tailingFrame" src="/html/blank.jsp" style="display: block" class="log-files__iframe"></iframe>
+    <iframe id="tailingFrame" src="/html/blank.jsp" style="display: block; min-height: 250px;" class="log-files__iframe"></iframe>
     <div class="logViewerPrinted" style="flex-grow: 1;"></div>
 </div>
