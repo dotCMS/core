@@ -33,9 +33,6 @@
 							}
 						}
 					],
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
 					"request": {
 						"auth": {
 							"type": "basic",
@@ -52,7 +49,7 @@
 								}
 							]
 						},
-						"method": "GET",
+						"method": "POST",
 						"header": [],
 						"body": {
 							"mode": "raw",
@@ -101,9 +98,6 @@
 							}
 						}
 					],
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
 					"request": {
 						"auth": {
 							"type": "basic",
@@ -120,7 +114,7 @@
 								}
 							]
 						},
-						"method": "GET",
+						"method": "PUT",
 						"header": [],
 						"body": {
 							"mode": "raw",
@@ -2559,6 +2553,14 @@
 		},
 		{
 			"key": "amountSitesPreArchive",
+			"value": ""
+		},
+		{
+			"key": "sitevarId",
+			"value": ""
+		},
+		{
+			"key": "sitevariableId",
 			"value": ""
 		}
 	]
