@@ -28,6 +28,7 @@ const ChipsTemplate = `<p-chips [(ngModel)]="values" ></p-chips>`;
 
 const Template: Story<Chips> = (props: Chips) => {
     const template = ChipsTemplate;
+
     return {
         props,
         template

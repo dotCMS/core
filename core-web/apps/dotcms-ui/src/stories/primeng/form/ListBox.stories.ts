@@ -44,6 +44,7 @@ const ListBoxTemplate = `<p-listbox [options]="cities" [(ngModel)]="selectedCity
 
 const Template: Story<City[]> = (props: City[]) => {
     const template = ListBoxTemplate;
+
     return {
         props,
         template

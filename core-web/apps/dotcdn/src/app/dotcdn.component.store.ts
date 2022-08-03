@@ -76,47 +76,45 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
      *
      * @memberof DotCDNStore
      */
-    getChartStats = this.effect(
-        (period$: Observable<string>): Observable<DotCDNStats> => {
-            return period$.pipe(
-                mergeMap((period: string) => {
-                    // Dispatch the loading state
-                    this.dispatchLoading({
-                        loadingState: LoadingState.LOADING,
-                        loader: Loader.CHART
-                    });
-                    return this.dotCdnService.requestStats(period).pipe(
-                        tapResponse(
-                            (data: DotCDNStats) => {
-                                // Now the chart is loaded
-                                this.dispatchLoading({
-                                    loadingState: LoadingState.LOADED,
-                                    loader: Loader.CHART
-                                });
+    getChartStats = this.effect((period$: Observable<string>): Observable<DotCDNStats> => {
+        return period$.pipe(
+            mergeMap((period: string) => {
+                // Dispatch the loading state
+                this.dispatchLoading({
+                    loadingState: LoadingState.LOADING,
+                    loader: Loader.CHART
+                });
 
-                                const {
-                                    statsData,
-                                    chartData: [chartBandwidthData, chartRequestsData],
-                                    cdnDomain
-                                } = this.getChartStatsData(data);
+                return this.dotCdnService.requestStats(period).pipe(
+                    tapResponse(
+                        (data: DotCDNStats) => {
+                            // Now the chart is loaded
+                            this.dispatchLoading({
+                                loadingState: LoadingState.LOADED,
+                                loader: Loader.CHART
+                            });
 
-                                this.updateChartState({
-                                    chartBandwidthData,
-                                    chartRequestsData,
-                                    statsData,
-                                    cdnDomain
-                                });
-                            },
-                            (error) => {
-                                // TODO: Handle error
-                                console.log(error);
-                            }
-                        )
-                    );
-                })
-            );
-        }
-    );
+                            const {
+                                statsData,
+                                chartData: [chartBandwidthData, chartRequestsData],
+                                cdnDomain
+                            } = this.getChartStatsData(data);
+
+                            this.updateChartState({
+                                chartBandwidthData,
+                                chartRequestsData,
+                                statsData,
+                                cdnDomain
+                            });
+                        },
+                        (_error) => {
+                            // TODO: Handle error
+                        }
+                    )
+                );
+            })
+        );
+    });
 
     /**
      *  Dispatches a loading state
@@ -131,11 +129,13 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
                         ...state,
                         isChartLoading: action.loadingState === LoadingState.LOADING
                     };
+
                 case Loader.PURGE_URLS:
                     return {
                         ...state,
                         isPurgeUrlsLoading: action.loadingState === LoadingState.LOADING
                     };
+
                 case Loader.PURGE_PULL_ZONE:
                     return {
                         ...state,
@@ -161,6 +161,7 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
                 loader: Loader.PURGE_URLS
             })
         );
+
         return loading$.pipe(
             switchMapTo(
                 this.dotCdnService.purgeCache(urls).pipe(
@@ -213,9 +214,9 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
                 datasets: [
                     {
                         label: 'Requests Served',
-                        data: Object.values(
-                            stats.requestsServedChart
-                        ).map((value: number): string => value.toString()),
+                        data: Object.values(stats.requestsServedChart).map(
+                            (value: number): string => value.toString()
+                        ),
                         borderColor: '#FFA726',
                         fill: false
                     }

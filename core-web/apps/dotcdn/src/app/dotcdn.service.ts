@@ -24,6 +24,7 @@ export class DotCDNService {
             mergeMap((hostId: string) => {
                 const dateTo = format(new Date(), 'yyyy-MM-dd');
                 const dateFrom = format(subDays(new Date(), parseInt(period, 10)), 'yyyy-MM-dd');
+
                 return this.coreWebService.requestView<DotCDNStats>({
                     url: `/api/v1/dotcdn/stats?hostId=${hostId}&dateFrom=${dateFrom}&dateTo=${dateTo}`
                 });

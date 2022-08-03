@@ -161,6 +161,7 @@ export class SearchableDropdownComponent
         if (this.usePlaceholder(changes.placeholder) || changes.persistentPlaceholder) {
             this.setLabel();
         }
+
         this.setOptions(changes);
         this.totalRecords = this.totalRecords || this.data?.length;
     }
@@ -198,6 +199,7 @@ export class SearchableDropdownComponent
             this.searchInput.nativeElement.value = '';
             this.paginate(null);
         }
+
         this.hide.emit();
     }
 
@@ -217,6 +219,7 @@ export class SearchableDropdownComponent
         } else {
             this.cssClass += cssClass;
         }
+
         setTimeout(() => {
             if (!this.overlayPanelMinHeight) {
                 this.overlayPanelMinHeight = this.searchPanelRef.container
@@ -242,6 +245,7 @@ export class SearchableDropdownComponent
         if (this.searchInput) {
             paginationEvent.filter = this.searchInput.nativeElement.value;
         }
+
         this.pageChange.emit(paginationEvent);
     }
 
@@ -358,6 +362,7 @@ export class SearchableDropdownComponent
         if (change.data && change.data.currentValue) {
             this.options = _.cloneDeep(change.data.currentValue).map((item) => {
                 item.label = this.getItemLabel(item);
+
                 return item;
             });
         }

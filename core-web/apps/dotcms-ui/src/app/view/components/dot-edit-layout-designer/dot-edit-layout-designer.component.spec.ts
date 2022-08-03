@@ -1,7 +1,12 @@
 import { By } from '@angular/platform-browser';
 import { Component, Input, EventEmitter, Output, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormsModule, UntypedFormGroup, ReactiveFormsModule, ControlContainer } from '@angular/forms';
+import {
+    FormsModule,
+    UntypedFormGroup,
+    ReactiveFormsModule,
+    ControlContainer
+} from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
 import { of as observableOf, of } from 'rxjs';
 
@@ -311,7 +316,6 @@ describe('DotEditLayoutDesignerComponent', () => {
             const themeSelectorBtn = fixture.debugElement.query(
                 By.css('.dot-edit-layout__toolbar-action-themes')
             );
-            console.dir(themeSelectorBtn);
             expect(themeSelectorBtn.nativeElement.disabled).toBe(true);
             expect(themeSelectorBtn.attributes['ng-reflect-text']).toBe('No Read Permission');
         });

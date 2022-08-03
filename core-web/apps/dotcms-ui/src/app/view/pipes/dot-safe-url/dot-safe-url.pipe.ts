@@ -14,6 +14,7 @@ export class DotSafeUrlPipe implements PipeTransform {
     transform(url) {
         if (url) {
             const urlWithParameters = this.addURLWithParameters(url);
+
             return this.sanitizer.bypassSecurityTrustResourceUrl(urlWithParameters);
         } else {
             return this.sanitizer.bypassSecurityTrustResourceUrl('');
@@ -38,6 +39,7 @@ export class DotSafeUrlPipe implements PipeTransform {
         Object.keys(this.activatedRoute.snapshot.queryParams).map((attr) => {
             params += `&${attr}=${this.activatedRoute.snapshot.queryParams[attr]}`;
         });
+
         return params;
     }
 }

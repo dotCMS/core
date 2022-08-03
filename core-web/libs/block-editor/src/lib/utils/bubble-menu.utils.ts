@@ -33,6 +33,7 @@ export const getNodePosition = (node: HTMLElement, type: string): DOMRect => {
     if (type === 'dotImage' && img) {
         return img.getBoundingClientRect();
     }
+
     return node.getBoundingClientRect();
 };
 

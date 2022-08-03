@@ -100,6 +100,7 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                 const { ranges } = selection;
                 const from = Math.min(...ranges.map((range) => range.$from.pos));
                 const to = Math.max(...ranges.map((range) => range.$to.pos));
+
                 return { from, to };
             }
 
@@ -113,8 +114,10 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                                 if (areImageFiles(event)) {
                                     if (event.clipboardData.files.length !== 1) {
                                         alert('Can paste just one image at a time');
+
                                         return false;
                                     }
+
                                     const { from } = getPositionFromCursor(view);
                                     const files = Array.from(event.clipboardData.files);
                                     uploadImages(view, files, from);
@@ -128,8 +131,10 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                                     event.preventDefault();
                                     if (event.dataTransfer.files.length !== 1) {
                                         alert('Can drop just one image at a time');
+
                                         return false;
                                     }
+
                                     const { pos: position } = view.posAtCoords({
                                         left: event.clientX,
                                         top: event.clientY
@@ -138,6 +143,7 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                                     const files = Array.from(event.dataTransfer.files);
                                     uploadImages(view, files, position);
                                 }
+
                                 return false;
                             }
                         }

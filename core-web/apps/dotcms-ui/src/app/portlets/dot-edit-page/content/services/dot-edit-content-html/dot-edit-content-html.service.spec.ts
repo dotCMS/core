@@ -174,70 +174,66 @@ xdescribe('DotEditContentHtmlService', () => {
     let mouseOverContentlet;
     let dotContainerContentletService: DotContainerContentletService;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [HttpClientTestingModule],
-                providers: [
-                    { provide: CoreWebService, useClass: CoreWebServiceMock },
-                    DotEditContentHtmlService,
-                    DotContainerContentletService,
-                    DotEditContentToolbarHtmlService,
-                    DotDragDropAPIHtmlService,
-                    DotDOMHtmlUtilService,
-                    LoggerService,
-                    StringUtils,
-                    DotAlertConfirmService,
-                    ConfirmationService,
-                    DotGlobalMessageService,
-                    DotEventsService,
-                    {
-                        provide: DotHttpErrorManagerService,
-                        useValue: {
-                            handle: jasmine.createSpy().and.returnValue(of({}))
-                        }
-                    },
-                    DotWorkflowActionsFireService,
-                    { provide: DotMessageService, useValue: messageServiceMock },
-                    { provide: DotLicenseService, useClass: MockDotLicenseService }
-                ]
-            });
-            service = TestBed.inject(DotEditContentHtmlService);
-            dotEditContentToolbarHtmlService = TestBed.inject(DotEditContentToolbarHtmlService);
-            dotLicenseService = TestBed.inject(DotLicenseService);
-            dotContainerContentletService = TestBed.inject(DotContainerContentletService);
-            dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
+            providers: [
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                DotEditContentHtmlService,
+                DotContainerContentletService,
+                DotEditContentToolbarHtmlService,
+                DotDragDropAPIHtmlService,
+                DotDOMHtmlUtilService,
+                LoggerService,
+                StringUtils,
+                DotAlertConfirmService,
+                ConfirmationService,
+                DotGlobalMessageService,
+                DotEventsService,
+                {
+                    provide: DotHttpErrorManagerService,
+                    useValue: {
+                        handle: jasmine.createSpy().and.returnValue(of({}))
+                    }
+                },
+                DotWorkflowActionsFireService,
+                { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: DotLicenseService, useClass: MockDotLicenseService }
+            ]
+        });
+        service = TestBed.inject(DotEditContentHtmlService);
+        dotEditContentToolbarHtmlService = TestBed.inject(DotEditContentToolbarHtmlService);
+        dotLicenseService = TestBed.inject(DotLicenseService);
+        dotContainerContentletService = TestBed.inject(DotContainerContentletService);
+        dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
 
-            fakeIframeEl = document.createElement('iframe');
-            document.body.appendChild(fakeIframeEl);
+        fakeIframeEl = document.createElement('iframe');
+        document.body.appendChild(fakeIframeEl);
 
-            /*
+        /*
                 TODO: in the refactor we need to make this service just to generate and return stuff, pass the iframe
                 is not a good architecture.
             */
 
-            const pageState: DotPageRenderState = new DotPageRenderState(
-                mockUser(),
-                new DotPageRender({
-                    ...mockDotRenderedPage(),
-                    page: {
-                        ...mockDotPage(),
-                        rendered: fakeHTML
-                    }
-                })
-            );
+        const pageState: DotPageRenderState = new DotPageRenderState(
+            mockUser(),
+            new DotPageRender({
+                ...mockDotRenderedPage(),
+                page: {
+                    ...mockDotPage(),
+                    rendered: fakeHTML
+                }
+            })
+        );
 
-            service.initEditMode(pageState, { nativeElement: fakeIframeEl });
-            fakeDocument = fakeIframeEl.contentWindow.document;
+        service.initEditMode(pageState, { nativeElement: fakeIframeEl });
+        fakeDocument = fakeIframeEl.contentWindow.document;
 
-            mouseOverContentlet = () => {
-                const doc = service.iframe.nativeElement.contentDocument;
-                doc.querySelector('[data-dot-object="contentlet"] h3').dispatchEvent(
-                    mouseoverEvent
-                );
-            };
-        })
-    );
+        mouseOverContentlet = () => {
+            const doc = service.iframe.nativeElement.contentDocument;
+            doc.querySelector('[data-dot-object="contentlet"] h3').dispatchEvent(mouseoverEvent);
+        };
+    }));
 
     describe('same height containers', () => {
         let mockLayout;
@@ -400,6 +396,7 @@ xdescribe('DotEditContentHtmlService', () => {
                     createElement: () => {
                         const el = document.createElement('div');
                         el.innerHTML = '<h1>new container</h1>';
+
                         return el;
                     },
                     open: () => {

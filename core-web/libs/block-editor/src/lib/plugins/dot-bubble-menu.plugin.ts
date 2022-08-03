@@ -49,17 +49,23 @@ export const DotBubbleMenuPlugin = (options: DotBubbleMenuPluginProps) => {
                 if (changeTo.isOpen) {
                     if (key === 'Escape') {
                         component.toggleChangeTo.emit();
+
                         return true;
                     }
+
                     if (key === 'Enter') {
                         changeTo.execCommand();
+
                         return true;
                     }
+
                     if (key === 'ArrowDown' || key === 'ArrowUp') {
                         changeTo.updateSelection(event);
+
                         return true;
                     }
                 }
+
                 return false;
             }
         }
@@ -138,7 +144,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         doc.nodesBetween(
             this.selectionRange.$from.pos,
             this.selectionRange.$to.pos,
-            (node, pos) => {
+            (node, _pos) => {
                 if (node.isBlock) {
                     this.selectionNodesCount++;
                 }
@@ -160,6 +166,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         if (!this.shouldShowProp) {
             this.hide();
             this.tippyChangeTo?.hide();
+
             return;
         }
 
@@ -170,6 +177,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
                     if (node) {
                         const type = doc.nodeAt(from).type.name;
+
                         return getNodePosition(node, type);
                     }
                 }
@@ -216,6 +224,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
     updateActiveItems = (items: BubbleMenuItem[] = [], activeMarks: string[]): BubbleMenuItem[] => {
         return items.map((item) => {
             item.active = activeMarks.includes(item.markAction);
+
             return item;
         });
     };
@@ -247,43 +256,57 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
             case 'bold':
                 this.editor.commands.toggleBold();
                 break;
+
             case 'italic':
                 this.editor.commands.toggleItalic();
                 break;
+
             case 'strike':
                 this.editor.commands.toggleStrike();
                 break;
+
             case 'underline':
                 this.editor.commands.toggleUnderline();
                 break;
+
             case 'left':
                 this.toggleTextAlign(action, active);
                 break;
+
             case 'center':
                 this.toggleTextAlign(action, active);
                 break;
+
             case 'right':
                 this.toggleTextAlign(action, active);
                 break;
+
             case 'bulletList':
                 this.editor.commands.toggleBulletList();
                 break;
+
             case 'orderedList':
                 this.editor.commands.toggleOrderedList();
                 break;
+
             case 'indent':
                 if (isListNode(this.editor)) {
                     this.editor.commands.sinkListItem('listItem');
                 }
+
                 break;
+
             case 'outdent':
                 if (isListNode(this.editor)) {
                     this.editor.commands.liftListItem('listItem');
                 }
+
                 break;
+
             case 'link':
                 this.editor.commands.toogleLinkForm();
                 break;
+
             case 'deleteNode':
                 if (this.selectionNodesCount > 1) {
                     this.deleteByRange();
@@ -292,6 +315,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                 }
 
                 break;
+
             case 'clearAll':
                 this.editor.commands.unsetAllMarks();
                 this.editor.commands.clearNodes();
@@ -342,12 +366,14 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                     ? this.editor.isActive('heading', option.attributes)
                     : this.editor.isActive(option.id);
             };
+
             option.command = () => {
                 changeTopCommands[option.id]();
                 this.tippyChangeTo.hide();
                 this.setSelectedNodeItem();
             };
         });
+
         return changeToOptions;
     }
 
@@ -432,14 +458,18 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         const selectionParentNode = findParentNode(this.selectionRange.$from);
         const nodeSelectionNodeType: NodeTypes = selectionParentNode.type.name;
 
+        const closestOrderedOrBulletNode = findParentNode(this.selectionRange.$from, [
+            NodeTypes.ORDERED_LIST,
+            NodeTypes.BULLET_LIST
+        ]);
+
+        const { childCount } = closestOrderedOrBulletNode;
+
         switch (nodeSelectionNodeType) {
             case NodeTypes.ORDERED_LIST:
+
+            // eslint-disable-next-line no-fallthrough
             case NodeTypes.BULLET_LIST:
-                const closestOrderedOrBulletNode = findParentNode(this.selectionRange.$from, [
-                    NodeTypes.ORDERED_LIST,
-                    NodeTypes.BULLET_LIST
-                ]);
-                const { childCount } = closestOrderedOrBulletNode;
                 if (childCount > 1) {
                     //delete only the list item selected
                     this.editor.chain().deleteNode(NodeTypes.LIST_ITEM).blur().run();
@@ -447,7 +477,9 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                     // delete the order/bullet node
                     this.editor.chain().deleteNode(closestOrderedOrBulletNode.type).blur().run();
                 }
+
                 break;
+
             default:
                 this.editor.chain().deleteNode(selectionParentNode.type).blur().run();
                 break;

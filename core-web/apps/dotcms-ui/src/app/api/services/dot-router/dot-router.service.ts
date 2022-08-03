@@ -287,6 +287,7 @@ export class DotRouterService {
         const urlSegments = url
             .split('/')
             .filter((item) => item !== '' && item !== '#' && item !== 'c');
+
         return urlSegments.indexOf('add') > -1 ? urlSegments.splice(-1)[0] : urlSegments[0];
     }
 
@@ -333,6 +334,7 @@ export class DotRouterService {
         if (this.storedRedirectUrl) {
             return this.router.navigate([this.storedRedirectUrl]).then((ok: boolean) => {
                 this.storedRedirectUrl = null;
+
                 return ok;
             });
         } else {
