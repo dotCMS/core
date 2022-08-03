@@ -1,8 +1,9 @@
 {
 	"info": {
-		"_postman_id": "537d9c9b-0cd6-401d-88f4-02a3ccaed61d",
+		"_postman_id": "15b56fe9-5de6-4399-874d-440ad636781e",
 		"name": "TempAPI",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "4500400"
 	},
 	"item": [
 		{
@@ -58,6 +59,69 @@
 							"type": "file",
 							"src": "resources/image/Landscape_2008_urban_park_and_plaza_Ankaran.jpeg"
 						},
+						{
+							"key": "file",
+							"type": "file",
+							"src": "resources/image/Landscape_2009_romantic_country_garden.jpeg"
+						},
+						{
+							"key": "file",
+							"type": "file",
+							"src": "resources/image/16475687531_eac8a30914_b.jpeg"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/temp?maxFileLength=1MB",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"temp"
+					],
+					"query": [
+						{
+							"key": "maxFileLength",
+							"value": "1MB"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Given_AnonUser_Unable_To_Upload",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 401\", function () {",
+							"    pm.response.to.have.status(401);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Origin",
+						"value": "{{serverURL}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
 						{
 							"key": "file",
 							"type": "file",
