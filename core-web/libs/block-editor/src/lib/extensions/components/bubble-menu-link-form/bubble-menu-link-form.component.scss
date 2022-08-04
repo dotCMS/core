@@ -1,12 +1,13 @@
 @use "libs/dot-primeng-theme-styles/src/scss/variables" as *;
 
 .form-container {
+    box-sizing: border-box;
     background: $white;
     border-radius: $border-radius;
-    box-shadow: 0px 4px 10px rgba(10, 7, 37, 0.1);
+    box-shadow: 0 calc(0.25 * $dot-editor-size) calc(0.625 * $dot-editor-size) rgba(10, 7, 37, 0.1);
     display: flex;
     flex-direction: column;
-    padding: $spacing-1;
+    padding: 0.45 * $dot-editor-size;
     width: $form-width;
 }
 
@@ -14,15 +15,15 @@ form {
     align-items: center;
     display: flex;
     flex-direction: row;
-    gap: $spacing-1;
+    gap: 0.5 * $dot-editor-size;
     justify-content: space-between;
     width: 100%;
     input {
-        background: #FFFFFF;
+        background: #ffffff;
         border-radius: $border-radius;
-        border: 1px solid #B3B1B8;
+        border: 1px solid #b3b1b8;
         box-sizing: border-box;
-        padding: 0.85rem;
+        padding: 0.85 * $dot-editor-size;
         width: calc(100% - 5.5rem);
         &:focus {
             outline: none;
@@ -31,15 +32,15 @@ form {
 }
 
 .card-container {
-    padding: $spacing-1;
+    padding: 0.5 * $dot-editor-size;
 }
 
 .card-header {
     display: flex;
     flex-direction: column;
-    gap: $spacing-1;
-    padding-bottom: $spacing-2;
-    padding-top: $spacing-3;
+    gap: 0.5 * $dot-editor-size;
+    padding-bottom: 0.75 * $dot-editor-size;
+    padding-top: $dot-editor-size;
 }
 
 .linked-to {
@@ -62,10 +63,10 @@ form {
     color: $black;
     display: flex;
     font-size: $font-size-medium;
-    gap: $spacing-1;
+    gap: 0.5 * $dot-editor-size;
     height: 100%;
     justify-content: flex-start;
-    padding: $spacing-1 0;
+    padding: calc(0.5 * $dot-editor-size) 0;
     text-decoration: none;
     width: 100%;
 }
@@ -84,23 +85,23 @@ form {
     display: flex;
     font-weight: bold;
     justify-content: center;
-    padding: 0.85rem $spacing-3;
-    width: 180px;
+    padding: calc(0.75 * $dot-editor-size) $dot-editor-size;
+    width: 11.25 * $dot-editor-size;
 }
 
 .btn-add {
-    width: 5.5rem;
-    background: #576BE8;
-    border: 1px solid #576BE8;
+    width: 5.5 * $dot-editor-size;
+    background: #576be8;
+    border: 1px solid #576be8;
     color: $white;
 }
 
-.btn-copy { 
-    border: 1px solid #576BE8;
-    color: #576BE8;
+.btn-copy {
+    border: 1px solid #576be8;
+    color: #576be8;
 }
 
-.btn-remove {
-    border: 1px solid #EC4B41;
-    color: #EC4B41;
+.btn- * remove {
+    border: 1px solid #ec4b41;
+    color: #ec4b41;
 }

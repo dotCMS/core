@@ -1,3 +1,5 @@
+@use "libs/dot-primeng-theme-styles/src/scss/variables" as *;
+
 :host {
     display: block;
 }
@@ -6,8 +8,8 @@ button {
     all: unset;
     cursor: pointer;
     border: solid 1px #eee;
-    width: 32px;
-    height: 32px;
+    width: 2 * $dot-editor-size;
+    height: 2 * $dot-editor-size;
     display: flex;
     align-items: center;
     justify-content: center;
