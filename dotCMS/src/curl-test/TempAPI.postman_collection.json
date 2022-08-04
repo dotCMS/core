@@ -107,6 +107,9 @@
 					}
 				}
 			],
+			"protocolProfileBehavior": {
+				"disableCookies": true
+			},
 			"request": {
 				"auth": {
 					"type": "noauth"
