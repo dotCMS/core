@@ -1,4 +1,4 @@
-package com.dotcms.api;
+package com.dotcms.api.contenttype;
 
 import com.dotcms.api.provider.DefaultResponseExceptionMapper;
 import com.dotcms.api.provider.DotCMSClientHeaders;
