@@ -262,7 +262,7 @@ public class ContentletWebAPIImplIntegrationTest extends IntegrationTestBase {
         final TemplateLayout templateLayout = DotTemplateTool.themeLayout(template.getInode());
         final String drawedBodyJson = JsonTransformer.mapper.writeValueAsString(templateLayout);
         assertFalse("drawedBodyJson: "  + drawedBodyJson  + " oldHostName: "  + oldHostName, drawedBodyJson.contains(String.format("//%s/", oldHostName)));
-        assertTrue("drawedBodyJson: "  + drawedBodyJson  + " oldHostName: "  + newHostname, drawedBodyJson.contains(String.format("//%s/", newHostname)));
+        assertTrue("drawedBodyJson: "  + drawedBodyJson  + " newHostname: "  + newHostname, drawedBodyJson.contains(String.format("//%s/", newHostname)));
     }
 
     private void checkTemplate(
