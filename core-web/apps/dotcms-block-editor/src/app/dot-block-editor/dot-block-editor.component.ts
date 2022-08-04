@@ -46,15 +46,13 @@ export class DotBlockEditorComponent implements OnInit {
 
     value = ''; // can be HTML or JSON, see https://www.tiptap.dev/api/editor#content
 
-    constructor(private injector: Injector, public viewContainerRef: ViewContainerRef) {
-    }
+    constructor(private injector: Injector, public viewContainerRef: ViewContainerRef) {}
 
     ngOnInit() {
         this.editor = new Editor({
             extensions: this.setEditorExtensions()
         });
     }
-
 
     private setEditorExtensions(): AnyExtension[] {
         const defaultExtensions: AnyExtension[] = [
@@ -70,11 +68,11 @@ export class DotBlockEditorComponent implements OnInit {
             DotBubbleMenuExtension(this.viewContainerRef),
             // Marks Extensions
             Underline,
-            TextAlign.configure({types: ['heading', 'paragraph', 'listItem', 'dotImage']}),
-            Highlight.configure({HTMLAttributes: {style: 'background: #accef7;'}}),
-            Link.configure({openOnClick: true}),
+            TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'dotImage'] }),
+            Highlight.configure({ HTMLAttributes: { style: 'background: #accef7;' } }),
+            Link.configure({ openOnClick: true }),
             Placeholder.configure({
-                placeholder: ({node}) => {
+                placeholder: ({ node }) => {
                     if (node.type.name === 'heading') {
                         return `${toTitleCase(node.type.name)} ${node.attrs.level}`;
                     }
@@ -83,19 +81,21 @@ export class DotBlockEditorComponent implements OnInit {
                 }
             })
         ];
-        const customExtensions: Map<string,AnyExtension> = new Map([
+        const customExtensions: Map<string, AnyExtension> = new Map([
             ['contentlets', ContentletBlock(this.injector)],
             ['dotImage', ImageBlock(this.injector)]
         ]);
 
         return [
             ...defaultExtensions,
-            ...(this.allowedBlocks ?
-                [StarterKit.configure(this.setStarterKitOptions()), ...this.setCustomExtensions(customExtensions)] :
-                [StarterKit, ...customExtensions.values()]),
-        ]
+            ...(this._allowedBlocks.length
+                ? [
+                      StarterKit.configure(this.setStarterKitOptions()),
+                      ...this.setCustomExtensions(customExtensions)
+                  ]
+                : [StarterKit, ...customExtensions.values()])
+        ];
     }
-
 
     /**
      *
@@ -105,27 +105,40 @@ export class DotBlockEditorComponent implements OnInit {
      */
     private setStarterKitOptions(): Partial<StarterKitOptions> {
         // These are the keys that meter for the starter kit.
-        const staterKitOptions = ['orderedList', 'bulletList', 'blockquote', 'codeBlock', 'horizontalRule'];
-        const headingOptions: HeadingOptions = {levels: [], HTMLAttributes: {}};
+        const staterKitOptions = [
+            'orderedList',
+            'bulletList',
+            'blockquote',
+            'codeBlock',
+            'horizontalRule'
+        ];
+        const headingOptions: HeadingOptions = { levels: [], HTMLAttributes: {} };
 
         //Heading types supported by default in the editor.
-        ['heading1', 'heading2', 'heading3', 'heading4', 'heading5', 'heading6'].forEach((heading) => {
-            if (this._allowedBlocks[heading]) {
-                headingOptions.levels.push(+heading.slice(-1) as Level)
+        ['heading1', 'heading2', 'heading3', 'heading4', 'heading5', 'heading6'].forEach(
+            (heading) => {
+                if (this._allowedBlocks[heading]) {
+                    headingOptions.levels.push(+heading.slice(-1) as Level);
+                }
             }
-        });
+        );
 
         return {
             heading: headingOptions.levels.length ? headingOptions : false,
-            ...staterKitOptions.reduce((object, item) => ( {...object, ...(this._allowedBlocks[item] ? {} : {[item]: false})}), {})
+            ...staterKitOptions.reduce(
+                (object, item) => ({
+                    ...object,
+                    ...(this._allowedBlocks[item] ? {} : { [item]: false })
+                }),
+                {}
+            )
         };
     }
 
-    private setCustomExtensions(customExtensions: Map<string,AnyExtension>): AnyExtension[] {
+    private setCustomExtensions(customExtensions: Map<string, AnyExtension>): AnyExtension[] {
         return [
             ...(this._allowedBlocks['contentlets'] ? [customExtensions['contentlets']] : []),
             ...(this._allowedBlocks['dotImage'] ? [customExtensions['dotImage']] : [])
-        ]
+        ];
     }
 }
-
