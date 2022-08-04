@@ -11,20 +11,20 @@ const dbType = core.getInput('db_type')
 const run = async () => {
   core.info("Running Core's integration tests")
 
-  const cmd = integration.COMMANDS[buildEnv as keyof integration.Commands]
-  if (!cmd) {
+  const cmds = integration.COMMANDS[buildEnv as keyof integration.Commands]
+  if (!cmds) {
     core.error('Cannot resolve build tool, aborting')
     return
   }
 
-  const exitCode = await integration.runTests(cmd)
-  const skipReport = !(cmd.outputDir && fs.existsSync(cmd.outputDir))
-  setOutput('tests_results_location', cmd.outputDir)
-  setOutput('tests_results_report_location', cmd.reportDir)
-  setOutput('ci_index', cmd.ciIndex)
-  setOutput('tests_results_status', exitCode === 0 ? 'PASSED' : 'FAILED')
+  const result = await integration.runTests(cmds)
+  const skipReport = !(result.outputDir && fs.existsSync(result.outputDir))
+  setOutput('tests_results_location', result.outputDir)
+  setOutput('tests_results_report_location', result.reportDir)
+  setOutput('ci_index', result.ciIndex)
+  setOutput('tests_results_status', result.exitCode === 0 ? 'PASSED' : 'FAILED')
   setOutput('tests_results_skip_report', skipReport)
-  setOutput(`${dbType}_tests_results_status`, exitCode === 0 ? 'PASSED' : 'FAILED')
+  setOutput(`${dbType}_tests_results_status`, result.exitCode === 0 ? 'PASSED' : 'FAILED')
   setOutput(`${dbType}_tests_results_skip_report`, skipReport)
 }
 

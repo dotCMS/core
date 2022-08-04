@@ -454,18 +454,9 @@ public class VelocityUtil {
         return toolboxManager;
     }
 	
-	private static List<Language> languages =null;
-	
+
 	private static List<Language> getLanguages(){
-		if(languages ==null){
-			synchronized (VelocityUtil.class) {
-				if(languages ==null){
-					languages = APILocator.getLanguageAPI().getLanguages();
-				}
-			}
-		}
-		return languages;
-		
+		return APILocator.getLanguageAPI().getLanguages();
 	}
 	
 
@@ -482,17 +473,17 @@ public class VelocityUtil {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    public static String getPageCacheKey(final HttpServletRequest request, final IHTMLPage page)
+    public static boolean shouldPageCache(final HttpServletRequest request, final IHTMLPage page)
             throws DotDataException, DotSecurityException {
         if (LicenseUtil.getLevel() <= LicenseLevel.COMMUNITY.level) {
-            return null;
+            return false;
         }
         if (page == null || page.getCacheTTL() < 1) {
-            return null;
+            return false;
         }
         // don't cache posts
         if (!"GET".equalsIgnoreCase(request.getMethod()) && !"HEAD".equalsIgnoreCase(request.getMethod()) ) {
-            return null;
+            return false;
         }
         // nocache passed either as a session var, as a request var or as a
         // request attribute
@@ -500,14 +491,12 @@ public class VelocityUtil {
                 || NO.equals(request.getAttribute(DOTCACHE))
                 || (request.getSession(false) != null && NO.equals(request.getSession(true).getAttribute(DOTCACHE)))
 				|| (request.getSession(false) != null && REFRESH.equals(request.getSession(true).getAttribute(DOTCACHE))) ) {
-            return null;
+            return false;
         }
 
 
-        StringBuilder sb = new StringBuilder();
-        sb.append(page.getInode());
-        sb.append("_" + page.getModDate().getTime());
-        return sb.toString();
+
+        return true;
     }
 
 	/**

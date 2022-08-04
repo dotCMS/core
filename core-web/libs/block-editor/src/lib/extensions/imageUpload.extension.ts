@@ -7,10 +7,13 @@ import { LoaderComponent, MessageType } from './components/loader/loader.compone
 import { PlaceholderPlugin } from '../plugins/placeholder.plugin';
 import { take } from 'rxjs/operators';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { IMAGE_BLOCK_NAME } from "./blocks/image-block/image-block.extention";
 
 export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerRef) => {
     return Extension.create({
         name: 'imageUpload',
+
+
 
         addProseMirrorPlugins() {
             const dotImageService = injector.get(DotImageService);
@@ -33,6 +36,11 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                 }
 
                 return !!files.length;
+            }
+
+            function isImageBlockAllowed(): boolean {
+                const allowedBlocks: string [] = editor.storage.dotConfig.allowedBlocks;
+                return allowedBlocks.length > 1 ? allowedBlocks.includes(IMAGE_BLOCK_NAME) : true;
             }
 
             function setPlaceHolder(view: EditorView, position: number, id: string) {
@@ -110,7 +118,7 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                     props: {
                         handleDOMEvents: {
                             paste(view, event: ClipboardEvent) {
-                                if (areImageFiles(event)) {
+                                if (isImageBlockAllowed() && areImageFiles(event)) {
                                     if (event.clipboardData.files.length !== 1) {
                                         alert('Can paste just one image at a time');
                                         return false;
@@ -124,7 +132,7 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                             },
 
                             drop(view, event: DragEvent) {
-                                if (areImageFiles(event)) {
+                                if (isImageBlockAllowed() && areImageFiles(event)) {
                                     event.preventDefault();
                                     if (event.dataTransfer.files.length !== 1) {
                                         alert('Can drop just one image at a time');
