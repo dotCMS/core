@@ -33,7 +33,6 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
 import { DotPage } from '@dotcms/app/shared/models/dot-page/dot-page.model';
 import { DotAddContentTypePayload } from './models/dot-contentlets-events.model';
 import { DotIframeEditEvent } from '@dotcms/dotcms-models';
-import { DialogService } from 'primeng/dynamicdialog';
 import { INLINE_EDIT_BLOCK_EDITOR_SCRIPTS } from '@portlets/dot-edit-page/content/services/html/libraries/inline-ediit-block-editor.js';
 
 export enum DotContentletAction {
@@ -82,8 +81,7 @@ export class DotEditContentHtmlService {
         private dotGlobalMessageService: DotGlobalMessageService,
         private dotWorkflowActionsFireService: DotWorkflowActionsFireService,
         private ngZone: NgZone,
-        private dotLicenseService: DotLicenseService,
-        public dialogService: DialogService
+        private dotLicenseService: DotLicenseService
     ) {
         this.contentletEvents$.subscribe(
             (

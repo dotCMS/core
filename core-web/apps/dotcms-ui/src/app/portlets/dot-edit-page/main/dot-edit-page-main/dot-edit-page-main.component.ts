@@ -1,6 +1,6 @@
 import { Observable, Subject, merge } from 'rxjs';
 import { pluck, takeUntil, tap } from 'rxjs/operators';
-import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { DotPageRenderState } from '../../shared/models/dot-rendered-page-state.model';
 import { DotPageStateService } from '../../content/services/dot-page-state/dot-page-state.service';
@@ -8,7 +8,6 @@ import { DotContentletEditorService } from '@components/dot-contentlet-editor/se
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { Title } from '@angular/platform-browser';
-import { DotEditBlockEditorComponent } from '@portlets/dot-edit-page/components/dot-edit-block-editor/dot-edit-block-editor.component';
 
 @Component({
     selector: 'dot-edit-page-main',
@@ -16,7 +15,6 @@ import { DotEditBlockEditorComponent } from '@portlets/dot-edit-page/components/
     styleUrls: ['./dot-edit-page-main.component.scss']
 })
 export class DotEditPageMainComponent implements OnInit, OnDestroy {
-    @ViewChild('blockEditor') blockEditor: DotEditBlockEditorComponent;
     pageState$: Observable<DotPageRenderState>;
     private pageUrl: string;
     private languageId: string;
