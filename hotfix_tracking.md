@@ -148,3 +148,8 @@ This maintenance release includes the following code fixes:
 
 80. https://github.com/dotCMS/core/issues/22478 : NormalizationFilter does not set javax.servlet.forward.request_uri #22478
 81. https://github.com/dotCMS/core/issues/22498 : Normalization filter is too aggressive #22498
+
+**Release-21.06.11**
+
+82. https://github.com/dotCMS/core/issues/19358 : Large amounts of content in structure can deadlock the DB when repermissioning #19358
+83. 

@@ -1,5 +1,6 @@
 package com.dotmarketing.common.reindex;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.exception.DotDataException;
@@ -34,10 +35,10 @@ public interface ReindexQueueAPI {
     /**
      * This method will add all content identifier for a structure to the index
      * 
-     * @param structureInode
+     * @param contentType
      * @throws DotDataException
      */
-    public void addStructureReindexEntries(String structureInode) throws DotDataException;
+    public void addStructureReindexEntries(ContentType contentType) throws DotDataException;
 
     /**
      * Will add reindex enteries for all content on all servers in the cluster including this one It

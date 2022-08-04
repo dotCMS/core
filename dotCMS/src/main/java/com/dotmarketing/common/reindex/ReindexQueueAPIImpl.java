@@ -11,6 +11,7 @@ import java.util.Map;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.ElasticReadOnlyCommand;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -48,8 +49,8 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
 
     @Override
     @WrapInTransaction
-    public void addStructureReindexEntries(String structureInode) throws DotDataException {
-        reindexQueueFactory.addStructureReindexEntries(structureInode);
+    public void addStructureReindexEntries(final ContentType contentType) throws DotDataException {
+        reindexQueueFactory.addStructureReindexEntries(contentType);
     }
 
     @Override

@@ -51,6 +51,7 @@ import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
 import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
+import com.dotmarketing.business.PermissionBitFactoryImplTest;
 import com.dotmarketing.business.helper.PermissionHelperTest;
 import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
 import com.dotmarketing.common.db.DBTimeZoneCheckTest;
@@ -419,7 +420,8 @@ import org.junit.runners.Suite.SuiteClasses;
         CookieToolTest.class,
         BinaryMapTest.class,
         CSSCacheTest.class,
-        URLMapBundlerTest.class
+        URLMapBundlerTest.class,
+        PermissionBitFactoryImplTest.class
 })
 public class MainSuite {
 

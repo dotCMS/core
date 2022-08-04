@@ -29,6 +29,8 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
+import com.dotcms.contenttype.transform.contenttype.ContentTypeTransformer;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -3228,7 +3230,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void reindex(Structure structure)throws DotReindexStateException {
         try {
-            reindexQueueAPI.addStructureReindexEntries(structure.getInode());
+            final ContentTypeTransformer contentTypeTransformer = new StructureTransformer(structure);
+            reindexQueueAPI.addStructureReindexEntries(contentTypeTransformer.from());
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
             throw new DotReindexStateException("Unable to complete reindex: " + e.getMessage(),e);
@@ -3244,8 +3247,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void refresh(Structure structure) throws DotReindexStateException {
         try {
-            reindexQueueAPI.addStructureReindexEntries(structure.getInode());
-            //CacheLocator.getContentletCache().clearCache();
+            final ContentTypeTransformer contentTypeTransformer = new StructureTransformer(structure);
+            reindexQueueAPI.addStructureReindexEntries(contentTypeTransformer.from());
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
             throw new DotReindexStateException("Unable to complete reindex: " + e.getMessage(),e);
@@ -3257,8 +3260,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void refresh(ContentType type) throws DotReindexStateException {
         try {
-            reindexQueueAPI.addStructureReindexEntries(type.id());
-            //CacheLocator.getContentletCache().clearCache();
+            reindexQueueAPI.addStructureReindexEntries(type);
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
             throw new DotReindexStateException("Unable to complete reindex: " + e.getMessage(),e);
