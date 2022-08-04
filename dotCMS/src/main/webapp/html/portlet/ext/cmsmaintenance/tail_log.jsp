@@ -296,7 +296,10 @@
     // Function that gets called when pressed "Enter" key to exclude no matching rows
     function excludeNoMatchingRows(log) {
         var splitParam = '<br>';
-        return log.split(splitParam).filter((row) => row.indexOf('highlighKeywordtMatchLogViewer') !== -1).join(splitParam) + splitParam;
+        var filteredData = log.split(/<br>|<br \/>/);
+        var excludedRows = filteredData.filter((row) => row.indexOf('highlighKeywordtMatchLogViewer') !== -1)
+        var joined = excludedRows.join(splitParam);
+        return joined;
     }
 
     function scrollLogToBottom() {
