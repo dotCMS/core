@@ -1,1 +1,27 @@
-<tiptap-editor [editor]="editor" [(ngModel)]="value"></tiptap-editor>
+<p-sidebar blockScroll="true"
+           [visible]="!!this.data?.content"
+           position="right">
+    <div class="container" *ngIf="this.data?.content">
+        <tiptap-editor [editor]="editor" [(ngModel)]="this.data.content"></tiptap-editor>
+        <footer>
+            <button
+                    pButton
+                    class="p-button-secondary"
+                    data-testid="cancelBtn"
+                    type="button"
+                    [label]="'Cancel' | dm">
+            </button>
+            <button
+                    pButton
+                    data-testid="saveBtn"
+                    type="button"
+                    (click)="saveEditorChanges()"
+                    [label]="'Save' | dm">
+            </button>
+        </footer>
+    </div>
+</p-sidebar>
+
+
+
+

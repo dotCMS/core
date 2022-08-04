@@ -6,10 +6,7 @@ import { DotEditPageNavModule } from '../dot-edit-page-nav/dot-edit-page-nav.mod
 import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotRouterService } from '@dotcms/dotcms-js';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { SidebarModule } from 'primeng/sidebar';
 import { DotEditBlockEditorModule } from '@portlets/dot-edit-page/components/dot-edit-block-editor/dot-edit-block-editor.module';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { ButtonModule } from 'primeng/button';
 
 @NgModule({
     imports: [
@@ -17,10 +14,7 @@ import { ButtonModule } from 'primeng/button';
         RouterModule,
         DotEditPageNavModule,
         DotContentletEditorModule,
-        SidebarModule,
-        DotEditBlockEditorModule,
-        DotMessagePipeModule,
-        ButtonModule
+        DotEditBlockEditorModule
     ],
     providers: [DotRouterService, DotCustomEventHandlerService],
     declarations: [DotEditPageMainComponent]

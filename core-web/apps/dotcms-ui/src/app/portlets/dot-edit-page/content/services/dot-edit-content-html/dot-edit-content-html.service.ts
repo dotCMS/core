@@ -33,8 +33,6 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
 import { DotPage } from '@dotcms/app/shared/models/dot-page/dot-page.model';
 import { DotAddContentTypePayload } from './models/dot-contentlets-events.model';
 import { DotIframeEditEvent } from '@dotcms/dotcms-models';
-import { editor } from 'monaco-editor';
-import { Editor } from '@tiptap/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { INLINE_EDIT_BLOCK_EDITOR_SCRIPTS } from '@portlets/dot-edit-page/content/services/html/libraries/inline-ediit-block-editor.js';
 
@@ -489,10 +487,6 @@ export class DotEditContentHtmlService {
             const tinyMceScript = this.dotDOMHtmlUtilService.creatExternalScriptElement(TINYMCE);
             const tinyMceInitScript: HTMLScriptElement =
                 this.dotDOMHtmlUtilService.createInlineScriptElement(INLINE_TINYMCE_SCRIPTS);
-            const blockEditorScript: HTMLScriptElement =
-                this.dotDOMHtmlUtilService.createInlineScriptElement(
-                    INLINE_EDIT_BLOCK_EDITOR_SCRIPTS
-                );
 
             this.dotLicenseService
                 .isEnterprise()
@@ -505,7 +499,6 @@ export class DotEditContentHtmlService {
 
                     doc.body.append(tinyMceInitScript);
                     doc.body.append(tinyMceScript);
-                    doc.body.append(blockEditorScript);
 
                     editModeNodes.forEach((node) => {
                         node.classList.add('dotcms__inline-edit-field');
@@ -516,8 +509,10 @@ export class DotEditContentHtmlService {
 
     private injectInlineBlockEditor(): void {
         const doc = this.getEditPageDocument();
-        const blockEditorWrapper: HTMLDivElement = doc.querySelector('[block-editor]');
-        if (blockEditorWrapper) {
+        const editBlockEditorNodes = doc.querySelectorAll(
+            '.section-blog-post-content[data-content]'
+        );
+        if (editBlockEditorNodes.length) {
             const blockEditorScript: HTMLScriptElement =
                 this.dotDOMHtmlUtilService.createInlineScriptElement(
                     INLINE_EDIT_BLOCK_EDITOR_SCRIPTS
@@ -531,35 +526,10 @@ export class DotEditContentHtmlService {
                 .subscribe(() => {
                     // We have elements in the DOM and we're on enterprise plan
                     doc.body.append(blockEditorScript);
+                    editBlockEditorNodes.forEach((node) => {
+                        node.classList.add('dotcms__inline-edit-field');
+                    });
                 });
-
-            // const BLOCK_EDITOR_URL = `/html/dotcms-block-editor.js`;
-            // const blockEditorScript =
-            //     this.dotDOMHtmlUtilService.creatExternalScriptElement(BLOCK_EDITOR_URL);
-            // doc.body.append(blockEditorScript);
-            // const blockEditorContent: HTMLDivElement = blockEditorWrapper.querySelector(
-            //     '.block-editor-wrapper__content'
-            // );
-            // const blockElement = document.createElement('dotcms-block-editor');
-            // blockElement.setAttribute('lang', blockEditorWrapper.dataset.lang);
-            // blockEditorWrapper.style['pointer-events'] = 'all';
-            // blockEditorWrapper.append(blockElement);
-            // setTimeout(() => {
-            //     const block: any = blockEditorWrapper.querySelector(
-            //         'dotcms-block-editor .ProseMirror'
-            //     );
-            //     const editor: Editor = block.editor;
-            //     editor.commands.setContent(JSON.parse(blockEditorWrapper.dataset.content));
-            //
-            //     console.log('block', block);
-            // }, 100);
-            //
-            // blockEditorWrapper.addEventListener('click', (event) => {
-            //     console.log('click');
-            //     //blockEditorContent.style.display = "none";
-            //     //block.style.display = "block";
-            //     //blockEditorWrapper.remove
-            // });
         }
     }
 
@@ -781,15 +751,6 @@ export class DotEditContentHtmlService {
             },
             'handle-http-error': (err: HttpErrorResponse) => {
                 this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe();
-            },
-            'edit-block-editor': (event) => {
-                // this.dialogService.open(DotEditBlockEditorComponent, {
-                //     data: event,
-                //     width: '100%',
-                //     height: '100%',
-                //     showHeader: false
-                // });
-                console.log('edit-block-editor', event);
             }
         };
 
@@ -850,7 +811,7 @@ export class DotEditContentHtmlService {
         this.setEditContentletStyles();
         this.addContentToolBars();
         this.injectInlineEditingScripts();
-        // this.injectInlineBlockEditor();
+        this.injectInlineBlockEditor();
         this.dotDragDropAPIHtmlService.initDragAndDropContext(this.getEditPageIframe());
     }
 
