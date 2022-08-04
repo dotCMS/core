@@ -125,10 +125,11 @@ public class UpdateContainersPathsJob extends DotStatefulJob  {
 
         final String randomID = UUID.randomUUID().toString();
 
+        final String jobName  = "updateContainersPathsJob-" + randomID;
+        final String groupName = "update_containers_paths_job";
+
         final JobDetail jobDetail = new JobDetail(
-                "updateContainersPathsJob-" + randomID,
-                "update_containers_paths_job",
-                UpdateContainersPathsJob.class
+                jobName, groupName, UpdateContainersPathsJob.class
         );
 
         jobDetail.setJobDataMap(jobDataMap);
@@ -138,9 +139,7 @@ public class UpdateContainersPathsJob extends DotStatefulJob  {
 
         long startTime = System.currentTimeMillis();
         final SimpleTrigger trigger = new SimpleTrigger(
-                "updateContainersPathsTrigger",
-                "update_containers_paths_job_triggers",
-                new Date(startTime)
+                jobName, groupName, new Date(startTime)
         );
 
         try {
