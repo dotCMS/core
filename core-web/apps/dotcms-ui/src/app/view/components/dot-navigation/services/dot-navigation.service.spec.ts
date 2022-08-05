@@ -260,6 +260,7 @@ describe('DotNavigationService', () => {
                 } else {
                     expect(menus.map((menu: DotMenu) => menu.isOpen)).toEqual([false, false]);
                 }
+
                 counter++;
             });
             service.collapseMenu();
@@ -322,6 +323,7 @@ describe('DotNavigationService', () => {
                 } else {
                     expect(menus.map((menu: DotMenu) => menu.isOpen)).toEqual([false, false]);
                 }
+
                 counter++;
             });
 
@@ -375,6 +377,7 @@ describe('DotNavigationService', () => {
                 expect(menus[1].isOpen).toBe(false);
                 expect(menus[1].menuItems[0].active).toBe(false);
             }
+
             counter++;
         });
 

@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { BubbleMenuItem } from '@dotcms/block-editor';
 
 @Component({
-    selector: 'dotcms-bubble-menu',
+    selector: 'dot-bubble-menu',
     templateUrl: './bubble-menu.component.html',
     styleUrls: ['./bubble-menu.component.scss']
 })

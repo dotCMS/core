@@ -7,7 +7,7 @@ export const enum MessageType {
 }
 
 @Component({
-    selector: 'dotcms-message',
+    selector: 'dot-message',
     templateUrl: './loader.component.html',
     styleUrls: ['./loader.component.scss'],
     encapsulation: ViewEncapsulation.None

@@ -18,6 +18,7 @@ export const mockDotTimeZones = [
         offset: '300'
     }
 ];
+
 export class DotcmsConfigServiceMock {
     getTimeZones(): Observable<DotTimeZone[]> {
         return of(mockDotTimeZones);

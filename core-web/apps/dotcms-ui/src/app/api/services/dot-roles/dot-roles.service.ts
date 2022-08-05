@@ -50,6 +50,7 @@ export class DotRolesService {
                 } else if (role.user) {
                     role.name = `${role.name} (${this.dotMessageService.get('user')})`;
                 }
+
                 return role;
             });
     }

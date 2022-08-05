@@ -2,11 +2,10 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ComponentFixture } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DotDeviceSelectorComponent } from './dot-device-selector.component';
-import { DebugElement, Component } from '@angular/core';
-import { DOTTestBed } from '../../../test/dot-test-bed';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
 import { DotDevicesService } from '@services/dot-devices/dot-devices.service';
 import { DotDevicesServiceMock } from '../../../test/dot-device-service.mock';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -15,8 +14,9 @@ import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { By } from '@angular/platform-browser';
 import { mockDotDevices } from '../../../test/dot-device.mock';
 import { DotDevice } from '@models/dot-device/dot-device.model';
-import { of } from 'rxjs/internal/observable/of';
 import { DotIconModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/app/view/pipes';
+import { of } from 'rxjs';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -46,9 +46,9 @@ describe('DotDeviceSelectorComponent', () => {
         'editpage.viewas.label.device': 'Device'
     });
 
-    beforeEach(() => {
-        const testbed = DOTTestBed.configureTestingModule({
-            declarations: [TestHostComponent, DotDeviceSelectorComponent],
+    beforeEach(async () => {
+        await TestBed.configureTestingModule({
+            declarations: [TestHostComponent, DotDeviceSelectorComponent, DotMessagePipe],
             imports: [BrowserAnimationsModule, DotIconModule],
             providers: [
                 {
@@ -59,16 +59,17 @@ describe('DotDeviceSelectorComponent', () => {
                     provide: DotMessageService,
                     useValue: messageServiceMock
                 }
-            ]
-        });
-
-        fixtureHost = DOTTestBed.createComponent(TestHostComponent);
+            ],
+            schemas: [CUSTOM_ELEMENTS_SCHEMA]
+        }).compileComponents();
+    });
+    beforeEach(() => {
+        fixtureHost = TestBed.createComponent(TestHostComponent);
         deHost = fixtureHost.debugElement;
         componentHost = fixtureHost.componentInstance;
         de = deHost.query(By.css('dot-device-selector'));
         component = de.componentInstance;
-
-        dotDeviceService = testbed.get(DotDevicesService);
+        dotDeviceService = TestBed.inject(DotDevicesService);
     });
 
     it('should have icon', () => {
@@ -114,13 +115,11 @@ describe('DotDeviceSelectorComponent', () => {
     it('should reload options when value change', () => {
         spyOn(dotDeviceService, 'get').and.callThrough();
 
-        fixtureHost.detectChanges();
         componentHost.value = {
             ...mockDotDevices[1]
         };
         fixtureHost.detectChanges();
-
-        expect(dotDeviceService.get).toHaveBeenCalledTimes(2);
+        expect(dotDeviceService.get).toHaveBeenCalledTimes(1);
     });
 
     describe('disabled', () => {

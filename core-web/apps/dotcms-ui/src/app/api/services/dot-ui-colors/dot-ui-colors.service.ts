@@ -33,6 +33,7 @@ export class DotUiColorsService {
 
     private getRgbString(color: TinyColor): string {
         const rgb = color.toRgb();
+
         return `${rgb.r}, ${rgb.g}, ${rgb.b}`;
     }
 

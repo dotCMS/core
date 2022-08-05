@@ -75,6 +75,7 @@ export class DotAlertConfirmService {
         if (this.alertModel.accept) {
             this.alertModel.accept($event);
         }
+
         this.alertModel = null;
     }
 
@@ -87,6 +88,7 @@ export class DotAlertConfirmService {
         if (this.alertModel.reject) {
             this.alertModel.reject($event);
         }
+
         this.alertModel = null;
     }
 

@@ -57,6 +57,7 @@ const Template: Story<Dropdown> = (args: Dropdown) => {
 };
 
 export const Primary: Story = Template.bind({});
+
 Primary.parameters = {
     docs: {
         source: {
