@@ -1,11 +1,11 @@
-@use "libs/dot-primeng-theme-styles/src/scss/variables" as *;
+@use "libs/block-editor/src/lib/scss/variables" as *;
 
 :host {
     display: block;
     min-width: 15rem;
-    box-shadow: 0px calc(0.25 * $dot-editor-size) calc(1.25 * $dot-editor-size) rgba(0, 0, 0, 0.1);
-    padding: calc(0.5 * $dot-editor-size) 0;
-    background: #ffffff;
+    box-shadow: 0px (0.25 * $dot-editor-size) (1.25 * $dot-editor-size) rgba(0, 0, 0, 0.1);
+    padding: (0.5 * $dot-editor-size) 0;
+    background: $white;
     font-family: "Roboto", Helvetica, sans-serif, Arial;
 }
 
@@ -59,7 +59,7 @@ button {
     font-size: $font-size-medium;
     font-weight: $font-weight-semi-bold;
     line-height: normal;
-    padding: calc(0.75 * $dot-editor-size) calc(2 * $dot-editor-size);
+    padding: (0.75 * $dot-editor-size) (2 * $dot-editor-size);
     text-transform: uppercase;
 }
 

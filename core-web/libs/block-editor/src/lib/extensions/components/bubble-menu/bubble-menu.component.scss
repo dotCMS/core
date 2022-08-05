@@ -1,4 +1,4 @@
-@use "libs/dot-primeng-theme-styles/src/scss/variables" as *;
+@use "libs/block-editor/src/lib/scss/variables" as *;
 
 :host {
     height: 100%;
@@ -30,7 +30,7 @@
         &::after {
             content: "";
             border: solid $black;
-            border-width: 0 calc(0.125 * $dot-editor-size) calc(0.125 * $dot-editor-size) 0;
+            border-width: 0 (0.125 * $dot-editor-size) (0.125 * $dot-editor-size) 0;
             display: inline-block;
             padding: 0.2 * $dot-editor-size;
             transform: rotate(45deg);
@@ -41,6 +41,6 @@
     .divider {
         border-left: 1px solid $gray-bg;
         height: 100%;
-        margin: 0 calc(0.5 * $dot-editor-size);
+        margin: 0 (0.5 * $dot-editor-size);
     }
 }

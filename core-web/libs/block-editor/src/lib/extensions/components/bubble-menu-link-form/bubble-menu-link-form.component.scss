@@ -1,10 +1,10 @@
-@use "libs/dot-primeng-theme-styles/src/scss/variables" as *;
+@use "libs/block-editor/src/lib/scss/variables" as *;
 
 .form-container {
     box-sizing: border-box;
     background: $white;
     border-radius: $border-radius;
-    box-shadow: 0 calc(0.25 * $dot-editor-size) calc(0.625 * $dot-editor-size) rgba(10, 7, 37, 0.1);
+    box-shadow: 0 (0.25 * $dot-editor-size) (0.625 * $dot-editor-size) rgba(10, 7, 37, 0.1);
     display: flex;
     flex-direction: column;
     padding: 0.45 * $dot-editor-size;
@@ -66,7 +66,7 @@ form {
     gap: 0.5 * $dot-editor-size;
     height: 100%;
     justify-content: flex-start;
-    padding: calc(0.5 * $dot-editor-size) 0;
+    padding: (0.5 * $dot-editor-size) 0;
     text-decoration: none;
     width: 100%;
 }
@@ -85,7 +85,7 @@ form {
     display: flex;
     font-weight: bold;
     justify-content: center;
-    padding: calc(0.75 * $dot-editor-size) $dot-editor-size;
+    padding: (0.75 * $dot-editor-size) $dot-editor-size;
     width: 11.25 * $dot-editor-size;
 }
 
