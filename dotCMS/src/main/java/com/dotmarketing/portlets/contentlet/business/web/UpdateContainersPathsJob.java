@@ -50,10 +50,14 @@ public class UpdateContainersPathsJob extends DotStatefulJob  {
     @WrapInTransaction
     @Override
     public void run(final JobExecutionContext jobContext) throws JobExecutionException {
-        Logger.info(UpdateContainersPathsJob.class, "Running UpdateContainersPathsJob");
+
         final JobDataMap jobDataMap = jobContext.getJobDetail().getJobDataMap();
         final String oldHostName = jobDataMap.get("oldHostName").toString();
         final String newHostName = jobDataMap.get("newHostName").toString();
+
+        Logger.debug(UpdateContainersPathsJob.class, () ->
+                String.format("Running UpdateContainersPathsJob -> oldHostName: %s newHostName: %s",
+                        oldHostName, newHostName));
 
         try {
             final List<Map<String, Object>> templates = getAllTemplatesByPath(oldHostName);
@@ -83,7 +87,7 @@ public class UpdateContainersPathsJob extends DotStatefulJob  {
             }
         }
 
-        Logger.info(UpdateContainersPathsJob.class, "Finished UpdateContainersPathsJob");
+        Logger.debug(UpdateContainersPathsJob.class, () -> "Finished UpdateContainersPathsJob");
     }
 
     private void cleanCache(final List<Map<String, Object>> templates, final Host host) throws DotDataException {
