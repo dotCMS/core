@@ -34,6 +34,7 @@ function toTitleCase(str) {
 export class DotBlockEditorComponent implements OnInit {
     @Input() lang = DEFAULT_LANG_ID;
     @Input() allowedContentTypes = '';
+    @Input() customStyles = '';
 
     editor: Editor;
 
