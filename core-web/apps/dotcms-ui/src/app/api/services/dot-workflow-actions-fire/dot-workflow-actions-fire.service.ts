@@ -147,6 +147,7 @@ export class DotWorkflowActionsFireService {
         const bodyRequest = individualPermissions
             ? { contentlet, individualPermissions }
             : { contentlet };
+
         return this.coreWebService
             .requestView({
                 method: 'PUT',

@@ -33,6 +33,7 @@ interface DotFavoritePageInitialProps {
 }
 
 export const CMS_OWNER_ROLE_ID = '6b1fa42f-8729-4625-80d1-17e4ef691ce7';
+
 const IMG_RATIO_43 = 1.333;
 
 @Injectable()
@@ -86,6 +87,7 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
                         },
                         (error: HttpErrorResponse) => {
                             this.dotHttpErrorManagerService.handle(error);
+
                             return of(null);
                         }
                     )
