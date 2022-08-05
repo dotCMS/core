@@ -22,6 +22,7 @@ export class DotHtmlToImage {
     }>;
     @State() previewImg: string;
 
+    boundOnMessageHandler = null;
     iframeId = `iframe_${Math.floor(Date.now() / 1000).toString()}`;
     loadScript = `
         html2canvas(document.body, {
@@ -73,24 +74,8 @@ export class DotHtmlToImage {
 
         doc.body.append(scriptLib);
 
-        window.addEventListener('message', (event) => {
-            if (event.data.iframeId !== this.iframeId) return;
-
-            if (event.data.error) {
-                this.pageThumbnail.emit({ file: null, error: event.data.error });
-                return;
-            }
-
-            const { previewImg, fileObj } = event.data;
-            this.previewImg = previewImg;
-
-            const img = document.createElement('img');
-            img.src = previewImg;
-            img.style.width = '100%';
-            iframe.parentElement.appendChild(img);
-
-            this.pageThumbnail.emit({ file: fileObj });
-        });
+        this.boundOnMessageHandler = this.onMessageHandler.bind(null, iframe, this);
+        window.addEventListener('message', this.boundOnMessageHandler);
     }
 
     render() {
@@ -104,5 +89,28 @@ export class DotHtmlToImage {
                 <iframe id={this.iframeId} />
             </Host>
         );
+    }
+
+    disconnectedCallback() {
+        window.removeEventListener('message', this.boundOnMessageHandler);
+    }
+
+    private onMessageHandler(iframe, component, event) {
+        if (event.data.iframeId !== component.iframeId) return;
+
+        if (event.data.error) {
+            component.pageThumbnail.emit({ file: null, error: event.data.error });
+            return;
+        }
+
+        const { previewImg, fileObj } = event.data;
+        component.previewImg = previewImg;
+
+        const img = document.createElement('img');
+        img.src = previewImg;
+        img.style.width = '100%';
+        iframe.parentElement.appendChild(img);
+
+        component.pageThumbnail.emit({ file: fileObj });
     }
 }

@@ -156,7 +156,7 @@ describe('DotFormSelectorComponent', () => {
                     expect(component.shutdown.emit).toHaveBeenCalledWith(true);
                 });
 
-                fit('trigger event when click select button', (done) => {
+                it('trigger event when click select button', (done) => {
                     setTimeout(() => {
                         fixture.detectChanges();
                         const button = de.query(By.css('.form-selector__button'));
