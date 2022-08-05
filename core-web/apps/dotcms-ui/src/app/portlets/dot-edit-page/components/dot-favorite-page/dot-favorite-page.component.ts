@@ -40,7 +40,12 @@ export class DotFavoritePageComponent implements OnInit, AfterViewInit, OnDestro
         private fb: UntypedFormBuilder,
         private store: DotFavoritePageStore
     ) {
-        this.store.setInitialStateData(this.config.data.page);
+        this.store.setInitialStateData({
+            isAdmin: this.config.data.page.pageState.user.admin,
+            imgWidth: this.config.data.page.pageState.viewAs.device?.cssWidth,
+            imgHeight: this.config.data.page.pageState.viewAs.device?.cssHeight,
+            pageRenderedHtml: this.config.data.page.pageRenderedHtml
+        });
     }
 
     ngOnInit(): void {

@@ -101,7 +101,9 @@ describe('DotFavoritePageStore', () => {
         spyOn(dotCurrentUser, 'getCurrentUser').and.callThrough();
 
         dotFavoritePageStore.setInitialStateData({
-            pageState: mockRenderedPageState,
+            isAdmin: mockRenderedPageState.user.admin,
+            imgWidth: mockRenderedPageState.viewAs.device?.cssWidth,
+            imgHeight: mockRenderedPageState.viewAs.device?.cssHeight,
             pageRenderedHtml: '<p>test</p>'
         });
     });

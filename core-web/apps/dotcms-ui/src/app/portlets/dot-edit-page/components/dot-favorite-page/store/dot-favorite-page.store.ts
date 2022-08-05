@@ -4,7 +4,7 @@ import { DotRole } from '@dotcms/app/shared/models/dot-role/dot-role.model';
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { forkJoin, Observable, of, throwError } from 'rxjs';
 import { switchMap, take } from 'rxjs/operators';
-import { DotFavoritePageFormData, DotFavoritePageProps } from '../dot-favorite-page.component';
+import { DotFavoritePageFormData } from '../dot-favorite-page.component';
 import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
@@ -23,6 +23,13 @@ export interface DotFavoritePageState {
     imgHeight: number;
     loading: boolean;
     closeDialog: boolean;
+}
+
+interface DotFavoritePageInitialProps {
+    isAdmin: boolean;
+    imgWidth: string;
+    imgHeight: string;
+    pageRenderedHtml?: string;
 }
 
 export const CMS_OWNER_ROLE_ID = '6b1fa42f-8729-4625-80d1-17e4ef691ce7';
@@ -101,17 +108,16 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
     /**
      * Sets initial state data from props, roles and current logged user data
      *
-     * @param {DotFavoritePageProps} props
+     * @param {DotFavoritePageInitialProps} props
      * @memberof DotFavoritePageStore
      */
-    setInitialStateData(props: DotFavoritePageProps): void {
+    setInitialStateData(props: DotFavoritePageInitialProps): void {
         const propsData = {
-            isAdmin: props.pageState.user.admin,
-            imgWidth: parseInt(props.pageState.params.viewAs.device?.cssWidth, 10) || 1024,
+            isAdmin: props.isAdmin,
+            imgWidth: parseInt(props.imgWidth, 10) || 1024,
             imgHeight:
-                parseInt(props.pageState.params.viewAs.device?.cssHeight, 10) ||
-                (parseInt(props.pageState.params.viewAs.device?.cssWidth, 10) || 1024) /
-                    IMG_RATIO_43
+                parseInt(props.imgHeight, 10) ||
+                (parseInt(props.imgWidth, 10) || 1024) / IMG_RATIO_43
         };
 
         this.setState({
