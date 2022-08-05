@@ -21,7 +21,11 @@ import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import javax.management.Query;
 import javax.servlet.http.HttpServletRequest;
+
+import io.netty.util.NetUtil;
+import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
+import org.elasticsearch.common.network.InetAddresses;
 
 /**
  * Provides quick access to information that can be obtained from the HTTP
@@ -69,53 +73,10 @@ public class HttpRequestDataUtil {
 	 */
 	public static InetAddress getIpAddress(HttpServletRequest request)
 			throws UnknownHostException {
-		InetAddress ipAddress = null;
-		String ip = request.getHeader("X-Forwarded-For");
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("Proxy-Client-IP");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("WL-Proxy-Client-IP");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("HTTP_X_FORWARDED_FOR");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("HTTP_X_FORWARDED");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("HTTP_X_CLUSTER_CLIENT_IP");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("HTTP_CLIENT_IP");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("HTTP_FORWARDED_FOR");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("HTTP_FORWARDED");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("HTTP_VIA");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("REMOTE_ADDR");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("X-Real-IP");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getRemoteAddr();
-		}
-		if (UtilMethods.isSet(ip)) {
-		    //If X-Forwarded-For has multiple addresses, let's grab the first one only
-		    if(ip.indexOf(',') > -1){
-		        String[] ipAddresses = ip.split(",");
-		        ip = ipAddresses[0];
-		    }
-			ipAddress = InetAddress.getByName(ip);
-		}
-		return ipAddress;
+		byte[] remoteAddr = Try.of(()-> InetAddresses.isInetAddress(request.getRemoteAddr())).getOrElse(false)
+				? NetUtil.createByteArrayFromIpAddressString(request.getRemoteAddr())
+				: new byte[]{127, 0, 0, 1};
+		return InetAddress.getByAddress(remoteAddr);
 	}
 
 	/**
