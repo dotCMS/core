@@ -15,6 +15,7 @@ export class SuggestionsService {
     get defaultHeaders() {
         const headers = new HttpHeaders();
         headers.set('Accept', '*/*').set('Content-Type', 'application/json');
+
         return headers;
     }
 
@@ -46,7 +47,6 @@ export class SuggestionsService {
             })
             .pipe(pluck('entity', 'jsonObjectView', 'contentlets'));
     }
-
 
     /**
      * Get contentlets filtered by urlMap

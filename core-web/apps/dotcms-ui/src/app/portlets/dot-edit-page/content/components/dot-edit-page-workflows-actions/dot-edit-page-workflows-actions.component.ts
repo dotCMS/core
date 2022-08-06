@@ -126,6 +126,7 @@ export class DotEditPageWorkflowsActionsComponent implements OnChanges {
                 take(1),
                 catchError((error) => {
                     this.httpErrorManagerService.handle(error);
+
                     return currentMenuActions;
                 })
             )

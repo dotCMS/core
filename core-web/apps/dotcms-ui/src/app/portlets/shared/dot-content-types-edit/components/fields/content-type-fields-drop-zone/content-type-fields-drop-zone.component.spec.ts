@@ -88,6 +88,7 @@ class TestContentTypeFieldsPropertiesFormComponent {
 
     public destroy(): void {
         return;
+
         return;
     }
 }

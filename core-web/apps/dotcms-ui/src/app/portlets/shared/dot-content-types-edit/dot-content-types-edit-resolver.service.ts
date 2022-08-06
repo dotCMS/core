@@ -35,6 +35,7 @@ export class DotContentTypeEditResolver implements Resolve<DotCMSContentType> {
             return this.getContentType(route.paramMap.get('id'));
         } else {
             const contentType = this.getFilterByParam(route) || route.paramMap.get('type');
+
             return this.getDefaultContentType(contentType);
         }
     }

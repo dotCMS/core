@@ -49,7 +49,7 @@
     </form>
 
     <!-- Suggestions -->
-    <dotcms-suggestions
+    <dot-suggestions
         #suggestions
         *ngIf="showSuggestions"
         class="link-suggestions"
@@ -59,13 +59,13 @@
         [urlItem]="true"
         [title]="noResultsTitle"
     >
-    </dotcms-suggestions>
+    </dot-suggestions>
 
     <!-- Form Actions -->
-    <dotcms-form-actions
+    <dot-form-actions
         [link]="currentLink"
         (hide)="hide.emit($event)"
         (remove)="removeLink.emit($event)"
     >
-    </dotcms-form-actions>
+    </dot-form-actions>
 </div>

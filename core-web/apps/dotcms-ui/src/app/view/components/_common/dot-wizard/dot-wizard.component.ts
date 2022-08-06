@@ -168,6 +168,7 @@ export class DotWizardComponent implements OnInit, OnDestroy {
             this.dialogActions.cancel.disabled = false;
             this.dialogActions.accept.label = this.dotMessageService.get('next');
         }
+
         this.dialogActions.accept.disabled = !this.stepsValidation[this.currentStep];
     }
 
@@ -213,6 +214,7 @@ export class DotWizardComponent implements OnInit, OnDestroy {
                 clearInterval(interval);
                 (form.elements[0] as HTMLElement).focus();
             }
+
             count++;
         }, 200);
     }
@@ -225,6 +227,7 @@ export class DotWizardComponent implements OnInit, OnDestroy {
                 disabled: false
             };
         }
+
         return {
             action: () => this.loadNextStep(-1),
             label: this.dotMessageService.get('previous'),

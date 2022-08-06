@@ -11,6 +11,7 @@ export class DefaultGuardService implements CanActivate {
 
     canActivate(): boolean {
         this.router.goToMain();
+
         return true;
     }
 }

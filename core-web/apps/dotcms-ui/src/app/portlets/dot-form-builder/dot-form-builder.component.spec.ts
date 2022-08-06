@@ -14,6 +14,7 @@ import { ActivatedRoute } from '@angular/router';
 export class MockDotUnlicensedPorletComponent {
     @Input() data;
 }
+
 @Component({
     selector: 'dot-content-types',
     template: ''
@@ -25,27 +26,25 @@ describe('DotFormBuilderComponent', () => {
     let de: DebugElement;
     let router: ActivatedRoute;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [
-                    DotFormBuilderComponent,
-                    MockDotUnlicensedPorletComponent,
-                    MockDotContentTypesPortletComponent
-                ],
-                providers: [
-                    {
-                        provide: ActivatedRoute,
-                        useValue: {
-                            get data() {
-                                return '';
-                            }
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [
+                DotFormBuilderComponent,
+                MockDotUnlicensedPorletComponent,
+                MockDotContentTypesPortletComponent
+            ],
+            providers: [
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        get data() {
+                            return '';
                         }
                     }
-                ]
-            });
-        })
-    );
+                }
+            ]
+        });
+    }));
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotFormBuilderComponent);

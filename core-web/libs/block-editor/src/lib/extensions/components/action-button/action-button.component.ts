@@ -1,9 +1,8 @@
 import { Component } from '@angular/core';
 
 @Component({
-    selector: 'dotcms-action-button',
+    selector: 'dot-action-button',
     templateUrl: './action-button.component.html',
     styleUrls: ['./action-button.component.scss']
 })
-export class ActionButtonComponent {
-}
+export class ActionButtonComponent {}

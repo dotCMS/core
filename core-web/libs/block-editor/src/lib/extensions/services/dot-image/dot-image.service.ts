@@ -22,6 +22,7 @@ export class DotImageService {
                         indexPolicy: 'WAIT_FOR'
                     });
                 });
+
                 return this.http
                     .post(
                         '/api/v1/workflow/actions/default/fire/PUBLISH',

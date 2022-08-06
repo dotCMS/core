@@ -25,7 +25,7 @@ export interface NodeProps {
 }
 
 @Component({
-    selector: 'dotcms-bubble-menu-link-form',
+    selector: 'dot-bubble-menu-link-form',
     templateUrl: './bubble-menu-link-form.component.html',
     styleUrls: ['./bubble-menu-link-form.component.scss']
 })
@@ -141,6 +141,7 @@ export class BubbleMenuLinkFormComponent implements OnInit {
 
         if (e.key === 'Escape') {
             this.hide.emit(true);
+
             return true;
         }
 
@@ -152,10 +153,13 @@ export class BubbleMenuLinkFormComponent implements OnInit {
             case 'Enter':
                 this.suggestionsComponent?.execCommand();
                 // prevent submit form
+
                 return false;
+
             case 'ArrowUp':
                 this.suggestionsComponent?.updateSelection(e);
                 break;
+
             case 'ArrowDown':
                 this.suggestionsComponent?.updateSelection(e);
                 break;

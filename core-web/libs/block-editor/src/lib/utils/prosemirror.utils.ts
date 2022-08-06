@@ -19,6 +19,7 @@ export const findParentNode = (
             if (Array.isArray(NodesTypesToFind) && NodesTypesToFind.includes(parent.type.name)) {
                 break;
             }
+
             depth--;
         }
     } while (depth > 0 && parent);
@@ -43,16 +44,15 @@ export const textNodeRange = (selectionStart: ResolvedPos, pos: number) => {
     return { to, from };
 };
 
-
 /**
  *
  * Get the block editor click position based on mouse event.
  * @param {EditorView} view
  * @param {MouseEvent} event
- * @return {*} 
+ * @return {*}
  */
 export const getPosAtDocCoords = (view: EditorView, event: MouseEvent) => {
     const { clientX: left, clientY: top } = event;
     const { pos } = view.posAtCoords({ left, top });
     return pos;
-}
+};

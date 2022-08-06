@@ -7,7 +7,7 @@ interface ImageData {
 }
 
 @Component({
-    selector: 'dotcms-image-block',
+    selector: 'dot-image-block',
     templateUrl: './image-block.component.html',
     styleUrls: ['./image-block.component.scss']
 })

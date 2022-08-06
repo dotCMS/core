@@ -65,7 +65,7 @@ export const Basic: Story = () => {
         template: OverlayPanelTemplate,
         props: {
             on: () => {
-                console.log('asas');
+                //
             },
             products: [
                 {

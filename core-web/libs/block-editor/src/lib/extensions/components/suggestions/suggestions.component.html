@@ -6,8 +6,8 @@
     <h3 *ngIf="!urlItem">{{ title }}</h3>
 
     <!-- TODO: instace list-items inside list -->
-    <dotcms-suggestion-list class="suggestion-list-container" id="editor-suggestion-list" #list>
-        <dotcms-suggestions-list-item
+    <dot-suggestion-list class="suggestion-list-container" id="editor-suggestion-list" #list>
+        <dot-suggestions-list-item
             *ngFor="let item of items; let i = index"
             (mousedown)="onMouseDown($event, item)"
             (mouseenter)="onMouseEnter($event)"
@@ -18,8 +18,8 @@
             [data]="item.data"
             [urlItem]="urlItem"
         >
-        </dotcms-suggestions-list-item>
-    </dotcms-suggestion-list>
+        </dot-suggestions-list-item>
+    </dot-suggestion-list>
 </div>
 
 <!-- TODO: Move this to a custom `page-suggestions` -->
