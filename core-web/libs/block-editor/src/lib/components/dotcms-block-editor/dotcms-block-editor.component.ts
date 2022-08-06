@@ -1,26 +1,23 @@
 import { Component, Injector, Input, OnInit, ViewContainerRef } from '@angular/core';
-import { AnyExtension, Editor } from '@tiptap/core';
-import { HeadingOptions, Level } from '@tiptap/extension-heading';
-import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
-import Placeholder from '@tiptap/extension-placeholder';
-
 import {
     ActionsMenu,
     BubbleLinkFormExtension,
     ContentletBlock,
     DEFAULT_LANG_ID,
     DotBubbleMenuExtension,
+    DotConfigExtension,
     DragHandler,
     ImageBlock,
-    ImageUpload,
-    DotConfigExtension
+    ImageUpload
 } from '@dotcms/block-editor';
-
-// Marks Extensions
+import { AnyExtension, Editor } from '@tiptap/core';
+import { Underline } from '@tiptap/extension-underline';
+import { TextAlign } from '@tiptap/extension-text-align';
 import { Highlight } from '@tiptap/extension-highlight';
 import { Link } from '@tiptap/extension-link';
-import { TextAlign } from '@tiptap/extension-text-align';
-import { Underline } from '@tiptap/extension-underline';
+import Placeholder from '@tiptap/extension-placeholder';
+import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
+import { HeadingOptions, Level } from '@tiptap/extension-heading';
 
 function toTitleCase(str) {
     return str.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {
@@ -30,21 +27,23 @@ function toTitleCase(str) {
 
 @Component({
     selector: 'dotcms-block-editor',
-    templateUrl: './dot-block-editor.component.html',
-    styleUrls: ['./dot-block-editor.component.scss']
+    templateUrl: './dotcms-block-editor.component.html',
+    styleUrls: ['./dotcms-block-editor.component.scss']
 })
-export class DotBlockEditorComponent implements OnInit {
+export class DotcmsBlockEditorComponent implements OnInit {
     @Input() lang = DEFAULT_LANG_ID;
     @Input() allowedContentTypes = '';
+    @Input() value: { [key: string]: string } | string = ''; // can be HTML or JSON, see https://www.tiptap.dev/api/editor#content
 
     @Input() set allowedBlocks(blocks: string) {
-        this._allowedBlocks = ['paragraph', ...blocks.replace(/ /g, '').split(',').filter(Boolean)];
+        this._allowedBlocks = [
+            ...this._allowedBlocks,
+            ...(blocks ? blocks.replace(/ /g, '').split(',').filter(Boolean) : [])
+        ];
     }
 
-    _allowedBlocks = [];
+    _allowedBlocks = ['paragraph']; //paragraph should be always.
     editor: Editor;
-
-    value = ''; // can be HTML or JSON, see https://www.tiptap.dev/api/editor#content
 
     constructor(private injector: Injector, public viewContainerRef: ViewContainerRef) {}
 
@@ -53,7 +52,6 @@ export class DotBlockEditorComponent implements OnInit {
             extensions: this.setEditorExtensions()
         });
     }
-
     private setEditorExtensions(): AnyExtension[] {
         const defaultExtensions: AnyExtension[] = [
             DotConfigExtension({
@@ -88,7 +86,7 @@ export class DotBlockEditorComponent implements OnInit {
 
         return [
             ...defaultExtensions,
-            ...(this._allowedBlocks.length
+            ...(this._allowedBlocks.length > 1
                 ? [
                       StarterKit.configure(this.setStarterKitOptions()),
                       ...this.setCustomExtensions(customExtensions)

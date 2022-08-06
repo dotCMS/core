@@ -8,7 +8,6 @@ import { OrderListModule } from 'primeng/orderlist';
 import { MenuModule } from 'primeng/menu';
 
 import { delay } from 'rxjs/operators';
-import { DotBlockEditorComponent } from './dot-block-editor.component';
 import { BubbleMenuLinkFormComponent } from '@dotcms/block-editor';
 import {
     ActionButtonComponent,
@@ -22,6 +21,7 @@ import {
     DotImageService,
     DotLanguageService
 } from '@dotcms/block-editor';
+import { DotcmsBlockEditorComponent } from './dotcms-block-editor.component';
 
 export default {
     title: 'Block Editor'
@@ -633,5 +633,5 @@ export const primary = () => ({
             BubbleMenuLinkFormComponent
         ]
     },
-    component: DotBlockEditorComponent
+    component: DotcmsBlockEditorComponent
 });

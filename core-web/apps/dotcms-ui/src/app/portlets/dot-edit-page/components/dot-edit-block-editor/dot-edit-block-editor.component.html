@@ -1,6 +1,13 @@
-<p-sidebar blockScroll="true" [visible]="!!this.editor" position="right" (onHide)="closeSidebar()">
-    <div class="container" *ngIf="this.editor">
-        <tiptap-editor [editor]="editor" [(ngModel)]="this.data.content"></tiptap-editor>
+<p-sidebar blockScroll="true" [visible]="!!this.data" position="right" (onHide)="closeSidebar()">
+    <div class="container" *ngIf="this.data">
+        <dotcms-block-editor
+            #blockEditor
+            [lang]="this.data.language"
+            [allowedBlocks]="this.data.allowedBlocks"
+            [allowedContentTypes]="this.data.allowedContentTypes"
+            [value]="data.content"
+        >
+        </dotcms-block-editor>
         <footer>
             <button
                 pButton

@@ -26,6 +26,7 @@ import { BubbleMenuComponent } from './extensions/components/bubble-menu/bubble-
 import { BubbleMenuButtonComponent } from './extensions/components/bubble-menu-button/bubble-menu-button.component';
 import { BubbleMenuLinkFormComponent } from './extensions/components/bubble-menu-link-form/bubble-menu-link-form.component';
 import { ContentletStatePipe } from './extensions/pipes/contentlet-state/contentlet-state.pipe';
+import { DotcmsBlockEditorComponent } from './components/dotcms-block-editor/dotcms-block-editor.component';
 
 @NgModule({
     imports: [CommonModule, FormsModule, CardModule, MenuModule],
@@ -45,7 +46,8 @@ import { ContentletStatePipe } from './extensions/pipes/contentlet-state/content
         BubbleMenuComponent,
         BubbleMenuButtonComponent,
         BubbleMenuLinkFormComponent,
-        ContentletStatePipe
+        ContentletStatePipe,
+        DotcmsBlockEditorComponent
     ],
     providers: [SuggestionsService, DotImageService, LoggerService, StringUtils],
     exports: [
@@ -56,7 +58,8 @@ import { ContentletStatePipe } from './extensions/pipes/contentlet-state/content
         NodeViewContentDirective,
         ActionButtonComponent,
         BubbleMenuComponent,
-        BubbleMenuLinkFormComponent
+        BubbleMenuLinkFormComponent,
+        DotcmsBlockEditorComponent
     ]
 })
 export class NgxTiptapModule {}
