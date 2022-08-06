@@ -43,6 +43,7 @@ const CheckboxTemplate = `
 `;
 const Template: Story<Checkbox> = (props: Checkbox) => {
     const template = CheckboxTemplate;
+
     return {
         props,
         template
@@ -50,6 +51,7 @@ const Template: Story<Checkbox> = (props: Checkbox) => {
 };
 
 export const Primary: Story = Template.bind({});
+
 Primary.parameters = {
     docs: {
         source: {

@@ -40,7 +40,7 @@ export enum ItemsType {
 }
 
 @Component({
-    selector: 'dotcms-suggestions',
+    selector: 'dot-suggestions',
     templateUrl: './suggestions.component.html',
     styleUrls: ['./suggestions.component.scss']
 })
@@ -109,6 +109,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
                 ...this.items
             ];
         }
+
         this.initialItems = this.items;
         this.itemsLoaded = ItemsType.BLOCK;
         this.dotLanguageService
@@ -193,6 +194,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
         if (!this.mouseMove) {
             return;
         }
+
         e.preventDefault();
         const index = Number((e.target as HTMLElement).dataset.index);
         this.updateActiveItem(index);
@@ -239,12 +241,15 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
                     item.label.toLowerCase().includes(filter.trim().toLowerCase())
                 );
                 break;
+
             case ItemsType.CONTENTTYPE:
                 this.loadContentTypes(filter);
                 break;
+
             case ItemsType.CONTENT:
                 this.loadContentlets(this.selectedContentType, filter);
         }
+
         this.isFilterActive = !!filter.length;
         this.setFirstItemActive();
     }
@@ -261,27 +266,33 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
         this.loading = true;
         this.suggestionsService
             .getContentletsUrlMap({ filter: link })
-            .pipe(take(1))
-            .subscribe((contentlets: DotCMSContentlet[]) => {
-                this.items = contentlets.map((contentlet) => {
-                    const { languageId } = contentlet;
-                    contentlet.language = this.getContentletLanguage(languageId);
-                    return {
-                        label: contentlet.title,
-                        icon: 'contentlet/image',
-                        data: {
-                            contentlet: contentlet
-                        },
-                        command: () => {
-                            this.onSelection({
-                                payload: contentlet,
-                                type: {
-                                    name: 'dotContent'
-                                }
-                            });
-                        }
-                    };
-                });
+            .pipe(
+                take(1),
+                map((contentlets: DotCMSContentlet[]) =>
+                    contentlets.map((contentlet) => {
+                        const { languageId } = contentlet;
+                        contentlet.language = this.getContentletLanguage(languageId);
+
+                        return {
+                            label: contentlet.title,
+                            icon: 'contentlet/image',
+                            data: {
+                                contentlet: contentlet
+                            },
+                            command: () => {
+                                this.onSelection({
+                                    payload: contentlet,
+                                    type: {
+                                        name: 'dotContent'
+                                    }
+                                });
+                            }
+                        };
+                    })
+                )
+            )
+            .subscribe((items: DotMenuItem[]) => {
+                this.items = items;
                 this.loading = false;
                 // Active first result
                 requestAnimationFrame(() => this.setFirstItemActive());
@@ -337,6 +348,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
                 this.items = contentlets.map((contentlet) => {
                     const { languageId } = contentlet;
                     contentlet.language = this.getContentletLanguage(languageId);
+
                     return {
                         label: contentlet.title,
                         icon: 'contentlet/image',

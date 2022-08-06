@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 @Component({
-    selector: 'dotcms-form-actions',
+    selector: 'dot-form-actions',
     templateUrl: './form-actions.component.html',
     styleUrls: ['./form-actions.component.scss']
 })

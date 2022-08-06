@@ -19,6 +19,7 @@ export class AuthGuardService implements CanActivate {
                     this.dotRouterService.goToLogin();
                     this.dotRouterService.storedRedirectUrl = state.url;
                 }
+
                 return isLogin;
             })
         );

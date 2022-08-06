@@ -28,6 +28,7 @@ const InputMaskTemplate = `<p-inputMask [(ngModel)]="val" mask="99-9999" placeho
 
 const Template: Story<InputMask> = (props: InputMask) => {
     const template = InputMaskTemplate;
+
     return {
         props,
         template

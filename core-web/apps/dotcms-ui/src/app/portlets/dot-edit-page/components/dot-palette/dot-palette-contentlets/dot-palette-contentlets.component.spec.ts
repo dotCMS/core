@@ -166,6 +166,7 @@ describe('DotPaletteContentletsComponent', () => {
         for (let index = 0; index < 30; index++) {
             productsArray.push(contentletProductDataMock);
         }
+
         componentHost.items = [productsArray] as unknown as DotCMSContentlet[];
         componentHost.loading = false;
         componentHost.totalRecords = 30;

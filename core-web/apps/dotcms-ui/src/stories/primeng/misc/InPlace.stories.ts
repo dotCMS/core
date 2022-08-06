@@ -84,6 +84,7 @@ type Car = {
 
 const Template: Story<{ records: Car[] }> = (props: { records: Car[] }) => {
     const template = InPlaceTemplate;
+
     return {
         props,
         template
@@ -91,6 +92,7 @@ const Template: Story<{ records: Car[] }> = (props: { records: Car[] }) => {
 };
 
 export const Primary: Story = Template.bind({});
+
 Primary.parameters = {
     docs: {
         source: {

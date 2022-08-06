@@ -124,6 +124,7 @@ export class DotThemeSelectorComponent implements OnInit, OnDestroy {
                     this.themes = themes;
                     this.cd.detectChanges();
                 }
+
                 this.initialLoad = false;
             });
         this.dataView.first = $event.first;

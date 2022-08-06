@@ -12,8 +12,8 @@ describe('DotEventsService', () => {
         dotEventsService = TestBed.get(DotEventsService);
     });
     it('should filter notifications based on event name', () => {
-        let timesCalled = 0,
-            randomEvent = 0;
+        let timesCalled = 0;
+        let randomEvent = 0;
         dotEventsService.listen('test').subscribe(() => {
             timesCalled++;
         });

@@ -18,6 +18,7 @@ export class DotAppsConfigurationResolver implements Resolve<Observable<DotApps>
 
     resolve(route: ActivatedRouteSnapshot): Observable<DotApps> {
         const appsKey = route.paramMap.get('appKey');
+
         return this.dotAppsService.getConfigurationList(appsKey).pipe(take(1));
     }
 }
