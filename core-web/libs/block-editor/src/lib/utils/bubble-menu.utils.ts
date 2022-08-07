@@ -28,7 +28,10 @@ export const shouldShowBubbleMenu = ({ editor, state, from, to }: ShouldShowProp
     const isEmptyTextBlock = !doc.textBetween(from, to).length && isTextSelection(state.selection);
 
     // If it's empty or the current node is type dotContent, it will not open.
-    if (!isOpen && (!view.hasFocus() || empty || isEmptyTextBlock || hideBubbleMenuOn[node?.type.name])) {
+    if (
+        !isOpen &&
+        (!view.hasFocus() || empty || isEmptyTextBlock || hideBubbleMenuOn[node?.type.name])
+    ) {
         return false;
     }
 
@@ -55,6 +58,7 @@ export const isValidURL = (nodeText: string) => {
             '(\\#[-a-z\\d_]*)?$',
         'i'
     ); // fragment locator
+
     return !!pattern.test(nodeText);
 };
 
@@ -64,6 +68,7 @@ export const getNodePosition = (node: HTMLElement, type: string): DOMRect => {
     if (type === 'dotImage' && img) {
         return img.getBoundingClientRect();
     }
+
     return node.getBoundingClientRect();
 };
 

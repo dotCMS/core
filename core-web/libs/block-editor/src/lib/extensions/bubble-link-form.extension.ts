@@ -40,6 +40,7 @@ export const BubbleLinkFormExtension = (viewContainerRef: ViewContainerRef) => {
                             .setHighlight()
                             .command(({ tr }) => {
                                 tr.setMeta(LINK_FORM_PLUGIN_KEY, { isOpen: true, openOnClick });
+
                                 return true;
                             })
                             .run();
@@ -50,7 +51,11 @@ export const BubbleLinkFormExtension = (viewContainerRef: ViewContainerRef) => {
                         return chain()
                             .unsetHighlight()
                             .command(({ tr }) => {
-                                tr.setMeta(LINK_FORM_PLUGIN_KEY, { isOpen: false, openOnClick: false });
+                                tr.setMeta(LINK_FORM_PLUGIN_KEY, {
+                                    isOpen: false,
+                                    openOnClick: false
+                                });
+
                                 return true;
                             })
                             .run();

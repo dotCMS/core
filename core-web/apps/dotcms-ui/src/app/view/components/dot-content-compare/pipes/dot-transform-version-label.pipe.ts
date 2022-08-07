@@ -36,6 +36,7 @@ export class DotTransformVersionLabelPipe implements PipeTransform {
         relativeDateStr: string
     ): string {
         const dateLabel = diffDays > 6 ? item.modDate : relativeDateStr;
+
         return `${dateLabel} ${this.dotMessageService.get('by')} ${item.modUserName}`;
     }
 }

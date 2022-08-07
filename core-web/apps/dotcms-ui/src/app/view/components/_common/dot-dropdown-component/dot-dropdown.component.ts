@@ -73,6 +73,7 @@ export class DotDropdownComponent implements OnChanges {
             if (clickedComponent === this.elementRef.nativeElement) {
                 inside = true;
             }
+
             clickedComponent = clickedComponent.parentNode;
         } while (clickedComponent);
 

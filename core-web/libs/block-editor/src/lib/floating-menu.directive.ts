@@ -3,6 +3,7 @@ import { Editor } from '@tiptap/core';
 import { FloatingMenuPlugin, FloatingMenuPluginProps } from '@tiptap/extension-floating-menu';
 
 @Directive({
+    // eslint-disable-next-line @angular-eslint/directive-selector
     selector: 'tiptap-floating-menu[editor], [tiptapFloatingMenu][editor]'
 })
 export class FloatingMenuDirective implements OnInit, OnDestroy {

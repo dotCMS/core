@@ -95,6 +95,7 @@ export class BubbleLinkFormView {
         // Check that the current plugin state is different to previous plugin state.
         if (next.isOpen === prev.isOpen) {
             this.detectLinkFormChanges();
+
             return;
         }
 
@@ -232,6 +233,7 @@ export class BubbleLinkFormView {
             : this.editor.getAttributes('dotImage');
         const link = href || this.getLinkSelect();
         const blank = target ? target === '_blank' : true;
+
         return { link, blank };
     }
 
@@ -245,6 +247,7 @@ export class BubbleLinkFormView {
 
     isDotImageNode() {
         const { type } = this.editor.state.doc.nodeAt(this.editor.state.selection.from) || {};
+
         return type?.name === 'dotImage';
     }
 
@@ -263,12 +266,14 @@ export class BubbleLinkFormView {
         if (this.scrollElementMap[element.id] || this.scrollElementMap[parentElement.id]) {
             return;
         }
+
         this.hide();
     }
 }
 
 export const bubbleLinkFormPlugin = (options: BubbleLinkFormProps) => {
     let lastNode;
+
     return new Plugin({
         key: options.pluginKey as PluginKey,
         view: (view) => new BubbleLinkFormView({ view, ...options }),
@@ -318,6 +323,7 @@ export const bubbleLinkFormPlugin = (options: BubbleLinkFormProps) => {
 
                 if (!editor.isActive('link') || !pos) {
                     lastNode = node;
+
                     return;
                 }
 
@@ -325,11 +331,13 @@ export const bubbleLinkFormPlugin = (options: BubbleLinkFormProps) => {
                 // We close the form and enable editing.
                 if (isEqual(lastNode, node)) {
                     editor.chain().setTextSelection(pos).closeLinkForm().run();
+
                     return;
                 }
 
                 openFormLinkOnclik({ editor, view, pos });
                 lastNode = node;
+
                 return true;
             },
 
@@ -342,6 +350,7 @@ export const bubbleLinkFormPlugin = (options: BubbleLinkFormProps) => {
                 }
 
                 openFormLinkOnclik({ editor, view, pos });
+
                 return true;
             }
         }

@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 
 @Component({
-    selector: 'dotcms-suggestion-loading-list',
+    selector: 'dot-suggestion-loading-list',
     templateUrl: './suggestion-loading-list.component.html',
     styleUrls: ['./suggestion-loading-list.component.scss']
 })

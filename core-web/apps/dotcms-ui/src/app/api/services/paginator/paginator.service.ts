@@ -177,6 +177,7 @@ export class PaginatorService {
                         response.header(PaginatorService.PAGINATION_TOTAL_ENTRIES_HEADER_NAME),
                         10
                     );
+
                     return response.entity;
                 }),
                 take(1)
@@ -211,6 +212,7 @@ export class PaginatorService {
         const urlPage = this.links['x-page']
             ? this.links['x-page'].replace('pageValue', String(pageParam))
             : undefined;
+
         return this.get(urlPage);
     }
 
@@ -249,6 +251,7 @@ export class PaginatorService {
      */
     public getWithOffset<T>(offset: number): Observable<T> {
         const page = this.getPageFromOffset(offset);
+
         return this.getPage(page);
     }
 
@@ -290,6 +293,7 @@ export class PaginatorService {
         if (this.paginationPerPage) {
             params.set('per_page', String(this.paginationPerPage));
         }
+
         return this.getObjectFromMap<PaginatiorServiceParams>(params);
     }
 

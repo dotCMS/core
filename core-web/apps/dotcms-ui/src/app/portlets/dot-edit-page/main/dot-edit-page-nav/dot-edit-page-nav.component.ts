@@ -61,6 +61,7 @@ export class DotEditPageNavComponent implements OnChanges {
         return this.dotLicenseService.isEnterprise().pipe(
             map((isEnterpriseLicense: boolean) => {
                 this.isEnterpriseLicense = isEnterpriseLicense;
+
                 return this.getNavItems(this.pageState, isEnterpriseLicense);
             })
         );

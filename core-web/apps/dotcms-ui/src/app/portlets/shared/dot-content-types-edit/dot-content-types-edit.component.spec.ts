@@ -175,31 +175,29 @@ describe('DotContentTypesEditComponent', () => {
     };
 
     describe('create mode', () => {
-        beforeEach(
-            waitForAsync(() => {
-                const configCreateMode = getConfig({
-                    contentType: {
-                        baseType: 'CONTENT'
-                    }
-                });
+        beforeEach(waitForAsync(() => {
+            const configCreateMode = getConfig({
+                contentType: {
+                    baseType: 'CONTENT'
+                }
+            });
 
-                TestBed.configureTestingModule(configCreateMode);
+            TestBed.configureTestingModule(configCreateMode);
 
-                fixture = TestBed.createComponent(DotContentTypesEditComponent);
-                comp = fixture.componentInstance;
-                de = fixture.debugElement;
+            fixture = TestBed.createComponent(DotContentTypesEditComponent);
+            comp = fixture.componentInstance;
+            de = fixture.debugElement;
 
-                crudService = de.injector.get(DotCrudService);
-                location = de.injector.get(Location);
-                dotRouterService = de.injector.get(DotRouterService);
-                dotHttpErrorManagerService = de.injector.get(DotHttpErrorManagerService);
+            crudService = de.injector.get(DotCrudService);
+            location = de.injector.get(Location);
+            dotRouterService = de.injector.get(DotRouterService);
+            dotHttpErrorManagerService = de.injector.get(DotHttpErrorManagerService);
 
-                fixture.detectChanges();
-                dialog = de.query(By.css('dot-dialog'));
+            fixture.detectChanges();
+            dialog = de.query(By.css('dot-dialog'));
 
-                spyOn(comp, 'onDialogHide').and.callThrough();
-            })
-        );
+            spyOn(comp, 'onDialogHide').and.callThrough();
+        }));
 
         it('should have dialog opened by default & has css base-type class', () => {
             expect(dialog).not.toBeNull();
@@ -437,26 +435,24 @@ describe('DotContentTypesEditComponent', () => {
     });
 
     describe('edit mode', () => {
-        beforeEach(
-            waitForAsync(() => {
-                TestBed.configureTestingModule(configEditMode);
+        beforeEach(waitForAsync(() => {
+            TestBed.configureTestingModule(configEditMode);
 
-                fixture = TestBed.createComponent(DotContentTypesEditComponent);
-                comp = fixture.componentInstance;
-                de = fixture.debugElement;
+            fixture = TestBed.createComponent(DotContentTypesEditComponent);
+            comp = fixture.componentInstance;
+            de = fixture.debugElement;
 
-                crudService = fixture.debugElement.injector.get(DotCrudService);
-                location = fixture.debugElement.injector.get(Location);
-                dotRouterService = fixture.debugElement.injector.get(DotRouterService);
-                dotHttpErrorManagerService = fixture.debugElement.injector.get(
-                    DotHttpErrorManagerService
-                );
+            crudService = fixture.debugElement.injector.get(DotCrudService);
+            location = fixture.debugElement.injector.get(Location);
+            dotRouterService = fixture.debugElement.injector.get(DotRouterService);
+            dotHttpErrorManagerService = fixture.debugElement.injector.get(
+                DotHttpErrorManagerService
+            );
 
-                fixture.detectChanges();
+            fixture.detectChanges();
 
-                spyOn(comp, 'onDialogHide').and.callThrough();
-            })
-        );
+            spyOn(comp, 'onDialogHide').and.callThrough();
+        }));
 
         const clickEditButton = () => {
             const contentTypeLayout = de.query(By.css('dot-content-type-layout'));
@@ -596,6 +592,7 @@ describe('DotContentTypesEditComponent', () => {
             spyOn<any>(fieldService, 'saveFields').and.callFake(() => {
                 fixture.detectChanges();
                 expect(contentTypeFieldsDropZone.componentInstance.loading).toBe(true);
+
                 return of(fieldsReturnByServer);
             });
 

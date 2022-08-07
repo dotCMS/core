@@ -39,6 +39,7 @@ const MessageTemplate = `<p-messages [(value)]="messages"></p-messages>`;
 
 const Template: Story<{ messages: Message[] }> = () => {
     const template = MessageTemplate;
+
     return {
         props: {
             messages: [

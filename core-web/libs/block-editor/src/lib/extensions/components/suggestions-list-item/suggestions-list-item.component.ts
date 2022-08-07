@@ -3,7 +3,7 @@ import { Component, ElementRef, HostBinding, Input, OnInit } from '@angular/core
 import { FocusableOption } from '@angular/cdk/a11y';
 
 @Component({
-    selector: 'dotcms-suggestions-list-item',
+    selector: 'dot-suggestions-list-item',
     templateUrl: './suggestions-list-item.component.html',
     styleUrls: ['./suggestions-list-item.component.scss']
 })
@@ -74,6 +74,7 @@ export class SuggestionsListItemComponent implements FocusableOption, OnInit {
     private isIntoView(): boolean {
         const { bottom, top } = this.element.nativeElement.getBoundingClientRect();
         const containerRect = this.element.nativeElement.parentElement.getBoundingClientRect();
+
         return top >= containerRect.top && bottom <= containerRect.bottom;
     }
 
@@ -91,6 +92,7 @@ export class SuggestionsListItemComponent implements FocusableOption, OnInit {
         const { top } = this.element.nativeElement.getBoundingClientRect();
         const { top: containerTop } =
             this.element.nativeElement.parentElement.getBoundingClientRect();
+
         return top < containerTop;
     }
 }
