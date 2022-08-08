@@ -29,8 +29,11 @@ declare module '@tiptap/core' {
             /**
              * Add Heading
              */
-            addHeading: (attr: any) => ReturnType;
-            addContentletBlock: (attr: any) => ReturnType;
+            addHeading: (attr: {
+                range: Range;
+                type: { name: string; level?: number };
+            }) => ReturnType;
+            addContentletBlock: ({ range: Range, payload: unknown }) => ReturnType;
         };
     }
 }
@@ -43,6 +46,7 @@ export type FloatingMenuOptions = Omit<FloatingMenuPluginProps, 'editor' | 'elem
 function getSuggestionComponent(viewContainerRef: ViewContainerRef) {
     const component = viewContainerRef.createComponent(SuggestionsComponent);
     component.changeDetectorRef.detectChanges();
+
     return component;
 }
 
@@ -159,6 +163,7 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
             range.to = range.to + suggestionQuery;
             execCommand({ editor: editor, range: range, props: item });
         };
+
         suggestionsComponent.instance.clearFilter.pipe(takeUntil(destroy$)).subscribe((type) => {
             const queryRange = {
                 to: range.to + suggestionKey.getState(editor.view.state).query.length,
@@ -179,18 +184,22 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
 
         if (key === 'Escape') {
             myTippy.hide();
+
             return true;
         }
 
         if (key === 'Enter') {
             suggestionsComponent.instance.execCommand();
+
             return true;
         }
 
         if (key === 'ArrowDown' || key === 'ArrowUp') {
             suggestionsComponent.instance.updateSelection(event);
+
             return true;
         }
+
         return false;
     }
 
@@ -224,6 +233,7 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
                         if (suggestionsComponent) {
                             suggestionsComponent.instance.filterItems(query);
                         }
+
                         // suggestions plugin need to return something,
                         // but we are using the angular suggestionsComponent
                         // https://tiptap.dev/api/utilities/suggestion
@@ -255,6 +265,7 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
                                     data: payload
                                 });
                                 data.tr.replaceSelectionWith(node);
+
                                 return true;
                             })
                             .focus()

@@ -19,6 +19,7 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                     node.getBoundingClientRect().top - container.getBoundingClientRect().top;
                 const left =
                     node.getBoundingClientRect().left - container.getBoundingClientRect().left;
+
                 return { top, left };
             }
 
@@ -39,6 +40,7 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                         }
                     }
                 }
+
                 return null;
             }
 
@@ -66,8 +68,10 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                     ) {
                         break;
                     }
+
                     node = node.parentNode;
                 }
+
                 return node;
             }
 
@@ -108,6 +112,7 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                         requestAnimationFrame(() => bindEventsToDragHandler(editorView));
                         // We need to also react to page scrolling.
                         document.body.addEventListener('scroll', hanlderScroll, true);
+
                         return {
                             destroy() {
                                 removeNode(dragHandler);
@@ -125,8 +130,10 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                                     if (node) {
                                         node.classList.remove('ProseMirror-hideselection');
                                     }
+
                                     dragHandler.classList.remove('visible');
                                 });
+
                                 return false;
                             },
                             mousemove(view, event: MouseEvent) {
@@ -153,6 +160,7 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                                     nodeToBeDragged = null;
                                     dragHandler.classList.remove('visible');
                                 }
+
                                 return false;
                             }
                         }

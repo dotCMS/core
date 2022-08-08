@@ -3,7 +3,8 @@
     "files": [],
     "include": [],
     "compilerOptions": {
-        "types": ["jest", "node"]
+        "types": ["jest", "node"],
+        "target": "es2020"
     },
     "references": [
         {

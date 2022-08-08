@@ -83,11 +83,13 @@ const setActiveItems =
     ({ url, collapsed, menuId, previousUrl }: DotActiveItemsProps) =>
     (source: Observable<DotMenu[]>) => {
         let urlId = getTheUrlId(url);
+
         return source.pipe(
             map((m: DotMenu[]) => {
                 if (!url) {
                     return m; // nothing changes.
                 }
+
                 const menus: DotMenu[] = [...m];
 
                 if (
@@ -148,6 +150,7 @@ const DOTCMS_MENU_STATUS = 'dotcms.menu.status';
 
 function getTheUrlId(url: string): string {
     const urlSegments: string[] = url.split('/').filter(Boolean);
+
     return urlSegments[0] === 'c' ? urlSegments.pop() : urlSegments[0];
 }
 
@@ -185,6 +188,7 @@ export class DotNavigationService {
                             if (pageTitle) {
                                 this.titleService.setTitle(`${pageTitle} - ${this._appMainTitle}`);
                             }
+
                             return menu;
                         }),
                         setActiveItems({
@@ -258,6 +262,7 @@ export class DotNavigationService {
     closeAllSections(): void {
         const closedMenu: DotMenu[] = this._items$.getValue().map((menu: DotMenu) => {
             menu.isOpen = false;
+
             return menu;
         });
         this.setMenu(closedMenu);
@@ -290,6 +295,7 @@ export class DotNavigationService {
                 }
             });
             menu.isOpen = isActive;
+
             return menu;
         });
         this.setMenu(expandedMenu);
@@ -322,6 +328,7 @@ export class DotNavigationService {
                 if (!isRouted) {
                     this.reloadIframePage();
                 }
+
                 return isRouted;
             });
     }
@@ -362,6 +369,7 @@ export class DotNavigationService {
     setOpen(id: string): void {
         const updatedMenu: DotMenu[] = this._items$.getValue().map((menu: DotMenu) => {
             menu.isOpen = menu.isOpen ? false : id === menu.id;
+
             return menu;
         });
         this.setMenu(updatedMenu);
@@ -374,12 +382,14 @@ export class DotNavigationService {
                     ? menuItem.url
                     : this.getLegacyPortletUrl(menuItem.id);
             });
+
             return menuGroup;
         });
     }
 
     private extractFirtsMenuLink(menus: DotMenu[]): string {
         const firstMenuItem: DotMenuItem = menus[0].menuItems[0];
+
         return firstMenuItem.angular
             ? firstMenuItem.url
             : this.getLegacyPortletUrl(firstMenuItem.id);

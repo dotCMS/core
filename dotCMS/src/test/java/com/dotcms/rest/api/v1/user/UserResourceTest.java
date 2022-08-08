@@ -85,7 +85,7 @@ public class UserResourceTest extends UnitTestBase {
         int page = 3;
         int perPage = 4;
         final List<User> users = new ArrayList<>();
-        Response responseExpected = Response.ok(new ResponseEntityView(users)).build();
+        Response responseExpected = Response.ok(new ResponseEntityView<>(users)).build();
         final PaginationUtil paginationUtil = mock(PaginationUtil.class);
         when(paginationUtil.getPage(request, user, filter, page, perPage )).thenReturn(responseExpected);
 
@@ -171,7 +171,7 @@ public class UserResourceTest extends UnitTestBase {
         int page = 3;
         int perPage = 4;
         final List<User> users = new ArrayList<>();
-        Response responseExpected = Response.ok(new ResponseEntityView(users)).build();
+        Response responseExpected = Response.ok(new ResponseEntityView<>(users)).build();
         final PaginationUtil paginationUtil = mock(PaginationUtil.class);
         when(paginationUtil.getPage(request, user, filter, page, perPage )).thenReturn(responseExpected);
 
@@ -245,7 +245,7 @@ public class UserResourceTest extends UnitTestBase {
         int page = 3;
         int perPage = 4;
         final List<User> users = new ArrayList<>();
-        Response responseExpected = Response.ok(new ResponseEntityView(users)).build();
+        Response responseExpected = Response.ok(new ResponseEntityView<>(users)).build();
         final PaginationUtil paginationUtil = mock(PaginationUtil.class);
         when(paginationUtil.getPage(request, user, filter, page, perPage )).thenReturn(responseExpected);
         UserResource userResource =
@@ -324,7 +324,7 @@ public class UserResourceTest extends UnitTestBase {
         int page = 3;
         int perPage = 4;
         final List<User> users = new ArrayList<>();
-        Response responseExpected = Response.ok(new ResponseEntityView(users)).build();
+        Response responseExpected = Response.ok(new ResponseEntityView<>(users)).build();
         final PaginationUtil paginationUtil = mock(PaginationUtil.class);
         when(paginationUtil.getPage(request, user, filter, page, perPage )).thenReturn(responseExpected);
 
@@ -378,7 +378,7 @@ public class UserResourceTest extends UnitTestBase {
         int perPage = 4;
 
         List<User> users = new ArrayList<>();
-        Response responseExpected = Response.ok(new ResponseEntityView(users)).build();
+        Response responseExpected = Response.ok(new ResponseEntityView<>(users)).build();
 
         final PaginationUtil paginationUtil = mock(PaginationUtil.class);
         when(paginationUtil.getPage(request, user, filter, page, perPage )).thenReturn(responseExpected);
@@ -429,7 +429,7 @@ public class UserResourceTest extends UnitTestBase {
         int perPage = 4;
 
         List<User> users = new ArrayList<>();
-        Response responseExpected = Response.ok(new ResponseEntityView(users)).build();
+        Response responseExpected = Response.ok(new ResponseEntityView<>(users)).build();
 
         final PaginationUtil paginationUtil = mock(PaginationUtil.class);
         when(paginationUtil.getPage(request, user, filter, page, perPage )).thenReturn(responseExpected);

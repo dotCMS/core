@@ -69,6 +69,7 @@ export const Secondary: Story = () => {
         template: SecondaryTemplate
     };
 };
+
 Secondary.parameters = {
     docs: {
         source: {
@@ -87,6 +88,7 @@ export const Icons: Story = () => {
         template: IconsTemplate
     };
 };
+
 Icons.parameters = {
     docs: {
         source: {

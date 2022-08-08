@@ -7,7 +7,9 @@ define("dojox/grid/DataGrid", [
 	"dojo/_base/declare",
 	"./_Grid",
 	"./DataSelection",
-	"dojo/_base/html"
+	"dojo/_base/html",
+	"dojo/has",
+	"dojo/has!dojo-bidi?./bidi/_BidiMixin"
 ], function(dojox, array, lang, json, has, declare, _Grid, DataSelection, html){
 
 /*=====

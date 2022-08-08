@@ -3,7 +3,7 @@ import { AngularNodeViewComponent } from '../../../NodeViewRenderer';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 @Component({
-    selector: 'dotcms-contentlet-block',
+    selector: 'dot-contentlet-block',
     templateUrl: './contentlet-block.component.html',
     styleUrls: ['./contentlet-block.component.scss'],
     encapsulation: ViewEncapsulation.None

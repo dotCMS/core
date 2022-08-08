@@ -84,7 +84,7 @@ public class AppsResource {
                             .init();
             final User user = initData.getUser();
             final List<AppView> appViews = helper.getAvailableDescriptorViews(user, filter);
-            return Response.ok(new ResponseEntityView(appViews)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(appViews)).build(); // 200
         } catch (Exception e) {
             //By doing this mapping here. The resource becomes integration test friendly.
             Logger.error(this.getClass(), "Exception on listing all available apps.", e);
@@ -217,7 +217,7 @@ public class AppsResource {
             final User user = initData.getUser();
             final List<AppView> apps = helper
                     .createApp(multipart, user);
-            return Response.ok(new ResponseEntityView(apps)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(apps)).build(); // 200
         } catch (Exception e) {
             //By doing this mapping here. The resource becomes integration test friendly.
             Logger.error(this.getClass(),"Exception saving/creating app.", e);

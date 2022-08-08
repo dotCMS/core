@@ -261,6 +261,7 @@ export class DotEditPageStateControllerComponent implements OnChanges {
                 this.pageState.page.lockedByName
             );
         }
+
         return message;
     }
 

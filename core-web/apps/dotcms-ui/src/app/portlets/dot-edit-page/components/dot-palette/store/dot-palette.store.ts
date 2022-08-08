@@ -101,6 +101,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                     this.paginationService.searchParam = 'variable';
                     this.paginationService.filter = value;
                 }
+
                 this.getContentletsData({ first: 0 });
             })
         );
@@ -119,12 +120,11 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                 this.setFilter(query);
 
                 // If it's empty, set the inital contentTypes;
-                if(!query) {
+                if (!query) {
                     this.setContentTypes(this.initialContent);
-                } else  {
+                } else {
                     this.getContenttypesData();
                 }
-
             })
         );
     });
@@ -213,14 +213,14 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
     getContenttypesData(): void {
         this.setLoading();
         this.state$.pipe(take(1)).subscribe(({ filter, allowedContent }) => {
-            if(allowedContent && allowedContent.length) {
+            if (allowedContent && allowedContent.length) {
                 forkJoin([
                     this.dotContentTypeService.filterContentTypes(filter, allowedContent.join(',')),
                     this.dotContentTypeService.getContentTypes({ filter, page: 40, type: 'WIDGET' })
                 ])
                     .pipe(take(1))
-                    .subscribe((results: DotCMSContentType[][] ) => {
-                        const [ allowContent, widgets ] = results;
+                    .subscribe((results: DotCMSContentType[][]) => {
+                        const [allowContent, widgets] = results;
 
                         // Some pages bring widgets in the CONTENT_PALETTE_HIDDEN_CONTENT_TYPES, and others don't.
                         // However, all pages allow widgets, so we make a request just to get them.
@@ -236,7 +236,8 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                         this.loadContentypes(contentTypes);
                     });
             } else {
-                this.dotContentTypeService.getContentTypes({ filter, page: 40, type: 'WIDGET' })
+                this.dotContentTypeService
+                    .getContentTypes({ filter, page: 40, type: 'WIDGET' })
                     .pipe(take(1))
                     .subscribe((data: DotCMSContentType[]) => this.loadContentypes(data));
             }
@@ -249,12 +250,12 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
      * @param {DotCMSContentType[]} contentTypes
      * @memberof DotPaletteStore
      */
-    loadContentypes(contentTypes:  DotCMSContentType[]): void {
+    loadContentypes(contentTypes: DotCMSContentType[]): void {
         this.setLoaded();
         this.setContentTypes(contentTypes);
-        if(!this.initialContent) {
+        if (!this.initialContent) {
             this.initialContent = contentTypes;
-        };
+        }
     }
 
     /**

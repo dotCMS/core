@@ -1,4 +1,4 @@
-import { FormGroup } from '@angular/forms';
+import { UntypedFormGroup } from '@angular/forms';
 import { Component, Input, ViewEncapsulation } from '@angular/core';
 
 @Component({
@@ -8,5 +8,5 @@ import { Component, Input, ViewEncapsulation } from '@angular/core';
     encapsulation: ViewEncapsulation.None
 })
 export class DotLayoutPropertiesComponent {
-    @Input() group: FormGroup;
+    @Input() group: UntypedFormGroup;
 }

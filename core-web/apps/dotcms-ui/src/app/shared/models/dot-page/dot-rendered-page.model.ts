@@ -17,6 +17,7 @@ export interface DotPageRenderParameters {
     viewAs: DotEditPageViewAs;
     numberContents: number;
 }
+
 export class DotPageRender {
     constructor(private _params: DotPageRenderParameters) {}
 

@@ -9,7 +9,7 @@ import {
     Input,
     OnDestroy
 } from '@angular/core';
-import { FormControl, ValidationErrors } from '@angular/forms';
+import { UntypedFormControl, ValidationErrors } from '@angular/forms';
 import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
@@ -41,10 +41,10 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
         this.cd.markForCheck();
     }
 
-    _field: FormControl;
+    _field: UntypedFormControl;
 
     @Input()
-    set field(control: FormControl) {
+    set field(control: UntypedFormControl) {
         this._field = control;
         control.statusChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
             this.errorMsg = this.getErrors(control.errors);
@@ -83,13 +83,16 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
                             actualLength
                         );
                         break;
+
                     default:
                         errorTranslated = NG_DEFAULT_VALIDATORS_ERRORS_MSG[key];
                         break;
                 }
+
                 errorMsgs = [...errorMsgs, errorTranslated];
             }
         });
+
         return errorMsgs;
     }
 
@@ -100,6 +103,7 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
                 errorMsgs = [...errorMsgs, value];
             }
         });
+
         return errorMsgs;
     }
 }

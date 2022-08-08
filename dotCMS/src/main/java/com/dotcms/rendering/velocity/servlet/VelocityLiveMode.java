@@ -197,6 +197,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
                     if(response.getStatus() == 200) {
                         CacheLocator.getBlockPageCache()
                                 .add(htmlPage, trimmedPage, cacheParameters);
+
                     }
                 }
             }

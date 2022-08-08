@@ -10,6 +10,7 @@ export interface BubbleLinkFormOptions {
     tippyOptions?: Partial<Props>;
     element: HTMLElement | null;
 }
+
 export interface PluginStorage {
     show: boolean;
 }
@@ -51,6 +52,7 @@ export const BubbleLinkFormExtension = (injector: Injector, viewContainerRef: Vi
                     () =>
                     ({ commands }) => {
                         this.storage.show = !this.storage.show;
+
                         return commands.setHighlight();
                     }
             };

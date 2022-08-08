@@ -90,7 +90,7 @@ public class PushPublishFilterResource {
                         .init();
         final User user = initData.getUser();
         final List<FilterDescriptor> list = this.publisherAPI.get().getFiltersDescriptorsByRole(user);
-        return Response.ok(new ResponseEntityView(list)).build();
+        return Response.ok(new ResponseEntityView<>(list)).build();
     }
 
     /**
@@ -212,7 +212,7 @@ public class PushPublishFilterResource {
         }
 
         final List<String> filterNames = saveAndReloadFiltersFromForm(filterDescriptorForm, user);
-        return Response.ok(new ResponseEntityView(filterNames)).build();
+        return Response.ok(new ResponseEntityView<>(filterNames)).build();
     }
 
     /**
@@ -257,7 +257,7 @@ public class PushPublishFilterResource {
 
         Logger.debug(this, ()-> "Adding PP filter by file");
         final List<String> filterNames = saveAndReloadFiltersFromFile(multipart, user);
-        return Response.ok(new ResponseEntityView(filterNames)).build();
+        return Response.ok(new ResponseEntityView<>(filterNames)).build();
     }
 
     /**
@@ -321,7 +321,7 @@ public class PushPublishFilterResource {
         }
 
         final List<String> filterNames = saveAndReloadFiltersFromForm(filterDescriptorForm, user);
-        return Response.ok(new ResponseEntityView(filterNames)).build();
+        return Response.ok(new ResponseEntityView<>(filterNames)).build();
     }
 
     /**
@@ -366,7 +366,7 @@ public class PushPublishFilterResource {
 
         Logger.debug(this, ()-> "Updating PP filter by file");
         final List<String> filterNames = updateAndReloadFiltersFromFile(multipart, user);
-        return Response.ok(new ResponseEntityView(filterNames)).build();
+        return Response.ok(new ResponseEntityView<>(filterNames)).build();
     }
 
     /**
@@ -406,7 +406,7 @@ public class PushPublishFilterResource {
         if (deleted) {
             final List<String> filterNames =
                     this.publisherAPI.get().getFiltersDescriptorsByRole(user).stream().map(FilterDescriptor::getKey).collect(Collectors.toList());
-            return Response.ok(new ResponseEntityView(filterNames)).build();
+            return Response.ok(new ResponseEntityView<>(filterNames)).build();
         }
         return Response.status(Response.Status.EXPECTATION_FAILED).
                 entity(new ResponseEntityView(List.of(

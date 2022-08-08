@@ -393,7 +393,7 @@ public class UserResource implements Serializable {
 			revertLoginAsSessionInfo(request, currentSite, currentUser.getUserId());
 			if (UtilMethods.isSet(e.getMessageKey())) {
 				final User user = initData.getUser();
-				response = Response.ok(new ResponseEntityView(
+				response = Response.ok(new ResponseEntityView<>(
 						list(new ErrorEntity(e.getMessageKey(), LanguageUtil.get(user.getLocale(), e.getMessageKey()))),
 						map("loginAs", false))).build();
 			} else {

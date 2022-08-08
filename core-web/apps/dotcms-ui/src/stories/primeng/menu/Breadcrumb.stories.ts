@@ -31,6 +31,7 @@ const BreadcrumbTemplate = `<p-breadcrumb [model]="items"></p-breadcrumb>`;
 
 const Template: Story<{ label: string; url: string }> = (props: { label: string; url: string }) => {
     const template = BreadcrumbTemplate;
+
     return {
         props,
         template

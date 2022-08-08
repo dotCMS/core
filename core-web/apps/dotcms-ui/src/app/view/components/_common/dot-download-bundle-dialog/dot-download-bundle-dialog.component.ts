@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 
 import { SelectItem } from 'primeng/api';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
@@ -29,7 +29,7 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
     downloadOptions: SelectItem[];
     filterOptions: SelectItem[];
     dialogActions: DotDialogActions;
-    form: FormGroup;
+    form: UntypedFormGroup;
     showDialog = false;
     errorMessage = '';
 
@@ -38,7 +38,7 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
     private filters: SelectItem[] = null;
 
     constructor(
-        public fb: FormBuilder,
+        public fb: UntypedFormBuilder,
         private dotMessageService: DotMessageService,
         private dotPushPublishFiltersService: DotPushPublishFiltersService,
         private dotDownloadBundleDialogService: DotDownloadBundleDialogService
@@ -143,9 +143,11 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
                         if (a.label > b.label) {
                             return 1;
                         }
+
                         if (a.label < b.label) {
                             return -1;
                         }
+
                         // a must be equal to b
                         return 0;
                     });
@@ -211,6 +213,7 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
             .then((res: Response) => {
                 const contentDisposition = res.headers.get('content-disposition');
                 fileName = this.getFilenameFromContentDisposition(contentDisposition);
+
                 return res.blob();
             })
             .then((blob: Blob) => {
@@ -225,6 +228,7 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
 
     private getFilenameFromContentDisposition(contentDisposition: string): string {
         const key = 'filename=';
+
         return contentDisposition.slice(contentDisposition.indexOf(key) + key.length);
     }
 }

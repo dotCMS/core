@@ -79,6 +79,7 @@ export class BubbleLinkFormView {
         // Check that the current plugin state is different to previous plugin state.
         if (next.toggle === prev.toggle) {
             this.detectLinkFormChanges();
+
             return;
         }
 
@@ -162,6 +163,7 @@ export class BubbleLinkFormView {
         } else {
             this.editor.commands.setLink({ href: link });
         }
+
         this.hide();
     }
 
@@ -171,6 +173,7 @@ export class BubbleLinkFormView {
         } else {
             this.editor.commands.unsetLink();
         }
+
         this.hide();
     }
 
@@ -217,11 +220,13 @@ export class BubbleLinkFormView {
                 '(\\#[-a-z\\d_]*)?$',
             'i'
         ); // fragment locator
+
         return !!pattern.test(nodeText);
     }
 
     isDotImageNode() {
         const { type } = this.editor.state.doc.nodeAt(this.editor.state.selection.from);
+
         return type.name === 'dotImage';
     }
 

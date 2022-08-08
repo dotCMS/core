@@ -2561,7 +2561,6 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                         var restBaseUrl = location.protocol + '//' + location.host + '/api/content/render/false';
                         var restBasePostUrl = getRestBasePostUrl();
 
-
                         queryRaw = counters["luceneQueryRaw"];
                         var encodedQueryRaw = queryRaw.replace(/'/g, "%27").replace(/"/g, "%22");
                         var queryfield=document.getElementById("luceneQuery");

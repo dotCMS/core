@@ -6,6 +6,7 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
+import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -90,7 +91,7 @@ public class ResetPasswordResourceIntegrationTest{
         //Check that the response is 400
         Assert.assertEquals(Status.BAD_REQUEST.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        Assert.assertEquals("reset-password-token-invalid",responseEntityView.getErrors().get(0).getErrorCode());
+        Assert.assertEquals("reset-password-token-invalid",  ErrorEntity.class.cast(responseEntityView.getErrors().get(0)).getErrorCode());
     }
 
     /**
@@ -116,7 +117,7 @@ public class ResetPasswordResourceIntegrationTest{
         //Check that the response is 401
         Assert.assertEquals(Status.FORBIDDEN.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        Assert.assertEquals("reset-password-token-expired",responseEntityView.getErrors().get(0).getErrorCode());
+        Assert.assertEquals("reset-password-token-expired", ErrorEntity.class.cast(responseEntityView.getErrors().get(0)).getErrorCode());
     }
 
     /**
@@ -137,7 +138,7 @@ public class ResetPasswordResourceIntegrationTest{
         //Check that the response is 400
         Assert.assertEquals(Status.BAD_REQUEST.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        Assert.assertEquals("reset-password-invalid-password",responseEntityView.getErrors().get(0).getErrorCode());
+        Assert.assertEquals("reset-password-invalid-password", ErrorEntity.class.cast(responseEntityView.getErrors().get(0)).getErrorCode());
     }
 
 

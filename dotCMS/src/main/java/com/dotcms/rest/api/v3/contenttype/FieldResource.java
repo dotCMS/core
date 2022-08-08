@@ -85,7 +85,7 @@ public class FieldResource {
         final ContentType contentType = APILocator.getContentTypeAPI(user).find(typeIdOrVarName);
 
         final FieldLayout fieldLayout = this.contentTypeFieldLayoutAPI.updateField(contentType, fieldFromInput, user);
-        return Response.ok(new ResponseEntityView(fieldLayout.getRows())).build();
+        return Response.ok(new ResponseEntityView<>(fieldLayout.getRows())).build();
     }
 
     /**
@@ -150,7 +150,7 @@ public class FieldResource {
         final FieldLayout layout = moveFieldsForm.getRows(contentType);
 
         final FieldLayout fieldLayout = this.contentTypeFieldLayoutAPI.moveFields(contentType, layout, user);
-        return Response.ok(new ResponseEntityView(fieldLayout.getRows())).build();
+        return Response.ok(new ResponseEntityView<>(fieldLayout.getRows())).build();
     }
 
     /**
@@ -178,7 +178,7 @@ public class FieldResource {
 
         final FieldLayout fieldLayout = this.contentTypeFieldLayoutAPI.getLayout(typeIdOrVarName, user);
 
-        return Response.ok(new ResponseEntityView(fieldLayout.getRows())).build();
+        return Response.ok(new ResponseEntityView<>(fieldLayout.getRows())).build();
     }
 
     /**
