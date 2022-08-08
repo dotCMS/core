@@ -481,8 +481,11 @@ public class ContainerResource implements Serializable {
                 final Host defaultHost = WebAPILocator.getHostWebAPI().findDefaultHost(user, false);
                 if (!defaultHost.getIdentifier().equals(containerHost.getIdentifier())) {
 
-                    return  this.containerAPI.getWorkingContainerByFolderPath(relativePath,
-                            defaultHost, APILocator.getUserAPI().getSystemUser(), false);
+                    return  mode.showLive ?
+                            this.containerAPI.getLiveContainerByFolderPath(relativePath, defaultHost, APILocator.getUserAPI().getSystemUser(), false) :
+                            (archive?
+                                    this.containerAPI.getWorkingArchiveContainerByFolderPath(relativePath, defaultHost, APILocator.getUserAPI().getSystemUser(), false):
+                                    this.containerAPI.getWorkingContainerByFolderPath(relativePath, defaultHost, APILocator.getUserAPI().getSystemUser(), false));
                 }
             }
         }
