@@ -694,9 +694,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @WrapInTransaction
     @Override
     public void publish(final Contentlet contentlet, final User userIn, final boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException {
-        if(contentlet!=null && contentlet.getIdentifier().equals("0eb4d77ee7df4372604bdb32f97f9b25")) {
-            Thread.dumpStack();
-        }
         final User user = (userIn!=null) ? userIn : APILocator.getUserAPI().getAnonymousUser();
         String contentPushPublishDate = contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE);
         String contentPushExpireDate  = contentlet.getStringProperty("wfExpireDate");
