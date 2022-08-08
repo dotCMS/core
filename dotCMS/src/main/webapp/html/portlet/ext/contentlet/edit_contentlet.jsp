@@ -48,16 +48,12 @@
 
 <script type="text/javascript">
 
-	const relationsName = [];
+	const relationsLoadedMap = {};
 
-	function waitForRelation(selectors = []) {
-		return new Promise(resolve => {
-			if (allRelationsHaveLoad(selectors)) {
-				return resolve(true);
-			}
-
-			const observer = new MutationObserver(mutations => {
-				if (allRelationsHaveLoad(selectors)) {
+	function waitForRelation() {
+		return new Promise((resolve) => {
+			const observer = new MutationObserver((mutations) => {
+				if (allRelationsHaveLoad()) {
 					resolve(true);
 					observer.disconnect();
 				}
@@ -65,21 +61,14 @@
 
 			observer.observe(document.body, {
 				childList: true,
-				subtree: true
+				subtree: true,
 			});
 		});
 	}
 
-	function allRelationsHaveLoad(selectors = []) {
-		let count = 0;
-		selectors.forEach((selector) => {
-			// Check that the Relation field exist.
-			if(document.querySelector(selector)) {
-				count++;
-			}
-		});
+	function allRelationsHaveLoad() {
 		// Check all the Relation fields exist.
-		return count  === selectors.length;
+		return !(Object.values(relationsLoadedMap).filter((loaded) => !loaded).length);
 	}
 </script>
 

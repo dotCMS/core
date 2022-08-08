@@ -831,6 +831,12 @@ dojo.declare(
                 inodes[0] = content.inode;
             }
 
+            // If we add a new relation,
+            // We have to wait until that relation is loaded to save the content.
+            if(typeof relationsLoadedMap !== 'undefined' && relationsLoadedMap[this.relationJsName]) {
+                relationsLoadedMap[this.relationJsName] = false;
+            }
+
             setTimeout(
                 "ContentletAjax.getContentletsData ('" +
                     inodes +
