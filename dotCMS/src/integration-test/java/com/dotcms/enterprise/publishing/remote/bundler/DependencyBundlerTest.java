@@ -434,6 +434,7 @@ public class DependencyBundlerTest {
         return new TestData(folder, map(
                 folder, list(host, parentFolder, contentType, contentlet, link, subFolder),
                 contentlet, list(language),
+                contentlet_2, list(APILocator.getLanguageAPI().getLanguage(contentlet_2.getLanguageId())),
                 subFolder, list(contentlet_2, folderContentType),
                 contentType, list(systemWorkflowScheme),
                 folderContentType, list(systemWorkflowScheme)
