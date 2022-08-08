@@ -20,8 +20,12 @@ const PORTLETS_ANGULAR = [
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         path: 'templates',
+        /*loadChildren: () =>
+            import('@portlets/dot-templates/dot-templates.module').then((m) => m.DotTemplatesModule)*/
         loadChildren: () =>
-            import('@portlets/dot-templates/dot-templates.module').then((m) => m.DotTemplatesModule)
+            import('@dotcms/dotcms-ui/templates/feature-shell').then(
+                (m) => m.DotcmsUiTemplatesFeatureShellModule
+            )
     },
     {
         canActivate: [MenuGuardService],

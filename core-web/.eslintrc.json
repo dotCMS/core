@@ -1,3 +1,4 @@
+// https://nx.dev/structure/monorepo-tags
 {
     "root": true,
     "ignorePatterns": ["**/*"],
@@ -16,6 +17,18 @@
                             {
                                 "sourceTag": "*",
                                 "onlyDependOnLibsWithTags": ["*"]
+                            },
+                            {
+                                "sourceTag": "scope:shared",
+                                "onlyDependOnLibsWithTags": ["scope:shared"]
+                            },
+                            {
+                                "sourceTag": "scope:templates",
+                                "onlyDependOnLibsWithTags": [
+                                    "scope:shared",
+                                    "type:feature",
+                                    "scope:templates"
+                                ]
                             }
                         ]
                     }

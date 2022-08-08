@@ -15,6 +15,9 @@
         "dotcms-models": "libs/dotcms-models",
         "dotcms-ui": "apps/dotcms-ui",
         "dotcms-ui-e2e": "apps/dotcms-ui-e2e",
+        "dotcms-ui-templates-feature-create-edit": "libs/dotcms-ui/templates/feature-create-edit",
+        "dotcms-ui-templates-feature-list": "libs/dotcms-ui/templates/feature-list",
+        "dotcms-ui-templates-feature-shell": "libs/dotcms-ui/templates/feature-shell",
         "dotcms-webcomponents": "libs/dotcms-webcomponents",
         "ui": "libs/ui",
         "utils": "libs/utils"

@@ -152,6 +152,6 @@
             }
         }
     },
-    "tags": [],
+    "tags": ["scope:dotcms-ui", "type:app"],
     "implicitDependencies": ["dotcms-webcomponents"]
 }

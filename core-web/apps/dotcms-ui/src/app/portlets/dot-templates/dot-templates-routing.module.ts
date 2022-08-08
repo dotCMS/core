@@ -1,8 +1,8 @@
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
-import { DotTemplateListComponent } from './dot-template-list/dot-template-list.component';
-import { DotTemplateListResolver } from './dot-template-list/dot-template-list-resolver.service';
-import { DotTemplateCreateEditResolver } from './dot-template-create-edit/resolvers/dot-template-create-edit.resolver';
+import { DotTemplateListComponent } from '../../../../../../libs/dotcms-ui/templates/feature-list/src/lib/dot-template-list.component';
+import { DotTemplateListResolver } from '../../../../../../libs/dotcms-ui/templates/feature-list/src/lib/dot-template-list-resolver.service';
+import { DotTemplateCreateEditResolver } from '../../../../../../libs/dotcms-ui/templates/feature-create-edit/src/lib/dot-template-create-edit.resolver';
 import { LayoutEditorCanDeactivateGuardService } from '@services/guards/layout-editor-can-deactivate-guard.service';
 
 const routes: Routes = [
@@ -20,7 +20,7 @@ const routes: Routes = [
         path: 'new',
         loadChildren: () =>
             import(
-                '@portlets/dot-templates/dot-template-create-edit/dot-template-new/dot-template-new.module'
+                '@portlets/../../../../../../libs/dotcms-ui/templates/feature-create-edit/src/lib/components/dot-template-new/dot-template-new.module'
             ).then((m) => m.DotTemplateNewModule)
     },
     {

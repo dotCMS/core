@@ -24,8 +24,8 @@
         }
     },
     "cli": {
-        "analytics": false,
-        "defaultCollection": "@nxext/stencil"
+        "defaultCollection": "@nrwl/angular",
+        "packageManager": "npm"
     },
     "defaultProject": "dotcms-ui",
     "generators": {

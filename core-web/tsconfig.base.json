@@ -26,6 +26,15 @@
             "@dotcms/dotcms-field-elements/loader": ["dist/libs/dotcms-field-elements/loader"],
             "@dotcms/dotcms-js": ["libs/dotcms-js/src/public_api.ts"],
             "@dotcms/dotcms-models": ["libs/dotcms-models/src/index.ts"],
+            "@dotcms/dotcms-ui/templates/feature-create-edit": [
+                "libs/dotcms-ui/templates/feature-create-edit/src/index.ts"
+            ],
+            "@dotcms/dotcms-ui/templates/feature-list": [
+                "libs/dotcms-ui/templates/feature-list/src/index.ts"
+            ],
+            "@dotcms/dotcms-ui/templates/feature-shell": [
+                "libs/dotcms-ui/templates/feature-shell/src/index.ts"
+            ],
             "@dotcms/dotcms-webcomponents": ["libs/dotcms-webcomponents/src/index.ts"],
             "@dotcms/dotcms-webcomponents/loader": ["dist/libs/dotcms-webcomponents/loader"],
             "@dotcms/ui": ["libs/ui/src/index.ts"],
