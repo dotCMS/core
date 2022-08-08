@@ -5,6 +5,7 @@ import { DotLoginInformation } from '@dotcms/dotcms-models';
 export const mockUser = () => {
     return {
         emailAddress: 'admin@dotcms.com',
+        admin: true,
         firstName: 'Admin',
         lastName: 'Admin',
         loggedInDate: 123456789,

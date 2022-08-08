@@ -25,21 +25,33 @@ export class DotRolesService {
             .requestView({
                 url: `/api/v1/roles/${roleId}/rolehierarchyanduserroles?roleHierarchyForAssign=${roleHierarchy}`
             })
-            .pipe(
-                pluck('entity'),
-                map((roles: DotRole[]) =>
-                    roles
-                        .filter((role: DotRole) => role.roleKey !== 'anonymous')
-                        .map((role: DotRole) => {
-                            if (role.roleKey === CURRENT_USER_KEY) {
-                                role.name = this.dotMessageService.get('current-user');
-                            } else if (role.user) {
-                                role.name = `${role.name} (${this.dotMessageService.get('user')})`;
-                            }
+            .pipe(pluck('entity'), map(this.processRolesResponse.bind(this)));
+    }
 
-                            return role;
-                        })
-                )
-            );
+    /**
+     * Return list of roles.
+     * @returns Observable<DotRole[]>
+     * @memberof DotRolesService
+     */
+    search(): Observable<DotRole[]> {
+        return this.coreWebService
+            .requestView({
+                url: `/api/v1/roles/_search`
+            })
+            .pipe(pluck('entity'), map(this.processRolesResponse.bind(this)));
+    }
+
+    private processRolesResponse(roles: DotRole[]): DotRole[] {
+        return roles
+            .filter((role: DotRole) => role.roleKey !== 'anonymous')
+            .map((role: DotRole) => {
+                if (role.roleKey === CURRENT_USER_KEY) {
+                    role.name = this.dotMessageService.get('current-user');
+                } else if (role.user) {
+                    role.name = `${role.name} (${this.dotMessageService.get('user')})`;
+                }
+
+                return role;
+            });
     }
 }

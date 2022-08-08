@@ -25,7 +25,7 @@ const FROM_INITIAL_VALUE = {
     tags: null
 };
 
-const mockDotCMSTempFile = {
+export const mockDotCMSTempFile = {
     fileName: 'temp-file_123.jpeg',
     folder: '',
     id: 'temp-file_123',
