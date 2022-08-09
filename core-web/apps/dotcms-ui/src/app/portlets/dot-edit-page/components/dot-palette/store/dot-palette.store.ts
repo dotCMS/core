@@ -226,15 +226,13 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                         // However, all pages allow widgets, so we make a request just to get them.
                         // Full comment here: https://github.com/dotCMS/core/pull/22573#discussion_r921263060
                         // This filter is used to prevent widgets from being repeated.
-                        const contentLets = allowContent.filter(
-                            (item) => item.baseType !== 'WIDGET'
-                        );
+                        const contentLets = allowContent.filter((item) => item.baseType !== 'WIDGET');
 
                         // Merge both array and order them by name
-                        const contentTypes = [...contentLets, ...widgets]
-                            .sort((a, b) => a.name.localeCompare(b.name))
-                            .slice(0, 40);
-
+                        const contentTypes = [...contentLets, ...widgets].sort(
+                            (a, b) => a.name.localeCompare(b.name)
+                        ).slice(0, 40);
+    
                         this.loadContentypes(contentTypes);
                     });
             } else {

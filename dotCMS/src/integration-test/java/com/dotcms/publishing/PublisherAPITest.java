@@ -1,24 +1,11 @@
 package com.dotcms.publishing;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.RoleDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TestUserUtils;
-import com.dotcms.datagen.UserDataGen;
+import com.dotcms.datagen.*;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.bundle.business.BundleAPI;
-import com.dotcms.publisher.business.DotPublisherException;
-import com.dotcms.publisher.business.PublishAuditAPI;
-import com.dotcms.publisher.business.PublishAuditHistory;
-import com.dotcms.publisher.business.PublishAuditStatus;
-import com.dotcms.publisher.business.PublishQueueElement;
+import com.dotcms.publisher.business.*;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.bean.factory.PublishingEndPointFactory;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
@@ -28,15 +15,10 @@ import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.PublisherConfig.Operation;
-import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -52,20 +34,16 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import java.io.File;
-import java.io.FileFilter;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileNotFoundException;
+import java.util.*;
+
+import static org.junit.Assert.*;
 
 /**
  * Created by Oscar Arrieta on 7/7/17.
@@ -330,7 +308,7 @@ public class PublisherAPITest extends IntegrationTestBase {
      */
     @Test
     public void test_addFilter_success() throws DotDataException {
-        PublisherAPIImpl.class.cast(publisherAPI).getFilterDescriptorMap().clear();
+        PublisherAPIImpl.class.cast(publisherAPI).clearFilterDescriptorList();
 
         final Map<String,Object> filtersMap =
                 ImmutableMap.of("dependencies",true,"relationships",true,"excludeClasses","Host,Workflow");
@@ -353,7 +331,7 @@ public class PublisherAPITest extends IntegrationTestBase {
      */
     @Test
     public void test_getFiltersByRole_CMSAdmin_returnAllFilters() throws DotDataException {
-        PublisherAPIImpl.class.cast(publisherAPI).getFilterDescriptorMap().clear();
+        PublisherAPIImpl.class.cast(publisherAPI).clearFilterDescriptorList();
 
         final Map<String,Object> filtersMap =
                 ImmutableMap.of("dependencies",true,"relationships",true,"excludeClasses","Host,Workflow");
@@ -384,7 +362,7 @@ public class PublisherAPITest extends IntegrationTestBase {
      */
     @Test
     public void test_getFiltersByRole_nonCMSAdmin_userId() throws DotDataException {
-        PublisherAPIImpl.class.cast(publisherAPI).getFilterDescriptorMap().clear();
+        PublisherAPIImpl.class.cast(publisherAPI).clearFilterDescriptorList();
 
         final User newUser = new UserDataGen().nextPersisted();
 
@@ -425,7 +403,7 @@ public class PublisherAPITest extends IntegrationTestBase {
      */
     @Test
     public void test_getFiltersByRole_nonCMSAdmin_RoleHierarchy() throws DotDataException {
-        PublisherAPIImpl.class.cast(publisherAPI).getFilterDescriptorMap().clear();
+        PublisherAPIImpl.class.cast(publisherAPI).clearFilterDescriptorList();
 
         final User userA = new UserDataGen().nextPersisted();
         final User userB = new UserDataGen().nextPersisted();
@@ -502,7 +480,7 @@ public class PublisherAPITest extends IntegrationTestBase {
      */
     @Test
     public void test_getFilterDescriptorByKey_emptyKey_returnDefaultFilter(){
-        PublisherAPIImpl.class.cast(publisherAPI).getFilterDescriptorMap().clear();
+        PublisherAPIImpl.class.cast(publisherAPI).clearFilterDescriptorList();
 
         final String keyDefault = "TestByKeyEmptyKeyDefault.yml";
         createFilterDescriptor(keyDefault,"TestByKeyEmptyKeyDefault",true,null);
@@ -521,7 +499,7 @@ public class PublisherAPITest extends IntegrationTestBase {
      */
     @Test
     public void test_getFilterDescriptorByKey_filterKeyDoesNotExist_returnDefaultFilter(){
-        PublisherAPIImpl.class.cast(publisherAPI).getFilterDescriptorMap().clear();
+        PublisherAPIImpl.class.cast(publisherAPI).clearFilterDescriptorList();
 
         final String keyDefault = "TestByKeyDoesNotExistDefault.yml";
         createFilterDescriptor(keyDefault,"TestByKeyDoesNotExistDefault",true,null);
@@ -543,7 +521,7 @@ public class PublisherAPITest extends IntegrationTestBase {
     @Test
     public void test_createPublisherFilter_withAllFilters()
             throws DotDataException, DotSecurityException {
-        PublisherAPIImpl.class.cast(publisherAPI).getFilterDescriptorMap().clear();
+        PublisherAPIImpl.class.cast(publisherAPI).clearFilterDescriptorList();
 
         final String filterKey = "TestCreatePublisherFilterAllFilters.yml";
         final Map<String,Object> filtersMap = new HashMap<>();
@@ -590,7 +568,7 @@ public class PublisherAPITest extends IntegrationTestBase {
     @Test
     public void test_createPublisherFilter_withSomeFilters()
             throws DotDataException, DotSecurityException {
-        PublisherAPIImpl.class.cast(publisherAPI).getFilterDescriptorMap().clear();
+        PublisherAPIImpl.class.cast(publisherAPI).clearFilterDescriptorList();
 
         final String filterKey = "TestCreatePublisherFilter.yml";
         final List<Object> listExcludeClasses = new ArrayList();

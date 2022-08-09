@@ -158,6 +158,7 @@
             String customStyles = "";
             String customClassName = "";
             String allowedContentTypes = "";
+            String allowedBlocks = "";
 
             List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
             for(FieldVariable fv : acceptTypes){
@@ -168,6 +169,9 @@
                 if("contentTypes".equalsIgnoreCase(fv.getKey())){
                     //only allow alphanumeric character an comma
                     allowedContentTypes = fv.getValue().replaceAll("[^a-zA-Z0-9,]", "");
+                }
+                if("allowedBlocks".equalsIgnoreCase(fv.getKey())){
+                    allowedBlocks = fv.getValue().replaceAll("[^a-zA-Z0-9,]", "");
                 }
             }
             %>
@@ -186,6 +190,7 @@
             <script src="/html/dotcms-block-editor.js"></script>
             <dotcms-block-editor
                 allowed-content-types="<%=allowedContentTypes%>"
+                allowed-blocks="<%=allowedBlocks%>"
                 class="<%=customClassName%>"
                 lang="<%=contentLanguage%>">
             </dotcms-block-editor>

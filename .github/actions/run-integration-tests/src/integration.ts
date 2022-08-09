@@ -13,9 +13,9 @@ const resolveCiIndex = (): number => {
     return 0
   } else if (dbType === 'mssql') {
     return 1
+  } else {
+    return -1
   }
-
-  return -1
 }
 
 const buildEnv = core.getInput('build_env')
@@ -29,13 +29,17 @@ const outputDir = `${dotCmsRoot}/build/test-results/integrationTest`
 const reportDir = `${dotCmsRoot}/build/reports/tests/integrationTest`
 const ciIndex = resolveCiIndex()
 
+interface CommandResult {
+  exitCode: number
+  outputDir?: string
+  reportDir?: string
+  ciIndex?: number
+}
+
 export interface Command {
   cmd: string
   args: string[]
   workingDir: string
-  outputDir?: string
-  reportDir?: string
-  ciIndex?: number
   env?: {[key: string]: string}
 }
 
@@ -48,32 +52,36 @@ const DEPS_ENV: DatabaseEnvs = {
   postgres: {
     POSTGRES_USER: 'postgres',
     POSTGRES_PASSWORD: 'postgres',
-    POSTGRES_DB: 'dotcms'
+    POSTGRES_DB: 'dotcms' /*,
+    MAX_LOCKS_PER_TRANSACTION: '128'*/
   }
 }
 
 export interface Commands {
-  gradle: Command
-  maven: Command
+  gradle: Command[]
+  maven: Command[]
 }
 
 export const COMMANDS: Commands = {
-  gradle: {
-    cmd: './gradlew',
-    args: ['integrationTest', `-PdatabaseType=${dbType}`],
-    workingDir: dotCmsRoot,
-    outputDir: outputDir,
-    reportDir: reportDir,
-    ciIndex: ciIndex
-  },
-  maven: {
-    cmd: './mvnw',
-    args: ['integrationTest', `-PdatabaseType=${dbType}`],
-    workingDir: dotCmsRoot,
-    outputDir: outputDir,
-    reportDir: reportDir,
-    ciIndex: ciIndex
-  }
+  gradle: [
+    {
+      cmd: './gradlew',
+      args: ['createDistPrep'],
+      workingDir: dotCmsRoot
+    },
+    {
+      cmd: './gradlew',
+      args: ['integrationTest', `-PdatabaseType=${dbType}`],
+      workingDir: dotCmsRoot
+    }
+  ],
+  maven: [
+    {
+      cmd: './mvnw',
+      args: ['integrationTest', `-PdatabaseType=${dbType}`],
+      workingDir: dotCmsRoot
+    }
+  ]
 }
 
 const START_DEPENDENCIES_CMD: Command = {
@@ -93,41 +101,63 @@ const STOP_DEPENDENCIES_CMD: Command = {
 /**
  * Based on a revolved {@link Command}, resolve the command to execute in order to run integration tests.
  *
- * @param cmd resolved command
+ * @param cmds resolved command
  * @returns a number representing the command exit code
  */
-export const runTests = async (cmd: Command): Promise<number> => {
+export const runTests = async (cmds: Command[]): Promise<CommandResult> => {
   // Setup ITs
-  setup.setupTests(propertyMap())
+  await setup.setupTests(propertyMap())
 
-  // Starting dependencies
-  core.info(`
+  let idx = 0
+
+  try {
+    if (cmds.length > 1) {
+      const prepareCmd = cmds[idx++]
+      core.info(`
+      ===========================
+      Preparing integration tests
+      ===========================`)
+      await execCmd(prepareCmd)
+    }
+
+    // Starting dependencies
+    core.info(`
     =======================================
     Starting integration tests dependencies
     =======================================`)
-  execCmdAsync(START_DEPENDENCIES_CMD)
+    execCmdAsync(START_DEPENDENCIES_CMD)
 
-  await waitFor(60, `ES and ${dbType}`)
+    await waitFor(60, `ES and ${dbType}`)
 
-  // Executes ITs
-  resolveParams(cmd)
-  core.info(`
-    ===========================================
-    Running integration tests against ${dbType}
-    ===========================================`)
-  let itCode
-  try {
-    itCode = await execCmd(cmd)
+    // Executes ITs
+    const cmd = cmds[idx]
+    resolveParams(cmd)
+    core.info(`
+      ===========================================
+      Running integration tests against ${dbType}
+      ===========================================`)
+
+    const exitCode = await execCmd(cmd)
     core.info(`
       ===========================================
       Integration tests have finished to run
       ===========================================`)
-    return itCode
+    return {
+      exitCode,
+      outputDir,
+      reportDir,
+      ciIndex
+    }
   } catch (err) {
     core.setFailed(`Running integration tests failed due to ${err}`)
-    return 127
+    return {
+      exitCode: 127,
+      outputDir,
+      reportDir,
+      ciIndex
+    }
   } finally {
-    stopDeps()
+    await stopDeps()
   }
 }
 
@@ -157,6 +187,8 @@ const propertyMap = (): Map<string, string> => {
   properties.set('dotSecureFolder', appendToWorkspace('custom/dotsecure'))
   properties.set('dotCmsFolder', dotCmsRoot)
   properties.set('felixFolder', appendToWorkspace('custom/felix'))
+  const tomcatRoot = path.join(projectRoot, 'dist', 'dotserver', 'tomcat-9.0.60')
+  properties.set('systemFelixFolder', path.join(tomcatRoot, 'webapps', 'ROOT', 'WEB-INF', 'felix-system'))
   properties.set('assetsFolder', appendToWorkspace('custom/assets'))
   properties.set('esDataFolder', appendToWorkspace('custom/esdata'))
   properties.set('logsFolder', dotCmsRoot)

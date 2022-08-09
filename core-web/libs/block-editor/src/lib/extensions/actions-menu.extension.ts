@@ -21,7 +21,11 @@ import { ActionButtonComponent } from './components/action-button/action-button.
 import { PluginKey } from 'prosemirror-state';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { SuggestionPopperModifiers } from '../utils/suggestion.utils';
+import {
+    CONTENT_SUGGESTION_ID,
+    suggestionOptions,
+    SuggestionPopperModifiers
+} from '../utils/suggestion.utils';
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
@@ -128,10 +132,37 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
      * @param {(SuggestionProps | FloatingActionsProps)} { editor, range, clientRect }
      */
     function onStart({ editor, range, clientRect }: SuggestionProps | FloatingActionsProps): void {
+        setUpSuggestionComponent(editor, range);
+        myTippy = getTippyInstance({
+            element: editor.view.dom,
+            content: suggestionsComponent.location.nativeElement,
+            rect: clientRect,
+            onHide: () => {
+                const transaction = editor.state.tr.setMeta(FLOATING_ACTIONS_MENU_KEYBOARD, {
+                    open: false
+                });
+                editor.view.dispatch(transaction);
+            }
+        });
+    }
+
+    function setUpSuggestionComponent(editor: Editor, range: Range) {
+        const allowedBlocks: string[] = editor.storage.dotConfig.allowedBlocks;
         suggestionsComponent = getSuggestionComponent(viewContainerRef);
         suggestionsComponent.instance.currentLanguage = editor.storage.dotConfig.lang;
         suggestionsComponent.instance.allowedContentTypes =
             editor.storage.dotConfig.allowedContentTypes;
+        if (allowedBlocks.length > 1) {
+            suggestionsComponent.instance.items = suggestionOptions.filter((item) =>
+                allowedBlocks.includes(item.id)
+            );
+            if (allowedBlocks.includes(CONTENT_SUGGESTION_ID)) {
+                suggestionsComponent.instance.addCContentletItem();
+            }
+        } else {
+            suggestionsComponent.instance.addCContentletItem();
+        }
+
         suggestionsComponent.instance.onSelection = (item) => {
             const suggestionQuery = suggestionKey.getState(editor.view.state).query?.length || 0;
             range.to = range.to + suggestionQuery;
@@ -144,18 +175,6 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
                 from: type === ItemsType.BLOCK ? range.from : range.from + 1
             };
             editor.chain().deleteRange(queryRange).run();
-        });
-
-        myTippy = getTippyInstance({
-            element: editor.view.dom,
-            content: suggestionsComponent.location.nativeElement,
-            rect: clientRect,
-            onHide: () => {
-                const transaction = editor.state.tr.setMeta(FLOATING_ACTIONS_MENU_KEYBOARD, {
-                    open: false
-                });
-                editor.view.dispatch(transaction);
-            }
         });
     }
 
@@ -198,32 +217,35 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
 
     return Extension.create<FloatingMenuOptions>({
         name: 'actionsMenu',
-        defaultOptions: {
-            pluginKey: 'actionsMenu',
-            element: null,
-            suggestion: {
-                char: '/',
-                pluginKey: suggestionKey,
-                allowSpaces: true,
-                startOfLine: true,
-                render: () => {
-                    return {
-                        onStart,
-                        onKeyDown,
-                        onExit
-                    };
-                },
-                items: ({ query }) => {
-                    if (suggestionsComponent) {
-                        suggestionsComponent.instance.filterItems(query);
-                    }
 
-                    // suggestions plugin need to return something,
-                    // but we are using the angular suggestionsComponent
-                    // https://tiptap.dev/api/utilities/suggestion
-                    return [];
+        addOptions() {
+            return {
+                pluginKey: 'actionsMenu',
+                element: null,
+                suggestion: {
+                    char: '/',
+                    pluginKey: suggestionKey,
+                    allowSpaces: true,
+                    startOfLine: true,
+                    render: () => {
+                        return {
+                            onStart,
+                            onKeyDown,
+                            onExit
+                        };
+                    },
+                    items: ({ query }) => {
+                        if (suggestionsComponent) {
+                            suggestionsComponent.instance.filterItems(query);
+                        }
+
+                        // suggestions plugin need to return something,
+                        // but we are using the angular suggestionsComponent
+                        // https://tiptap.dev/api/utilities/suggestion
+                        return [];
+                    }
                 }
-            }
+            };
         },
 
         addCommands() {

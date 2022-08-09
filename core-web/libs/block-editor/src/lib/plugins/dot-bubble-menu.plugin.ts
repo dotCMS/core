@@ -332,7 +332,12 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
     }
 
     setChangeToOptions() {
-        const changeToOptions = suggestionOptions.filter((item) => item.id != 'horizontalLine');
+        const allowedBlocks: string[] = this.editor.storage.dotConfig.allowedBlocks;
+
+        const changeToOptions =
+            allowedBlocks.length > 1
+                ? suggestionOptions.filter((item) => allowedBlocks.includes(item.id))
+                : suggestionOptions.filter((item) => item.id != 'horizontalLine');
         const changeTopCommands = {
             heading1: () => {
                 this.editor.chain().focus().clearNodes().setHeading({ level: 1 }).run();
