@@ -1,6 +1,7 @@
 package com.dotcms.csspreproc.dartsass;
 
 import com.dotmarketing.util.Config;
+import io.vavr.Lazy;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -62,12 +63,12 @@ public class CompilerOptions implements Serializable {
      * @param builder The {@link Builder} object containing the specified compilation parameters.
      */
     private CompilerOptions(final Builder builder) {
-        this.verbose = builder.verbose;
-        this.expandedCss = builder.expandedCss;
-        this.errorInCss = builder.errorInCss;
-        this.stopOnError = builder.stopOnError;
-        this.deprecationWarnings = builder.deprecationWarnings;
-        this.deprecationWarningsFromDependencies = builder.deprecationWarningsFromDependencies;
+        this.verbose = builder.verbose.get();
+        this.expandedCss = builder.expandedCss.get();
+        this.errorInCss = builder.errorInCss.get();
+        this.stopOnError = builder.stopOnError.get();
+        this.deprecationWarnings = builder.deprecationWarnings.get();
+        this.deprecationWarningsFromDependencies = builder.deprecationWarningsFromDependencies.get();
     }
 
     /**
@@ -212,13 +213,14 @@ public class CompilerOptions implements Serializable {
      */
     public static final class Builder {
 
-        private boolean verbose = Config.getBooleanProperty(VERBOSE, Boolean.FALSE);
-        private boolean expandedCss = Config.getBooleanProperty(ENABLE_EXPANDED_CSS, Boolean.TRUE);
-        private boolean errorInCss = Config.getBooleanProperty(ERROR_IN_CSS, Boolean.TRUE);
-        private boolean stopOnError = Config.getBooleanProperty(STOP_ON_ERROR, Boolean.TRUE);
-        private boolean deprecationWarnings = Config.getBooleanProperty(DEPRECATION_WARNINGS, Boolean.FALSE);
-        private boolean deprecationWarningsFromDependencies =
-                Config.getBooleanProperty(DEPRECATION_WARNINGS_FROM_DEPENDENCIES, Boolean.FALSE);
+        private Lazy<Boolean> verbose = Lazy.of(() -> Config.getBooleanProperty(VERBOSE, Boolean.FALSE));
+        private Lazy<Boolean> expandedCss = Lazy.of(() -> Config.getBooleanProperty(ENABLE_EXPANDED_CSS, Boolean.TRUE));
+        private Lazy<Boolean> errorInCss = Lazy.of(() -> Config.getBooleanProperty(ERROR_IN_CSS, Boolean.TRUE));
+        private Lazy<Boolean> stopOnError = Lazy.of(() -> Config.getBooleanProperty(STOP_ON_ERROR, Boolean.TRUE));
+        private Lazy<Boolean> deprecationWarnings = Lazy.of(() -> Config.getBooleanProperty(DEPRECATION_WARNINGS,
+                Boolean.FALSE));
+        private Lazy<Boolean> deprecationWarningsFromDependencies =
+                Lazy.of(() -> Config.getBooleanProperty(DEPRECATION_WARNINGS_FROM_DEPENDENCIES, Boolean.FALSE));
 
         /**
          * Default class constructor.
@@ -234,7 +236,7 @@ public class CompilerOptions implements Serializable {
          * @return The current {@link Builder} instance.
          */
         public Builder verbose(final boolean verbose) {
-            this.verbose = verbose;
+            this.verbose = Lazy.of(() -> verbose);
             return this;
         }
 
@@ -248,7 +250,7 @@ public class CompilerOptions implements Serializable {
          * @return The current {@link Builder} instance.
          */
         public Builder expandedCss(final boolean expandedCss) {
-            this.expandedCss = expandedCss;
+            this.expandedCss = Lazy.of(() -> expandedCss);
             return this;
         }
 
@@ -262,7 +264,7 @@ public class CompilerOptions implements Serializable {
          * @return The current {@link Builder} instance.
          */
         public Builder errorInCss(final boolean errorInCss) {
-            this.errorInCss = errorInCss;
+            this.errorInCss = Lazy.of(() -> errorInCss);
             return this;
         }
 
@@ -275,7 +277,7 @@ public class CompilerOptions implements Serializable {
          * @return The current {@link Builder} instance.
          */
         public Builder stopOnError(final boolean stopOnError) {
-            this.stopOnError = stopOnError;
+            this.stopOnError = Lazy.of(() -> stopOnError);
             return this;
         }
 
@@ -288,7 +290,7 @@ public class CompilerOptions implements Serializable {
          * @return The current {@link Builder} instance.
          */
         public Builder deprecationWarnings(final boolean deprecationWarnings) {
-            this.deprecationWarnings = deprecationWarnings;
+            this.deprecationWarnings = Lazy.of(() -> deprecationWarnings);
             return this;
         }
 
@@ -302,7 +304,7 @@ public class CompilerOptions implements Serializable {
          * @return The current {@link Builder} instance.
          */
         public Builder deprecationWarningsFromDependencies(final boolean deprecationWarningsFromDependencies) {
-            this.deprecationWarningsFromDependencies = deprecationWarningsFromDependencies;
+            this.deprecationWarningsFromDependencies = Lazy.of(() -> deprecationWarningsFromDependencies);
             return this;
         }
 
