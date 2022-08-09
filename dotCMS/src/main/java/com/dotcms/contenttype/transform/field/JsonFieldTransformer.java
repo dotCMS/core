@@ -4,6 +4,8 @@ import static com.dotcms.util.CollectionsUtils.map;
 
 import com.dotcms.contenttype.model.field.ContentTypeFieldProperties;
 import com.dotcms.contenttype.model.field.ImmutableRelationshipField;
+import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.UtilMethods;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -185,9 +187,11 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
       } else if (ImmutableRelationshipField.class.getName().equals(fieldMap.get("clazz"))) {
         final String cardinality = fieldMap.remove(VALUES).toString();
         final String relationType = fieldMap.remove("relationType").toString();
-
+        final Relationship relationship = APILocator.getRelationshipAPI()
+                .getRelationshipFromField(field, APILocator.getLoginServiceAPI().getLoggedInUser());
         fieldMap.put(ContentTypeFieldProperties.RELATIONSHIPS.getName(), map(
-            "cardinality", Integer.parseInt(cardinality), "velocityVar", relationType
+            "cardinality", Integer.parseInt(cardinality), "velocityVar", relationType,
+                "isParentField", APILocator.getRelationshipAPI().isParentField(relationship, field)
         ));
       }
 
