@@ -154,3 +154,4 @@ This maintenance release includes the following code fixes:
 82. https://github.com/dotCMS/core/issues/19358 : Large amounts of content in structure can deadlock the DB when repermissioning #19358
 83. https://github.com/dotCMS/core/issues/19569 : Rely on Tomcat's RemoteIpValve for dns resolution - was: External service interaction (DNS) #19569
 84. https://github.com/dotCMS/core/issues/21619 : ContentTypeFactoryImpl Getting Config values cause unneeded load #21619
+85. https://github.com/dotCMS/core/issues/21624 : [Push Publishing] : Pushing single archived content un-publishes all its versions in receiving instance #21624
