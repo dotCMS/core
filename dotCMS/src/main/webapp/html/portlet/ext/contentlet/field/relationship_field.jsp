@@ -481,10 +481,10 @@
             }
 
 			<%= relationJsName %>_Contents = <%= relationJsName %>_Contents.concat(dataNoRep);
-			renumberAndReorder<%= relationJsName %>();
 			// This function is called when relations are loaded or every time we add a new relation.
 			// So we set the map value to true.
 			relationsLoadedMap['<%=relationJsName%>'] = true;
+			renumberAndReorder<%= relationJsName %>();
 		}
 
 

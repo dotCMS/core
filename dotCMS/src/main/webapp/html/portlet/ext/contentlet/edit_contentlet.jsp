@@ -61,7 +61,9 @@
 
 			observer.observe(document.body, {
 				childList: true,
-				subtree: true,
+				attributes: true,
+				characterData: true,
+				subtree: true
 			});
 		});
 	}
