@@ -25,10 +25,13 @@ export const LINK_FORM_PLUGIN_KEY = new PluginKey('addLink');
 export const BubbleLinkFormExtension = (viewContainerRef: ViewContainerRef) => {
     return Extension.create<BubbleLinkFormOptions>({
         name: 'bubbleLinkForm',
-        defaultOptions: {
-            element: null,
-            tippyOptions: {},
-            pluginKey: LINK_FORM_PLUGIN_KEY
+
+        addOptions() {
+            return {
+                element: null,
+                tippyOptions: {},
+                pluginKey: LINK_FORM_PLUGIN_KEY
+            };
         },
 
         addCommands() {

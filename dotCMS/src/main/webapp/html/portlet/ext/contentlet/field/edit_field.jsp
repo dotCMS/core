@@ -158,6 +158,7 @@
             String customStyles = "";
             String customClassName = "";
             String allowedContentTypes = "";
+            String allowedBlocks = "";
 
             List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
             for(FieldVariable fv : acceptTypes){
@@ -168,6 +169,9 @@
                     //only allow alphanumeric character an comma
                     allowedContentTypes = fv.getValue().replaceAll("[^a-zA-Z0-9,]", "");
                 }
+                if("allowedBlocks".equalsIgnoreCase(fv.getKey())){
+                    allowedBlocks = fv.getValue().replaceAll("[^a-zA-Z0-9,]", "");
+                }
             }
             %>
 
@@ -175,6 +179,7 @@
             <dotcms-block-editor
                 allowed-content-types="<%=allowedContentTypes%>"
                 custom-styles="<%=customStyles%>"
+                allowed-blocks="<%=allowedBlocks%>"
                 lang="<%=contentLanguage%>">
             </dotcms-block-editor>
             <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"/>

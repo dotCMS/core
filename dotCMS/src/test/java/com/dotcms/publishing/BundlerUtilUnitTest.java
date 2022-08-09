@@ -9,7 +9,7 @@ import org.junit.Test;
 /**
  * @author Jonathan Gamba 2019-01-08
  */
-public class BundlerUtilTest {
+public class BundlerUtilUnitTest {
 
     @Test
     public void sanitize_bundle_name_no_changes() throws Exception {

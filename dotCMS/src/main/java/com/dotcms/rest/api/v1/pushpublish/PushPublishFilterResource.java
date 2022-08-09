@@ -1,14 +1,13 @@
 package com.dotcms.rest.api.v1.pushpublish;
 
 import com.dotcms.publishing.FilterDescriptor;
-import com.dotcms.publishing.PushPublishFiltersInitializer;
+import com.dotcms.publishing.PublisherAPI;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.MultiPartUtils;
-import com.dotcms.util.YamlUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DoesNotExistException;
@@ -18,7 +17,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
-import org.apache.commons.io.FileUtils;
+import io.vavr.Lazy;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.server.JSONP;
 
@@ -30,8 +29,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -51,8 +48,8 @@ import java.util.stream.Collectors;
 public class PushPublishFilterResource {
 
     private final WebResource webResource;
-
     private final MultiPartUtils multiPartUtils = new MultiPartUtils();
+    private final Lazy<PublisherAPI> publisherAPI = Lazy.of(() -> APILocator.getPublisherAPI());
 
     public PushPublishFilterResource(){
         this(new WebResource());
@@ -92,10 +89,7 @@ public class PushPublishFilterResource {
                         .rejectWhenNoUser(true)
                         .init();
         final User user = initData.getUser();
-        final List<FilterDescriptor> list = APILocator.getPublisherAPI().getFiltersDescriptorsByRole(user);
-        if (UtilMethods.isSet(list)) {
-            Collections.sort(list);
-        }
+        final List<FilterDescriptor> list = this.publisherAPI.get().getFiltersDescriptorsByRole(user);
         return Response.ok(new ResponseEntityView<>(list)).build();
     }
 
@@ -134,7 +128,7 @@ public class PushPublishFilterResource {
                         .init();
         final User user = initData.getUser();
 
-        if (APILocator.getPublisherAPI().existsFilterDescriptor(filterKey)) {
+        if (this.publisherAPI.get().existsFilterDescriptor(filterKey)) {
 
             final FilterDescriptor filterDescriptor = APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey);
             if (!user.isAdmin()) {
@@ -210,21 +204,14 @@ public class PushPublishFilterResource {
 
         Logger.debug(this, ()-> "Adding PP filter: " + filterDescriptorForm);
 
-        if (APILocator.getPublisherAPI().existsFilterDescriptor(filterDescriptorForm.getKey())) {
+        if (this.publisherAPI.get().existsFilterDescriptor(filterDescriptorForm.getKey())) {
             final String errorMsg = String.format("Filter '%s' cannot be added because it already exists",
                     filterDescriptorForm.getKey());
             Logger.debug(this, () -> errorMsg);
             throw new IllegalArgumentException(errorMsg);
         }
 
-        final FilterDescriptor filterDescriptor = new FilterDescriptor(filterDescriptorForm.getKey(), filterDescriptorForm.getTitle(),
-                filterDescriptorForm.getFilters(), filterDescriptorForm.isDefaultFilter(), filterDescriptorForm.getRoles());
-        final File filterPathFile = new File(new File(APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "server"
-                + File.separator + "publishing-filters" + File.separator), filterDescriptor.getKey());
-        YamlUtil.write(filterPathFile, filterDescriptor);
-        new PushPublishFiltersInitializer().init();
-        final List<String> filterNames = APILocator.getPublisherAPI()
-                .getFiltersDescriptorsByRole(user).stream().map(filter -> filter.getKey()).collect(Collectors.toList());
+        final List<String> filterNames = saveAndReloadFiltersFromForm(filterDescriptorForm, user);
         return Response.ok(new ResponseEntityView<>(filterNames)).build();
     }
 
@@ -268,28 +255,8 @@ public class PushPublishFilterResource {
                         .init();
         final User user = initData.getUser();
 
-        Logger.debug(this, ()-> "Adding PP filter by file ");
-
-        final List<File> filterFiles = this.multiPartUtils.getBinariesFromMultipart(multipart);
-
-        for (final File file : filterFiles) {
-            if (APILocator.getPublisherAPI().existsFilterDescriptor(file.getName())) {
-                final String errorMsg =
-                        String.format("Filter '%s' cannot be added because it already exists", file.getName());
-                Logger.debug(this, () -> errorMsg);
-                throw new IllegalArgumentException(errorMsg);
-            }
-        }
-
-        for (final File file : filterFiles) {
-            final File filterPathFile = new File(new File(APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "server"
-                    + File.separator + "publishing-filters" + File.separator), file.getName());
-            FileUtils.copyFile(file, filterPathFile);
-        }
-        new PushPublishFiltersInitializer().init();
-        final List<String> filterNames = APILocator.getPublisherAPI()
-                .getFiltersDescriptorsByRole(user).stream().map(filter -> filter.getKey()).collect(Collectors.toList());
-
+        Logger.debug(this, ()-> "Adding PP filter by file");
+        final List<String> filterNames = saveAndReloadFiltersFromFile(multipart, user);
         return Response.ok(new ResponseEntityView<>(filterNames)).build();
     }
 
@@ -347,20 +314,13 @@ public class PushPublishFilterResource {
 
         Logger.debug(this, ()-> "Updating PP filter: " + filterDescriptorForm);
 
-        if (!APILocator.getPublisherAPI().existsFilterDescriptor(filterDescriptorForm.getKey())) {
+        if (!this.publisherAPI.get().existsFilterDescriptor(filterDescriptorForm.getKey())) {
             final String errorMsg = String.format("Filter '%s' does not exist", filterDescriptorForm.getKey());
             Logger.debug(this, ()-> errorMsg);
             throw new DoesNotExistException(errorMsg);
         }
 
-        final FilterDescriptor filterDescriptor = new FilterDescriptor(filterDescriptorForm.getKey(), filterDescriptorForm.getTitle(),
-                filterDescriptorForm.getFilters(), filterDescriptorForm.isDefaultFilter(), filterDescriptorForm.getRoles());
-        final File filterPathFile = new File(new File(APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "server"
-                + File.separator + "publishing-filters" + File.separator), filterDescriptor.getKey());
-        YamlUtil.write(filterPathFile, filterDescriptor);
-        new PushPublishFiltersInitializer().init();
-        final List<String> filterNames = APILocator.getPublisherAPI()
-                .getFiltersDescriptorsByRole(user).stream().map(filter -> filter.getKey()).collect(Collectors.toList());
+        final List<String> filterNames = saveAndReloadFiltersFromForm(filterDescriptorForm, user);
         return Response.ok(new ResponseEntityView<>(filterNames)).build();
     }
 
@@ -404,27 +364,8 @@ public class PushPublishFilterResource {
                         .init();
         final User user = initData.getUser();
 
-        Logger.debug(this, ()-> "Updating PP filter by file ");
-
-        final List<File> filterFiles = this.multiPartUtils.getBinariesFromMultipart(multipart);
-
-        for (final File file : filterFiles) {
-            if (!APILocator.getPublisherAPI().existsFilterDescriptor(file.getName())) {
-                final String errorMsg = String.format("Filter '%s' does not exist", file.getName());
-                Logger.debug(this, ()-> errorMsg);
-                throw new IllegalArgumentException(errorMsg);
-            }
-        }
-
-        for (final File file : filterFiles) {
-            final File filterPathFile = new File(new File(APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "server"
-                    + File.separator + "publishing-filters" + File.separator), file.getName());
-            FileUtils.copyFile(file, filterPathFile);
-        }
-        new PushPublishFiltersInitializer().init();
-        final List<String> filterNames = APILocator.getPublisherAPI()
-                .getFiltersDescriptorsByRole(user).stream().map(filter -> filter.getKey()).collect(Collectors.toList());
-
+        Logger.debug(this, ()-> "Updating PP filter by file");
+        final List<String> filterNames = updateAndReloadFiltersFromFile(multipart, user);
         return Response.ok(new ResponseEntityView<>(filterNames)).build();
     }
 
@@ -441,9 +382,7 @@ public class PushPublishFilterResource {
      *
      * @return The complete list of Push Publishing Filters in the system.
      *
-     * @throws DotDataException     An error occurred when interacting with the data source.
-     * @throws DotSecurityException The {@link User} calling this method does not have the required permission to
-     *                              perform this action.
+     * @throws DotDataException An error occurred when interacting with the data source.
      */
     @DELETE
     @Path("/{filterKey}")
@@ -452,7 +391,7 @@ public class PushPublishFilterResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response deleteFilter(@Context final HttpServletRequest request,
                                      @Context final HttpServletResponse response,
-                                     @PathParam("filterKey") final String filterKey) throws DotDataException, DotSecurityException {
+                                     @PathParam("filterKey") final String filterKey) throws DotDataException {
 
         final InitDataObject initData =
                 new WebResource.InitBuilder(webResource)
@@ -463,31 +402,92 @@ public class PushPublishFilterResource {
                         .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
                         .init();
         final User user = initData.getUser();
-
-        if (!APILocator.getPublisherAPI().existsFilterDescriptor(filterKey)) {
-            final String errorMsg = String.format("Filter '%s' does not exist", filterKey);
-            Logger.debug(this, ()-> errorMsg);
-            throw new DoesNotExistException(errorMsg);
-        }
-
-        final File filterPathFile = new File(new File(APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "server"
-                + File.separator + "publishing-filters" + File.separator), filterKey);
-        if (FileUtils.deleteQuietly(filterPathFile)) {
-            new PushPublishFiltersInitializer().init();
-            final List<String> filterNames = APILocator.getPublisherAPI()
-                    .getFiltersDescriptorsByRole(user).stream().map(filter -> filter.getKey()).collect(Collectors.toList());
-
+        final boolean deleted = this.publisherAPI.get().deleteFilterDescriptor(filterKey);
+        if (deleted) {
+            final List<String> filterNames =
+                    this.publisherAPI.get().getFiltersDescriptorsByRole(user).stream().map(FilterDescriptor::getKey).collect(Collectors.toList());
             return Response.ok(new ResponseEntityView<>(filterNames)).build();
         }
-
         return Response.status(Response.Status.EXPECTATION_FAILED).
-                entity(new ResponseEntityView(Arrays.asList(
-                        new ErrorEntity(
-                                new Integer(Response.Status.EXPECTATION_FAILED.getStatusCode()).toString(),
+                entity(new ResponseEntityView(List.of(
+                        new ErrorEntity(Integer.valueOf(Response.Status.EXPECTATION_FAILED.getStatusCode()).toString(),
                                 String.format("Filter '%s' cannot be deleted", filterKey))
                         )
                     )
                 ).build();
+    }
+
+    /**
+     * Saves or updates the Push Publishing Filter submitted via the REST Form, and re-initializes the complete list of
+     * Filters.
+     *
+     * @param filterDescriptorForm The {@link FilterDescriptorForm} containing the information from the Push
+     *                             Publishing Filter.
+     * @param user                 The {@link User} performing this action.
+     *
+     * @return The list containing the keys from all Push Publishing Filters.
+     *
+     * @throws DotDataException An error occurred when interacting with the data source.
+     */
+    protected List<String> saveAndReloadFiltersFromForm(final FilterDescriptorForm filterDescriptorForm,
+                                                        final User user) throws DotDataException {
+        final FilterDescriptor filterDescriptor = new FilterDescriptor(filterDescriptorForm.getKey(),
+                filterDescriptorForm.getTitle(), filterDescriptorForm.getSort(), filterDescriptorForm.getFilters(),
+                filterDescriptorForm.isDefaultFilter(), filterDescriptorForm.getRoles());
+        this.publisherAPI.get().upsertFilterDescriptor(filterDescriptor);
+        return this.publisherAPI.get().getFiltersDescriptorsByRole(user).stream().map(FilterDescriptor::getKey).collect(Collectors.toList());
+    }
+
+    /**
+     * Saves the Push Publishing Filter submitted as YML files, and re-initializes the complete list of Filters.
+     *
+     * @param multipart The {@link FormDataMultiPart} object containing the binary YML file(s).
+     * @param user      The {@link User} performing this action.
+     *
+     * @return The list containing the keys from all Push Publishing Filters.
+     *
+     * @throws DotDataException         An error occurred when interacting with the data source.
+     * @throws IOException              An error occurred when copying the YML files.
+     * @throws IllegalArgumentException At least one of the specified Filters already exist.
+     */
+    protected List<String> saveAndReloadFiltersFromFile(final FormDataMultiPart multipart, final User user) throws DotDataException, IOException {
+        final List<File> filterFiles = this.multiPartUtils.getBinariesFromMultipart(multipart);
+        for (final File file : filterFiles) {
+            if (APILocator.getPublisherAPI().existsFilterDescriptor(file.getName())) {
+                final String errorMsg =
+                        String.format("Filter '%s' cannot be added because it already exists", file.getName());
+                Logger.warn(this, () -> errorMsg);
+                throw new IllegalArgumentException(errorMsg);
+            }
+        }
+        this.publisherAPI.get().saveFilterDescriptors(filterFiles);
+        return this.publisherAPI.get().getFiltersDescriptorsByRole(user).stream().map(FilterDescriptor::getKey).collect(Collectors.toList());
+    }
+
+    /**
+     * Updates the Push Publishing Filter submitted as YML files, and re-initializes the complete list of Filters.
+     *
+     * @param multipart The {@link FormDataMultiPart} object containing the binary YML file(s).
+     * @param user      The {@link User} performing this action.
+     *
+     * @return The list containing the keys from all Push Publishing Filters.
+     *
+     * @throws DotDataException         An error occurred when interacting with the data source.
+     * @throws IOException              An error occurred when copying the YML files.
+     * @throws IllegalArgumentException At least one of the specified Filters does not exist.
+     */
+    protected List<String> updateAndReloadFiltersFromFile(final FormDataMultiPart multipart, final User user) throws DotDataException, IOException {
+        final List<File> filterFiles = this.multiPartUtils.getBinariesFromMultipart(multipart);
+        for (final File file : filterFiles) {
+            if (!APILocator.getPublisherAPI().existsFilterDescriptor(file.getName())) {
+                final String errorMsg =
+                        String.format("Filter '%s' does not exist", file.getName());
+                Logger.warn(this, () -> errorMsg);
+                throw new IllegalArgumentException(errorMsg);
+            }
+        }
+        this.publisherAPI.get().saveFilterDescriptors(filterFiles);
+        return this.publisherAPI.get().getFiltersDescriptorsByRole(user).stream().map(FilterDescriptor::getKey).collect(Collectors.toList());
     }
 
 }

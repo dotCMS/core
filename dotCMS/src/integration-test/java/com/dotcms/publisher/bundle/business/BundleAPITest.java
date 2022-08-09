@@ -1,10 +1,5 @@
 package com.dotcms.publisher.bundle.business;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.publisher.bundle.bean.Bundle;
@@ -23,12 +18,15 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
 import java.util.Set;
-import org.junit.BeforeClass;
-import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 public class BundleAPITest {
 
@@ -262,6 +260,7 @@ public class BundleAPITest {
         bundle.setOperation(PushPublisherConfig.Operation.PUBLISH.ordinal());
         bundleAPI.generateTarGzipBundleFile(bundle);
         assertTrue(bundle.bundleTgzExists());
-        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
+        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).clearFilterDescriptorList();
     }
+
 }
