@@ -1,5 +1,5 @@
 import { NgModule } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { EditorDirective } from './editor.directive';
 import { BubbleMenuDirective } from './bubble-menu.directive';
@@ -7,6 +7,9 @@ import { DraggableDirective } from './draggable.directive';
 import { NodeViewContentDirective } from './node-view-content.directive';
 
 import { MenuModule } from 'primeng/menu';
+import { CheckboxModule } from 'primeng/checkbox';
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
 import { CommonModule } from '@angular/common';
 import { CardModule } from 'primeng/card';
 import { ContentletBlockComponent } from './extensions/blocks/contentlet-block/contentlet-block.component';
@@ -26,9 +29,20 @@ import { BubbleMenuComponent } from './extensions/components/bubble-menu/bubble-
 import { BubbleMenuButtonComponent } from './extensions/components/bubble-menu-button/bubble-menu-button.component';
 import { BubbleMenuLinkFormComponent } from './extensions/components/bubble-menu-link-form/bubble-menu-link-form.component';
 import { ContentletStatePipe } from './extensions/pipes/contentlet-state/contentlet-state.pipe';
+import { SuggestionLoadingListComponent } from './extensions/components/suggestion-loading-list/suggestion-loading-list.component';
+import { FormActionsComponent } from './extensions/components/bubble-menu-link-form/components/form-actions/form-actions.component';
 
 @NgModule({
-    imports: [CommonModule, FormsModule, CardModule, MenuModule],
+    imports: [
+        CommonModule,
+        FormsModule,
+        ReactiveFormsModule,
+        CardModule,
+        MenuModule,
+        CheckboxModule,
+        ButtonModule,
+        InputTextModule
+    ],
     declarations: [
         EditorDirective,
         BubbleMenuDirective,
@@ -45,7 +59,9 @@ import { ContentletStatePipe } from './extensions/pipes/contentlet-state/content
         BubbleMenuComponent,
         BubbleMenuButtonComponent,
         BubbleMenuLinkFormComponent,
-        ContentletStatePipe
+        ContentletStatePipe,
+        SuggestionLoadingListComponent,
+        FormActionsComponent
     ],
     providers: [SuggestionsService, DotImageService, LoggerService, StringUtils],
     exports: [
@@ -56,7 +72,11 @@ import { ContentletStatePipe } from './extensions/pipes/contentlet-state/content
         NodeViewContentDirective,
         ActionButtonComponent,
         BubbleMenuComponent,
-        BubbleMenuLinkFormComponent
+        BubbleMenuLinkFormComponent,
+        ReactiveFormsModule,
+        CheckboxModule,
+        ButtonModule,
+        InputTextModule
     ]
 })
 export class NgxTiptapModule {}

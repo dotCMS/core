@@ -3,6 +3,7 @@ import { ComponentRef, ViewContainerRef } from '@angular/core';
 import { Editor, Extension, Range } from '@tiptap/core';
 import { FloatingMenuPluginProps } from '@tiptap/extension-floating-menu';
 import Suggestion, { SuggestionOptions, SuggestionProps } from '@tiptap/suggestion';
+import { Level } from '@tiptap/extension-heading';
 
 import tippy, { GetReferenceClientRect } from 'tippy.js';
 
@@ -256,7 +257,7 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
                         return chain()
                             .focus()
                             .deleteRange(range)
-                            .toggleHeading({ level: type.level })
+                            .toggleHeading({ level: type.level as Level })
                             .focus()
                             .run();
                     },
