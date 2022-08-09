@@ -1,7 +1,6 @@
 dojo.require("dojo.io.iframe");
 
 function emmitCompanyInfoUpdated(content) {
-    console.log('Helo')
   var customEvent = document.createEvent("CustomEvent");
   customEvent.initCustomEvent("ng-event", false, false, {
     name: "company-info-updated",
