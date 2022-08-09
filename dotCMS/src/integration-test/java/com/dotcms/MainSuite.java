@@ -179,6 +179,7 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        ContentletWebAPIImplIntegrationTest.class,
         DependencyBundlerTest.class,
         FolderCacheImplIntegrationTest.class,
         StaticPublisherIntegrationTest.class,
@@ -442,7 +443,6 @@ import org.junit.runners.Suite.SuiteClasses;
         GoogleTranslationServiceIntegrationTest.class,
         Task05380ChangeContainerPathToAbsoluteTest.class,
         DotTemplateToolTest.class,
-        ContentletWebAPIImplIntegrationTest.class/*,
         Task05370AddAppsPortletToLayoutTest.class,
         FolderFactoryImplTest.class,
         DotSamlResourceTest.class,
@@ -555,7 +555,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task220401CreateClusterLockTableTest.class,
         Task220606UpdatePushNowActionletNameTest.class,
         BundlerUtilTest.class,
-        AWSS3PublisherTest.class*/
+        AWSS3PublisherTest.class
 })
 public class MainSuite {
 
