@@ -328,10 +328,13 @@ public class FileUtil {
 	} // sha256toUnixHash.
 
 	/**
+	 * Reads the contents of the specified file, using the {@code Files.newInputStream} approach.
 	 *
-	 * @param file
-	 * @return
-	 * @throws IOException
+	 * @param file The {@link File} that will be read.
+	 *
+	 * @return The String contents of the File in the form of an {@link Optional}.
+	 *
+	 * @throws IOException An error occurred when reading the file.
 	 */
 	public static Optional<String> read(final File file) throws IOException {
 		if (file == null || !file.exists()) {
@@ -342,7 +345,8 @@ public class FileUtil {
 			 final InputStream inputStream = Files.newInputStream(file.toPath())) {
 			int bytesRead = inputStream.read(buffer);
 			if (bytesRead < buffer.length) {
-				return Optional.of(Arrays.toString(Arrays.copyOf(buffer, bytesRead)));
+				byteArrayOutputStream.write(buffer, 0, bytesRead);
+				return Optional.of(byteArrayOutputStream.toString());
 			}
 			while (bytesRead != -1) {
 				byteArrayOutputStream.write(buffer, 0, bytesRead);
