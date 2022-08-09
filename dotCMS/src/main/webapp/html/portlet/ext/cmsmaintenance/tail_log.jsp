@@ -1,4 +1,5 @@
 <%@page import="java.io.File"%>
+<%@ page import="com.dotmarketing.servlets.taillog.TailLogServlet" %>
 <%
 
 	String regex = com.dotmarketing.util.Config.getStringProperty("TAIL_LOG_FILE_REGEX");
@@ -67,6 +68,11 @@
         background-color: yellow;
         color: #000;
     }
+
+    .keepAlive{
+        display: none;
+    }
+
 </style>
 <script type="text/javascript">
 
@@ -182,8 +188,7 @@
     /**********************/
     /* Log Viewer - BEGIN */
 
-    var highlightTagBegin = '<span class="highlighKeywordtMatchLogViewer">';
-    var highlightTagEnd = "</span>";
+
     var attachedFilterLogEvents = false;
     var excludeLogRowsActive = false;
 
@@ -192,15 +197,19 @@
     var logViewerFiltering = false;
     var logViewerDirty = false;
 
-    // TEMP - BEGIN
-    function countLogViewerLines() {
-        var splitParam = '<br>';
-        var linesCount = dataLogPrintedElem.innerHTML.split(splitParam).length;
-        document.querySelector('.logViewerLinesCount').value = linesCount;
-    }
-    // TEMP - END
+    const linesPerPage = <%=TailLogServlet.LINES_PER_PAGE%>;
+    const ON_SCREEN_PAGES = 5;
+    let numberOfPagesOnScreen = 0;
+    let currentActivePageId = 1;
+
+    let fetchingPriorPage = false;
 
     function attachLogIframeEvents() {
+
+        let dataLogSourceElem = document.getElementById('tailingFrame');
+        let logger = document.querySelector('.logViewerPrinted');
+        let iDoc = dataLogSourceElem.contentWindow || dataLogSourceElem.contentDocument;
+
         if (!attachedFilterLogEvents) {
             var debounce = (callback, time = 300, interval) => (...args) => {
                 clearTimeout(interval, interval = setTimeout(() => callback(...args), time));
@@ -215,69 +224,150 @@
             attachedFilterLogEvents = true;
         }
 
-        var dataLogSourceElem = document.getElementById('tailingFrame');
-        var iDoc = dataLogSourceElem.contentWindow || dataLogSourceElem.contentDocument;
-
         iDoc.document.addEventListener("logUpdated", (e) => {
             // Only triggering if "newContent" has a value, cuz there can be calls from BE with empty data
             // for the purpose of just to keep the connection alive
             if (e.detail.newContent.length > 0) {
-                updateLogViewerData(e.detail.newContent);
 
-                var jsScriptTags = document.getElementById('tailingFrame').contentDocument.body?.querySelectorAll('script')
-                for (var i = 0, total = jsScriptTags.length; i < total; i++) {
-                    jsScriptTags[i].parentNode.removeChild(jsScriptTags[i]);
-                }
+                currentActivePageId = updateLogViewerData(e, currentActivePageId, dataLogSourceElem, logger);
+
             }
-        })
+        });
+
+        logger.addEventListener("scroll", (e)=>{
+            let div = e.target;
+            if(div.scrollTop === 0){
+                fetchPage(dataLogSourceElem, div);
+            }
+        });
     }
     
     // Function called on every fiter keydown event
     function filterLog(event) {
         const ignoredKeys = ["ArrowLeft", "ArrowUp", "ArrowDown", "ArrowRight"];
 
-        var log = document.getElementById('tailingFrame').contentDocument.body?.innerHTML;
-        logViewerDirty = false;
+        let logger = document.querySelector('.logViewerPrinted');
 
         // If keyword is greater than 2 characters, then filtering is applied
         logViewerFiltering = keywordLogInput.value.length > 2;
 
         if (event.key === 'Enter' && logViewerFiltering) {
             excludeLogRowsActive = true;
-            log = performLogViewerMark(log, excludeNoMatchingRows);
+            //logger = performLogViewerMark(logger, excludeNoMatchingRows);
         } else if (!ignoredKeys.includes(event.key) && logViewerFiltering) {
             excludeLogRowsActive = false;
-            log = performLogViewerMark(log);
+            logger.innerHTML = performLogViewerMark(logger.innerHTML);
+        }
+
+        if(!logViewerFiltering){
+            removeHighlight(logger);
         }
 
         // If previously the logviewer has any highlight or shown excluded any rows, then content is set
+        /*
         if (logViewerDirty) {
             dataLogPrintedElem.innerHTML = null;
             dataLogPrintedElem.insertAdjacentHTML('beforeend', log);
-        }
+        }*/
         
     }
 
     // Function that gets called on every new log update
-    function updateLogViewerData(newContent) {
-        if (logViewerFiltering) {
-            excludeLogRowsActive ? 
-            newContent = performLogViewerMark(newContent, excludeNoMatchingRows) : newContent = performLogViewerMark(newContent);
-        }
+    function updateLogViewerData(e, currentActivePageId ,src, dest) {
 
-        dataLogPrintedElem.insertAdjacentHTML('beforeend', '<p style="margin:0">' + newContent + '</p>');
+        let newContent =  logViewerFiltering ?  performLogViewerMark(e.detail.newContent) : e.detail.newContent ;
+
+        let pageId =  parseInt(e.detail.pageId);
+        if(pageId > currentActivePageId ){
+            //Time to change page
+            //We only want to keep in the div 'onScreenPages' number of pages
+            onNewFullPage(dest);
+            currentActivePageId = pageId;
+        }
+            dest.insertAdjacentHTML('beforeend', newContent );
 
         if (document.querySelector('#scrollMe').checked) {
             scrollLogToBottom();
         }
+
+        return currentActivePageId;
+    }
+
+    function onNewFullPage(dest){
+        numberOfPagesOnScreen++;
+        if(numberOfPagesOnScreen >= ON_SCREEN_PAGES ){
+            //drop the earliest page
+            numberOfPagesOnScreen = dropEarlyPagesOnScreen(numberOfPagesOnScreen, dest);
+        }
+    }
+
+    function dropEarlyPagesOnScreen(numberOfPagesOnScreen, dest) {
+        console.log(" :::::: numberOfPagesOnScreen ::::: " + numberOfPagesOnScreen);
+        let numOfPagesToDrop = Math.round((numberOfPagesOnScreen * 30) * .01);
+        console.log("numOfPagesToDrop:: " + numOfPagesToDrop);
+        for(let i=1; i<= numOfPagesToDrop; i++){
+            let first = dest.querySelector(`.log:first-child`);
+            console.log( "First:: " + first);
+            if(first){
+               let firstPageId = first.dataset.page;
+                console.log( "FirstPageID:: " + firstPageId);
+               let pageToDrop = dest.querySelectorAll(`.page${firstPageId}`);
+                console.log( pageToDrop );
+                if (pageToDrop.length > 0) {
+                    //Remove all items on that page
+                    pageToDrop.forEach((elem) => elem.remove());
+                }
+                console.log(' page  : ' + firstPageId  + ' dropped!' );
+            } else {
+                break;
+            }
+        }
+        console.log(' We are done!' );
+        return numberOfPagesOnScreen - numOfPagesToDrop;
     }
 
     // Function that adds to the log content SPAN Html Tags used for highlight
     function addLogViewerKeywordMatchHighlight(log) {
-        var keyword = keywordLogInput.value;
+        let keyword = keywordLogInput.value;
+        const regEx = new RegExp( keyword, "ig");
+        return log.replaceAll(regEx, '<span class="highlighKeywordtMatchLogViewer">$&</span>');
+    }
 
-        var regEx = new RegExp( keyword, "ig");
-        return log.replaceAll(regEx, highlightTagBegin + "$&" + highlightTagEnd);
+    function removeHighlight(logger) {
+
+        logger.querySelectorAll(".highlighKeywordtMatchLogViewer").forEach(el => el.replaceWith(...el.childNodes));
+
+    }
+
+    function fetchPage( src, dest) {
+        if(fetchingPriorPage === true){
+            return;
+        }
+        fetchingPriorPage = true;
+        try{
+            let first = dest.querySelector(`.log:first-child`);
+            if(first){
+                let firstPageId = first.dataset.page;
+                firstPageId--;
+                let list = src.contentDocument.body.querySelectorAll(`.page${firstPageId}`);
+                if (list.length > 0) {
+                    if (logViewerFiltering) {
+                        list.forEach((elem) => {
+                            dest.insertAdjacentHTML('afterbegin',
+                                addLogViewerKeywordMatchHighlight(elem.outerHTML));
+                        });
+                    } else {
+                        list.forEach((elem) => {
+                            dest.insertAdjacentHTML('afterbegin', elem.outerHTML);
+                        });
+                    }
+                }
+                //Move the scroll just a tiny bit so we have room to fire the event again
+                dest.scrollTop = dest.scrollTop + 10;
+            }
+        }finally {
+            fetchingPriorPage = false;
+        }
     }
 
     function performLogViewerMark(newContent, callback) {
@@ -295,6 +385,7 @@
 
     // Function that gets called when pressed "Enter" key to exclude no matching rows
     function excludeNoMatchingRows(log) {
+
         var splitParam = '<br>';
         return log.split(splitParam).filter((row) => row.indexOf('highlighKeywordtMatchLogViewer') !== -1).join(splitParam) + splitParam;
     }
@@ -327,7 +418,7 @@
             <input dojoType="dijit.form.TextBox" id="keywordLogFilterInput" placeholder="<%=com.liferay.portal.language.LanguageUtil.get(pageContext, "Filter")%>" type="text" style="width: 200px">
         </div>
     </div>
-            <input class="logViewerLinesCount" onClick="countLogViewerLines()" />
+
     <div class="portlet-toolbar__actions-secondary">
         <button dojoType="dijit.form.Button" onClick="doPopup()" value="popup" name="popup">
             <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"popup") %>
@@ -339,6 +430,6 @@
 </div>
 
 <div id="tailContainer" class="log-files__container" style="display: flex; flex-direction: column;">
-    <iframe id="tailingFrame" src="/html/blank.jsp" style="display: block; min-height: 250px;" class="log-files__iframe"></iframe>
+    <iframe id="tailingFrame" src="/html/blank.jsp" style="display: none;" class="log-files__iframe" ></iframe>
     <div class="logViewerPrinted" style="flex-grow: 1;"></div>
 </div>
