@@ -21,7 +21,11 @@ import { ActionButtonComponent } from './components/action-button/action-button.
 import { PluginKey } from 'prosemirror-state';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { CONTENT_SUGGESTION_ID, suggestionOptions, SuggestionPopperModifiers } from '../utils/suggestion.utils';
+import {
+    CONTENT_SUGGESTION_ID,
+    suggestionOptions,
+    SuggestionPopperModifiers
+} from '../utils/suggestion.utils';
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
@@ -142,7 +146,7 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
         });
     }
 
-    function setUpSuggestionComponent(editor: Editor, range: Range,) {
+    function setUpSuggestionComponent(editor: Editor, range: Range) {
         const allowedBlocks: string[] = editor.storage.dotConfig.allowedBlocks;
         suggestionsComponent = getSuggestionComponent(viewContainerRef);
         suggestionsComponent.instance.currentLanguage = editor.storage.dotConfig.lang;
@@ -153,11 +157,12 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
                 allowedBlocks.includes(item.id)
             );
             if (allowedBlocks.includes(CONTENT_SUGGESTION_ID)) {
-                suggestionsComponent.instance.addCContentletItem()
+                suggestionsComponent.instance.addCContentletItem();
             }
         } else {
-            suggestionsComponent.instance.addCContentletItem()
+            suggestionsComponent.instance.addCContentletItem();
         }
+
         suggestionsComponent.instance.onSelection = (item) => {
             const suggestionQuery = suggestionKey.getState(editor.view.state).query?.length || 0;
             range.to = range.to + suggestionQuery;
@@ -240,7 +245,7 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
                         return [];
                     }
                 }
-            }
+            };
         },
 
         addCommands() {
