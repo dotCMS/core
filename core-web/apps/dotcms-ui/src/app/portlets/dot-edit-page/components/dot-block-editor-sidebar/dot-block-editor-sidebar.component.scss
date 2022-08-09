@@ -1,11 +1,16 @@
 @use "libs/dot-primeng-theme-styles/src/scss/variables" as *;
 
+:host {
+    dotcms-block-editor {
+        height: calc(100% - 5rem);
+    }
+}
+
 ::ng-deep {
     p-sidebar {
-        background: red;
         .p-sidebar-right {
             width: 50%;
-            max-width: 875px;
+            max-width: 1040px;
         }
 
         .p-sidebar-content {
@@ -13,15 +18,18 @@
                 height: 100%;
             }
         }
+        .p-sidebar .p-sidebar-header {
+            padding: 0;
+        }
     }
 }
 
 footer {
     display: flex;
     justify-content: flex-end;
-    margin-top: 2rem;
+    margin-top: $spacing-5;
 
     .p-button-secondary {
-        margin-right: 1rem;
+        margin-right: $spacing-3;
     }
 }

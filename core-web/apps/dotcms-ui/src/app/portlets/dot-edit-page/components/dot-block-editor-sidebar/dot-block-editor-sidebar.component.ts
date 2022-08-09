@@ -15,11 +15,11 @@ export interface BlockEditorData {
 }
 
 @Component({
-    selector: 'dot-edit-block-editor',
-    templateUrl: './dot-edit-block-editor.component.html',
-    styleUrls: ['./dot-edit-block-editor.component.scss']
+    selector: 'dot-block-editor-sidebar',
+    templateUrl: './dot-block-editor-sidebar.component.html',
+    styleUrls: ['./dot-block-editor-sidebar.component.scss']
 })
-export class DotEditBlockEditorComponent implements OnInit, OnDestroy {
+export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
     @ViewChild('blockEditor') blockEditor: DotcmsBlockEditorComponent;
 
     data: BlockEditorData;

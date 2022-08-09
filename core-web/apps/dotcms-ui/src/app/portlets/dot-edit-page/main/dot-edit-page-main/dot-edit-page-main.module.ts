@@ -6,7 +6,7 @@ import { DotEditPageNavModule } from '../dot-edit-page-nav/dot-edit-page-nav.mod
 import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotRouterService } from '@dotcms/dotcms-js';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotEditBlockEditorModule } from '@portlets/dot-edit-page/components/dot-edit-block-editor/dot-edit-block-editor.module';
+import { DotBlockEditorSidebarModule } from '@portlets/dot-edit-page/components/dot-block-editor-sidebar/dot-block-editor-sidebar.module';
 
 @NgModule({
     imports: [
@@ -14,7 +14,7 @@ import { DotEditBlockEditorModule } from '@portlets/dot-edit-page/components/dot
         RouterModule,
         DotEditPageNavModule,
         DotContentletEditorModule,
-        DotEditBlockEditorModule
+        DotBlockEditorSidebarModule
     ],
     providers: [DotRouterService, DotCustomEventHandlerService],
     declarations: [DotEditPageMainComponent]

@@ -1,4 +1,12 @@
-<p-sidebar blockScroll="true" [visible]="!!this.data" position="right" (onHide)="closeSidebar()">
+<p-sidebar
+    blockScroll="true"
+    [visible]="!!this.data"
+    position="right"
+    [dismissible]="false"
+    [showCloseIcon]="false"
+    [closeOnEscape]="false"
+    (onHide)="closeSidebar()"
+>
     <div class="container" *ngIf="this.data">
         <dotcms-block-editor
             #blockEditor
@@ -24,7 +32,7 @@
                 data-testid="saveBtn"
                 type="button"
                 (click)="saveEditorChanges()"
-                [label]="'Save' | dm"
+                [label]="'Update' | dm"
             ></button>
         </footer>
     </div>
