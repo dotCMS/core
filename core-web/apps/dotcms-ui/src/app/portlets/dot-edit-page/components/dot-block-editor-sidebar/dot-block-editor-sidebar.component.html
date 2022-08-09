@@ -1,0 +1,39 @@
+<p-sidebar
+    blockScroll="true"
+    [visible]="!!this.data"
+    position="right"
+    [dismissible]="false"
+    [showCloseIcon]="false"
+    [closeOnEscape]="false"
+    (onHide)="closeSidebar()"
+>
+    <div class="container" *ngIf="this.data">
+        <dotcms-block-editor
+            #blockEditor
+            [lang]="this.data.language"
+            [allowedBlocks]="this.data.allowedBlocks"
+            [allowedContentTypes]="this.data.allowedContentTypes"
+            [value]="data.content"
+        >
+        </dotcms-block-editor>
+        <footer>
+            <button
+                pButton
+                class="p-button-secondary"
+                data-testid="cancelBtn"
+                type="button"
+                (click)="closeSidebar()"
+                [label]="'Cancel' | dm"
+            ></button>
+            <button
+                [disabled]="saving"
+                [loading]="saving"
+                pButton
+                data-testid="saveBtn"
+                type="button"
+                (click)="saveEditorChanges()"
+                [label]="'Update' | dm"
+            ></button>
+        </footer>
+    </div>
+</p-sidebar>
