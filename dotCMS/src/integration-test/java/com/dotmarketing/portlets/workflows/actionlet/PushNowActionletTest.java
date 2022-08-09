@@ -63,7 +63,8 @@ public class PushNowActionletTest extends BaseWorkflowIntegrationTest {
         contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
         contentletAPI = APILocator.getContentletAPI();
         final long currentTime = System.currentTimeMillis();
-        adminUser = TestUserUtils.getUser(TestUserUtils.getOrCreateAdminRole(),"testPushNow@test.com"+currentTime,"testPushNowActionlet"+currentTime,"testPushNowActionlet"+currentTime,"testPushNowActionlet"+currentTime);
+        adminUser = TestUserUtils.getUser(APILocator.getRoleAPI().loadCMSAdminRole(),
+                "testPushNow@test.com"+currentTime,"testPushNowActionlet"+currentTime,"testPushNowActionlet"+currentTime,"testPushNowActionlet"+currentTime);
 
     }
 
