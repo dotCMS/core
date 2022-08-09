@@ -1,4 +1,4 @@
-@use "libs/dot-primeng-theme-styles/src/scss/variables" as *;
+@use "libs/block-editor/src/lib/scss/variables" as *;
 
 :host {
     display: flex;
@@ -14,8 +14,8 @@
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    width: 2.286rem;
-    height: 2.286rem;
+    width: 2 * $dot-editor-size;
+    height: 2 * $dot-editor-size;
     border-radius: $border-radius;
 
     &:hover {

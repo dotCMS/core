@@ -235,47 +235,12 @@ export const primary = () => ({
                 provide: SuggestionsService,
                 useValue: {
                     getContentTypes(filter = '') {
-                        const items = [
-                            {
-                                name: 'Empty Content',
-                                icon: 'hourglass_disabled',
-                                variable: 'empty'
-                            },
-                            {
-                                name: 'Blog',
-                                icon: 'article',
-                                variable: 'blog'
-                            },
-                            {
-                                name: 'Persona',
-                                icon: 'face',
-                                variable: 'persona'
-                            },
-                            {
-                                name: 'News Item',
-                                icon: 'mic',
-                                variable: 'news_item'
-                            },
-                            {
-                                name: 'Banner',
-                                icon: 'view_carousel',
-                                variable: 'banner'
-                            },
-                            {
-                                name: 'Product in the store',
-                                icon: 'inventory_2',
-                                variable: 'inventory'
-                            },
-                            {
-                                name: 'Reatil information',
-                                icon: 'storefront',
-                                variable: 'retail'
-                            }
-                        ];
                         return of(
                             filter
-                                ? items.filter((item) => item.name.match(new RegExp(filter, 'i')))
-                                : items
+                                ? contentletsMock.filter((item) =>
+                                      item.name.match(new RegExp(filter, 'i'))
+                                  )
+                                : contentletsMock
                         );
                     },
                     getContentlets(type, filter = '') {
@@ -292,7 +257,8 @@ export const primary = () => ({
                         );
                     },
                     getContentletsUrlMap({ filter }) {
-                        return of(contentletsMock.filter((item) =>
+                        return of(
+                            contentletsMock.filter((item) =>
                                 item.url.match(new RegExp(filter, 'i'))
                             )
                         ).pipe(debounceTime(400));

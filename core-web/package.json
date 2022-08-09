@@ -1,6 +1,6 @@
 {
     "name": "dotcms-ui",
-    "version": "22.8.0-next.6",
+    "version": "22.8.0-next.8",
     "license": "MIT",
     "engines": {
         "node": ">=16.13.2"
@@ -62,6 +62,7 @@
         "@ctrl/tinycolor": "^3.1.7",
         "@material/mwc-button": "^0.20.0",
         "@material/mwc-checkbox": "^0.20.0",
+        "@material/mwc-circular-progress": "^0.20.0",
         "@material/mwc-dialog": "^0.20.0",
         "@material/mwc-formfield": "^0.20.0",
         "@material/mwc-icon-button": "^0.20.0",

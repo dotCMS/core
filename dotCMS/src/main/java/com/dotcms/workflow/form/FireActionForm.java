@@ -1,9 +1,11 @@
 package com.dotcms.workflow.form;
 
+import com.dotmarketing.business.PermissionAPI;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.rest.api.Validated;
 
+import java.util.List;
 import java.util.Map;
 
 @JsonDeserialize(builder = FireActionForm.Builder.class)
@@ -22,6 +24,7 @@ public class FireActionForm extends Validated {
     private final String query;
     private final String pathToMove;
     private final String timezoneId;
+    private final Map<PermissionAPI.Type, List<String>> individualPermissions;
 
     @JsonProperty("contentlet")
     private final Map<String, Object> contentletFormData;
@@ -82,6 +85,10 @@ public class FireActionForm extends Validated {
         return timezoneId;
     }
 
+    public Map<PermissionAPI.Type, List<String>> getIndividualPermissions() {
+        return individualPermissions;
+    }
+
     public FireActionForm(final Builder builder) {
 
         this.comments    = builder.comments;
@@ -96,9 +103,9 @@ public class FireActionForm extends Validated {
         this.iWantTo     = builder.iWantTo;
         this.query       = builder.query;
         this.pathToMove  = builder.pathToMove;
-        this.contentletFormData =
-                builder.contentlet;
-        this.timezoneId = builder.timezoneId;
+        this.timezoneId  = builder.timezoneId;
+        this.contentletFormData    = builder.contentlet;
+        this.individualPermissions = builder.individualPermissions;
     }
 
     public static class Builder {
@@ -131,6 +138,13 @@ public class FireActionForm extends Validated {
         private String timezoneId;
         @JsonProperty("contentlet")
         private Map<String, Object> contentlet;
+        @JsonProperty("individualPermissions")
+        private Map<PermissionAPI.Type, List<String>> individualPermissions;
+
+        public Builder individualPermissions(final Map<PermissionAPI.Type, List<String>> individualPermissions) {
+            this.individualPermissions = individualPermissions;
+            return this;
+        }
 
         public Builder pathToMove(final String pathToMove) {
             this.pathToMove = pathToMove;

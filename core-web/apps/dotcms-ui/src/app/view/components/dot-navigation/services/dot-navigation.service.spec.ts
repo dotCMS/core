@@ -148,6 +148,7 @@ export const dotMenuMock1 = () => {
 };
 
 const basemockUser = {
+    admin: true,
     emailAddress: 'admin@dotcms.com',
     firstName: 'Admin',
     lastName: 'Admin',
