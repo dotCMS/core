@@ -164,7 +164,7 @@ public class DotSamlResource implements Serializable {
 					final HttpSession session = httpServletRequest.getSession();
 					if (null == session) {
 
-						Logger.debug(this, () -> "Processing saml login request for idpConfig id: " + idpConfigId);
+						Logger.debug(this, () -> "No session has been created.");
 						throw new DotSamlException("No session has been created.");
 					}
 
@@ -174,12 +174,16 @@ public class DotSamlResource implements Serializable {
 
 					if (null == attributes) {
 
+						Logger.debug(this, () -> "User cannot be extracted from Assertion!");
 						throw new DotSamlException("User cannot be extracted from Assertion!");
 					}
+
+					Logger.debug(this, () -> "Retrieving attributes: " + attributes);
 					// Creates the user object and adds a user if it doesn't already exist
 					final User user = this.samlHelper.resolveUser(attributes, identityProviderConfiguration);
 					if (null == user) {
 
+						Logger.debug(this, () -> "User cannot be extracted from Assertion!");
 						throw new DotSamlException("User cannot be extracted from Assertion!");
 					}
 
@@ -202,6 +206,7 @@ public class DotSamlResource implements Serializable {
 					session.setAttribute(identityProviderConfiguration.getId() + DotSamlConstants.SAML_USER_ID, user.getUserId());
 
 					String loginPath = (String) session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
+					Logger.debug(this,"LoginPath: " + loginPath);
 					if (null == loginPath) {
 						// At this stage we cannot determine whether this was a front
 						// end or back end request since we cannot determine
