@@ -1,9 +1,11 @@
 import { take, map } from 'rxjs/operators';
+import { Component, OnInit } from '@angular/core';
+
+import { ConfigParams, DotcmsConfigService, DotUiColors } from '@dotcms/dotcms-js';
+
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { DotNavLogoService } from '@services/dot-nav-logo/dot-nav-logo.service';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { ConfigParams, DotcmsConfigService, DotUiColors } from '@dotcms/dotcms-js';
-import { Component, OnInit } from '@angular/core';
 
 @Component({
     selector: 'dot-root',
