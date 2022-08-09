@@ -203,7 +203,7 @@ public class UpdatePageTemplatePathJob extends DotStatefulJob {
 
         long startTime = System.currentTimeMillis();
         final SimpleTrigger trigger = new SimpleTrigger(
-                "updatePageTemplatePathTrigger",
+                "updatePageTemplatePathTrigger-" + randomID,
                 "update_page_template_path_job_triggers",
                 new Date(startTime)
         );
