@@ -199,18 +199,27 @@
             <script>
 
                 /**
-                 * Do not use "<%=textValue%>" or '<%=textValue%>'
-                 * If we put it in quotes and the user adds a content that has quotes,
-                 * it will throw a syntax error
+                 * "textValue" can be a JSON or HTML now
+                 *  In this code we'll indentify if is JSON or HTML and act accordinhly
                  */
-                const data = <%=textValue%>;
+                const data = `<%=textValue%>`
+                let json;
+                let html;
+
+                try {
+                    json = JSON.parse(data);
+                } catch (error) {
+                    html = data;
+                }
+
+                console.log({json, html})
 
                 const block = document.querySelector('dotcms-block-editor .ProseMirror');
                 const field = document.querySelector('#<%=field.getVelocityVarName()%>');
 
                 if (data) {
-                    block.editor.commands.setContent(data);
-                    field.value = JSON.stringify(data);
+                    block.editor.commands.setContent(json ? json : html);
+                    field.value = json ? JSON.stringify(json) : html;
                 }
 
                 block.editor.on('update', ({ editor }) => {
