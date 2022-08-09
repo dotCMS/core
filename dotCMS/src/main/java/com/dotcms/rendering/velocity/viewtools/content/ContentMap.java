@@ -216,13 +216,14 @@ public class ContentMap {
 				
 				
 				
-				String inode =  EDIT_OR_PREVIEW_MODE ? cvi.get().getWorkingInode() : cvi.get().getLiveInode();
-				Contentlet asset  =  APILocator.getContentletAPI().find(inode, user!=null?user:APILocator.getUserAPI().getAnonymousUser(), true);
-					
-				if(asset == null || !UtilMethods.isSet(asset.getInode())) {
-				    return null;
-				}
-				
+                String inode = EDIT_OR_PREVIEW_MODE ? cvi.get().getWorkingInode() : cvi.get().getLiveInode();
+                Contentlet asset = APILocator.getContentletAPI().find(inode,
+                                user != null ? user : APILocator.getUserAPI().getAnonymousUser(), true);
+
+                if (asset == null || UtilMethods.isEmpty(asset.getInode())) {
+                    return null;
+                }
+
                 if (asset.isFileAsset()) {
                     FileAssetMap fam = FileAssetMap.of(asset);
                     // Store file asset map into fieldValueMap
