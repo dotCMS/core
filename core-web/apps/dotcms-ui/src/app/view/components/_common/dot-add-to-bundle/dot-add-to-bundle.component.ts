@@ -67,6 +67,7 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy
                     .setValue(
                         this.getDefaultBundle(bundles) ? this.getDefaultBundle(bundles).name : ''
                     );
+
                 return bundles;
             }),
             tap(() => {
@@ -148,6 +149,7 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy
 
     private getDefaultBundle(bundles: DotBundle[]): DotBundle {
         const lastBundle: DotBundle = JSON.parse(sessionStorage.getItem(LAST_BUNDLE_USED));
+
         // return lastBundle ? this.bundle$.find(bundle => bundle.name === lastBundle.name) : null;
         return lastBundle ? bundles.find((bundle) => bundle.name === lastBundle.name) : null;
     }

@@ -3,7 +3,7 @@ import { AfterContentInit, Component, ContentChildren, QueryList } from '@angula
 import { SuggestionsListItemComponent } from '../suggestions-list-item/suggestions-list-item.component';
 
 @Component({
-    selector: 'dotcms-suggestion-list',
+    selector: 'dot-suggestion-list',
     templateUrl: './suggestion-list.component.html',
     styleUrls: ['./suggestion-list.component.scss']
 })

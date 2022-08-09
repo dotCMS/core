@@ -77,6 +77,7 @@ export class DotWhatsChangedComponent implements OnInit, OnChanges {
     private updateHtml(content: string): string {
         const fakeHtml = document.createElement('html');
         fakeHtml.innerHTML = content;
+
         return fakeHtml.innerHTML;
     }
 }

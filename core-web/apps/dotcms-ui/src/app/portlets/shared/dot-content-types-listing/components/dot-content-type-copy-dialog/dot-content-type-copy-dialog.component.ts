@@ -10,7 +10,12 @@ import {
     ViewChild
 } from '@angular/core';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { UntypedFormBuilder, UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
+import {
+    UntypedFormBuilder,
+    UntypedFormControl,
+    UntypedFormGroup,
+    Validators
+} from '@angular/forms';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotCopyContentTypeDialogFormFields } from '@dotcms/dotcms-models';
 import { combineLatest, Observable, of } from 'rxjs';
@@ -122,6 +127,7 @@ export class DotContentTypeCopyDialogComponent implements OnInit, AfterViewCheck
         this.dialogActions$ = combineLatest([dialogActions$, this.form.valueChanges]).pipe(
             map(([dialogActions]) => {
                 dialogActions.accept.disabled = !this.form.valid;
+
                 return dialogActions;
             })
         );

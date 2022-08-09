@@ -122,6 +122,7 @@ export class DotListingDataTableComponent implements OnInit {
         if (rowData?.identifier === 'SYSTEM_TEMPLATE') {
             return;
         }
+
         this.rowWasClicked.emit(rowData);
     }
 
@@ -225,6 +226,7 @@ export class DotListingDataTableComponent implements OnInit {
                         item[col.fieldName]
                     ))
             );
+
             return item;
         });
     }

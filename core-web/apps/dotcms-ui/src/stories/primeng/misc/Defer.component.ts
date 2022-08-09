@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { MessageService } from 'primeng/api';
 
 export interface Car {
@@ -41,14 +41,10 @@ export interface Car {
         </div>
     `
 })
-export class DeferComponent implements OnInit {
+export class DeferComponent {
     cars: [];
 
     constructor(private messageService: MessageService) {}
-
-    ngOnInit() {
-        console.log('object');
-    }
 
     initData() {
         this.messageService.add({

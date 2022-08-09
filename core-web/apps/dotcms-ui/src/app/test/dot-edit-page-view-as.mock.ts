@@ -5,7 +5,7 @@ import { mockDotPersona } from './dot-persona.mock';
 import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
 
 export const mockDotEditPageViewAs: DotEditPageViewAs = {
-    language: mockDotLanguage.id,
+    language: mockDotLanguage,
     device: mockDotDevices[0],
     persona: mockDotPersona,
     mode: DotPageMode.EDIT

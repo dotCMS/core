@@ -6,6 +6,7 @@ import { ComponentRef, EventEmitter } from '@angular/core';
 import { SuggestionsComponent } from '../extensions/components/suggestions/suggestions.component';
 
 export const DEFAULT_LANG_ID = 1;
+
 export type DotConfigKeys = 'lang';
 
 export interface ContentletFilters {

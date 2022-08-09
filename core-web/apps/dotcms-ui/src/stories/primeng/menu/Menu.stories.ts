@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 // also exported from '@storybook/angular' if you can deal with breaking changes in 6.1
 import { Meta } from '@storybook/angular/types-6-0';
 import { MenuModule, Menu } from 'primeng/menu';

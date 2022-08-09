@@ -20,6 +20,7 @@ export const PlaceholderPlugin = new Plugin({
             } else if (action && action.remove) {
                 set = set.remove(set.find(null, null, (spec) => spec.id == action.remove.id));
             }
+
             return set;
         }
     },

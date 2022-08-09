@@ -91,10 +91,13 @@ export class DotCrumbtrailService {
                 if (index === array.length - 1) {
                     section = currentData[key];
                 }
+
                 currentData = currentData[key];
             });
+
             return section;
         }
+
         return null;
     }
 
@@ -136,6 +139,7 @@ export class DotCrumbtrailService {
 
     private isPortletTitleAvailable(url: string): boolean {
         const sections: string[] = this.splitURL(url);
+
         return !!this.portletsTitlePathFinder[sections[0]];
     }
 }
