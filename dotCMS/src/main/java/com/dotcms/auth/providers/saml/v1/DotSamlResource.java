@@ -4,11 +4,11 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.saml.Attributes;
 import com.dotcms.saml.DotSamlConstants;
+import com.dotcms.saml.DotSamlException;
 import com.dotcms.saml.DotSamlProxyFactory;
 import com.dotcms.saml.IdentityProviderConfiguration;
 import com.dotcms.saml.IdentityProviderConfigurationFactory;
 import com.dotcms.saml.SamlAuthenticationService;
-import com.dotcms.saml.DotSamlException;
 import com.dotcms.saml.SamlConfigurationService;
 import com.dotcms.saml.SamlName;
 import com.dotcms.util.RedirectUtil;
@@ -16,12 +16,9 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
-import io.vavr.Lazy;
-import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -38,10 +35,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.Serializable;
-import java.io.StringWriter;
-import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -170,6 +164,7 @@ public class DotSamlResource implements Serializable {
 					final HttpSession session = httpServletRequest.getSession();
 					if (null == session) {
 
+						Logger.debug(this, () -> "Processing saml login request for idpConfig id: " + idpConfigId);
 						throw new DotSamlException("No session has been created.");
 					}
 

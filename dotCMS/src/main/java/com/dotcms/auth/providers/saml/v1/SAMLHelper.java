@@ -39,6 +39,7 @@ import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -58,6 +59,8 @@ import static com.dotmarketing.util.UtilMethods.isSet;
  * @author jsanca
  */
 public class SAMLHelper {
+
+    private static final String DO_HASH_KEY = "hash.userid";
 
     private final HostWebAPI hostWebAPI;
     private final UserAPI    userAPI;
@@ -89,7 +92,7 @@ public class SAMLHelper {
     /*
     * Tries to load the user by id, if not found, tries to hash the user id in case the id was previously hashed.
      */
-    private User loadUserById (final String userId, final User currentUser) throws DotSecurityException, DotDataException {
+    private User loadUserById (final String userId, final User currentUser, final boolean doHash) throws DotSecurityException, DotDataException {
 
         User user = null;
 
@@ -99,7 +102,7 @@ public class SAMLHelper {
         if(null == user) {
 
             // not found, try hashed
-            final String hashedUserId= Try.of(()->this.hashIt(userId)).getOrNull();
+            final String hashedUserId= Try.of(()->this.hashIt(userId, doHash)).getOrNull();
 
             if (null != hashedUserId) {
 
@@ -137,8 +140,10 @@ public class SAMLHelper {
             systemUser             = this.userAPI.getSystemUser();
             final Company company  = companyAPI.getDefaultCompany();
             final String  authType = company.getAuthType();
+            final boolean doHash   = identityProviderConfiguration.containsOptionalProperty(DO_HASH_KEY)?
+                    BooleanUtils.toBoolean(identityProviderConfiguration.getOptionalProperty(DO_HASH_KEY).toString()):false;
             user                   = Company.AUTH_TYPE_ID.equals(authType)?
-                    this.loadUserById(nameId,      systemUser):
+                    this.loadUserById(nameId, systemUser, doHash):
                     this.userAPI.loadByUserByEmail(nameId, systemUser, false);
         } catch (NoSuchUserException e) {
 
@@ -492,14 +497,23 @@ public class SAMLHelper {
         return org.apache.commons.lang3.StringUtils.abbreviate(hashed, Config.getIntProperty("dotcms.user.id.maxlength", 100));
     }
 
+    @VisibleForTesting
+    protected String hashIt (final String token, final boolean doHash) throws NoSuchAlgorithmException {
+
+        return doHash? hashIt(token): token;
+    }
+
+
     protected User createNewUser(final User systemUser, final Attributes attributesBean,
                                  final IdentityProviderConfiguration identityProviderConfiguration) {
         User user = null;
 
         try {
 
+            final boolean doHash      = identityProviderConfiguration.containsOptionalProperty(DO_HASH_KEY)?
+                    BooleanUtils.toBoolean(identityProviderConfiguration.getOptionalProperty(DO_HASH_KEY).toString()):false;
             final String nameID       = this.samlAuthenticationService.getValue(attributesBean.getNameID());
-            final String hashedNameID = this.hashIt(nameID);
+            final String hashedNameID = this.hashIt(nameID, doHash);
             try {
 
                 user = this.userAPI.createUser(hashedNameID, attributesBean.getEmail());
