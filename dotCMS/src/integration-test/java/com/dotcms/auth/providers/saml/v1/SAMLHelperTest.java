@@ -341,9 +341,9 @@ public class SAMLHelperTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link SAMLHelper#createNewUser(User, Attributes, IdentityProviderConfiguration)}
-     * Given Scenario: creates an user with all properties
-     * ExpectedResult: The user is created successfully with random values
+     * Method to test: {@link SAMLHelper#hashIt(String, boolean)}
+     * Given Scenario: creates an uuid, does the hash for one call, and does not the hash for another call
+     * ExpectedResult: The hashed call will be diff to the original uuid, the non hashed uuid will be the same of uuid
      *
      */
     @Test()
