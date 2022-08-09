@@ -21,7 +21,7 @@ const PORTLETS_ANGULAR = [
         canActivateChild: [MenuGuardService],
         path: 'templates',
         loadChildren: () =>
-            import('@portlets/dot-templates/dot-templates.module').then((m) => m.DotTemplatesModule)
+            import('@dotcms-ui/portlets/templates').then((m) => m.DotTemplatesModule)
     },
     {
         canActivate: [MenuGuardService],

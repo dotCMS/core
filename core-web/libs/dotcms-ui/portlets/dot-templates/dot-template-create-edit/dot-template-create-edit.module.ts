@@ -1,0 +1,30 @@
+import { NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
+
+import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
+import { ButtonModule } from 'primeng/button';
+
+import { DotTemplateCreateEditComponent } from './dot-template-create-edit.component';
+import { DotTemplateCreateEditRoutingModule } from './dot-template-create-edit-routing.module';
+import { DotTemplatePropsModule } from './dot-template-props/dot-template-props.module';
+import { DotTemplateBuilderModule } from './dot-template-builder/dot-template-builder.module';
+import { DotApiLinkModule } from '../../../../../apps/dotcms-ui/src/app/view/components/dot-api-link/dot-api-link.module';
+import { DotPortletBaseModule } from '../../../../../apps/dotcms-ui/src/app/view/components/dot-portlet-base/dot-portlet-base.module';
+import { DotMessagePipeModule } from '../../../../../apps/dotcms-ui/src/app/view/pipes/dot-message/dot-message-pipe.module';
+
+@NgModule({
+    imports: [
+        ButtonModule,
+        CommonModule,
+        DotApiLinkModule,
+        DotPortletBaseModule,
+        DotTemplateCreateEditRoutingModule,
+        DotTemplatePropsModule,
+        DynamicDialogModule,
+        DotTemplateBuilderModule,
+        DotMessagePipeModule
+    ],
+    declarations: [DotTemplateCreateEditComponent],
+    providers: [DialogService]
+})
+export class DotTemplateCreateEditModule {}
