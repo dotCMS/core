@@ -352,7 +352,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "/Users/danielsilva/Documents/core-release/dotCMS/src/curl-test/resources/GraphQL/test-page-graphql-render.tar.gz"
+									"src": "resources/GraphQL/test-page-graphql-render.tar.gz"
 								}
 							]
 						},
