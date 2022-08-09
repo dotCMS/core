@@ -56,7 +56,9 @@ const resolveCiIndex = () => {
     else if (dbType === 'mssql') {
         return 1;
     }
-    return -1;
+    else {
+        return -1;
+    }
 };
 const buildEnv = core.getInput('build_env');
 const projectRoot = core.getInput('project_root');
@@ -72,26 +74,30 @@ const DEPS_ENV = {
     postgres: {
         POSTGRES_USER: 'postgres',
         POSTGRES_PASSWORD: 'postgres',
-        POSTGRES_DB: 'dotcms'
+        POSTGRES_DB: 'dotcms' /*,
+        MAX_LOCKS_PER_TRANSACTION: '128'*/
     }
 };
 exports.COMMANDS = {
-    gradle: {
-        cmd: './gradlew',
-        args: ['integrationTest', `-PdatabaseType=${dbType}`],
-        workingDir: dotCmsRoot,
-        outputDir: outputDir,
-        reportDir: reportDir,
-        ciIndex: ciIndex
-    },
-    maven: {
-        cmd: './mvnw',
-        args: ['integrationTest', `-PdatabaseType=${dbType}`],
-        workingDir: dotCmsRoot,
-        outputDir: outputDir,
-        reportDir: reportDir,
-        ciIndex: ciIndex
-    }
+    gradle: [
+        {
+            cmd: './gradlew',
+            args: ['createDistPrep'],
+            workingDir: dotCmsRoot
+        },
+        {
+            cmd: './gradlew',
+            args: ['integrationTest', `-PdatabaseType=${dbType}`],
+            workingDir: dotCmsRoot
+        }
+    ],
+    maven: [
+        {
+            cmd: './mvnw',
+            args: ['integrationTest', `-PdatabaseType=${dbType}`],
+            workingDir: dotCmsRoot
+        }
+    ]
 };
 const START_DEPENDENCIES_CMD = {
     cmd: 'docker-compose',
@@ -108,40 +114,59 @@ const STOP_DEPENDENCIES_CMD = {
 /**
  * Based on a revolved {@link Command}, resolve the command to execute in order to run integration tests.
  *
- * @param cmd resolved command
+ * @param cmds resolved command
  * @returns a number representing the command exit code
  */
-const runTests = (cmd) => __awaiter(void 0, void 0, void 0, function* () {
+const runTests = (cmds) => __awaiter(void 0, void 0, void 0, function* () {
     // Setup ITs
-    setup.setupTests(propertyMap());
-    // Starting dependencies
-    core.info(`
+    yield setup.setupTests(propertyMap());
+    let idx = 0;
+    try {
+        if (cmds.length > 1) {
+            const prepareCmd = cmds[idx++];
+            core.info(`
+      ===========================
+      Preparing integration tests
+      ===========================`);
+            yield execCmd(prepareCmd);
+        }
+        // Starting dependencies
+        core.info(`
     =======================================
     Starting integration tests dependencies
     =======================================`);
-    execCmdAsync(START_DEPENDENCIES_CMD);
-    yield waitFor(60, `ES and ${dbType}`);
-    // Executes ITs
-    resolveParams(cmd);
-    core.info(`
-    ===========================================
-    Running integration tests against ${dbType}
-    ===========================================`);
-    let itCode;
-    try {
-        itCode = yield execCmd(cmd);
+        execCmdAsync(START_DEPENDENCIES_CMD);
+        yield waitFor(60, `ES and ${dbType}`);
+        // Executes ITs
+        const cmd = cmds[idx];
+        resolveParams(cmd);
+        core.info(`
+      ===========================================
+      Running integration tests against ${dbType}
+      ===========================================`);
+        const exitCode = yield execCmd(cmd);
         core.info(`
       ===========================================
       Integration tests have finished to run
       ===========================================`);
-        return itCode;
+        return {
+            exitCode,
+            outputDir,
+            reportDir,
+            ciIndex
+        };
     }
     catch (err) {
         core.setFailed(`Running integration tests failed due to ${err}`);
-        return 127;
+        return {
+            exitCode: 127,
+            outputDir,
+            reportDir,
+            ciIndex
+        };
     }
     finally {
-        stopDeps();
+        yield stopDeps();
     }
 });
 exports.runTests = runTests;
@@ -171,6 +196,8 @@ const propertyMap = () => {
     properties.set('dotSecureFolder', appendToWorkspace('custom/dotsecure'));
     properties.set('dotCmsFolder', dotCmsRoot);
     properties.set('felixFolder', appendToWorkspace('custom/felix'));
+    const tomcatRoot = path.join(projectRoot, 'dist', 'dotserver', 'tomcat-9.0.60');
+    properties.set('systemFelixFolder', path.join(tomcatRoot, 'webapps', 'ROOT', 'WEB-INF', 'felix-system'));
     properties.set('assetsFolder', appendToWorkspace('custom/assets'));
     properties.set('esDataFolder', appendToWorkspace('custom/esdata'));
     properties.set('logsFolder', dotCmsRoot);
@@ -323,8 +350,6 @@ const SOURCE_TEST_RESOURCES_FOLDER = 'cicd/resources';
 const TARGET_TEST_RESOURCES_FOLDER = 'dotCMS/src/integration-test/resources';
 const LICENSE_FOLDER = 'custom/dotsecure/license';
 const projectRoot = core.getInput('project_root');
-const tomcatRoot = path.join(projectRoot, 'dist', 'dotserver', 'tomcat-9.0.60');
-const SYSTEM_FELIX_FOLDER = path.join(tomcatRoot, 'webapps', 'ROOT', 'WEB-INF', 'felix-system');
 const workspaceRoot = path.dirname(projectRoot);
 const IT_FOLDERS = [
     'custom/assets',
@@ -332,8 +357,7 @@ const IT_FOLDERS = [
     'custom/esdata',
     'custom/output/reports/html',
     'custom/felix',
-    LICENSE_FOLDER,
-    SYSTEM_FELIX_FOLDER
+    LICENSE_FOLDER
 ];
 const TEST_RESOURCES = [path.join(projectRoot, SOURCE_TEST_RESOURCES_FOLDER, 'log4j2.xml')];
 /**
@@ -341,16 +365,16 @@ const TEST_RESOURCES = [path.join(projectRoot, SOURCE_TEST_RESOURCES_FOLDER, 'lo
  *
  * @param propertyMap properties vaslues map
  */
-const setupTests = (propertyMap) => {
+const setupTests = (propertyMap) => __awaiter(void 0, void 0, void 0, function* () {
     // prepare folders and copy files
-    prepareTests();
+    yield prepareTests();
     // override existing properties
-    overrideProperties(propertyMap);
+    yield overrideProperties(propertyMap);
     // append new properties
     appendProperties(propertyMap);
     // prepare license
-    prepareLicense();
-};
+    yield prepareLicense();
+});
 exports.setupTests = setupTests;
 /**
  * Gets the value from the properties map otherwise empty.
@@ -369,6 +393,7 @@ const prepareTests = () => __awaiter(void 0, void 0, void 0, function* () {
         const itFolder = path.join(workspaceRoot, folder);
         core.info(`Creating IT folder ${itFolder}`);
         fs.mkdirSync(itFolder, { recursive: true });
+        yield exec.exec('ls', ['-las', path.dirname(itFolder)]);
     }
     for (const res of TEST_RESOURCES) {
         const dest = path.join(projectRoot, TARGET_TEST_RESOURCES_FOLDER, path.basename(res));
@@ -407,7 +432,7 @@ const appendProperties = (propertyMap) => {
     for (const file of appends.files) {
         core.info(`Appending properties to ${file.file}`);
         const line = file.lines.join('\n');
-        core.info(`Appeding properties:\n ${line}`);
+        core.info(`Appending properties:\n${line}`);
         fs.appendFileSync(file.file, `\n${line}`, { encoding: 'utf8', flag: 'a+', mode: 0o666 });
     }
 };
@@ -511,6 +536,7 @@ const getOverrides = (propertyMap) => {
  */
 const getAppends = (propertyMap) => {
     const felixFolder = getValue(propertyMap, 'felixFolder');
+    const systemFelixFolder = getValue(propertyMap, 'systemFelixFolder');
     const esDataFolder = getValue(propertyMap, 'esDataFolder');
     const logsFolder = getValue(propertyMap, 'logsFolder');
     const dotCmsFolder = getValue(propertyMap, 'dotCmsFolder');
@@ -523,7 +549,7 @@ const getAppends = (propertyMap) => {
                     `felix.felix.fileinstall.dir=${felixFolder}/load`,
                     `felix.felix.undeployed.dir=${felixFolder}/undeploy`,
                     'dotcms.concurrent.locks.disable=false',
-                    `system.felix.base.dir=${SYSTEM_FELIX_FOLDER}`
+                    `system.felix.base.dir=${systemFelixFolder}`
                 ]
             },
             {
@@ -607,19 +633,19 @@ const dbType = core.getInput('db_type');
  */
 const run = () => __awaiter(void 0, void 0, void 0, function* () {
     core.info("Running Core's integration tests");
-    const cmd = integration.COMMANDS[buildEnv];
-    if (!cmd) {
+    const cmds = integration.COMMANDS[buildEnv];
+    if (!cmds) {
         core.error('Cannot resolve build tool, aborting');
         return;
     }
-    const exitCode = yield integration.runTests(cmd);
-    const skipReport = !(cmd.outputDir && fs.existsSync(cmd.outputDir));
-    setOutput('tests_results_location', cmd.outputDir);
-    setOutput('tests_results_report_location', cmd.reportDir);
-    setOutput('ci_index', cmd.ciIndex);
-    setOutput('tests_results_status', exitCode === 0 ? 'PASSED' : 'FAILED');
+    const result = yield integration.runTests(cmds);
+    const skipReport = !(result.outputDir && fs.existsSync(result.outputDir));
+    setOutput('tests_results_location', result.outputDir);
+    setOutput('tests_results_report_location', result.reportDir);
+    setOutput('ci_index', result.ciIndex);
+    setOutput('tests_results_status', result.exitCode === 0 ? 'PASSED' : 'FAILED');
     setOutput('tests_results_skip_report', skipReport);
-    setOutput(`${dbType}_tests_results_status`, exitCode === 0 ? 'PASSED' : 'FAILED');
+    setOutput(`${dbType}_tests_results_status`, result.exitCode === 0 ? 'PASSED' : 'FAILED');
     setOutput(`${dbType}_tests_results_skip_report`, skipReport);
 });
 const setOutput = (name, value) => {

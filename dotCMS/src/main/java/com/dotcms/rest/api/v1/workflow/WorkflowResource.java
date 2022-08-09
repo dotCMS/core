@@ -592,7 +592,6 @@ public class WorkflowResource {
             fireBulkActionsForm.getPopupParamsBean()
                     .getAdditionalParamsMap().put(SUCCESS_ACTION_CALLBACK,
                             (Consumer<Long>) delta -> {
-                                Logger.info(this, "CALLBACK ------");
                                 eventBuilder.name("success");
                                 eventBuilder.data(Map.class,
                                         map("success", delta));
