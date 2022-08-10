@@ -9,7 +9,9 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Optional;
 import javax.inject.Inject;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -17,18 +19,21 @@ import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
 @QuarkusTest
-public class InstanceCommandTest {
+public class InstanceCommandTest extends CommandTest {
 
-    @Inject
-    PicocliCommandLineFactory factory;
+    @BeforeAll
+    public static void beforeAll() {
+        disableAnsi();
+    }
 
-    @Inject
-    ServiceManager serviceManager;
+    @AfterAll
+    public static void afterAll() {
+        enableAnsi();
+    }
 
     @BeforeEach
     public void setupTest() throws IOException {
-        serviceManager.removeAll()
-                .persist(ServiceBean.builder().name("default").active(true).build());
+        resetServiceProfiles();
     }
 
     /**
@@ -67,9 +72,9 @@ public class InstanceCommandTest {
                 Assertions.assertEquals(ExitCode.OK, status);
                 final String output = writer.toString();
                 Assertions.assertTrue(
-                        output.contains("Profile [default], Uri [http://localhost:8080/api]"));
+                        output.contains("Profile [default], Uri [http://localhost:8080/api]"),()->output);
                 Assertions.assertTrue(
-                        output.contains("Profile [demo], Uri [https://demo.dotcms.com/api]"));
+                        output.contains("Profile [demo], Uri [https://demo.dotcms.com/api]"), ()->output);
             }
         }
     }
@@ -115,7 +120,7 @@ public class InstanceCommandTest {
                 final String output = writer.toString();
                 Assertions.assertTrue(output.contains(String.format(
                         "The instance name [%s] does not match any configured server! Use --list option.",
-                        instance)));
+                        instance)),()->output);
             }
         }
     }
@@ -151,7 +156,7 @@ public class InstanceCommandTest {
                 final String output = writer.toString();
                 Assertions.assertTrue(output.contains(
                         String.format("The instance name [%s] is now the active profile.",
-                                newProfile)));
+                                newProfile)),()->output);
             }
         }
     }
