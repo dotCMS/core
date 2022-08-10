@@ -139,14 +139,15 @@ describe('DotFormSelectorComponent', () => {
             });
 
             describe('events', () => {
-                beforeEach(() => {
+                beforeEach(async () => {
                     spyOn(component.pick, 'emit');
                     spyOn(component.shutdown, 'emit');
 
                     fixture.componentInstance.show = true;
                     paginatorService.totalRecords = 1;
                     paginatorService.paginationPerPage = 1;
-                    fixture.detectChanges();
+
+                    await fixture.whenStable();
                 });
 
                 it('should emit close', () => {
@@ -156,14 +157,11 @@ describe('DotFormSelectorComponent', () => {
                     expect(component.shutdown.emit).toHaveBeenCalledWith(true);
                 });
 
-                xit('trigger event when click select button', (done) => {
-                    setTimeout(() => {
-                        fixture.detectChanges();
-                        const button = de.query(By.css('.form-selector__button'));
-                        button.triggerEventHandler('click', null);
-                        expect(component.pick.emit).toHaveBeenCalledWith(mockContentType);
-                        done();
-                    }, 0);
+                it('trigger event when click select button', () => {
+                    fixture.detectChanges();
+                    const button = de.query(By.css('.form-selector__button'));
+                    button.triggerEventHandler('click', null);
+                    expect(component.pick.emit).toHaveBeenCalledWith(mockContentType);
                 });
             });
         });
