@@ -303,6 +303,8 @@ public class UserResourceTest extends UnitTestBase {
         user.setUserId("dotcms.org.1");
 
         final User systemUser = new User();
+        final Locale enUsLocale = new Locale.Builder().setLanguage("en").setRegion("US").build();
+        systemUser.setLocale(enUsLocale);
 
         when(initDataObject.getUser()).thenReturn(user);
         when(userAPI.getSystemUser()).thenReturn(systemUser);
@@ -310,8 +312,11 @@ public class UserResourceTest extends UnitTestBase {
         when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
         when(request.getSession()).thenReturn(session);
         when(request.getSession(false)).thenReturn(session);
-        when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
+        when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(enUsLocale);
         when(loginService.passwordMatch("password", user)).thenReturn(false);
+        when(errorHelper
+                .getErrorResponse(Response.Status.BAD_REQUEST, enUsLocale, "current.usermanager.password.incorrect"))
+                .thenReturn(Response.status(Response.Status.BAD_REQUEST).build());
 
         final UserResourceHelper userHelper  = new UserResourceHelper(userService, roleAPI, userAPI, layoutAPI, hostWebAPI,
                 userWebAPI, permissionAPI, userProxyAPI, loginService);
