@@ -36,3 +36,36 @@
     padding: 1.25rem;
     height: 100%;
 }
+
+.p-sidebar-mask.p-component-overlay-leave {
+    display: none;
+}
+
+.p-sidebar-mask {
+    backdrop-filter: blur(5px);
+
+    &.p-component-overlay-enter {
+        animation: p-component-overlay-enter-animation 150ms forwards;
+    }
+
+    &.p-component-overlay-leave {
+        animation: p-component-overlay-leave-animation 150ms forwards;
+    }
+}
+
+@keyframes p-component-overlay-enter-animation {
+    from {
+        background-color: transparent;
+    }
+    to {
+        background-color: rgba($black, 0.8);
+    }
+}
+@keyframes p-component-overlay-leave-animation {
+    from {
+        background-color: rgba($black, 0.8);
+    }
+    to {
+        background-color: transparent;
+    }
+}

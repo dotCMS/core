@@ -1,9 +1,9 @@
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
-import { DotcmsBlockEditorComponent } from '@dotcms/block-editor';
 import { take, takeUntil } from 'rxjs/operators';
 import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { Subject } from 'rxjs';
+import { DotBlockEditorComponent } from '@dotcms/block-editor';
 
 export interface BlockEditorData {
     content: { [key: string]: string };
@@ -20,7 +20,7 @@ export interface BlockEditorData {
     styleUrls: ['./dot-block-editor-sidebar.component.scss']
 })
 export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
-    @ViewChild('blockEditor') blockEditor: DotcmsBlockEditorComponent;
+    @ViewChild('blockEditor') blockEditor: DotBlockEditorComponent;
 
     data: BlockEditorData;
     saving = false;

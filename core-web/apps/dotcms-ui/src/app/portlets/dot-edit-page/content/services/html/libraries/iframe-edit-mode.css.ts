@@ -454,6 +454,10 @@ export const getEditPageCss = (timestampId: string): string => {
         display: block;
     }
     
+    ${timestampId} [data-inode][data-field-name][data-content].dotcms__inline-edit-field {
+        cursor: pointer;
+    }
+    
     ${timestampId} .dotcms__navbar-form {
         display: inline-block;
     }
