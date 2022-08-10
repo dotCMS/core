@@ -9,10 +9,8 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
 export class DotRelationshipTreeComponent implements OnInit {
     @Input() velocityVar: string;
     @Input() contentType: DotCMSContentType;
+    @Input() isParentField: boolean;
 
-    isRelationshipChild = false;
-    relatedContentType: string;
-    fieldName: string;
     child: string;
     parent: string;
 
@@ -25,13 +23,10 @@ export class DotRelationshipTreeComponent implements OnInit {
      * @memberof DotRelationshipTreeComponent
      */
     setInitialValues(): void {
-        // If velocityVar has a dot it means it's the child of the relationship
-        this.isRelationshipChild = this.velocityVar?.indexOf('.') !== -1;
-
         const [relatedContentType] = this.velocityVar?.split('.') || '';
         const contentTypeName = this.contentType?.name;
 
-        this.parent = this.isRelationshipChild ? relatedContentType : contentTypeName;
-        this.child = this.isRelationshipChild ? contentTypeName : relatedContentType;
+        this.child = this.isParentField ? relatedContentType : contentTypeName;
+        this.parent = this.isParentField ? contentTypeName : relatedContentType;
     }
 }
