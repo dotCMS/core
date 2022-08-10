@@ -15,10 +15,10 @@ import { CardModule } from 'primeng/card';
 import { ContentletBlockComponent } from './blocks/contentlet-block/contentlet-block.component';
 
 import { SuggestionsService } from './services/suggestions/suggestions.service';
-import { SuggestionsComponent } from './extensions/components/suggestions/suggestions.component';
-import { SuggestionListComponent } from './extensions/components/suggestion-list/suggestion-list.component';
+import { SuggestionsComponent } from './shared/components/suggestions/suggestions.component';
+import { SuggestionListComponent } from './shared/components/suggestion-list/suggestion-list.component';
 import { ActionButtonComponent } from './extensions/action-button/action-button.component';
-import { SuggestionsListItemComponent } from './extensions/components/suggestions-list-item/suggestions-list-item.component';
+import { SuggestionsListItemComponent } from './shared/components/suggestion-list/components/suggestions-list-item/suggestions-list-item.component';
 import { LoggerService } from '@dotcms/dotcms-js';
 import { StringUtils } from '@dotcms/dotcms-js';
 import { DragHandlerComponent } from './extensions/drag-handler/drag-handler.component';

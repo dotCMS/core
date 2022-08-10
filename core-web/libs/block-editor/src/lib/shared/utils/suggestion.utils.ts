@@ -6,9 +6,9 @@ import {
     pIcon,
     quoteIcon,
     ulIcon
-} from '../../extensions/components/suggestions/suggestion-icons';
+} from '../components/suggestions/suggestion-icons';
 import { SafeUrl, ɵDomSanitizerImpl } from '@angular/platform-browser';
-import { DotMenuItem } from '../../extensions/components/suggestions/suggestions.component';
+import { DotMenuItem } from '../components/suggestions/suggestions.component';
 
 const domSanitizer = new ɵDomSanitizerImpl(document);
 

@@ -14,7 +14,7 @@ import { debounceTime } from 'rxjs/operators';
 import {
     SuggestionsCommandProps,
     SuggestionsComponent
-} from '../components/suggestions/suggestions.component';
+} from '../../shared/components/suggestions/suggestions.component';
 
 // Models
 import { isValidURL } from '../bubble-menu/utils';

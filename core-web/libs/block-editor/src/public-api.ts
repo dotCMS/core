@@ -13,7 +13,7 @@ export * from './lib/AngularRenderer';
 export * from './lib/NodeViewRenderer';
 
 // Editor blocks components
-export * from './lib/extensions/components/suggestions/suggestions.component';
+export * from './lib/shared/components/suggestions/suggestions.component';
 export * from './lib/extensions/action-button/action-button.component';
 export * from './lib/extensions/image-uploader/components/loader/loader.component';
 export * from './lib/extensions/drag-handler/drag-handler.component';

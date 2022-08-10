@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { moduleMetadata, Story } from '@storybook/angular';
 
-import { SuggestionsListItemComponent } from '../suggestions-list-item/suggestions-list-item.component';
+import { SuggestionsListItemComponent } from './suggestions-list-item.component';
 
 export default {
     title: 'Suggestions List Item',

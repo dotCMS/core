@@ -1,6 +1,6 @@
 import { FocusKeyManager } from '@angular/cdk/a11y';
 import { AfterContentInit, Component, ContentChildren, QueryList } from '@angular/core';
-import { SuggestionsListItemComponent } from '../suggestions-list-item/suggestions-list-item.component';
+import { SuggestionsListItemComponent } from './components/suggestions-list-item/suggestions-list-item.component';
 
 @Component({
     selector: 'dot-suggestion-list',

@@ -12,12 +12,12 @@ import {
     FloatingActionsKeydownProps,
     FloatingActionsPlugin,
     FloatingActionsProps
-} from './plugins/floating.plugin';
+} from '../../shared/plugins/floating.plugin';
 import {
     ItemsType,
     SuggestionsCommandProps,
     SuggestionsComponent
-} from '../components/suggestions/suggestions.component';
+} from '../../shared/components/suggestions/suggestions.component';
 import { ActionButtonComponent } from './action-button.component';
 import { PluginKey } from 'prosemirror-state';
 import { Subject } from 'rxjs';
