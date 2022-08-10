@@ -36,8 +36,6 @@ import com.dotcms.storage.model.Metadata;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.util.*;
-import com.dotmarketing.beans.*;
-import com.dotmarketing.business.*;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DotPreconditions;
@@ -116,6 +114,8 @@ import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.*;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.dotmarketing.util.contentet.pagination.ContentletPaginatedBuilder;
+import com.dotmarketing.util.contentet.pagination.ContentletsPaginated;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -648,7 +648,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
 
-    public ContentletPaginated findContentletsPaginatedByHost(final Host parentHost,
+    public ContentletsPaginated findContentletsPaginatedByHost(final Host parentHost,
             final List<Integer> includingContentTypes,
             final List<Integer> excludingContentTypes,
             final User user,
@@ -657,7 +657,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final String query = getContentletByHostQuery(parentHost, includingContentTypes,
                 excludingContentTypes);
 
-        return new ContentletPaginated(query, user, respectFrontendRoles);
+        return new ContentletPaginatedBuilder()
+                .setLuceneQuery(query)
+                .setUser(user)
+                .setRespectFrontendRoles(respectFrontendRoles)
+                .build();
     }
 
     @CloseDBIfOpened

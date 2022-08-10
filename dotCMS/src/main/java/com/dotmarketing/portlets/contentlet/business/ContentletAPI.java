@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
@@ -25,7 +24,7 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships.Content
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.ContentletPaginated;
+import com.dotmarketing.util.contentet.pagination.ContentletsPaginated;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import java.io.Serializable;
@@ -263,7 +262,7 @@ public interface ContentletAPI {
 	 */
 	public List<Contentlet> findContentletsByHost(Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
-	public ContentletPaginated findContentletsPaginatedByHost(Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	public ContentletsPaginated findContentletsPaginatedByHost(Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 *
