@@ -32,6 +32,7 @@
 </div>
 
 <dot-dialog
+    width="45rem"
     [(visible)]="displayDialog"
     [actions]="dialogActions"
     [hideButtons]="hideButtons"
@@ -40,14 +41,37 @@
 >
     <p-tabView [(activeIndex)]="activeTab" (onChange)="handleTabChange($event.index)">
         <p-tabPanel [header]="'contenttypes.dropzone.tab.overview' | dm">
-            <dot-content-type-fields-properties-form
-                [formFieldData]="currentField"
-                (saveField)="saveFieldsHandler($event)"
-                (valid)="setDialogOkButtonState($event)"
-                [contentType]="contentType"
-                #fieldPropertiesForm
+            <div
+                class="info"
+                *ngIf="
+                    currentFieldType?.clazz ===
+                    'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
+                "
             >
-            </dot-content-type-fields-properties-form>
+                <span>
+                    We released a new <b>Block Editor Field</b> that ease content creation.
+                </span>
+                <button pButton class="p-button-secondary p-button-sm" (click)="scrollTo()">
+                    Check it out!
+                </button>
+            </div>
+            <div class="wrapper">
+                <dot-content-type-fields-properties-form
+                    [formFieldData]="currentField"
+                    (saveField)="saveFieldsHandler($event)"
+                    (valid)="setDialogOkButtonState($event)"
+                    [contentType]="contentType"
+                    #fieldPropertiesForm
+                >
+                </dot-content-type-fields-properties-form>
+                <dot-convert-wysiwyg-to-block
+                    *ngIf="
+                        currentFieldType?.clazz ===
+                        'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
+                    "
+                    [currentFieldType]="currentFieldType"
+                ></dot-convert-wysiwyg-to-block>
+            </div>
         </p-tabPanel>
         <p-tabPanel
             [header]="'contenttypes.dropzone.tab.variables' | dm"

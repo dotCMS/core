@@ -1,0 +1,18 @@
+@use "variables" as *;
+
+:host {
+    margin-top: $spacing-6;
+    display: block;
+    border: solid 1px $gray-light;
+    padding: $spacing-2 $spacing-4;
+    border-radius: $border-radius;
+}
+
+h3 {
+    font-size: $font-size-large;
+    margin: $spacing-2 0;
+}
+
+p {
+    line-height: 1.5;
+}

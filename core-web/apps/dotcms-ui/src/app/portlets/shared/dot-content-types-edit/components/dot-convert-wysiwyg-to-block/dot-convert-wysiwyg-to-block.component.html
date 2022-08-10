@@ -1,0 +1,22 @@
+<h3 id="convert">New Block Editor Field</h3>
+<p>
+    With Block Editor, you can build your content as building blocks. Every element in your editor
+    can be added, edited, dragged, and dropped to be reordered or deleted.
+    <a href="https://www.dotcms.com/docs/latest/block-editor">More Info</a>
+</p>
+
+<h3 id="convert">Convert WYSIWYG to Block Editor</h3>
+
+<p>
+    The content will not change until is edited. Some blocks <b>might get lost</b> during the
+    content transformation.
+</p>
+
+<div class="field-checkbox">
+    <p-checkbox inputId="agreed" [(ngModel)]="accept" [binary]="true"></p-checkbox>
+    <label for="agreed">I understand, I want to convert this field.</label>
+</div>
+
+<p>
+    <button [disabled]="!accept" pButton>Convert Field</button>
+</p>
