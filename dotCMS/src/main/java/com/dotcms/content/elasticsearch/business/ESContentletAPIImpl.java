@@ -647,28 +647,48 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+
+    public ContentletPaginated findContentletsPaginatedByHost(final Host parentHost,
+            final List<Integer> includingContentTypes,
+            final List<Integer> excludingContentTypes,
+            final User user,
+            final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+        final String query = getContentletByHostQuery(parentHost, includingContentTypes,
+                excludingContentTypes);
+
+        return new ContentletPaginated(query, user, respectFrontendRoles);
+    }
+
     @CloseDBIfOpened
     @Override
     public List<Contentlet> findContentletsByHost(Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         try {
-            StringBuilder query = new StringBuilder();
-            query.append("+conHost:").append(parentHost.getIdentifier()).append(" +working:true");
+            final String query = getContentletByHostQuery(parentHost, includingContentTypes,
+                    excludingContentTypes);
 
-            // Including content types
-            if(includingContentTypes != null && !includingContentTypes.isEmpty()) {
-                query.append(" +structureType:(").append(StringUtils.join(includingContentTypes, " ")).append(")");
-            }
-
-            // Excluding content types
-            if(excludingContentTypes != null && !excludingContentTypes.isEmpty()) {
-                query.append(" -structureType:(").append(StringUtils.join(excludingContentTypes, " ")).append(")");
-            }
-
-            return permissionAPI.filterCollection(search(query.toString(), -1, 0, null , user, respectFrontendRoles), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+            return permissionAPI.filterCollection(search(query, -1, 0, null , user, respectFrontendRoles), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         } catch (Exception e) {
             Logger.error(this.getClass(), e.getMessage(), e);
             throw new DotRuntimeException(e.getMessage(), e);
         }
+    }
+
+    private String getContentletByHostQuery(Host parentHost, List<Integer> includingContentTypes,
+            List<Integer> excludingContentTypes) {
+        final StringBuilder query = new StringBuilder();
+        query.append("+conHost:").append(parentHost.getIdentifier()).append(" +working:true");
+
+        // Including content types
+        if(includingContentTypes != null && !includingContentTypes.isEmpty()) {
+            query.append(" +structureType:(").append(StringUtils.join(includingContentTypes, " ")).append(")");
+        }
+
+        // Excluding content types
+        if(excludingContentTypes != null && !excludingContentTypes.isEmpty()) {
+            query.append(" -structureType:(").append(StringUtils.join(excludingContentTypes, " ")).append(")");
+        }
+        return query.toString();
     }
 
     @CloseDBIfOpened

@@ -25,6 +25,7 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships.Content
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.ContentletPaginated;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import java.io.Serializable;
@@ -262,7 +263,10 @@ public interface ContentletAPI {
 	 */
 	public List<Contentlet> findContentletsByHost(Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
+	public ContentletPaginated findContentletsPaginatedByHost(Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
 	/**
+	 *
 	 * Returns a list of {@link Contentlet} whose parent host matches the given host and whose base-type
 	 * (See {@link Structure.Type}) matches any of the given base types. .
 	 *
