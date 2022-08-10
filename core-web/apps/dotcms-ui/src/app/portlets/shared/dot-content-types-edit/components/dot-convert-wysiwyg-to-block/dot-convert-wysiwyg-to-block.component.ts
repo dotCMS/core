@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 @Component({
     selector: 'dot-convert-wysiwyg-to-block',
@@ -7,6 +7,8 @@ import { Component, Input } from '@angular/core';
 })
 export class DotConvertWysiwygToBlockComponent {
     @Input() currentFieldType;
+
+    @Output() convert = new EventEmitter<MouseEvent>();
 
     accept = false;
 }

@@ -18,5 +18,5 @@
 </div>
 
 <p>
-    <button [disabled]="!accept" pButton>Convert Field</button>
+    <button [disabled]="!accept" pButton (click)="convert.emit($event)">Convert Field</button>
 </p>

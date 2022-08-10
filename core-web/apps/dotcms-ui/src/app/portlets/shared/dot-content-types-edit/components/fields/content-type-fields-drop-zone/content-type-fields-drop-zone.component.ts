@@ -230,6 +230,20 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     }
 
     /**
+     * Convert WYSIWYG field to Block Field
+     *
+     * @memberof ContentTypeFieldsDropZoneComponent
+     */
+    convertWysiwygToBlock() {
+        this.editField.emit({
+            ...this.currentField,
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
+            fieldType: 'Story-Block'
+        });
+        this.toggleDialog();
+    }
+
+    /**
      * Emit the saveField event
      * @param DotContentTypeField fieldToSave
      * @memberof ContentTypeFieldsDropZoneComponent

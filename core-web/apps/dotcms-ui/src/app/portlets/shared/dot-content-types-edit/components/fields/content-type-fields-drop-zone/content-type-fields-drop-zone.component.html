@@ -51,9 +51,25 @@
                 <span>
                     We released a new <b>Block Editor Field</b> that ease content creation.
                 </span>
-                <button pButton class="p-button-secondary p-button-sm" (click)="scrollTo()">
+
+                <button
+                    *ngIf="currentField?.id; else learnMore"
+                    pButton
+                    class="p-button-secondary p-button-sm"
+                    (click)="scrollTo()"
+                >
                     Check it out!
                 </button>
+
+                <ng-template #learnMore
+                    ><a
+                        [ngStyle]="{ 'text-decoration': 'none' }"
+                        target="_blank"
+                        class="p-element p-button-secondary p-button-sm p-button p-component"
+                        href="https://www.dotcms.com/docs/latest/block-editor"
+                        >Learn More</a
+                    ></ng-template
+                >
             </div>
             <div class="wrapper">
                 <dot-content-type-fields-properties-form
@@ -65,9 +81,11 @@
                 >
                 </dot-content-type-fields-properties-form>
                 <dot-convert-wysiwyg-to-block
+                    (convert)="convertWysiwygToBlock($event)"
                     *ngIf="
+                        !!currentField?.id &&
                         currentFieldType?.clazz ===
-                        'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
+                            'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
                     "
                     [currentFieldType]="currentFieldType"
                 ></dot-convert-wysiwyg-to-block>
