@@ -28,8 +28,9 @@ function toTitleCase(str) {
     });
 }
 
+// eslint-disable-next-line
 @Component({
-    selector: 'dotcms-block-editor',
+    selector: 'dot-block-editor',
     templateUrl: './dot-block-editor.component.html',
     styleUrls: ['./dot-block-editor.component.scss']
 })

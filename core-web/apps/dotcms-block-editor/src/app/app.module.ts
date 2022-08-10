@@ -5,28 +5,13 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
-import { OrderListModule } from 'primeng/orderlist';
-import { ListboxModule } from 'primeng/listbox';
-
-import { DotBlockEditorComponent } from './dot-block-editor/dot-block-editor.component';
-
 import { createCustomElement } from '@angular/elements';
 import { AppComponent } from './app.component';
-import { NgxTiptapModule } from '@dotcms/block-editor';
-import { HttpClientModule } from '@angular/common/http';
+import { DotBlockEditorComponent, NgxTiptapModule } from '@dotcms/block-editor';
 
 @NgModule({
-    declarations: [AppComponent, DotBlockEditorComponent],
-    imports: [
-        BrowserModule,
-        BrowserAnimationsModule,
-        CommonModule,
-        FormsModule,
-        NgxTiptapModule,
-        OrderListModule,
-        ListboxModule,
-        HttpClientModule
-    ],
+    declarations: [AppComponent],
+    imports: [BrowserModule, BrowserAnimationsModule, CommonModule, FormsModule, NgxTiptapModule],
     providers: []
 })
 export class AppModule {

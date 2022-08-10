@@ -9,6 +9,7 @@ import { DotEvent } from '@models/dot-event/dot-event';
  */
 @Injectable()
 export class DotEventsService {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private subject: Subject<DotEvent<any>> = new Subject();
 
     /**

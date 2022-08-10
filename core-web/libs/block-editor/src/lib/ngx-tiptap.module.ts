@@ -31,6 +31,9 @@ import { BubbleMenuLinkFormComponent } from './extensions/components/bubble-menu
 import { ContentletStatePipe } from './extensions/pipes/contentlet-state/contentlet-state.pipe';
 import { SuggestionLoadingListComponent } from './extensions/components/suggestion-loading-list/suggestion-loading-list.component';
 import { FormActionsComponent } from './extensions/components/bubble-menu-link-form/components/form-actions/form-actions.component';
+import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
+import { OrderListModule } from 'primeng/orderlist';
+import { ListboxModule } from 'primeng/listbox';
 
 @NgModule({
     imports: [
@@ -41,7 +44,9 @@ import { FormActionsComponent } from './extensions/components/bubble-menu-link-f
         MenuModule,
         CheckboxModule,
         ButtonModule,
-        InputTextModule
+        InputTextModule,
+        OrderListModule,
+        ListboxModule
     ],
     declarations: [
         EditorDirective,
@@ -61,7 +66,8 @@ import { FormActionsComponent } from './extensions/components/bubble-menu-link-f
         BubbleMenuLinkFormComponent,
         ContentletStatePipe,
         SuggestionLoadingListComponent,
-        FormActionsComponent
+        FormActionsComponent,
+        DotBlockEditorComponent
     ],
     providers: [SuggestionsService, DotImageService, LoggerService, StringUtils],
     exports: [
@@ -76,7 +82,8 @@ import { FormActionsComponent } from './extensions/components/bubble-menu-link-f
         ReactiveFormsModule,
         CheckboxModule,
         ButtonModule,
-        InputTextModule
+        InputTextModule,
+        DotBlockEditorComponent
     ]
 })
 export class NgxTiptapModule {}

@@ -12,6 +12,9 @@ export * from './lib/ngx-tiptap.module';
 export * from './lib/AngularRenderer';
 export * from './lib/NodeViewRenderer';
 
+//Editor
+export * from './lib/components/dot-block-editor/dot-block-editor.component';
+
 // Editor blocks components
 export * from './lib/extensions/components/suggestions/suggestions.component';
 export * from './lib/extensions/components/action-button/action-button.component';

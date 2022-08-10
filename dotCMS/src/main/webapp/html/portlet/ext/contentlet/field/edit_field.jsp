@@ -176,12 +176,12 @@
             %>
 
             <script src="/html/dotcms-block-editor.js"></script>
-            <dotcms-block-editor
+            <dot-block-editor
                 allowed-content-types="<%=allowedContentTypes%>"
                 allowed-blocks="<%=allowedBlocks%>"
                 custom-styles="<%=customStyles%>"
                 lang="<%=contentLanguage%>">
-            </dotcms-block-editor>
+            </dot-block-editor>
             <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"/>
 
             <script>
