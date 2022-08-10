@@ -12,25 +12,25 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { CommonModule } from '@angular/common';
 import { CardModule } from 'primeng/card';
-import { ContentletBlockComponent } from './extensions/blocks/contentlet-block/contentlet-block.component';
+import { ContentletBlockComponent } from './blocks/contentlet-block/contentlet-block.component';
 
-import { SuggestionsService } from './extensions/services/suggestions/suggestions.service';
+import { SuggestionsService } from './services/suggestions/suggestions.service';
 import { SuggestionsComponent } from './extensions/components/suggestions/suggestions.component';
 import { SuggestionListComponent } from './extensions/components/suggestion-list/suggestion-list.component';
-import { ActionButtonComponent } from './extensions/components/action-button/action-button.component';
+import { ActionButtonComponent } from './extensions/action-button/action-button.component';
 import { SuggestionsListItemComponent } from './extensions/components/suggestions-list-item/suggestions-list-item.component';
 import { LoggerService } from '@dotcms/dotcms-js';
 import { StringUtils } from '@dotcms/dotcms-js';
-import { DragHandlerComponent } from './extensions/components/drag-handler/drag-handler.component';
-import { ImageBlockComponent } from './extensions/blocks/image-block/image-block.component';
-import { LoaderComponent } from './extensions/components/loader/loader.component';
-import { DotImageService } from './extensions/services/dot-image/dot-image.service';
-import { BubbleMenuComponent } from './extensions/components/bubble-menu/bubble-menu.component';
-import { BubbleMenuButtonComponent } from './extensions/components/bubble-menu-button/bubble-menu-button.component';
-import { BubbleMenuLinkFormComponent } from './extensions/components/bubble-menu-link-form/bubble-menu-link-form.component';
-import { ContentletStatePipe } from './extensions/pipes/contentlet-state/contentlet-state.pipe';
-import { SuggestionLoadingListComponent } from './extensions/components/suggestion-loading-list/suggestion-loading-list.component';
-import { FormActionsComponent } from './extensions/components/bubble-menu-link-form/components/form-actions/form-actions.component';
+import { DragHandlerComponent } from './extensions/drag-handler/drag-handler.component';
+import { ImageBlockComponent } from './blocks/image-block/image-block.component';
+import { LoaderComponent } from './extensions/image-uploader/components/loader/loader.component';
+import { DotImageService } from './services/dot-image/dot-image.service';
+import { BubbleMenuComponent } from './extensions/bubble-menu/bubble-menu.component';
+import { BubbleMenuButtonComponent } from './extensions/bubble-menu/components/bubble-menu-button/bubble-menu-button.component';
+import { BubbleMenuLinkFormComponent } from './extensions/bubble-menu-link-form/bubble-menu-link-form.component';
+import { ContentletStatePipe } from './shared/pipes/contentlet-state/contentlet-state.pipe';
+import { SuggestionLoadingListComponent } from './extensions/suggestion-loading-list/suggestion-loading-list.component';
+import { FormActionsComponent } from './extensions/bubble-menu-link-form/components/form-actions/form-actions.component';
 
 @NgModule({
     imports: [
