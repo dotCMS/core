@@ -1,8 +1,9 @@
 {
 	"info": {
-		"_postman_id": "a11e17c1-7080-4391-a1fb-2d364e660ef6",
+		"_postman_id": "ca8ea061-cf7f-411f-884b-f7f1235a6232",
 		"name": "Bundle Resource",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "4500400"
 	},
 	"item": [
 		{
@@ -1627,12 +1628,12 @@
 											"    jsonData.forEach(item => {",
 											"        if (item.type === \"contentlet\" && item.isHtmlPage){",
 											"            pm.expect(\"Page Asset\").to.eq(item.content_type_name);",
-											"            pm.expect(\"6bda9acb-2850-433c-963f-dd243cc91fdc\").to.eq(item.inode);",
+											"            pm.expect(\"892662d008a2cdfcfdd4f00e138df6fe\").to.eq(item.asset);",
 											"            pm.expect(\"page_test\").to.eq(item.title);",
 											"            pm.expect(true).to.eq(item.isHtmlPage);",
 											"        } else if (item.type === \"contentlet\") {",
 											"            pm.expect(\"type_1\").to.eq(item.content_type_name);",
-											"            pm.expect(\"27d2b9d0-e7f0-46f8-959e-a04aa0e565b8\").to.eq(item.inode);",
+											"            pm.expect(\"ad7551b54313c244e7110608c0cda9fe\").to.eq(item.asset);",
 											"            pm.expect(\"Testing\").to.eq(item.title);",
 											"        } else if (item.type === \"contenttype\"){",
 											"            pm.expect(\"type_1\").to.eq(item.title);",
