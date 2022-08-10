@@ -14,9 +14,9 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 import { DotTemplateItem } from '../store/dot-template.store';
-import { DotMessageService } from '../../../../../../apps/dotcms-ui/src/app/api/services/dot-message/dot-messages.service';
-import { DotPortletToolbarActions } from '../../../../../../apps/dotcms-ui/src/app/shared/models/dot-portlet-toolbar.model/dot-portlet-toolbar-actions.model';
-import { DotContainer } from '../../../../../../apps/dotcms-ui/src/app/shared/models/container/dot-container.model';
+import { DotPortletToolbarActions } from '@models/dot-portlet-toolbar.model/dot-portlet-toolbar-actions.model';
+import { DotContainer } from '@models/container/dot-container.model';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 
 interface MonacoEditorOperation {
     range: number;

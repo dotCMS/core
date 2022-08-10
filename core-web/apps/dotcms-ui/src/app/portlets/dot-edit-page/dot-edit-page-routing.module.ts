@@ -3,7 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 
 import { DotEditPageMainComponent } from './main/dot-edit-page-main/dot-edit-page-main.component';
 import { DotEditPageResolver } from './shared/services/dot-edit-page-resolver/dot-edit-page-resolver.service';
-import { LayoutEditorCanDeactivateGuardService } from '@services/guards/layout-editor-can-deactivate-guard.service';
+import { LayoutEditorCanDeactivateGuardService } from '@dotcms-ui/shared';
 
 const dotEditPage: Routes = [
     {

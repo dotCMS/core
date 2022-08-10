@@ -3,12 +3,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { of, throwError } from 'rxjs';
 
-import { DotCrudService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-crud';
-import { DotMessageService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-message/dot-messages.service';
-import { DotTempFileUploadService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
-import { DotWorkflowActionsFireService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
-import { MockDotMessageService } from 'core-web/apps/dotcms-ui/src/app/test/dot-message-service.mock';
-import { dotcmsContentletMock } from 'core-web/apps/dotcms-ui/src/app/test/dotcms-contentlet.mock';
 import { DotTemplateThumbnailFieldComponent } from './dot-template-thumbnail-field.component';
 import {
     UntypedFormBuilder,
@@ -16,6 +10,12 @@ import {
     FormsModule,
     ReactiveFormsModule
 } from '@angular/forms';
+import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
+import { dotcmsContentletMock } from '@tests/dotcms-contentlet.mock';
+import { DotTempFileUploadService } from '@services/dot-temp-file-upload/dot-temp-file-upload.service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotCrudService } from '@services/dot-crud';
 
 const messageServiceMock = new MockDotMessageService({
     'templates.properties.form.thumbnail.error.invalid.url': 'Invalid url',

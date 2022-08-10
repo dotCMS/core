@@ -5,10 +5,10 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DialogService } from 'primeng/dynamicdialog';
 import { Subject } from 'rxjs';
 
-import { DotMessageService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-message/dot-messages.service';
-import { DotRouterService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-router/dot-router.service';
-import { MockDotMessageService } from 'core-web/apps/dotcms-ui/src/app/test/dot-message-service.mock';
 import { DotTemplateNewComponent } from './dot-template-new.component';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 
 describe('DotTemplateNewComponent', () => {
     let fixture: ComponentFixture<DotTemplateNewComponent>;

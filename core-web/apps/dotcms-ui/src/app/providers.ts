@@ -31,7 +31,7 @@ import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-han
 import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { ConfirmationService } from 'primeng/api';
-import { LayoutEditorCanDeactivateGuardService } from '@services/guards/layout-editor-can-deactivate-guard.service';
+import { LayoutEditorCanDeactivateGuardService } from '@dotcms-ui/shared';
 
 export const LOCATION_TOKEN = new InjectionToken<Location>('Window location object');
 

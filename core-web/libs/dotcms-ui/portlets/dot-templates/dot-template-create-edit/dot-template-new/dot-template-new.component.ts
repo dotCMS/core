@@ -2,9 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { take } from 'rxjs/operators';
 
 import { DialogService } from 'primeng/dynamicdialog';
-import { DotMessageService } from '../../../../../../apps/dotcms-ui/src/app/api/services/dot-message/dot-messages.service';
 import { DotTemplateSelectorComponent } from '../../dot-template-list/components/dot-template-selector/dot-template-selector.component';
-import { DotRouterService } from '../../../../../../apps/dotcms-ui/src/app/api/services/dot-router/dot-router.service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 @Component({
     selector: 'dot-dot-template-new',

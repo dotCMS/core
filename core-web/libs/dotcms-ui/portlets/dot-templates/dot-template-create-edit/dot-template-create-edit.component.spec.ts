@@ -4,36 +4,35 @@ import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/c
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { BehaviorSubject, of, Subject } from 'rxjs';
-
 import { DialogService } from 'primeng/dynamicdialog';
-import { ButtonModule } from 'primeng/button';
 
+import { ButtonModule } from 'primeng/button';
 import {
     DotTemplateStore,
     EMPTY_TEMPLATE_ADVANCED,
     EMPTY_TEMPLATE_DESIGN
 } from './store/dot-template.store';
 import { DotTemplateCreateEditComponent } from './dot-template-create-edit.component';
-import { DotFormDialogModule } from 'core-web/apps/dotcms-ui/src/app/view/components/dot-form-dialog/dot-form-dialog.module';
 import { DotTemplatePropsModule } from './dot-template-props/dot-template-props.module';
-import { DotMessageService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-message/dot-messages.service';
-import { MockDotMessageService } from 'core-web/apps/dotcms-ui/src/app/test/dot-message-service.mock';
-import { DotMessagePipe } from 'core-web/apps/dotcms-ui/src/app/view/pipes/dot-message/dot-message.pipe';
-import { DotCrudService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-crud';
-import { DotTempFileUploadService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
-import { DotWorkflowActionsFireService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
-import { PaginatorService } from 'core-web/apps/dotcms-ui/src/app/api/services/paginator';
-import { mockDotThemes } from 'core-web/apps/dotcms-ui/src/app/test/dot-themes.mock';
-import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
-import { DotThemesService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-themes/dot-themes.service';
-import { CoreWebServiceMock } from 'core-web/apps/dotcms-ui/src/app/test/core-web.service.mock';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotEventsService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-events/dot-events.service';
-import { mockSites } from 'core-web/apps/dotcms-ui/src/app/test/site-service.mock';
 import { DotTemplateItem } from './store/dot-template.store';
+
+import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
+import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
+import { PaginatorService } from '@services/paginator';
+import { DotTempFileUploadService } from '@services/dot-temp-file-upload/dot-temp-file-upload.service';
+import { DotCrudService } from '@services/dot-crud';
+import { DotThemesService } from '@services/dot-themes/dot-themes.service';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { DotFormDialogModule } from '@components/dot-form-dialog/dot-form-dialog.module';
+import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotMessagePipe } from '@dotcms/app/view/pipes';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { mockDotThemes } from '@tests/dot-themes.mock';
+import { mockSites } from '@tests/site-service.mock';
 
 @Component({
     selector: 'dot-api-link',

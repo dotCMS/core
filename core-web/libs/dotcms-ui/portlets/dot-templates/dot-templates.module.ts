@@ -4,7 +4,7 @@ import { DotTemplatesRoutingModule } from './dot-templates-routing.module';
 import { DotTemplatesService } from './dot-templates.service';
 import { DotTemplateListModule } from './dot-template-list/dot-template-list.module';
 import { DotTemplateCreateEditResolver } from './dot-template-create-edit/resolvers/dot-template-create-edit.resolver';
-import { LayoutEditorCanDeactivateGuardService } from '../../../../apps/dotcms-ui/src/app/api/services/guards/layout-editor-can-deactivate-guard.service';
+import { LayoutEditorCanDeactivateGuardService } from '@dotcms-ui/shared';
 
 @NgModule({
     imports: [CommonModule, DotTemplatesRoutingModule, DotTemplateListModule],

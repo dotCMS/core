@@ -10,9 +10,9 @@ import {
     ReactiveFormsModule
 } from '@angular/forms';
 
-import { DotMessageService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-message/dot-messages.service';
-import { MockDotMessageService } from 'core-web/apps/dotcms-ui/src/app/test/dot-message-service.mock';
 import { DotTemplateAdvancedComponent } from './dot-template-advanced.component';
+import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 
 @Component({
     selector: 'dot-portlet-base',

@@ -18,17 +18,15 @@ import * as _ from 'lodash';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { DotTemplatesService } from '../../dot-templates.service';
-import { DotContainerMap } from '../../../../../../apps/dotcms-ui/src/app/shared/models/container/dot-container.model';
-import {
-    DotLayout,
-    DotTemplate
-} from '../../../../../../apps/dotcms-ui/src/app/shared/models/dot-edit-layout-designer';
-import { DotRouterService } from '../../../../../../apps/dotcms-ui/src/app/api/services/dot-router/dot-router.service';
-import { DotHttpErrorManagerService } from '../../../../../../apps/dotcms-ui/src/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotTemplateContainersCacheService } from '../../../../../../apps/dotcms-ui/src/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
-import { DotEditLayoutService } from '../../../../../../apps/dotcms-ui/src/app/api/services/dot-edit-layout/dot-edit-layout.service';
-import { DotGlobalMessageService } from '../../../../../../apps/dotcms-ui/src/app/view/components/_common/dot-global-message/dot-global-message.service';
-import { DotMessageService } from '../../../../../../apps/dotcms-ui/src/app/api/services/dot-message/dot-messages.service';
+
+import { DotContainerMap } from '@models/container/dot-container.model';
+import { DotLayout, DotTemplate } from '@models/dot-edit-layout-designer';
+import { DotEditLayoutService } from '@services/dot-edit-layout/dot-edit-layout.service';
+import { DotTemplateContainersCacheService } from '@services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 type DotTemplateType = 'design' | 'advanced';
 

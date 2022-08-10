@@ -11,11 +11,12 @@ import {
 import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
 
 import { DotTemplatePropsComponent } from './dot-template-props.component';
-import { DotMessagePipe } from 'core-web/apps/dotcms-ui/src/app/view/pipes/dot-message/dot-message.pipe';
-import { DotMessageService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-message/dot-messages.service';
-import { MockDotMessageService } from 'core-web/apps/dotcms-ui/src/app/test/dot-message-service.mock';
-import { DotFieldValidationMessageModule } from 'core-web/apps/dotcms-ui/src/app/view/components/_common/dot-field-validation-message/dot-file-validation-message.module';
+
 import { By } from '@angular/platform-browser';
+import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
+import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotMessagePipe } from '@dotcms/app/view/pipes';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 @Component({
     selector: 'dot-form-dialog',
     template: '<ng-content></ng-content>',

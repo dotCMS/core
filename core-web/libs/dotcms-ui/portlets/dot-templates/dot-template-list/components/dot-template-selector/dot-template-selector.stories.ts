@@ -1,11 +1,13 @@
-import { DotIconModule } from '@dotcms/ui';
-import { DotMessagePipeModule } from 'core-web/apps/dotcms-ui/src/app/view/pipes/dot-message/dot-message-pipe.module';
-import { DotMessageService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-message/dot-messages.service';
 import { Meta, moduleMetadata } from '@storybook/angular';
-import { MockDotMessageService } from 'core-web/apps/dotcms-ui/src/app/test/dot-message-service.mock';
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
+
+import { DotIconModule } from '@dotcms/ui';
+
 import { DotTemplateSelectorComponent } from './dot-template-selector.component';
+import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
 const messageServiceMock = new MockDotMessageService({
     'templates.template.selector.label.designer': 'Designer',

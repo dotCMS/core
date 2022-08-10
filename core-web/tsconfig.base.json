@@ -36,7 +36,9 @@
             "@services/*": ["apps/dotcms-ui/src/app/api/services/*"],
             "@shared/*": ["apps/dotcms-ui/src/app/shared/*"],
             "@tests/*": ["apps/dotcms-ui/src/app/test/*"],
-            "@dotcms-ui/portlets/templates": ["libs/dotcms-ui/portlets/dot-templates"]
+            // migrated
+            "@dotcms-ui/portlets/templates": ["libs/dotcms-ui/portlets/dot-templates"],
+            "@dotcms-ui/shared": ["libs/dotcms-ui/shared/"]
         }
     },
     "exclude": ["node_modules", "tmp"]

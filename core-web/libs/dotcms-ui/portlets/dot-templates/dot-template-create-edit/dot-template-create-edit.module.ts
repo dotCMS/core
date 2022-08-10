@@ -8,9 +8,10 @@ import { DotTemplateCreateEditComponent } from './dot-template-create-edit.compo
 import { DotTemplateCreateEditRoutingModule } from './dot-template-create-edit-routing.module';
 import { DotTemplatePropsModule } from './dot-template-props/dot-template-props.module';
 import { DotTemplateBuilderModule } from './dot-template-builder/dot-template-builder.module';
-import { DotApiLinkModule } from '../../../../../apps/dotcms-ui/src/app/view/components/dot-api-link/dot-api-link.module';
-import { DotPortletBaseModule } from '../../../../../apps/dotcms-ui/src/app/view/components/dot-portlet-base/dot-portlet-base.module';
-import { DotMessagePipeModule } from '../../../../../apps/dotcms-ui/src/app/view/pipes/dot-message/dot-message-pipe.module';
+
+import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
+import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
 @NgModule({
     imports: [

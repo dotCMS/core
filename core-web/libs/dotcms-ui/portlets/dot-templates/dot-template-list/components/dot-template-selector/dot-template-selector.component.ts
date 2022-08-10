@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
-import { DotMessageService } from '../../../../../../../apps/dotcms-ui/src/app/api/services/dot-message/dot-messages.service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 
 @Component({
     selector: 'dot-dot-template-selector',

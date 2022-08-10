@@ -9,11 +9,8 @@ import { DotTemplatePropsComponent } from './dot-template-props/dot-template-pro
 import { DotTemplateItem, DotTemplateState, DotTemplateStore } from './store/dot-template.store';
 import { DynamicDialogRef } from 'primeng/dynamicdialog/dynamicdialog-ref';
 import { Site, SiteService } from '@dotcms/dotcms-js';
-import { DotMessageService } from '../../../../../apps/dotcms-ui/src/app/api/services/dot-message/dot-messages.service';
-import {
-    DotLayout,
-    DotTemplate
-} from '../../../../../apps/dotcms-ui/src/app/shared/models/dot-edit-layout-designer';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotLayout, DotTemplate } from '@models/dot-edit-layout-designer';
 
 @Component({
     selector: 'dot-template-create-edit',

@@ -4,9 +4,9 @@ import { TestBed } from '@angular/core/testing';
 import { DotTemplatesService } from '../../dot-templates.service';
 import { of } from 'rxjs';
 import { DotTemplateCreateEditResolver } from './dot-template-create-edit.resolver';
-import { DotTemplate } from 'core-web/apps/dotcms-ui/src/app/shared/models/dot-edit-layout-designer';
-import { DotRouterService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-router/dot-router.service';
-import { MockDotRouterService } from 'core-web/apps/dotcms-ui/src/app/test/dot-router-service.mock';
+import { MockDotRouterService } from '@tests/dot-router-service.mock';
+import { DotTemplate } from '@models/dot-edit-layout-designer';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 const templateMock: DotTemplate = {
     anonymous: false,

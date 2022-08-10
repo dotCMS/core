@@ -12,9 +12,6 @@ import {
 } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { DotMessagePipeModule } from 'core-web/apps/dotcms-ui/src/app/view/pipes/dot-message/dot-message-pipe.module';
-import { DotMessageService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-message/dot-messages.service';
-import { MockDotMessageService } from 'core-web/apps/dotcms-ui/src/app/test/dot-message-service.mock';
 import { DotTemplateBuilderComponent } from './dot-template-builder.component';
 import { By } from '@angular/platform-browser';
 import {
@@ -22,8 +19,11 @@ import {
     EMPTY_TEMPLATE_ADVANCED,
     EMPTY_TEMPLATE_DESIGN
 } from '../store/dot-template.store';
-import { DotPortletBoxModule } from 'core-web/apps/dotcms-ui/src/app/view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
-import { IframeComponent } from 'core-web/apps/dotcms-ui/src/app/view/components/_common/iframe/iframe-component';
+import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { IframeComponent } from '@components/_common/iframe/iframe-component';
+import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
 @Component({
     selector: 'dot-edit-layout-designer',

@@ -4,8 +4,8 @@ import { ActivatedRouteSnapshot, Resolve, RouterStateSnapshot } from '@angular/r
 
 import { DotTemplatesService } from '../../dot-templates.service';
 import { map } from 'rxjs/operators';
-import { DotTemplate } from '../../../../../../apps/dotcms-ui/src/app/shared/models/dot-edit-layout-designer';
-import { DotRouterService } from '../../../../../../apps/dotcms-ui/src/app/api/services/dot-router/dot-router.service';
+import { DotTemplate } from '@models/dot-edit-layout-designer';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 @Injectable()
 export class DotTemplateCreateEditResolver implements Resolve<DotTemplate> {

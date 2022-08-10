@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 
 import { LayoutEditorCanDeactivateGuardService } from './layout-editor-can-deactivate-guard.service';
-import { DotEditLayoutService } from '../dot-edit-layout/dot-edit-layout.service';
+import { DotEditLayoutService } from '@services/dot-edit-layout/dot-edit-layout.service';
 
 describe('LayoutEditorCanDeactivateGuardService', () => {
     let service: LayoutEditorCanDeactivateGuardService;
@@ -9,7 +9,7 @@ describe('LayoutEditorCanDeactivateGuardService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            providers: [LayoutEditorCanDeactivateGuardService, DotEditLayoutService],
+            providers: [LayoutEditorCanDeactivateGuardService, DotEditLayoutService]
         });
         service = TestBed.inject(LayoutEditorCanDeactivateGuardService);
         dotEditLayoutService = TestBed.inject(DotEditLayoutService);

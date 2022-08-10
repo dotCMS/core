@@ -2,21 +2,20 @@
 
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 
 import { of, throwError } from 'rxjs';
 
-import { DotTemplateContainersCacheService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
-import { DotTemplatesService } from '../../dot-templates.service';
 import { DotTemplateStore, DotTemplateItem } from './dot-template.store';
-import { DotRouterService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-router/dot-router.service';
-import { DotGlobalMessageService } from 'core-web/apps/dotcms-ui/src/app/view/components/_common/dot-global-message/dot-global-message.service';
-import { MockDotMessageService } from 'core-web/apps/dotcms-ui/src/app/test/dot-message-service.mock';
-import { DotMessageService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-message/dot-messages.service';
-
-import { DotEditLayoutService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-edit-layout/dot-edit-layout.service';
-import { DotHttpErrorManagerService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { HttpErrorResponse } from '@angular/common/http';
-import { mockResponseView } from 'core-web/apps/dotcms-ui/src/app/test/response-view.mock';
+import { DotTemplatesService } from '../../dot-templates.service';
+import { DotEditLayoutService } from '@services/dot-edit-layout/dot-edit-layout.service';
+import { DotTemplateContainersCacheService } from '@services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { mockResponseView } from '@tests/response-view.mock';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 const messageServiceMock = new MockDotMessageService({
     'dot.common.message.saved': 'saved',

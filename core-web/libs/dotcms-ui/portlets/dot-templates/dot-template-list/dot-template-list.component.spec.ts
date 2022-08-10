@@ -4,8 +4,7 @@ import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testin
 import { DotTemplateListComponent } from './dot-template-list.component';
 import { of, Subject } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
-import { DotMessageService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-message/dot-messages.service';
-import { MockDotMessageService } from 'core-web/apps/dotcms-ui/src/app/test/dot-message-service.mock';
+
 import { By } from '@angular/platform-browser';
 import {
     CoreWebService,
@@ -19,42 +18,42 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { DotTemplatesService } from '../dot-templates.service';
-import { DotHttpErrorManagerService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotAlertConfirmService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-alert-confirm';
-import { ConfirmationService, SharedModule } from 'primeng/api';
-import { dotEventSocketURLFactory } from 'core-web/apps/dotcms-ui/src/app/test/dot-test-bed';
-import { DotRouterService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-router/dot-router.service';
-import { DotMessageDisplayService } from 'core-web/apps/dotcms-ui/src/app/view/components/dot-message-display/services';
-import { DotListingDataTableModule } from 'core-web/apps/dotcms-ui/src/app/view/components/dot-listing-data-table';
-import { CommonModule } from '@angular/common';
-import { CheckboxModule } from 'primeng/checkbox';
-import { Menu, MenuModule } from 'primeng/menu';
-import { ButtonModule } from 'primeng/button';
-import { DotActionButtonModule } from 'core-web/apps/dotcms-ui/src/app/view/components/_common/dot-action-button/dot-action-button.module';
-import { DotActionMenuButtonModule } from 'core-web/apps/dotcms-ui/src/app/view/components/_common/dot-action-menu-button/dot-action-menu-button.module';
-import { DotAddToBundleModule } from 'core-web/apps/dotcms-ui/src/app/view/components/_common/dot-add-to-bundle';
+import { DotTemplate } from '@models/dot-edit-layout-designer';
+import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotListingDataTableComponent } from 'core-web/apps/dotcms-ui/src/app/view/components/dot-listing-data-table/dot-listing-data-table.component';
+import { ButtonModule } from 'primeng/button';
+import { DotFormatDateServiceMock } from '@tests/format-date-service.mock';
+import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
+import { CommonModule } from '@angular/common';
+import { Menu, MenuModule } from 'primeng/menu';
 import { CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
-import { DotActionMenuButtonComponent } from 'core-web/apps/dotcms-ui/src/app/view/components/_common/dot-action-menu-button/dot-action-menu-button.component';
-import {
-    DotMessageSeverity,
-    DotMessageType
-} from 'core-web/apps/dotcms-ui/src/app/view/components/dot-message-display/model';
-import { DotAddToBundleComponent } from 'core-web/apps/dotcms-ui/src/app/view/components/_common/dot-add-to-bundle/dot-add-to-bundle.component';
-import { ButtonModel } from 'core-web/apps/dotcms-ui/src/app/shared/models/action-header';
-import { DotTemplate } from 'core-web/apps/dotcms-ui/src/app/shared/models/dot-edit-layout-designer';
-import { DotActionBulkResult } from 'core-web/apps/dotcms-ui/src/app/shared/models/dot-action-bulk-result/dot-action-bulk-result.model';
+import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotListingDataTableModule } from '@components/dot-listing-data-table';
+import { ConfirmationService } from 'primeng/api';
+import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotFormatDateService } from '@services/dot-format-date-service';
+import { CheckboxModule } from 'primeng/checkbox';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
-import { DotBulkInformationComponent } from 'core-web/apps/dotcms-ui/src/app/view/components/_common/dot-bulk-information/dot-bulk-information.component';
-import { DotMessagePipeModule } from 'core-web/apps/dotcms-ui/src/app/view/pipes/dot-message/dot-message-pipe.module';
+import { DotSiteBrowserService } from '@services/dot-site-browser/dot-site-browser.service';
+import { DotActionMenuButtonComponent } from '@components/_common/dot-action-menu-button/dot-action-menu-button.component';
+import { DotAddToBundleComponent } from '@components/_common/dot-add-to-bundle/dot-add-to-bundle.component';
+import { DotActionBulkResult } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
 import { DotContentState } from '@dotcms/dotcms-models';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { CoreWebServiceMock } from 'core-web/apps/dotcms-ui/src/app/test/core-web.service.mock';
-import { mockSites } from 'core-web/apps/dotcms-ui/src/app/test/site-service.mock';
-import { DotSiteBrowserService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-site-browser/dot-site-browser.service';
-import { DotFormatDateService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-format-date-service';
-import { DotFormatDateServiceMock } from 'core-web/apps/dotcms-ui/src/app/test/format-date-service.mock';
+import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotBulkInformationComponent } from '@components/_common/dot-bulk-information/dot-bulk-information.component';
+import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
+import { ButtonModel } from '@models/action-header';
+import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { SharedModule } from '@shared/shared.module';
+import { mockSites } from '@tests/site-service.mock';
 
 const templatesMock: DotTemplate[] = [
     {

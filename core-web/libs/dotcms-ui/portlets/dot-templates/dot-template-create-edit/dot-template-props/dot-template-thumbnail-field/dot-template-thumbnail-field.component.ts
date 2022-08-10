@@ -6,13 +6,13 @@ import { throwError } from 'rxjs';
 import { finalize, switchMap, take } from 'rxjs/operators';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 import {
     DotCMSTempFile,
     DotTempFileUploadService
-} from '../../../../../../../apps/dotcms-ui/src/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
-import { DotWorkflowActionsFireService } from '../../../../../../../apps/dotcms-ui/src/app/api/services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
-import { DotCrudService } from '../../../../../../../apps/dotcms-ui/src/app/api/services/dot-crud';
-import { DotMessageService } from '../../../../../../../apps/dotcms-ui/src/app/api/services/dot-message/dot-messages.service';
+} from '@services/dot-temp-file-upload/dot-temp-file-upload.service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotCrudService } from '@services/dot-crud';
 
 export interface DotCMSTemplateThumbnail extends DotCMSContentlet {
     assetVersion: string;

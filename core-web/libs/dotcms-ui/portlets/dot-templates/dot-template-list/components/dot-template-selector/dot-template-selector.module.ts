@@ -4,7 +4,7 @@ import { DotTemplateSelectorComponent } from './dot-template-selector.component'
 import { DotIconModule } from '@dotcms/ui';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
-import { DotMessagePipeModule } from '../../../../../../../apps/dotcms-ui/src/app/view/pipes/dot-message/dot-message-pipe.module';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
 @NgModule({
     declarations: [DotTemplateSelectorComponent],

@@ -8,7 +8,7 @@ import {
     ViewChild
 } from '@angular/core';
 import { DotTemplateItem } from '../store/dot-template.store';
-import { IframeComponent } from '../../../../../../apps/dotcms-ui/src/app/view/components/_common/iframe/iframe-component';
+import { IframeComponent } from '@components/_common/iframe/iframe-component';
 
 @Component({
     selector: 'dot-template-builder',

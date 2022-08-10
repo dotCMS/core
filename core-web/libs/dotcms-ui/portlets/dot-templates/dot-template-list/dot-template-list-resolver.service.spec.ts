@@ -8,14 +8,15 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from 'core-web/apps/dotcms-ui/src/app/test/core-web.service.mock';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { of } from 'rxjs';
-import { DotLicenseService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-license/dot-license.service';
-import { PushPublishService } from 'core-web/apps/dotcms-ui/src/app/api/services/push-publish/push-publish.service';
+
 import { take } from 'rxjs/operators';
-import { DotCurrentUserService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-current-user/dot-current-user.service';
-import { DotFormatDateService } from 'core-web/apps/dotcms-ui/src/app/api/services/dot-format-date-service';
+import { DotLicenseService } from '@services/dot-license/dot-license.service';
+import { PushPublishService } from '@services/push-publish/push-publish.service';
+import { DotCurrentUserService } from '@services/dot-current-user/dot-current-user.service';
+import { DotFormatDateService } from '@services/dot-format-date-service';
+import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 
 describe('DotTemplateListResolverService', () => {
     let service: DotTemplateListResolver;
