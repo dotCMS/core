@@ -56,6 +56,9 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
     setOutput('tests_results_report_location', reportFolder);
     setOutput('tests_results_status', results.testsResultsStatus);
     setOutput('tests_results_skip_report', results.skipResultsReport);
+    if (results.testsRunExitCode !== 0) {
+        core.setFailed(`Postman tests failed: ${JSON.stringify(results)}`);
+    }
 });
 const setOutput = (name, value) => {
     const val = value === undefined ? '' : value;
@@ -144,7 +147,7 @@ const DEPS_ENV = {
     DOTCMS_IMAGE: builtImageName,
     TEST_TYPE: 'postman',
     DB_TYPE: dbType,
-    CUUSTOM_STARTER_FOLDER: customStarterUrl,
+    CUSTOM_STARTER_FOLDER: customStarterUrl,
     WAIT_FOR_DEPS: waitForDeps,
     POSTGRES_USER: 'postgres',
     POSTGRES_PASSWORD: 'postgres',
@@ -155,7 +158,7 @@ const DEPS_ENV = {
  * @returns a number representing the command exit code
  */
 const runTests = () => __awaiter(void 0, void 0, void 0, function* () {
-    setup();
+    yield setup();
     startDeps();
     printInfo();
     try {
@@ -170,7 +173,7 @@ const runTests = () => __awaiter(void 0, void 0, void 0, function* () {
         };
     }
     finally {
-        copyOutputs();
+        yield copyOutputs();
         yield stopDeps();
     }
 });
@@ -180,22 +183,18 @@ exports.runTests = runTests;
  */
 const copyOutputs = () => __awaiter(void 0, void 0, void 0, function* () {
     printInfo();
-    yield execCmd(toCommand('docker', [
-        'cp',
-        'docker_dotcms-app_1:/srv/dotserver/tomcat-9.0.60/logs/dotcms.log',
-        logFile
-    ]));
+    yield execCmd(toCommand('docker', ['cp', 'docker_dotcms-app_1:/srv/dotserver/tomcat-9.0.60/logs/dotcms.log', logFile]));
     yield execCmd(toCommand('ls', ['-las', dotCmsRoot]));
 });
 /**
  * Sets up everuthing needed to run postman collections.
  */
-const setup = () => {
-    installDeps();
+const setup = () => __awaiter(void 0, void 0, void 0, function* () {
+    yield installDeps();
     createFolders();
-    prepareLicense();
-    printInfo();
-};
+    yield prepareLicense();
+    yield printInfo();
+});
 const printInfo = () => __awaiter(void 0, void 0, void 0, function* () {
     yield execCmd(toCommand('docker', ['images']));
     yield execCmd(toCommand('docker', ['ps']));
@@ -311,7 +310,7 @@ const runPostmanCollections = () => __awaiter(void 0, void 0, void 0, function* 
         if (exportReport) {
             const passed = rc === 0;
             htmlResults.push(`<tr><td><a href="./${normalized}.html">${collection}</a></td><td style="color: #ffffff; background-color: ${passed ? '#28a745' : '#dc3545'}; font-weight: bold;">${passed ? PASSED : FAILED}</td>
-        <td>${duration} seconds</td>
+        <td>${duration}</td>
         </tr>`);
         }
     }
@@ -393,7 +392,7 @@ const delay = (seconds) => new Promise(resolve => setTimeout(resolve, seconds * 
  *
  * @param wait time to wait
  * @param startLabel start label
- * @param endLabel endlabel
+ * @param endLabel end label
  */
 const waitFor = (wait, startLabel, endLabel) => __awaiter(void 0, void 0, void 0, function* () {
     core.info(`Waiting ${wait} seconds for ${startLabel}`);

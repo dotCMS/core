@@ -45,8 +45,10 @@ export enum ItemsType {
     styleUrls: ['./suggestions.component.scss']
 })
 export class SuggestionsComponent implements OnInit, AfterViewInit {
+    // TODO: Move all the logic related to the list to its component
     @ViewChild('list', { static: false }) list: SuggestionListComponent;
 
+    // Maybe this should be an @Output() instead of @Input();
     @Input() onSelection: (props: SuggestionsCommandProps) => void;
     @Input() items: DotMenuItem[] = [];
     @Input() title = 'Select a block';
@@ -55,7 +57,11 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
     @Input() currentLanguage = DEFAULT_LANG_ID;
     @Input() allowedContentTypes = '';
 
+    @Input() loading = false;
+    @Input() urlItem = false;
+
     @Output() clearFilter: EventEmitter<string> = new EventEmitter<string>();
+    @Output() goBack: EventEmitter<MouseEvent> = new EventEmitter<MouseEvent>();
 
     private itemsLoaded: ItemsType;
     private selectedContentType: DotCMSContentType;
@@ -77,7 +83,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
     ) {}
 
     ngOnInit(): void {
-        if (this.items?.length === 0) {
+        if (this.items?.length === 0 && !this.loading) {
             // assign the default suggestions options.
             this.items = suggestionOptions;
             this.items.forEach((item) => {
@@ -90,18 +96,6 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
                         : this.onSelection({ type: { name: item.id } });
                 };
             });
-
-            this.items = [
-                {
-                    label: 'Contentlets',
-                    icon: 'receipt',
-                    command: () => {
-                        this.clearFilter.emit(ItemsType.CONTENTTYPE);
-                        this.loadContentTypes();
-                    }
-                },
-                ...this.items
-            ];
         }
 
         this.initialItems = this.items;
@@ -113,6 +107,26 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
     }
 
     ngAfterViewInit() {
+        this.setFirstItemActive();
+    }
+
+    /**
+     * Add the Contentlets item to the suggestions that is not present by default.
+     *
+     * @memberof SuggestionsComponent
+     */
+    addCContentletItem() {
+        this.items = [
+            {
+                label: 'Contentlets',
+                icon: 'receipt',
+                command: () => {
+                    this.clearFilter.emit(ItemsType.CONTENTTYPE);
+                    this.loadContentTypes();
+                }
+            },
+            ...this.items
+        ];
         this.setFirstItemActive();
     }
 
@@ -155,7 +169,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
      * @memberof SuggestionsComponent
      */
     updateActiveItem(index: number): void {
-        this.list.updateActiveItem(index);
+        this.list?.updateActiveItem(index);
     }
 
     /**
@@ -215,6 +229,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
     handleBackButton(event: MouseEvent): void {
         event.preventDefault();
         event.stopPropagation();
+        this.goBack.emit(event);
         // Set the previous load Time to make the right search.
         this.itemsLoaded =
             this.itemsLoaded === ItemsType.CONTENT ? ItemsType.CONTENTTYPE : ItemsType.BLOCK;
@@ -245,6 +260,46 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
 
         this.isFilterActive = !!filter.length;
         this.setFirstItemActive();
+    }
+
+    // MOVE THIS TO LINK FORM COMPONENT
+    /**
+     * Search contentlets filtered by url
+     *
+     * @private
+     * @param {*} { link = '' }
+     * @memberof BubbleMenuLinkFormComponent
+     */
+    searchContentlets({ link = '' }) {
+        this.loading = true;
+        this.suggestionsService
+            .getContentletsUrlMap({ filter: link })
+            .pipe(take(1))
+            .subscribe((contentlets: DotCMSContentlet[]) => {
+                this.items = contentlets.map((contentlet) => {
+                    const { languageId } = contentlet;
+                    contentlet.language = this.getContentletLanguage(languageId);
+
+                    return {
+                        label: contentlet.title,
+                        icon: 'contentlet/image',
+                        data: {
+                            contentlet: contentlet
+                        },
+                        command: () => {
+                            this.onSelection({
+                                payload: contentlet,
+                                type: {
+                                    name: 'dotContent'
+                                }
+                            });
+                        }
+                    };
+                });
+                this.loading = false;
+                // Active first result
+                requestAnimationFrame(() => this.setFirstItemActive());
+            });
     }
 
     private loadContentTypes(filter = '') {

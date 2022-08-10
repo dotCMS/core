@@ -1,6 +1,7 @@
 import { Component, Injector, Input, OnInit, ViewContainerRef } from '@angular/core';
-import { Editor } from '@tiptap/core';
-import StarterKit from '@tiptap/starter-kit';
+import { AnyExtension, Editor } from '@tiptap/core';
+import { HeadingOptions, Level } from '@tiptap/extension-heading';
+import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 
 import {
@@ -11,7 +12,8 @@ import {
     DotBubbleMenuExtension,
     DragHandler,
     ImageBlock,
-    ImageUpload
+    ImageUpload,
+    DotConfigExtension
 } from '@dotcms/block-editor';
 
 // Marks Extensions
@@ -34,7 +36,13 @@ function toTitleCase(str) {
 export class DotBlockEditorComponent implements OnInit {
     @Input() lang = DEFAULT_LANG_ID;
     @Input() allowedContentTypes = '';
+    @Input() customStyles = '';
 
+    @Input() set allowedBlocks(blocks: string) {
+        this._allowedBlocks = ['paragraph', ...blocks.replace(/ /g, '').split(',').filter(Boolean)];
+    }
+
+    _allowedBlocks = [];
     editor: Editor;
 
     value = ''; // can be HTML or JSON, see https://www.tiptap.dev/api/editor#content
@@ -43,41 +51,95 @@ export class DotBlockEditorComponent implements OnInit {
 
     ngOnInit() {
         this.editor = new Editor({
-            extensions: [
-                StarterKit,
-                ContentletBlock(this.injector),
-                ImageBlock(this.injector),
-                ActionsMenu(this.viewContainerRef),
-                DragHandler(this.viewContainerRef),
-                ImageUpload(this.injector, this.viewContainerRef),
-                BubbleLinkFormExtension(this.injector, this.viewContainerRef),
-                DotBubbleMenuExtension(this.viewContainerRef),
-                // Marks Extensions
-                Underline,
-                TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'dotImage'] }),
-                Highlight.configure({ HTMLAttributes: { style: 'background: #accef7;' } }),
-                Link.configure({ openOnClick: true }),
-                Placeholder.configure({
-                    placeholder: ({ node }) => {
-                        if (node.type.name === 'heading') {
-                            return `${toTitleCase(node.type.name)} ${node.attrs.level}`;
-                        }
-
-                        return 'Type "/" for commmands';
-                    }
-                })
-            ]
+            extensions: this.setEditorExtensions()
         });
-
-        this.setEditorStorageData();
     }
 
-    // Here we create the dotConfig name space
-    // to storage information in the editor.
-    private setEditorStorageData() {
-        this.editor.storage.dotConfig = {
-            lang: this.lang,
-            allowedContentTypes: this.allowedContentTypes
+    private setEditorExtensions(): AnyExtension[] {
+        const defaultExtensions: AnyExtension[] = [
+            DotConfigExtension({
+                lang: this.lang,
+                allowedContentTypes: this.allowedContentTypes,
+                allowedBlocks: this._allowedBlocks
+            }),
+            ActionsMenu(this.viewContainerRef),
+            DragHandler(this.viewContainerRef),
+            ImageUpload(this.injector, this.viewContainerRef),
+            BubbleLinkFormExtension(this.viewContainerRef),
+            DotBubbleMenuExtension(this.viewContainerRef),
+            // Marks Extensions
+            Underline,
+            TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'dotImage'] }),
+            Highlight.configure({ HTMLAttributes: { style: 'background: #accef7;' } }),
+            Link.configure({ openOnClick: false }),
+            Placeholder.configure({
+                placeholder: ({ node }) => {
+                    if (node.type.name === 'heading') {
+                        return `${toTitleCase(node.type.name)} ${node.attrs.level}`;
+                    }
+
+                    return 'Type "/" for commmands';
+                }
+            })
+        ];
+        const customExtensions: Map<string, AnyExtension> = new Map([
+            ['contentlets', ContentletBlock(this.injector)],
+            ['dotImage', ImageBlock(this.injector)]
+        ]);
+
+        return [
+            ...defaultExtensions,
+            ...(this.allowedBlocks
+                ? [
+                      StarterKit.configure(this.setStarterKitOptions()),
+                      ...this.setCustomExtensions(customExtensions)
+                  ]
+                : [StarterKit, ...customExtensions.values()])
+        ];
+    }
+
+    /**
+     *
+     * Check if the starter kit keys are part of the _allowedBlocks,
+     * ONLY if is not present will add an attribute with false to disable it. ex. {orderedList: false}.
+     * Exception, headings fill the HeadingOptions or false.
+     */
+    private setStarterKitOptions(): Partial<StarterKitOptions> {
+        // These are the keys that meter for the starter kit.
+        const staterKitOptions = [
+            'orderedList',
+            'bulletList',
+            'blockquote',
+            'codeBlock',
+            'horizontalRule'
+        ];
+        const headingOptions: HeadingOptions = { levels: [], HTMLAttributes: {} };
+
+        //Heading types supported by default in the editor.
+        ['heading1', 'heading2', 'heading3', 'heading4', 'heading5', 'heading6'].forEach(
+            (heading) => {
+                if (this._allowedBlocks[heading]) {
+                    headingOptions.levels.push(+heading.slice(-1) as Level);
+                }
+            }
+        );
+
+        return {
+            heading: headingOptions.levels.length ? headingOptions : false,
+            ...staterKitOptions.reduce(
+                (object, item) => ({
+                    ...object,
+                    ...(this._allowedBlocks[item] ? {} : { [item]: false })
+                }),
+                {}
+            )
         };
+    }
+
+    private setCustomExtensions(customExtensions: Map<string, AnyExtension>): AnyExtension[] {
+        return [
+            ...(this._allowedBlocks['contentlets'] ? [customExtensions['contentlets']] : []),
+            ...(this._allowedBlocks['dotImage'] ? [customExtensions['dotImage']] : [])
+        ];
     }
 }

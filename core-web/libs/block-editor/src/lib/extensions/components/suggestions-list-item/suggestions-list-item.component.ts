@@ -18,6 +18,7 @@ export class SuggestionsListItemComponent implements FocusableOption, OnInit {
     @Input() command: () => void;
     @Input() label = '';
     @Input() url = '';
+    @Input() urlItem = false;
     @Input() data = null;
 
     icon = false;
@@ -42,7 +43,23 @@ export class SuggestionsListItemComponent implements FocusableOption, OnInit {
 
     scrollIntoView() {
         if (!this.isIntoView()) {
-            this.element.nativeElement.scrollIntoView(this.alignToTop());
+            const child = this.element.nativeElement as HTMLElement;
+            const parent = child.parentElement;
+
+            // Get BoundingClientRect of the elements
+            const {
+                top: containerTop,
+                top: containerBot,
+                height: containerHeight
+            } = parent.getBoundingClientRect();
+            const { top, bottom } = child.getBoundingClientRect();
+
+            const scrollTop = top - containerTop;
+            const scrollBot = bottom - containerBot;
+
+            // += scrollTop -> If we're near the top of the list.
+            // += scrollBot - containerHeight -> If we're near the bottom of the list.
+            parent.scrollTop += this.alignToTop() ? scrollTop : scrollBot - containerHeight;
         }
     }
 
@@ -64,7 +81,7 @@ export class SuggestionsListItemComponent implements FocusableOption, OnInit {
     /**
      *
      * If true, the top of the element will be aligned to the top of the visible area
-     * of the scrollable ancestorIf true, the top of the element will be aligned to
+     * of the scrollable ancestor If true, the top of the element will be aligned to
      * the top of the visible area of the scrollable ancestor.
      *
      * @private

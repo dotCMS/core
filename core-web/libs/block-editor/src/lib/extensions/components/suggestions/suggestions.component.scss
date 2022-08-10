@@ -7,6 +7,20 @@
     padding: (0.5 * $dot-editor-size) 0;
     background: $white;
     font-family: "Roboto", Helvetica, sans-serif, Arial;
+
+    &.link-suggestions ::ng-deep {
+        width: 100%;
+        box-shadow: none;
+        padding: 0;
+
+        .suggestion-list-container {
+            max-height: 20rem;
+        }
+
+        dotcms-suggestions-list-item {
+            padding: 8px;
+        }
+    }
 }
 
 h3 {
