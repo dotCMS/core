@@ -74,9 +74,11 @@ import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot
 import { DotMdIconSelectorModule } from '@dotcms/app/view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
 import { DotInlineEditModule } from '@components/_common/dot-inline-edit/dot-inline-edit.module';
 import { DotConvertWysiwygToBlockComponent } from './components/dot-convert-wysiwyg-to-block/dot-convert-wysiwyg-to-block.component';
+import { DotConvertToBlockInfoComponent } from './components/dot-convert-to-block-info/dot-convert-to-block-info.component';
 
 @NgModule({
     declarations: [
+        DotConvertToBlockInfoComponent,
         DotConvertWysiwygToBlockComponent,
         CategoriesPropertyComponent,
         CheckboxPropertyComponent,

@@ -1,0 +1,11 @@
+@use "variables" as *;
+
+:host {
+    background-color: rgba($brand-primary_rgb, 0.2);
+    padding: $spacing-1 $spacing-6;
+    color: $brand-background;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: $spacing-1;
+}
