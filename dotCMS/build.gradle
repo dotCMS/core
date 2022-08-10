@@ -158,7 +158,7 @@ configurations {
 
     if(JavaVersion.current() >= JavaVersion.VERSION_11) {
         all*.exclude group: "xerces"
-        all*.exclude group: "xml-apis", module: "xml-apiss"
+        all*.exclude group: "xml-apis", module: "xml-apis"
         all*.exclude group: "com.sun.activation"
     }
 
@@ -895,7 +895,7 @@ task createDist(dependsOn: ['createDistPrep','zip', 'tgzTask']) {
 
 javadoc {
 
-    options.addStringOption('sourcepath', sourceSets.main.allJava.asPath)
+    options.addStringOption('sourcepath', ["${project.projectDir}/src/main/java", generatedSourcesDir].join(":"))
     //doclint html standards in Java 8 are very strict that's why is better to turn in off
     options.addBooleanOption('Xdoclint:none', true)
 
