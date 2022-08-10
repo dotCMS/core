@@ -179,8 +179,8 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
-        ContentletWebAPIImplIntegrationTest.class,
-        DependencyBundlerTest.class,
+        ContentletWebAPIImplIntegrationTest.class, // moved to top because of failures on GHA
+        DependencyBundlerTest.class, // moved to top because of failures on GHA
         FolderCacheImplIntegrationTest.class,
         StaticPublisherIntegrationTest.class,
         com.dotcms.publishing.PublisherAPIImplTest.class,
