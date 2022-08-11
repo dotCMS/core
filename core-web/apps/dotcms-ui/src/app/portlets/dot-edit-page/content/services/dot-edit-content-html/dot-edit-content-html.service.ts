@@ -33,8 +33,6 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
 import { DotPage } from '@dotcms/app/shared/models/dot-page/dot-page.model';
 import { DotAddContentTypePayload } from './models/dot-contentlets-events.model';
 import { DotIframeEditEvent } from '@dotcms/dotcms-models';
-import { INLINE_EDIT_BLOCK_EDITOR_SCRIPTS } from '@portlets/dot-edit-page/content/services/html/libraries/inline-ediit-block-editor.js';
-
 export enum DotContentletAction {
     EDIT,
     ADD
@@ -521,10 +519,6 @@ export class DotEditContentHtmlService {
             '.section-blog-post-content[data-content]'
         );
         if (editBlockEditorNodes.length) {
-            const blockEditorScript: HTMLScriptElement =
-                this.dotDOMHtmlUtilService.createInlineScriptElement(
-                    INLINE_EDIT_BLOCK_EDITOR_SCRIPTS
-                );
             this.dotLicenseService
                 .isEnterprise()
                 .pipe(
@@ -532,10 +526,14 @@ export class DotEditContentHtmlService {
                     filter((isEnterprise: boolean) => isEnterprise === true)
                 )
                 .subscribe(() => {
-                    // We have elements in the DOM and we're on enterprise plan
-                    doc.body.append(blockEditorScript);
                     editBlockEditorNodes.forEach((node) => {
                         node.classList.add('dotcms__inline-edit-field');
+                        node.addEventListener('click', (event) => {
+                            const customEvent = new CustomEvent('ng-event', {
+                                detail: { name: 'edit-block-editor', data: event.target }
+                            });
+                            window.top.document.dispatchEvent(customEvent);
+                        });
                     });
                 });
         }

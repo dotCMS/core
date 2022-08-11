@@ -7,11 +7,10 @@ import { DotBlockEditorComponent } from '@dotcms/block-editor';
 
 export interface BlockEditorData {
     content: { [key: string]: string };
-    allowedContentTypes: string;
-    allowedBlocks: string;
     fieldName: string;
     language: number;
     inode: string;
+    fieldVariables?: { [key: string]: string };
 }
 
 @Component({
@@ -39,10 +38,9 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
                 this.data = {
                     fieldName: event.data.dataset.fieldName,
                     language: parseInt(event.data.dataset.language),
-                    allowedBlocks: event.data.dataset.allowedBlocks,
-                    allowedContentTypes: event.data.dataset.allowedContentTypes,
                     inode: event.data.dataset.inode,
-                    content: JSON.parse(event.data.dataset.content)
+                    content: JSON.parse(event.data.dataset.content),
+                    fieldVariables: JSON.parse(event.data.dataset.fieldVariables)
                 };
             });
     }

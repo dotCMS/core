@@ -11,9 +11,9 @@
     <div class="container" *ngIf="this.data">
         <dotcms-block-editor
             #blockEditor
-            [lang]="this.data.language"
-            [allowedBlocks]="this.data.allowedBlocks"
-            [allowedContentTypes]="this.data.allowedContentTypes"
+            [lang]="data.language"
+            [allowedBlocks]="data.fieldVariables.allowedBlocks"
+            [allowedContentTypes]="data.fieldVariables.allowedContentTypes"
             [value]="data.content"
             [customStyles]="'height: 100%'"
         >
