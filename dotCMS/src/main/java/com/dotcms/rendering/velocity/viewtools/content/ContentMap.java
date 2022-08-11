@@ -9,6 +9,7 @@ import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.ContentsWebAPI;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -33,6 +34,8 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONObject;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.io.File;
@@ -131,7 +134,7 @@ public class ContentMap {
 	 * @param fieldVariableName String field var name
 	 * @return Map
 	 */
-	public Object getFieldVariables(String fieldVariableName) {
+	public Object getFieldVariables(final String fieldVariableName) {
 
 		final  Map<String, com.dotcms.contenttype.model.field.Field> fieldMap =
 				this.content.getContentType().fieldMap();
@@ -142,6 +145,35 @@ public class ContentMap {
 		}
 
 		return Collections.emptyMap();
+	}
+
+	/**
+	 * Recovery the field variables as a json object
+	 * @param fieldVariableName String field var name
+	 * @return Map
+	 */
+	public Object getFieldVariablesJson(final String fieldVariableName) {
+
+		final  Map<String, FieldVariable> fieldMap =
+				(Map<String, FieldVariable>) this.getFieldVariables(fieldVariableName);
+
+		final JSONObject jsonObject = new JSONObject();
+
+		for (final Map.Entry<String, FieldVariable> fieldKey : fieldMap.entrySet()) {
+
+			final JSONObject jsonObjectFieldVariable = new JSONObject();
+
+			jsonObjectFieldVariable.put("value", fieldKey.getValue().value());
+			jsonObjectFieldVariable.put("fieldId", fieldKey.getValue().fieldId());
+			jsonObjectFieldVariable.put("key", fieldKey.getValue().key());
+			jsonObjectFieldVariable.put("id", fieldKey.getValue().id());
+			jsonObjectFieldVariable.put("modDate", fieldKey.getValue().modDate());
+			jsonObjectFieldVariable.put("userId", fieldKey.getValue().userId());
+			jsonObjectFieldVariable.put("name", fieldKey.getValue().name());
+			jsonObject.put(fieldKey.getKey(), jsonObjectFieldVariable);
+		}
+
+		return jsonObject;
 	}
 
 	private Object get(String fieldVariableName, Boolean parseVelocity) {
