@@ -40,7 +40,7 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
                     language: parseInt(event.data.dataset.language),
                     inode: event.data.dataset.inode,
                     content: JSON.parse(event.data.dataset.content),
-                    fieldVariables: JSON.parse(event.data.dataset.fieldVariables)
+                    fieldVariables: this.parseFieldVariables(event.data.dataset.fieldVariables)
                 };
             });
     }
@@ -69,5 +69,14 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
+    }
+
+    private parseFieldVariables(fieldVariables: string): { [key: string]: string } {
+        const { allowedBlocks, allowedContentTypes } = JSON.parse(fieldVariables);
+
+        return {
+            allowedBlocks: allowedBlocks?.value,
+            allowedContentTypes: allowedContentTypes?.value
+        };
     }
 }
