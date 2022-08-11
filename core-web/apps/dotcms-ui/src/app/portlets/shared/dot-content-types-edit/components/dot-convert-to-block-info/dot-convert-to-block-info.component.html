@@ -1,4 +1,4 @@
-<span> We released a new <b>Block Editor Field</b> that ease content creation. </span>
+<span [innerHTML]="messages.content"></span>
 
 <button
     *ngIf="currentField?.id; else learnMore"
@@ -6,7 +6,7 @@
     class="p-button-secondary p-button-sm"
     (click)="action.emit($event)"
 >
-    Check it out!
+    {{ messages.button }}
 </button>
 
 <ng-template #learnMore
@@ -16,6 +16,6 @@
         href="https://www.dotcms.com/docs/latest/block-editor"
         rel="noopener"
         target="_blank"
-        >Learn More</a
+        >{{ messages.learnMore }}</a
     ></ng-template
 >
