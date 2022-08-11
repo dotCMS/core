@@ -90,7 +90,7 @@ export class SearchableDropdownComponent
      * @memberof SearchableDropdownComponent
      */
     @Input()
-    overlayWidth = '300px';
+    overlayWidth = '300';
 
     @Input()
     multiple: boolean;

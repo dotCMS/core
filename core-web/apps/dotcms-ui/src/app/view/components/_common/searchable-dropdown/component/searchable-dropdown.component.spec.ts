@@ -194,7 +194,7 @@ describe('SearchableDropdownComponent', () => {
     it('should set CSS class, width', fakeAsync(() => {
         hostComp.data = data;
         hostComp.cssClass = 'testClass';
-        hostComp.overlayWidth = '650px';
+        hostComp.overlayWidth = '650';
         hostFixture.detectChanges();
         tick();
 
