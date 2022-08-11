@@ -1,17 +1,28 @@
 import { NgModule, Injector } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
+import { OrderListModule } from 'primeng/orderlist';
+import { ListboxModule } from 'primeng/listbox';
+
 import { createCustomElement } from '@angular/elements';
 import { AppComponent } from './app.component';
 import { DotBlockEditorComponent, NgxTiptapModule } from '@dotcms/block-editor';
+import { HttpClientModule } from '@angular/common/http';
 
 @NgModule({
     declarations: [AppComponent],
-    imports: [BrowserModule, BrowserAnimationsModule, CommonModule, FormsModule, NgxTiptapModule],
+    imports: [
+        BrowserModule,
+        CommonModule,
+        FormsModule,
+        NgxTiptapModule,
+        OrderListModule,
+        ListboxModule,
+        HttpClientModule
+    ],
     providers: []
 })
 export class AppModule {

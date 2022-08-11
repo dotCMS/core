@@ -57,7 +57,7 @@
                         {
                             "type": "anyComponentStyle",
                             "maximumWarning": "200kb",
-                            "maximumError": "200kb"
+                            "maximumError": "250kb"
                         }
                     ]
                 }

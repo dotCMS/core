@@ -1,11 +1,12 @@
 <p-sidebar
+    #sidebar
     blockScroll="true"
     [visible]="!!this.data"
     position="right"
     [dismissible]="false"
     [showCloseIcon]="false"
     [closeOnEscape]="false"
-    (onHide)="closeSidebar()"
+    (onHide)="sidebar.destroyModal(); closeSidebar()"
 >
     <div class="container" *ngIf="this.data">
         <dotcms-block-editor
@@ -14,6 +15,7 @@
             [allowedBlocks]="this.data.allowedBlocks"
             [allowedContentTypes]="this.data.allowedContentTypes"
             [value]="data.content"
+            [customStyles]="'height: 100%'"
         >
         </dotcms-block-editor>
         <footer>
