@@ -15,6 +15,7 @@ import com.dotmarketing.util.*;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.*;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -31,6 +32,8 @@ import java.util.stream.Collectors;
  * @since Jul 26th, 2019
  */
 abstract class DotCSSCompiler {
+
+  protected final HttpServletRequest req;
   protected final Set<String> allImportedURI = new HashSet<>();
   protected byte[] output;
   protected final String inputURI;
@@ -45,10 +48,11 @@ abstract class DotCSSCompiler {
     return output;
   }
 
-  public DotCSSCompiler(Host host, String uri, boolean live) {
+  public DotCSSCompiler(final Host host, final String uri, final boolean live, final HttpServletRequest req) {
     inputHost = host;
     inputURI = uri;
     inputLive = live;
+    this.req = req;
   }
 
   public abstract void compile() throws DotSecurityException, DotStateException, DotDataException, IOException;

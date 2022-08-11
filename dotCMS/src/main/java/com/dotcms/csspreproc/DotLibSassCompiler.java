@@ -4,7 +4,6 @@ import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.csspreproc.dartsass.DartSassCompiler;
 import com.dotmarketing.beans.Host;
@@ -20,8 +19,10 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RuntimeUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
+import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
@@ -38,15 +39,15 @@ public class DotLibSassCompiler extends DotCSSCompiler {
 
     final boolean live;
 
-    public DotLibSassCompiler(final Host host, final String uri, final boolean live) {
-        super(host, uri, live);
+    public DotLibSassCompiler(final Host host, final String uri, final boolean live, final HttpServletRequest req) {
+        super(host, uri, live, req);
         this.live = live;
     }
 
     @Override
     public void compile() throws DotSecurityException, DotStateException, DotDataException, IOException {
 
-        String trying = inputURI.substring(0, inputURI.lastIndexOf('.')) + ".scss";
+        String trying = inputURI.substring(0, inputURI.lastIndexOf('.')) + "." + getDefaultExtension();
         final File compileDir  = createCompileDir( inputHost, trying, inputLive );
 
         try {
@@ -126,9 +127,11 @@ public class DotLibSassCompiler extends DotCSSCompiler {
     private void notifyUI(final String message, final MessageSeverity severity) {
         final SystemMessageBuilder messageBuilder =
                 new SystemMessageBuilder().setMessage(UtilMethods.htmlLineBreak(message)).setType(MessageType.SIMPLE_MESSAGE).setSeverity(severity).setLife(10000);
-        final String loggedInUserID =
-                WebAPILocator.getUserWebAPI().getLoggedInUser(HttpServletRequestThreadLocal.INSTANCE.getRequest()).getUserId();
-        SystemMessageEventUtil.getInstance().pushMessage(messageBuilder.create(), ImmutableList.of(loggedInUserID));
+        final User loggedInUser = WebAPILocator.getUserWebAPI().getLoggedInUser(req);
+        if (null != loggedInUser) {
+            SystemMessageEventUtil.getInstance().pushMessage(messageBuilder.create(),
+                    ImmutableList.of(loggedInUser.getUserId()));
+        }
     }
 
     @Override
