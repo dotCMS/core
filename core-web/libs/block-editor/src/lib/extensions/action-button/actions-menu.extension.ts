@@ -1,32 +1,30 @@
 import { ComponentRef, ViewContainerRef } from '@angular/core';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
+import { PluginKey } from 'prosemirror-state';
 import { Editor, Extension, Range } from '@tiptap/core';
 import { FloatingMenuPluginProps } from '@tiptap/extension-floating-menu';
-import Suggestion, { SuggestionOptions, SuggestionProps } from '@tiptap/suggestion';
 import { Level } from '@tiptap/extension-heading';
-
+import Suggestion, { SuggestionOptions, SuggestionProps } from '@tiptap/suggestion';
 import tippy, { GetReferenceClientRect } from 'tippy.js';
 
 import {
+    // Floating Menu
     FLOATING_ACTIONS_MENU_KEYBOARD,
     FloatingActionsKeydownProps,
     FloatingActionsPlugin,
-    FloatingActionsProps
-} from '../../shared/plugins/floating.plugin';
-import {
+    FloatingActionsProps,
+    // Suggestions
     ItemsType,
     SuggestionsCommandProps,
-    SuggestionsComponent
-} from '../../shared/components/suggestions/suggestions.component';
-import { ActionButtonComponent } from './action-button.component';
-import { PluginKey } from 'prosemirror-state';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
-import {
+    SuggestionsComponent,
     CONTENT_SUGGESTION_ID,
     suggestionOptions,
     SuggestionPopperModifiers
-} from '../../shared/utils/suggestion.utils';
+} from '@dotcms/block-editor';
+
+import { ActionButtonComponent } from './action-button.component';
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {

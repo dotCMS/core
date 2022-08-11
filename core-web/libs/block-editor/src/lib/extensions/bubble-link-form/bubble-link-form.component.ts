@@ -25,11 +25,11 @@ export interface NodeProps {
 }
 
 @Component({
-    selector: 'dot-bubble-menu-link-form',
-    templateUrl: './bubble-menu-link-form.component.html',
-    styleUrls: ['./bubble-menu-link-form.component.scss']
+    selector: 'dot-bubble-link-form',
+    templateUrl: './bubble-link-form.component.html',
+    styleUrls: ['./bubble-link-form.component.scss']
 })
-export class BubbleMenuLinkFormComponent implements OnInit {
+export class BubbleLinkFormComponent implements OnInit {
     @ViewChild('input') input: ElementRef;
     @ViewChild('suggestions', { static: false }) suggestionsComponent: SuggestionsComponent;
 
@@ -89,7 +89,7 @@ export class BubbleMenuLinkFormComponent implements OnInit {
     /**
      * Submit node props and close link form.
      *
-     * @memberof BubbleMenuLinkFormComponent
+     * @memberof BubbleLinkFormComponent
      */
     submitForm() {
         this.setNodeProps.emit(this.form.value);
@@ -99,7 +99,7 @@ export class BubbleMenuLinkFormComponent implements OnInit {
     /**
      *
      *
-     * @memberof BubbleMenuLinkFormComponent
+     * @memberof BubbleLinkFormComponent
      */
     setLoading() {
         const shouldShow = this.newLink.length >= this.minChars && !isValidURL(this.newLink);
@@ -115,7 +115,7 @@ export class BubbleMenuLinkFormComponent implements OnInit {
      * Set Form values without emit `valueChanges` event.
      *
      * @param {NodeProps} { link, blank }
-     * @memberof BubbleMenuLinkFormComponent
+     * @memberof BubbleLinkFormComponent
      */
     setFormValue({ link, blank }: NodeProps) {
         this.form.setValue({ link, blank }, { emitEvent: false });
@@ -124,7 +124,7 @@ export class BubbleMenuLinkFormComponent implements OnInit {
     /**
      * Set Focus Search Input
      *
-     * @memberof BubbleMenuLinkFormComponent
+     * @memberof BubbleLinkFormComponent
      */
     focusInput() {
         this.input.nativeElement.focus();
@@ -135,7 +135,7 @@ export class BubbleMenuLinkFormComponent implements OnInit {
      *
      * @param {KeyboardEvent} e
      * @return {*}
-     * @memberof BubbleMenuLinkFormComponent
+     * @memberof BubbleLinkFormComponent
      */
     onKeyDownEvent(e: KeyboardEvent) {
         const items = this.suggestionsComponent?.items;
@@ -170,7 +170,7 @@ export class BubbleMenuLinkFormComponent implements OnInit {
     /**
      * Reset form value to initials
      *
-     * @memberof BubbleMenuLinkFormComponent
+     * @memberof BubbleLinkFormComponent
      */
     resetForm() {
         this.showSuggestions = false;
@@ -181,7 +181,7 @@ export class BubbleMenuLinkFormComponent implements OnInit {
      * Set url on selection
      *
      * @param {SuggestionsCommandProps} { payload: { url } }
-     * @memberof BubbleMenuLinkFormComponent
+     * @memberof BubbleLinkFormComponent
      */
     onSelection({ payload: { url } }: SuggestionsCommandProps) {
         this.setFormValue({ ...this.form.value, link: url });

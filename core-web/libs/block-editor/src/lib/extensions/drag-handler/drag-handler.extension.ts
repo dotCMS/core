@@ -1,7 +1,8 @@
-import { Extension } from '@tiptap/core';
-import { NodeSelection, Plugin, PluginKey } from 'prosemirror-state';
-import { EditorView } from 'prosemirror-view';
 import { ViewContainerRef } from '@angular/core';
+import { EditorView } from 'prosemirror-view';
+import { NodeSelection, Plugin, PluginKey } from 'prosemirror-state';
+import { Extension } from '@tiptap/core';
+
 import { DragHandlerComponent } from './drag-handler.component';
 
 export const DragHandler = (viewContainerRef: ViewContainerRef) => {

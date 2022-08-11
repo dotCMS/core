@@ -1,8 +1,10 @@
 import { ViewContainerRef } from '@angular/core';
 import BubbleMenu, { BubbleMenuOptions } from '@tiptap/extension-bubble-menu';
 import { Props } from 'tippy.js';
+
 import { DotBubbleMenuPlugin } from './plugins/dot-bubble-menu.plugin';
 import { shouldShowBubbleMenu } from './utils/index';
+
 import { BubbleMenuComponent, SuggestionsComponent } from '@dotcms/block-editor';
 
 const defaultTippyOptions: Partial<Props> = {

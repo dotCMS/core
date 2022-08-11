@@ -5,7 +5,7 @@ import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 
 import { BubbleMenuDirective } from './bubble-menu.directive';
-import { EditorDirective } from './editor.directive';
+import { EditorDirective } from '../../editor.directive';
 
 @Component({
     template: `

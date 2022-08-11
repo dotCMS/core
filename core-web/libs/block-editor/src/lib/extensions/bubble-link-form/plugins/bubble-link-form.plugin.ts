@@ -1,22 +1,21 @@
 import { ComponentRef } from '@angular/core';
 import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+
 import { Editor, posToDOMRect } from '@tiptap/core';
 import { EditorState, Plugin, PluginKey, Transaction } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import tippy, { Instance, Props } from 'tippy.js';
 
-import { BubbleMenuLinkFormComponent, NodeProps } from '../bubble-menu-link-form.component';
+import isEqual from 'lodash.isequal';
 
 // Interface
+import { BubbleLinkFormComponent, NodeProps } from '../bubble-link-form.component';
 import { LINK_FORM_PLUGIN_KEY } from '../bubble-link-form.extension';
 
 // Utils
-import { getPosAtDocCoords } from '../../../shared/utils/prosemirror.utils';
-import { isValidURL } from '../../bubble-menu/utils';
+import { getPosAtDocCoords, isValidURL } from '@dotcms/block-editor';
 import { openFormLinkOnclik } from '../utils';
-
-import isEqual from 'lodash.isequal';
-import { takeUntil } from 'rxjs/operators';
 
 interface PluginState {
     isOpen: boolean;
@@ -28,7 +27,7 @@ export interface BubbleLinkFormProps {
     editor: Editor;
     element: HTMLElement;
     tippyOptions?: Partial<Props>;
-    component?: ComponentRef<BubbleMenuLinkFormComponent>;
+    component?: ComponentRef<BubbleLinkFormComponent>;
 }
 
 export type BubbleLinkFormViewProps = BubbleLinkFormProps & {
@@ -48,7 +47,7 @@ export class BubbleLinkFormView {
 
     public pluginKey: PluginKey;
 
-    public component?: ComponentRef<BubbleMenuLinkFormComponent>;
+    public component?: ComponentRef<BubbleLinkFormComponent>;
 
     private scrollElementMap = {
         'editor-suggestion-list': true,

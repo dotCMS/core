@@ -6,19 +6,24 @@ import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
 import tippy, { Instance } from 'tippy.js';
 
 import {
+    // Bubble Menu
     BubbleMenuComponentProps,
     BubbleMenuItem,
-    CustomNodeTypes,
     DotBubbleMenuPluginProps,
     DotBubbleMenuViewProps,
+    CustomNodeTypes,
+    // Suggestions
+    suggestionOptions,
+    SuggestionsComponent,
+    // Utils
     getNodePosition,
     NodeTypes,
-    suggestionOptions,
-    SuggestionsComponent
+    findParentNode
 } from '@dotcms/block-editor';
+
+import { LINK_FORM_PLUGIN_KEY } from '@dotcms/block-editor';
+
 import { bubbleMenuImageItems, bubbleMenuItems, isListNode, popperModifiers } from '../utils';
-import { findParentNode } from '../../../shared/utils/prosemirror.utils';
-import { LINK_FORM_PLUGIN_KEY } from '../../bubble-menu-link-form/bubble-link-form.extension';
 
 export const DotBubbleMenuPlugin = (options: DotBubbleMenuPluginProps) => {
     const component = options.component.instance;

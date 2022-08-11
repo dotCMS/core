@@ -1,9 +1,9 @@
-import { Node, mergeAttributes, NodeViewRenderer } from '@tiptap/core';
-import { DOMOutputSpec, ParseRule } from 'prosemirror-model';
 import { Injector } from '@angular/core';
+import { DOMOutputSpec, ParseRule } from 'prosemirror-model';
+import { Node, mergeAttributes, NodeViewRenderer } from '@tiptap/core';
 
-import { ContentletBlockComponent } from '../contentlet-block/contentlet-block.component';
-import { AngularNodeViewRenderer } from '../../NodeViewRenderer';
+import { AngularNodeViewRenderer } from '@dotcms/block-editor';
+import { ContentletBlockComponent } from './contentlet-block.component';
 
 export type ContentletBlockOptions = {
     HTMLAttributes: Record<string, unknown>;

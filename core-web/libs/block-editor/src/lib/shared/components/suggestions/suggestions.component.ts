@@ -268,7 +268,7 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
      *
      * @private
      * @param {*} { link = '' }
-     * @memberof BubbleMenuLinkFormComponent
+     * @memberof BubbleLinkFormComponent
      */
     searchContentlets({ link = '' }) {
         this.loading = true;

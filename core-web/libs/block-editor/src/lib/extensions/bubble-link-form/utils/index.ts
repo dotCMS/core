@@ -1,4 +1,4 @@
-import { textNodeRange } from '../../../shared/utils/prosemirror.utils';
+import { textNodeRange } from '@dotcms/block-editor';
 
 export const openFormLinkOnclik = ({ editor, view, pos }) => {
     const selectionStart = view.state.doc?.resolve(pos);

@@ -1,13 +1,20 @@
-import { Plugin, PluginKey } from 'prosemirror-state';
 import { ComponentRef, Injector, ViewContainerRef } from '@angular/core';
-import { Extension } from '@tiptap/core';
-import { DotImageService } from '../../services/dot-image/dot-image.service';
-import { EditorView } from 'prosemirror-view';
-import { LoaderComponent, MessageType } from './components/loader/loader.component';
-import { PlaceholderPlugin } from './plugins/placeholder.plugin';
 import { take } from 'rxjs/operators';
+
+import { EditorView } from 'prosemirror-view';
+import { Plugin, PluginKey } from 'prosemirror-state';
+import { Extension } from '@tiptap/core';
+
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { IMAGE_BLOCK_NAME } from '../../blocks/image-block/image-block.extention';
+
+import {
+    DotImageService,
+    LoaderComponent,
+    IMAGE_BLOCK_NAME,
+    MessageType
+} from '@dotcms/block-editor';
+
+import { PlaceholderPlugin } from './plugins/placeholder.plugin';
 
 export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerRef) => {
     return Extension.create({

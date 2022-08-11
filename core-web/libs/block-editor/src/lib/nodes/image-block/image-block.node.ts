@@ -1,8 +1,10 @@
-import { Node, mergeAttributes, NodeViewRenderer } from '@tiptap/core';
 import { Injector } from '@angular/core';
+
 import { DOMOutputSpec, ParseRule } from 'prosemirror-model';
+import { Node, mergeAttributes, NodeViewRenderer } from '@tiptap/core';
+
+import { AngularNodeViewRenderer } from '@dotcms/block-editor';
 import { ImageBlockComponent } from './image-block.component';
-import { AngularNodeViewRenderer } from '../../NodeViewRenderer';
 
 export const IMAGE_BLOCK_NAME = 'dotImage';
 

@@ -1,9 +1,10 @@
 import { Extension } from '@tiptap/core';
 import { PluginKey } from 'prosemirror-state';
-import { BubbleMenuLinkFormComponent } from './bubble-menu-link-form.component';
 import { ViewContainerRef } from '@angular/core';
-import { bubbleLinkFormPlugin } from './plugins/bubble-link-form.plugin';
 import { Props } from 'tippy.js';
+
+import { bubbleLinkFormPlugin } from './plugins/bubble-link-form.plugin';
+import { BubbleLinkFormComponent } from './bubble-link-form.component';
 
 export interface BubbleLinkFormOptions {
     pluginKey: PluginKey;
@@ -67,7 +68,7 @@ export const BubbleLinkFormExtension = (viewContainerRef: ViewContainerRef) => {
         },
 
         addProseMirrorPlugins() {
-            const component = viewContainerRef.createComponent(BubbleMenuLinkFormComponent);
+            const component = viewContainerRef.createComponent(BubbleLinkFormComponent);
             component.changeDetectorRef.detectChanges();
 
             return [

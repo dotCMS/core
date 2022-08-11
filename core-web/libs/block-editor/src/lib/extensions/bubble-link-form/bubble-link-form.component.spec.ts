@@ -1,20 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { BubbleMenuLinkFormComponent } from './bubble-menu-link-form.component';
+import { BubbleLinkFormComponent } from './bubble-link-form.component';
 
-describe('BubbleMenuLinkFormComponent', () => {
-    let component: BubbleMenuLinkFormComponent;
-    let fixture: ComponentFixture<BubbleMenuLinkFormComponent>;
+describe('BubbleLinkFormComponent', () => {
+    let component: BubbleLinkFormComponent;
+    let fixture: ComponentFixture<BubbleLinkFormComponent>;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [BubbleMenuLinkFormComponent],
+            declarations: [BubbleLinkFormComponent],
             teardown: { destroyAfterEach: false }
         }).compileComponents();
     });
 
     beforeEach(() => {
-        fixture = TestBed.createComponent(BubbleMenuLinkFormComponent);
+        fixture = TestBed.createComponent(BubbleLinkFormComponent);
         component = fixture.componentInstance;
         fixture.detectChanges();
     });

@@ -1,6 +1,6 @@
 import { isTextSelection } from '@tiptap/core';
 import { BubbleMenuItem, ShouldShowProps } from '@dotcms/block-editor';
-import { LINK_FORM_PLUGIN_KEY } from '../../bubble-menu-link-form/bubble-link-form.extension';
+import { LINK_FORM_PLUGIN_KEY } from '../../bubble-link-form/bubble-link-form.extension';
 
 const hideBubbleMenuOn = {
     dotContent: true
