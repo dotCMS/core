@@ -240,7 +240,7 @@
 									"    var jsonData = pm.response.json();",
 									"    console.log(jsonData);",
 									"",
-									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"test-page-graphql-render.tar.gz\");",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"issue-22236-RelatedPagination-01GA6T1VX69MHWX2NYME3EG238.tar.gz\");",
 									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
 									"});"
 								],
