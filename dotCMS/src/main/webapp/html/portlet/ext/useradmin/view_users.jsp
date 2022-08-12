@@ -124,12 +124,12 @@
 					</div>
 					<% if ( enterprise ) {%>
 						<% if ( endPoints ) {%>
-							<div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: remotePublishUsers">
-								<%= LanguageUtil.get(pageContext, "Remote-Publish") %>
+							<div id="remotePublishUsersDiv" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: remotePublishUsers">
+								<%= LanguageUtil.get(pageContext, "Remote-Publish-all-users") %>
 							</div>
 						<%}%>
-						<div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: addToBundleUsers">
-							<%= LanguageUtil.get(pageContext, "Add-To-Bundle") %>
+						<div id="addToBundleUsersDiv" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: addToBundleUsers">
+							<%= LanguageUtil.get(pageContext, "Add-To-Bundle-all-users") %>
 						</div>
 					<%}%>
 				</div>
