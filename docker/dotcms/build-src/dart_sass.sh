@@ -18,6 +18,8 @@ arch=$(uname -m)
 [[ "$arch" == 'x86_64' ]] && arch='x64'
 folderName="dart-sass-linux-$arch"
 
+apt-get install wget
+
 wget https://github.com/sass/dart-sass/releases/download/$dartSassLatest/dart-sass-$dartSassLatest-linux-$arch.tar.gz -O $fileName
 tar -xf $fileName
 
