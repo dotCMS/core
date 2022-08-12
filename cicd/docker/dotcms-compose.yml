@@ -11,7 +11,7 @@ volumes:
   cms-shared:
   cms-local:
   output:
-#  license:
+  license:
 
 services:
   dotcms-app:
@@ -42,9 +42,9 @@ services:
     volumes:
       - cms-shared:/data/shared
       - cms-local:/data/local
-#      - type: bind
-#        source: ./license/license.dat
-#        target: /data/local/dotsecure/license/license.dat
+      - type: bind
+        source: ./license/license.dat
+        target: /data/local/dotsecure/license/license.dat
     networks:
       - db_net
       - es_net
