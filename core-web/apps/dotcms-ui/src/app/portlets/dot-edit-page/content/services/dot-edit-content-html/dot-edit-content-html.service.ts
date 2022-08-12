@@ -241,6 +241,7 @@ export class DotEditContentHtmlService {
         if (isDroppedContentlet) {
             this.setCurrentContainerOnContentDrop(doc);
         }
+
         const containerEl: HTMLElement = doc.querySelector(
             `[data-dot-object="container"][data-dot-identifier="${this.currentContainer.identifier}"][data-dot-uuid="${this.currentContainer.uuid}"]`
         );
@@ -284,6 +285,7 @@ export class DotEditContentHtmlService {
         if (isDroppedForm) {
             this.setCurrentContainerOnContentDrop(doc);
         }
+
         const containerEl: HTMLElement = doc.querySelector(
             [
                 '[data-dot-object="container"]',
@@ -295,6 +297,7 @@ export class DotEditContentHtmlService {
         if (this.isFormExistInContainer(formId, containerEl)) {
             this.showContentAlreadyAddedError();
             this.removeContentletPlaceholder();
+
             return of(null);
         } else {
             let contentletPlaceholder = doc.querySelector(CONTENTLET_PLACEHOLDER_SELECTOR);
@@ -313,6 +316,7 @@ export class DotEditContentHtmlService {
                             this.renderFormContentlet(identifier, inode),
                             contentletPlaceholder
                         );
+
                         return this.getContentModel();
                     })
                 );
@@ -365,6 +369,7 @@ export class DotEditContentHtmlService {
         const placeholder = doc.createElement('div');
         placeholder.setAttribute('data-dot-object', 'contentlet');
         placeholder.appendChild(this.getLoadingIndicator());
+
         return placeholder;
     }
 
@@ -400,6 +405,7 @@ export class DotEditContentHtmlService {
     private getCurrentContentlet(target: HTMLElement): DotPageContent {
         try {
             const contentlet = <HTMLElement>target.closest('[data-dot-object="contentlet"]');
+
             return {
                 identifier: contentlet.dataset.dotIdentifier,
                 inode: contentlet.dataset.dotInode,
@@ -453,6 +459,7 @@ export class DotEditContentHtmlService {
         const currentContentlets: HTMLElement[] = <HTMLElement[]>(
             Array.from(containerEL.querySelectorAll(contentsSelector).values())
         );
+
         return currentContentlets.some(
             (contentElement) => contentElement.dataset.dotIdentifier === contentlet.identifier
         );
@@ -514,6 +521,7 @@ export class DotEditContentHtmlService {
         } else {
             script.text = node.textContent;
         }
+
         return script;
     }
 
@@ -661,6 +669,7 @@ export class DotEditContentHtmlService {
                     if (this.updateContentletInode) {
                         this.currentContentlet.inode = contentlet.inode;
                     }
+
                     // because: https://github.com/dotCMS/core/issues/21818
                     setTimeout(() => {
                         this.renderEditedContentlet(this.currentContentlet);

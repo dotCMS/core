@@ -48,6 +48,7 @@ field="name"
 `;
 const Template: Story<AutoComplete> = (props: AutoComplete) => {
     const template = AutocompleteTemplate;
+
     return {
         props,
         template
@@ -55,6 +56,7 @@ const Template: Story<AutoComplete> = (props: AutoComplete) => {
 };
 
 export const Primary: Story = Template.bind({});
+
 Primary.parameters = {
     docs: {
         source: {

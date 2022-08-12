@@ -1,6 +1,6 @@
 {
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
     "projectType": "library",
-    "root": "libs/block-editor",
     "sourceRoot": "libs/block-editor/src",
     "prefix": "dotcms",
     "targets": {
@@ -18,19 +18,17 @@
             "executor": "@nrwl/jest:jest",
             "outputs": ["coverage/libs/block-editor"],
             "options": {
-                "jestConfig": "libs/block-editor/jest.config.js",
+                "jestConfig": "libs/block-editor/jest.config.ts",
                 "passWithNoTests": true
             }
         },
         "storybook": {
-            "executor": "@nrwl/storybook:storybook",
+            "executor": "@storybook/angular:start-storybook",
             "options": {
-                "uiFramework": "@storybook/angular",
                 "port": 6600,
-                "config": {
-                    "configFolder": "libs/block-editor/.storybook"
-                },
-                "projectBuildConfig": "block-editor:build-storybook"
+                "configDir": "libs/block-editor/.storybook",
+                "browserTarget": "block-editor:build-storybook",
+                "compodoc": false
             },
             "configurations": {
                 "ci": {
@@ -39,16 +37,14 @@
             }
         },
         "build-storybook": {
-            "executor": "@nrwl/storybook:build",
+            "executor": "@storybook/angular:build-storybook",
             "outputs": ["{options.outputPath}"],
             "options": {
-                "uiFramework": "@storybook/angular",
-                "outputPath": "docs/block-editor",
                 "deleteOutputPath": false,
-                "config": {
-                    "configFolder": "libs/block-editor/.storybook"
-                },
-                "projectBuildConfig": "block-editor:build-storybook"
+                "outputDir": "docs/block-editor",
+                "configDir": "libs/block-editor/.storybook",
+                "browserTarget": "block-editor:build-storybook",
+                "compodoc": false
             },
             "configurations": {
                 "ci": {

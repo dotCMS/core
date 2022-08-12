@@ -38,7 +38,34 @@ public interface PermissionAPI {
 
 	final static String[] PERMISSION_TYPES={"PERMISSION_READ","PERMISSION_WRITE","PERMISSION_PUBLISH","PERMISSION_USE","PERMISSION_CAN_ADD_CHILDREN","PERMISSION_EDIT","PERMISSION_EDIT_PERMISSIONS"};
 
+	/**
+	 * Permission type: basically READ, EDIT, PUBLISH, EDIT_PERMISSIONS, ADD CHILDREN,
+	 */
+	public static enum Type {
 
+		READ(PERMISSION_READ),USE(PERMISSION_USE),
+		EDIT(PERMISSION_EDIT),WRITE(PERMISSION_WRITE),
+		PUBLISH(PERMISSION_PUBLISH),EDIT_PERMISSIONS(PERMISSION_EDIT_PERMISSIONS),
+		CAN_ADD_CHILDREN(PERMISSION_CAN_ADD_CHILDREN);
+
+		private final int type;
+		Type(final int type) {
+			this.type = type;
+		}
+
+		public int getType() {
+			return type;
+		}
+
+		public static Type findById(int type) {
+			for(Type typeEnum : values()) {
+				if(typeEnum.type == type) {
+					return typeEnum;
+				}
+			}
+			return null;
+		}
+	}
 
 	//Permission types
 	String INDIVIDUAL_PERMISSION_TYPE = "individual";

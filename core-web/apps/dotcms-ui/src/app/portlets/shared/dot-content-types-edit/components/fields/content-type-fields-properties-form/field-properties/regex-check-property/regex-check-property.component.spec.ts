@@ -1,4 +1,4 @@
-import { FormGroup, FormControl } from '@angular/forms';
+import { UntypedFormGroup, UntypedFormControl } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -37,8 +37,8 @@ describe('RegexCheckPropertyComponent', () => {
             fixture = DOTTestBed.createComponent(RegexCheckPropertyComponent);
             comp = fixture.componentInstance;
 
-            comp.group = new FormGroup({
-                regexCheck: new FormControl('')
+            comp.group = new UntypedFormGroup({
+                regexCheck: new UntypedFormControl('')
             });
             comp.property = {
                 name: 'regexCheck',
@@ -51,7 +51,7 @@ describe('RegexCheckPropertyComponent', () => {
     );
 
     it('should have a form', () => {
-        const group = new FormGroup({});
+        const group = new UntypedFormGroup({});
         comp.group = group;
         const divForm: DebugElement = fixture.debugElement.query(By.css('div'));
 

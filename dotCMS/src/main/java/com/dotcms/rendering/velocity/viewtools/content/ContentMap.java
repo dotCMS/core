@@ -3,6 +3,7 @@
  */
 package com.dotcms.rendering.velocity.viewtools.content;
 
+import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.services.VelocityType;
@@ -125,6 +126,23 @@ public class ContentMap {
 		return get(fieldVariableName, false);
 	}
 
+	/**
+	 * Recovery the field variables for a content type field (if the field already exists, otherwise returns an empty collection)
+	 * @param fieldVariableName String field var name
+	 * @return Map
+	 */
+	public Object getFieldVariables(String fieldVariableName) {
+
+		final  Map<String, com.dotcms.contenttype.model.field.Field> fieldMap =
+				this.content.getContentType().fieldMap();
+
+		if (fieldMap.containsKey(fieldVariableName)) {
+
+			return fieldMap.get(fieldVariableName).fieldVariablesMap();
+		}
+
+		return Collections.emptyMap();
+	}
 
 	private Object get(String fieldVariableName, Boolean parseVelocity) {
 		try {
@@ -543,5 +561,4 @@ public class ContentMap {
 	public Contentlet getContentObject() {
 		return this.content;
 	}
-
 }

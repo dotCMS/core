@@ -35,6 +35,7 @@ services:
       DOT_ASYNC_COMMIT_LISTENERS: "false"
       DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS: 600
       WAIT_FOR_DEPS:
+      JVM_ENDPOINT_TEST_PASS:
     depends_on:
       - database
       - elasticsearch

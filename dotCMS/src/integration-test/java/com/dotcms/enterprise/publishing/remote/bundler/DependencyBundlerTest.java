@@ -41,7 +41,6 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Config;
@@ -49,22 +48,22 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.collection.Stream;
-import java.io.File;
-import java.io.Serializable;
-import java.net.URL;
-import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
+import java.net.URL;
 import java.util.*;
+import java.util.stream.Collectors;
 
-import static com.dotcms.publishing.PublisherAPIImplTest.getLanguageVariables;
 import static com.dotcms.publishing.PublisherAPIImplTest.getLanguagesVariableDependencies;
 import static com.dotcms.util.CollectionsUtils.*;
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 import static org.jgroups.util.Util.assertEquals;
 import static org.jgroups.util.Util.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -435,6 +434,7 @@ public class DependencyBundlerTest {
         return new TestData(folder, map(
                 folder, list(host, parentFolder, contentType, contentlet, link, subFolder),
                 contentlet, list(language),
+                contentlet_2, list(APILocator.getLanguageAPI().getLanguage(contentlet_2.getLanguageId())),
                 subFolder, list(contentlet_2, folderContentType),
                 contentType, list(systemWorkflowScheme),
                 folderContentType, list(systemWorkflowScheme)
@@ -614,7 +614,8 @@ public class DependencyBundlerTest {
 
         final Map<ManifestItem, Collection<ManifestItem>>  contentletWithImageIncludes = map(
                 contentletWithImage, list(host, contentTypeWithImageField, imageFileAsset, language),
-                imageFileAsset, list(imageFolder, imageFileLanguage, imageFileAsset.getContentType())
+                imageFileAsset, list(imageFolder, imageFileLanguage, imageFileAsset.getContentType()),
+                contentTypeWithImageField, list(APILocator.getWorkflowAPI().findSystemWorkflowScheme())
         );
 
         final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
@@ -1206,7 +1207,7 @@ public class DependencyBundlerTest {
     public void addAssetInBundle(final TestData testData)
             throws IOException, DotBundleException, DotDataException, DotSecurityException {
 
-        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
+        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).clearFilterDescriptorList();
         APILocator.getPublisherAPI().addFilterDescriptor(testData.filterDescriptor);
 
         final PushPublisherConfig config = new PushPublisherConfig();
@@ -1321,7 +1322,7 @@ public class DependencyBundlerTest {
     public void excludeContenletChildAssetByModDate(ModDateTestData modDateTestData)
             throws DotBundleException, DotDataException, DotSecurityException, IOException {
 
-        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
+        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).clearFilterDescriptorList();
         APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptorAllDependencies);
 
         final Map<String, Object> relationShip = createRelationShip();
@@ -1448,7 +1449,7 @@ public class DependencyBundlerTest {
     public void includeContenletChildWithSeveralVersionAssetByModDate(ModDateTestData modDateTestData)
             throws DotBundleException, DotDataException, DotSecurityException, IOException {
 
-        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
+        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).clearFilterDescriptorList();
         APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptorAllDependencies);
 
         final Map<String, Object> relationShip = createRelationShip();
@@ -1528,7 +1529,7 @@ public class DependencyBundlerTest {
     @UseDataProvider("configs")
     public void notExcludeContenletChildAssetByModDate(ModDateTestData modDateTestData)
             throws DotBundleException, DotDataException, DotSecurityException, IOException {
-        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
+        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).clearFilterDescriptorList();
         APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptorAllDependencies);
 
         final Map<String, Object> relationShipMap = createRelationShip();
@@ -1697,7 +1698,7 @@ public class DependencyBundlerTest {
     public void excludeHTMLDependenciesByModDate(ModDateTestData modDateTestData)
             throws DotBundleException, DotDataException, DotSecurityException, IOException {
 
-        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
+        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).clearFilterDescriptorList();
         APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptorAllDependencies);
 
         final Calendar yesterday = Calendar.getInstance();
@@ -1821,7 +1822,7 @@ public class DependencyBundlerTest {
     public void includeHTMLDependenciesNoMatterModDate(ModDateTestData modDateTestData)
             throws DotBundleException, DotDataException, DotSecurityException, IOException {
 
-        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
+        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).clearFilterDescriptorList();
         APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptorAllDependencies);
 
         final Calendar yesterday = Calendar.getInstance();
@@ -1912,7 +1913,7 @@ public class DependencyBundlerTest {
     public void includeDependenciesEvenWhenAssetExcludeByModDate(ModDateTestData modDateTestData)
             throws DotBundleException, DotDataException, DotSecurityException, IOException {
 
-        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
+        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).clearFilterDescriptorList();
         APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptorAllDependencies);
 
         final Calendar yesterday = Calendar.getInstance();
@@ -1998,7 +1999,7 @@ public class DependencyBundlerTest {
                 .excludeDependencyClasses(list("Template"))
                 .nextPersisted();
 
-        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
+        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).clearFilterDescriptorList();
         APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
 
         final Map<String, Object> pageAndDependencies = pageWithDependencies();
@@ -2058,7 +2059,7 @@ public class DependencyBundlerTest {
     public void includeTemplateUsingTwoEnvironment()
             throws DotBundleException, DotDataException, DotSecurityException, IOException {
 
-        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
+        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).clearFilterDescriptorList();
         APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptorAllDependencies);
 
         final Calendar yesterday = Calendar.getInstance();

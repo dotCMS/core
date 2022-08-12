@@ -15,6 +15,7 @@ export class StringPixels {
         const maxText = _.maxBy(textValues, (text: string) => text.length).length;
         const maxWidth =
             StringPixels.characterSize * maxText > 108 ? 108 : StringPixels.characterSize * maxText;
+
         return `${maxWidth + StringPixels.arrowDropdownComponentSize}px`;
     }
 }

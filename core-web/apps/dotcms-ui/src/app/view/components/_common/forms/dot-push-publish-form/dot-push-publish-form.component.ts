@@ -15,7 +15,7 @@ import {
 import { catchError, filter, map, take, takeUntil } from 'rxjs/operators';
 import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
 import { Observable, of, Subject } from 'rxjs';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { DotParseHtmlService } from '@services/dot-parse-html/dot-parse-html.service';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
@@ -33,7 +33,7 @@ export class DotPushPublishFormComponent
     implements OnInit, OnDestroy, DotFormModel<DotPushPublishDialogData, DotPushPublishData>
 {
     dateFieldMinDate = new Date();
-    form: FormGroup;
+    form: UntypedFormGroup;
     pushActions: SelectItem[];
     filterOptions: SelectItem[] = null;
     timeZoneOptions: SelectItem[] = null;
@@ -60,7 +60,7 @@ export class DotPushPublishFormComponent
         private dotMessageService: DotMessageService,
         private dotcmsConfigService: DotcmsConfigService,
         private httpErrorManagerService: DotHttpErrorManagerService,
-        public fb: FormBuilder
+        public fb: UntypedFormBuilder
     ) {}
 
     ngOnInit() {
@@ -135,6 +135,7 @@ export class DotPushPublishFormComponent
             });
             this.emitValues();
         }
+
         this.loadTimezones();
     }
 
@@ -174,23 +175,12 @@ export class DotPushPublishFormComponent
     private loadFilters(): Observable<unknown> {
         return this.dotPushPublishFiltersService.get().pipe(
             map((filterOptions: DotPushPublishFilter[]) => {
-                this._filterOptions = filterOptions
-                    .map((item: DotPushPublishFilter) => {
-                        return {
-                            label: item.title,
-                            value: item.key
-                        };
-                    })
-                    .sort((a: SelectItem, b: SelectItem) => {
-                        if (a.label > b.label) {
-                            return 1;
-                        }
-                        if (a.label < b.label) {
-                            return -1;
-                        }
-                        // a must be equal to b
-                        return 0;
-                    });
+                this._filterOptions = filterOptions.map((item: DotPushPublishFilter) => {
+                    return {
+                        label: item.title,
+                        value: item.key
+                    };
+                });
 
                 this.filterOptions = this._filterOptions;
 
@@ -201,6 +191,7 @@ export class DotPushPublishFormComponent
             }),
             catchError((error) => {
                 this.httpErrorManagerService.handle(error);
+
                 return of([]);
             })
         );
@@ -245,6 +236,7 @@ export class DotPushPublishFormComponent
                         enableFilters();
                         break;
                     }
+
                     case 'expire': {
                         publishDate.disable();
                         expireDate.enable();
@@ -253,6 +245,7 @@ export class DotPushPublishFormComponent
                         this.filterOptions = [];
                         break;
                     }
+
                     default: {
                         publishDate.enable();
                         expireDate.enable();

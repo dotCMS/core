@@ -27,6 +27,7 @@ describe('DotUiColorsService', () => {
                     '--color-sec': '#54428E',
                     '--color-background': '#3A3847'
                 };
+
                 return map[cssVar];
             }
         } as CSSStyleDeclaration);

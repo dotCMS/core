@@ -1,16 +1,8 @@
 package com.dotcms.rest.api.v1.user;
 
-import static com.dotcms.util.CollectionsUtils.getMapValue;
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.rest.ErrorEntity;
-import com.dotcms.rest.ErrorResponseHelper;
-import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.WebResource;
+import com.dotcms.rest.*;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.IncorrectPasswordException;
 import com.dotcms.rest.exception.BadRequestException;
@@ -19,18 +11,8 @@ import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.UserPaginator;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.ApiProvider;
-import com.dotmarketing.business.NoSuchUserException;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.UserFirstNameException;
-import com.dotmarketing.exception.UserLastNameException;
+import com.dotmarketing.business.*;
+import com.dotmarketing.exception.*;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
@@ -42,27 +24,23 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
+import io.vavr.control.Try;
+import org.glassfish.jersey.server.JSONP;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 
-import io.vavr.control.Try;
-import org.glassfish.jersey.server.JSONP;
+import static com.dotcms.util.CollectionsUtils.*;
 
 /**
  * This end-point provides access to information associated to dotCMS users.
@@ -150,11 +128,37 @@ public class UserResource implements Serializable {
 	}
 
 	/**
+	 * Updates information from the specified User. This REST Endpoint allows Users to update their own information.
+	 * <p>Use example:</p>
+	 * <pre>
+	 *     {@code PUT} - Auth Required - http://localhost:8080/api/v1/users/current
+	 * </pre>
+	 * <pre>
+	 *     {
+	 *     		"currentPassword":"oldpass2",
+	 *     		"email":"myemail@dotcms.com",
+	 *     		"givenName":"Test",
+	 *     		"surname":"User",
+	 *     		"userId":"user-7fcb5d28-a921-4a96-b7b6-8d1730795e27",
+	 *     		"newPassword":"newpasswd5"
+	 *     	}
+	 * </pre>
 	 *
-	 * @param httpServletRequest
-	 * @param updateUserForm
-	 * @return
-	 * @throws Exception
+	 * @param httpServletRequest  The current {@link HttpServletRequest} instance.
+	 * @param httpServletResponse The current {@link HttpServletResponse} instance.
+	 * @param updateUserForm      The {@link UpdateUserForm} containing the User's information.
+	 *
+	 * @return The JSON response with the result of the User update process.
+	 *
+	 * @throws Exception Different response status codes can be returned when invalid User data is submitted. For
+	 * example:
+	 *                   <ul>
+	 *                       <li>Invalid User's first or last name.</li>
+	 *                       <li>User not having the required permissions to perform this action.</li>
+	 *                       <li>User not found.</li>
+	 *                       <li>Invalid User's current or new password.</li>
+	 *                       <li>Generic error from server.</li>
+	 *                   </ul>
 	 */
 	@PUT
 	@JSONP
@@ -206,26 +210,23 @@ public class UserResource implements Serializable {
 
 			this.helper.log("Error Updating User. Invalid Last Name", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
 			response = this.errorHelper.getErrorResponse(Response.Status.BAD_REQUEST, locale, "User-Info-Save-Last-Name-Failed");
-		} catch (final DotSecurityException  e) {
+		} catch (final DotSecurityException e) {
 
 			this.helper.log("Error Updating User. "+e.getMessage(), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
 			response = this.errorHelper.getErrorResponse(Response.Status.UNAUTHORIZED, locale, "User-Doesnot-Have-Permission");
-		} catch (final NoSuchUserException  e) {
+		} catch (final NoSuchUserException e) {
 
 			this.helper.log("Error Updating User. "+e.getMessage(), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
 			response = this.errorHelper.getErrorResponse(Response.Status.NOT_FOUND, locale, "User-Not-Found");
-		} catch (final DotDataException e) {
-			if(null != e.getMessageKey()){
-				this.helper.log("Error Updating User. "+e.getFormattedMessage(systemLocale), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+		} catch (final DotDataException | IncorrectPasswordException e) {
+			if (UtilMethods.isSet(e.getMessageKey())) {
+				this.helper.log("Error Updating User. " + e.getFormattedMessage(systemLocale), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
 				response = this.errorHelper.getErrorResponse(Response.Status.BAD_REQUEST, locale, e.getMessageKey());
 			} else{
-				this.helper.log("Error Updating User. "+e.getMessage(), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+				this.helper.log("Error Updating User. " + e.getMessage(), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
 				response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 			}
-		} catch (final IncorrectPasswordException e) {
-			this.helper.log("Error Updating User. " + e.getMessage(), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
-			response = ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
-		} catch (final Exception  e) {
+		} catch (final Exception e) {
 			this.helper.log("Error Updating User. "+e.getMessage(), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
@@ -392,7 +393,7 @@ public class UserResource implements Serializable {
 			revertLoginAsSessionInfo(request, currentSite, currentUser.getUserId());
 			if (UtilMethods.isSet(e.getMessageKey())) {
 				final User user = initData.getUser();
-				response = Response.ok(new ResponseEntityView(
+				response = Response.ok(new ResponseEntityView<>(
 						list(new ErrorEntity(e.getMessageKey(), LanguageUtil.get(user.getLocale(), e.getMessageKey()))),
 						map("loginAs", false))).build();
 			} else {

@@ -30,6 +30,7 @@ export * from './lib/extensions/imageUpload.extension';
 export * from './lib/extensions/dragHandler.extension';
 export * from './lib/extensions/bubble-link-form.extension';
 export * from './lib/extensions/dot-bubble-menu.extension';
+export * from './lib/extensions/dot-config.extension';
 
 //Editor Blocks
 export * from './lib/extensions/blocks/contentlet-block/contentlet-block.extension';

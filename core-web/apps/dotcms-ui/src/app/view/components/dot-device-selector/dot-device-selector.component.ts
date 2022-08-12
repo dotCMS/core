@@ -1,22 +1,25 @@
 import {
+    ChangeDetectionStrategy,
+    ChangeDetectorRef,
     Component,
     EventEmitter,
-    Input,
-    Output,
     HostBinding,
-    OnInit,
+    Input,
     OnChanges,
+    OnInit,
+    Output,
     SimpleChanges
 } from '@angular/core';
 import { DotDevicesService } from '@services/dot-devices/dot-devices.service';
 import { DotDevice } from '@models/dot-device/dot-device.model';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { map, take, flatMap, filter, toArray } from 'rxjs/operators';
+import { filter, flatMap, map, take, toArray } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-device-selector',
     templateUrl: './dot-device-selector.component.html',
-    styleUrls: ['./dot-device-selector.component.scss']
+    styleUrls: ['./dot-device-selector.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotDeviceSelectorComponent implements OnInit, OnChanges {
     @Input() value: DotDevice;
@@ -28,7 +31,8 @@ export class DotDeviceSelectorComponent implements OnInit, OnChanges {
 
     constructor(
         private dotDevicesService: DotDevicesService,
-        private dotMessageService: DotMessageService
+        private dotMessageService: DotMessageService,
+        private readonly cd: ChangeDetectorRef
     ) {}
 
     ngOnInit() {
@@ -76,6 +80,9 @@ export class DotDeviceSelectorComponent implements OnInit, OnChanges {
                 () => {
                     this.disabled = true;
                     this.placeholder = 'No devices';
+                },
+                () => {
+                    this.cd.detectChanges();
                 }
             );
     }
@@ -86,7 +93,8 @@ export class DotDeviceSelectorComponent implements OnInit, OnChanges {
                 name: message,
                 cssHeight: '',
                 cssWidth: '',
-                inode: '0'
+                inode: '0',
+                identifier: ''
             },
             ...devices
         ];

@@ -51,6 +51,7 @@ export class DotCreateContentletComponent implements OnInit {
         if (this.dotRouterService.currentSavedURL.includes('/c/content/new/')) {
             this.dotRouterService.goToContent();
         }
+
         this.dotIframeService.reloadData(this.dotRouterService.currentPortlet.id);
         this.shutdown.emit(event);
     }

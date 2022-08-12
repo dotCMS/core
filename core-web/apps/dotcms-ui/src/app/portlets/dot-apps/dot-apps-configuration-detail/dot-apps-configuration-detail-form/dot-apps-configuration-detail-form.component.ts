@@ -7,7 +7,7 @@ import {
     ViewChild,
     ElementRef
 } from '@angular/core';
-import { FormControl, FormGroup, Validators, NgForm } from '@angular/forms';
+import { UntypedFormControl, UntypedFormGroup, Validators, NgForm } from '@angular/forms';
 import { DotAppsSecrets } from '@shared/models/dot-apps/dot-apps.model';
 
 const getFieldValueFn = {
@@ -32,17 +32,17 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit {
     @Input() appConfigured = false;
     @Output() data = new EventEmitter<{ [key: string]: string }>();
     @Output() valid = new EventEmitter<boolean>();
-    myFormGroup: FormGroup;
+    myFormGroup: UntypedFormGroup;
 
     ngOnInit() {
         const group = {};
         this.formFields.forEach((field: DotAppsSecrets) => {
-            group[field.name] = new FormControl(
+            group[field.name] = new UntypedFormControl(
                 this.getFieldValue(field),
                 field.required ? Validators.required : null
             );
         });
-        this.myFormGroup = new FormGroup(group);
+        this.myFormGroup = new UntypedFormGroup(group);
 
         this.myFormGroup.valueChanges.subscribe(() => {
             this.emitValues();

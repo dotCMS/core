@@ -121,3 +121,4 @@ karma_html/
 /core-web/storybook
 /core-web/out*/
 dist-docs/
+**/test-reports/

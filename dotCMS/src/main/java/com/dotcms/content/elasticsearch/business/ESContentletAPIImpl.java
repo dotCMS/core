@@ -38,6 +38,26 @@ import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.util.*;
 import com.dotmarketing.beans.*;
 import com.dotmarketing.business.*;
+import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.ConversionUtils;
+import com.dotcms.util.DotPreconditions;
+import com.dotcms.util.ThreadContextUtil;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.beans.Tree;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.Treeable;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
@@ -111,6 +131,7 @@ import com.liferay.util.StringPool;
 import com.liferay.util.StringUtil;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.xml.DomDriver;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.commons.beanutils.BeanUtils;
@@ -2404,7 +2425,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         if (contentlets.size() > 0) {
 
-            final XStream xstream = XStreamFactory.INSTANCE.getInstance();
+            final XStream xstream = new XStream(new DomDriver());
             final File backupFolder = new File(backupPath);
             if (!backupFolder.exists()) {
 
@@ -2717,7 +2738,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         if (contentlets.size() > 0) {
-            XStream _xstream = XStreamFactory.INSTANCE.getInstance();
+            XStream _xstream = new XStream(new DomDriver());
             Date date = new Date();
             SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
             String lastmoddate = sdf.format(date);
@@ -8685,7 +8706,36 @@ public class ESContentletAPIImpl implements ContentletAPI {
             List<Category> cats, List<Permission> selectedPermissions, User user,
             boolean respectFrontendRoles, boolean generateSystemEvent) throws IllegalArgumentException,
             DotDataException, DotSecurityException, DotContentletStateException, DotContentletValidationException {
-        return checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, true, generateSystemEvent);
+
+        final Contentlet contentletReturned = checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, true, generateSystemEvent);
+
+        if (InodeUtils.isSet(contentletReturned.getInode()) && UtilMethods.isSet(selectedPermissions)) {
+
+            final Runnable savePermissions = () -> {
+
+                try {
+
+                    Logger.debug(this, ()-> "Removing the permissions for: "  + contentlet.getTitle() +
+                            ", id: " + contentlet.getIdentifier());
+                    this.permissionAPI.removePermissions(contentletReturned);
+                    Logger.debug(this, ()-> "Saving the permissions for: "  + contentlet.getTitle() +
+                            ", id: " + contentlet.getIdentifier());
+                    this.permissionAPI.save(selectedPermissions.stream()
+                        .map(permission -> new Permission(contentletReturned.getPermissionId(), permission.getRoleId(), permission.getPermission()))
+                        .collect(Collectors.toList()), contentletReturned, user, respectFrontendRoles);
+                } catch (Exception e) {
+
+                    Logger.error(this, "Could not save the permissions for: " + contentlet.getTitle() +
+                            ", id: " + contentlet.getIdentifier() + ", msg: " + e.getMessage(), e);
+                }
+            };
+
+            FunctionUtils.ifOrElse(DbConnectionFactory.inTransaction(),
+                    ()-> HibernateUtil.addCommitListener(contentletReturned.getInode(), savePermissions),
+                    ()-> savePermissions.run());
+        }
+
+        return contentletReturned;
     }
 
     @Override

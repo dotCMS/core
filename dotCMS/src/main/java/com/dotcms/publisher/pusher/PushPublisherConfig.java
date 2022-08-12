@@ -113,6 +113,27 @@ public class PushPublisherConfig extends PublisherConfig {
 		this.switchIndexWhenDone = switchIndexWhenDone;
 	}
 
+	/**
+	 * Return true if the {@link PushPublisherConfig#getAssets()} list is not empty and just
+	 * contains {@link User}, otherwise return false.
+	 *
+	 * @return
+	 */
+	public boolean justIncludesUsers() {
+
+		if (!UtilMethods.isSet(this.getAssets())) {
+			return false;
+		}
+
+		for (PublishQueueElement asset : this.getAssets()) {
+			if (!PusheableAsset.USER.name().equalsIgnoreCase(asset.getType())) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	public List<PublishingEndPoint> getEndpoints() {
 		return endpoints;
 	}

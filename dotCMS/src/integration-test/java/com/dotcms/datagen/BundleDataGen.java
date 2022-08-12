@@ -27,6 +27,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.google.common.collect.Lists;
 
+import com.liferay.portal.model.User;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -54,6 +55,13 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
                 (Object asset) -> ((ContentType) asset).inode(),
                 PusheableAsset.CONTENT_TYPE
             )
+        );
+
+        howAddInBundle.put(User.class, new MetaData(
+                        (PushPublisherConfig config) -> Collections.EMPTY_LIST,
+                        (Object asset) -> ((User) asset).getUserId(),
+                        PusheableAsset.USER
+                )
         );
 
         howAddInBundle.put(Host.class, new MetaData(
