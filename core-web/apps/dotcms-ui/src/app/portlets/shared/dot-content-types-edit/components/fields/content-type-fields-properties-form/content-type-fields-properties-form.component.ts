@@ -39,7 +39,10 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     private originalValue: DotCMSContentTypeField;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(private fb: UntypedFormBuilder, private fieldPropertyService: FieldPropertyService) {}
+    constructor(
+        private fb: UntypedFormBuilder,
+        private fieldPropertyService: FieldPropertyService
+    ) {}
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes.formFieldData?.currentValue && this.formFieldData) {
@@ -69,6 +72,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
         } else {
             this.fieldProperties.forEach((property) => this.form.get(property).markAsTouched());
         }
+
         this.valid.next(false);
     }
 
@@ -166,6 +170,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
             if (checkbox === this.form.get('unique')) {
                 this.handleDisabledRequired(true);
             }
+
             this.handleDisabledIndexed(true);
         }
 

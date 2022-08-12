@@ -34,6 +34,7 @@ export class DotAppsService {
      */
     get(filter?: string): Observable<DotApps[]> {
         const url = filter ? `${appsUrl}?filter=${filter}` : appsUrl;
+
         return this.coreWebService
             .requestView<DotApps[]>({
                 url
@@ -144,10 +145,12 @@ export class DotAppsService {
                 const key = 'filename=';
                 const contentDisposition = res.headers.get('content-disposition');
                 fileName = contentDisposition.slice(contentDisposition.indexOf(key) + key.length);
+
                 return res.blob();
             })
             .then((blob: Blob) => {
                 getDownloadLink(blob, fileName).click();
+
                 return '';
             })
             .catch((error) => {
@@ -165,6 +168,7 @@ export class DotAppsService {
         const formData = new FormData();
         formData.append('json', JSON.stringify(conf.json));
         formData.append('file', conf.file);
+
         return this.coreWebService
             .requestView<string>({
                 url: `/api/${appsUrl}/import`,

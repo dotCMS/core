@@ -7,6 +7,7 @@ export interface RegexTemplate {
     label: string;
     value: string;
 }
+
 @Component({
     selector: 'dot-regex-check-property',
     templateUrl: './regex-check-property.component.html',

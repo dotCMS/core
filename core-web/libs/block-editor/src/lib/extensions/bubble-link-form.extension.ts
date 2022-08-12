@@ -1,7 +1,7 @@
 import { Extension } from '@tiptap/core';
 import { PluginKey } from 'prosemirror-state';
 import { BubbleMenuLinkFormComponent } from './components/bubble-menu-link-form/bubble-menu-link-form.component';
-import { Injector, ViewContainerRef } from '@angular/core';
+import { ViewContainerRef } from '@angular/core';
 import { bubbleLinkFormPlugin } from '../plugins/bubble-link-form.plugin';
 import { Props } from 'tippy.js';
 
@@ -10,45 +10,58 @@ export interface BubbleLinkFormOptions {
     tippyOptions?: Partial<Props>;
     element: HTMLElement | null;
 }
-export interface PluginStorage {
-    show: boolean;
-}
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         bubbleLinkForm: {
-            toogleLinkForm: () => ReturnType;
+            openLinkForm: ({ openOnClick }) => ReturnType;
+            closeLinkForm: () => ReturnType;
         };
     }
-
-    interface Storage {
-        bubbleLinkForm: PluginStorage;
-    }
 }
+
 export const LINK_FORM_PLUGIN_KEY = new PluginKey('addLink');
 
-export const BubbleLinkFormExtension = (injector: Injector, viewContainerRef: ViewContainerRef) => {
+export const BubbleLinkFormExtension = (viewContainerRef: ViewContainerRef) => {
     return Extension.create<BubbleLinkFormOptions>({
         name: 'bubbleLinkForm',
-        defaultOptions: {
-            element: null,
-            tippyOptions: {},
-            pluginKey: LINK_FORM_PLUGIN_KEY
-        },
 
-        addStorage() {
+        addOptions() {
             return {
-                show: true
+                element: null,
+                tippyOptions: {},
+                pluginKey: LINK_FORM_PLUGIN_KEY
             };
         },
 
         addCommands() {
             return {
-                toogleLinkForm:
+                openLinkForm:
+                    ({ openOnClick }) =>
+                    ({ chain }) => {
+                        return chain()
+                            .setHighlight()
+                            .command(({ tr }) => {
+                                tr.setMeta(LINK_FORM_PLUGIN_KEY, { isOpen: true, openOnClick });
+
+                                return true;
+                            })
+                            .run();
+                    },
+                closeLinkForm:
                     () =>
-                    ({ commands }) => {
-                        this.storage.show = !this.storage.show;
-                        return commands.setHighlight();
+                    ({ chain }) => {
+                        return chain()
+                            .unsetHighlight()
+                            .command(({ tr }) => {
+                                tr.setMeta(LINK_FORM_PLUGIN_KEY, {
+                                    isOpen: false,
+                                    openOnClick: false
+                                });
+
+                                return true;
+                            })
+                            .run();
                     }
             };
         },
@@ -63,7 +76,6 @@ export const BubbleLinkFormExtension = (injector: Injector, viewContainerRef: Vi
                     editor: this.editor,
                     element: component.location.nativeElement,
                     tippyOptions: this.options.tippyOptions,
-                    storage: this.storage,
                     component: component
                 })
             ];

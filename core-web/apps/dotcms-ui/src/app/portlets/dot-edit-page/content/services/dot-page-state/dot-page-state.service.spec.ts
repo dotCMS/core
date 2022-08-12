@@ -201,7 +201,8 @@ describe('DotPageStateService', () => {
                     inode: '',
                     name: 'iPad',
                     cssHeight: '',
-                    cssWidth: ''
+                    cssWidth: '',
+                    identifier: ''
                 };
                 service.setDevice(device);
 

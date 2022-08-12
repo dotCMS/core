@@ -176,6 +176,7 @@ export class DotContentletEditorService {
         if (events.load) {
             this._load = events.load;
         }
+
         if (events.keyDown) {
             this._keyDown = events.keyDown;
         }

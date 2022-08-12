@@ -154,6 +154,7 @@ export class DotThemeSelectorDropdownComponent
         if (this.value) {
             this.currentSiteIdentifier = this.value.hostId;
         }
+
         this.searchInput.nativeElement.value = '';
         this.setHostThemes(this.currentSiteIdentifier);
     }
@@ -218,6 +219,7 @@ export class DotThemeSelectorDropdownComponent
                     this.themes = themes;
                     this.setTotalRecords();
                 }
+
                 this.initialLoad = false;
             });
     }

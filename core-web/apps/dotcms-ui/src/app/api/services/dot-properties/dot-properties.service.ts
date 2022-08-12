@@ -35,6 +35,7 @@ export class DotPropertiesService {
      */
     getKeyAsList(key: string): Observable<string[]> {
         const finalKey = `list:${key}`;
+
         return this.coreWebService
             .requestView<{ [key: string]: string[] }>({
                 url: `/api/v1/configuration/config?keys=${finalKey}`

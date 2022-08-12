@@ -8,6 +8,7 @@ export class DotcmsEventsServiceMock {
         if (!this.observers[clientEventType]) {
             this.observers[clientEventType] = new Subject();
         }
+
         return this.observers[clientEventType].asObservable();
     }
 

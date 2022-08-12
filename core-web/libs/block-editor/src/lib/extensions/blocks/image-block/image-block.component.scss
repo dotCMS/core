@@ -1,8 +1,8 @@
-@use "libs/dot-primeng-theme-styles/src/scss/variables" as *;
+@use "libs/block-editor/src/lib/scss/variables" as *;
 
 :host {
     display: block;
-    margin-bottom: $spacing-3;
+    margin-bottom: $dot-editor-size;
 
     img {
         max-width: 100%;

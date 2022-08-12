@@ -261,8 +261,8 @@ public class ContentletWebAPIImplIntegrationTest extends IntegrationTestBase {
 
         final TemplateLayout templateLayout = DotTemplateTool.themeLayout(template.getInode());
         final String drawedBodyJson = JsonTransformer.mapper.writeValueAsString(templateLayout);
-        assertFalse(drawedBodyJson.contains(String.format("//%s/", oldHostName)));
-        assertTrue(drawedBodyJson.contains(String.format("//%s/", newHostname)));
+        assertFalse("drawedBodyJson: "  + drawedBodyJson  + " oldHostName: "  + oldHostName, drawedBodyJson.contains(String.format("//%s/", oldHostName)));
+        assertTrue("drawedBodyJson: "  + drawedBodyJson  + " newHostname: "  + newHostname, drawedBodyJson.contains(String.format("//%s/", newHostname)));
     }
 
     private void checkTemplate(
@@ -405,10 +405,7 @@ public class ContentletWebAPIImplIntegrationTest extends IntegrationTestBase {
 
         contentletWebAPI.saveContent(hostMap, false, false, user);
 
-        final String[] jobGroupNames = QuartzUtils.getScheduler().getJobGroupNames();
-
-        assertFalse(jobGroupNames.length > 0 &&
-                Arrays.asList(jobGroupNames).contains("update_containers_paths_job"));
+        waitUntilJobIsFinish();
 
         final Template templateFromDatabase = APILocator.getTemplateAPI().find(template.getInode(), user, false);
 

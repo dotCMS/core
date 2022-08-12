@@ -8,6 +8,7 @@ export interface DotMessageServiceParams {
     buildDate?: string;
     language?: string;
 }
+
 @Injectable({
     providedIn: 'root'
 })

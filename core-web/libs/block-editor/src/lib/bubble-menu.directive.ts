@@ -3,6 +3,7 @@ import { Editor } from '@tiptap/core';
 import { BubbleMenuPlugin, BubbleMenuPluginProps } from '@tiptap/extension-bubble-menu';
 
 @Directive({
+    // eslint-disable-next-line @angular-eslint/directive-selector
     selector: 'tiptap-bubble-menu[editor], [tiptapBubbleMenu][editor]'
 })
 export class BubbleMenuDirective implements OnInit, OnDestroy {

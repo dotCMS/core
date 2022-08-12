@@ -14,6 +14,7 @@ const domSanitizer = new ɵDomSanitizerImpl(document);
 
 const headings = [...Array(3).keys()].map((level) => {
     const size = level + 1;
+
     return {
         label: `Heading ${size}`,
         icon: sanitizeUrl(headerIcons[level]),
@@ -82,3 +83,5 @@ export const SuggestionPopperModifiers = [
         }
     }
 ];
+
+export const CONTENT_SUGGESTION_ID = 'contentlets';

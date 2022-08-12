@@ -24,6 +24,7 @@ export class PublicAuthGuardService implements CanActivate {
                 if (isLogin) {
                     this.router.goToMain();
                 }
+
                 return !isLogin;
             })
         );

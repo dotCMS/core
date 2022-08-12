@@ -89,6 +89,7 @@ export class DotLoginComponent implements OnInit, OnDestroy {
                     } else {
                         this.loggerService.debug(res);
                     }
+
                     this.setFromState(false);
                     this.dotLoadingIndicatorService.hide();
                 }

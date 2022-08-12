@@ -100,6 +100,7 @@ export class DotFormatDateService {
      */
     formatTZ(date: Date, formatPattern: string): string {
         const zonedDate = utcToZonedTime(date, this._systemTimeZone.id);
+
         return formatTZ(zonedDate, formatPattern, { timeZone: this._systemTimeZone.id });
     }
 
