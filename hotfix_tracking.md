@@ -159,3 +159,5 @@ This maintenance release includes the following code fixes:
 87. https://github.com/dotCMS/core/issues/22124 : When logged in to front end, automatically redirect to back-end edit mode #22124
 88. https://github.com/dotCMS/core/issues/22204 : We are not notifying the UI about the bad request error changing password #22204
 89. https://github.com/dotCMS/core/issues/22149 : The push publish button in the expansion menu on the users portlet doesn't just push the selected user, it pushes all users #22149
+90. https://github.com/dotCMS/core/issues/22237 : Limited User Can't Open Page if it has a content that doesn't have permissions over #22237
+91. 
