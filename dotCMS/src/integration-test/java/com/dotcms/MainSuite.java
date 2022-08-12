@@ -91,7 +91,6 @@ import com.dotcms.security.multipart.SecureFileValidatorTest;
 import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
-import com.dotcms.util.XStreamFactoryTest;
 import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotmarketing.beans.HostTest;
 import com.dotmarketing.business.DeterministicIdentifierAPITest;
@@ -181,6 +180,8 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        ContentletWebAPIImplIntegrationTest.class, // moved to top because of failures on GHA
+        DependencyBundlerTest.class, // moved to top because of failures on GHA
         FolderCacheImplIntegrationTest.class,
         StaticPublisherIntegrationTest.class,
         com.dotcms.publishing.PublisherAPIImplTest.class,
@@ -443,7 +444,6 @@ import org.junit.runners.Suite.SuiteClasses;
         GoogleTranslationServiceIntegrationTest.class,
         Task05380ChangeContainerPathToAbsoluteTest.class,
         DotTemplateToolTest.class,
-        ContentletWebAPIImplIntegrationTest.class,
         Task05370AddAppsPortletToLayoutTest.class,
         FolderFactoryImplTest.class,
         DotSamlResourceTest.class,
@@ -472,7 +472,6 @@ import org.junit.runners.Suite.SuiteClasses;
         ResetPasswordTokenUtilTest.class,
         ContainerBundlerTest.class,
         ContentTypeBundlerTest.class,
-        DependencyBundlerTest.class,
         FolderBundlerTest.class,
         HostBundlerTest.class,
         LinkBundlerTest.class,
@@ -547,7 +546,6 @@ import org.junit.runners.Suite.SuiteClasses;
         Task220330ChangeVanityURLSiteFieldTypeTest.class,
         Task220402UpdateDateTimezonesTest.class,
         Task220413IncreasePublishedPushedAssetIdColTest.class,
-        XStreamFactoryTest.class,
         com.dotcms.util.pagination.ContainerPaginatorTest.class,
         ContentDispositionFileNameParserTest.class,
         SecureFileValidatorTest.class,

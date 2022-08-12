@@ -25,6 +25,7 @@ import {
     popperModifiers
 } from '../utils/bubble-menu.utils';
 import { findParentNode } from '../utils/prosemirror.utils';
+import { LINK_FORM_PLUGIN_KEY } from '../extensions/bubble-link-form.extension';
 
 export const DotBubbleMenuPlugin = (options: DotBubbleMenuPluginProps) => {
     const component = options.component.instance;
@@ -80,7 +81,6 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
     private shouldShowProp = false;
 
-    private selection$FromPos;
     private selectionRange;
     private selectionNodesCount;
     private selectionNode;
@@ -111,6 +111,8 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         document.body.addEventListener('scroll', this.hanlderScroll.bind(this), true);
         document.body.addEventListener('mouseup', this.showMenu.bind(this), true);
         document.body.addEventListener('keyup', this.showMenu.bind(this), true);
+
+        this.editor.off('blur', this.blurHandler);
     }
 
     showMenu() {
@@ -141,15 +143,11 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         this.selectionRange = ranges[0];
         this.selectionNodesCount = 0;
 
-        doc.nodesBetween(
-            this.selectionRange.$from.pos,
-            this.selectionRange.$to.pos,
-            (node, _pos) => {
-                if (node.isBlock) {
-                    this.selectionNodesCount++;
-                }
+        doc.nodesBetween(this.selectionRange.$from.pos, this.selectionRange.$to.pos, (node) => {
+            if (node.isBlock) {
+                this.selectionNodesCount++;
             }
-        );
+        });
 
         const from = Math.min(...ranges.map((range) => range.$from.pos));
         const to = Math.max(...ranges.map((range) => range.$to.pos));
@@ -188,6 +186,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
         this.updateComponent();
         this.setMenuItems(doc, from);
+        this.show();
     }
 
     /* @Overrrider */
@@ -198,11 +197,9 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         this.element.removeEventListener('mousedown', this.mousedownHandler, { capture: true });
         this.view.dom.removeEventListener('dragstart', this.dragstartHandler);
 
-        this.editor.off('focus', this.focusHandler);
-        this.editor.off('blur', this.blurHandler);
-
         this.component.instance.command.unsubscribe();
         this.component.instance.toggleChangeTo.unsubscribe();
+
         this.component.destroy();
         this.changeTo.destroy();
 
@@ -304,7 +301,11 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                 break;
 
             case 'link':
-                this.editor.commands.toogleLinkForm();
+                // eslint-disable-next-line
+                const { isOpen } = LINK_FORM_PLUGIN_KEY.getState(this.editor.state);
+                isOpen
+                    ? this.editor.view.focus()
+                    : this.editor.commands.openLinkForm({ openOnClick: false });
                 break;
 
             case 'deleteNode':
@@ -332,7 +333,12 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
     }
 
     setChangeToOptions() {
-        const changeToOptions = suggestionOptions.filter((item) => item.id != 'horizontalLine');
+        const allowedBlocks: string[] = this.editor.storage.dotConfig.allowedBlocks;
+
+        const changeToOptions =
+            allowedBlocks.length > 1
+                ? suggestionOptions.filter((item) => allowedBlocks.includes(item.id))
+                : suggestionOptions.filter((item) => item.id != 'horizontalLine');
         const changeTopCommands = {
             heading1: () => {
                 this.editor.chain().focus().clearNodes().setHeading({ level: 1 }).run();
@@ -393,7 +399,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
     createChangeToTooltip() {
         const { element: editorElement } = this.editor.options;
 
-        if (this.tippyChangeTo || !editorElement) {
+        if (this.tippyChangeTo) {
             return;
         }
 

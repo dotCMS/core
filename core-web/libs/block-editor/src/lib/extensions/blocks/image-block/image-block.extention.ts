@@ -4,6 +4,8 @@ import { DOMOutputSpec, ParseRule } from 'prosemirror-model';
 import { ImageBlockComponent } from './image-block.component';
 import { AngularNodeViewRenderer } from '../../../NodeViewRenderer';
 
+export const IMAGE_BLOCK_NAME = 'dotImage';
+
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         ImageBlock: {
@@ -21,7 +23,7 @@ declare module '@tiptap/core' {
 
 export const ImageBlock = (injector: Injector): Node => {
     return Node.create({
-        name: 'dotImage',
+        name: IMAGE_BLOCK_NAME,
         group: 'block',
         inline: false,
         draggable: true,

@@ -33,6 +33,15 @@
         height: 2.625 * $dot-editor-size;
         flex-basis: 2.625 * $dot-editor-size;
     }
+
+    &.url-item {
+        &,
+        dot-contentlet-thumbnail {
+            flex-basis: 4 * $dot-editor-size;
+            height: 4 * $dot-editor-size;
+            width: 4 * $dot-editor-size;
+        }
+    }
 }
 
 .data-wrapper {
@@ -43,11 +52,18 @@
         display: block;
         white-space: nowrap;
         text-overflow: ellipsis;
+        margin-bottom: 4px;
+    }
+
+    .url {
+        color: $gray-light;
+        font-size: 0.9 * $dot-editor-size;
     }
 
     .state {
         margin-top: (0.5 * $dot-editor-size);
         display: flex;
+        align-items: flex-end;
 
         dot-state-icon {
             margin-right: (0.5 * $dot-editor-size);

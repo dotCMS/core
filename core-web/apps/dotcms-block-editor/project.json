@@ -16,13 +16,16 @@
                     "apps/dotcms-block-editor/src/favicon.ico",
                     "apps/dotcms-block-editor/src/assets"
                 ],
-                "styles": ["apps/dotcms-block-editor/src/styles.scss"],
                 "scripts": [
                     {
                         "bundleName": "generator-runtime",
                         "input": "node_modules/regenerator-runtime/runtime.js"
                     }
                 ],
+                "stylePreprocessorOptions": {
+                    "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
+                },
+                "allowedCommonJsDependencies": ["lodash.isequal"],
                 "vendorChunk": true,
                 "extractLicenses": false,
                 "buildOptimizer": false,
@@ -49,12 +52,12 @@
                         {
                             "type": "initial",
                             "maximumWarning": "2mb",
-                            "maximumError": "5mb"
+                            "maximumError": "2mb"
                         },
                         {
                             "type": "anyComponentStyle",
-                            "maximumWarning": "6kb",
-                            "maximumError": "10kb"
+                            "maximumWarning": "200kb",
+                            "maximumError": "200kb"
                         }
                     ]
                 }

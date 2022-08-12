@@ -1,8 +1,10 @@
 {
 	"info": {
-		"_postman_id": "214ebbd5-cae7-4080-806c-e7cf3a9f7dc3",
+		"_postman_id": "02bcda5b-2892-4357-9a9c-b44e74c6b357",
 		"name": "PushPublishFilterResource",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+		"description": "This collection tests basic operations performed on Push Publishing Filters.\n\nYou may create Push Publishing filters to control which content is pushed from your sending server to your receiving server. The filters allow you to have fine-grained control over what content does and does not get pushed, whether intentionally (when specifically selected) or by dependency.\n\nYou may create as many filters as you wish. You can specify permissions for the filters, allowing you to control what content and objects different users and Roles may push. For example, you can allow users with a specific Role to only push content of a specific Content Type, or only push content in a specific location.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "5403727"
 	},
 	"item": [
 		{
@@ -289,7 +291,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"key\":\"NoWorkflow.yml\",\n    \"title\":\"Push without Wofklows Updated.\",\n    \"defaultFilter\":\"false\",\n    \"roles\":\"DOTCMS_BACK_END_USER\",\n    \"filters\": {\n        \"excludeQuery\": \"\",\n        \"excludeClasses\": [\"Host\", \"Workflow\", \"OSGI\"],\n        \"dependencies\": true,\n        \"excludeDependencyQuery\": \"\",\n        \"excludeDependencyClasses\": [\"Host\", \"Workflow\"],\n        \"forcePush\": false,\n        \"relationships\": false\n    }\n}",
+					"raw": "{\n    \"key\":\"NoWorkflow.yml\",\n    \"title\":\"Push without Wofklows Updated.\",\n    \"defaultFilter\":\"false\",\n    \"roles\":\"DOTCMS_BACK_END_USER\",\n    \"sort\": \"0\",\n    \"filters\": {\n        \"excludeQuery\": \"\",\n        \"excludeClasses\": [\"Host\", \"Workflow\", \"OSGI\"],\n        \"dependencies\": true,\n        \"excludeDependencyQuery\": \"\",\n        \"excludeDependencyClasses\": [\"Host\", \"Workflow\"],\n        \"forcePush\": false,\n        \"relationships\": false\n    }\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -373,6 +375,86 @@
 						"filters"
 					]
 				}
+			},
+			"response": []
+		},
+		{
+			"name": "Check Filter Order - Sort Value",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"The 'NoWorkflow.yml' Filter must be #1 in the list, as it was updated before to have sort = 0.\", function () {",
+							"    pm.expect(jsonData.entity[0].key).to.eql('NoWorkflow.yml');",
+							"});",
+							"",
+							"pm.test(\"The 'ContentOnly.yml' Filter must be #2 in the list.\", function () {",
+							"    pm.expect(jsonData.entity[1].key).to.eql('ContentOnly.yml');",
+							"});",
+							"",
+							"pm.test(\"The 'WebContentOnly.yml' Filter must be #3 in the list.\", function () {",
+							"    pm.expect(jsonData.entity[2].key).to.eql('WebContentOnly.yml');",
+							"});",
+							"",
+							"pm.test(\"The 'Intelligent.yml' Filter must be #4 in the list.\", function () {",
+							"    pm.expect(jsonData.entity[3].key).to.eql('Intelligent.yml');",
+							"});",
+							"",
+							"pm.test(\"The 'ForcePush.yml' Filter must be #5 in the list.\", function () {",
+							"    pm.expect(jsonData.entity[4].key).to.eql('ForcePush.yml');",
+							"});",
+							"",
+							"pm.test(\"The 'ShallowPush.yml' Filter must be #6 in the list.\", function () {",
+							"    pm.expect(jsonData.entity[5].key).to.eql('ShallowPush.yml');",
+							"});",
+							"",
+							"pm.test(\"The 'TestPPFilter.yml' Filter must be #7 in the list, as it was updated before to have sort = 20\", function () {",
+							"    pm.expect(jsonData.entity[6].key).to.eql('TestPPFilter.yml');",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/pushpublish/filters",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"pushpublish",
+						"filters"
+					]
+				},
+				"description": "Requests all the Push Publishing Filters in the system and verifies that they're being returned in the correct order.\n\nIn this case, the `NoWorkflow` and the `TestPPFilter` filters had their sort values set to \"0\" and \"20\" respectively. This means that they must show up first and last in the result list. This is because their sort values are set and the default alphabetical order won't be applied."
 			},
 			"response": []
 		},

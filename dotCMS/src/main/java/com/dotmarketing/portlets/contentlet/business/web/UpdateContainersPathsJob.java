@@ -50,9 +50,14 @@ public class UpdateContainersPathsJob extends DotStatefulJob  {
     @WrapInTransaction
     @Override
     public void run(final JobExecutionContext jobContext) throws JobExecutionException {
+
         final JobDataMap jobDataMap = jobContext.getJobDetail().getJobDataMap();
         final String oldHostName = jobDataMap.get("oldHostName").toString();
         final String newHostName = jobDataMap.get("newHostName").toString();
+
+        Logger.debug(UpdateContainersPathsJob.class, () ->
+                String.format("Running UpdateContainersPathsJob -> oldHostName: %s newHostName: %s",
+                        oldHostName, newHostName));
 
         try {
             final List<Map<String, Object>> templates = getAllTemplatesByPath(oldHostName);
@@ -81,6 +86,8 @@ public class UpdateContainersPathsJob extends DotStatefulJob  {
                Logger.error(UpdateContainersPathsJob.class, e.getMessage());
             }
         }
+
+        Logger.debug(UpdateContainersPathsJob.class, () -> "Finished UpdateContainersPathsJob");
     }
 
     private void cleanCache(final List<Map<String, Object>> templates, final Host host) throws DotDataException {
@@ -122,10 +129,11 @@ public class UpdateContainersPathsJob extends DotStatefulJob  {
 
         final String randomID = UUID.randomUUID().toString();
 
+        final String jobName  = "updateContainersPathsJob-" + randomID;
+        final String groupName = "update_containers_paths_job";
+
         final JobDetail jobDetail = new JobDetail(
-                "updateContainersPathsJob-" + randomID,
-                "update_containers_paths_job",
-                UpdateContainersPathsJob.class
+                jobName, groupName, UpdateContainersPathsJob.class
         );
 
         jobDetail.setJobDataMap(jobDataMap);
@@ -135,9 +143,7 @@ public class UpdateContainersPathsJob extends DotStatefulJob  {
 
         long startTime = System.currentTimeMillis();
         final SimpleTrigger trigger = new SimpleTrigger(
-                "updateContainersPathsTrigger",
-                "update_containers_paths_job_triggers",
-                new Date(startTime)
+                jobName, groupName, new Date(startTime)
         );
 
         try {

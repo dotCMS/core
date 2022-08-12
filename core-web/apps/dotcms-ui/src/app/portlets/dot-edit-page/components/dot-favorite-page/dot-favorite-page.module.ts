@@ -27,10 +27,6 @@ import { MultiSelectModule } from 'primeng/multiselect';
         ReactiveFormsModule,
         MultiSelectModule
     ],
-    providers: [
-        DotTempFileUploadService,
-        DotWorkflowActionsFireService,
-        DotRolesService
-    ]
+    providers: [DotTempFileUploadService, DotWorkflowActionsFireService, DotRolesService]
 })
 export class DotFavoritePageModule {}

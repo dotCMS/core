@@ -30,8 +30,6 @@ const SOURCE_TEST_RESOURCES_FOLDER = 'cicd/resources'
 const TARGET_TEST_RESOURCES_FOLDER = 'dotCMS/src/integration-test/resources'
 const LICENSE_FOLDER = 'custom/dotsecure/license'
 const projectRoot = core.getInput('project_root')
-const tomcatRoot = path.join(projectRoot, 'dist', 'dotserver', 'tomcat-9.0.60')
-const SYSTEM_FELIX_FOLDER = path.join(tomcatRoot, 'webapps', 'ROOT', 'WEB-INF', 'felix-system')
 const workspaceRoot = path.dirname(projectRoot)
 const IT_FOLDERS = [
   'custom/assets',
@@ -39,8 +37,7 @@ const IT_FOLDERS = [
   'custom/esdata',
   'custom/output/reports/html',
   'custom/felix',
-  LICENSE_FOLDER,
-  SYSTEM_FELIX_FOLDER
+  LICENSE_FOLDER
 ]
 
 const TEST_RESOURCES = [path.join(projectRoot, SOURCE_TEST_RESOURCES_FOLDER, 'log4j2.xml')]
@@ -50,18 +47,18 @@ const TEST_RESOURCES = [path.join(projectRoot, SOURCE_TEST_RESOURCES_FOLDER, 'lo
  *
  * @param propertyMap properties vaslues map
  */
-export const setupTests = (propertyMap: Map<string, string>) => {
+export const setupTests = async (propertyMap: Map<string, string>) => {
   // prepare folders and copy files
-  prepareTests()
+  await prepareTests()
 
   // override existing properties
-  overrideProperties(propertyMap)
+  await overrideProperties(propertyMap)
 
   // append new properties
   appendProperties(propertyMap)
 
   // prepare license
-  prepareLicense()
+  await prepareLicense()
 }
 
 /**
@@ -83,6 +80,7 @@ const prepareTests = async () => {
     const itFolder = path.join(workspaceRoot, folder)
     core.info(`Creating IT folder ${itFolder}`)
     fs.mkdirSync(itFolder, {recursive: true})
+    await exec.exec('ls', ['-las', path.dirname(itFolder)])
   }
 
   for (const res of TEST_RESOURCES) {
@@ -127,7 +125,7 @@ const appendProperties = (propertyMap: Map<string, string>) => {
   for (const file of appends.files) {
     core.info(`Appending properties to ${file.file}`)
     const line = file.lines.join('\n')
-    core.info(`Appeding properties:\n ${line}`)
+    core.info(`Appending properties:\n${line}`)
     fs.appendFileSync(file.file, `\n${line}`, {encoding: 'utf8', flag: 'a+', mode: 0o666})
   }
 }
@@ -234,6 +232,7 @@ const getOverrides = (propertyMap: Map<string, string>): OverrideProperties => {
  */
 const getAppends = (propertyMap: Map<string, string>): AppendProperties => {
   const felixFolder = getValue(propertyMap, 'felixFolder')
+  const systemFelixFolder = getValue(propertyMap, 'systemFelixFolder')
   const esDataFolder = getValue(propertyMap, 'esDataFolder')
   const logsFolder = getValue(propertyMap, 'logsFolder')
   const dotCmsFolder = getValue(propertyMap, 'dotCmsFolder')
@@ -247,7 +246,7 @@ const getAppends = (propertyMap: Map<string, string>): AppendProperties => {
           `felix.felix.fileinstall.dir=${felixFolder}/load`,
           `felix.felix.undeployed.dir=${felixFolder}/undeploy`,
           'dotcms.concurrent.locks.disable=false',
-          `system.felix.base.dir=${SYSTEM_FELIX_FOLDER}`
+          `system.felix.base.dir=${systemFelixFolder}`
         ]
       },
       {
