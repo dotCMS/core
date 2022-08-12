@@ -11,7 +11,9 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Optional;
 import javax.inject.Inject;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
@@ -19,21 +21,25 @@ import picocli.CommandLine.ExitCode;
 
 
 @QuarkusTest
-public class StatusCommandTest {
-
-    @Inject
-    PicocliCommandLineFactory factory;
-
-    @Inject
-    ServiceManager serviceManager;
+public class StatusCommandTest extends CommandTest {
 
     @Inject
     AuthenticationContext authenticationContext;
 
+    @BeforeAll
+    public static void beforeAll() {
+        disableAnsi();
+    }
+
+    @AfterAll
+    public static void afterAll() {
+        enableAnsi();
+    }
+
     @BeforeEach
     public void setupTest() throws IOException {
         //Destroy the config file that say what dotCMS instance we're connected to.
-        serviceManager.removeAll().persist(ServiceBean.builder().name("default").active(true).build());
+        resetServiceProfiles();
         //in case any other test has already logged in.
         authenticationContext.reset();
     }
@@ -69,8 +75,7 @@ public class StatusCommandTest {
     @Test
     public void Test_Command_Status_Default_Profile_Not_Logged_In() throws IOException {
 
-        serviceManager.removeAll()
-                .persist(ServiceBean.builder().name("default").active(true).build());
+        resetServiceProfiles();
 
         final CommandLine commandLine = factory.create();
         final StringWriter writer = new StringWriter();
@@ -125,8 +130,7 @@ public class StatusCommandTest {
         final String user = "admin@dotCMS.com";
         final String passwd = "admin";
 
-        serviceManager.removeAll()
-                .persist(ServiceBean.builder().name("default").active(true).build());
+        resetServiceProfiles();
         authenticationContext.login(user, passwd.toCharArray());
 
         //Test the user and credential got stored after an OK login
