@@ -8,7 +8,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import javax.inject.Inject;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -16,17 +18,21 @@ import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
 @QuarkusTest
-public class LoginCommandTest {
+public class LoginCommandTest extends CommandTest {
 
-    @Inject
-    PicocliCommandLineFactory factory;
+    @BeforeAll
+    public static void beforeAll() {
+        disableAnsi();
+    }
 
-    @Inject
-    ServiceManager serviceManager;
+    @AfterAll
+    public static void afterAll() {
+        enableAnsi();
+    }
 
     @BeforeEach
     public void setupTest() throws IOException {
-        serviceManager.removeAll().persist(ServiceBean.builder().name("default").active(true).build());
+        resetServiceProfiles();
     }
 
     /**
@@ -102,7 +108,5 @@ public class LoginCommandTest {
         }
 
     }
-
-
 
 }

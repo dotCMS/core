@@ -412,9 +412,10 @@
         window.scrollTo(0,0);	// To show lightbox effect(IE) and save content errors.
         dijit.byId('savingContentDialog').show();
 
-        // Check if the relations HTML have been loaded.
-        await waitForRelation(relationsName);
-
+        // Check if the relations have not been loaded.
+        if(!allRelationsHaveLoad()) {
+            await waitForRelation();
+        }
 
         if(isAutoSave && isContentSaving){
             return;
