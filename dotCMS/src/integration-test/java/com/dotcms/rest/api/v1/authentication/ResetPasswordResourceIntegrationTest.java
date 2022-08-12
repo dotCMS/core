@@ -26,6 +26,7 @@ import javax.ws.rs.core.Response;
 public class ResetPasswordResourceIntegrationTest{
 
     static ResetPasswordResource resource;
+    private final String newPassword = "n3wP@ssworD";
 
     @BeforeClass
 	public static void prepare() throws Exception{
@@ -67,7 +68,7 @@ public class ResetPasswordResourceIntegrationTest{
         UserUtil.update(newUser);
 
         //Call Resource
-        final Response responseResource = resource.resetPassword(getHttpRequest(),getResetPasswordForm("n3wPa$$w0rD",token));
+        final Response responseResource = resource.resetPassword(getHttpRequest(),getResetPasswordForm(newPassword,token));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         //Check password has changed
