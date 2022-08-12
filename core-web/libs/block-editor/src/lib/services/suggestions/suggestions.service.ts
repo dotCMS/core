@@ -6,7 +6,7 @@ import { pluck } from 'rxjs/operators';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { ContentletFilters, DEFAULT_LANG_ID } from '../../extensions/bubble-menu/models/index';
+import { ContentletFilters, DEFAULT_LANG_ID } from '@dotcms/block-editor';
 
 @Injectable()
 export class SuggestionsService {

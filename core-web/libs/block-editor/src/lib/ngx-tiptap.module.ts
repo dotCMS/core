@@ -19,13 +19,13 @@ import {
     BubbleMenuDirective,
     DraggableDirective,
     NodeViewContentDirective
-} from './directives/api';
+} from './directives';
 
 // Services
-import { SuggestionsService, DotImageService } from './services/api';
+import { SuggestionsService, DotImageService } from './services';
 
 // Nodes
-import { ContentletBlockComponent, ImageBlockComponent } from './nodes/api';
+import { ContentletBlockComponent, ImageBlockComponent } from './nodes';
 
 // Extension Components
 import {
@@ -36,7 +36,7 @@ import {
     DragHandlerComponent,
     FormActionsComponent,
     LoaderComponent
-} from './extensions/api';
+} from './extensions';
 
 // Shared
 import {
@@ -45,7 +45,7 @@ import {
     SuggestionsListItemComponent,
     SuggestionLoadingListComponent,
     ContentletStatePipe
-} from './shared/api';
+} from './shared';
 
 @NgModule({
     imports: [

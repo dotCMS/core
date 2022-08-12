@@ -3,7 +3,7 @@ import { EditorView } from 'prosemirror-view';
 import { EditorState } from 'prosemirror-state';
 import { BubbleMenuPluginProps, BubbleMenuViewProps } from '@tiptap/extension-bubble-menu';
 import { ComponentRef, EventEmitter } from '@angular/core';
-import { SuggestionsComponent } from '../../../shared/components/suggestions/suggestions.component';
+import { SuggestionsComponent } from '@dotcms/block-editor';
 
 export const DEFAULT_LANG_ID = 1;
 

@@ -1,5 +1,5 @@
 import { Extension } from '@tiptap/core';
-import { DotConfigModel } from './models/dot-config.model';
+import { DotConfigModel } from './models';
 
 // Storage configuration in the editor under the name space dotConfig
 // access through editor.storage.dotConfig

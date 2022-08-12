@@ -1,5 +1,7 @@
 import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { AngularNodeViewComponent } from '../../NodeViewRenderer';
+
+// Models
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 @Component({

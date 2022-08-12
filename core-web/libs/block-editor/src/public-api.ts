@@ -6,16 +6,16 @@ export * from './lib/AngularRenderer';
 export * from './lib/NodeViewRenderer';
 
 // Editor Extensions
-export * from './lib/extensions/api';
+export * from './lib/extensions';
 
 // Editor Nodes
-export * from './lib/nodes/api';
+export * from './lib/nodes';
 
 // Editor Directives
-export * from './lib/directives/api';
+export * from './lib/directives';
 
 // Services
-export * from './lib/services/api';
+export * from './lib/services';
 
 // Shared
-export * from './lib/shared/api';
+export * from './lib/shared';
