@@ -141,7 +141,7 @@ public class SAMLHelper {
             final Company company  = companyAPI.getDefaultCompany();
             final String  authType = company.getAuthType();
             final boolean doHash   = identityProviderConfiguration.containsOptionalProperty(DO_HASH_KEY)?
-                    BooleanUtils.toBoolean(identityProviderConfiguration.getOptionalProperty(DO_HASH_KEY).toString()):false;
+                    BooleanUtils.toBoolean(identityProviderConfiguration.getOptionalProperty(DO_HASH_KEY).toString()):true;
             user                   = Company.AUTH_TYPE_ID.equals(authType)?
                     this.loadUserById(nameId, systemUser, doHash):
                     this.userAPI.loadByUserByEmail(nameId, systemUser, false);
@@ -511,7 +511,7 @@ public class SAMLHelper {
         try {
 
             final boolean doHash      = identityProviderConfiguration.containsOptionalProperty(DO_HASH_KEY)?
-                    BooleanUtils.toBoolean(identityProviderConfiguration.getOptionalProperty(DO_HASH_KEY).toString()):false;
+                    BooleanUtils.toBoolean(identityProviderConfiguration.getOptionalProperty(DO_HASH_KEY).toString()):true;
             final String nameID       = this.samlAuthenticationService.getValue(attributesBean.getNameID());
             final String hashedNameID = this.hashIt(nameID, doHash);
             try {
