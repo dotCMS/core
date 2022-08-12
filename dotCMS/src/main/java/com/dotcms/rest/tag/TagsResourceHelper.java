@@ -59,7 +59,6 @@ public class TagsResourceHelper {
      * @return
      */
     public String getSiteId (final String siteId, final HttpServletRequest request) {
-
         if (UtilMethods.isSet(siteId)) {
             final Host host = Try.of(()->hostAPI.find(siteId, APILocator.systemUser(), false)).getOrNull();
             if(null == host || UtilMethods.isNotSet(host.getIdentifier())){

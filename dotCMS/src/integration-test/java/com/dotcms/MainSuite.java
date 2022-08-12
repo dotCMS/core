@@ -180,7 +180,8 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
-        DependencyBundlerTest.class,
+        ContentletWebAPIImplIntegrationTest.class, // moved to top because of failures on GHA
+        DependencyBundlerTest.class, // moved to top because of failures on GHA
         FolderCacheImplIntegrationTest.class,
         StaticPublisherIntegrationTest.class,
         com.dotcms.publishing.PublisherAPIImplTest.class,
@@ -443,7 +444,6 @@ import org.junit.runners.Suite.SuiteClasses;
         GoogleTranslationServiceIntegrationTest.class,
         Task05380ChangeContainerPathToAbsoluteTest.class,
         DotTemplateToolTest.class,
-        ContentletWebAPIImplIntegrationTest.class,
         Task05370AddAppsPortletToLayoutTest.class,
         FolderFactoryImplTest.class,
         DotSamlResourceTest.class,
