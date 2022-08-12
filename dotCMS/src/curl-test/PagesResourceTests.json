@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "0f71306d-44ac-4861-8c82-f747d4b171f8",
+		"_postman_id": "423e3f39-d4c5-4389-acad-8f5496ccb9bb",
 		"name": "Page API - [api/v1/page]",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "781456"
@@ -3343,7 +3343,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"htmlpageasset\",\n        \"hostFolder\": \"default\",\n        \"title\": \"Test Page Host variables\",\n        \"url\": \"testpagehostvariables\",\n        \"template\":\"{{templateIdToPublishedHost}}\",\n        \"sortOrder\":1,\n        \"cachettl\":\"0\",\n        \"friendlyName\":\"testpagehostvariables\"\n\n    }\n}"
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"htmlpageasset\",\n        \"hostFolder\": \"{{siteIdTestHost}}\",\n        \"title\": \"Test Page Host variables\",\n        \"url\": \"testpagehostvariables\",\n        \"template\":\"{{templateIdToPublishedHost}}\",\n        \"sortOrder\":1,\n        \"cachettl\":\"0\",\n        \"friendlyName\":\"testpagehostvariables\"\n\n    }\n}"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
