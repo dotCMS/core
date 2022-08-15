@@ -26,4 +26,3 @@ rm -rf $dart_sass_lib
 mkdir -p $dart_sass_lib
 ## Rename the folder to have the expected naming convention before moving it to the "WEB-INF/bin/" folder
 mv ./dart-sass $dart_sass_lib$folder_name
-chmod 755 /srv/dotserver/${tomcat_dir}/webapps/ROOT/WEB-INF/bin/dart-sass-*/sass
