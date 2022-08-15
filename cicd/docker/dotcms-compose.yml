@@ -34,6 +34,7 @@ services:
       DOT_ASYNC_REINDEX_COMMIT_LISTENERS: "false"
       DOT_ASYNC_COMMIT_LISTENERS: "false"
       DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS: 600
+      CUSTOM_STARTER_URL:
       WAIT_FOR_DEPS:
     depends_on:
       - database
