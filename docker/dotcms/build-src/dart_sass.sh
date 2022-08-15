@@ -11,17 +11,19 @@ set -e
 ## 2. The Tomcat version number in the "dart_sass_lib" variable must be updated every time Tomcat gets updated.
 ## ====================================================================================================================
 
-dartSassLatest=$1
-fileName='dart-sass.tar.gz'
-dart_sass_lib='/srv/dotserver/tomcat-9.0.60/webapps/ROOT/WEB-INF/bin/'
+dart_sass_latest=$1
+tomcat_dir=$(basename /srv/dotserver/tomcat-*)
+file_name='dart-sass.tar.gz'
+dart_sass_lib="/srv/dotserver/${tomcat_dir}/webapps/ROOT/WEB-INF/bin/"
 arch=$(uname -m)
 [[ "$arch" == 'x86_64' ]] && arch='x64'
-folderName="dart-sass-linux-$arch"
+folder_name="dart-sass-linux-$arch"
 
-curl -s -L -o $fileName https://github.com/sass/dart-sass/releases/download/$dartSassLatest/dart-sass-$dartSassLatest-linux-$arch.tar.gz
-tar -xf $fileName
+curl -s -L -o $file_name https://github.com/sass/dart-sass/releases/download/$dart_sass_latest/dart-sass-$dart_sass_latest-linux-$arch.tar.gz
+tar -xf $file_name
 
 rm -rf $dart_sass_lib
 mkdir -p $dart_sass_lib
 ## Rename the folder to have the expected naming convention before moving it to the "WEB-INF/bin/" folder
-mv ./dart-sass $dart_sass_lib$folderName
+mv ./dart-sass $dart_sass_lib$folder_name
+chmod 755 /srv/dotserver/${tomcat_dir}/webapps/ROOT/WEB-INF/bin/dart-sass-*/sass
