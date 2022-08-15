@@ -26,6 +26,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -433,13 +434,20 @@ public class RoleResource implements Serializable {
 									schema = @Schema(implementation = ResponseEntitySmallRoleView.class)))})
 	public Response searchRoles(@Context final HttpServletRequest request,
 							    @Context final HttpServletResponse response,
-							    @DefaultValue("")   @QueryParam("searchName") final String searchName,
-								@DefaultValue("")   @QueryParam("searchKey") final String searchKey,
-								@DefaultValue("")   @QueryParam("roleId")     final String roleId,
-								@DefaultValue("0")  @QueryParam("start")      final int startParam,
-								@DefaultValue("20") @QueryParam("count")      final int count,
-								@DefaultValue("true") @QueryParam("includeUserRoles")      final boolean includeUserRoles,
-								@DefaultValue("false") @QueryParam("includeWorkflowRoles")  final boolean includeWorkflowRoles)
+							    @Parameter(name = "searchName", description = "Value to filter by role name")
+									@DefaultValue("")   @QueryParam("searchName") final String searchName,
+								@Parameter(name = "searchKey", description = "Value to filter by role key")
+									@DefaultValue("")   @QueryParam("searchKey") final String searchKey,
+								@Parameter(name = "roleId", description = "Value for specific role id")
+									@DefaultValue("")   @QueryParam("roleId")     final String roleId,
+								@Parameter(name = "start", description = "Offset on pagination")
+									@DefaultValue("0")  @QueryParam("start")      final int startParam,
+								@Parameter(name = "count", description = "Size on pagination")
+									@DefaultValue("20") @QueryParam("count")      final int count,
+								@Parameter(name = "includeUserRoles", description = "Set false if do not want to include user rules")
+									@DefaultValue("true") @QueryParam("includeUserRoles")      final boolean includeUserRoles,
+								@Parameter(name = "includeWorkflowRoles", description = "Set to true if want to include the workflow roles")
+									@DefaultValue("false") @QueryParam("includeWorkflowRoles")  final boolean includeWorkflowRoles)
             throws DotDataException, DotSecurityException, LanguageException, IOException, InvocationTargetException, IllegalAccessException {
 
 		final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource).requiredBackendUser(true)
