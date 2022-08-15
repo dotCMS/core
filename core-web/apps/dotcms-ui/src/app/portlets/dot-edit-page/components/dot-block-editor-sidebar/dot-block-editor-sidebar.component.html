@@ -1,12 +1,13 @@
 <p-sidebar
     #sidebar
-    blockScroll="true"
+    [blockScroll]="true"
     [visible]="!!this.data"
     position="right"
     [dismissible]="false"
     [showCloseIcon]="false"
     [closeOnEscape]="false"
     (onHide)="sidebar.destroyModal(); closeSidebar()"
+    data-testid="sidebar"
 >
     <div class="container" *ngIf="this.data">
         <dotcms-block-editor
@@ -22,19 +23,19 @@
             <button
                 pButton
                 class="p-button-secondary"
-                data-testid="cancelBtn"
                 type="button"
                 (click)="closeSidebar()"
                 [label]="'Cancel' | dm"
+                data-testid="cancelBtn"
             ></button>
             <button
                 [disabled]="saving"
                 [loading]="saving"
                 pButton
-                data-testid="saveBtn"
                 type="button"
                 (click)="saveEditorChanges()"
                 [label]="'Update' | dm"
+                data-testid="updateBtn"
             ></button>
         </footer>
     </div>

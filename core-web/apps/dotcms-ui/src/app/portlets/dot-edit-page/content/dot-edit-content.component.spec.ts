@@ -39,7 +39,10 @@ import { DotPageStateService } from './services/dot-page-state/dot-page-state.se
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
-import { DotEditContentComponent } from './dot-edit-content.component';
+import {
+    DotEditContentComponent,
+    EDIT_BLOCK_EDITOR_CUSTOM_EVENT
+} from './dot-edit-content.component';
 import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit-page-info.module';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
@@ -154,6 +157,7 @@ describe('DotEditContentComponent', () => {
     let dotCustomEventHandlerService: DotCustomEventHandlerService;
     let dotConfigurationService: DotPropertiesService;
     let dotLicenseService: DotLicenseService;
+    let dotEventsService: DotEventsService;
 
     function detectChangesForIframeRender(fix) {
         fix.detectChanges();
@@ -299,6 +303,7 @@ describe('DotEditContentComponent', () => {
         dotCustomEventHandlerService = de.injector.get(DotCustomEventHandlerService);
         dotConfigurationService = de.injector.get(DotPropertiesService);
         dotLicenseService = de.injector.get(DotLicenseService);
+        dotEventsService = de.injector.get(DotEventsService);
         spyOn(dotPageStateService, 'reload');
 
         spyOn(dotEditContentHtmlService, 'renderAddedForm').and.returnValue(
@@ -950,6 +955,22 @@ describe('DotEditContentComponent', () => {
                         const menu = de.query(By.css('dot-reorder-menu'));
                         expect(menu.componentInstance.url).toBe('');
                         expect(dotPageStateService.reload).toHaveBeenCalledTimes(1);
+                    }));
+
+                    it('should handle edit-block-editor', fakeAsync(() => {
+                        detectChangesForIframeRender(fixture);
+                        spyOn(dotEventsService, 'notify');
+
+                        triggerIframeCustomEvent({
+                            name: 'edit-block-editor',
+                            data: 'test'
+                        });
+                        fixture.detectChanges();
+
+                        expect(dotEventsService.notify).toHaveBeenCalledWith(
+                            EDIT_BLOCK_EDITOR_CUSTOM_EVENT,
+                            'test'
+                        );
                     }));
                 });
 

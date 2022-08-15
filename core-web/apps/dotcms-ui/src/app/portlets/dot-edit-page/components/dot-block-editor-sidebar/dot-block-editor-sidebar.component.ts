@@ -4,6 +4,9 @@ import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fi
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { Subject } from 'rxjs';
 import { DotBlockEditorComponent } from '@dotcms/block-editor';
+import { HttpErrorResponse } from '@angular/common/http';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 
 export interface BlockEditorData {
     content: { [key: string]: string };
@@ -27,7 +30,9 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
 
     constructor(
         private dotWorkflowActionsFireService: DotWorkflowActionsFireService,
-        private dotEventsService: DotEventsService
+        private dotEventsService: DotEventsService,
+        private dotMessageService: DotMessageService,
+        private dotGlobalMessageService: DotGlobalMessageService
     ) {}
 
     ngOnInit(): void {
@@ -54,12 +59,22 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
                 indexPolicy: 'WAIT_FOR'
             })
             .pipe(take(1))
-            .subscribe(() => {
-                this.saving = false;
-                const customEvent = new CustomEvent('ng-event', { detail: { name: 'in-iframe' } });
-                window.top.document.dispatchEvent(customEvent);
-                this.data = null;
-            });
+            .subscribe(
+                () => {
+                    this.saving = false;
+                    const customEvent = new CustomEvent('ng-event', {
+                        detail: { name: 'in-iframe' }
+                    });
+                    window.top.document.dispatchEvent(customEvent);
+                    this.data = null;
+                },
+                (e: HttpErrorResponse) => {
+                    const message =
+                        e.error.errors[0].message ||
+                        this.dotMessageService.get('editpage.inline.error');
+                    this.dotGlobalMessageService.error(message);
+                }
+            );
     }
 
     closeSidebar(): void {
