@@ -5,6 +5,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.system.permission.ResponseEntityPermissionView;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
@@ -576,4 +577,45 @@ public class RoleResource implements Serializable {
 
         return list;
     }
+
+	/**
+	 * Load the user and roles by role id.
+	 * @param request   {@link HttpServletRequest}
+	 * @param response  {@link HttpServletResponse}
+	 * @param roleId    {@link String} role
+	 * @param roleHierarchyForAssign {@link Boolean} true if want to include the hierarchy, false by default
+	 * @param roleNameToFilter {@link String} prefix role name, if you want to filter the results
+	 * @return Response
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@GET
+	@Path("/users/{userId}")
+	@Produces("application/json") // ResponseEntityRoleView
+	@Operation(summary = "Get User Role",
+			responses = {
+					@ApiResponse(
+							responseCode = "200",
+							content = @Content(mediaType = "application/json",
+									schema = @Schema(implementation = ResponseEntityRoleView.class)))})
+	@SuppressWarnings("unchecked")
+	public Response getUserRole(@Context final HttpServletRequest request,
+								@Context final HttpServletResponse response,
+								@PathParam   ("userId") final String userId) throws DotDataException, DotSecurityException {
+
+		new WebResource.InitBuilder(this.webResource).requiredBackendUser(true)
+				.requiredFrontendUser(false).requestAndResponse(request, response)
+				.rejectWhenNoUser(true).init();
+
+		Logger.debug(this, ()-> "Getting the user role for the user: " + userId);
+
+		if(UtilMethods.isSet(userId)) {
+
+			final User userForRole = userAPI.loadUserById(userId);
+			return Response.ok(new ResponseEntityRoleView(
+					new RoleView(this.roleAPI.getUserRole(userForRole), null))).build();
+		}
+
+		throw new BadRequestException("User id is required");
+	}
 }
