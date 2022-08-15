@@ -86,9 +86,7 @@ public class DotLibSassCompiler extends DotCSSCompiler {
             final DartSassCompiler compiler = new DartSassCompiler(compileTargetFile, compileDestinationFile);
             final Optional<String> out = compiler.compile();
             handleOutput(compiler.terminalOutput());
-            if (out.isPresent()) {
-                this.output = out.get().getBytes();
-            }
+            this.output = out.isPresent() ? out.get().getBytes() : null;
         } catch (final Exception ex) {
             final String errorMsg = String.format("Unable to compile SASS code in %s:%s [ live:%s ]: %s", inputHost,
                     inputURI, inputLive, ex.getMessage());
