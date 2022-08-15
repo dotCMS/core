@@ -86,7 +86,9 @@ public class DotLibSassCompiler extends DotCSSCompiler {
             final DartSassCompiler compiler = new DartSassCompiler(compileTargetFile, compileDestinationFile);
             final Optional<String> out = compiler.compile();
             handleOutput(compiler.terminalOutput());
-            this.output = out.get().getBytes();
+            if (out.isPresent()) {
+                this.output = out.get().getBytes();
+            }
         } catch (final Exception ex) {
             final String errorMsg = String.format("Unable to compile SASS code in %s:%s [ live:%s ]: %s", inputHost,
                     inputURI, inputLive, ex.getMessage());
@@ -114,17 +116,25 @@ public class DotLibSassCompiler extends DotCSSCompiler {
         } else if (terminalOutput.failed()) {
             Logger.error(this, terminalOutput.output());
             notifyUI(terminalOutput.output(), MessageSeverity.ERROR);
+        } else if (-1 == terminalOutput.exitValue()) {
+            Logger.error(this, "A system level error occurred when executing the SASS compiler. Please " +
+                    "check for potential permission errors or any other OS-related problems.");
+            Logger.error(this, terminalOutput.output());
+            notifyUI(terminalOutput.output(), MessageSeverity.ERROR);
         }
     }
 
     /**
      * Provides the currently logged-in User with a notification in the UI when an SCSS compilation error or warning is
-     * thrown.
+     * thrown. Null or empty messages will NOT be sent.
      *
-     * @param message  The error or warning message from the SCSS Compiler.
+     * @param message  The message from the SCSS Compiler.
      * @param severity The message severity. E.g, {@link MessageSeverity#ERROR} , {@link MessageSeverity#WARNING} .
      */
     private void notifyUI(final String message, final MessageSeverity severity) {
+        if (!UtilMethods.isSet(message) || null == severity) {
+            return;
+        }
         final SystemMessageBuilder messageBuilder =
                 new SystemMessageBuilder().setMessage(UtilMethods.htmlLineBreak(message)).setType(MessageType.SIMPLE_MESSAGE).setSeverity(severity).setLife(10000);
         final User loggedInUser = WebAPILocator.getUserWebAPI().getLoggedInUser(req);

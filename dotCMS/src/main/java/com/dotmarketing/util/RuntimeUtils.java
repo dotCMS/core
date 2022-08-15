@@ -86,9 +86,9 @@ public class RuntimeUtils {
         final TerminalOutput terminalOutput = new TerminalOutput();
         final Process process = Try.of(() -> runProcess(commands)).getOrNull();
         if (process == null) {
-            Logger.warn(
-                    RuntimeUtils.class,
-                    String.format("Cannot run process for provided command %s", String.join(" ", commands)));
+            final String errorMsg = String.format("Cannot run process for provided command %s", String.join(" ", commands));
+            Logger.warn(RuntimeUtils.class, errorMsg);
+            terminalOutput.output(errorMsg);
             return terminalOutput;
         }
 
@@ -226,12 +226,12 @@ public class RuntimeUtils {
         }
 
         /**
-         * Returns {@code true} when the exit value after running the specified command is NOT zero.
+         * Returns {@code true} when the exit value after running the specified command is greater than zero.
          *
          * @return If the command execution failed or an error was returned, returns {@code true}.
          */
         public boolean failed() {
-            return 0 != this.exitValue ? Boolean.TRUE : Boolean.FALSE;
+            return this.exitValue > 0 ? Boolean.TRUE : Boolean.FALSE;
         }
 
         @Override
