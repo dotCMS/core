@@ -11,7 +11,7 @@ import io.vavr.Lazy;
 public class ContentletPaginatedBuilder {
 
     private String luceneQuery;
-    private User user;
+    private User user = APILocator.systemUser();
     private boolean respectFrontendRoles;
     private ContentletAPI contentletAPI;
     private int perPage = -1;
@@ -44,7 +44,7 @@ public class ContentletPaginatedBuilder {
     }
 
     public ContentletsPaginated build(){
-        if (UtilMethods.isSet(contentletAPI)) {
+        if (!UtilMethods.isSet(contentletAPI)) {
             contentletAPI = APILocator.getContentletAPI();
         }
 

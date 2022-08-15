@@ -7,8 +7,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PaginatedArrayList;
-import com.google.common.annotations.VisibleForTesting;
+import com.dotmarketing.util.PaginatedArrayList;;
 import com.liferay.portal.model.User;
 import java.util.Iterator;
 import java.util.List;
@@ -24,9 +23,8 @@ public class ContentletsPaginated implements Iterable<Contentlet> {
     private String luceneQuery;
     private boolean respectFrontendRoles;
 
-    private String SORT_BY = "title desc";
+    private String SORT_BY = "title asc";
     private int perPage;
-    private int currentOffset = 0;
     private long totalHits = NOT_LOAD;
     private List<String> currentPageContentletInodes = null;
 
@@ -39,7 +37,7 @@ public class ContentletsPaginated implements Iterable<Contentlet> {
         this.perPage = perPage;
 
         try {
-            currentPageContentletInodes = loadNextPage();
+            currentPageContentletInodes = loadNextPage(0);
         } catch (DotSecurityException | DotDataException e) {
             Logger.error(ContentletIterator.class, e.getMessage());
         }
@@ -55,11 +53,11 @@ public class ContentletsPaginated implements Iterable<Contentlet> {
         return new ContentletIterator();
     }
 
-    private List<String> loadNextPage() throws DotSecurityException, DotDataException {
+    private List<String> loadNextPage(final int offset) throws DotSecurityException, DotDataException {
          final PaginatedArrayList<ContentletSearch> paginatedArrayList = (PaginatedArrayList) this.contentletAPI
                 .searchIndex(this.luceneQuery,
                         perPage,
-                        currentOffset,
+                        offset,
                         SORT_BY,
                         this.user,
                         this.respectFrontendRoles);
@@ -91,7 +89,7 @@ public class ContentletsPaginated implements Iterable<Contentlet> {
         public Contentlet next() {
             try {
                 if (currentIndex >= currentPageContentletInodes.size()) {
-                    currentPageContentletInodes = loadNextPage();
+                    currentPageContentletInodes = loadNextPage(currentTotalIndex);
                     currentIndex = 0;
                 }
 

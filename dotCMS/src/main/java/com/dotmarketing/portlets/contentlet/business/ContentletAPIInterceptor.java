@@ -30,6 +30,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.contentet.pagination.ContentletsPaginated;
 import com.liferay.portal.model.User;
 import org.elasticsearch.action.search.SearchResponse;
 
@@ -959,7 +960,35 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         return c;
     }
 
-    @Override
+	@Override
+	public ContentletsPaginated findContentletsPaginatedByHost(
+			final Host parentHost,
+			final List<Integer> includingContentTypes,
+			final List<Integer> excludingContentTypes,
+			final User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException{
+		for (ContentletAPIPreHook pre : preHooks) {
+			boolean preResult = pre.findContentletsByHost(parentHost, includingContentTypes,
+					excludingContentTypes, user, respectFrontendRoles);
+			if (!preResult) {
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed "
+						+ pre.getClass().getName());
+			}
+		}
+
+		final ContentletsPaginated contentletsPaginatedByHost = conAPI.findContentletsPaginatedByHost(
+				parentHost, includingContentTypes,
+				excludingContentTypes, user, respectFrontendRoles);
+
+		for (ContentletAPIPostHook post : postHooks) {
+			post.findContentletsByHost(parentHost, includingContentTypes,
+					excludingContentTypes, user, respectFrontendRoles);
+		}
+		return contentletsPaginatedByHost;
+	}
+
+
+	@Override
 	public List<Contentlet> findContentletsByHostBaseType(Host parentHost,
 												  List<Integer> includingBaseTypes, User user,
 												  boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
