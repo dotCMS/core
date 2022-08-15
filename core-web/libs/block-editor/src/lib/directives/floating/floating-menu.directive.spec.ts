@@ -4,7 +4,7 @@ import { By } from '@angular/platform-browser';
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 
-import { EditorDirective } from '../editor/editor.directive';
+import { EditorDirective } from '@dotcms/block-editor';
 import { FloatingMenuDirective } from './floating-menu.directive';
 
 @Component({

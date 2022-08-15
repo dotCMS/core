@@ -24,6 +24,3 @@ export * from './drag-handler/drag-handler.component';
 // Image Uploader
 export * from './image-uploader/image-uploader.extension';
 export * from './image-uploader/components/loader/loader.component';
-
-// Suggestion Loading List
-export * from '../shared/components/suggestion-loading-list/suggestion-loading-list.component';

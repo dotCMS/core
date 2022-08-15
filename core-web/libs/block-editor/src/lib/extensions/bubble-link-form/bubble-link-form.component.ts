@@ -11,10 +11,7 @@ import { FormBuilder, FormGroup } from '@angular/forms';
 import { debounceTime } from 'rxjs/operators';
 
 // Components
-import {
-    SuggestionsCommandProps,
-    SuggestionsComponent
-} from '../../shared/components/suggestions/suggestions.component';
+import { SuggestionsCommandProps, SuggestionsComponent } from '@dotcms/block-editor';
 
 // Models
 import { isValidURL } from '../bubble-menu/utils';
