@@ -32,7 +32,7 @@ public class DartSassCompiler {
         multiKeyMap.put(MAC_OS, RuntimeUtils.ARM64_ARCH, "dart-sass-macos-arm64/sass");
         multiKeyMap.put(MAC_OS, RuntimeUtils.X86_64_ARCH, "dart-sass-macos-x64/sass");
         multiKeyMap.put(LINUX_OS, RuntimeUtils.ARM64_ARCH, "dart-sass-linux-arm64/sass");
-        multiKeyMap.put(LINUX_OS, RuntimeUtils.X86_64_ARCH, "dart-sass-linux-x64/sass");
+        multiKeyMap.put(LINUX_OS, RuntimeUtils.AMD64_ARCH, "dart-sass-linux-x64/sass");
         return multiKeyMap;
     });
 
