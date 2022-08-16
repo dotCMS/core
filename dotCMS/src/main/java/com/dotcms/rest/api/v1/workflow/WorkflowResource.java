@@ -592,7 +592,6 @@ public class WorkflowResource {
             fireBulkActionsForm.getPopupParamsBean()
                     .getAdditionalParamsMap().put(SUCCESS_ACTION_CALLBACK,
                             (Consumer<Long>) delta -> {
-                                Logger.info(this, "CALLBACK ------");
                                 eventBuilder.name("success");
                                 eventBuilder.data(Map.class,
                                         map("success", delta));
@@ -1575,6 +1574,8 @@ public class WorkflowResource {
                     .workflowWhereToSend(fireActionForm.getWhereToSend())
                     .workflowIWantTo(fireActionForm.getIWantTo())
                     .workflowPathToMove(fireActionForm.getPathToMove());
+
+            this.processPermissions(fireActionForm, formBuilder);
         }
 
         if (contentlet.getMap().containsKey(Contentlet.RELATIONSHIP_KEY)) {
@@ -1598,6 +1599,23 @@ public class WorkflowResource {
                                         this.workflowAPI.fireContentWorkflow(contentlet, formBuilder.build()))
                 )
         ).build(); // 200
+    }
+
+    private void processPermissions(final FireActionForm fireActionForm,
+                                    final ContentletDependencies.Builder formBuilder) {
+
+        if (UtilMethods.isSet(fireActionForm.getIndividualPermissions())) {
+
+            final List<Permission> permissions = new ArrayList<>();
+            for(final Map.Entry<PermissionAPI.Type, List<String>> entry :
+                    fireActionForm.getIndividualPermissions().entrySet()) {
+
+                entry.getValue().forEach(roleId -> permissions.add(
+                        new Permission(null, roleId, entry.getKey().getType())));
+            }
+
+            formBuilder.permissions(permissions);
+        }
     }
 
     private boolean needSave (final FireActionForm fireActionForm) {

@@ -60,6 +60,7 @@ export class DotContentTypeStore extends ComponentStore<ContentTypeState> {
                             }),
                             catchError((error) => {
                                 this.isSaving(false);
+
                                 return this.httpErrorManagerService.handle(error);
                             })
                         )

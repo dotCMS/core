@@ -52,11 +52,12 @@ const DEPS_ENV: {[key: string]: string} = {
   DOTCMS_IMAGE: builtImageName,
   TEST_TYPE: 'postman',
   DB_TYPE: dbType,
-  CUUSTOM_STARTER_FOLDER: customStarterUrl,
+  CUSTOM_STARTER_FOLDER: customStarterUrl,
   WAIT_FOR_DEPS: waitForDeps,
   POSTGRES_USER: 'postgres',
   POSTGRES_PASSWORD: 'postgres',
-  POSTGRES_DB: 'dotcms'
+  POSTGRES_DB: 'dotcms',
+  JVM_ENDPOINT_TEST_PASS: 'obfuscate_me'
 }
 
 /*
@@ -64,7 +65,7 @@ const DEPS_ENV: {[key: string]: string} = {
  * @returns a number representing the command exit code
  */
 export const runTests = async (): Promise<PostmanTestsResult> => {
-  setup()
+  await setup()
   startDeps()
   printInfo()
 
@@ -78,7 +79,7 @@ export const runTests = async (): Promise<PostmanTestsResult> => {
       skipResultsReport: !fs.existsSync(reportFolder)
     }
   } finally {
-    copyOutputs()
+    await copyOutputs()
     await stopDeps()
   }
 }
@@ -97,11 +98,11 @@ const copyOutputs = async () => {
 /**
  * Sets up everuthing needed to run postman collections.
  */
-const setup = () => {
-  installDeps()
+const setup = async () => {
+  await installDeps()
   createFolders()
-  prepareLicense()
-  printInfo()
+  await prepareLicense()
+  await printInfo()
 }
 
 const printInfo = async () => {
@@ -252,7 +253,7 @@ const runPostmanCollections = async (): Promise<PostmanTestsResult> => {
         `<tr><td><a href="./${normalized}.html">${collection}</a></td><td style="color: #ffffff; background-color: ${
           passed ? '#28a745' : '#dc3545'
         }; font-weight: bold;">${passed ? PASSED : FAILED}</td>
-        <td>${duration} seconds</td>
+        <td>${duration}</td>
         </tr>`
       )
     }
@@ -344,7 +345,7 @@ const delay = (seconds: number) => new Promise(resolve => setTimeout(resolve, se
  *
  * @param wait time to wait
  * @param startLabel start label
- * @param endLabel endlabel
+ * @param endLabel end label
  */
 const waitFor = async (wait: number, startLabel: string, endLabel?: string) => {
   core.info(`Waiting ${wait} seconds for ${startLabel}`)

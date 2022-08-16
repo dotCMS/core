@@ -95,6 +95,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
                   if (item.key === savedVariable.key) {
                       item = savedVariable;
                   }
+
                   return item;
               })
             : [savedVariable, ...this.fieldVariables];

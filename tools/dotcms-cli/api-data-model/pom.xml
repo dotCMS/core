@@ -22,7 +22,6 @@
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
         <quarkus.platform.version>2.9.1.Final</quarkus.platform.version>
         <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
-        <version.java-keytar>1.0.0</version.java-keytar>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -84,13 +83,12 @@
             <artifactId>quarkus-rest-client-jackson</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.starxg</groupId>
-            <artifactId>java-keytar</artifactId>
-            <version>${version.java-keytar}</version>
-        </dependency>
-        <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-devtools-registry-client</artifactId>
         </dependency>
     </dependencies>
     <build>

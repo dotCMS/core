@@ -44,6 +44,7 @@ const RadioButtonTemplate = `
 
 const Template: Story<{ selectedValue: string }> = (props: { selectedValue: string }) => {
     const template = RadioButtonTemplate;
+
     return {
         props,
         template

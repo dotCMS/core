@@ -182,9 +182,11 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
                         case 'User-Info-Confirm-Current-Password-Failed':
                             this.confirmPasswordFailedMsg = message;
                             break;
+
                         case 'User-Info-Save-Password-Failed':
                             this.newPasswordFailedMsg = message;
                             break;
+
                         default:
                             this.httpErrorManagerService
                                 .handle(response)

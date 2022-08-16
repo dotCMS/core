@@ -25,6 +25,7 @@ import {
     popperModifiers
 } from '../utils/bubble-menu.utils';
 import { findParentNode } from '../utils/prosemirror.utils';
+import { LINK_FORM_PLUGIN_KEY } from '../extensions/bubble-link-form.extension';
 
 export const DotBubbleMenuPlugin = (options: DotBubbleMenuPluginProps) => {
     const component = options.component.instance;
@@ -49,17 +50,23 @@ export const DotBubbleMenuPlugin = (options: DotBubbleMenuPluginProps) => {
                 if (changeTo.isOpen) {
                     if (key === 'Escape') {
                         component.toggleChangeTo.emit();
+
                         return true;
                     }
+
                     if (key === 'Enter') {
                         changeTo.execCommand();
+
                         return true;
                     }
+
                     if (key === 'ArrowDown' || key === 'ArrowUp') {
                         changeTo.updateSelection(event);
+
                         return true;
                     }
                 }
+
                 return false;
             }
         }
@@ -74,7 +81,6 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
     private shouldShowProp = false;
 
-    private selection$FromPos;
     private selectionRange;
     private selectionNodesCount;
     private selectionNode;
@@ -105,6 +111,8 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         document.body.addEventListener('scroll', this.hanlderScroll.bind(this), true);
         document.body.addEventListener('mouseup', this.showMenu.bind(this), true);
         document.body.addEventListener('keyup', this.showMenu.bind(this), true);
+
+        this.editor.off('blur', this.blurHandler);
     }
 
     showMenu() {
@@ -135,15 +143,11 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         this.selectionRange = ranges[0];
         this.selectionNodesCount = 0;
 
-        doc.nodesBetween(
-            this.selectionRange.$from.pos,
-            this.selectionRange.$to.pos,
-            (node, pos) => {
-                if (node.isBlock) {
-                    this.selectionNodesCount++;
-                }
+        doc.nodesBetween(this.selectionRange.$from.pos, this.selectionRange.$to.pos, (node) => {
+            if (node.isBlock) {
+                this.selectionNodesCount++;
             }
-        );
+        });
 
         const from = Math.min(...ranges.map((range) => range.$from.pos));
         const to = Math.max(...ranges.map((range) => range.$to.pos));
@@ -160,6 +164,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         if (!this.shouldShowProp) {
             this.hide();
             this.tippyChangeTo?.hide();
+
             return;
         }
 
@@ -170,6 +175,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
                     if (node) {
                         const type = doc.nodeAt(from).type.name;
+
                         return getNodePosition(node, type);
                     }
                 }
@@ -180,6 +186,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
         this.updateComponent();
         this.setMenuItems(doc, from);
+        this.show();
     }
 
     /* @Overrrider */
@@ -190,11 +197,9 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         this.element.removeEventListener('mousedown', this.mousedownHandler, { capture: true });
         this.view.dom.removeEventListener('dragstart', this.dragstartHandler);
 
-        this.editor.off('focus', this.focusHandler);
-        this.editor.off('blur', this.blurHandler);
-
         this.component.instance.command.unsubscribe();
         this.component.instance.toggleChangeTo.unsubscribe();
+
         this.component.destroy();
         this.changeTo.destroy();
 
@@ -216,6 +221,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
     updateActiveItems = (items: BubbleMenuItem[] = [], activeMarks: string[]): BubbleMenuItem[] => {
         return items.map((item) => {
             item.active = activeMarks.includes(item.markAction);
+
             return item;
         });
     };
@@ -247,43 +253,61 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
             case 'bold':
                 this.editor.commands.toggleBold();
                 break;
+
             case 'italic':
                 this.editor.commands.toggleItalic();
                 break;
+
             case 'strike':
                 this.editor.commands.toggleStrike();
                 break;
+
             case 'underline':
                 this.editor.commands.toggleUnderline();
                 break;
+
             case 'left':
                 this.toggleTextAlign(action, active);
                 break;
+
             case 'center':
                 this.toggleTextAlign(action, active);
                 break;
+
             case 'right':
                 this.toggleTextAlign(action, active);
                 break;
+
             case 'bulletList':
                 this.editor.commands.toggleBulletList();
                 break;
+
             case 'orderedList':
                 this.editor.commands.toggleOrderedList();
                 break;
+
             case 'indent':
                 if (isListNode(this.editor)) {
                     this.editor.commands.sinkListItem('listItem');
                 }
+
                 break;
+
             case 'outdent':
                 if (isListNode(this.editor)) {
                     this.editor.commands.liftListItem('listItem');
                 }
+
                 break;
+
             case 'link':
-                this.editor.commands.toogleLinkForm();
+                // eslint-disable-next-line
+                const { isOpen } = LINK_FORM_PLUGIN_KEY.getState(this.editor.state);
+                isOpen
+                    ? this.editor.view.focus()
+                    : this.editor.commands.openLinkForm({ openOnClick: false });
                 break;
+
             case 'deleteNode':
                 if (this.selectionNodesCount > 1) {
                     this.deleteByRange();
@@ -292,6 +316,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                 }
 
                 break;
+
             case 'clearAll':
                 this.editor.commands.unsetAllMarks();
                 this.editor.commands.clearNodes();
@@ -308,7 +333,12 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
     }
 
     setChangeToOptions() {
-        const changeToOptions = suggestionOptions.filter((item) => item.id != 'horizontalLine');
+        const allowedBlocks: string[] = this.editor.storage.dotConfig.allowedBlocks;
+
+        const changeToOptions =
+            allowedBlocks.length > 1
+                ? suggestionOptions.filter((item) => allowedBlocks.includes(item.id))
+                : suggestionOptions.filter((item) => item.id != 'horizontalLine');
         const changeTopCommands = {
             heading1: () => {
                 this.editor.chain().focus().clearNodes().setHeading({ level: 1 }).run();
@@ -342,12 +372,14 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                     ? this.editor.isActive('heading', option.attributes)
                     : this.editor.isActive(option.id);
             };
+
             option.command = () => {
                 changeTopCommands[option.id]();
                 this.tippyChangeTo.hide();
                 this.setSelectedNodeItem();
             };
         });
+
         return changeToOptions;
     }
 
@@ -367,7 +399,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
     createChangeToTooltip() {
         const { element: editorElement } = this.editor.options;
 
-        if (this.tippyChangeTo || !editorElement) {
+        if (this.tippyChangeTo) {
             return;
         }
 
@@ -432,14 +464,18 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         const selectionParentNode = findParentNode(this.selectionRange.$from);
         const nodeSelectionNodeType: NodeTypes = selectionParentNode.type.name;
 
+        const closestOrderedOrBulletNode = findParentNode(this.selectionRange.$from, [
+            NodeTypes.ORDERED_LIST,
+            NodeTypes.BULLET_LIST
+        ]);
+
+        const { childCount } = closestOrderedOrBulletNode;
+
         switch (nodeSelectionNodeType) {
             case NodeTypes.ORDERED_LIST:
+
+            // eslint-disable-next-line no-fallthrough
             case NodeTypes.BULLET_LIST:
-                const closestOrderedOrBulletNode = findParentNode(this.selectionRange.$from, [
-                    NodeTypes.ORDERED_LIST,
-                    NodeTypes.BULLET_LIST
-                ]);
-                const { childCount } = closestOrderedOrBulletNode;
                 if (childCount > 1) {
                     //delete only the list item selected
                     this.editor.chain().deleteNode(NodeTypes.LIST_ITEM).blur().run();
@@ -447,7 +483,9 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                     // delete the order/bullet node
                     this.editor.chain().deleteNode(closestOrderedOrBulletNode.type).blur().run();
                 }
+
                 break;
+
             default:
                 this.editor.chain().deleteNode(selectionParentNode.type).blur().run();
                 break;

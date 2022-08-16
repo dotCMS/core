@@ -12,6 +12,7 @@ import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.content.model.hydration.MetadataDelegateTest;
+import com.dotcms.contenttype.business.ContentTypeInitializerTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.csspreproc.CSSCacheTest;
@@ -76,6 +77,7 @@ import com.dotcms.rest.api.v1.apps.AppsResourceTest;
 import com.dotcms.rest.api.v1.apps.view.AppsInterpolationTest;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtilTest;
 import com.dotcms.rest.api.v1.folder.FolderResourceTest;
+import com.dotcms.rest.api.v1.menu.MenuResourceTest;
 import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
 import com.dotcms.rest.api.v1.system.ConfigurationHelperTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
@@ -90,7 +92,6 @@ import com.dotcms.security.multipart.SecureFileValidatorTest;
 import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
-import com.dotcms.util.XStreamFactoryTest;
 import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotmarketing.beans.HostTest;
 import com.dotmarketing.business.DeterministicIdentifierAPITest;
@@ -180,6 +181,8 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        ContentletWebAPIImplIntegrationTest.class, // moved to top because of failures on GHA
+        DependencyBundlerTest.class, // moved to top because of failures on GHA
         FolderCacheImplIntegrationTest.class,
         StaticPublisherIntegrationTest.class,
         com.dotcms.publishing.PublisherAPIImplTest.class,
@@ -442,7 +445,6 @@ import org.junit.runners.Suite.SuiteClasses;
         GoogleTranslationServiceIntegrationTest.class,
         Task05380ChangeContainerPathToAbsoluteTest.class,
         DotTemplateToolTest.class,
-        ContentletWebAPIImplIntegrationTest.class,
         Task05370AddAppsPortletToLayoutTest.class,
         FolderFactoryImplTest.class,
         DotSamlResourceTest.class,
@@ -471,7 +473,6 @@ import org.junit.runners.Suite.SuiteClasses;
         ResetPasswordTokenUtilTest.class,
         ContainerBundlerTest.class,
         ContentTypeBundlerTest.class,
-        DependencyBundlerTest.class,
         FolderBundlerTest.class,
         HostBundlerTest.class,
         LinkBundlerTest.class,
@@ -546,7 +547,6 @@ import org.junit.runners.Suite.SuiteClasses;
         Task220330ChangeVanityURLSiteFieldTypeTest.class,
         Task220402UpdateDateTimezonesTest.class,
         Task220413IncreasePublishedPushedAssetIdColTest.class,
-        XStreamFactoryTest.class,
         com.dotcms.util.pagination.ContainerPaginatorTest.class,
         ContentDispositionFileNameParserTest.class,
         SecureFileValidatorTest.class,
@@ -557,7 +557,9 @@ import org.junit.runners.Suite.SuiteClasses;
         Task220401CreateClusterLockTableTest.class,
         Task220606UpdatePushNowActionletNameTest.class,
         BundlerUtilTest.class,
-        AWSS3PublisherTest.class
+        MenuResourceTest.class,
+        AWSS3PublisherTest.class,
+        ContentTypeInitializerTest.class
 })
 public class MainSuite {
 

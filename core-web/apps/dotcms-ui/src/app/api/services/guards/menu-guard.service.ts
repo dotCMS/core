@@ -41,6 +41,7 @@ export class MenuGuardService implements CanActivate {
                 if (!isValidPortlet) {
                     this.dotNavigationService.goToFirstPortlet();
                 }
+
                 return isValidPortlet;
             })
         );

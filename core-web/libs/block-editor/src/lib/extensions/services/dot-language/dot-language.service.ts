@@ -29,6 +29,7 @@ export class DotLanguageService {
     get defaultHeaders() {
         const headers = new HttpHeaders();
         headers.set('Accept', '*/*').set('Content-Type', 'application/json');
+
         return headers;
     }
 

@@ -143,9 +143,11 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
                         if (a.label > b.label) {
                             return 1;
                         }
+
                         if (a.label < b.label) {
                             return -1;
                         }
+
                         // a must be equal to b
                         return 0;
                     });
@@ -211,6 +213,7 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
             .then((res: Response) => {
                 const contentDisposition = res.headers.get('content-disposition');
                 fileName = this.getFilenameFromContentDisposition(contentDisposition);
+
                 return res.blob();
             })
             .then((blob: Blob) => {
@@ -225,6 +228,7 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
 
     private getFilenameFromContentDisposition(contentDisposition: string): string {
         const key = 'filename=';
+
         return contentDisposition.slice(contentDisposition.indexOf(key) + key.length);
     }
 }

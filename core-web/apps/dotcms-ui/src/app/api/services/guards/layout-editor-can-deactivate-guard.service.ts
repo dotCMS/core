@@ -22,7 +22,6 @@ export interface CanDeactivateGuarded {
  */
 @Injectable()
 export class LayoutEditorCanDeactivateGuardService implements CanDeactivate<CanDeactivateGuarded> {
-
     constructor(private dotEditLayoutService: DotEditLayoutService) {}
 
     /**
@@ -34,9 +33,10 @@ export class LayoutEditorCanDeactivateGuardService implements CanDeactivate<CanD
     canDeactivate(): Observable<boolean> {
         return this.dotEditLayoutService.canBeDesactivated$.pipe(
             filter((res) => {
-                if(!res) {
+                if (!res) {
                     this.dotEditLayoutService.changeCloseEditLayoutState(!res);
                 }
+
                 return res;
             })
         );

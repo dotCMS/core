@@ -715,6 +715,10 @@ public class PermissionAPITest extends IntegrationTestBase {
 	 */
 	@Test
     public void issue560() throws Exception {
+        final String propName = "site.key.dns.validation";
+        final boolean propValue = Config.getBooleanProperty(propName, false);
+        Config.setProperty(propName, false);
+
         Host hh = new Host();
         hh.setHostname("issue560_"+System.currentTimeMillis()+".demo.dotcms.com");
         hh=APILocator.getHostAPI().save(hh, sysuser, false);
@@ -775,6 +779,8 @@ public class PermissionAPITest extends IntegrationTestBase {
             assertTrue(found2);
         }
         finally {
+            Config.setProperty(propName, propValue);
+            
             try {
 
                 if (cont1 != null) {

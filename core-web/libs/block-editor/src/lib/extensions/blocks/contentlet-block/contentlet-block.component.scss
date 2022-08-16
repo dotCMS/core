@@ -1,4 +1,4 @@
-@use "libs/dot-primeng-theme-styles/src/scss/variables" as *;
+@use "libs/block-editor/src/lib/scss/variables" as *;
 
 dotcms-contentlet-block {
     display: block;
@@ -16,14 +16,14 @@ dotcms-contentlet-block {
 
     .p-card-header {
         box-sizing: border-box;
-        min-width: 110px;
+        min-width: 6.875 * $dot-editor-size;
         padding: $spacing-1;
-        width: 110px;
+        width: 6.875 * $dot-editor-size;
     }
 
     .p-card-body {
         box-sizing: border-box;
-        min-width: 100px;
+        min-width: 6.25 * $dot-editor-size;
         padding: $spacing-3;
         padding-right: $spacing-4;
         flex: 1;
@@ -63,8 +63,8 @@ dotcms-contentlet-block {
         align-items: center;
         display: block;
         position: relative;
-        width: 94px;
-        height: 94px;
+        width: 5.875 * $dot-editor-size;
+        height: 5.875 * $dot-editor-size;
     }
 
     .state {

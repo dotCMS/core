@@ -12,6 +12,7 @@ import { Content, Editor, JSONContent } from '@tiptap/core';
 import { Transaction } from 'prosemirror-state';
 
 @Directive({
+    // eslint-disable-next-line @angular-eslint/directive-selector
     selector: 'tiptap[editor], [tiptap][editor], tiptap-editor[editor], [tiptapEditor][editor]',
     providers: [
         {
@@ -71,6 +72,7 @@ export class EditorDirective implements OnInit, ControlValueAccessor, OnDestroy 
 
         if (this.outputFormat === 'html') {
             this.onChange(this.editor.getHTML());
+
             return;
         }
 
