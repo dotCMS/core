@@ -59,6 +59,7 @@ public class SitePaginatorTest {
         assertEquals(hosts, items);
     }
 
+    @Test
     public void testGetItemsWithArchived(){
         final String filter = "filter";
         final boolean showArchived = true;
@@ -66,15 +67,16 @@ public class SitePaginatorTest {
         final int offset = 4;
         final User user = new User();
 
-        when(hostAPI.search( filter, showArchived,false, limit, offset, user, false ))
+        when(hostAPI.search( filter, showArchived, true, false, limit, offset, user, false ))
                 .thenReturn( hosts );
 
         final PaginatedArrayList<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null,
-                map(SitePaginator.ARCHIVED_PARAMETER_NAME, showArchived));
+                map(SitePaginator.ARCHIVED_PARAMETER_NAME, showArchived, SitePaginator.LIVE_PARAMETER_NAME, null));
         assertEquals(totalRecords, items.getTotalResults());
         assertEquals(hosts, items);
     }
 
+    @Test
     public void testGetItemsWithStopped(){
         final String filter = "filter";
         final boolean showStopped = true;
@@ -82,16 +84,17 @@ public class SitePaginatorTest {
         final int offset = 4;
         final User user = new User();
 
-        when(hostAPI.searchByStopped( filter, !showStopped,false, limit, offset, user, false ))
+        when(hostAPI.searchByStopped( filter, showStopped,false, limit, offset, user, false ))
                 .thenReturn( hosts );
 
         final PaginatedArrayList<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null,
-                map(SitePaginator.LIVE_PARAMETER_NAME, !showStopped));
+                map(SitePaginator.LIVE_PARAMETER_NAME, !showStopped, SitePaginator.ARCHIVED_PARAMETER_NAME, null));
 
         assertEquals(totalRecords, items.getTotalResults());
         assertEquals(hosts, items);
     }
 
+    @Test
     public void testGetItemsWithStoppedAndArchived(){
         final String filter = "filter";
         final boolean showArchived = true;
@@ -100,7 +103,7 @@ public class SitePaginatorTest {
         final int offset = 4;
         final User user = new User();
 
-        when(hostAPI.search( filter, showArchived, !showStopped,false, limit, offset, user, false ))
+        when(hostAPI.search( filter, showArchived, showStopped,false, limit, offset, user, false ))
                 .thenReturn( hosts );
 
         final PaginatedArrayList<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null,
@@ -110,6 +113,7 @@ public class SitePaginatorTest {
         assertEquals(hosts, items);
     }
 
+    @Test
     public void testGetItemsWithSystem(){
         final String filter = "filter";
         final int limit = 5;
