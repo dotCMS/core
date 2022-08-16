@@ -31,6 +31,8 @@ RUN chmod 500 /build/dart_sass.sh && /build/dart_sass.sh ${DART_SASS_VERSION}
 RUN mkdir -p /srv/utils /srv/templates /srv/config /srv/home
 RUN chmod -R 666 /srv && find /srv/ -type d -exec chmod a+x {} \;
 
+RUN chmod 755 /srv/dotserver/tomcat-*/webapps/ROOT/WEB-INF/bin/dart-sass-*/sass
+
 # ----------------------------------------------
 # Stage 2:  Construct our container using the minimal-java image
 #           and copying the prebuilt dotcms
