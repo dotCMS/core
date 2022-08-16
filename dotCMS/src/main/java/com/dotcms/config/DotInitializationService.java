@@ -2,6 +2,7 @@ package com.dotcms.config;
 
 import com.dotcms.api.system.event.PayloadVerifierFactoryInitializer;
 import com.dotcms.api.system.event.SystemEventProcessorFactoryInitializer;
+import com.dotcms.contenttype.business.ContentTypeInitializer;
 import com.dotcms.rendering.velocity.events.ExceptionHandlersInitializer;
 import com.dotcms.system.event.local.business.LocalSystemEventSubscribersInitializer;
 import com.dotcms.util.ReflectionUtils;
@@ -114,7 +115,8 @@ public class DotInitializationService implements Serializable {
                 (DotInitializer) APILocator.getPublisherAPI(),
                 (DotInitializer)APILocator.getContainerAPI(),
                 (DotInitializer)APILocator.getThemeAPI(),
-                (DotInitializer)APILocator.getTemplateAPI()
+                (DotInitializer)APILocator.getTemplateAPI(),
+                new ContentTypeInitializer()
         );
     } // getInternalInitializers.
 
