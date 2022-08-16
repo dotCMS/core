@@ -42,6 +42,8 @@ import com.dotcms.enterprise.linkchecker.LinkCheckerAPIImpl;
 import com.dotcms.enterprise.priv.ESSearchProxy;
 import com.dotcms.enterprise.publishing.sitesearch.ESSiteSearchAPI;
 import com.dotcms.enterprise.rules.RulesAPI;
+import com.dotcms.experiments.business.ExperimentsAPI;
+import com.dotcms.experiments.business.ExperimentsAPIImpl;
 import com.dotcms.graphql.business.GraphqlAPI;
 import com.dotcms.graphql.business.GraphqlAPIImpl;
 import com.dotcms.keyvalue.business.KeyValueAPI;
@@ -1083,6 +1085,14 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
+	 * Creates a single instance of the {@link com.dotcms.experiments.business.ExperimentsAPI} class.
+	 * @return the instance
+	 */
+	public static ExperimentsAPI getExperimentsAPI(){
+		return (ExperimentsAPI) getInstance(APIIndex.EXPERIMENTS_API);
+	}
+
+	/**
 	 * Generates a unique instance of the specified dotCMS API.
 	 *
 	 * @param index
@@ -1228,7 +1238,8 @@ enum APIIndex
 	CONTENTLET_METADATA_API,
 	DEVICE_API,
 	DETERMINISTIC_IDENTIFIER_API,
-	CONTENTLET_JSON_API;
+	CONTENTLET_JSON_API,
+	EXPERIMENTS_API;
 
 
 
@@ -1315,6 +1326,7 @@ enum APIIndex
 			case DEVICE_API: return new DeviceAPIImpl();
 			case DETERMINISTIC_IDENTIFIER_API: return new DeterministicIdentifierAPIImpl();
 			case CONTENTLET_JSON_API: return new ContentletJsonAPIImpl();
+			case EXPERIMENTS_API: return new ExperimentsAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
