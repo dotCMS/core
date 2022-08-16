@@ -2,8 +2,12 @@ package com.dotcms.rendering.velocity.viewtools.navigation;
 
 
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.Versionable;
 import com.dotmarketing.portlets.browser.ajax.BrowserAjax;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.PageMode;
 import com.google.common.annotations.VisibleForTesting;
 
 
@@ -11,7 +15,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -26,11 +29,14 @@ import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UtilMethods;
 
+import com.google.common.collect.ImmutableList;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.beanutils.BeanUtils;
@@ -50,7 +56,7 @@ public class NavTool implements ViewTool {
     final long defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage().getId();
     static {
 
-      systemUser = APILocator.systemUser();
+        systemUser = APILocator.systemUser();
 
     }
 
@@ -60,10 +66,10 @@ public class NavTool implements ViewTool {
         try {
             this.request = context.getRequest();
             this.currenthost = WebAPILocator.getHostWebAPI()
-                .getCurrentHost(context.getRequest());
+                    .getCurrentHost(context.getRequest());
             this.currentLanguage = WebAPILocator.getLanguageWebAPI()
-                .getLanguage(this.request)
-                .getId();
+                    .getLanguage(this.request)
+                    .getId();
         } catch (Exception e) {
             Logger.warn(this, e.getMessage(), e);
         }
@@ -73,7 +79,9 @@ public class NavTool implements ViewTool {
         return getNav(host, path, this.currentLanguage, this.systemUser);
     }
 
-    protected NavResultHydrated getNav(Host host, String path, long languageId, User systemUserParam)
+    final List<PageMode> liveOnlyPageModes = ImmutableList.of(PageMode.ADMIN_MODE, PageMode.LIVE);
+
+    protected NavResultHydrated getNav(final Host host, String path, final long languageId, final User systemUserParam)
             throws DotDataException, DotSecurityException {
 
         if (path != null && path.contains(".")) {
@@ -81,145 +89,178 @@ public class NavTool implements ViewTool {
         }
 
         final Folder originalFolder = !path.equals("/") ? APILocator.getFolderAPI()
-            .findFolderByPath(path, host, systemUserParam, true)
+                .findFolderByPath(path, host, systemUserParam, true)
                 : APILocator.getFolderAPI()
-                    .findSystemFolder();
+                        .findSystemFolder();
 
         if (originalFolder == null || !UtilMethods.isSet(originalFolder.getIdentifier())) {
             return null;
         }
 
-        Folder folder = getDefensiveCopyOfFolder(originalFolder);
+        final Folder folder = getDefensiveCopyOfFolder(originalFolder);
 
-        NavResult result = CacheLocator.getNavToolCache()
-            .getNav(host.getIdentifier(), folder.getInode(), languageId);
-        if (result != null) {
+        final PageMode pageMode = pageMode();
 
-            return new NavResultHydrated(result, this.context);
-        } else {
-            String parentId;
-            if (!folder.getInode()
+        final NavToolCache navToolCache = CacheLocator.getNavToolCache();
+
+        //WE only care about cached resulting when we're rendering a live view
+        if(liveOnlyPageModes.contains(pageMode)){
+            final NavResult result = navToolCache.getNav(host.getIdentifier(), folder.getInode(), languageId);
+            if (result != null) {
+                return new NavResultHydrated(result, this.context);
+            }
+        }
+
+        String parentId;
+        if (!folder.getInode()
                 .equals(FolderAPI.SYSTEM_FOLDER)) {
-                Identifier ident = APILocator.getIdentifierAPI()
-                    .find(folder.getIdentifier());
-                parentId = ident.getParentPath()
-                    .equals("/") ? FolderAPI.SYSTEM_FOLDER
-                            : APILocator.getFolderAPI()
-                                .findFolderByPath(ident.getParentPath(), host, systemUserParam, false)
-                                .getInode();
-            } else {
-                //set hostId to systemfolder, so when looking items only brings items of the selected site
-                folder.setHostId(host.getIdentifier());
-                parentId = null;
-            }
-            result = new NavResult(parentId, host.getIdentifier(), folder.getInode(), languageId);
-
             Identifier ident = APILocator.getIdentifierAPI()
-                .find(folder.getIdentifier());
-            result.setHref(ident.getURI());
-            result.setTitle(folder.getTitle());
-            result.setOrder(folder.getSortOrder());
-            result.setType("folder");
-            result.setPermissionId(folder.getPermissionId());
-            List<NavResult> children = new ArrayList<NavResult>();
-            List<String> folderIds = new ArrayList<String>();
-            result.setChildren(children);
-            result.setChildrenFolderIds(folderIds);
-            result.setShowOnMenu(folder.isShowOnMenu());
+                    .find(folder.getIdentifier());
+            parentId = ident.getParentPath()
+                    .equals("/") ? FolderAPI.SYSTEM_FOLDER
+                    : APILocator.getFolderAPI()
+                            .findFolderByPath(ident.getParentPath(), host, systemUserParam, false)
+                            .getInode();
+        } else {
+            //set hostId to systemfolder, so when looking items only brings items of the selected site
+            folder.setHostId(host.getIdentifier());
+            parentId = null;
+        }
 
-            List<?> menuItems = APILocator.getFolderAPI()
-                    .findMenuItems(folder, systemUserParam, true);
-            List<Folder> folders = new ArrayList<>();
-            if (path.equals("/")) {
-                folders.addAll(APILocator.getFolderAPI()
-                        .findSubFolders(host, true));
-            }
+        final NavResult result = new NavResult(parentId, host.getIdentifier(), folder.getInode(), languageId);
 
-            for (Folder itemFolder : folders) {
-                addFolderToNav(host, languageId, folder, children, folderIds, itemFolder);
-            }
+        Identifier ident = APILocator.getIdentifierAPI().find(folder.getIdentifier());
+        result.setHref(ident.getURI());
+        result.setTitle(folder.getTitle());
+        result.setOrder(folder.getSortOrder());
+        result.setType("folder");
+        result.setPermissionId(folder.getPermissionId());
+        List<NavResult> children = new ArrayList<NavResult>();
+        List<String> folderIds = new ArrayList<String>();
+        result.setChildren(children);
+        result.setChildrenFolderIds(folderIds);
+        result.setShowOnMenu(folder.isShowOnMenu());
+
+        List<?> menuItems = APILocator.getFolderAPI()
+                .findMenuItems(folder, systemUserParam, true);
+
+        //We only care about showing/hiding versionables when we're rendering a live view.
+        //This way when we're rendering a live page and we have unpublished an item such item will get excluded from the menuItems on that live page
+        //Both Edit_Mode and Preview_Mode will show all menu items. Therefore, it is not necessary to make any exclusion here for both (Edit_Mode,Preview_Mode)
+        if(liveOnlyPageModes.contains(pageMode)) {
+            menuItems = filterNonLiveItems(menuItems);
+        }
+
+        List<Folder> folders = new ArrayList<>();
+        if (path.equals("/")) {
+            folders.addAll(APILocator.getFolderAPI()
+                    .findSubFolders(host, true));
+        }
+
+        for (Folder itemFolder : folders) {
+            addFolderToNav(host, languageId, folder, children, folderIds, itemFolder);
+        }
 
 
-            for (Object item : menuItems) {
-                if (item instanceof Folder) {
-                    Folder itemFolder = (Folder) item;
-                    if(!folders.contains(itemFolder)) {
-                        addFolderToNav(host, languageId, folder, children, folderIds, itemFolder);
-                    }
-                } else if (item instanceof Link) {
-                    Link itemLink = (Link) item;
-                    NavResult nav = new NavResult(folder.getInode(), host.getIdentifier(), languageId);
+        for (final Object item : menuItems) {
 
-                    if (itemLink.getLinkType()
-                            .equals(LinkType.CODE.toString()) && LinkType.CODE.toString() != null) {
-                        nav.setCodeLink(itemLink.getLinkCode());
-                    } else {
-                        nav.setHref(itemLink.getWorkingURL());
-                    }
-                    nav.setTitle(itemLink.getTitle());
-                    nav.setOrder(itemLink.getSortOrder());
-                    nav.setType("link");
-                    nav.setTarget(itemLink.getTarget());
-                    nav.setPermissionId(itemLink.getPermissionId());
-                    nav.setShowOnMenu(itemLink.isShowOnMenu());
-                    children.add(nav);
-                } else if ((Contentlet.class.cast(item)).isHTMLPage()) {
-                    final IHTMLPage itemPage = APILocator.getHTMLPageAssetAPI().fromContentlet(Contentlet.class.cast(item));
+            if (item instanceof Folder) {
+                Folder itemFolder = (Folder) item;
+                if(!folders.contains(itemFolder)) {
+                    addFolderToNav(host, languageId, folder, children, folderIds, itemFolder);
+                }
+            } else if (item instanceof Link) {
+                Link itemLink = (Link) item;
+                NavResult nav = new NavResult(folder.getInode(), host.getIdentifier(), languageId);
 
-                    if (itemPage.getLanguageId() == languageId || shouldAddHTMLPageInAnotherLang(menuItems, itemPage, languageId)){
-                        final String httpProtocol = "http://";
-                        final String httpsProtocol = "https://";
+                if (itemLink.getLinkType()
+                        .equals(LinkType.CODE.toString()) && LinkType.CODE.toString() != null) {
+                    nav.setCodeLink(itemLink.getLinkCode());
+                } else {
+                    nav.setHref(itemLink.getWorkingURL());
+                }
+                nav.setTitle(itemLink.getTitle());
+                nav.setOrder(itemLink.getSortOrder());
+                nav.setType("link");
+                nav.setTarget(itemLink.getTarget());
+                nav.setPermissionId(itemLink.getPermissionId());
+                nav.setShowOnMenu(itemLink.isShowOnMenu());
+                children.add(nav);
+            } else if ((Contentlet.class.cast(item)).isHTMLPage()) {
+                final IHTMLPage itemPage = APILocator.getHTMLPageAssetAPI().fromContentlet(Contentlet.class.cast(item));
 
-                        ident = APILocator.getIdentifierAPI()
+                if (itemPage.getLanguageId() == languageId || shouldAddHTMLPageInAnotherLang(menuItems, itemPage, languageId)){
+                    final String httpProtocol = "http://";
+                    final String httpsProtocol = "https://";
+
+                    ident = APILocator.getIdentifierAPI()
                             .find(itemPage);
 
-                        String redirectUri = itemPage.getRedirect();
-                        NavResult nav =  new NavResult(folder.getInode(), host.getIdentifier(), itemPage.getLanguageId());
+                    String redirectUri = itemPage.getRedirect();
+                    NavResult nav =  new NavResult(folder.getInode(), host.getIdentifier(), itemPage.getLanguageId());
 
-                        nav.setTitle(itemPage.getTitle());
-                        if (UtilMethods.isSet(redirectUri) && !redirectUri.startsWith("/")) {
-                            if (redirectUri.startsWith(httpsProtocol) || redirectUri.startsWith(httpProtocol)) {
-                                nav.setHref(redirectUri);
-                            } else {
-                                if (itemPage.isHttpsRequired())
-                                    nav.setHref(httpsProtocol + redirectUri);
-                                else
-                                    nav.setHref(httpProtocol + redirectUri);
-                            }
-
+                    nav.setTitle(itemPage.getTitle());
+                    if (UtilMethods.isSet(redirectUri) && !redirectUri.startsWith("/")) {
+                        if (redirectUri.startsWith(httpsProtocol) || redirectUri.startsWith(httpProtocol)) {
+                            nav.setHref(redirectUri);
                         } else {
-                            nav.setHref(ident.getURI());
+                            if (itemPage.isHttpsRequired())
+                                nav.setHref(httpsProtocol + redirectUri);
+                            else
+                                nav.setHref(httpProtocol + redirectUri);
                         }
-                        nav.setOrder(itemPage.getMenuOrder());
-                        nav.setType("htmlpage");
-                        nav.setPermissionId(itemPage.getPermissionId());
-                        nav.setShowOnMenu(itemPage.isShowOnMenu());
-                        children.add(nav);
-                    }
-                } else if ((Contentlet.class.cast(item)).isFileAsset()) {
-                    final IFileAsset itemFile = APILocator.getFileAssetAPI().fromContentlet(Contentlet.class.cast(item));
 
-                    if ( itemFile.getLanguageId() == languageId || shouldAddFileInAnotherLang(menuItems, itemFile, languageId)) {
-                        ident = APILocator.getIdentifierAPI()
-                            .find(itemFile.getPermissionId());
-                        NavResult nav = new NavResult(folder.getInode(), host.getIdentifier(), itemFile.getLanguageId());
-
-                        nav.setTitle(itemFile.getFriendlyName());
+                    } else {
                         nav.setHref(ident.getURI());
-                        nav.setOrder(itemFile.getMenuOrder());
-                        nav.setType("file");
-                        nav.setPermissionId(itemFile.getPermissionId());
-                        nav.setShowOnMenu(itemFile.isShowOnMenu());
-                        children.add(nav);
                     }
+                    nav.setOrder(itemPage.getMenuOrder());
+                    nav.setType("htmlpage");
+                    nav.setPermissionId(itemPage.getPermissionId());
+                    nav.setShowOnMenu(itemPage.isShowOnMenu());
+                    children.add(nav);
+                }
+            } else if ((Contentlet.class.cast(item)).isFileAsset()) {
+                final IFileAsset itemFile = APILocator.getFileAssetAPI().fromContentlet(Contentlet.class.cast(item));
+
+                if ( itemFile.getLanguageId() == languageId || shouldAddFileInAnotherLang(menuItems, itemFile, languageId)) {
+                    ident = APILocator.getIdentifierAPI()
+                            .find(itemFile.getPermissionId());
+                    NavResult nav = new NavResult(folder.getInode(), host.getIdentifier(), itemFile.getLanguageId());
+
+                    nav.setTitle(itemFile.getFriendlyName());
+                    nav.setHref(ident.getURI());
+                    nav.setOrder(itemFile.getMenuOrder());
+                    nav.setType("file");
+                    nav.setPermissionId(itemFile.getPermissionId());
+                    nav.setShowOnMenu(itemFile.isShowOnMenu());
+                    children.add(nav);
                 }
             }
-
-            CacheLocator.getNavToolCache()
-                .putNav(host.getIdentifier(), folder.getInode(), result, languageId);
-
-            return new NavResultHydrated(result, this.context);
         }
+        //we only want to store things in cache for live views.
+        //It makes no sense putting things in cache when we're browsing in Preview or Edit mode
+        if(liveOnlyPageModes.contains(pageMode)) {
+            navToolCache.putNav(host.getIdentifier(), folder.getInode(), result, languageId);
+        }
+        return new NavResultHydrated(result, this.context);
+    }
+
+    private List<?> filterNonLiveItems(final List<?> menuItems) {
+        if (!menuItems.isEmpty()) {
+            final List<Versionable> nonLive = menuItems.stream()
+                    .filter(o -> o instanceof Versionable)
+                    .map(o -> (Versionable) o)
+                    .filter(versionable -> Try.of(() -> !versionable.isLive()).getOrElse(false))
+                    .collect(Collectors.toList());
+            menuItems.removeAll(nonLive);
+            System.out.println(" ::: nonLive items removed ::: "+nonLive);
+        }
+        return menuItems;
+    }
+
+    PageMode pageMode(){
+        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        return PageMode.get(request);
     }
 
     /**
@@ -261,8 +302,8 @@ public class NavTool implements ViewTool {
     @VisibleForTesting
     boolean shouldAddHTMLPageInAnotherLang(List<?> menuItems, IHTMLPage itemPage, long languageId) {
         return (APILocator.getLanguageAPI().canDefaultPageToDefaultLanguage() &&
-            itemPage.getLanguageId()  == defaultLanguage &&
-            !doesHTMLPageInRequestedLanguageExists(menuItems,itemPage.getIdentifier(),languageId));
+                itemPage.getLanguageId()  == defaultLanguage &&
+                !doesHTMLPageInRequestedLanguageExists(menuItems,itemPage.getIdentifier(),languageId));
     }
 
     @VisibleForTesting
@@ -275,7 +316,7 @@ public class NavTool implements ViewTool {
     /**
      * Pass the level of the nav you wish to retrieve, based on the current path, level 0 being the
      * root
-     * 
+     *
      * @param level
      * @return
      * @throws DotDataException
@@ -339,15 +380,15 @@ public class NavTool implements ViewTool {
             List<RegExMatch> find = RegEX.find(path, "^//(\\w+)/(.+)");
             if (find.size() == 1) {
                 String hostname = find.get(0)
-                    .getGroups()
-                    .get(0)
-                    .getMatch();
+                        .getGroups()
+                        .get(0)
+                        .getMatch();
                 path = "/" + find.get(0)
-                    .getGroups()
-                    .get(1)
-                    .getMatch();
+                        .getGroups()
+                        .get(1)
+                        .getMatch();
                 return APILocator.getHostAPI()
-                    .findByName(hostname, systemUser, false);
+                        .findByName(hostname, systemUser, false);
             }
         }
 
@@ -356,12 +397,12 @@ public class NavTool implements ViewTool {
 
     private boolean doesHTMLPageInRequestedLanguageExists(final List<?> items, final String identifier, final long language){
         return items.stream().anyMatch((item)->(item instanceof IHTMLPage
-            && ((IHTMLPage) item).getIdentifier().equals(identifier) && ((IHTMLPage) item).getLanguageId() == language));
+                && ((IHTMLPage) item).getIdentifier().equals(identifier) && ((IHTMLPage) item).getLanguageId() == language));
     }
 
     private boolean doesFileAssetInRequestedLanguageExists(final List<?> items, final String identifier, final long language){
         return items.stream().anyMatch((item)->(item instanceof IFileAsset
-            && ((IFileAsset) item).getPermissionId().equals(identifier) && ((IFileAsset) item).getLanguageId() == language));
+                && ((IFileAsset) item).getPermissionId().equals(identifier) && ((IFileAsset) item).getLanguageId() == language));
     }
 
 }
