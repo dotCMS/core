@@ -4,7 +4,7 @@ import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
-import { Component, DebugElement, Input } from '@angular/core';
+import { Component, DebugElement, Injectable, Input } from '@angular/core';
 import { DEFAULT_LANG_ID } from '@dotcms/block-editor';
 import { By } from '@angular/platform-browser';
 import { Sidebar, SidebarModule } from 'primeng/sidebar';
@@ -17,6 +17,7 @@ import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { mockResponseView } from '@tests/response-view.mock';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotContentTypeService } from '@services/dot-content-type';
 
 @Component({
     selector: 'dotcms-block-editor' /* eslint-disable-line */,
@@ -36,6 +37,28 @@ export class MockDotBlockEditorComponent {
     };
 }
 
+@Injectable()
+class MockDotContentTypeService {
+    getContentType() {
+        return of({
+            fields: [
+                {
+                    variable: 'testName',
+                    fieldVariables: [
+                        { key: 'allowedBlocks', value: 'heading1' },
+                        { key: 'allowedContentTypes', value: 'Activity' },
+                        { key: 'styles', value: 'height:50%' }
+                    ]
+                },
+                {
+                    variable: 'otherName',
+                    fieldVariables: [{ key: 'invalidKey', value: 'test' }]
+                }
+            ]
+        });
+    }
+}
+
 const messageServiceMock = new MockDotMessageService({
     'editpage.inline.error': 'An error occurred'
 });
@@ -43,11 +66,10 @@ const messageServiceMock = new MockDotMessageService({
 const clickEvent = {
     dataset: {
         fieldName: 'testName',
+        contentType: 'Blog',
         language: 2,
         inode: 'testInode',
-        content: '{"field":"field value"}',
-        fieldVariables:
-            '{"allowedBlocks":{"value":"heading1"},"allowedContentTypes":{"value":"Activity"}, "styles":{"value":"height:50%"}}'
+        content: '{"field":"field value"}'
     }
 };
 
@@ -57,6 +79,7 @@ describe('DotBlockEditorSidebarComponent', () => {
     let dotEventsService: DotEventsService;
     let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
     let dotGlobalMessageService: DotGlobalMessageService;
+    let dotContentTypeService: DotContentTypeService;
     let de: DebugElement;
 
     beforeEach(async () => {
@@ -72,6 +95,7 @@ describe('DotBlockEditorSidebarComponent', () => {
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: DotContentTypeService, useClass: MockDotContentTypeService },
                 DotWorkflowActionsFireService,
                 DotEventsService,
                 DotGlobalMessageService
@@ -80,6 +104,7 @@ describe('DotBlockEditorSidebarComponent', () => {
         dotEventsService = TestBed.inject(DotEventsService);
         dotWorkflowActionsFireService = TestBed.inject(DotWorkflowActionsFireService);
         dotGlobalMessageService = TestBed.inject(DotGlobalMessageService);
+        dotContentTypeService = TestBed.inject(DotContentTypeService);
     });
 
     beforeEach(() => {
@@ -100,11 +125,14 @@ describe('DotBlockEditorSidebarComponent', () => {
     });
 
     it('should set inputs to the block editor', () => {
+        spyOn(dotContentTypeService, 'getContentType').and.callThrough();
         dotEventsService.notify('edit-block-editor', clickEvent);
         fixture.detectChanges();
         const blockEditor: MockDotBlockEditorComponent = de.query(
             By.css('dotcms-block-editor')
         ).componentInstance;
+
+        expect(dotContentTypeService.getContentType).toHaveBeenCalledWith('Blog');
         expect(blockEditor.lang).toEqual(clickEvent.dataset.language);
         expect(blockEditor.allowedBlocks).toEqual('heading1');
         expect(blockEditor.allowedContentTypes).toEqual('Activity');

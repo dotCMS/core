@@ -1,12 +1,14 @@
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
-import { take, takeUntil } from 'rxjs/operators';
+import { switchMap, take, takeUntil } from 'rxjs/operators';
 import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { Subject } from 'rxjs';
+import { Observable, of, Subject } from 'rxjs';
 import { DotBlockEditorComponent } from '@dotcms/block-editor';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotContentTypeService } from '@services/dot-content-type';
+import { DotCMSContentTypeField, DotCMSContentTypeFieldVariable } from '@dotcms/dotcms-models';
 
 export interface BlockEditorData {
     content: { [key: string]: string };
@@ -36,21 +38,19 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
         private dotWorkflowActionsFireService: DotWorkflowActionsFireService,
         private dotEventsService: DotEventsService,
         private dotMessageService: DotMessageService,
-        private dotGlobalMessageService: DotGlobalMessageService
+        private dotGlobalMessageService: DotGlobalMessageService,
+        private dotContentTypeService: DotContentTypeService
     ) {}
 
     ngOnInit(): void {
         this.dotEventsService
             .listen<HTMLDivElement>('edit-block-editor')
-            .pipe(takeUntil(this.destroy$))
-            .subscribe((event) => {
-                this.data = {
-                    fieldName: event.data.dataset.fieldName,
-                    language: parseInt(event.data.dataset.language),
-                    inode: event.data.dataset.inode,
-                    content: JSON.parse(event.data.dataset.content),
-                    fieldVariables: this.parseFieldVariables(event.data.dataset.fieldVariables)
-                };
+            .pipe(
+                takeUntil(this.destroy$),
+                switchMap((event) => this.extractBlockEditorData(event.data.dataset))
+            )
+            .subscribe((eventData: BlockEditorData) => {
+                this.data = eventData;
             });
     }
 
@@ -100,13 +100,35 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
         this.destroy$.complete();
     }
 
-    private parseFieldVariables(fieldVariables: string): BlockEditorData['fieldVariables'] {
-        const { allowedBlocks, allowedContentTypes, styles } = JSON.parse(fieldVariables);
+    private extractBlockEditorData(dataSet: {
+        [key: string]: string;
+    }): Observable<BlockEditorData> {
+        return this.dotContentTypeService.getContentType(dataSet.contentType).pipe(
+            switchMap((contentType) =>
+                contentType?.fields.filter((field) => field.variable == dataSet.fieldName)
+            ),
+            switchMap((field: DotCMSContentTypeField) => {
+                return of({
+                    fieldVariables: this.parseFieldVariables(field.fieldVariables),
+                    fieldName: dataSet.fieldName,
+                    language: parseInt(dataSet.language),
+                    inode: dataSet.inode,
+                    content: JSON.parse(dataSet.content)
+                });
+            })
+        );
+    }
 
+    private parseFieldVariables(
+        fieldVariables: DotCMSContentTypeFieldVariable[]
+    ): BlockEditorData['fieldVariables'] {
         return {
-            allowedBlocks: allowedBlocks?.value,
-            allowedContentTypes: allowedContentTypes?.value,
-            styles: styles?.value
+            allowedBlocks: fieldVariables.find((variable) => variable.key === 'allowedBlocks')
+                ?.value,
+            allowedContentTypes: fieldVariables.find(
+                (variable) => variable.key === 'allowedContentTypes'
+            )?.value,
+            styles: fieldVariables.find((variable) => variable.key === 'styles')?.value
         };
     }
 }
