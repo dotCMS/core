@@ -822,11 +822,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             siteListOpt = this.getHostFactory()
                     .findLiveSites(filter, limit, offset, showSystemHost, user, respectFrontendRoles);
             if (siteListOpt.isPresent()) {
-
-                final Optional<List<Host>> siteListOptAllRecords = this.getHostFactory()
-                        .findLiveSites(filter, -1, 0, showSystemHost, user, respectFrontendRoles);
-
-                return convertToSitePaginatedList(siteListOpt.get(), siteListOptAllRecords. get().size());
+                return convertToSitePaginatedList(siteListOpt.get());
             }
         }
         if (showStopped && !showArchived) {
@@ -834,9 +830,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             siteListOpt = this.getHostFactory()
                     .findStoppedSites(filter, false, limit, offset, showSystemHost, user, respectFrontendRoles);
             if (siteListOpt.isPresent()) {
-                final Optional<List<Host>> siteListOptAllRecords = this.getHostFactory()
-                        .findStoppedSites(filter, false, -1, 0, showSystemHost, user, respectFrontendRoles);
-                return convertToSitePaginatedList(siteListOpt.get(), siteListOptAllRecords.get().size());
+                return convertToSitePaginatedList(siteListOpt.get());
             }
         }
         if (showStopped && showArchived) {
@@ -844,9 +838,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             siteListOpt = this.getHostFactory()
                     .findArchivedSites(filter, limit, offset, showSystemHost, user, respectFrontendRoles);
             if (siteListOpt.isPresent()) {
-                final Optional<List<Host>> siteListOptAllRecords = this.getHostFactory()
-                        .findArchivedSites(filter, -1, 0, showSystemHost, user, respectFrontendRoles);
-                        return convertToSitePaginatedList(siteListOpt.get(), siteListOptAllRecords.get().size());
+                return convertToSitePaginatedList(siteListOpt.get());
             }
         }
         return new PaginatedArrayList<>();
@@ -866,11 +858,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
                 .findArchivedSites(filter, limit, offset, showSystemHost, user, respectFrontendRoles) :
                 this.getHostFactory().findLiveSites(filter, limit, offset, showSystemHost, user, respectFrontendRoles);
         if (siteListOpt.isPresent()) {
-            final Optional<List<Host>> siteListOptAllRecords = showArchived ? this.getHostFactory()
-                    .findArchivedSites(filter, -1, 0, showSystemHost, user, respectFrontendRoles) :
-                    this.getHostFactory().findLiveSites(filter, -1, 0, showSystemHost, user, respectFrontendRoles);
-
-            return convertToSitePaginatedList(siteListOpt.get(), siteListOptAllRecords.get().size());
+            return convertToSitePaginatedList(siteListOpt.get());
         }
         return new PaginatedArrayList<>();
     }
@@ -892,14 +880,13 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
      * Utility method used to convert a list of Sites into paginated Site objects.
      *
      * @param list The list of {@link Host} objects.
-     * @param totalResults The total amount of records (without considering limit and offset params)
      *
      * @return The paginated list of {@link Host} objects.
      */
-    private PaginatedArrayList<Host> convertToSitePaginatedList(final List<Host> list, final long totalResults) {
+    private PaginatedArrayList<Host> convertToSitePaginatedList(final List<Host> list) {
         final PaginatedArrayList<Host> paginatedSites = new PaginatedArrayList<>();
         paginatedSites.addAll(list);
-        paginatedSites.setTotalResults(totalResults);
+        paginatedSites.setTotalResults(list.size());
         return paginatedSites;
     }
 
