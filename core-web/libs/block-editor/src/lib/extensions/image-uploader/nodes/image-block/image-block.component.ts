@@ -1,5 +1,5 @@
 import { Component, OnInit, ElementRef, OnDestroy } from '@angular/core';
-import { AngularNodeViewComponent } from '../../NodeViewRenderer';
+import { AngularNodeViewComponent } from '../../../../NodeViewRenderer';
 
 interface ImageData {
     asset: string;

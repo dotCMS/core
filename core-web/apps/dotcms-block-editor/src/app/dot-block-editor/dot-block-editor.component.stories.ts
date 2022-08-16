@@ -13,7 +13,7 @@ import { BubbleLinkFormComponent } from '@dotcms/block-editor';
 import {
     ActionButtonComponent,
     ContentletBlockComponent,
-    NgxTiptapModule,
+    BlockEditorModule,
     SuggestionsComponent,
     SuggestionsService,
     ImageBlockComponent,
@@ -209,7 +209,7 @@ export const primary = () => ({
             MenuModule,
             CommonModule,
             FormsModule,
-            NgxTiptapModule,
+            BlockEditorModule,
             OrderListModule,
             ListboxModule,
             BrowserAnimationsModule

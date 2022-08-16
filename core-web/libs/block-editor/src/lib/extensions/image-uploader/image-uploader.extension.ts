@@ -7,12 +7,10 @@ import { Extension } from '@tiptap/core';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import {
-    DotImageService,
-    LoaderComponent,
-    IMAGE_BLOCK_NAME,
-    MessageType
-} from '@dotcms/block-editor';
+import { LoaderComponent, MessageType } from '@dotcms/block-editor';
+
+import { DotImageService } from './services/dot-image/dot-image.service';
+import { IMAGE_BLOCK_NAME } from './nodes/image-block/image-block.node';
 
 import { PlaceholderPlugin } from './plugins/placeholder.plugin';
 

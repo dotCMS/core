@@ -16,7 +16,7 @@ import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 import { map, take } from 'rxjs/operators';
 import { MenuItem } from 'primeng/api';
 
-import { SuggestionsService, DotLanguageService } from '../../../services';
+import { SuggestionsService, DotLanguageService } from '../../services';
 
 import {
     SuggestionListComponent,

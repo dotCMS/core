@@ -14,18 +14,10 @@ import { LoggerService } from '@dotcms/dotcms-js';
 import { StringUtils } from '@dotcms/dotcms-js';
 
 // Directives
-import {
-    EditorDirective,
-    BubbleMenuDirective,
-    DraggableDirective,
-    NodeViewContentDirective
-} from './directives';
-
-// Services
-import { SuggestionsService, DotImageService } from './services';
+import { EditorDirective } from './shared/directives';
 
 // Nodes
-import { ContentletBlockComponent, ImageBlockComponent } from './nodes';
+import { ContentletBlockComponent } from './nodes';
 
 // Extension Components
 import {
@@ -35,17 +27,13 @@ import {
     BubbleMenuComponent,
     DragHandlerComponent,
     FormActionsComponent,
-    LoaderComponent
+    LoaderComponent,
+    ImageBlockComponent,
+    DotImageService
 } from './extensions';
 
 // Shared
-import {
-    SuggestionsComponent,
-    SuggestionListComponent,
-    SuggestionsListItemComponent,
-    SuggestionLoadingListComponent,
-    ContentletStatePipe
-} from './shared';
+import { SharedModule } from './shared/shared.module';
 
 @NgModule({
     imports: [
@@ -56,16 +44,11 @@ import {
         MenuModule,
         CheckboxModule,
         ButtonModule,
-        InputTextModule
+        InputTextModule,
+        SharedModule
     ],
     declarations: [
         EditorDirective,
-        BubbleMenuDirective,
-        DraggableDirective,
-        NodeViewContentDirective,
-        SuggestionsComponent,
-        SuggestionListComponent,
-        SuggestionsListItemComponent,
         ContentletBlockComponent,
         ActionButtonComponent,
         DragHandlerComponent,
@@ -74,24 +57,19 @@ import {
         BubbleMenuComponent,
         BubbleMenuButtonComponent,
         BubbleLinkFormComponent,
-        ContentletStatePipe,
-        SuggestionLoadingListComponent,
         FormActionsComponent
     ],
-    providers: [SuggestionsService, DotImageService, LoggerService, StringUtils],
+    providers: [DotImageService, LoggerService, StringUtils],
     exports: [
-        SuggestionsComponent,
         EditorDirective,
-        BubbleMenuDirective,
-        DraggableDirective,
-        NodeViewContentDirective,
         ActionButtonComponent,
         BubbleMenuComponent,
         BubbleLinkFormComponent,
         ReactiveFormsModule,
         CheckboxModule,
         ButtonModule,
-        InputTextModule
+        InputTextModule,
+        SharedModule
     ]
 })
-export class NgxTiptapModule {}
+export class BlockEditorModule {}

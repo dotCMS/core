@@ -24,3 +24,6 @@ export * from './drag-handler/drag-handler.component';
 // Image Uploader
 export * from './image-uploader/image-uploader.extension';
 export * from './image-uploader/components/loader/loader.component';
+export * from './image-uploader/nodes/image-block/image-block.component';
+export * from './image-uploader/nodes/image-block/image-block.node';
+export * from './image-uploader/services/dot-image/dot-image.service';
