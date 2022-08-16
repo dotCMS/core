@@ -38,7 +38,7 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
     @Input() system: boolean;
     @Input() cssClass: string;
     @Input() width: string;
-    @Input() pageSize = 10;
+    @Input() pageSize = 20;
     @Input() asField = false;
 
     @Output() switch: EventEmitter<Site> = new EventEmitter();
