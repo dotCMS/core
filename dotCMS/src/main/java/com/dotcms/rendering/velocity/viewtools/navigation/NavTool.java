@@ -253,7 +253,6 @@ public class NavTool implements ViewTool {
                     .filter(versionable -> Try.of(() -> !versionable.isLive()).getOrElse(false))
                     .collect(Collectors.toList());
             menuItems.removeAll(nonLive);
-            System.out.println(" ::: nonLive items removed ::: "+nonLive);
         }
         return menuItems;
     }
