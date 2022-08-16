@@ -24,7 +24,7 @@ jobs:
         run: |
           cd core-web
           npm run nx build dotcms-webcomponents -- --with-deps
-          npm run nx run-many -- --target=build-storybook --parallel --projects=dotcms-ui,dotcms-webcomponents
+          npm run nx run-many -- --target=build-storybook --projects=dotcms-ui,dotcms-webcomponents
           npm run nx build-storybook dotcms-block-editor
           npm run build:docs:dotcms
           npm run build:docs:dotcms-models
@@ -32,4 +32,4 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@4.1.0
         with:
           branch: gh-pages
-          folder: dist-docs
+          folder: core-web/dist-docs
