@@ -47,7 +47,7 @@ const clickEvent = {
         inode: 'testInode',
         content: '{"field":"field value"}',
         fieldVariables:
-            '{"allowedBlocks":{"value":"heading1"},"allowedContentTypes":{"value":"Activity"}}'
+            '{"allowedBlocks":{"value":"heading1"},"allowedContentTypes":{"value":"Activity"}, "styles":{"value":"height:50%"}}'
     }
 };
 
@@ -109,7 +109,7 @@ describe('DotBlockEditorSidebarComponent', () => {
         expect(blockEditor.allowedBlocks).toEqual('heading1');
         expect(blockEditor.allowedContentTypes).toEqual('Activity');
         expect(blockEditor.value).toEqual(JSON.parse(clickEvent.dataset.content));
-        expect(blockEditor.customStyles).toEqual('height: 100%');
+        expect(blockEditor.customStyles).toEqual('height:50%');
     });
 
     it('should save changes in the editor', () => {

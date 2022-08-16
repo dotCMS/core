@@ -13,7 +13,11 @@ export interface BlockEditorData {
     fieldName: string;
     language: number;
     inode: string;
-    fieldVariables?: { [key: string]: string };
+    fieldVariables?: {
+        allowedBlocks?: string;
+        allowedContentTypes?: string;
+        styles: string;
+    };
 }
 
 @Component({
@@ -96,12 +100,13 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
         this.destroy$.complete();
     }
 
-    private parseFieldVariables(fieldVariables: string): { [key: string]: string } {
-        const { allowedBlocks, allowedContentTypes } = JSON.parse(fieldVariables);
+    private parseFieldVariables(fieldVariables: string): BlockEditorData['fieldVariables'] {
+        const { allowedBlocks, allowedContentTypes, styles } = JSON.parse(fieldVariables);
 
         return {
             allowedBlocks: allowedBlocks?.value,
-            allowedContentTypes: allowedContentTypes?.value
+            allowedContentTypes: allowedContentTypes?.value,
+            styles: styles?.value
         };
     }
 }
