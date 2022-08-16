@@ -51,7 +51,7 @@ const clickEvent = {
     }
 };
 
-fdescribe('DotBlockEditorSidebarComponent', () => {
+describe('DotBlockEditorSidebarComponent', () => {
     let component: DotBlockEditorSidebarComponent;
     let fixture: ComponentFixture<DotBlockEditorSidebarComponent>;
     let dotEventsService: DotEventsService;
@@ -102,7 +102,7 @@ fdescribe('DotBlockEditorSidebarComponent', () => {
     it('should set inputs to the block editor', () => {
         dotEventsService.notify('edit-block-editor', clickEvent);
         fixture.detectChanges();
-        const blockEditor: DotBlockEditorComponentMock = de.query(
+        const blockEditor: MockDotBlockEditorComponent = de.query(
             By.css('dotcms-block-editor')
         ).componentInstance;
         expect(blockEditor.lang).toEqual(clickEvent.dataset.language);

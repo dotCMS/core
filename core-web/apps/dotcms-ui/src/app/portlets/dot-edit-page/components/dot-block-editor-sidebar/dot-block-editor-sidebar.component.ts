@@ -50,6 +50,11 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
             });
     }
 
+    /**
+     *  Execute the workflow to save the editor changes and then close the sidebar.
+     *
+     * @memberof DotBlockEditorSidebarComponent
+     */
     saveEditorChanges(): void {
         this.saving = true;
         this.dotWorkflowActionsFireService
@@ -77,6 +82,11 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
             );
     }
 
+    /**
+     *  Clear the date to close the sideber.
+     *
+     * @memberof DotBlockEditorSidebarComponent
+     */
     closeSidebar(): void {
         this.data = null;
     }
