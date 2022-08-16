@@ -43,6 +43,11 @@ public class SitePaginatorTest {
         hosts.add( mock( Host.class ) );
     }
 
+    /**
+     * <b>Method to test:</b> {@link SitePaginator#getItems(User, String, int, int, String, OrderDirection, Map)} <br></br>
+     * <b>Given Scenario:</b> SitePaginator is invoked with a dummy filter<br></br>
+     * <b>Expected Result:</b> {@link HostAPI#search(String, boolean, int, int, User, boolean)} is expected to be called<br></br>
+     */
     @Test
     public void testGetItems(){
         final String filter = "filter";
@@ -59,6 +64,11 @@ public class SitePaginatorTest {
         assertEquals(hosts, items);
     }
 
+    /**
+     * <b>Method to test:</b> {@link SitePaginator#getItems(User, String, int, int, String, OrderDirection, Map)} <br></br>
+     * <b>Given Scenario:</b> SitePaginator is invoked with a dummy filter to get archived items<br></br>
+     * <b>Expected Result:</b> {@link HostAPI#search(String, boolean, boolean, boolean, int, int, User, boolean)} is expected to be called<br></br>
+     */
     @Test
     public void testGetItemsWithArchived(){
         final String filter = "filter";
@@ -76,6 +86,11 @@ public class SitePaginatorTest {
         assertEquals(hosts, items);
     }
 
+    /**
+     * <b>Method to test:</b> {@link SitePaginator#getItems(User, String, int, int, String, OrderDirection, Map)} <br></br>
+     * <b>Given Scenario:</b> SitePaginator is invoked with a dummy filter to get stopped hosts<br></br>
+     * <b>Expected Result:</b> {@link HostAPI#searchByStopped(String, boolean, boolean, int, int, User, boolean)} is expected to be called<br></br>
+     */
     @Test
     public void testGetItemsWithStopped(){
         final String filter = "filter";
@@ -94,6 +109,11 @@ public class SitePaginatorTest {
         assertEquals(hosts, items);
     }
 
+    /**
+     * <b>Method to test:</b> {@link SitePaginator#getItems(User, String, int, int, String, OrderDirection, Map)} <br></br>
+     * <b>Given Scenario:</b> SitePaginator is invoked with a dummy filter to get stopped and archived hosts<br></br>
+     * <b>Expected Result:</b> {@link HostAPI#search(String, boolean, boolean, boolean, int, int, User, boolean)} is expected to be called<br></br>
+     */
     @Test
     public void testGetItemsWithStoppedAndArchived(){
         final String filter = "filter";
@@ -113,6 +133,12 @@ public class SitePaginatorTest {
         assertEquals(hosts, items);
     }
 
+
+    /**
+     * <b>Method to test:</b> {@link SitePaginator#getItems(User, String, int, int, String, OrderDirection, Map)} <br></br>
+     * <b>Given Scenario:</b> SitePaginator is invoked with a dummy filter setting showSystemHost param<br></br>
+     * <b>Expected Result:</b> {@link HostAPI#search(String, boolean, int, int, User, boolean)} is expected to be called<br></br>
+     */
     @Test
     public void testGetItemsWithSystem(){
         final String filter = "filter";
