@@ -1,0 +1,1 @@
+export var EditorOpenSource;!function(EditorOpenSource){EditorOpenSource[EditorOpenSource.API=0]="API",EditorOpenSource[EditorOpenSource.USER=1]="USER"}(EditorOpenSource||(EditorOpenSource={}));

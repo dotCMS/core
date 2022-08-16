@@ -1,0 +1,1 @@
+export function computeIndentLevel(line,tabSize){let indent=0,i=0;const len=line.length;for(;i<len;){const chCode=line.charCodeAt(i);if(32===chCode)indent++;else{if(9!==chCode)break;indent=indent-indent%tabSize+tabSize}i++}return i===len?-1:indent}

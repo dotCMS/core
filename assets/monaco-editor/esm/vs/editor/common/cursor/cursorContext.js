@@ -1,0 +1,1 @@
+export class CursorContext{constructor(model,viewModel,coordinatesConverter,cursorConfig){this._cursorContextBrand=void 0,this.model=model,this.viewModel=viewModel,this.coordinatesConverter=coordinatesConverter,this.cursorConfig=cursorConfig}}

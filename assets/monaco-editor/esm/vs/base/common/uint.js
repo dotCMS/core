@@ -1,0 +1,1 @@
+export function toUint8(v){return v<0?0:v>255?255:0|v}export function toUint32(v){return v<0?0:v>4294967295?4294967295:0|v}

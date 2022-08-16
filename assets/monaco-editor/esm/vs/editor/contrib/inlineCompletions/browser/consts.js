@@ -1,0 +1,1 @@
+export const inlineSuggestCommitId="editor.action.inlineSuggest.commit";

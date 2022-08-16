@@ -1,0 +1,1 @@
+export const allCharCodes=(()=>{const v=[];for(let i=32;i<=126;i++)v.push(i);return v.push(65533),v})();export const getCharIndex=(chCode,fontScale)=>(chCode-=32)<0||chCode>96?fontScale<=2?(chCode+96)%96:95:chCode;

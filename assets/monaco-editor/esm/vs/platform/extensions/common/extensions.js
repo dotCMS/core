@@ -1,0 +1,1 @@
+export class ExtensionIdentifier{constructor(value){this.value=value,this._lower=value.toLowerCase()}static toKey(id){return"string"==typeof id?id.toLowerCase():id._lower}}

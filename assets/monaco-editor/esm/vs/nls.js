@@ -1,0 +1,1 @@
+function _format(message,args){let result;return result=0===args.length?message:message.replace(/\{(\d+)\}/g,(function(match,rest){const index=rest[0];return void 0!==args[index]?args[index]:match})),result}export function localize(data,message,...args){return _format(message,args)}

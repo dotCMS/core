@@ -1,0 +1,1 @@
+import{Codicon}from"../../../common/codicons.js";import"./codicon/codicon.css";import"./codicon/codicon-modifiers.css";export function formatRule(c){let def=c.definition;for(;def instanceof Codicon;)def=def.definition;return`.codicon-${c.id}:before { content: '${def.fontCharacter}'; }`}

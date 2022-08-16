@@ -1,0 +1,1 @@
+import{Mimes}from"../common/mime.js";export const DataTransfers={RESOURCES:"ResourceURLs",DOWNLOAD_URL:"DownloadURL",FILES:"Files",TEXT:Mimes.text,TERMINALS:"Terminals"};export class DragAndDropData{constructor(data){this.data=data}update(){}getData(){return this.data}}export const StaticDND={CurrentDragAndDropData:void 0};

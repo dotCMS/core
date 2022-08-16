@@ -1,0 +1,1 @@
+export class LRUCachedComputed{constructor(computeFn){this.computeFn=computeFn,this.lastCache=void 0,this.lastArgKey=void 0}get(arg){const key=JSON.stringify(arg);return this.lastArgKey!==key&&(this.lastArgKey=key,this.lastCache=this.computeFn(arg)),this.lastCache}}

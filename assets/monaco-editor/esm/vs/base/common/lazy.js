@@ -1,0 +1,1 @@
+export class Lazy{constructor(executor){this.executor=executor,this._didRun=!1}getValue(){if(!this._didRun)try{this._value=this.executor()}catch(err){this._error=err}finally{this._didRun=!0}if(this._error)throw this._error;return this._value}get rawValue(){return this._value}}
