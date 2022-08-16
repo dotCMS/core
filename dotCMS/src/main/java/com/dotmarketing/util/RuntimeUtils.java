@@ -84,7 +84,8 @@ public class RuntimeUtils {
      */
     protected static TerminalOutput runProcessAndGetOutput(final boolean returnErrors, final boolean formatOutput, final String... commands) {
         final TerminalOutput terminalOutput = new TerminalOutput();
-        final Process process = Try.of(() -> runProcess(commands)).getOrNull();
+        //final Process process = Try.of(() -> runProcess(commands)).getOrNull();
+        final Process process = runProcess(commands);
         if (process == null) {
             final String errorMsg = String.format("Cannot run process for provided command %s", String.join(" ", commands));
             Logger.warn(RuntimeUtils.class, errorMsg);
@@ -138,7 +139,16 @@ public class RuntimeUtils {
      */
     private static Process runProcess(final String... commands) {
         final ProcessBuilder processBuilder = buildProcess(commands);
-        return Try.of(processBuilder::start).getOrElseThrow(DotRuntimeException::new);
+        //return Try.of(processBuilder::start).getOrElseThrow(DotRuntimeException::new);
+        Process process = null;
+        try {
+            process = processBuilder.start();
+
+        } catch (IOException e) {
+            Logger.error(RuntimeUtils.class, e);
+            throw new RuntimeException(e);
+        }
+        return process;
     }
 
     /**
