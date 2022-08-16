@@ -293,7 +293,7 @@ jobs:
     name: Run Postman Tests
     runs-on: ubuntu-latest
     needs: repo-metadata-job
-    if: success()
+    if: success() && needs.repo-metadata-job.outputs.module_found == 'true'
     outputs:
       tests_results_status: ${{ steps.run-postman-tests.outputs.tests_results_status }}
       tests_results_skip_report: ${{ steps.run-postman-tests.outputs.tests_results_skip_report }}
