@@ -1,23 +1,17 @@
 package com.dotcms.rendering.velocity.viewtools.navigation;
 
 
-
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.Versionable;
-import com.dotmarketing.portlets.browser.ajax.BrowserAjax;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.util.PageMode;
-import com.google.common.annotations.VisibleForTesting;
-
-
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.Versionable;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.browser.ajax.BrowserAjax;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -25,25 +19,22 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.links.model.Link.LinkType;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UtilMethods;
-
-import com.google.common.collect.ImmutableList;
+import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
-
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
-
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
-
-import com.liferay.portal.model.User;
 
 public class NavTool implements ViewTool {
 
@@ -79,8 +70,6 @@ public class NavTool implements ViewTool {
         return getNav(host, path, this.currentLanguage, this.systemUser);
     }
 
-    final List<PageMode> liveOnlyPageModes = ImmutableList.of(PageMode.ADMIN_MODE, PageMode.LIVE);
-
     protected NavResultHydrated getNav(final Host host, String path, final long languageId, final User systemUserParam)
             throws DotDataException, DotSecurityException {
 
@@ -104,7 +93,7 @@ public class NavTool implements ViewTool {
         final NavToolCache navToolCache = CacheLocator.getNavToolCache();
 
         //WE only care about cached resulting when we're rendering a live view
-        if(liveOnlyPageModes.contains(pageMode)){
+        if(pageMode.showLive){
             final NavResult result = navToolCache.getNav(host.getIdentifier(), folder.getInode(), languageId);
             if (result != null) {
                 return new NavResultHydrated(result, this.context);
@@ -147,7 +136,7 @@ public class NavTool implements ViewTool {
         //We only care about showing/hiding versionables when we're rendering a live view.
         //This way when we're rendering a live page and we have unpublished an item such item will get excluded from the menuItems on that live page
         //Both Edit_Mode and Preview_Mode will show all menu items. Therefore, it is not necessary to make any exclusion here for both (Edit_Mode,Preview_Mode)
-        if(liveOnlyPageModes.contains(pageMode)) {
+        if(pageMode.showLive) {
             menuItems = filterNonLiveItems(menuItems);
         }
 
@@ -239,7 +228,7 @@ public class NavTool implements ViewTool {
         }
         //we only want to store things in cache for live views.
         //It makes no sense putting things in cache when we're browsing in Preview or Edit mode
-        if(liveOnlyPageModes.contains(pageMode)) {
+        if(pageMode.showLive) {
             navToolCache.putNav(host.getIdentifier(), folder.getInode(), result, languageId);
         }
         return new NavResultHydrated(result, this.context);
