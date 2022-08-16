@@ -9,6 +9,7 @@ public class Experiment {
 
     public enum Status {
         RUNNING,
+        SCHEDULED,
         ENDED,
         DRAFT
     }
