@@ -46,6 +46,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Assert;
@@ -1265,6 +1266,58 @@ public class HostAPITest extends IntegrationTestBase  {
             archiveHost(testSite, systemUser);
             deleteHost(testSite, systemUser);
             deleteHost(testSiteTwo, systemUser);
+        }
+    }
+
+    /**
+     * Method to test: {@link HostAPI#searchByStopped(String, boolean, boolean, int, int, User, boolean)}
+     *
+     * Given Scenario: Create a set of 5 sites and return 3 of them.Then, the totalResults of the pagination is compared
+     *
+     * Expected Result: The total results should return at least the total amount of sites created
+     */
+    @Test
+    public void searchByStoppedUsingPagination() throws DotHibernateException, ExecutionException, InterruptedException {
+        // Initialization
+        final HostAPI hostAPI = APILocator.getHostAPI();
+        SiteDataGen siteDataGen = new SiteDataGen();
+        final User systemUser = APILocator.systemUser();
+        List<Host> sites = new ArrayList<>();
+        Host testSite;
+
+        try {
+            // Test data generation (5 live sites are generated)
+            for(int i=0;i<5;i++){
+                testSite = siteDataGen.nextPersisted();
+                sites.add(testSite);
+                unpublishHost(testSite, systemUser);
+            }
+
+            //Get 3 non-stopped sites
+            PaginatedArrayList<Host> result = hostAPI.searchByStopped(null, false, false, 3, 0,
+                    systemUser, false);
+
+            // Assertions
+            assertTrue("Non-stopped sites must be at least 5", result.getTotalResults()>=5);
+
+            //Now, sites are stopped
+            for(final Host currentSite: sites){
+                unpublishHost(currentSite, systemUser);
+            }
+
+            //Get 3 stopped sites
+            result = hostAPI.searchByStopped(null, true, false, 3, 0,
+                    systemUser, false);
+
+            // Assertions
+            assertTrue("Stopped sites must be at least 5", result.getTotalResults()>=5);
+
+        } finally {
+            // Cleanup
+            for(final Host currentSite: sites) {
+                archiveHost(currentSite, systemUser);
+                deleteHost(currentSite, systemUser);
+            }
         }
     }
 
