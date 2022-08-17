@@ -247,6 +247,8 @@ public interface ContentletAPI {
 	 */
 	public List<Contentlet> findContentletsByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
+	public ContentletsPaginated findContentletsPaginatedByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
 	/**
 	 * Gets a list of Contentlets from a given parent host, retrieves the working version of content. The difference between this method and the other one
 	 * is that the user can specify which content type want to include and exclude.

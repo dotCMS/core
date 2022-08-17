@@ -647,6 +647,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    @CloseDBIfOpened
+    @Override
+    public ContentletsPaginated findContentletsPaginatedByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        return findContentletsPaginatedByHost(parentHost, null, null, user, respectFrontendRoles);
+    }
+
 
     public ContentletsPaginated findContentletsPaginatedByHost(final Host parentHost,
             final List<Integer> includingContentTypes,

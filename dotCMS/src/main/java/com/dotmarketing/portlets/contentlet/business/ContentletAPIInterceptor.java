@@ -960,6 +960,12 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         return c;
     }
 
+
+
+	public ContentletsPaginated findContentletsPaginatedByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		return findContentletsPaginatedByHost(parentHost, null, null, user, respectFrontendRoles);
+	}
+
 	@Override
 	public ContentletsPaginated findContentletsPaginatedByHost(
 			final Host parentHost,
