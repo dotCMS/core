@@ -1,10 +1,9 @@
 package com.dotcms.csspreproc.dartsass;
 
+import com.dotcms.csspreproc.dartsass.strategy.SassCommandStrategy;
+import com.dotcms.csspreproc.dartsass.strategy.SassCommandStrategyResolver;
 import com.dotmarketing.util.*;
 import com.liferay.util.StringPool;
-import io.vavr.Lazy;
-import org.apache.commons.collections.map.LinkedMap;
-import org.apache.commons.collections.map.MultiKeyMap;
 import org.apache.commons.lang3.SystemUtils;
 
 import java.io.File;
@@ -16,26 +15,18 @@ import java.util.Optional;
 /**
  * Provides Dart SASS Compilation capabilities in dotCMS. This implementation shells out and calls the appropriate Dart
  * SASS binary under the covers. Dart Sass is the primary implementation of Sass, which means it gets new features
- * before any other implementation. It's fast, easy to install.
+ * before any other implementation. It's very fast and easy to deploy.
+ * <p>It's worth noting that the Dart SASS binaries used to compile SCSS files are specific to your current Operating
+ * System and architecture. In order to make things easier to handle and configure, the
+ * {@link SassCommandStrategyResolver} allows you to specify the way the compiler command must be assembled for a
+ * specific environment.</p>
  *
  * @author Jose Castro
  * @since Jul 26th, 2022
  */
 public class DartSassCompiler {
 
-    private final Lazy<String> dartSassLocation = Lazy.of(
-            () -> Config.getStringProperty("dartsass.compiler.expanded.location", "./WEB-INF/bin/"));
-    private static final String MAC_OS = "macos";
-    private static final String LINUX_OS = "linux";
-    private static final Lazy<MultiKeyMap> DART_SASS_CMD = Lazy.of(() -> {
-        MultiKeyMap multiKeyMap = MultiKeyMap.decorate(new LinkedMap());
-        multiKeyMap.put(MAC_OS, RuntimeUtils.ARM64_ARCH, "dart-sass-macos-arm64/sass");
-        multiKeyMap.put(MAC_OS, RuntimeUtils.X86_64_ARCH, "dart-sass-macos-x64/sass");
-        multiKeyMap.put(LINUX_OS, RuntimeUtils.ARM64_ARCH, "dart-sass-linux-arm64/sass");
-        multiKeyMap.put(LINUX_OS, RuntimeUtils.AMD64_ARCH, "dart-sass-linux-x64/sass");
-        return multiKeyMap;
-    });
-
+    private final SassCommandStrategyResolver commandStrategyResolver = SassCommandStrategyResolver.getInstance();
     private File inputFile;
     private File outputFile;
     private final CompilerOptions compilerOptions;
@@ -172,9 +163,8 @@ public class DartSassCompiler {
      */
     private String[] buildCompilationCommand() {
         final List<String> compileInstructions = new ArrayList<>();
-        final String location = dartSassLocation.get().endsWith(File.separator) ? dartSassLocation.get() :
-                                        dartSassLocation.get() + File.separator;
-        compileInstructions.add(location + getOsSpecificSassCommand());
+        final String location = this.commandStrategyResolver.getStrategy().get().apply();
+        compileInstructions.add(location);
         compileInstructions.addAll(this.compilerOptions().generate());
         compileInstructions.add(this.inputFile().getAbsolutePath());
         compileInstructions.add(this.outputFile().getAbsolutePath());
@@ -188,43 +178,36 @@ public class DartSassCompiler {
      * @throws DotSassCompilerException An error occurred when validating required compiler input data.
      */
     private void validateInputData() throws DotSassCompilerException {
-        if (null == this.inputFile() || !this.inputFile().exists()) {
-            throw new DotSassCompilerException("Input SCSS file is null or doesn't exist");
+        if (null == this.inputFile() || !this.inputFile().exists() || !this.inputFile.canRead()) {
+            throw new DotSassCompilerException("Input SCSS file is null, doesn't exist or cannot be read");
         }
         if (null == this.outputFile()) {
-            throw new DotSassCompilerException("Output SCSS file is not set");
+            throw new DotSassCompilerException("Output SCSS file is not specified");
         }
-        if (UtilMethods.isNotSet(this.dartSassLocation.get()) || invalidPathFound()) {
+        final Optional<SassCommandStrategy> sassCommandStrategyOpt = this.commandStrategyResolver.getStrategy();
+        if (sassCommandStrategyOpt.isEmpty()) {
+            throw new DotSassCompilerException("Current server OS and/or arch is not compatible with the provided " +
+                                                       "Dart SASS libraries.");
+        }
+        if (invalidPathFound(sassCommandStrategyOpt.get().apply())) {
             throw new DotSassCompilerException("Dart SASS compiler location is incorrect or invalid");
         }
     }
 
     /**
      * Verifies that the specified location to the Dart SASS library does not try to access upper level folders or
-     * unexpected harmful commands.
+     * unexpected harmful commands, and is not empty.
+     *
+     * @param path Path to the parent folder of the Dart SASS compiler.
      *
      * @return If the folder path is valid, returns {@code true}.
      */
-    private boolean invalidPathFound() {
-        final String sanitizedPath = this.dartSassLocation.get().replaceAll("\\.{2}|[&;|]+", StringPool.BLANK);
-        return !this.dartSassLocation.get().equals(sanitizedPath) ? Boolean.TRUE : Boolean.FALSE;
-    }
-
-    /**
-     * Returns the appropriate version of the Dart SASS library that must be used by your specific OS and architecture.
-     * <p>There are different binary files for the Dart SASS library depending on your current environment. This method
-     * makes sure that you're using the correct version without users or developers having to worry about it.</p>
-     *
-     * @return The OS-specific version of the Dart SASS library.
-     */
-    private String getOsSpecificSassCommand() {
-        String dartCmd = null;
-        if (SystemUtils.IS_OS_MAC_OSX) {
-            dartCmd = this.DART_SASS_CMD.get().get(MAC_OS, SystemUtils.OS_ARCH).toString();
-        } else if (SystemUtils.IS_OS_LINUX) {
-            dartCmd = this.DART_SASS_CMD.get().get(LINUX_OS, SystemUtils.OS_ARCH).toString();
+    private boolean invalidPathFound(final String path) {
+        if (UtilMethods.isNotSet(path)) {
+            return Boolean.FALSE;
         }
-        return dartCmd;
+        final String sanitizedPath = path.replaceAll("\\.{2}|[&;|]+", StringPool.BLANK);
+        return !path.equals(sanitizedPath) ? Boolean.TRUE : Boolean.FALSE;
     }
 
 }
