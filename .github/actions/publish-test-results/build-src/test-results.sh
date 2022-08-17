@@ -69,7 +69,7 @@ function persistResults {
   if [[ ${remote_branch} == 1 ]]; then
     clone_branch=${BUILD_ID}
   else
-    clone_branch=master
+    clone_branch=scratch
   fi
 
   # Clone test-results repo at resolved branch
