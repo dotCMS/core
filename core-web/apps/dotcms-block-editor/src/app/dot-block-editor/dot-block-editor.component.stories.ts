@@ -9,11 +9,11 @@ import { MenuModule } from 'primeng/menu';
 
 import { debounceTime, delay } from 'rxjs/operators';
 import { DotBlockEditorComponent } from './dot-block-editor.component';
-import { BubbleMenuLinkFormComponent } from '@dotcms/block-editor';
+import { BubbleLinkFormComponent } from '@dotcms/block-editor';
 import {
     ActionButtonComponent,
     ContentletBlockComponent,
-    NgxTiptapModule,
+    BlockEditorModule,
     SuggestionsComponent,
     SuggestionsService,
     ImageBlockComponent,
@@ -209,7 +209,7 @@ export const primary = () => ({
             MenuModule,
             CommonModule,
             FormsModule,
-            NgxTiptapModule,
+            BlockEditorModule,
             OrderListModule,
             ListboxModule,
             BrowserAnimationsModule
@@ -299,7 +299,7 @@ export const primary = () => ({
             DragHandlerComponent,
             ImageBlockComponent,
             LoaderComponent,
-            BubbleMenuLinkFormComponent
+            BubbleLinkFormComponent
         ]
     },
     component: DotBlockEditorComponent
