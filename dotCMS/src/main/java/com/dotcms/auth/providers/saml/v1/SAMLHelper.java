@@ -1,5 +1,6 @@
 package com.dotcms.auth.providers.saml.v1;
 
+import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.company.CompanyAPI;
 import com.dotcms.filters.interceptor.saml.AutoLoginResult;
 import com.dotcms.filters.interceptor.saml.SamlWebInterceptor;
@@ -96,9 +97,10 @@ public class SAMLHelper {
     }
 
     protected void doLogin(final HttpServletRequest request,
-                                        final HttpServletResponse response,
-                                        final IdentityProviderConfiguration identityProviderConfiguration,
-                                        final User user) {
+                           final HttpServletResponse response,
+                           final IdentityProviderConfiguration identityProviderConfiguration,
+                           final User user,
+                           final LoginServiceAPI loginServiceAPI) {
 
         // we are going to do the autologin, so if the session is null,
         // create it!
@@ -112,7 +114,7 @@ public class SAMLHelper {
                     "An error occurred when retrieving data from user '" + user.getUserId() + "': " + e.getMessage(), e);
         }
 
-        final boolean doCookieLogin = APILocator.getLoginServiceAPI()
+        final boolean doCookieLogin = loginServiceAPI
                 .doCookieLogin(EncryptorFactory.getInstance().getEncryptor().encryptString(user.getUserId()), request, response);
 
         Logger.debug(this, ()->"Cookie Login by LoginService = " + doCookieLogin);

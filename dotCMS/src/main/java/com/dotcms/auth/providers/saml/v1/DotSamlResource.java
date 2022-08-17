@@ -222,7 +222,8 @@ public class DotSamlResource implements Serializable {
 					}
 
 					Logger.debug(this, ()-> "Doing login to the user " + (user != null? user.getEmailAddress() : "unknown"));
-					this.samlHelper.doLogin(httpServletRequest, httpServletResponse, identityProviderConfiguration, user);
+					this.samlHelper.doLogin(httpServletRequest, httpServletResponse,
+							identityProviderConfiguration, user, APILocator.getLoginServiceAPI());
 
 					RedirectUtil.sendRedirectHTML(httpServletResponse, loginPath);
 					return;
