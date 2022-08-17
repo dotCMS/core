@@ -62,18 +62,8 @@ function persistResults {
   local test_results_repo_url=$(resolveRepoUrl ${TEST_RESULTS_GITHUB_REPO} ${INPUT_CICD_GITHUB_TOKEN} ${GITHUB_USER})
   local test_results_path=${INPUT_PROJECT_ROOT}/${TEST_RESULTS_GITHUB_REPO}
 
-  # Query for remote branch
-  gitRemoteLs ${test_results_repo_url} ${BUILD_ID}
-  local remote_branch=$?
-  # If it does not exist use master
-  if [[ ${remote_branch} == 1 ]]; then
-    clone_branch=${BUILD_ID}
-  else
-    clone_branch=scratch
-  fi
-
   # Clone test-results repo at resolved branch
-  gitClone ${test_results_repo_url} ${clone_branch} ${test_results_path}
+  gitClone ${test_results_repo_url} scratch ${test_results_path}
   # Create results folder if ir does not exist and switch to it
   local results_folder=${test_results_path}/projects/${INPUT_TARGET_PROJECT}
   [[ ! -d ${results_folder} ]] && executeCmd "mkdir -p ${results_folder}"
@@ -82,8 +72,14 @@ function persistResults {
   # Prepare who is pushing the changes
   gitConfig ${GITHUB_USER}
 
-  # If no remote branch detected create one
-  [[ ${remote_branch} != 1 ]] && executeCmd "git checkout -b ${BUILD_ID}"
+  # Query for remote branch
+  gitRemoteLs ${test_results_repo_url} ${BUILD_ID}
+  local remote_branch=$?
+  # If remote branch detected
+  [[ ${remote_branch} == 1 ]] && executeCmd "git push origin :${BUILD_ID}"
+
+  # If clone branch is meant to be new = from scratch
+  executeCmd "git checkout -b ${BUILD_ID}"
 
   # Clean test results folders by removing contents and committing them
   cleanTestFolders
@@ -110,18 +106,6 @@ function persistResults {
     if [[ ${cmd_result} != 0 ]]; then
       echo "Error committing to git for ${INPUT_BUILD_HASH} at ${INPUT_BUILD_ID}, error code: ${cmd_result}"
       exit 1
-    fi
-
-    # Do not pull unless branch is remote
-    if [[ ${remote_branch} == 1 ]]; then
-      # Perform a pull just in case
-      executeCmd "git pull origin ${BUILD_ID}"
-      if [[ ${cmd_result} != 0 ]]; then
-        echo "Error pulling from git branch ${BUILD_ID}, error code: ${cmd_result}"
-        echo "Trying by deleting "
-      fi
-    else
-      echo "Not pulling ${BUILD_ID} since it is not remote yet"
     fi
 
     # Finally push the changes
