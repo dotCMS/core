@@ -19,7 +19,9 @@ const PORTLETS_ANGULAR = [
     {
         path: 'container-new',
         loadChildren: () =>
-            import('@portlets/dot-container/dot-container.module').then((m) => m.DotContainerModule)
+            import('@dotcms/app/portlets/dot-containers/dot-containers.module').then(
+                (m) => m.DotContainersModule
+            )
     },
     {
         canActivate: [MenuGuardService],
