@@ -20,7 +20,7 @@ import { DotGlobalMessageService } from '@components/_common/dot-global-message/
 import { DotContentTypeService } from '@services/dot-content-type';
 
 @Component({
-    selector: 'dotcms-block-editor' /* eslint-disable-line */,
+    selector: 'dot-block-editor',
     template: ''
 })
 export class MockDotBlockEditorComponent {

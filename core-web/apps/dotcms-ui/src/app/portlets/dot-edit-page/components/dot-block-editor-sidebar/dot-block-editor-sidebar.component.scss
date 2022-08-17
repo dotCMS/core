@@ -1,7 +1,7 @@
 @use "libs/dot-primeng-theme-styles/src/scss/variables" as *;
 
 :host {
-    dotcms-block-editor {
+    dot-block-editor {
         height: calc(100% - 5rem);
     }
 }
@@ -22,7 +22,7 @@
             padding: 0;
         }
     }
-    dotcms-block-editor .editor-wrapper {
+    dot-block-editor .editor-wrapper {
         height: 100% !important;
     }
 }

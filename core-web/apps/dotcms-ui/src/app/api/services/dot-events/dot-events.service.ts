@@ -9,8 +9,7 @@ import { DotEvent } from '@models/dot-event/dot-event';
  */
 @Injectable()
 export class DotEventsService {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private subject: Subject<DotEvent<any>> = new Subject();
+    private subject: Subject<DotEvent<unknown>> = new Subject();
 
     /**
      * Method to register a listener of a specif event.
@@ -20,7 +19,9 @@ export class DotEventsService {
      */
     listen<T>(eventName: string): Observable<DotEvent<T>> {
         // TODO: need to make this method to support multiple events
-        return this.subject.asObservable().pipe(filter((res) => res.name === eventName));
+        return this.subject
+            .asObservable()
+            .pipe(filter((res: DotEvent<T>) => res.name === eventName));
     }
 
     /**

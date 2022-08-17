@@ -10,7 +10,7 @@
     data-testid="sidebar"
 >
     <div class="container" *ngIf="this.data">
-        <dotcms-block-editor
+        <dot-block-editor
             #blockEditor
             [lang]="data.language"
             [allowedBlocks]="data.fieldVariables.allowedBlocks"
@@ -18,7 +18,7 @@
             [value]="data.content"
             [customStyles]="data.fieldVariables.styles"
         >
-        </dotcms-block-editor>
+        </dot-block-editor>
         <footer>
             <button
                 pButton

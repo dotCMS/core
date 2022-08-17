@@ -159,7 +159,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         this.dotLoadingIndicatorService.show();
         this.setInitalData();
         this.subscribeSwitchSite();
-        this.subscribeIframeCustomEvents();
+        this.subscribeToNgEvents();
         this.subscribeIframeActions();
         this.subscribePageModelChange();
         this.subscribeOverlayService();
@@ -421,7 +421,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         return eventsHandlerMap[event];
     }
 
-    private subscribeIframeCustomEvents(): void {
+    private subscribeToNgEvents(): void {
         fromEvent(window.document, 'ng-event')
             .pipe(pluck('detail'), takeUntil(this.destroy$))
             .subscribe((customEvent: { name: string; data: unknown }) => {

@@ -29,7 +29,7 @@ function toTitleCase(str) {
 }
 
 @Component({
-    selector: 'dotcms-block-editor' /* eslint-disable-line */,
+    selector: 'dot-block-editor',
     templateUrl: './dot-block-editor.component.html',
     styleUrls: ['./dot-block-editor.component.scss']
 })
