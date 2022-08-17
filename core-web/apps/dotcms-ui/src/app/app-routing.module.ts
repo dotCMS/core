@@ -17,6 +17,11 @@ import { DotCustomReuseStrategyService } from '@shared/dot-custom-reuse-strategy
 
 const PORTLETS_ANGULAR = [
     {
+        path: 'container-new',
+        loadChildren: () =>
+            import('@portlets/dot-container/dot-container.module').then((m) => m.DotContainerModule)
+    },
+    {
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         path: 'templates',
