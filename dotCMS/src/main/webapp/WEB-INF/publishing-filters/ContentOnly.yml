@@ -1,4 +1,5 @@
 title: Content and Relationships
+sort: 1
 default: false
 roles: DOTCMS_BACK_END_USER
 filters:

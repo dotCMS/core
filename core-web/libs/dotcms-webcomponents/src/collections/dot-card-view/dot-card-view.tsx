@@ -151,6 +151,7 @@ export class DotCardView {
         }
 
         this.value = this.selection.map(({ inode }: DotContentletItem) => inode).join(',');
+
         this.selected.emit(this.selection);
     }
 
