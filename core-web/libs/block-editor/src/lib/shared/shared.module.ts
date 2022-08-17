@@ -1,4 +1,6 @@
 import { NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 // Shared
 import { SuggestionsService } from './services';
@@ -11,6 +13,7 @@ import {
 } from './';
 
 @NgModule({
+    imports: [CommonModule, FormsModule, ReactiveFormsModule],
     declarations: [
         SuggestionsComponent,
         SuggestionListComponent,
