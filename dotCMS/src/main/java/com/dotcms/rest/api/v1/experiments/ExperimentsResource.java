@@ -6,6 +6,8 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Collections;
@@ -36,7 +38,7 @@ public class ExperimentsResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public ResponseEntityExperimentView create(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            final ExperimentForm experimentForm) {
+            final ExperimentForm experimentForm) throws DotDataException, DotSecurityException {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
@@ -45,7 +47,8 @@ public class ExperimentsResource {
 
         final User user = initData.getUser();
         // test
-        final Experiment experiment = new Experiment("test", "test");
+        final Experiment experiment = new Experiment(experimentForm.getPageId(), experimentForm.getName(),
+                experimentForm.getDescription());
 
         final Experiment persistedExperiment = experimentsAPI.save(experiment, user);
 

@@ -1,14 +1,20 @@
 package com.dotcms.experiments.model;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.Map;
 
-public class TrafficProportion {
+/**
+ * DB:
+ * experiment (traffic_type, traffic_proportion json)
+ */
+
+public class TrafficProportion implements Serializable {
 
     private Type type;
-    private Map<String, Integer> percentages;
+    private Map<String, Float> percentages;
 
-    private TrafficProportion(final Type type, final Map<String, Integer> percentages) {
+    public TrafficProportion(final Type type, final Map<String, Float> percentages) {
         this.type = type;
         this.percentages = percentages;
     }
@@ -18,7 +24,7 @@ public class TrafficProportion {
                 Collections.emptyMap());
     }
 
-    public static TrafficProportion createCustomTraffic(final Map<String, Integer> percentages) {
+    public static TrafficProportion createCustomTraffic(final Map<String, Float> percentages) {
         return new TrafficProportion(Type.CUSTOM_PERCENTAGES,
                 percentages);
     }
@@ -32,7 +38,7 @@ public class TrafficProportion {
         return type;
     }
 
-    public Map<String, Integer> getPercentages() {
+    public Map<String, Float> getPercentages() {
         return percentages;
     }
 }

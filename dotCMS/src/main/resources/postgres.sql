@@ -2484,4 +2484,39 @@ CREATE TABLE shedlock(name VARCHAR(64) NOT NULL, lock_until timestamptz NOT NULL
                       locked_at timestamptz NOT NULL, locked_by VARCHAR(255) NOT NULL, PRIMARY KEY (name));
 
 
+-- create table template (
+--                           inode varchar(36) not null,
+--                           show_on_menu bool,
+--                           title varchar(255),
+--                           mod_date timestamptz,
+--                           mod_user varchar(100),
+--                           sort_order int4,
+--                           friendly_name varchar(255),
+--                           body text,
+--                           header text,
+--                           footer text,
+--                           image varchar(36),
+--                           identifier varchar(36),
+--                           drawed bool,
+--                           drawed_body text,
+--                           add_container_links int4,
+--                           containers_added int4,
+--                           head_code text,
+--                           theme varchar(255),
+--                           primary key (inode)
+-- );
 
+create table experiment (
+     id  varchar(36) not null,
+     page_id varchar(36) not null,
+     name varchar(255) not null,
+     description varchar(64) not null,
+     status varchar(64) not null,
+     traffic_type varchar(64) not null,
+     traffic_proportion jsonb,
+     traffic_allocation float4,
+     mod_date timestamptz,
+     start_date timestamptz,
+     end_date timestamptz,
+     ready_to_start bool
+);
