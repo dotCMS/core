@@ -1,7 +1,7 @@
 import { Observable, Subject, merge } from 'rxjs';
 
 import { pluck, takeUntil, tap } from 'rxjs/operators';
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewContainerRef } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { DotPageRenderState } from '../../shared/models/dot-rendered-page-state.model';
 import { DotPageStateService } from '../../content/services/dot-page-state/dot-page-state.service';
@@ -9,6 +9,7 @@ import { DotContentletEditorService } from '@components/dot-contentlet-editor/se
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { Title } from '@angular/platform-browser';
+import { DotBlockEditorSidebarComponent } from '@portlets/dot-edit-page/components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 
 @Component({
     selector: 'dot-edit-page-main',
@@ -29,7 +30,8 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
         private dotPageStateService: DotPageStateService,
         private dotRouterService: DotRouterService,
         private dotCustomEventHandlerService: DotCustomEventHandlerService,
-        private titleService: Title
+        private titleService: Title,
+        private viewContainerRef: ViewContainerRef
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
@@ -63,6 +65,7 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
         );
 
         this.subscribeIframeCloseAction();
+        this.viewContainerRef.createComponent(DotBlockEditorSidebarComponent);
     }
 
     ngOnDestroy(): void {

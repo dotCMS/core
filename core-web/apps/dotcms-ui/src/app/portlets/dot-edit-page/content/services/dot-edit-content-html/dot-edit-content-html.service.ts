@@ -515,9 +515,7 @@ export class DotEditContentHtmlService {
 
     private injectInlineBlockEditor(): void {
         const doc = this.getEditPageDocument();
-        const editBlockEditorNodes = doc.querySelectorAll(
-            '.section-blog-post-content[data-content]'
-        );
+        const editBlockEditorNodes = doc.querySelectorAll('[data-block-editor-content]');
         if (editBlockEditorNodes.length) {
             this.dotLicenseService
                 .isEnterprise()

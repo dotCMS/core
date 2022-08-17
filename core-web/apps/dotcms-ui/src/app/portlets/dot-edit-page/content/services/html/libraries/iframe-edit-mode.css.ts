@@ -454,7 +454,7 @@ export const getEditPageCss = (timestampId: string): string => {
         display: block;
     }
     
-    ${timestampId} [data-inode][data-field-name][data-content].dotcms__inline-edit-field {
+    ${timestampId} [data-inode][data-field-name][data-block-editor-content].dotcms__inline-edit-field {
         cursor: pointer;
     }
     

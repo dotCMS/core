@@ -10,7 +10,7 @@ import { DotGlobalMessageService } from '@components/_common/dot-global-message/
 import { DotContentTypeService } from '@services/dot-content-type';
 import { DotCMSContentTypeField, DotCMSContentTypeFieldVariable } from '@dotcms/dotcms-models';
 
-export interface BlockEditorData {
+export interface BlockEditorInput {
     content: { [key: string]: string };
     fieldName: string;
     language: number;
@@ -30,7 +30,7 @@ export interface BlockEditorData {
 export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
     @ViewChild('blockEditor') blockEditor: DotBlockEditorComponent;
 
-    data: BlockEditorData;
+    data: BlockEditorInput;
     saving = false;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -49,7 +49,7 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
                 takeUntil(this.destroy$),
                 switchMap((event) => this.extractBlockEditorData(event.data.dataset))
             )
-            .subscribe((eventData: BlockEditorData) => {
+            .subscribe((eventData: BlockEditorInput) => {
                 this.data = eventData;
             });
     }
@@ -102,7 +102,7 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
 
     private extractBlockEditorData(dataSet: {
         [key: string]: string;
-    }): Observable<BlockEditorData> {
+    }): Observable<BlockEditorInput> {
         return this.dotContentTypeService.getContentType(dataSet.contentType).pipe(
             switchMap((contentType) =>
                 contentType?.fields.filter((field) => field.variable == dataSet.fieldName)
@@ -113,7 +113,7 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
                     fieldName: dataSet.fieldName,
                     language: parseInt(dataSet.language),
                     inode: dataSet.inode,
-                    content: JSON.parse(dataSet.content)
+                    content: JSON.parse(dataSet.blockEditorContent)
                 });
             })
         );
@@ -121,7 +121,7 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
 
     private parseFieldVariables(
         fieldVariables: DotCMSContentTypeFieldVariable[]
-    ): BlockEditorData['fieldVariables'] {
+    ): BlockEditorInput['fieldVariables'] {
         return {
             allowedBlocks: fieldVariables.find((variable) => variable.key === 'allowedBlocks')
                 ?.value,
