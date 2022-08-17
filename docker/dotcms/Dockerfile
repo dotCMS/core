@@ -14,6 +14,8 @@ ARG BUILD_FROM=COMMIT
 #  Value resolved in the context of $BUILD_FROM
 ARG BUILD_ID=HEAD
 
+ARG DART_SASS_VERSION="1.54.4"
+
 WORKDIR /srv
 
 # Set gradle options
@@ -24,9 +26,13 @@ ENV GRADLE_OPTS="-Dfile.encoding=utf-8 -Xmx2g"
 # dotCMS core distributed under GPLv3 license (https://github.com/dotCMS/core/blob/master/license.txt)
 COPY build-src/ /build/
 RUN chmod 500 /build/build_dotcms.sh && /build/build_dotcms.sh ${BUILD_FROM} ${BUILD_ID}
+RUN chmod 500 /build/dart_sass.sh && /build/dart_sass.sh ${DART_SASS_VERSION}
 
 RUN mkdir -p /srv/utils /srv/templates /srv/config /srv/home
 RUN chmod -R 666 /srv && find /srv/ -type d -exec chmod a+x {} \;
+
+# Make sure the Dart SASS binaries are executable
+RUN chmod 755 /srv/dotserver/tomcat-*/webapps/ROOT/WEB-INF/bin/dart-sass-*/sass
 
 # ----------------------------------------------
 # Stage 2:  Construct our container using the minimal-java image
