@@ -77,6 +77,10 @@ dependencies {
 
     implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: '2.13.2'
 
+    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: '2.13.2'
+
+    implementation group: 'com.fasterxml.jackson.module', name: 'jackson-module-parameter-names', version: '2.13.2'
+
     implementation (group: 'com.fasterxml.jackson.jaxrs', name: 'jackson-jaxrs-base', version: '2.11.1'){
         transitive = false
     }

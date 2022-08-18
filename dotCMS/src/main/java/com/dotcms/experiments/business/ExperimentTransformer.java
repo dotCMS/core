@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * DBTransformer that converts DB objects into Template instances
+ * DBTransformer that converts DB objects into {@link Experiment} instances
  */
 public class ExperimentTransformer implements DBTransformer {
     final List<Experiment> list;
@@ -34,19 +34,19 @@ public class ExperimentTransformer implements DBTransformer {
     }
 
     private static Experiment transform(Map<String, Object> map)  {
-        final Experiment experiment;
-        experiment = new Experiment((String) map.get("pageId"), (String) map.get("name"),
-                (String) map.get("description"));
-        experiment.setId((String) map.get("id"));
-        experiment.setStatus(Experiment.Status.valueOf((String) map.get("status")));
-        experiment.setTrafficProportion(new TrafficProportion(
-                TrafficProportion.Type.valueOf((String) map.get("traffic_type")),
-                        (Map<String, Float>) map.get("traffic_allocation")));
-
-        experiment.setModDate((LocalDateTime) map.get("mod_date"));
-        experiment.setStartDate((LocalDateTime) map.get("start_date"));
-        experiment.setEndDate((LocalDateTime) map.get("end_date"));
-        experiment.setReadyToStart(ConversionUtils.toBooleanFromDb(map.get("ready_to_start")));
-        return experiment;
+        return new Experiment.Builder((String) map.get("pageId"), (String) map.get("name"),
+                (String) map.get("description"))
+                .id((String) map.get("id"))
+                .status(Experiment.Status.valueOf((String) map.get("status")))
+                // TODO fix percentages - this needs to be from the JSON object
+                .trafficProportion(new TrafficProportion(
+                        TrafficProportion.Type.valueOf((String) map.get("traffic_type")),
+                        ((TrafficProportion) map.get("traffic_proportion")).getPercentages()))
+                .trafficAllocation((Float) map.get("traffic_allocation"))
+                .modDate((LocalDateTime) map.get("mod_date"))
+                .startDate((LocalDateTime) map.get("start_date"))
+                .endDate((LocalDateTime) map.get("end_date"))
+                .readyToStart(ConversionUtils.toBooleanFromDb(map.get("ready_to_start")))
+                .build();
     }
 }

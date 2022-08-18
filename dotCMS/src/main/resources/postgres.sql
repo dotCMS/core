@@ -2483,29 +2483,6 @@ create table storage_x_data (
 CREATE TABLE shedlock(name VARCHAR(64) NOT NULL, lock_until timestamptz NOT NULL,
                       locked_at timestamptz NOT NULL, locked_by VARCHAR(255) NOT NULL, PRIMARY KEY (name));
 
-
--- create table template (
---                           inode varchar(36) not null,
---                           show_on_menu bool,
---                           title varchar(255),
---                           mod_date timestamptz,
---                           mod_user varchar(100),
---                           sort_order int4,
---                           friendly_name varchar(255),
---                           body text,
---                           header text,
---                           footer text,
---                           image varchar(36),
---                           identifier varchar(36),
---                           drawed bool,
---                           drawed_body text,
---                           add_container_links int4,
---                           containers_added int4,
---                           head_code text,
---                           theme varchar(255),
---                           primary key (inode)
--- );
-
 create table experiment (
      id  varchar(36) not null,
      page_id varchar(36) not null,

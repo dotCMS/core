@@ -2684,3 +2684,41 @@ create table storage_x_data (
 
 CREATE TABLE shedlock(name VARCHAR(64) NOT NULL, lock_until datetime NOT NULL,
                       locked_at datetime NOT NULL, locked_by VARCHAR(255) NOT NULL, PRIMARY KEY (name));
+
+
+-- create table template (
+--                           inode NVARCHAR(36) not null,
+--                           show_on_menu tinyint null,
+--                           title NVARCHAR(255) null,
+--                           mod_date datetimeoffset(3) null,
+--                           mod_user NVARCHAR(100) null,
+--                           sort_order int null,
+--                           friendly_name NVARCHAR(255) null,
+--                           body NVARCHAR(MAX) null,
+--                           header NVARCHAR(MAX) null,
+--                           footer NVARCHAR(MAX) null,
+--                           image NVARCHAR(36) null,
+--                           identifier NVARCHAR(36) null,
+--                           drawed tinyint null,
+--                           drawed_body NVARCHAR(MAX) null,
+--                           add_container_links int null,
+--                           containers_added int null,
+--                           head_code NVARCHAR(MAX) null,
+--                           theme NVARCHAR(255) null,
+--                           primary key (inode)
+-- );
+
+create table experiment (
+    id  NVARCHAR(36) not null,
+    page_id NVARCHAR(36) not null,
+    name NVARCHAR(255) not null,
+    description NVARCHAR(255) not null,
+    status NVARCHAR(64) not null,
+    traffic_type NVARCHAR(64) not null,
+    traffic_proportion NVARCHAR(MAX),
+    traffic_allocation float,
+    mod_date datetimeoffset(3),
+    start_date datetimeoffset(3),
+    end_date datetimeoffset(3),
+    ready_to_start tinyint
+);

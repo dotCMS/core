@@ -17,6 +17,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 public class ExperimentsAPIImpl implements ExperimentsAPI {
 
@@ -41,12 +42,40 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             throw new DotSecurityException("You don't have permission to save the Experiment.");
         }
 
+        Experiment.Builder builder = experiment.toBuilder();
+
         if(!UtilMethods.isSet(experiment.getId())) {
-            experiment.setId(UUIDGenerator.generateUuid());
+            builder.id(UUIDGenerator.generateUuid());
         }
 
-        experiment.setModDate(LocalDateTime.now());
-        return factory.save(experiment);
+        builder.modDate(LocalDateTime.now());
+
+        final Experiment experimentToSave = builder.build();
+
+        return factory.save(experimentToSave);
+    }
+
+    @Override
+    public Optional<Experiment> find(final String id, final User user)
+            throws DotDataException, DotSecurityException {
+        if(!UtilMethods.isSet(id)) {
+            return Optional.empty();
+        }
+
+        final Optional<Experiment> experiment =  factory.find(id);
+
+        if(experiment.isPresent()) {
+            final Contentlet pageAsContent = contentletAPI
+                    .findContentletByIdentifierAnyLanguage(experiment.get().getPageId(), false);
+
+            if (!permissionAPI.doesUserHavePermission(pageAsContent, PermissionLevel.EDIT.getType(),
+                    user)) {
+                Logger.error(this, "You don't have permission to get the Experiment.");
+                throw new DotSecurityException("You don't have permission to get the Experiment.");
+            }
+        }
+
+        return experiment;
     }
 
     @Override

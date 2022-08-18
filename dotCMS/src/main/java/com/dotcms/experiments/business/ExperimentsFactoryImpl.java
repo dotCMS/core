@@ -3,6 +3,7 @@ package com.dotcms.experiments.business;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.JsonMapper;
 import com.dotmarketing.util.Logger;
@@ -11,6 +12,7 @@ import io.vavr.control.Try;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.postgresql.util.PGobject;
 
 public class ExperimentsFactoryImpl implements
         ExperimentsFactory {
@@ -80,7 +82,15 @@ public class ExperimentsFactoryImpl implements
         final String trafficProportionAsJSON = Try.of(()->
                         objectWriter.writeValueAsString(experiment.getTrafficProportion()))
                 .getOrNull();
-        dc.addObject(trafficProportionAsJSON);
+        if(DbConnectionFactory.isPostgres()) {
+            PGobject jsonObject = new PGobject();
+            jsonObject.setType("json");
+            Try.run(() -> jsonObject.setValue(trafficProportionAsJSON)).getOrElseThrow(
+                    () -> new DotDataException("Invalid Traffic Proportion"));
+            dc.addObject(jsonObject);
+        } else {
+            dc.addParam(trafficProportionAsJSON);
+        }
         dc.addParam(experiment.getTrafficAllocation());
         dc.addParam(experiment.getModDate());
         dc.addParam(experiment.getStartDate());

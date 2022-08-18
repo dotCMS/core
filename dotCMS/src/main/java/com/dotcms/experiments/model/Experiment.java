@@ -4,19 +4,33 @@ import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.DotStateException;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-public class Experiment implements Serializable, ManifestItem {
+public final class Experiment implements Serializable, ManifestItem {
     private String name;
     private String description;
     private String id;
     private Status status;
     private TrafficProportion trafficProportion;
     private float trafficAllocation;
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime startDate;
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime endDate;
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime modDate;
     private final String pageId;
     private boolean readyToStart;
@@ -28,44 +42,108 @@ public class Experiment implements Serializable, ManifestItem {
         DRAFT
     }
 
-    public Experiment(final String pageId, final String name, final String description) {
-        DotPreconditions.checkNotEmpty(pageId, DotStateException.class, "pageId is mandatory");
-        DotPreconditions.checkNotEmpty(name, DotStateException.class, "name is mandatory");
-        DotPreconditions.checkNotEmpty(description, DotStateException.class, "description is mandatory");
-        this.pageId = pageId;
-        this.name = name;
-        this.description = description;
-        this.status = Status.DRAFT;
-        this.trafficProportion = TrafficProportion.createSplitEvenlyTraffic();
-        this.trafficAllocation = 100;
+    public static class Builder {
+        // required parameters
+        private final String name;
+        private final String description;
+
+        private String id;
+        private Status status = Status.DRAFT;
+        private TrafficProportion trafficProportion = TrafficProportion.createSplitEvenlyTraffic();
+        private float trafficAllocation = 100;
+        private LocalDateTime startDate;
+        private LocalDateTime endDate;
+        private LocalDateTime modDate;
+        private String pageId;
+        private boolean readyToStart;
+
+        public Builder(final String pageId, final String name, final String description) {
+            DotPreconditions.checkNotEmpty(pageId, DotStateException.class, "pageId is mandatory");
+            DotPreconditions.checkNotEmpty(name, DotStateException.class, "name is mandatory");
+            DotPreconditions.checkNotEmpty(description, DotStateException.class, "description is mandatory");
+            this.pageId = pageId;
+            this.name = name;
+            this.description = description;
+        }
+
+        public Builder(final Experiment val) {
+            this.name = val.name;
+            this.description = val.description;
+            this.id = val.id;
+            this.status = val.status;
+            this.trafficProportion = val.trafficProportion;
+            this.trafficAllocation = val.trafficAllocation;
+            this.startDate = val.startDate;
+            this.endDate = val.endDate;
+            this.modDate = val.modDate;
+            this.pageId = val.pageId;
+            this.readyToStart = val.readyToStart;
+        }
+
+        public Builder id(final String val) {
+            id = val;
+            return this;
+
+        }
+        public Builder status(final Status val) {
+            status = val;
+            return this;
+        }
+
+        public Builder trafficProportion(final TrafficProportion val) {
+            trafficProportion = val;
+            return this;
+        }
+
+        public Builder trafficAllocation(final float val) {
+            trafficAllocation = val;
+            return this;
+        }
+
+        public Builder startDate(final LocalDateTime val) {
+            startDate = val;
+            return this;
+        }
+
+        public Builder endDate(final LocalDateTime val) {
+            endDate = val;
+            return this;
+        }
+
+        public Builder modDate(final LocalDateTime val) {
+            modDate = val;
+            return this;
+        }
+
+        public Builder readyToStart(final boolean val) {
+            readyToStart = val;
+            return this;
+        }
+
+        public Experiment build() {
+            return new Experiment(this);
+        }}
+
+    private Experiment(final Builder builder) {
+        this.name = builder.name;
+        this.description = builder.description;
+        this.id = builder.id;
+        this.status = builder.status;
+        this.trafficProportion = builder.trafficProportion;
+        this.trafficAllocation = builder.trafficAllocation;
+        this.startDate = builder.startDate;
+        this.endDate = builder.endDate;
+        this.modDate = builder.modDate;
+        this.pageId = builder.pageId;
+        this.readyToStart = builder.readyToStart;
     }
 
     public String getId() {
         return id;
     }
 
-    public void setId(String id) {
-        this.id = id;
-    }
-
     public String getName() {
         return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public void setStatus(Status status) {
-        this.status = status;
-    }
-
-    public void setTrafficProportion(TrafficProportion trafficProportion) {
-        this.trafficProportion = trafficProportion;
     }
 
     public String getDescription() {
@@ -79,37 +157,20 @@ public class Experiment implements Serializable, ManifestItem {
     public TrafficProportion getTrafficProportion() {
         return trafficProportion;
     }
-
     public float getTrafficAllocation() {
         return trafficAllocation;
-    }
-
-    public void setTrafficAllocation(float trafficAllocation) {
-        this.trafficAllocation = trafficAllocation;
     }
 
     public LocalDateTime getStartDate() {
         return startDate;
     }
 
-    public void setStartDate(LocalDateTime startDate) {
-        this.startDate = startDate;
-    }
-
     public LocalDateTime getEndDate() {
         return endDate;
     }
 
-    public void setEndDate(LocalDateTime endDate) {
-        this.endDate = endDate;
-    }
-
     public LocalDateTime getModDate() {
         return modDate;
-    }
-
-    public void setModDate(LocalDateTime modDate) {
-        this.modDate = modDate;
     }
 
     public String getPageId() {
@@ -120,8 +181,8 @@ public class Experiment implements Serializable, ManifestItem {
         return readyToStart;
     }
 
-    public void setReadyToStart(boolean readyToStart) {
-        this.readyToStart = readyToStart;
+    public Experiment.Builder toBuilder() {
+        return new Experiment.Builder(this);
     }
 
     @JsonIgnore
