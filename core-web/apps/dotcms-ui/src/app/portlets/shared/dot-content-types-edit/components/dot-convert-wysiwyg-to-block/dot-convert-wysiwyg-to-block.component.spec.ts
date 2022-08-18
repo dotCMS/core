@@ -36,7 +36,7 @@ describe('DotConvertWysiwygToBlockComponent', () => {
         fixture.detectChanges();
     });
 
-    it('should create', () => {
+    it('should render all the static content', () => {
         const infoHeader = de.query(By.css('[data-testId="infoHeader"]')).nativeElement;
         const infoContent = de.query(By.css('[data-testId="infoContent"]')).nativeElement;
         const header = de.query(By.css('[data-testId="header"]')).nativeElement;

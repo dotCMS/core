@@ -1,10 +1,14 @@
-<span [innerHTML]="'contenttypes.field.properties.wysiwyg.info.content' | dm"></span>
+<span
+    [innerHTML]="'contenttypes.field.properties.wysiwyg.info.content' | dm"
+    data-testId="infoContent"
+></span>
 
 <button
     *ngIf="currentField?.id; else learnMore"
     pButton
     class="p-button-secondary p-button-sm"
     (click)="action.emit($event)"
+    data-testId="button"
 >
     {{ 'contenttypes.field.properties.wysiwyg.info.button' | dm }}
 </button>
@@ -16,6 +20,7 @@
         href="https://www.dotcms.com/docs/latest/block-editor"
         rel="noopener"
         target="_blank"
+        data-testId="learnMore"
         >{{ 'learn-more' | dm }}</a
     ></ng-template
 >
