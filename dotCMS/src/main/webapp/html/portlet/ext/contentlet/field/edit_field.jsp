@@ -164,7 +164,6 @@
             for(FieldVariable fv : acceptTypes){
                 if("styles".equalsIgnoreCase(fv.getKey())){
                     customStyles = fv.getValue();
-                    customClassName = "block-custom-styles";
                 }
                 if("contentTypes".equalsIgnoreCase(fv.getKey())){
                     //only allow alphanumeric character an comma
@@ -175,23 +174,12 @@
                 }
             }
             %>
-            <style type="text/css">
-                dotcms-block-editor {
-                    width: 100%;
-                    height: 500px;
-                    display: block;
-                }
-
-                dotcms-block-editor.block-custom-styles {
-                    <%=customStyles%>
-                }
-            </style>
 
             <script src="/html/dotcms-block-editor.js"></script>
             <dotcms-block-editor
                 allowed-content-types="<%=allowedContentTypes%>"
                 allowed-blocks="<%=allowedBlocks%>"
-                class="<%=customClassName%>"
+                custom-styles="<%=customStyles%>"
                 lang="<%=contentLanguage%>">
             </dotcms-block-editor>
             <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"/>

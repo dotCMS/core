@@ -56,7 +56,8 @@ const DEPS_ENV: {[key: string]: string} = {
   WAIT_FOR_DEPS: waitForDeps,
   POSTGRES_USER: 'postgres',
   POSTGRES_PASSWORD: 'postgres',
-  POSTGRES_DB: 'dotcms'
+  POSTGRES_DB: 'dotcms',
+  JVM_ENDPOINT_TEST_PASS: 'obfuscate_me'
 }
 
 /*

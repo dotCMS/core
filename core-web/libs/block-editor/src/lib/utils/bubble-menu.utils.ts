@@ -1,5 +1,10 @@
 import { isTextSelection } from '@tiptap/core';
 import { BubbleMenuItem, ShouldShowProps } from '@dotcms/block-editor';
+import { LINK_FORM_PLUGIN_KEY } from '../extensions/bubble-link-form.extension';
+
+const hideBubbleMenuOn = {
+    dotContent: true
+};
 
 /**
  * Determine when the bubble menu can or cannot be displayed.
@@ -9,7 +14,10 @@ import { BubbleMenuItem, ShouldShowProps } from '@dotcms/block-editor';
  */
 export const shouldShowBubbleMenu = ({ editor, state, from, to }: ShouldShowProps) => {
     const { doc, selection } = state;
+    const { view } = editor;
     const { empty } = selection;
+
+    const { isOpen, openOnClick } = LINK_FORM_PLUGIN_KEY.getState(state);
 
     // Current selected node
     const node = editor.state.doc.nodeAt(editor.state.selection.from);
@@ -20,11 +28,38 @@ export const shouldShowBubbleMenu = ({ editor, state, from, to }: ShouldShowProp
     const isEmptyTextBlock = !doc.textBetween(from, to).length && isTextSelection(state.selection);
 
     // If it's empty or the current node is type dotContent, it will not open.
-    if (!editor.isFocused || empty || isEmptyTextBlock || node?.type.name == 'dotContent') {
+    if (
+        !isOpen &&
+        (!view.hasFocus() || empty || isEmptyTextBlock || hideBubbleMenuOn[node?.type.name])
+    ) {
+        return false;
+    }
+
+    if (isOpen && openOnClick) {
         return false;
     }
 
     return true;
+};
+
+/**
+ *  Check if a text is a valid url
+ *
+ * @param {string} nodeText
+ * @return {*}
+ */
+export const isValidURL = (nodeText: string) => {
+    const pattern = new RegExp(
+        '^(https?:\\/\\/)?' + // protocol
+            '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name
+            '((\\d{1,3}\\.){3}\\d{1,3}))' + // OR ip (v4) address
+            '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
+            '(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
+            '(\\#[-a-z\\d_]*)?$',
+        'i'
+    ); // fragment locator
+
+    return !!pattern.test(nodeText);
 };
 
 export const getNodePosition = (node: HTMLElement, type: string): DOMRect => {

@@ -1,107 +1,78 @@
 @use "libs/block-editor/src/lib/scss/variables" as *;
 
 .form-container {
-    box-sizing: border-box;
     background: $white;
     border-radius: $border-radius;
-    box-shadow: 0 (0.25 * $dot-editor-size) (0.625 * $dot-editor-size) rgba(10, 7, 37, 0.1);
+    box-shadow: 0px 4px 10px rgba(10, 7, 37, 0.1);
     display: flex;
     flex-direction: column;
-    padding: 0.45 * $dot-editor-size;
     width: $form-width;
-}
 
-form {
-    align-items: center;
-    display: flex;
-    flex-direction: row;
-    gap: 0.5 * $dot-editor-size;
-    justify-content: space-between;
-    width: 100%;
-    input {
-        background: #ffffff;
-        border-radius: $border-radius;
-        border: 1px solid #b3b1b8;
-        box-sizing: border-box;
-        padding: 0.85 * $dot-editor-size;
-        width: calc(100% - 5.5rem);
-        &:focus {
-            outline: none;
+    form {
+        align-items: center;
+        display: flex;
+        flex-direction: column;
+        max-width: 100%;
+    }
+
+    .search-container {
+        padding: $spacing-3;
+        width: 100%;
+        input[type="text"] {
+            background: $white;
+            border: 1px solid $gray-light;
+            &:focus {
+                outline: none;
+                box-shadow: none;
+            }
+        }
+    }
+
+    .info-container {
+        display: flex;
+        flex-direction: column;
+        gap: $dot-editor-size;
+        padding: $spacing-3;
+        width: 100%;
+
+        .url-container {
+            cursor: pointer;
+            white-space: nowrap;
+            font-size: $dot-editor-size;
+            width: 100%;
+            word-wrap: normal;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            gap: 0.5 * $dot-editor-size;
+            color: $black;
+        }
+
+        .field-checkbox {
+            display: flex;
+            gap: 0.2 * $dot-editor-size;
+            min-width: 100%;
+
+            .checkbox-container {
+                cursor: pointer;
+                width: 2 * $dot-editor-size;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
         }
     }
 }
 
-.card-container {
-    padding: 0.5 * $dot-editor-size;
-}
-
-.card-header {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5 * $dot-editor-size;
-    padding-bottom: 0.75 * $dot-editor-size;
-    padding-top: $dot-editor-size;
-}
-
-.linked-to {
-    color: $gray;
-    font-size: $font-size-small;
-    font-weight: $font-weight-semi-bold;
-}
-
-.link-container {
-    cursor: pointer;
-    white-space: nowrap;
-    word-wrap: normal;
-    &:hover {
-        background-color: $gray-bg;
-    }
-}
-
-.link {
-    align-items: center;
-    color: $black;
-    display: flex;
-    font-size: $font-size-medium;
-    gap: 0.5 * $dot-editor-size;
-    height: 100%;
-    justify-content: flex-start;
-    padding: (0.5 * $dot-editor-size) 0;
-    text-decoration: none;
+.divider {
+    border: 0;
+    border-top: 1px solid $gray-lighter;
     width: 100%;
+    margin: 0;
 }
 
-.card-footer {
-    align-items: center;
-    display: flex;
-    justify-content: space-between;
-}
-
-.btn {
-    align-items: center;
-    background: $white;
-    border-radius: $border-radius;
-    cursor: pointer;
-    display: flex;
-    font-weight: bold;
-    justify-content: center;
-    padding: (0.75 * $dot-editor-size) $dot-editor-size;
-    width: 11.25 * $dot-editor-size;
-}
-
-.btn-add {
-    width: 5.5 * $dot-editor-size;
-    background: #576be8;
-    border: 1px solid #576be8;
-    color: $white;
-}
-
-.btn-copy {
-    border: 1px solid #576be8;
-    color: #576be8;
-}
-
-.btn- * remove {
-    border: 1px solid #ec4b41;
-    color: #ec4b41;
+.truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }

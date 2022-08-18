@@ -1408,7 +1408,8 @@ public class WorkflowHelper {
      * @return Role
      * @throws DotDataException
      */
-    private Role resolveRole(final String id) throws DotDataException {
+    @VisibleForTesting
+    protected Role resolveRole(final String id) throws DotDataException {
 
         Role role = null;
         final String newid = id.substring
@@ -1417,6 +1418,9 @@ public class WorkflowHelper {
         if(id.startsWith("user-")) {
 
             role = this.roleAPI.loadRoleByKey(newid);
+            if (null == role) {
+                role = this.roleAPI.loadRoleByKey(id);
+            }
         } else if(id.startsWith("role-")) {
 
             role = this.roleAPI.loadRoleById (newid);

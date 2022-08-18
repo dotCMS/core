@@ -407,7 +407,7 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/tags?name=default",
+					"raw": "{{serverURL}}/api/v1/tags?name=global-tag-1",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -419,7 +419,11 @@
 					"query": [
 						{
 							"key": "name",
-							"value": "default"
+							"value": "global-tag-1"
+						},
+						{
+							"key": "siteId",
+							"value": ""
 						}
 					]
 				},

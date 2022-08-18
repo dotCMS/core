@@ -633,12 +633,12 @@ public class ContentResource {
                 int i = 0;
                 for(String relationshipValue: related.split(",")){
                     if (i == 0) {
-                        contentlets.addAll(getPullRelated(user, limit, relatedOrder, tmDate,
+                        contentlets.addAll(getPullRelated(user, limit, offset, relatedOrder, tmDate,
                                 processQuery(query), relationshipValue, language, live));
                     } else {
                         //filter the intersection in case multiple relationship
                         contentlets = contentlets.stream()
-                                .filter(getPullRelated(user, limit, relatedOrder, tmDate,
+                                .filter(getPullRelated(user, limit, offset, relatedOrder, tmDate,
                                         processQuery(query), relationshipValue, language, live)::contains).collect(
                                         Collectors.toList());
                     }
@@ -685,6 +685,7 @@ public class ContentResource {
      * Method used to obtain related content that matches a given criteria (lucene query and additional params)
      * @param user
      * @param limit
+     * @param offset
      * @param orderBy
      * @param tmDate
      * @param luceneQuery
@@ -695,7 +696,7 @@ public class ContentResource {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    private List<Contentlet> getPullRelated(User user, int limit,
+    private List<Contentlet> getPullRelated(User user, int limit, int offset,
             String orderBy, String tmDate, String luceneQuery, String relationshipValue, long language, boolean live)
             throws DotSecurityException, DotDataException {
         final String contentTypeVar = relationshipValue.split(":")[0].split("\\.")[0];
@@ -708,12 +709,10 @@ public class ContentResource {
                 .getRelationshipFromField(relatedContentType.fieldMap().get(fieldVar),
                         user);
 
-        List<Contentlet> pullRelated = ContentUtils
+        return ContentUtils
                 .pullRelated(relationship.getRelationTypeValue(), relatedIdentifier,
-                        luceneQuery, relationship.hasParents(), limit, orderBy, user,
+                        luceneQuery, relationship.hasParents(), limit, offset, orderBy, user,
                         tmDate, language, live);
-
-        return pullRelated;
     }
 
     /**

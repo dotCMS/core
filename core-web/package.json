@@ -1,6 +1,6 @@
 {
     "name": "dotcms-ui",
-    "version": "22.8.0-next.8",
+    "version": "22.10.0-next.4",
     "license": "MIT",
     "engines": {
         "node": ">=16.13.2"
@@ -92,6 +92,7 @@
         "font-awesome": "^4.7.0",
         "htmldiff-js": "^1.0.5",
         "lodash": "^4.17.20",
+        "lodash.isequal": "^4.5.0",
         "md5": "^2.3.0",
         "ng-packagr": "14.0.2",
         "ng2-dragula": "^2.1.1",

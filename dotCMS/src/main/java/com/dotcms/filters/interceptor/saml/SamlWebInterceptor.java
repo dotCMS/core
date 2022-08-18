@@ -156,6 +156,7 @@ public class SamlWebInterceptor implements WebInterceptor {
                             // if the auto login couldn't logged the user, then send it to the IdP login page (if it is not already logged in).
                             if (null == session || !autoLoginResult.isAutoLogin() || this.samlWebUtils.isNotLogged(request)) {
 
+                                Logger.debug(this, ()-> "User not logged in, doing SAML Authentication request");
                                 this.doAuthentication(request, response, session, identityProviderConfiguration);
                                 return Result.SKIP_NO_CHAIN;
                             }
@@ -219,11 +220,14 @@ public class SamlWebInterceptor implements WebInterceptor {
                 (UtilMethods.isSet(request.getQueryString())?
                     "?" + request.getQueryString() : StringUtils.EMPTY);
 
+        Logger.debug(this, ()-> "OriginalRequest: " + originalRequest);
+
         final String redirectAfterLogin = UtilMethods.isSet(request.getParameter(REFERRER_PARAMETER_KEY))
                 ?request.getParameter(REFERRER_PARAMETER_KEY) :
                 // this is safe, just to make a redirection when the user get's logged.
                 originalRequest;
 
+        Logger.debug(this, ()-> "Referrer: " + request.getParameter(REFERRER_PARAMETER_KEY));
         Logger.debug(this.getClass(),
                 ()-> "Executing SAML Login Redirection with request: " + redirectAfterLogin);
 
@@ -292,6 +296,8 @@ public class SamlWebInterceptor implements WebInterceptor {
                     final String uri = session.getAttribute(ORIGINAL_REQUEST) != null?
                             (String) session.getAttribute(ORIGINAL_REQUEST):
                             request.getRequestURI();
+
+                    Logger.debug(this,"SAML, uri: " + uri);
 
                     session.removeAttribute(ORIGINAL_REQUEST);
 

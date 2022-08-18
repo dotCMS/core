@@ -1,16 +1,30 @@
 @use "libs/block-editor/src/lib/scss/variables" as *;
 
+@import "apps/dotcms-block-editor/src/fonts.scss";
 @import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400&display=swap");
 @import url("https://fonts.googleapis.com/icon?family=Material+Icons");
 
+:host ::ng-deep {
+    @import "libs/dot-primeng-theme-styles/src/scss/styles";
+    @import "../../../../node_modules/primeng/resources/primeng.min";
+    @import "../../../../node_modules/primeicons/primeicons";
+}
+
 :host {
-    border-radius: 4px;
-    display: block;
-    height: 500px;
-    overflow-y: hidden;
     position: relative;
-    outline: $gray-light solid 1px;
-    resize: vertical;
+    font-family: "Roboto", sans-serif;
+    height: 100%;
+    display: block;
+
+    .editor-wrapper {
+        display: block;
+        border-radius: 4px;
+        height: 500px;
+        overflow: hidden;
+        position: relative;
+        resize: vertical;
+        outline: $gray-light solid 1px;
+    }
 
     // If a child is focused, set this style to the parent
     &:focus-within {
