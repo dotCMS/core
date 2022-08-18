@@ -21,6 +21,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.contentet.pagination.ContentletPaginatedBuilder;
 import com.dotmarketing.util.contentet.pagination.ContentletsPaginated;
+import java.util.Iterator;
 import java.util.List;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -83,6 +84,64 @@ public class ContentletsPaginatedIntegrationTest {
 
             assertEquals("The contentlets should be in order", contentletExpected.getIdentifier(), contentlet.getIdentifier());
             assertEquals("The contentlets should be in order", contentletExpected.getTitle(), contentlet.getTitle());
+        }
+    }
+
+
+    /**
+     * Method to test: {@link ContentletsPaginated}, really al the behavior as {@link Iterable}
+     * When:
+     * - Create 4 contentlets in the same Host.
+     * - Set the ContentletsPaginated's perPage attribute to a really big amount
+     * - Set the ContentletsPaginated's luceneQuery to "+conHost:[contentlet's host identifier]"
+     * - remove each contentlet from the Iterator meanwhile go through it
+     * Should: get all the 4 Contentlets
+     */
+    @Test
+    public void remove(){
+        final Host host = new SiteDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        final long currentTimeMillis = System.currentTimeMillis();
+        final Contentlet contentlet1 = new ContentletDataGen(contentType)
+                .host(host)
+                .setProperty("title", "A_" + currentTimeMillis)
+                .nextPersisted();
+
+        final Contentlet contentlet2 = new ContentletDataGen(contentType)
+                .host(host)
+                .setProperty("title", "B_" + currentTimeMillis)
+                .nextPersisted();
+
+        final Contentlet contentlet3 = new ContentletDataGen(contentType)
+                .host(host)
+                .setProperty("title", "C_" + currentTimeMillis)
+                .nextPersisted();
+
+        final Contentlet contentlet4 = new ContentletDataGen(contentType)
+                .host(host)
+                .setProperty("title", "D_" + currentTimeMillis)
+                .nextPersisted();
+
+        final List<Contentlet> expected = list(contentlet1, contentlet2, contentlet3, contentlet4);
+        final ContentletsPaginated contentletsPaginated = new ContentletPaginatedBuilder()
+                .setLuceneQuery("+conHost:" + host.getIdentifier())
+                .setUser(APILocator.systemUser())
+                .setRespectFrontendRoles(false)
+                .build();
+
+
+        assertEquals("Should return all the Contentlets", expected.size(), contentletsPaginated.size());
+
+        int i = 0;
+        final Iterator<Contentlet> iterator = contentletsPaginated.iterator();
+        while(iterator.hasNext()){
+            Contentlet contentlet = iterator.next();
+            final Contentlet contentletExpected = expected.get(i++);
+
+            assertEquals("The contentlets should be in order", contentletExpected.getIdentifier(), contentlet.getIdentifier());
+            assertEquals("The contentlets should be in order", contentletExpected.getTitle(), contentlet.getTitle());
+            iterator.remove();
         }
     }
 

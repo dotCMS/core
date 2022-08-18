@@ -77,30 +77,37 @@ public class ContentletsPaginated implements Iterable<Contentlet> {
 
     private class ContentletIterator implements Iterator<Contentlet> {
 
-        private int currentIndex = 0;
-        private int currentTotalIndex = 0;
+        private int currentIndex = -1;
+        private int totalIndex = 0;
 
         @Override
         public boolean hasNext() {
-            return currentTotalIndex < totalHits;
+            return totalIndex < totalHits;
         }
 
         @Override
         public Contentlet next() {
             try {
+
+                currentIndex++;
                 if (currentIndex >= currentPageContentletInodes.size()) {
-                    currentPageContentletInodes = loadNextPage(currentTotalIndex);
+                    currentPageContentletInodes = loadNextPage(totalIndex);
                     currentIndex = 0;
                 }
 
                 final String inode = currentPageContentletInodes.get(currentIndex);
-                currentIndex++;
-                currentTotalIndex++;
+                totalIndex++;
                 return ContentletsPaginated.this.contentletAPI.find(inode, user, respectFrontendRoles);
             } catch (DotSecurityException | DotDataException e) {
                 Logger.error(ContentletIterator.class, e.getMessage());
                 throw new NoSuchElementException(e.getMessage());
             }
+        }
+
+        @Override
+        public void remove() {
+            currentPageContentletInodes.remove(currentIndex);
+            currentIndex--;
         }
     }
 }
