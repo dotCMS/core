@@ -1,5 +1,5 @@
-<div *ngIf="items.length; else isFilterActive ? noResults : emptyBlock" class="inherited-styles">
-    <dot-suggestion-list #list [suggestionItems]="items"> </dot-suggestion-list>
+<div *ngIf="items.length" class="inherited-styles">
+    <dot-suggestion-list #list [suggestionItems]="items" [urlItem]="true"></dot-suggestion-list>
 </div>
 
 <!-- TODO: Move this to a custom `page-suggestions` -->
@@ -9,11 +9,5 @@
     <div class="empty" *ngIf="!loading">
         <p [innerHTML]="title"></p>
         <button (mousedown)="handleBackButton($event)">Back</button>
-    </div>
-</ng-template>
-
-<ng-template #noResults>
-    <div class="empty">
-        <p [innerHTML]="noResultsMessage"></p>
     </div>
 </ng-template>

@@ -1,9 +1,7 @@
 import {
-    AfterViewInit,
     ChangeDetectorRef,
     Component,
     EventEmitter,
-    HostListener,
     Input,
     OnInit,
     Output,
@@ -16,14 +14,10 @@ import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 import { map, take } from 'rxjs/operators';
 import { MenuItem } from 'primeng/api';
 
-import { SuggestionsService, DotLanguageService } from '../../services';
-
-import {
-    SuggestionListComponent,
-    DEFAULT_LANG_ID,
-    suggestionOptions,
-    Languages
-} from '@dotcms/block-editor';
+import { DotLanguageService, Languages } from '../../services/dot-language/dot-language.service';
+import { SuggestionListComponent } from '../suggestion-list/suggestion-list.component';
+import { SuggestionsService } from '../../services/suggestions/suggestions.service';
+import { DEFAULT_LANG_ID, suggestionOptions } from '@dotcms/block-editor';
 
 export interface SuggestionsCommandProps {
     payload?: DotCMSContentlet;
@@ -48,7 +42,7 @@ export enum ItemsType {
     templateUrl: './suggestions.component.html',
     styleUrls: ['./suggestions.component.scss']
 })
-export class SuggestionsComponent implements OnInit, AfterViewInit {
+export class SuggestionsComponent implements OnInit {
     // TODO: Move all the logic related to the list to its component
     @ViewChild('list', { static: false }) list: SuggestionListComponent;
 
@@ -57,28 +51,23 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
     @Input() items: DotMenuItem[] = [];
     @Input() title = 'Select a block';
     @Input() noResultsMessage = 'No Results';
-    @Input() isOpen = false;
     @Input() currentLanguage = DEFAULT_LANG_ID;
     @Input() allowedContentTypes = '';
 
+    @Output() clearFilter: EventEmitter<string> = new EventEmitter<string>();
+
+    // Should be gone
+    @Input() isOpen = false;
     @Input() loading = false;
     @Input() urlItem = false;
-
-    @Output() clearFilter: EventEmitter<string> = new EventEmitter<string>();
     @Output() goBack: EventEmitter<MouseEvent> = new EventEmitter<MouseEvent>();
 
     private itemsLoaded: ItemsType;
     private selectedContentType: DotCMSContentType;
-    private mouseMove = true;
     private dotLangs: Languages;
     private initialItems: DotMenuItem[];
 
     isFilterActive = false;
-
-    @HostListener('mousemove', ['$event'])
-    onMousemove() {
-        this.mouseMove = true;
-    }
 
     constructor(
         private suggestionsService: SuggestionsService,
@@ -110,16 +99,12 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
             .subscribe((dotLang) => (this.dotLangs = dotLang));
     }
 
-    ngAfterViewInit() {
-        this.setFirstItemActive();
-    }
-
     /**
      * Add the Contentlets item to the suggestions that is not present by default.
      *
      * @memberof SuggestionsComponent
      */
-    addCContentletItem() {
+    addContentletItem() {
         this.items = [
             {
                 label: 'Contentlets',
@@ -131,7 +116,6 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
             },
             ...this.items
         ];
-        this.setFirstItemActive();
     }
 
     /**
@@ -155,16 +139,6 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
      */
     updateSelection(e: KeyboardEvent) {
         this.list.updateSelection(e);
-        this.mouseMove = false;
-    }
-
-    /**
-     * Set the first item active
-     *
-     * @memberof SuggestionsComponent
-     */
-    setFirstItemActive() {
-        this.list?.setFirstItemActive();
     }
 
     /**
@@ -174,54 +148,6 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
      */
     updateActiveItem(index: number): void {
         this.list?.updateActiveItem(index);
-    }
-
-    /**
-     * Reset the key manager after we add new elements to the list
-     *
-     * @memberof SuggestionsComponent
-     */
-    resetKeyManager() {
-        this.list?.resetKeyManager();
-    }
-
-    /**
-     * Avoid closing the suggestions on manual scroll
-     *
-     * @param {MouseEvent} e
-     * @memberof SuggestionsComponent
-     */
-    onMouseDownHandler(e: MouseEvent) {
-        e.preventDefault();
-    }
-
-    /**
-     * Handle the active item on menu events
-     *
-     * @param {MouseEvent} e
-     * @memberof SuggestionsComponent
-     */
-    onMouseEnter(e: MouseEvent) {
-        // If mouse does not move then leave the function.
-        if (!this.mouseMove) {
-            return;
-        }
-
-        e.preventDefault();
-        const index = Number((e.target as HTMLElement).dataset.index);
-        this.updateActiveItem(index);
-    }
-
-    /**
-     * Execute the item command on mouse down
-     *
-     * @param {MouseEvent} e
-     * @param {MenuItem} item
-     * @memberof SuggestionsComponent
-     */
-    onMouseDown(e: MouseEvent, item: MenuItem) {
-        e.preventDefault();
-        item.command();
     }
 
     /**
@@ -263,47 +189,6 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
         }
 
         this.isFilterActive = !!filter.length;
-        this.setFirstItemActive();
-    }
-
-    // MOVE THIS TO LINK FORM COMPONENT
-    /**
-     * Search contentlets filtered by url
-     *
-     * @private
-     * @param {*} { link = '' }
-     * @memberof BubbleLinkFormComponent
-     */
-    searchContentlets({ link = '' }) {
-        this.loading = true;
-        this.suggestionsService
-            .getContentletsUrlMap({ filter: link })
-            .pipe(take(1))
-            .subscribe((contentlets: DotCMSContentlet[]) => {
-                this.items = contentlets.map((contentlet) => {
-                    const { languageId } = contentlet;
-                    contentlet.language = this.getContentletLanguage(languageId);
-
-                    return {
-                        label: contentlet.title,
-                        icon: 'contentlet/image',
-                        data: {
-                            contentlet: contentlet
-                        },
-                        command: () => {
-                            this.onSelection({
-                                payload: contentlet,
-                                type: {
-                                    name: 'dotContent'
-                                }
-                            });
-                        }
-                    };
-                });
-                this.loading = false;
-                // Active first result
-                requestAnimationFrame(() => this.setFirstItemActive());
-            });
     }
 
     private loadContentTypes(filter = '') {
@@ -332,14 +217,12 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
                 if (this.items.length) {
                     this.title = 'Select a content type';
                     this.cd.detectChanges();
-                    this.resetKeyManager();
                 } else {
                     this.title = `No results`;
                     this.cd.detectChanges();
                 }
 
                 this.cd.detectChanges();
-                this.resetKeyManager();
             });
     }
 
@@ -375,7 +258,6 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
                 if (this.items.length) {
                     this.title = 'Select a contentlet';
                     this.cd.detectChanges();
-                    this.resetKeyManager();
                 } else {
                     this.title = `No results for <b>${contentType.name}</b>`;
                     this.cd.detectChanges();

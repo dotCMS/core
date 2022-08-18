@@ -156,10 +156,10 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
                 allowedBlocks.includes(item.id)
             );
             if (allowedBlocks.includes(CONTENT_SUGGESTION_ID)) {
-                suggestionsComponent.instance.addCContentletItem();
+                suggestionsComponent.instance.addContentletItem();
             }
         } else {
-            suggestionsComponent.instance.addCContentletItem();
+            suggestionsComponent.instance.addContentletItem();
         }
 
         suggestionsComponent.instance.onSelection = (item) => {
@@ -198,6 +198,7 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
             return true;
         }
 
+        // I think this must be handled by the suggestion list component.
         if (key === 'ArrowDown' || key === 'ArrowUp') {
             suggestionsComponent.instance.updateSelection(event);
 
