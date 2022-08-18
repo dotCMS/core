@@ -49,14 +49,20 @@ public class RuntimeUtils {
 
     /**
      * Retrieves a {@link String} as a result from running the {@link Process} of calling the provided commands.
-     * Potential command errors are NOT reported back, and the terminal output is slightly formatted.
+     * Potential command errors are NOT reported back, only output form successful commands, and the terminal output is
+     * slightly formatted by replacing new line characters with blank Strings.
      *
-     * @param commands list of commands
-     * @return optional wrapping the result of running the process
+     * @param commands The list of commands being executed.
+     *
+     * @return Optional wrapping of the process result.
      */
     public static Optional<String> runProcessAndGetOutput(final String... commands) {
         final TerminalOutput commandOutput = runProcessAndGetOutput(false, true, commands);
-        return UtilMethods.isSet(commandOutput.output()) ? Optional.of(commandOutput.output()) : Optional.empty();
+        if (0 == commandOutput.exitValue()) {
+            return UtilMethods.isSet(commandOutput.output()) ? Optional.of(commandOutput.output()) : Optional.empty();
+        } else {
+            return Optional.empty();
+        }
     }
 
     /**
