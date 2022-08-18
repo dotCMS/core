@@ -1421,7 +1421,7 @@ public class DependencyBundlerTest {
             } else if (modDateTestData.operation == Operation.PUBLISH) {
                 manifestLines.addExclude(contentletChild, "Excluded by mod_date");
 
-                manifestLines.addDependencies(map(contentletChild, list(language)));
+                manifestLines.addDependencies(map(contentletChild, list(language, contentTypeChild)));
             } else {
                 manifestLines.addExclude(contentletChild, FILTER_EXCLUDE_BY_OPERATION + modDateTestData.operation);
             }
