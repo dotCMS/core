@@ -1,17 +1,19 @@
-<h3 id="convert">{{ messages.infoHeader }}</h3>
-<p [innerHTML]="messages.infoContent"></p>
+<h3 id="convert">{{ 'contenttypes.field.properties.wysiwyg.convert.info.header' | dm }}</h3>
+<p [innerHTML]="'contenttypes.field.properties.wysiwyg.convert.info.content' | dm"></p>
 
-<h3 id="convert">{{ messages.header }}</h3>
+<h4 id="convert">{{ 'contenttypes.field.properties.wysiwyg.convert.header' | dm }}</h4>
 
-<p [innerHTML]="messages.content"></p>
+<p [innerHTML]="'contenttypes.field.properties.wysiwyg.convert.content' | dm"></p>
 
 <div class="field-checkbox">
     <p-checkbox inputId="agreed" [(ngModel)]="accept" [binary]="true"></p-checkbox>
-    <label for="agreed">{{ messages.iunderstand }}</label>
+    <label for="agreed">{{
+        'contenttypes.field.properties.wysiwyg.convert.iunderstand' | dm
+    }}</label>
 </div>
 
 <p>
     <button [disabled]="!accept" pButton (click)="convert.emit($event)">
-        {{ messages.button }}
+        {{ 'contenttypes.field.properties.wysiwyg.convert.button' | dm }}
     </button>
 </p>
