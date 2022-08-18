@@ -200,7 +200,7 @@ public class FieldResourceTest {
                 "	\"name\" : \"YouTube Videos\","+
                 "   \"values\" :  1," +
                 "   \"variable\": \"youtubeVideos\","+
-                "   \"relationType\": \"Youtube\""+
+                "   \"relationType\": \"" + contentType.variable() + "\""+
                 "	}";
 
         Response response = resource.createContentTypeField(
