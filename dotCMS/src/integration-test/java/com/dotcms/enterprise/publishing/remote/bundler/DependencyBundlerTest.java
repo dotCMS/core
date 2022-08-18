@@ -615,7 +615,8 @@ public class DependencyBundlerTest {
         final Map<ManifestItem, Collection<ManifestItem>>  contentletWithImageIncludes = map(
                 contentletWithImage, list(host, contentTypeWithImageField, imageFileAsset, language),
                 imageFileAsset, list(imageFolder, imageFileLanguage, imageFileAsset.getContentType()),
-                contentTypeWithImageField, list(APILocator.getWorkflowAPI().findSystemWorkflowScheme())
+                contentTypeWithImageField, list(APILocator.getWorkflowAPI().findSystemWorkflowScheme()),
+                imageFileAsset.getContentType(), list(APILocator.getWorkflowAPI().findSystemWorkflowScheme())
         );
 
         final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
@@ -761,7 +762,7 @@ public class DependencyBundlerTest {
         final Map<ManifestItem, Collection<ManifestItem>> hostWithContentIncludes = map(
                 hostWithContent, list(contentType, contentlet),
                 contentType, list(systemWorkflowScheme),
-                contentlet, list(language)
+                contentlet, list(language, contentType)
         );
 
         final Map<ManifestItem, Collection<ManifestItem>> hostWithFolderInclude = map(
