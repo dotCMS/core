@@ -20,7 +20,7 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@actions/core": "^1.6.0",
+    "@actions/core": "^1.9.1",
     "node-fetch": "^3.2.3",
     "shelljs": "^0.8.5"
   },
