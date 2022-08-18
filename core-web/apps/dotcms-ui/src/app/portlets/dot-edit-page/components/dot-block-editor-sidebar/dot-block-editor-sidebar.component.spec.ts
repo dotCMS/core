@@ -184,6 +184,6 @@ describe('DotBlockEditorSidebarComponent', () => {
         fixture.detectChanges();
 
         expect(sidebar.visible).toEqual(false);
-        expect(component.data).toBeNull();
+        expect(component.blockEditorInput).toBeNull();
     });
 });

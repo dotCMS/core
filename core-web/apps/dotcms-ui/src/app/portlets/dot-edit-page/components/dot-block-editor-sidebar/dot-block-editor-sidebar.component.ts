@@ -30,7 +30,7 @@ export interface BlockEditorInput {
 export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
     @ViewChild('blockEditor') blockEditor: DotBlockEditorComponent;
 
-    data: BlockEditorInput;
+    blockEditorInput: BlockEditorInput;
     saving = false;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -50,7 +50,7 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
                 switchMap((event) => this.extractBlockEditorData(event.data.dataset))
             )
             .subscribe((eventData: BlockEditorInput) => {
-                this.data = eventData;
+                this.blockEditorInput = eventData;
             });
     }
 
@@ -63,8 +63,10 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
         this.saving = true;
         this.dotWorkflowActionsFireService
             .saveContentlet({
-                [this.data.fieldName]: JSON.stringify(this.blockEditor.editor.getJSON()),
-                inode: this.data.inode,
+                [this.blockEditorInput.fieldName]: JSON.stringify(
+                    this.blockEditor.editor.getJSON()
+                ),
+                inode: this.blockEditorInput.inode,
                 indexPolicy: 'WAIT_FOR'
             })
             .pipe(take(1))
@@ -75,7 +77,7 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
                         detail: { name: 'in-iframe' }
                     });
                     window.top.document.dispatchEvent(customEvent);
-                    this.data = null;
+                    this.closeSidebar();
                 },
                 (e: HttpErrorResponse) => {
                     const message =
@@ -92,7 +94,7 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
      * @memberof DotBlockEditorSidebarComponent
      */
     closeSidebar(): void {
-        this.data = null;
+        this.blockEditorInput = null;
     }
 
     ngOnDestroy(): void {
