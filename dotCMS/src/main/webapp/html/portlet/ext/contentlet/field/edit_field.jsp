@@ -194,12 +194,17 @@
                 let json;
                 let html;
 
+                /**
+                 * Try/catch will tell us if the content in the DB is html string (WYSIWYG)  
+                 * or JSON (block editor)
+                 */
                 try {
                     json = JSON.parse(data);
                 } catch (error) {
                     html = data;
                 }
 
+                // Will remove before the merge
                 console.log({json, html})
 
                 const block = document.querySelector('dotcms-block-editor .ProseMirror');
