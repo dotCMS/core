@@ -512,5 +512,33 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
     }
 
 
+    /**
+     * Scenario: This time we pass a a set of valid category values Expectation: everytime we must
+     * recover a category
+     */
+    @Test
+    public void Test_Pass_List_Of_Categories() throws DotDataException, DotSecurityException {
+        final Category category = createCategories();
+        final ContentType contentType = contentTypeWithCategoryField();
+        //Make sure we have a field of type Category
+        final Optional<Field> first = contentType.fields(CategoryField.class).stream().findFirst();
+        assertTrue(first.isPresent());
+
+        final MapToContentletPopulator populator = new MapToContentletPopulator();
+
+        final List<String> list = ImmutableList.of(category.getInode(), category.getKey(),
+                category.getCategoryId());
+
+        final String varName = first.get().variable();
+
+        final Contentlet withCategoryField = new Contentlet();
+        withCategoryField.setContentTypeId(contentType.id());
+        withCategoryField.setProperty(varName, list);
+        final List<Category> recovered = populator.getCategories(withCategoryField,
+                APILocator.systemUser(), false);
+        assertFalse(" I couldn't find categories using object " + list, recovered.isEmpty());
+
+    }
+
 
 }

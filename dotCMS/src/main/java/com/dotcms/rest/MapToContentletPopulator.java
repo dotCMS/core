@@ -37,6 +37,7 @@ import com.liferay.util.StringPool;
 
 import io.vavr.control.Try;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -355,8 +356,8 @@ public class MapToContentletPopulator  {
         for (final com.dotcms.contenttype.model.field.Field field: fields) {
             final Map<String, Object> map = contentlet.getMap();
             final Object object = map.get(field.variable());
-            if(object instanceof List){
-                List<?> list = (List<?>) object;
+            if(object instanceof Collection){
+                final Collection<?> list = (Collection<?>) object;
                 final String joinedCategories = list.stream().map(Object::toString).collect(
                         Collectors.joining(","));
                 buildUpCategories(categories, joinedCategories, user, respectFrontendRoles);
