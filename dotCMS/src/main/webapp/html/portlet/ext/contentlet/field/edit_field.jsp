@@ -188,7 +188,7 @@
 
                 /**
                  * "textValue" can be a JSON or HTML now
-                 *  In this code we'll indentify if is JSON or HTML and act accordinhly
+                 *  In this code we'll identify if is JSON or HTML and act accordingly
                  */
                 const data = `<%=textValue%>`
                 let json;
@@ -204,15 +204,12 @@
                     html = data;
                 }
 
-                // Will remove before the merge
-                console.log({json, html})
-
                 const block = document.querySelector('dotcms-block-editor .ProseMirror');
                 const field = document.querySelector('#<%=field.getVelocityVarName()%>');
 
                 if (data) {
                     block.editor.commands.setContent(json ? json : html);
-                    field.value = json ? JSON.stringify(json) : html;
+                    field.value = JSON.stringify(block.editor.getJSON());
                 }
 
                 block.editor.on('update', ({ editor }) => {
