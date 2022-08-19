@@ -1,39 +1,53 @@
 package com.dotcms.rest;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
+import com.dotcms.datagen.CategoryDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import javax.validation.constraints.AssertTrue;
+import org.immutables.value.Value.Immutable;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -367,5 +381,136 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
                 .setProperty("widgetTitle", "New YouTube Content")
                 .setProperty("url", "new-youtube-content").nextPersisted();
     }
+
+    private Category parentCategory;
+    private ContentType contentTypeWithCategoryField;
+
+    Category createCategories(){
+
+        if(null != parentCategory){
+           return parentCategory;
+        }
+        final String parentCategoryName = "ParentCategory-" + System.currentTimeMillis();
+        parentCategory = new CategoryDataGen()
+                .setCategoryName(parentCategoryName)
+                .setKey(parentCategoryName + "Key")
+                .setCategoryVelocityVarName(parentCategoryName)
+                .setSortOrder(1)
+                .nextPersisted();
+
+        final String childCategoryName1 = "Child-Category-1" + System.currentTimeMillis();
+
+        new CategoryDataGen()
+                .setCategoryName(childCategoryName1)
+                .setKey(childCategoryName1 + "Key")
+                .setCategoryVelocityVarName(childCategoryName1)
+                .setSortOrder(1)
+                .parent(parentCategory).nextPersisted();
+
+       return parentCategory;
+    }
+
+    ContentType contentTypeWithCategoryField(){
+        if(null != contentTypeWithCategoryField){
+            return contentTypeWithCategoryField;
+        }
+        final Category categories = createCategories();
+        contentTypeWithCategoryField= TestDataUtils.newContentTypeFieldTypesGalore(categories);
+        return contentTypeWithCategoryField;
+    }
+
+    /**
+     * Scenario: We pass any contantlet that lacks a category field  value set
+     * Expectation: nothing should blow-up
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_Pass_Categoryless_Contentlet() throws DotDataException, DotSecurityException {
+        final ContentType contentType = contentTypeWithCategoryField();
+        final Contentlet categoryless =  new Contentlet();
+        categoryless.setContentTypeId(contentType.id());
+        final MapToContentletPopulator populator = new MapToContentletPopulator();
+        final List<Category> categories = populator.getCategories(categoryless, APILocator.systemUser(), false);
+        assertTrue(categories.isEmpty());
+    }
+
+    /**
+     * Scenario: We pass any contantlet that has null in a CategoryField
+     * Expectation: nothing should blow-up. Nothing should happen.
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_Pass_Null_As_Category() throws DotDataException, DotSecurityException {
+        final Category category = createCategories();
+        final ContentType contentType = contentTypeWithCategoryField();
+        //Make sure we have a field of type Category
+        final Optional<Field> first = contentType.fields(CategoryField.class).stream().findFirst();
+        assertTrue(first.isPresent());
+
+        final MapToContentletPopulator populator = new MapToContentletPopulator();
+        final String varName = first.get().variable();
+
+        final Contentlet withCategoryField = new Contentlet();
+        withCategoryField.setContentTypeId(contentType.id());
+        withCategoryField.setProperty(varName, null);
+        final List<Category> recovered = populator.getCategories(withCategoryField, APILocator.systemUser(), false);
+        assertTrue("Sending null should be ignored.", recovered.isEmpty());
+    }
+
+    /**
+     * Scenario: We pass an invalid value in a category field
+     * Expectation: Illegal Argument Exception
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void Test_Pass_Invalid_Category() throws DotDataException, DotSecurityException {
+
+        final ContentType contentType = contentTypeWithCategoryField();
+        //Make sure we have a field of type Category
+        final Optional<Field> first = contentType.fields(CategoryField.class).stream().findFirst();
+        assertTrue(first.isPresent());
+
+        final Contentlet withCategoryField = new Contentlet();
+        withCategoryField.setContentTypeId(contentType.id());
+        withCategoryField.setProperty(first.get().variable(),"any-invalid-category-id");
+        final MapToContentletPopulator populator = new MapToContentletPopulator();
+        populator.getCategories(withCategoryField,
+                APILocator.systemUser(), false);
+    }
+
+    /**
+     * Scenario: This time we pass a a set of valid category values
+     * Expectation: everytime we must recover a category
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_Pass_Valid_Category() throws DotDataException, DotSecurityException {
+        final Category category = createCategories();
+        final ContentType contentType = contentTypeWithCategoryField();
+        //Make sure we have a field of type Category
+        final Optional<Field> first = contentType.fields(CategoryField.class).stream().findFirst();
+        assertTrue(first.isPresent());
+
+        final MapToContentletPopulator populator = new MapToContentletPopulator();
+
+        final List<String> categoryIdKey = ImmutableList.of(category.getInode(),category.getKey(),
+                category.getCategoryId());
+
+        final String varName = first.get().variable();
+
+        for (final String object:categoryIdKey) {
+            final Contentlet withCategoryField = new Contentlet();
+            withCategoryField.setContentTypeId(contentType.id());
+            withCategoryField.setProperty(varName, object);
+            final List<Category> recovered = populator.getCategories(withCategoryField, APILocator.systemUser(), false);
+            assertFalse(" I couldn't find categories using object "+object, recovered.isEmpty());
+        }
+    }
+
+
 
 }
