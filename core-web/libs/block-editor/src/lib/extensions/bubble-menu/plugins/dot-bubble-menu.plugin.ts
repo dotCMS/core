@@ -30,10 +30,7 @@ export const DotBubbleMenuPlugin = (options: DotBubbleMenuPluginProps) => {
     const changeTo = options.changeToComponent.instance;
 
     return new Plugin<DotBubbleMenuPluginProps>({
-        key:
-            typeof options.pluginKey === 'string'
-                ? new PluginKey(options.pluginKey)
-                : options.pluginKey,
+        key: options.pluginKey as PluginKey,
         view: (view) => new DotBubbleMenuPluginView({ view, ...options }),
         props: {
             /**
@@ -388,7 +385,9 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         // can be active at the same time
         const activeNode = activeMarks.length > 1 ? activeMarks[1] : activeMarks[0];
         // Set Active on Change To List
-        this.changeTo.instance.updateActiveItem(items.findIndex((item) => item === activeNode));
+        this.changeTo.instance.list.updateActiveItem(
+            items.findIndex((item) => item === activeNode)
+        );
         // Set button label on Bubble Menu
         this.component.instance.selected = activeNode?.label || '';
     }

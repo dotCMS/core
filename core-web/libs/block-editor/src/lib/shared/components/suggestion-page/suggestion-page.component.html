@@ -1,8 +1,7 @@
-<div *ngIf="items.length" class="inherited-styles">
+<div *ngIf="items.length">
     <dot-suggestion-list #list [suggestionItems]="items" [urlItem]="true"></dot-suggestion-list>
 </div>
 
-<!-- TODO: Move this to a custom `page-suggestions` -->
 <dot-suggestion-loading-list *ngIf="loading"></dot-suggestion-loading-list>
 
 <ng-template #emptyBlock>

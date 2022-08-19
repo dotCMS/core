@@ -58,9 +58,6 @@ export class SuggestionsComponent implements OnInit {
 
     // Should be gone
     @Input() isOpen = false;
-    @Input() loading = false;
-    @Input() urlItem = false;
-    @Output() goBack: EventEmitter<MouseEvent> = new EventEmitter<MouseEvent>();
 
     private itemsLoaded: ItemsType;
     private selectedContentType: DotCMSContentType;
@@ -76,7 +73,7 @@ export class SuggestionsComponent implements OnInit {
     ) {}
 
     ngOnInit(): void {
-        if (this.items?.length === 0 && !this.loading) {
+        if (this.items?.length === 0) {
             // assign the default suggestions options.
             this.items = suggestionOptions;
             this.items.forEach((item) => {
@@ -116,6 +113,7 @@ export class SuggestionsComponent implements OnInit {
             },
             ...this.items
         ];
+        this.initialItems = this.items;
     }
 
     /**
@@ -127,7 +125,7 @@ export class SuggestionsComponent implements OnInit {
         if (this.items.length) {
             this.list.execCommand();
         } else {
-            this.handleBackButton(new MouseEvent('click'));
+            this.handleBackButton();
         }
     }
 
@@ -142,28 +140,17 @@ export class SuggestionsComponent implements OnInit {
     }
 
     /**
-     * Update the active Index
-     * @param {number} index
-     * @memberof SuggestionsComponent
-     */
-    updateActiveItem(index: number): void {
-        this.list?.updateActiveItem(index);
-    }
-
-    /**
      * Go back to contentlet selection
      *
-     * @param {MouseEvent} event
      * @memberof SuggestionsComponent
      */
-    handleBackButton(event: MouseEvent): void {
-        event.preventDefault();
-        event.stopPropagation();
-        this.goBack.emit(event);
+    handleBackButton(): boolean {
         // Set the previous load Time to make the right search.
         this.itemsLoaded =
             this.itemsLoaded === ItemsType.CONTENT ? ItemsType.CONTENTTYPE : ItemsType.BLOCK;
         this.filterItems();
+
+        return false;
     }
 
     /**
@@ -214,13 +201,10 @@ export class SuggestionsComponent implements OnInit {
             .subscribe((items) => {
                 this.items = items;
                 this.itemsLoaded = ItemsType.CONTENTTYPE;
-                if (this.items.length) {
-                    this.title = 'Select a content type';
-                    this.cd.detectChanges();
-                } else {
-                    this.title = `No results`;
-                    this.cd.detectChanges();
-                }
+
+                this.items.length
+                    ? (this.title = 'Select a content type')
+                    : (this.noResultsMessage = `No results`);
 
                 this.cd.detectChanges();
             });
@@ -255,13 +239,12 @@ export class SuggestionsComponent implements OnInit {
                         }
                     };
                 });
-                if (this.items.length) {
-                    this.title = 'Select a contentlet';
-                    this.cd.detectChanges();
-                } else {
-                    this.title = `No results for <b>${contentType.name}</b>`;
-                    this.cd.detectChanges();
-                }
+
+                this.items.length
+                    ? (this.title = 'Select a contentlet')
+                    : (this.noResultsMessage = `No results for <b>${contentType.name}</b>`);
+
+                this.cd.detectChanges();
             });
     }
 

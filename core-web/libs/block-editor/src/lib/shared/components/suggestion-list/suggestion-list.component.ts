@@ -39,6 +39,28 @@ export class SuggestionListComponent implements AfterViewInit, OnChanges {
         this.mouseMove = true;
     }
 
+    // @HostListener('window:keydown', ['$event'])
+    // keyEvent(event: KeyboardEvent) {
+
+    //     const { key } = event;
+
+    //     console.log("Entramos");
+
+    //     // if (key === 'Enter') {
+    //     //     this.execCommand();
+
+    //     //     return false;
+    //     // }
+
+    //     // // I think this must be handled by the suggestion list component.
+    //     if (key === 'ArrowDown' || key === 'ArrowUp') {
+    //         this.updateSelection(event);
+
+    //         return false;
+    //     }
+    //     // return false;
+    // }
+
     ngAfterViewInit() {
         this.keyManager = new FocusKeyManager(this.items).withWrap();
         requestAnimationFrame(() => this.setFirstItemActive());
@@ -96,6 +118,7 @@ export class SuggestionListComponent implements AfterViewInit, OnChanges {
      * @memberof SuggestionListComponent
      */
     resetKeyManager() {
+        this.keyManager.activeItem?.unfocus();
         this.keyManager = new FocusKeyManager(this.items).withWrap();
         this.setFirstItemActive();
     }
