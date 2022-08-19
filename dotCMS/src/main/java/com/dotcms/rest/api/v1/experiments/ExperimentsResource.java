@@ -4,6 +4,7 @@ import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.PATCH;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.NotFoundException;
@@ -12,18 +13,18 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import org.apache.commons.beanutils.BeanUtils;
 import org.glassfish.jersey.server.JSONP;
 import org.jetbrains.annotations.NotNull;
 
@@ -87,6 +88,35 @@ public class ExperimentsResource {
         return new ResponseEntityExperimentView(Collections.singletonList(persistedExperiment));
     }
 
+    @PUT
+    @Path("/{experimentId}/_archive")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityExperimentView archive(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("experimentId") final String experimentId,
+            final ExperimentForm experimentForm) throws DotDataException, DotSecurityException {
+        final InitDataObject initData = getInitData(request, response);
+        final User user = initData.getUser();
+        final Experiment archivedExperiment =  experimentsAPI.archive(experimentId, user);
+        return new ResponseEntityExperimentView(Collections.singletonList(archivedExperiment));
+    }
+
+    @DELETE
+    @Path("/{experimentId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityView delete(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("experimentId") final String experimentId) throws DotDataException, DotSecurityException {
+        final InitDataObject initData = getInitData(request, response);
+        final User user = initData.getUser();
+        experimentsAPI.delete(experimentId, user);
+        return new ResponseEntityView<>("Experiment deleted");
+    }
+
     private Experiment patchExperiment(final Experiment experimentToUpdate,
             final ExperimentForm experimentForm) {
 
@@ -104,8 +134,20 @@ public class ExperimentsResource {
             builder.trafficAllocation(experimentForm.getTrafficAllocation());
         }
 
-        if(experimentForm.getTrafficAllocation()>0) {
-            builder.trafficAllocation(experimentForm.getTrafficAllocation());
+        if(experimentForm.getTrafficProportion()!=null) {
+            builder.trafficProportion(experimentForm.getTrafficProportion());
+        }
+
+        if(experimentForm.getStatus()!=null) {
+            builder.status(experimentForm.getStatus());
+        }
+
+        if(experimentForm.getStartDate()!=null) {
+            builder.startDate(experimentForm.getStartDate());
+        }
+
+        if(experimentForm.getEndDate()!=null) {
+            builder.endDate(experimentForm.getEndDate());
         }
 
         return builder.build();

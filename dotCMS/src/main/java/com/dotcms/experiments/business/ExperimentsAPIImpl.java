@@ -1,7 +1,9 @@
 package com.dotcms.experiments.business;
 
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.experiments.model.Experiment.Status;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -79,12 +81,58 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     @Override
-    public Experiment archive(final Experiment experiment, final User user) {
-        return null;
+    public Experiment archive(final String id, final User user)
+            throws DotDataException, DotSecurityException {
+        DotPreconditions.checkArgument(UtilMethods.isSet(id), "id must be provided.");
+
+        final Optional<Experiment> persistedExperiment =  factory.find(id);
+
+        if(persistedExperiment.isPresent()) {
+            final Contentlet pageAsContent = contentletAPI
+                    .findContentletByIdentifierAnyLanguage(persistedExperiment.get().getPageId(), false);
+
+            if (!permissionAPI.doesUserHavePermission(pageAsContent, PermissionLevel.EDIT.getType(),
+                    user)) {
+                Logger.error(this, "You don't have permission to get the Experiment.");
+                throw new DotSecurityException("You don't have permission to get the Experiment.");
+            }
+
+            if(persistedExperiment.get().getStatus()!= Status.ENDED) {
+                throw new DotStateException("Only ended experiments can be archived");
+            }
+
+            final Experiment archived = persistedExperiment.get().toBuilder().archived(true).build();
+            return factory.save(archived);
+        } else {
+            throw new NotFoundInDbException("Experiment with provided id not found");
+        }
+
     }
 
     @Override
-    public void delete(final Experiment experiment, final User user) {
+    public void delete(final String id, final User user)
+            throws DotDataException, DotSecurityException {
+        DotPreconditions.checkArgument(UtilMethods.isSet(id), "id must be provided.");
 
+        final Optional<Experiment> persistedExperiment =  factory.find(id);
+
+        if(persistedExperiment.isPresent()) {
+            final Contentlet pageAsContent = contentletAPI
+                    .findContentletByIdentifierAnyLanguage(persistedExperiment.get().getPageId(), false);
+
+            if (!permissionAPI.doesUserHavePermission(pageAsContent, PermissionLevel.EDIT.getType(),
+                    user)) {
+                Logger.error(this, "You don't have permission to get the Experiment.");
+                throw new DotSecurityException("You don't have permission to get the Experiment.");
+            }
+
+            if(persistedExperiment.get().getStatus()!= Status.DRAFT) {
+                throw new DotStateException("Only draft experiments can be deleted");
+            }
+
+            factory.delete(persistedExperiment.get());
+        } else {
+            throw new NotFoundInDbException("Experiment with provided id not found");
+        }
     }
 }

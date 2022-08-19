@@ -2495,5 +2495,6 @@ create table experiment (
      mod_date timestamptz,
      start_date timestamptz,
      end_date timestamptz,
-     ready_to_start bool
+     ready_to_start bool,
+     archived bool
 );

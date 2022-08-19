@@ -12,8 +12,8 @@ public interface ExperimentsAPI {
 
     Optional<Experiment> find(final String id, final User user) throws DotDataException, DotSecurityException;
 
-    Experiment archive(final Experiment experiment, final User user);
+    Experiment archive(final String id, final User user)
+            throws DotDataException, DotSecurityException;
 
-    void delete(final Experiment experiment, final User user);
-
+    void delete(String id, User user) throws DotDataException, DotSecurityException;
 }

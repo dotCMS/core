@@ -7,9 +7,7 @@ import java.util.Optional;
 public interface ExperimentsFactory {
     Experiment save(final Experiment experiment) throws DotDataException;
 
-    Experiment archive(final Experiment experiment);
-
-    void delete(final Experiment experiment);
+    void delete(final Experiment experiment) throws DotDataException;
 
     Optional<Experiment> find(String id) throws DotDataException;
 }

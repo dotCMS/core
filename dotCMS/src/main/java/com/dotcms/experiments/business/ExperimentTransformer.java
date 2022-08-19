@@ -55,6 +55,7 @@ public class ExperimentTransformer implements DBTransformer {
                 .endDate(Try.of(()->((java.sql.Timestamp) map.get("end_date")).toLocalDateTime())
                         .getOrNull())
                 .readyToStart(ConversionUtils.toBooleanFromDb(map.get("ready_to_start")))
+                .archived(ConversionUtils.toBooleanFromDb(map.get("archived")))
                 .build();
     }
 

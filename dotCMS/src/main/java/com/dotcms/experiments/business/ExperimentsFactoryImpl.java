@@ -20,15 +20,18 @@ public class ExperimentsFactoryImpl implements
     final ObjectWriter objectWriter = JsonMapper.mapper.writer().withDefaultPrettyPrinter();
 
     public static final String INSERT_EXPERIMENT = "INSERT INTO experiment(id, page_id, name, description, status, " +
-            "traffic_type, traffic_proportion, traffic_allocation, mod_date, start_date, end_date, ready_to_start) "
-            + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?)";
+            "traffic_type, traffic_proportion, traffic_allocation, mod_date, start_date, end_date, ready_to_start, "
+            + "archived) "
+            + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     public static final String UPDATE_EXPERIMENT = "UPDATE experiment set name=?, description=?, status=?, " +
             "traffic_type=?, traffic_proportion=?, traffic_allocation=?, mod_date=?, start_date=?, end_date=?, "
-            + "ready_to_start=? "
+            + "ready_to_start=?, archived=?"
             + "WHERE id=?";
 
     public static final String FIND_EXPERIMENT_BY_ID = "SELECT * FROM experiment WHERE id = ?";
+
+    public static final String DELETE_EXPERIMENT = "DELETE FROM experiment WHERE id = ?";
 
     @Override
     public Experiment save(Experiment experiment) throws DotDataException {
@@ -42,13 +45,11 @@ public class ExperimentsFactoryImpl implements
     }
 
     @Override
-    public Experiment archive(Experiment experiment) {
-        return null;
-    }
-
-    @Override
-    public void delete(Experiment experiment) {
-
+    public void delete(Experiment experiment) throws DotDataException {
+        DotConnect dc = new DotConnect();
+        dc.setSQL(DELETE_EXPERIMENT);
+        dc.addParam(experiment.getId());
+        dc.loadResult();
     }
 
     @Override
@@ -101,6 +102,7 @@ public class ExperimentsFactoryImpl implements
         dc.addParam(experiment.getStartDate());
         dc.addParam(experiment.getEndDate());
         dc.addParam(experiment.isReadyToStart());
+        dc.addParam(experiment.isArchived());
         dc.loadResult();
     }
 
@@ -128,6 +130,7 @@ public class ExperimentsFactoryImpl implements
         dc.addParam(experiment.getStartDate());
         dc.addParam(experiment.getEndDate());
         dc.addParam(experiment.isReadyToStart());
+        dc.addParam(experiment.isArchived());
         dc.addParam(experiment.getId());
         dc.loadResult();
     }

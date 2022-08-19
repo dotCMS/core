@@ -4,6 +4,7 @@ import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -34,6 +35,7 @@ public final class Experiment implements Serializable, ManifestItem {
     private LocalDateTime modDate;
     private final String pageId;
     private boolean readyToStart;
+    private boolean archived;
 
     public enum Status {
         RUNNING,
@@ -54,13 +56,11 @@ public final class Experiment implements Serializable, ManifestItem {
         private float trafficAllocation = 100;
         private LocalDateTime startDate;
         private LocalDateTime endDate;
-        private LocalDateTime modDate;
+        private LocalDateTime modDate = LocalDateTime.now();
         private boolean readyToStart;
+        private boolean archived;
 
         public Builder(final String pageId, final String name, final String description) {
-            DotPreconditions.checkNotEmpty(pageId, DotStateException.class, "pageId is mandatory");
-            DotPreconditions.checkNotEmpty(name, DotStateException.class, "name is mandatory");
-            DotPreconditions.checkNotEmpty(description, DotStateException.class, "description is mandatory");
             this.pageId = pageId;
             this.name = name;
             this.description = description;
@@ -130,11 +130,30 @@ public final class Experiment implements Serializable, ManifestItem {
             return this;
         }
 
+        public Builder archived(final boolean val) {
+            archived = val;
+            return this;
+        }
+
         public Experiment build() {
             return new Experiment(this);
         }}
 
     private Experiment(final Builder builder) {
+        DotPreconditions.checkNotEmpty(builder.pageId, DotStateException.class, "pageId is mandatory");
+        DotPreconditions.checkNotEmpty(builder.name, DotStateException.class, "name is mandatory");
+        DotPreconditions.checkNotEmpty(builder.description, DotStateException.class, "description is mandatory");
+        DotPreconditions.checkNotNull(builder.status, DotStateException.class, "status is mandatory");
+        DotPreconditions.checkNotNull(builder.trafficProportion, DotStateException.class, "trafficProportion is mandatory");
+        DotPreconditions.checkArgument(builder.trafficAllocation>=0
+                && builder.trafficAllocation<=100, "trafficAllocation must be between 0 and 100");
+        DotPreconditions.checkNotNull(builder.modDate, DotStateException.class, "modDate is mandatory");
+
+        if(UtilMethods.isSet(builder.startDate) && UtilMethods.isSet(builder.endDate)) {
+           DotPreconditions.checkArgument(builder.endDate.isAfter(builder.startDate),
+                    "endDate must be after startDate");
+        }
+
         this.name = builder.name;
         this.description = builder.description;
         this.id = builder.id;
@@ -146,6 +165,7 @@ public final class Experiment implements Serializable, ManifestItem {
         this.modDate = builder.modDate;
         this.pageId = builder.pageId;
         this.readyToStart = builder.readyToStart;
+        this.archived = builder.archived;
     }
 
     public String getId() {
@@ -189,6 +209,10 @@ public final class Experiment implements Serializable, ManifestItem {
 
     public boolean isReadyToStart() {
         return readyToStart;
+    }
+
+    public boolean isArchived() {
+        return archived;
     }
 
     public Experiment.Builder toBuilder() {
