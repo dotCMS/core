@@ -862,7 +862,7 @@ describe('Load fields and drag and drop', () => {
     });
 
     describe('Edit Field Dialog', () => {
-        fdescribe('WYSIWYG field', () => {
+        describe('WYSIWYG field', () => {
             let fieldBox;
             const field = {
                 clazz: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField',

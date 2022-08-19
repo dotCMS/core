@@ -28,7 +28,8 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 const mockDFormFieldData = {
     ...dotcmsContentTypeFieldBasicMock,
     clazz: 'field.class',
-    name: 'fieldName'
+    name: 'fieldName',
+    id: '123'
 };
 
 @Component({
@@ -128,41 +129,40 @@ xdescribe('ContentTypeFieldsPropertiesFormComponent', () => {
         });
     };
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [
-                    ContentTypeFieldsPropertiesFormComponent,
-                    DotHostTesterComponent,
-                    TestDynamicFieldPropertyDirective
-                ],
-                imports: [ReactiveFormsModule, DotPipesModule],
-                providers: [
-                    UntypedFormBuilder,
-                    ComponentFactoryResolver,
-                    FieldPropertyService,
-                    { provide: FieldPropertyService, useClass: TestFieldPropertiesService },
-                    { provide: DotMessageService, useValue: messageServiceMock }
-                ]
-            }).compileComponents();
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [
+                ContentTypeFieldsPropertiesFormComponent,
+                DotHostTesterComponent,
+                TestDynamicFieldPropertyDirective
+            ],
+            imports: [ReactiveFormsModule, DotPipesModule],
+            providers: [
+                UntypedFormBuilder,
+                ComponentFactoryResolver,
+                FieldPropertyService,
+                { provide: FieldPropertyService, useClass: TestFieldPropertiesService },
+                { provide: DotMessageService, useValue: messageServiceMock }
+            ]
+        }).compileComponents();
 
-            hostFixture = TestBed.createComponent(DotHostTesterComponent);
-            hostComp = hostFixture.componentInstance;
-            de = hostFixture.debugElement;
+        hostFixture = TestBed.createComponent(DotHostTesterComponent);
+        hostComp = hostFixture.componentInstance;
+        de = hostFixture.debugElement;
 
-            fixture = de.query(By.css('dot-content-type-fields-properties-form'));
-            comp = fixture.componentInstance;
+        fixture = de.query(By.css('dot-content-type-fields-properties-form'));
+        comp = fixture.componentInstance;
 
-            mockFieldPropertyService = fixture.injector.get(FieldPropertyService);
-        })
-    );
+        mockFieldPropertyService = fixture.injector.get(FieldPropertyService);
+    }));
 
     describe('should init component', () => {
         beforeEach(() => {
             spyOn(mockFieldPropertyService, 'getProperties').and.returnValue([
                 'property1',
                 'property2',
-                'property3'
+                'property3',
+                'id'
             ]);
         });
 
@@ -172,6 +172,7 @@ xdescribe('ContentTypeFieldsPropertiesFormComponent', () => {
             expect(mockFieldPropertyService.getProperties).toHaveBeenCalledWith('field.class');
             expect(comp.form.get('clazz').value).toBe('field.class');
 
+            expect(comp.form.get('id').value).toBe('123');
             expect(comp.form.get('property1').value).toBe('');
             expect(comp.form.get('property2').value).toBe(true);
             expect(comp.form.get('property3')).toBeNull();
