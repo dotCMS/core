@@ -19,7 +19,7 @@ import {
     DotCMSContentTypeLayoutRow,
     DotCMSContentType
 } from '@dotcms/dotcms-models';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
@@ -60,6 +60,7 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotConvertToBlockInfoComponent } from '../../dot-convert-to-block-info/dot-convert-to-block-info.component';
 import { DotConvertWysiwygToBlockComponent } from '../../dot-convert-wysiwyg-to-block/dot-convert-wysiwyg-to-block.component';
+import { CheckboxModule } from 'primeng/checkbox';
 
 const COLUMN_BREAK_FIELD = FieldUtil.createColumnBreak();
 
@@ -259,7 +260,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         expect(comp.dialogActions.accept.disabled).toBeTruthy();
     });
 
-    fit('should have a dialog', () => {
+    it('should have a dialog', () => {
         const dialog = de.query(By.css('dot-dialog'));
         expect(dialog.attributes.width).toBe('45rem');
         expect(dialog).not.toBeNull();
@@ -459,6 +460,8 @@ describe('Load fields and drag and drop', () => {
                 DragulaModule,
                 DotFieldValidationMessageModule,
                 DotContentTypeFieldsVariablesModule,
+                FormsModule,
+                CheckboxModule,
                 ReactiveFormsModule,
                 BrowserAnimationsModule,
                 DotActionButtonModule,
@@ -859,33 +862,52 @@ describe('Load fields and drag and drop', () => {
     });
 
     describe('Edit Field Dialog', () => {
-        it('should show convert to block messages and scroll on click when WYSIWYG field is edit', () => {
-            fixture.detectChanges();
-
+        fdescribe('WYSIWYG field', () => {
+            let fieldBox;
             const field = {
                 clazz: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
                 name: 'WYSIWYG',
                 id: '3'
             };
 
-            const fieldBox = de.query(By.css('dot-content-type-fields-row'));
-            fieldBox.componentInstance.editField.emit(field);
+            beforeEach(() => {
+                fixture.detectChanges();
 
-            fixture.detectChanges();
+                fieldBox = de.query(By.css('dot-content-type-fields-row'));
+                fieldBox.componentInstance.editField.emit(field);
 
-            const infoBox = de.query(By.css('dot-convert-to-block-info'));
-            const convertBox = de.query(By.css('dot-convert-wysiwyg-to-block'));
+                fixture.detectChanges();
+            });
+            it('should show info box and scrollTo on click', () => {
+                const infoBox = de.query(By.css('dot-convert-to-block-info'));
 
-            expect(infoBox.componentInstance.currentField.id).toBe('3');
-            expect(infoBox.componentInstance.currentFieldType.id).toBe('wysiwyg');
-            expect(convertBox).not.toBeNull();
+                expect(infoBox.componentInstance.currentField.id).toBe('3');
+                expect(infoBox.componentInstance.currentFieldType.id).toBe('wysiwyg');
 
-            infoBox.triggerEventHandler('action', {});
+                infoBox.triggerEventHandler('action', {});
 
-            expect(scrollIntoViewSpy).toHaveBeenCalledWith({
-                behavior: 'smooth',
-                block: 'start',
-                inline: 'nearest'
+                expect(scrollIntoViewSpy).toHaveBeenCalledWith({
+                    behavior: 'smooth',
+                    block: 'start',
+                    inline: 'nearest'
+                });
+            });
+
+            it('should show convert to block box and trigger convert', () => {
+                spyOn(comp.editField, 'emit');
+
+                const convertBox = de.query(By.css('dot-convert-wysiwyg-to-block'));
+
+                convertBox.triggerEventHandler('convert', {});
+
+                expect(comp.editField.emit).toHaveBeenCalledWith(
+                    jasmine.objectContaining({
+                        contentTypeId: '3b',
+                        fieldType: 'Story-Block',
+                        id: '3',
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField'
+                    })
+                );
             });
         });
 
