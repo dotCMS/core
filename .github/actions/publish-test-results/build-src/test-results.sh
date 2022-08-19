@@ -92,8 +92,7 @@ function persistResults {
 
   # Check for something new to commit
   [[ "${DEBUG}" == 'true' ]] \
-    && executeCmd "git branch" \
-    && executeCmd "git status"
+    && executeCmd "git branch && git status"
 
   executeCmd "git status | grep \"nothing to commit, working tree clean\""
   # If there are changes then start the fun part
@@ -230,7 +229,8 @@ function printStatus {
 githack_url=$(resolveRepoPath ${TEST_RESULTS_GITHUB_REPO} | sed -e 's/github.com/raw.githack.com/')
 
 BUILD_ID=${INPUT_BUILD_ID}
-[[ "${INPUT_BUILD_ID}" != 'master' ]] && BUILD_ID="${INPUT_BUILD_ID}_${INPUT_BUILD_HASH}"
+[[ "${INPUT_BUILD_ID}" != 'master' && ! ${INPUT_BUILD_ID} =~ ^release-[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$|^v[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$ ]] \
+  && BUILD_ID="${INPUT_BUILD_ID}_${INPUT_BUILD_HASH}"
 export BUILD_ID
 export OUTPUT_FOLDER="${INPUT_PROJECT_ROOT}/output"
 export REPORTS_LOCATION='reports/html'
