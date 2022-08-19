@@ -58,6 +58,8 @@ import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module
 import { TabViewModule } from 'primeng/tabview';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotConvertToBlockInfoComponent } from '../../dot-convert-to-block-info/dot-convert-to-block-info.component';
+import { DotConvertWysiwygToBlockComponent } from '../../dot-convert-wysiwyg-to-block/dot-convert-wysiwyg-to-block.component';
 
 const COLUMN_BREAK_FIELD = FieldUtil.createColumnBreak();
 
@@ -442,7 +444,9 @@ describe('Load fields and drag and drop', () => {
                 TestContentTypeFieldsPropertiesFormComponent,
                 TestDotContentTypeFieldsTabComponent,
                 TestHostComponent,
-                TestDotLoadingIndicatorComponent
+                TestDotLoadingIndicatorComponent,
+                DotConvertToBlockInfoComponent,
+                DotConvertWysiwygToBlockComponent
             ],
             imports: [
                 RouterTestingModule.withRoutes([
@@ -854,17 +858,20 @@ describe('Load fields and drag and drop', () => {
     });
 
     describe('Edit Field Dialog', () => {
-        fit('should convert to block messages and scroll on click when WYSIWYG field is edit', () => {
+        it('should show convert to block messages and scroll on click when WYSIWYG field is edit', () => {
             fixture.detectChanges();
-            // com.dotcms.contenttype.model.field.ImmutableWysiwygField
+
             const field = {
                 clazz: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
                 name: 'WYSIWYG',
                 id: '3'
             };
+
             const fieldBox = de.query(By.css('dot-content-type-fields-row'));
             fieldBox.componentInstance.editField.emit(field);
+
             fixture.detectChanges();
+
             const infoBox = de.query(By.css('dot-convert-to-block-info'));
             const convertBox = de.query(By.css('dot-convert-wysiwyg-to-block'));
 
@@ -873,11 +880,31 @@ describe('Load fields and drag and drop', () => {
             expect(convertBox).not.toBeNull();
 
             infoBox.triggerEventHandler('action', {});
+
             expect(scrollIntoViewSpy).toHaveBeenCalledWith({
                 behavior: 'smooth',
                 block: 'start',
                 inline: 'nearest'
             });
+        });
+
+        it('should show block editor info message when create a WYSIWYG', () => {
+            fixture.detectChanges();
+
+            // Trigger create a field
+            testFieldDragDropService._fieldDropFromSource.next({
+                item: {
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
+                }
+            });
+
+            fixture.detectChanges();
+
+            const infoBox = de.query(By.css('dot-convert-to-block-info'));
+            expect(infoBox).not.toBeNull();
+
+            const convertBox = de.query(By.css('dot-convert-wysiwyg-to-block'));
+            expect(convertBox).toBeNull();
         });
 
         it('should display dialog if a drop event happen from source', () => {
