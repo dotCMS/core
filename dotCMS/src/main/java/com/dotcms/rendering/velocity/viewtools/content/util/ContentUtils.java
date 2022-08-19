@@ -483,19 +483,21 @@ public class ContentUtils {
 
     /**
      * Will return a ContentMap object which can be used on dotCMS front end. This method is better
-     * then the old #pullRelatedContent macro because it doesn't have to parse all the velocity
+     * than the old #pullRelatedContent macro because it doesn't have to parse all the velocity
      * content object that are returned.  If you are building large pulls and depending on the types
      * of fields on the content this can get expensive especially with large data sets.<br />
      * EXAMPLE:<br /> #foreach($con in $dotcontent.pullRelated('myRelationship','asbd-asd-asda-asd','+myField:someValue',false,5,'modDate
      * desc'))<br /> $con.title<br /> #end<br /> The method will figure out language, working and
      * live for you if not passed in with the condition Returns empty List if no results are found
      *
+	 * This version of the method will assume no offset is set
+	 *
      * @param relationshipName - Name of the relationship as defined in the structure.
      * @param contentletIdentifier - Identifier of the contentlet
      * @param condition - Extra conditions to add to the query. like +title:Some Title.  Can be
      * Null
      * @param pullParents Should the related pull be based on Parents or Children
-     * @param limit 0 is the dotCMS max limit which is 10000. Becareful when searching for unlimited
+     * @param limit 0 is the dotCMS max limit which is 10000. Be careful when searching for unlimited
      * amount as all content will load into memory
      * @param sort - Velocity variable name to sort by.  this is a string and can contain multiple
      * values "sort1 acs, sort2 desc". Can be Null
@@ -505,15 +507,48 @@ public class ContentUtils {
      * @param live - Boolean to filter live/non-live content
      * @return Returns empty List if no results are found
      */
-    public static List<Contentlet> pullRelated(String relationshipName, String contentletIdentifier,
-            String condition, boolean pullParents, int limit, String sort, User user, String tmDate,
-            final long language, final Boolean live) {
-        final Relationship relationship = APILocator.getRelationshipAPI()
-                .byTypeValue(relationshipName);
+	public static List<Contentlet> pullRelated(String relationshipName, String contentletIdentifier,
+			String condition, boolean pullParents, int limit, String sort, User user, String tmDate,
+			final long language, final Boolean live) {
 
-        return getPullResults(relationship, contentletIdentifier, condition, limit, -1, sort,
-                user, tmDate, pullParents, language, live);
-    }
+		return pullRelated(relationshipName, contentletIdentifier, condition, pullParents, limit,
+				-1, sort, user, tmDate, language, live);
+	}
+
+	/**
+	 * Will return a ContentMap object which can be used on dotCMS front end. This method is better
+	 * than the old #pullRelatedContent macro because it doesn't have to parse all the velocity
+	 * content object that are returned.  If you are building large pulls and depending on the types
+	 * of fields on the content this can get expensive especially with large data sets.<br />
+	 * EXAMPLE:<br /> #foreach($con in $dotcontent.pullRelated('myRelationship','asbd-asd-asda-asd','+myField:someValue',false,5,'modDate
+	 * desc'))<br /> $con.title<br /> #end<br /> The method will figure out language, working and
+	 * live for you if not passed in with the condition Returns empty List if no results are found
+	 *
+	 * @param relationshipName - Name of the relationship as defined in the structure.
+	 * @param contentletIdentifier - Identifier of the contentlet
+	 * @param condition - Extra conditions to add to the query. like +title:Some Title.  Can be
+	 * Null
+	 * @param pullParents Should the related pull be based on Parents or Children
+	 * @param limit 0 is the dotCMS max limit which is 10000. Be careful when searching for unlimited
+	 * amount as all content will load into memory
+	 * @param offset result slice (how many records from the first one)
+	 * @param sort - Velocity variable name to sort by.  this is a string and can contain multiple
+	 * values "sort1 acs, sort2 desc". Can be Null
+	 * @param user
+	 * @param tmDate - Time Machine date
+	 * @param language - Language ID to be used to filter results
+	 * @param live - Boolean to filter live/non-live content
+	 * @return Returns empty List if no results are found
+	 */
+	public static List<Contentlet> pullRelated(String relationshipName, String contentletIdentifier,
+			String condition, boolean pullParents, int limit, int offset, String sort, User user, String tmDate,
+			final long language, final Boolean live) {
+		final Relationship relationship = APILocator.getRelationshipAPI()
+				.byTypeValue(relationshipName);
+
+		return getPullResults(relationship, contentletIdentifier, condition, limit, offset, sort,
+				user, tmDate, pullParents, language, live);
+	}
 
     /**
      * Logic used for `pullRelated` and `pullRelatedField` methods
