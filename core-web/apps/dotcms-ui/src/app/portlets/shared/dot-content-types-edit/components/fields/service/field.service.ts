@@ -13,6 +13,12 @@ import { FIELD_ICONS } from '../content-types-fields-list/content-types-fields-i
 export class FieldService {
     constructor(private coreWebService: CoreWebService) {}
 
+    /**
+     * Get the field types
+     *
+     * @return {*}  {Observable<FieldType[]>}
+     * @memberof FieldService
+     */
     loadFieldTypes(): Observable<FieldType[]> {
         return this.coreWebService
             .requestView({
