@@ -31,6 +31,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.TestWorkflowUtils;
 import com.dotcms.mock.response.MockAsyncResponse;
@@ -51,6 +52,7 @@ import com.dotcms.workflow.form.WorkflowSchemeImportObjectForm;
 import com.dotcms.workflow.form.WorkflowStepAddForm;
 import com.dotcms.workflow.form.WorkflowStepUpdateForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
@@ -305,7 +307,7 @@ public class WorkflowResourceLicenseIntegrationTest {
 
         ContentType contentType = null;
         final String ctName = "KeepWfTaskStatus" + System.currentTimeMillis();
-        final Role role = TestUserUtils.getOrCreatePublisherRole();
+        final Role role = TestUserUtils.getOrCreatePublisherRole(new SiteDataGen().nextPersisted());
         try {
             //Bill does NOT have Read permissions over this new content type
             contentType = createContentTypeAndAssignPermissions(ctName,
@@ -626,7 +628,7 @@ public class WorkflowResourceLicenseIntegrationTest {
 
         ContentType contentType = null;
         final String ctName = "KeepWfTaskStatus" + System.currentTimeMillis();
-        final Role role = TestUserUtils.getOrCreatePublisherRole();
+        final Role role = TestUserUtils.getOrCreatePublisherRole(new SiteDataGen().nextPersisted());
         try {
             //Bill does NOT have Read permissions over this new content type
             contentType = createContentTypeAndAssignPermissions(ctName,
@@ -664,7 +666,8 @@ public class WorkflowResourceLicenseIntegrationTest {
 
         ContentType contentType = null;
         final String ctName = "KeepWfTaskStatus" + System.currentTimeMillis();
-        final Role role = TestUserUtils.getOrCreatePublisherRole();
+
+        final Role role = TestUserUtils.getOrCreatePublisherRole(new SiteDataGen().nextPersisted());
         try {
             //Bill does NOT have Read permissions over this new content type
             contentType = createContentTypeAndAssignPermissions(ctName,
