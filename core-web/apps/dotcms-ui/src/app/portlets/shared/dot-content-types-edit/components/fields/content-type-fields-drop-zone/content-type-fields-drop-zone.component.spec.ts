@@ -259,8 +259,9 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         expect(comp.dialogActions.accept.disabled).toBeTruthy();
     });
 
-    it('should have a dialog', () => {
+    fit('should have a dialog', () => {
         const dialog = de.query(By.css('dot-dialog'));
+        expect(dialog.attributes.width).toBe('45rem');
         expect(dialog).not.toBeNull();
     });
 
