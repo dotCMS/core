@@ -1583,8 +1583,8 @@ public class WorkflowResource {
         final List<Category> categories = MapToContentletPopulator.
                 INSTANCE.getCategories(contentlet, user, pageMode.respectAnonPerms);
 
-        if (UtilMethods.isSet(categories)) {
-
+        //Must be compared against null. Empty collection implies removal, therefore we must allow it
+        if (null != categories) {
             formBuilder.categories(categories);
         }
 
