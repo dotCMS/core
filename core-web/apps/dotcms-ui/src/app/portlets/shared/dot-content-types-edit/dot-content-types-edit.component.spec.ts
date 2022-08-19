@@ -435,12 +435,16 @@ describe('DotContentTypesEditComponent', () => {
     });
 
     describe('edit mode', () => {
+        let fieldService: FieldService;
+
         beforeEach(waitForAsync(() => {
             TestBed.configureTestingModule(configEditMode);
 
             fixture = TestBed.createComponent(DotContentTypesEditComponent);
             comp = fixture.componentInstance;
             de = fixture.debugElement;
+
+            fieldService = de.injector.get(FieldService);
 
             crudService = fixture.debugElement.injector.get(DotCrudService);
             location = fixture.debugElement.injector.get(Location);
@@ -525,7 +529,6 @@ describe('DotContentTypesEditComponent', () => {
             const fieldToUpdate: DotCMSContentTypeField = layout[0].columns[0].fields[0];
             fieldToUpdate.name = 'Updated field';
 
-            const fieldService = fixture.debugElement.injector.get(FieldService);
             spyOn(fieldService, 'saveFields').and.returnValue(of(layout));
 
             const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
@@ -534,6 +537,23 @@ describe('DotContentTypesEditComponent', () => {
             expect<any>(fieldService.saveFields).toHaveBeenCalledWith('1234567890', [
                 fieldToUpdate
             ]);
+            expect(comp.layout).toEqual(layout);
+        });
+
+        it('should update fields on dropzone event', () => {
+            const layout: DotCMSContentTypeLayoutRow[] = _.cloneDeep(currentLayoutInServer);
+            const fieldToUpdate: DotCMSContentTypeField = layout[0].columns[0].fields[0];
+
+            spyOn(fieldService, 'updateField').and.returnValue(of(layout));
+
+            const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
+
+            comp.layout = [];
+
+            contentTypeFieldsDropZone.triggerEventHandler('editField', fieldToUpdate);
+
+            expect(fieldService.updateField).toHaveBeenCalledWith('1234567890', fieldToUpdate);
+
             expect(comp.layout).toEqual(layout);
         });
 
@@ -555,7 +575,7 @@ describe('DotContentTypesEditComponent', () => {
 
             const fieldsReturnByServer: DotCMSContentTypeField[] =
                 newFieldsAdded.concat(currentFieldsInServer);
-            const fieldService = fixture.debugElement.injector.get(FieldService);
+
             spyOn<any>(fieldService, 'saveFields').and.returnValue(of(fieldsReturnByServer));
 
             const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
@@ -585,7 +605,6 @@ describe('DotContentTypesEditComponent', () => {
 
             const fieldsReturnByServer: DotCMSContentTypeField[] =
                 newFieldsAdded.concat(currentFieldsInServer);
-            const fieldService = fixture.debugElement.injector.get(FieldService);
 
             const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
 
@@ -618,7 +637,6 @@ describe('DotContentTypesEditComponent', () => {
             newFieldsAdded.concat(fieldsReturnByServer[0].columns[0].fields);
             fieldsReturnByServer[0].columns[0].fields = newFieldsAdded;
 
-            const fieldService = fixture.debugElement.injector.get(FieldService);
             spyOn(fieldService, 'saveFields').and.returnValue(of(fieldsReturnByServer));
 
             const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
@@ -658,7 +676,6 @@ describe('DotContentTypesEditComponent', () => {
 
             layout.push(newRow);
 
-            const fieldService = fixture.debugElement.injector.get(FieldService);
             spyOn(fieldService, 'saveFields').and.returnValue(of(layout));
 
             const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
@@ -689,7 +706,7 @@ describe('DotContentTypesEditComponent', () => {
                     sortOrder: 2
                 }
             ];
-            const fieldService = fixture.debugElement.injector.get(FieldService);
+
             spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
             spyOn(fieldService, 'saveFields').and.returnValue(throwError(mockResponseView(403)));
 
@@ -706,7 +723,6 @@ describe('DotContentTypesEditComponent', () => {
             const layout: DotCMSContentTypeLayoutRow[] = _.cloneDeep(currentLayoutInServer);
             layout[0].columns[0].fields = layout[0].columns[0].fields.slice(-1);
 
-            const fieldService = fixture.debugElement.injector.get(FieldService);
             spyOn<any>(fieldService, 'deleteFields').and.returnValue(of({ fields: layout }));
 
             const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
@@ -732,7 +748,7 @@ describe('DotContentTypesEditComponent', () => {
 
         it('should handle remove field error', () => {
             spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
-            const fieldService = fixture.debugElement.injector.get(FieldService);
+
             spyOn(fieldService, 'deleteFields').and.returnValue(throwError(mockResponseView(403)));
 
             const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
