@@ -23,14 +23,19 @@ public class ExperimentsFactoryImpl implements
             "traffic_type, traffic_proportion, traffic_allocation, mod_date, start_date, end_date, ready_to_start) "
             + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?)";
 
-    public static final String FIND_EXPERIMENT_BY_ID = "SELECT FROM experiment WHERE id = ?";
+    public static final String UPDATE_EXPERIMENT = "UPDATE experiment set name=?, description=?, status=?, " +
+            "traffic_type=?, traffic_proportion=?, traffic_allocation=?, mod_date=?, start_date=?, end_date=?, "
+            + "ready_to_start=? "
+            + "WHERE id=?";
+
+    public static final String FIND_EXPERIMENT_BY_ID = "SELECT * FROM experiment WHERE id = ?";
 
     @Override
     public Experiment save(Experiment experiment) throws DotDataException {
         if(find(experiment.getId()).isEmpty()) {
             insertInDB(experiment);
         } else {
-//            updateInDB(experiment);
+            updateInDB(experiment);
         }
 
         return experiment;
@@ -96,6 +101,34 @@ public class ExperimentsFactoryImpl implements
         dc.addParam(experiment.getStartDate());
         dc.addParam(experiment.getEndDate());
         dc.addParam(experiment.isReadyToStart());
+        dc.loadResult();
+    }
+
+    private void updateInDB(final Experiment experiment) throws DotDataException {
+        DotConnect dc = new DotConnect();
+        dc.setSQL(UPDATE_EXPERIMENT);
+        dc.addParam(experiment.getName());
+        dc.addParam(experiment.getDescription());
+        dc.addParam(experiment.getStatus().name());
+        dc.addParam(experiment.getTrafficProportion().getType().name());
+        final String trafficProportionAsJSON = Try.of(()->
+                        objectWriter.writeValueAsString(experiment.getTrafficProportion()))
+                .getOrNull();
+        if(DbConnectionFactory.isPostgres()) {
+            PGobject jsonObject = new PGobject();
+            jsonObject.setType("json");
+            Try.run(() -> jsonObject.setValue(trafficProportionAsJSON)).getOrElseThrow(
+                    () -> new DotDataException("Invalid Traffic Proportion"));
+            dc.addObject(jsonObject);
+        } else {
+            dc.addParam(trafficProportionAsJSON);
+        }
+        dc.addParam(experiment.getTrafficAllocation());
+        dc.addParam(experiment.getModDate());
+        dc.addParam(experiment.getStartDate());
+        dc.addParam(experiment.getEndDate());
+        dc.addParam(experiment.isReadyToStart());
+        dc.addParam(experiment.getId());
         dc.loadResult();
     }
 }

@@ -44,8 +44,9 @@ public final class Experiment implements Serializable, ManifestItem {
 
     public static class Builder {
         // required parameters
-        private final String name;
-        private final String description;
+        private final String pageId;
+        private String name;
+        private String description;
 
         private String id;
         private Status status = Status.DRAFT;
@@ -54,7 +55,6 @@ public final class Experiment implements Serializable, ManifestItem {
         private LocalDateTime startDate;
         private LocalDateTime endDate;
         private LocalDateTime modDate;
-        private String pageId;
         private boolean readyToStart;
 
         public Builder(final String pageId, final String name, final String description) {
@@ -78,6 +78,16 @@ public final class Experiment implements Serializable, ManifestItem {
             this.modDate = val.modDate;
             this.pageId = val.pageId;
             this.readyToStart = val.readyToStart;
+        }
+
+        public Builder name(final String val) {
+            name = val;
+            return this;
+        }
+
+        public Builder description(final String val) {
+            description = val;
+            return this;
         }
 
         public Builder id(final String val) {

@@ -14,6 +14,9 @@ public class TrafficProportion implements Serializable {
     private Type type;
     private Map<String, Float> percentages;
 
+    public TrafficProportion() {
+    }
+
     public TrafficProportion(final Type type, final Map<String, Float> percentages) {
         this.type = type;
         this.percentages = percentages;
