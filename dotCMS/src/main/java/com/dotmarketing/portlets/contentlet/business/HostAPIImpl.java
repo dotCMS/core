@@ -808,28 +808,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     @Override
     public PaginatedArrayList<Host> searchByStopped(final String filter, final boolean showStopped, final boolean
             showSystemHost, final int limit, final int offset, final User user, final boolean respectFrontendRoles) {
-        PaginatedArrayList<Host> paginatedSiteList = new PaginatedArrayList<>();
-        final Optional<List<Host>> siteListOpt = showStopped ? this.getHostFactory()
-                .findStoppedSites(filter, true, limit, offset, showSystemHost, user, respectFrontendRoles) :
-                this.getHostFactory().findLiveSites(filter, limit, offset, showSystemHost, user, respectFrontendRoles);
-        if (siteListOpt.isPresent()) {
-            if (showStopped) {
-                return convertToSitePaginatedList(siteListOpt.get());
-            }
-            try {
-                // Permissions can only be checked on LIVE contents
-                final List<Host> filteredSiteList = APILocator.getPermissionAPI().filterCollection(siteListOpt.get(), PermissionAPI
-                        .PERMISSION_READ, respectFrontendRoles, user);
-                paginatedSiteList = convertToSitePaginatedList(filteredSiteList);
-            } catch (final DotDataException | DotSecurityException e) {
-                Logger.error(HostAPIImpl.class, String.format("An error occurred when searching for Sites based on " +
-                        "the following criteria: filter[ %s ], showStopped[ %s ], showSystemHost [ %s ]: %s", filter,
-                        showStopped, showSystemHost, e.getMessage()), e);
-                throw new DotRuntimeException(String.format("An error occurred when searching for Sites: %s", e
-                        .getMessage()), e);
-            }
-        }
-        return paginatedSiteList;
+        return search(filter, false, showStopped, showSystemHost, limit, offset, user, respectFrontendRoles);
     }
 
     @CloseDBIfOpened
@@ -837,26 +816,13 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     public PaginatedArrayList<Host> search(final String filter, final boolean showArchived, final boolean
             showStopped, final boolean showSystemHost, final int limit, final int offset, final User user, final
                                            boolean respectFrontendRoles) {
-        PaginatedArrayList<Host> paginatedSiteList = new PaginatedArrayList<>();
         Optional<List<Host>> siteListOpt;
         if (!showStopped && !showArchived) {
             // Return live Sites
             siteListOpt = this.getHostFactory()
                     .findLiveSites(filter, limit, offset, showSystemHost, user, respectFrontendRoles);
             if (siteListOpt.isPresent()) {
-                try {
-                    // Permissions can only be checked on LIVE contents
-                    final List<Host> filteredSiteList = APILocator.getPermissionAPI().filterCollection(siteListOpt.get(), PermissionAPI
-                            .PERMISSION_READ, respectFrontendRoles, user);
-                    paginatedSiteList = convertToSitePaginatedList(filteredSiteList);
-                } catch (final DotDataException | DotSecurityException e) {
-                    Logger.error(HostAPIImpl.class, String.format("An error occurred when searching for Sites based " +
-                            "on the following criteria: filter[ %s ], showArchived [ %s ], showStopped[ %s ], " +
-                            "showSystemHost [ %s ]: %s", filter, showArchived, showStopped, showSystemHost, e
-                            .getMessage()), e);
-                    throw new DotRuntimeException(String.format("An error occurred when searching for Sites: %s", e
-                            .getMessage()), e);
-                }
+                return convertToSitePaginatedList(siteListOpt.get());
             }
         }
         if (showStopped && !showArchived) {
@@ -864,7 +830,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             siteListOpt = this.getHostFactory()
                     .findStoppedSites(filter, false, limit, offset, showSystemHost, user, respectFrontendRoles);
             if (siteListOpt.isPresent()) {
-                paginatedSiteList = convertToSitePaginatedList(siteListOpt.get());
+                return convertToSitePaginatedList(siteListOpt.get());
             }
         }
         if (showStopped && showArchived) {
@@ -872,60 +838,29 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             siteListOpt = this.getHostFactory()
                     .findArchivedSites(filter, limit, offset, showSystemHost, user, respectFrontendRoles);
             if (siteListOpt.isPresent()) {
-                paginatedSiteList = convertToSitePaginatedList(siteListOpt.get());
+                return convertToSitePaginatedList(siteListOpt.get());
             }
         }
-        return paginatedSiteList;
+        return new PaginatedArrayList<>();
     }
 
     @CloseDBIfOpened
     @Override
     public PaginatedArrayList<Host> search(String filter, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles){
-        PaginatedArrayList<Host> paginatedSiteList = new PaginatedArrayList<>();
-        final Optional<List<Host>> siteListOpt =
-                this.getHostFactory().findLiveSites(filter, limit, offset, showSystemHost, user, respectFrontendRoles);
-        if (siteListOpt.isPresent()) {
-            try {
-                List<Host> filteredSiteList = APILocator.getPermissionAPI().filterCollection(siteListOpt.get(), PermissionAPI
-                        .PERMISSION_READ, respectFrontendRoles, user);
-                paginatedSiteList = convertToSitePaginatedList(filteredSiteList);
-            } catch (final DotDataException | DotSecurityException e) {
-                Logger.error(HostAPIImpl.class, String.format("An error occurred when searching for Sites based on " +
-                                "the following criteria: filter[ %s ], showSystemHost [ %s ]: %s", filter,
-                        showSystemHost, e.getMessage()), e);
-                throw new DotRuntimeException(String.format("An error occurred when searching for Sites: %s", e
-                        .getMessage()), e);
-            }
-        }
-        return paginatedSiteList;
+        return search(filter, false, showSystemHost, limit, offset, user, respectFrontendRoles);
     }
 
     @CloseDBIfOpened
     @Override
     public PaginatedArrayList<Host> search(final String filter, boolean showArchived, boolean showSystemHost, int
             limit, int offset, User user, boolean respectFrontendRoles) {
-        PaginatedArrayList<Host> paginatedSiteList = new PaginatedArrayList<>();
         final Optional<List<Host>> siteListOpt = showArchived ? this.getHostFactory()
                 .findArchivedSites(filter, limit, offset, showSystemHost, user, respectFrontendRoles) :
                 this.getHostFactory().findLiveSites(filter, limit, offset, showSystemHost, user, respectFrontendRoles);
         if (siteListOpt.isPresent()) {
-            if (showArchived) {
-                return convertToSitePaginatedList(siteListOpt.get());
-            }
-            try {
-                // Permissions can only be checked on LIVE contents
-                final List<Host> filteredSiteList = APILocator.getPermissionAPI().filterCollection(siteListOpt.get(), PermissionAPI
-                        .PERMISSION_READ, respectFrontendRoles, user);
-                paginatedSiteList = convertToSitePaginatedList(filteredSiteList);
-            } catch (final DotDataException | DotSecurityException e) {
-                Logger.error(HostAPIImpl.class, String.format("An error occurred when searching for Sites based on " +
-                                "the following criteria: filter[ %s ], showArchived[ %s ], showSystemHost [ %s ]: %s", filter,
-                        showArchived, showSystemHost, e.getMessage()), e);
-                throw new DotRuntimeException(String.format("An error occurred when searching for Sites: %s", e
-                        .getMessage()), e);
-            }
+            return convertToSitePaginatedList(siteListOpt.get());
         }
-        return paginatedSiteList;
+        return new PaginatedArrayList<>();
     }
 
     @CloseDBIfOpened
