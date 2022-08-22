@@ -27,7 +27,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.mockito.Mockito.when;
 
-public class ContentletsPaginatedIntegrationTest {
+public class PaginatedContentletsIntegrationTest {
 
     @BeforeClass
     public static void prepare() throws Exception {
