@@ -198,7 +198,6 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
             return true;
         }
 
-        // I think this must be handled by the suggestion list component.
         if (key === 'ArrowDown' || key === 'ArrowUp') {
             suggestionsComponent.instance.updateSelection(event);
 

@@ -72,7 +72,7 @@ export class SuggestionsListItemComponent implements FocusableOption, OnInit, On
      * Execute the item command on mouse down
      *
      * @param {MouseEvent} e
-     * @memberof SuggestionsComponent
+     * @memberof SuggestionsListItemComponent
      */
     onMouseDown(e: MouseEvent) {
         e.preventDefault();

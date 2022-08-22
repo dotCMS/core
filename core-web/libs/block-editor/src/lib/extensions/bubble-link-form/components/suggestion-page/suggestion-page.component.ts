@@ -32,11 +32,7 @@ export class SuggestionPageComponent {
      * @memberof SuggestionPageComponent
      */
     execCommand() {
-        if (this.items.length) {
-            this.list.execCommand();
-        } else {
-            this.handleBackButton();
-        }
+        this.items.length ? this.list.execCommand() : this.handleBackButton();
     }
 
     /**
