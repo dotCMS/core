@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostBinding, Input, OnInit, OnDestroy } from '@angular/core';
+import { Component, ElementRef, HostBinding, Input, OnInit, HostListener } from '@angular/core';
 
 import { FocusableOption } from '@angular/cdk/a11y';
 
@@ -7,7 +7,7 @@ import { FocusableOption } from '@angular/cdk/a11y';
     templateUrl: './suggestions-list-item.component.html',
     styleUrls: ['./suggestions-list-item.component.scss']
 })
-export class SuggestionsListItemComponent implements FocusableOption, OnInit, OnDestroy {
+export class SuggestionsListItemComponent implements FocusableOption, OnInit {
     @HostBinding('attr.role') role = 'list-item';
     @HostBinding('attr.tabindex') tabindex = '-1';
 
@@ -25,13 +25,14 @@ export class SuggestionsListItemComponent implements FocusableOption, OnInit, On
 
     constructor(private element: ElementRef) {}
 
-    ngOnInit() {
-        this.icon = this.icon = typeof this.url === 'string' && !(this.url.split('/').length > 1);
-        this.element.nativeElement.addEventListener('mousedown', this.onMouseDown.bind(this));
+    @HostListener('mousedown', ['$event'])
+    onMouseDown(e: MouseEvent) {
+        e.preventDefault();
+        this.command();
     }
 
-    ngOnDestroy() {
-        this.element.nativeElement.removeEventListener('mousedown', this.onMouseDown.bind(this));
+    ngOnInit() {
+        this.icon = this.icon = typeof this.url === 'string' && !(this.url.split('/').length > 1);
     }
 
     getLabel(): string {
@@ -66,17 +67,6 @@ export class SuggestionsListItemComponent implements FocusableOption, OnInit, On
             // += scrollBot - containerHeight -> If we're near the bottom of the list.
             parent.scrollTop += this.alignToTop() ? scrollTop : scrollBot - containerHeight;
         }
-    }
-
-    /**
-     * Execute the item command on mouse down
-     *
-     * @param {MouseEvent} e
-     * @memberof SuggestionsListItemComponent
-     */
-    onMouseDown(e: MouseEvent) {
-        e.preventDefault();
-        this.command();
     }
 
     /**
