@@ -119,7 +119,7 @@ public class NavResource {
 
             final String path = (!uri.startsWith("/")) ? "/" + uri : uri;
             //Force NavTool to behave as Live when rendering items
-            request.setAttribute(WebKeys.PAGE_MODE_PARAMETER, PageMode.LIVE);
+            PageMode.setPageMode(request, PageMode.LIVE);
             final NavTool tool = new NavTool();
             tool.init(ctx);
             final NavResult nav = tool.getNav(path, langId);
@@ -133,7 +133,7 @@ public class NavResource {
 
 
 
-            return Response.ok(new ResponseEntityView(navMap)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(navMap)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on NavResource exception message: " + e.getMessage(), e);
