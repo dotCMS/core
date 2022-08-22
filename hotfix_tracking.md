@@ -161,3 +161,4 @@ This maintenance release includes the following code fixes:
 89. https://github.com/dotCMS/core/issues/22149 : The push publish button in the expansion menu on the users portlet doesn't just push the selected user, it pushes all users #22149
 90. https://github.com/dotCMS/core/issues/22237 : Limited User Can't Open Page if it has a content that doesn't have permissions over #22237
 91. https://github.com/dotCMS/core/issues/22266 : Issue with static push publishing when pushing with a default language other than English #22266
+92. https://github.com/dotCMS/core/issues/22349 : Missing database migration tasks when migrating from <=5.1.6 #22349
