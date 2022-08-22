@@ -166,5 +166,14 @@ describe('DotTemplateSelectorComponent', () => {
             expect(dynamicDialogRef.close).toHaveBeenCalledWith('designer');
             expect(dynamicDialogRef.close).toHaveBeenCalledWith('advanced');
         });
+
+        it('it should close the dialog when pressed Enter key', () => {
+            const container = de.query(By.css('.wrapper '));
+            container.triggerEventHandler('keydown.enter', {
+                stopImmediatePropagation: jasmine.createSpy('')
+            });
+
+            expect(dynamicDialogRef.close).toHaveBeenCalledTimes(1);
+        });
     });
 });

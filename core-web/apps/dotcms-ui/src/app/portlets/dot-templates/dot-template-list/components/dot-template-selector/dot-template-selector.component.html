@@ -1,7 +1,8 @@
-<div class="wrapper">
+<div class="wrapper" (keydown.enter)="onClick()">
     <div class="options">
         <label data-testId="designer">
             <input
+                dotAutofocus
                 type="radio"
                 value="designer"
                 name="template"
