@@ -14,15 +14,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.Map;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.WriteListener;
-import javax.servlet.http.HttpServletResponse;
 import net.jodah.failsafe.CircuitBreaker;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.FailsafeException;
@@ -30,6 +21,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -38,6 +30,19 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+
+import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
+import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.RejectedExecutionException;
 
 /**
  * Defaults to GET requests with 2000 timeout
@@ -69,7 +74,9 @@ public class CircuitBreakerUrl {
     private Header[] responseHeaders;
     private final boolean allowRedirects;
 
-    
+    private static final Lazy<Integer> circuitBreakerMaxConnTotal = Lazy.of(()->Config.getIntProperty("CIRCUIT_BREAKER_MAX_CONN_TOTAL",100));
+    private static final Lazy<Boolean> allowAccessToPrivateSubnets = Lazy.of(()->Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false));
+    private static final CircuitBreakerConnectionControl circuitBreakerConnectionControl = new CircuitBreakerConnectionControl(circuitBreakerMaxConnTotal.get());
     /**
      * 
      * @param proxyUrl
@@ -192,16 +199,19 @@ public class CircuitBreakerUrl {
         });
     }
 
-    
-    
-    
-    
-    
     public void doOut(final HttpServletResponse response) throws IOException {
+
+        circuitBreakerConnectionControl.check(this.proxyUrl);
+
         try (final OutputStream out = response.getOutputStream()) {
+
+            circuitBreakerConnectionControl.start(Thread.currentThread().getId());
+
             if(verbose) {
+
                 Logger.info(this.getClass(), "Circuitbreaker to " + request + " is " + circuitBreaker.getState());
             }
+
             Failsafe.with(circuitBreaker)
                     .onSuccess(connection -> { 
                         if(verbose) Logger.info(this, "success to " + this.proxyUrl);
@@ -213,21 +223,24 @@ public class CircuitBreakerUrl {
                                 .setRedirectsEnabled(allowRedirects)
                                 .setConnectionRequestTimeout(Math.toIntExact(this.timeoutMs))
                                 .setSocketTimeout(Math.toIntExact(this.timeoutMs)).build();
-                        try (CloseableHttpClient httpclient = HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
+                        try (CloseableHttpClient httpclient = HttpClientBuilder.create()
+                                .setMaxConnTotal(circuitBreakerMaxConnTotal.get())
+                                .setDefaultRequestConfig(config).build()) {
                             
-                            if(IPUtils.isIpPrivateSubnet(this.request.getURI().getHost()) && !Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false)){
+                            if(IPUtils.isIpPrivateSubnet(this.request.getURI().getHost()) && !allowAccessToPrivateSubnets.get()){
                                 throw new DotRuntimeException("Remote HttpRequests cannot access private subnets.  Set ALLOW_ACCESS_TO_PRIVATE_SUBNETS=true to allow");
                             }
-                            
-                            HttpResponse innerResponse = httpclient.execute(this.request);
 
-                            this.responseHeaders = innerResponse.getAllHeaders();
+                            try (CloseableHttpResponse innerResponse = httpclient.execute(this.request)) {
 
-                            copyHeaders(innerResponse, response);
+                                this.responseHeaders = innerResponse.getAllHeaders();
 
-                            this.response = innerResponse.getStatusLine().getStatusCode();
-                            
-                            IOUtils.copy(innerResponse.getEntity().getContent(), out);
+                                copyHeaders(innerResponse, response);
+
+                                this.response = innerResponse.getStatusLine().getStatusCode();
+
+                                IOUtils.copy(innerResponse.getEntity().getContent(), out);
+                            }
                             
                             // throw an error if the request is bad
                             if(this.response<200 || this.response>299){
@@ -236,7 +249,11 @@ public class CircuitBreakerUrl {
                         }
                     });
         } catch (FailsafeException ee) {
+
             Logger.debug(this.getClass(), ee.getMessage() + " " + toString());
+        } finally {
+
+            circuitBreakerConnectionControl.end(Thread.currentThread().getId());
         }
     }
 
@@ -284,5 +301,33 @@ public class CircuitBreakerUrl {
 
     }
 
+    public static class CircuitBreakerConnectionControl {
 
+        private final int maxConnTotal;
+        private final Set<Long> threadIdConnectionCountSet = ConcurrentHashMap.newKeySet();
+
+        public CircuitBreakerConnectionControl(final int maxConnTotal) {
+            this.maxConnTotal = maxConnTotal;
+        }
+
+        public void check(final String proxyUrl) {
+
+            if (threadIdConnectionCountSet.size() >= maxConnTotal) {
+
+                Logger.info(this, "The maximum number of connections has been reached, size: " +
+                        threadIdConnectionCountSet.size() + ", url: " + proxyUrl);
+                throw new RejectedExecutionException("The maximum number of connections has been reached.");
+            }
+        }
+
+        public void start(final long id) {
+
+            threadIdConnectionCountSet.add(id);
+        }
+
+        public void end(final long id) {
+
+            threadIdConnectionCountSet.remove(id);
+        }
+    }
 }

@@ -285,6 +285,7 @@ describe('DotEditPageToolbarComponent', () => {
                 const whatsChangedElem = de.query(By.css('.dot-edit__what-changed-button'));
                 expect(whatsChangedElem).toBeDefined();
                 expect(whatsChangedElem.componentInstance.label).toBe('Whats');
+                expect(whatsChangedElem.componentInstance.binary).toBe(true);
             });
 
             it("should hide what's change selector", () => {
