@@ -6,7 +6,7 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.util.CloseUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.FileByteSplitter;
-import com.dotcms.util.FileJoiner;
+import com.dotcms.util.FileJoinerImpl;
 import com.dotcms.util.ReturnableDelegate;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -25,7 +25,6 @@ import com.google.common.collect.ImmutableSet;
 import com.liferay.util.Encryptor;
 import com.liferay.util.Encryptor.Hashing;
 import com.liferay.util.HashBuilder;
-import com.liferay.util.PropertiesUtil;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
@@ -41,7 +40,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -56,7 +54,7 @@ import org.apache.commons.lang3.mutable.MutableObject;
 
 /**
  * Represents a Storage on the database It supports big files since provides the ability to split
- * fat object in smaller pieces, see {@link FileByteSplitter} and {@link com.dotcms.util.FileJoiner}
+ * fat object in smaller pieces, see {@link FileByteSplitter} and {@link FileJoinerImpl}
  * to get more details about the process
  *
  * @author jsanca
@@ -695,8 +693,8 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
     }
 
     private File createJoinFile(final String hashId, final Connection connection) throws IOException, DotDataException {
-        final File file = FileUtil.createTemporaryFile("dot-db-storage-recovery", ".tmp", true);
-        try (final FileJoiner fileJoiner = new FileJoiner(file)) {
+        final File file = FileUtil.createTemporaryFile("dot-db-storage-recovery", ".tmp", true); // todo this should be configurable in order to use temp or a dir
+        try (final FileJoinerImpl fileJoiner = new FileJoinerImpl(file)) {
             final HashBuilder fileHashBuilder = Try.of(Hashing::sha256)
                     .getOrElseThrow(DotRuntimeException::new);
 
