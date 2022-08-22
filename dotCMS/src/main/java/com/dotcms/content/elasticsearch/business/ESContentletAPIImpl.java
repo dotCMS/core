@@ -116,6 +116,7 @@ import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.*;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -222,6 +223,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private static final Supplier<String> ND_SUPPLIER = ()->"N/D";
     private ElasticReadOnlyCommand elasticReadOnlyCommand;
+
+    ObjectMapper mapper = new ObjectMapper();
 
     /**
      * Default class constructor.
@@ -6493,9 +6496,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final Set<String> nullValueProperties = contentlet.getNullProperties();
         for (final Field field : fields) {
             final Object fieldValue = (nullValueProperties.contains(field.getVelocityVarName()) ? null : contentletMap.get(field.getVelocityVarName()));
+            final com.dotcms.contenttype.model.field.Field newField = LegacyFieldTransformer.from(field);
             // Validate Field Type
             if(fieldValue != null){
-                if(isFieldTypeString(field)){
+                if(isFieldTypeString(field) && !(newField instanceof JSONField)){
 
                     if(fieldValue instanceof Map && FieldType.KEY_VALUE.toString().equals(field.getFieldType())){
                         //That's fine we're handling now keyValues directly as maps
@@ -6544,6 +6548,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         hasError = true;
                         continue;
                     }
+                }else if(newField instanceof JSONField) {
+                    if(!(fieldValue instanceof String) || !(JsonUtil.isValidJSON(fieldValue.toString()))){
+                        cve.addBadTypeField(field);
+                        Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type JSON");
+                        hasError = true;
+                        continue;
+                    }
+                    //  binary field validation
                 }else if(isFieldTypeSystem(field) || isFieldTypeConstant(field)){
                     // Do not validate system or constant field values
                 }else{
