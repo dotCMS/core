@@ -88,7 +88,7 @@ public class NavTool implements ViewTool {
 
         final Folder folder = getDefensiveCopyOfFolder(originalFolder);
 
-        final PageMode pageMode = pageMode();
+        final PageMode pageMode = PageMode.get(request);
 
         final NavToolCache navToolCache = CacheLocator.getNavToolCache();
 
@@ -244,11 +244,6 @@ public class NavTool implements ViewTool {
             menuItems.removeAll(nonLive);
         }
         return menuItems;
-    }
-
-    PageMode pageMode(){
-        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-        return PageMode.get(request);
     }
 
     /**
