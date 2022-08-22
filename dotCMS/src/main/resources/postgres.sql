@@ -2483,5 +2483,9 @@ create table storage_x_data (
 CREATE TABLE shedlock(name VARCHAR(64) NOT NULL, lock_until timestamptz NOT NULL,
                       locked_at timestamptz NOT NULL, locked_by VARCHAR(255) NOT NULL, PRIMARY KEY (name));
 
-
+create table variant (
+     id varchar(36) primary key,
+     name varchar(255) not null,
+     deleted boolean NOT NULL default false
+);
 
