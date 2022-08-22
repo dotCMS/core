@@ -1,14 +1,8 @@
-<div class="suggestion-list-container" id="editor-suggestion-list">
-    <dot-suggestions-list-item
-        *ngFor="let item of suggestionItems; let i = index"
-        (mousedown)="onMouseDown($event, item)"
-        (mouseenter)="onMouseEnter($event)"
-        [command]="item.command"
-        [index]="i"
-        [label]="item.label"
-        [url]="item.icon"
-        [data]="item.data"
-        [urlItem]="urlItem"
-    >
-    </dot-suggestions-list-item>
+<div
+    id="editor-suggestion-list"
+    class="suggestion-list-container"
+    (mousedown)="onMouseDownHandler($event)"
+    (mouseover)="onMouseOver($event)"
+>
+    <ng-content></ng-content>
 </div>

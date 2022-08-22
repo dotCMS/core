@@ -11,7 +11,6 @@ import {
     SuggestionLoadingListComponent,
     ContentletStatePipe
 } from './';
-import { SuggestionPageComponent } from './components/suggestion-page/suggestion-page.component';
 
 @NgModule({
     imports: [CommonModule, FormsModule, ReactiveFormsModule],
@@ -20,10 +19,14 @@ import { SuggestionPageComponent } from './components/suggestion-page/suggestion
         SuggestionListComponent,
         SuggestionsListItemComponent,
         SuggestionLoadingListComponent,
-        ContentletStatePipe,
-        SuggestionPageComponent
+        ContentletStatePipe
     ],
     providers: [SuggestionsService],
-    exports: [SuggestionsComponent, SuggestionPageComponent]
+    exports: [
+        SuggestionsComponent,
+        SuggestionListComponent,
+        SuggestionsListItemComponent,
+        SuggestionLoadingListComponent
+    ]
 })
 export class SharedModule {}

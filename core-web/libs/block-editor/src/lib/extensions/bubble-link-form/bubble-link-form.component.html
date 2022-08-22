@@ -52,10 +52,10 @@
     <dot-suggestion-page
         #suggestions
         *ngIf="showSuggestions"
-        class="link-suggestions"
         [items]="items"
         [loading]="loading"
         [title]="noResultsTitle"
+        (back)="resetForm()"
     >
     </dot-suggestion-page>
 

@@ -38,6 +38,12 @@ export function DotBubbleMenuExtension(viewContainerRef: ViewContainerRef) {
             };
         },
 
+        addStorage() {
+            return {
+                changeToIsOpen: false
+            };
+        },
+
         addProseMirrorPlugins() {
             if (!bubbleMenuElement) {
                 return [];
@@ -45,14 +51,13 @@ export function DotBubbleMenuExtension(viewContainerRef: ViewContainerRef) {
 
             return [
                 DotBubbleMenuPlugin({
+                    ...this.options,
                     component: bubbleMenuComponent,
                     changeToComponent: changeToComponent,
                     pluginKey: BUBBLE_MENU_PLUGIN_KEY,
                     editor: this.editor,
                     element: bubbleMenuElement,
-                    changeToElement: changeToElement,
-                    tippyOptions: this.options.tippyOptions,
-                    shouldShow: this.options.shouldShow
+                    changeToElement: changeToElement
                 })
             ];
         }

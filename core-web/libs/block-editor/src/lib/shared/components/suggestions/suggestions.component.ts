@@ -43,10 +43,8 @@ export enum ItemsType {
     styleUrls: ['./suggestions.component.scss']
 })
 export class SuggestionsComponent implements OnInit {
-    // TODO: Move all the logic related to the list to its component
     @ViewChild('list', { static: false }) list: SuggestionListComponent;
 
-    // Maybe this should be an @Output() instead of @Input();
     @Input() onSelection: (props: SuggestionsCommandProps) => void;
     @Input() items: DotMenuItem[] = [];
     @Input() title = 'Select a block';
@@ -55,9 +53,6 @@ export class SuggestionsComponent implements OnInit {
     @Input() allowedContentTypes = '';
 
     @Output() clearFilter: EventEmitter<string> = new EventEmitter<string>();
-
-    // Should be gone
-    @Input() isOpen = false;
 
     private itemsLoaded: ItemsType;
     private selectedContentType: DotCMSContentType;

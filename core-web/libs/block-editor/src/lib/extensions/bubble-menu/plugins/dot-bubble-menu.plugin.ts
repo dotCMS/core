@@ -40,9 +40,10 @@ export const DotBubbleMenuPlugin = (options: DotBubbleMenuPluginProps) => {
              * @param {KeyboardEvent} event
              * @return {*}
              */
-            handleKeyDown(view: EditorView, event: KeyboardEvent) {
+            handleKeyDown(_view: EditorView, event: KeyboardEvent) {
                 const { key } = event;
-                if (changeTo.isOpen) {
+                const { changeToIsOpen } = options.editor?.storage.bubbleMenu || {};
+                if (changeToIsOpen) {
                     if (key === 'Escape') {
                         component.toggleChangeTo.emit();
 
@@ -97,7 +98,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         this.component.instance.toggleChangeTo.subscribe(this.toggleChangeTo.bind(this));
 
         // Load ChangeTo Options
-        this.changeTo.instance.items = this.setChangeToOptions();
+        this.changeTo.instance.items = this.changeToItems();
         this.changeTo.instance.title = 'Change To';
         this.changeToElement.remove();
         this.changeTo.changeDetectorRef.detectChanges();
@@ -206,11 +207,26 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
     /* Update Component */
     updateComponent() {
         const { items } = this.component.instance;
-        const aligment: string[] = ['left', 'center', 'right'];
-        const activeMarks = this.setActiveMarks(aligment);
-        this.setSelectedNodeItem();
+        const { activeItem } = this.getActiveNode();
+        const activeMarks = this.getActiveMarks(['left', 'center', 'right']);
+        // Update
+        this.component.instance.selected = activeItem?.label;
         this.component.instance.items = this.updateActiveItems(items, activeMarks);
         this.component.changeDetectorRef.detectChanges();
+    }
+
+    updateChangeTo() {
+        this.changeTo.instance.items = this.changeToItems();
+        this.changeTo.changeDetectorRef.detectChanges();
+        this.updateListActiveItem();
+    }
+
+    updateListActiveItem() {
+        const { index } = this.getActiveNode();
+        requestAnimationFrame(() => {
+            this.changeTo.instance.list.updateActiveItem(index);
+            this.changeTo.changeDetectorRef.detectChanges();
+        });
     }
 
     updateActiveItems = (items: BubbleMenuItem[] = [], activeMarks: string[]): BubbleMenuItem[] => {
@@ -225,7 +241,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         return [...Object.keys(this.editor.schema.marks), ...Object.keys(this.editor.schema.nodes)];
     };
 
-    setActiveMarks = (aligment = []): string[] => {
+    getActiveMarks = (aligment = []): string[] => {
         return [
             ...this.enabledMarks().filter((mark) => this.editor.isActive(mark)),
             ...aligment.filter((alignment) => this.editor.isActive({ textAlign: alignment }))
@@ -327,7 +343,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         }
     }
 
-    setChangeToOptions() {
+    changeToItems() {
         const allowedBlocks: string[] = this.editor.storage.dotConfig.allowedBlocks;
 
         const changeToOptions =
@@ -371,25 +387,22 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
             option.command = () => {
                 changeTopCommands[option.id]();
                 this.tippyChangeTo.hide();
-                this.setSelectedNodeItem();
+                this.getActiveNode();
             };
         });
 
         return changeToOptions;
     }
 
-    setSelectedNodeItem() {
-        const items = this.changeTo.instance.items;
+    getActiveNode() {
+        const items = this.changeToItems();
         const activeMarks = items.filter((option) => option?.isActive());
         // Needed because in some scenarios, paragraph and other mark (ex: blockquote)
         // can be active at the same time
-        const activeNode = activeMarks.length > 1 ? activeMarks[1] : activeMarks[0];
-        // Set Active on Change To List
-        this.changeTo.instance.list.updateActiveItem(
-            items.findIndex((item) => item === activeNode)
-        );
-        // Set button label on Bubble Menu
-        this.component.instance.selected = activeNode?.label || '';
+        const activeItem = activeMarks.length > 1 ? activeMarks[1] : activeMarks[0];
+        const index = items.findIndex((item) => item === activeItem);
+
+        return { activeItem, index };
     }
 
     // Tippy Change To
@@ -412,21 +425,20 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                 modifiers: popperModifiers
             },
             onHide: () => {
-                this.changeTo.instance.isOpen = false;
+                this.editor.storage.bubbleMenu.changeToIsOpen = false;
+                this.changeTo.instance.items = [];
+                this.changeTo.changeDetectorRef.detectChanges();
             },
             onShow: () => {
-                this.changeTo.instance.isOpen = true;
-                this.setSelectedNodeItem();
+                this.editor.storage.bubbleMenu.changeToIsOpen = true;
+                this.updateChangeTo();
             }
         });
     }
 
     toggleChangeTo() {
-        if (this.tippyChangeTo.state.isVisible) {
-            this.tippyChangeTo?.hide();
-        } else {
-            this.tippyChangeTo?.show();
-        }
+        const { changeToIsOpen } = this.editor?.storage.bubbleMenu || {};
+        changeToIsOpen ? this.tippyChangeTo?.hide() : this.tippyChangeTo?.show();
     }
 
     hanlderScroll() {
@@ -435,6 +447,8 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         }
     }
 
+    // TODO: Move this methods to `prosemirror.utils`
+    // Looks like we can reuse them.
     private deleteByNode() {
         if (CustomNodeTypes.includes(this.selectionNode.type.name)) {
             this.deleteSelectedCustomNodeType();

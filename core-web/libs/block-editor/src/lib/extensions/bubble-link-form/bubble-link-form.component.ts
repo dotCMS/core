@@ -11,12 +11,13 @@ import { FormBuilder, FormGroup } from '@angular/forms';
 import { debounceTime, take } from 'rxjs/operators';
 
 // Components
-import { SuggestionsCommandProps, SuggestionsComponent } from '@dotcms/block-editor';
+import { SuggestionsCommandProps } from '@dotcms/block-editor';
 
 // Models
 import { isValidURL } from '../bubble-menu/utils';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { SuggestionsService, DotLanguageService, Languages } from '../../shared';
+import { SuggestionPageComponent } from './components/suggestion-page/suggestion-page.component';
 
 export interface NodeProps {
     link: string;
@@ -30,7 +31,7 @@ export interface NodeProps {
 })
 export class BubbleLinkFormComponent implements OnInit {
     @ViewChild('input') input: ElementRef;
-    @ViewChild('suggestions', { static: false }) suggestionsComponent: SuggestionsComponent;
+    @ViewChild('suggestions', { static: false }) suggestionsComponent: SuggestionPageComponent;
 
     @Output() hide: EventEmitter<boolean> = new EventEmitter(false);
     @Output() removeLink: EventEmitter<boolean> = new EventEmitter(false);
@@ -45,6 +46,7 @@ export class BubbleLinkFormComponent implements OnInit {
 
     private minChars = 3;
     private dotLangs: Languages;
+
     loading = false;
     form: FormGroup;
     items = [];
@@ -66,9 +68,7 @@ export class BubbleLinkFormComponent implements OnInit {
         private fb: FormBuilder,
         private suggestionsService: SuggestionsService,
         private dotLanguageService: DotLanguageService
-    ) {
-        /* */
-    }
+    ) {}
 
     ngOnInit() {
         this.form = this.fb.group({ ...this.initialValues });
@@ -113,6 +113,7 @@ export class BubbleLinkFormComponent implements OnInit {
      */
     setLoading() {
         const shouldShow = this.newLink.length >= this.minChars && !isValidURL(this.newLink);
+        this.items = shouldShow ? this.items : [];
         this.showSuggestions = shouldShow;
         this.loading = shouldShow;
         if (shouldShow) {

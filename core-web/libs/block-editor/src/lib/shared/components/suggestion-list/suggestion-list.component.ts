@@ -4,76 +4,48 @@ import {
     Input,
     QueryList,
     AfterViewInit,
-    ViewChildren,
-    OnChanges
+    ContentChildren,
+    OnDestroy
 } from '@angular/core';
 import { FocusKeyManager } from '@angular/cdk/a11y';
-
-// Prime NG
-import { MenuItem } from 'primeng/api';
 
 // Components
 import { SuggestionsListItemComponent } from './components/suggestions-list-item/suggestions-list-item.component';
 
 // Interfaces
 import { DotMenuItem } from '../suggestions/suggestions.component';
-import { SimpleChanges } from '@angular/core';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-suggestion-list',
     templateUrl: './suggestion-list.component.html',
     styleUrls: ['./suggestion-list.component.scss']
 })
-export class SuggestionListComponent implements AfterViewInit, OnChanges {
-    // This should not be a suggestion list component
-    // It must be an interface with two outputs (mousedown) and (mouseenter)
-    @ViewChildren(SuggestionsListItemComponent) items: QueryList<SuggestionsListItemComponent>;
+export class SuggestionListComponent implements AfterViewInit, OnDestroy {
+    @ContentChildren(SuggestionsListItemComponent) items: QueryList<SuggestionsListItemComponent>;
     @Input() suggestionItems: DotMenuItem[] = [];
-    @Input() urlItem = false;
 
     keyManager: FocusKeyManager<SuggestionsListItemComponent>;
+    private destroy$ = new Subject<boolean>();
     private mouseMove = true;
 
-    @HostListener('mousemove', ['$event'])
-    onMousemove() {
+    @HostListener('mouseover', ['$event'])
+    onMouseMove() {
         this.mouseMove = true;
     }
-
-    // @HostListener('window:keydown', ['$event'])
-    // keyEvent(event: KeyboardEvent) {
-
-    //     const { key } = event;
-
-    //     console.log("Entramos");
-
-    //     // if (key === 'Enter') {
-    //     //     this.execCommand();
-
-    //     //     return false;
-    //     // }
-
-    //     // // I think this must be handled by the suggestion list component.
-    //     if (key === 'ArrowDown' || key === 'ArrowUp') {
-    //         this.updateSelection(event);
-
-    //         return false;
-    //     }
-    //     // return false;
-    // }
 
     ngAfterViewInit() {
         this.keyManager = new FocusKeyManager(this.items).withWrap();
         requestAnimationFrame(() => this.setFirstItemActive());
+
+        this.items.changes
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(() => requestAnimationFrame(() => this.setFirstItemActive()));
     }
 
-    ngOnChanges(changes: SimpleChanges) {
-        const { suggestionItems } = changes;
-
-        if (suggestionItems.firstChange) {
-            return;
-        }
-
-        requestAnimationFrame(() => this.resetKeyManager());
+    ngOnDestroy() {
+        this.destroy$.next(true);
     }
 
     /**
@@ -135,22 +107,10 @@ export class SuggestionListComponent implements AfterViewInit, OnChanges {
     }
 
     /**
-     * Execute the item command on mouse down
-     *
-     * @param {MouseEvent} e
-     * @param {MenuItem} item
-     * @memberof SuggestionsComponent
-     */
-    onMouseDown(e: MouseEvent, item: MenuItem) {
-        e.preventDefault();
-        item.command();
-    }
-
-    /**
      * Avoid closing the suggestions on manual scroll
      *
      * @param {MouseEvent} e
-     * @memberof SuggestionsComponent
+     * @memberof SuggestionListComponent
      */
     onMouseDownHandler(e: MouseEvent) {
         e.preventDefault();
@@ -160,16 +120,17 @@ export class SuggestionListComponent implements AfterViewInit, OnChanges {
      * Handle the active item on menu events
      *
      * @param {MouseEvent} e
-     * @memberof SuggestionsComponent
+     * @memberof SuggestionListComponent
      */
-    onMouseEnter(e: MouseEvent) {
-        // If mouse does not move then leave the function.
-        if (!this.mouseMove) {
+    onMouseOver(e: MouseEvent) {
+        const element = e.target as HTMLElement;
+        const value = element.dataset?.index as unknown;
+
+        if (isNaN(value as number) || !this.mouseMove) {
             return;
         }
 
-        e.preventDefault();
-        const index = Number((e.target as HTMLElement).dataset.index);
+        const index = Number(element?.dataset.index);
         this.updateActiveItem(index);
     }
 }

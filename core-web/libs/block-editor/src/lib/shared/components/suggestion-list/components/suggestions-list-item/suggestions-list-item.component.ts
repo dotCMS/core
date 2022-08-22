@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostBinding, Input, OnInit } from '@angular/core';
+import { Component, ElementRef, HostBinding, Input, OnInit, OnDestroy } from '@angular/core';
 
 import { FocusableOption } from '@angular/cdk/a11y';
 
@@ -7,7 +7,7 @@ import { FocusableOption } from '@angular/cdk/a11y';
     templateUrl: './suggestions-list-item.component.html',
     styleUrls: ['./suggestions-list-item.component.scss']
 })
-export class SuggestionsListItemComponent implements FocusableOption, OnInit {
+export class SuggestionsListItemComponent implements FocusableOption, OnInit, OnDestroy {
     @HostBinding('attr.role') role = 'list-item';
     @HostBinding('attr.tabindex') tabindex = '-1';
 
@@ -18,7 +18,7 @@ export class SuggestionsListItemComponent implements FocusableOption, OnInit {
     @Input() command: () => void;
     @Input() label = '';
     @Input() url = '';
-    @Input() urlItem = false;
+    @Input() page = false;
     @Input() data = null;
 
     icon = false;
@@ -27,6 +27,11 @@ export class SuggestionsListItemComponent implements FocusableOption, OnInit {
 
     ngOnInit() {
         this.icon = this.icon = typeof this.url === 'string' && !(this.url.split('/').length > 1);
+        this.element.nativeElement.addEventListener('mousedown', this.onMouseDown.bind(this));
+    }
+
+    ngOnDestroy() {
+        this.element.nativeElement.removeEventListener('mousedown', this.onMouseDown.bind(this));
     }
 
     getLabel(): string {
@@ -61,6 +66,17 @@ export class SuggestionsListItemComponent implements FocusableOption, OnInit {
             // += scrollBot - containerHeight -> If we're near the bottom of the list.
             parent.scrollTop += this.alignToTop() ? scrollTop : scrollBot - containerHeight;
         }
+    }
+
+    /**
+     * Execute the item command on mouse down
+     *
+     * @param {MouseEvent} e
+     * @memberof SuggestionsComponent
+     */
+    onMouseDown(e: MouseEvent) {
+        e.preventDefault();
+        this.command();
     }
 
     /**

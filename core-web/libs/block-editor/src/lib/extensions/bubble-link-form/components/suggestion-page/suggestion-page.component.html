@@ -1,5 +1,4 @@
-<div *ngIf="items.length; else emptyBlock">
-    <h3>{{ title }}</h3>
+<div *ngIf="items.length; else loading ? loadingBlock : emptyBlock">
     <dot-suggestion-list #list>
         <dot-suggestions-list-item
             *ngFor="let item of items; let i = index"
@@ -8,14 +7,19 @@
             [label]="item.label"
             [url]="item.icon"
             [data]="item.data"
+            [page]="true"
         >
         </dot-suggestions-list-item>
     </dot-suggestion-list>
 </div>
 
+<ng-template #loadingBlock>
+    <dot-suggestion-loading-list *ngIf="loading"></dot-suggestion-loading-list>
+</ng-template>
+
 <ng-template #emptyBlock>
     <div class="empty">
-        <p [innerHTML]="noResultsMessage"></p>
-        <button *ngIf="!isFilterActive" (mousedown)="handleBackButton($event)">Back</button>
+        <p [innerHTML]="title"></p>
+        <button (mousedown)="handleBackButton($event)">Back</button>
     </div>
 </ng-template>
