@@ -3,7 +3,9 @@ package com.dotcms.csspreproc;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.mock.response.DotCMSMockResponse;
+import com.dotcms.ema.proxy.MockHttpCaptureResponse;
+import com.dotcms.mock.request.DotCMSMockRequestWithSession;
+import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.util.ConfigTestHelper;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -14,7 +16,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.util.StringPool;
 import org.apache.http.HttpStatus;
@@ -25,14 +26,11 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 
 import static org.mockito.Mockito.when;
@@ -51,6 +49,10 @@ public class CSSPreProcessServletTest extends IntegrationTestBase {
     protected static FileAsset inputSimpleScssFile = null;
     protected static FileAsset inputScssFileWithImports = null;
     protected static FileAsset inputInvalidScssFile = null;
+
+    private static final String VALID_SCSS_FILE_RESPONSE = "body {\n" + "  font: 100% Helvetica, sans-serif;\n" + "  color: #555;\n" + "}\n";
+    private static final String SCSS_FILE_WITH_IMPORT_RESPONSE = "h3 {\n" + "  color: blue;\n" + "}\n" + "\n" + "body {\n" + "  font: 100% Helvetica, sans-serif;\n" + "  color: #555;\n" + "}\n" + "\n" + "h1 {\n" + "  color: red;\n" + "}\n";
+    private static final String INVALID_SCSS_FILE_RESPONSE = "/* Error: expected \":\".\n" + " *   ,\n" + " * 3 | $prim ary-color: #555;\n" + " *   |       ^\n" + " *   '";
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -90,12 +92,12 @@ public class CSSPreProcessServletTest extends IntegrationTestBase {
      *     <li><b>Method to Test:</b> {@link CSSPreProcessServlet#doGet(HttpServletRequest, HttpServletResponse)}</li>
      *     <li><b>Given Scenario:</b> Compiling a simple valid SCSS file.</li>
      *     <li><b>Expected Result:</b> Valid CSS code is returned. Because of the Servlet being mocked, the status code
-     *     must be zero.</li>
+     *     must be -1.</li>
      * </ul>
      */
     @Test
     public void testCompileValidScssFile() {
-        executeTest(inputSimpleScssFile, false);
+        executeTest(inputSimpleScssFile, VALID_SCSS_FILE_RESPONSE);
     }
 
     /**
@@ -104,12 +106,12 @@ public class CSSPreProcessServletTest extends IntegrationTestBase {
      *     <li><b>Given Scenario:</b> Compiling a simple valid SCSS file with an @import directive. This adds more
      *     complexity to the process as it forces dotCMS to scan files in a different folder.</li>
      *     <li><b>Expected Result:</b> Valid CSS code is returned. Because of the Servlet being mocked, the status code
-     *     must be zero.</li>
+     *     must be -1.</li>
      * </ul>
      */
     @Test
-    public void testCompileScssFileWithImports() {
-        executeTest(inputScssFileWithImports, false);
+    public void testCompileScssFileWithImport() {
+        executeTest(inputScssFileWithImports, SCSS_FILE_WITH_IMPORT_RESPONSE);
     }
 
     /**
@@ -118,12 +120,12 @@ public class CSSPreProcessServletTest extends IntegrationTestBase {
      *     <li><b>Given Scenario:</b> Compiling an invalid SCSS file. This failure must NOT cause harmful exceptions in
      *     the system as the page rendering process must finish as usual.</li>
      *     <li><b>Expected Result:</b> By default, an error message is added as part of the CSS response indicating the
-     *     situation to the user.</li>
+     *     situation to the user. Because of the Servlet being mocked, the status code must be -1.</li>
      * </ul>
      */
     @Test
     public void testCompileInvalidScssFile() {
-        executeTest(inputInvalidScssFile, true);
+        executeTest(inputInvalidScssFile, INVALID_SCSS_FILE_RESPONSE);
     }
 
     /**
@@ -149,36 +151,28 @@ public class CSSPreProcessServletTest extends IntegrationTestBase {
      * {@link CSSPreProcessServlet#doGet(HttpServletRequest, HttpServletResponse)} method is called, and both the status
      * code and response are retrieved, which will determine whether the specific test was successful or not.
      *
-     * @param inputScssFile The SCSS file that will be compiled.
-     * @param expectError   If the SCSS compilation process is expected to fail based on the input data, set this to
-     *                      {@code true}.
+     * @param inputScssFile  The SCSS file that will be compiled.
+     * @param expectedOutput The expected CSS output, or part of the error message if the SCSS is expected to fail.
      */
-    private void executeTest(final FileAsset inputScssFile, final boolean expectError) {
-        // Initialization
-        final HttpServletRequest mockRequest = Mockito.mock(HttpServletRequest.class);
-        final HttpServletResponse mockResponse = Mockito.mock(DotCMSMockResponse.class);
-        final HttpSession mockSession = Mockito.mock(HttpSession.class);
-        final MockServletOutputStream mockServletOutputStream = new MockServletOutputStream();
-
+    private void executeTest(final FileAsset inputScssFile, final String expectedOutput) {
         String cssCode = StringPool.BLANK;
-        int status = -1;
+        int status = 0;
         try {
-            hydrateMockedObjects(mockRequest, mockResponse, mockSession, mockServletOutputStream, inputScssFile);
+            // Initialization
+            final HttpServletRequest mockRequest = hydrateMockedRequest(inputScssFile);
+            final MockHttpCaptureResponse mockResponse = new MockHttpCaptureResponse(new MockHttpResponse());
             final CSSPreProcessServlet servlet = new CSSPreProcessServlet();
+
+            // Test data generation
             servlet.doGet(mockRequest, mockResponse);
-            cssCode = mockServletOutputStream.toString();
+            cssCode = new String(mockResponse.getBytes(), StandardCharsets.UTF_8);
             status = mockResponse.getStatus();
         } catch (final ServletException | IOException | DotDataException | DotSecurityException e) {
             Assert.fail(String.format("An error occurred when compiling the test SCSS file '%s'. Aborting test " +
                                               "execution...", inputScssFile));
         }
         // Assertions
-        if (expectError) {
-            Assert.assertTrue("The SASS compilation must have failed with an error message.", cssCode.startsWith(
-                    "/* Error:"));
-        } else {
-            Assert.assertTrue("There must be compiled CSS code in the response.", UtilMethods.isSet(cssCode));
-        }
+        Assert.assertTrue("This is NOT the expected SCSS compiler output.", cssCode.startsWith(expectedOutput));
         Assert.assertNotEquals("The SCSS file could not be found.", HttpStatus.SC_NOT_FOUND, status);
         Assert.assertNotEquals("The SCSS file could not be read by the specified dotCMS user.",
                 HttpStatus.SC_FORBIDDEN, status);
@@ -186,64 +180,27 @@ public class CSSPreProcessServletTest extends IntegrationTestBase {
     }
 
     /**
-     * Mocks all the required objects so that the {@link CSSPreProcessServlet} can run without problems.
+     * Mocks the required {@link HttpServletRequest} object so that the {@link CSSPreProcessServlet} can run without
+     * problems.
      *
-     * @param mockRequest             Mocked request.
-     * @param mockResponse            Mocked response.
-     * @param mockSession             Mocked session.
-     * @param mockServletOutputStream Mocked Servlet Output Stream used to retrieve the actual response.
-     * @param inputScssFile           Test SCSS file that will be compiled.
+     * @param inputScssFile The test SCSS file that will be compiled.
+     *
+     * @return The mocked {@link HttpServletRequest} object.
      *
      * @throws DotDataException     An error occurred when retrieving data form dotCMS.
      * @throws DotSecurityException The specified User doesn't have the required permissions to perform this operation.
      * @throws IOException          Servlet output and/or writer objects failed.
      */
-    private void hydrateMockedObjects(final HttpServletRequest mockRequest, final HttpServletResponse mockResponse,
-                                      final HttpSession mockSession,
-                                      final MockServletOutputStream mockServletOutputStream,
-                                      final FileAsset inputScssFile) throws DotDataException, DotSecurityException, IOException {
-        when(mockRequest.getParameter("host_id")).thenReturn(defaultSiteId);
-        when(mockRequest.getParameter("recompile")).thenReturn("true");
-        when(mockRequest.getRequestURI()).thenReturn(inputScssFile.getURI());
-        when(mockRequest.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(APILocator.getUserAPI().loadUserById("dotcms.org.1"));
-        when(mockRequest.getSession(false)).thenReturn(mockSession);
-        when(mockResponse.getOutputStream()).thenReturn(mockServletOutputStream);
-        when(mockResponse.getWriter()).thenReturn(new PrintWriter(mockServletOutputStream));
+    private HttpServletRequest hydrateMockedRequest(final FileAsset inputScssFile) throws DotDataException, DotSecurityException, IOException {
+        final HttpSession mockSession = Mockito.mock(HttpSession.class);
         when(mockSession.getAttribute(WebKeys.CMS_SELECTED_HOST_ID)).thenReturn(defaultSiteId);
-    }
-
-    /**
-     * Mock ServletOutputStream for testing purposes only.
-     */
-    private class MockServletOutputStream extends ServletOutputStream {
-
-        String out = null;
-
-        @Override
-        public boolean isReady() {
-            return false;
-        }
-
-        @Override
-        public void setWriteListener(WriteListener writeListener) {
-
-        }
-
-        @Override
-        public void write(int b) {
-
-        }
-
-        @Override
-        public void write(byte b[]) {
-            out = new String(b, StandardCharsets.UTF_8);
-        }
-
-        @Override
-        public String toString() {
-            return out;
-        }
-
+        final DotCMSMockRequestWithSession mockRequest = new DotCMSMockRequestWithSession(mockSession, false);
+        mockRequest.setRemoteHost(defaultSiteId);
+        // Make sure that SCSS files are ALWAYS compiled
+        mockRequest.setAttribute("recompile", "true");
+        mockRequest.setAttribute(com.liferay.portal.util.WebKeys.USER, APILocator.getUserAPI().loadUserById("dotcms.org.1"));
+        mockRequest.setRequestURI(inputScssFile.getURI());
+        return mockRequest;
     }
 
 }

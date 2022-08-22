@@ -45,12 +45,6 @@ public class CompilerOptions implements Serializable {
     private final boolean deprecationWarnings;
     private final boolean deprecationWarningsFromDependencies;
 
-    private static final String VERBOSE = "dartsass.compiler.verbose";
-    private static final String ENABLE_EXPANDED_CSS = "dartsass.compiler.expanded.css";
-    private static final String ERROR_IN_CSS = "dartsass.compiler.error.in.css";
-    private static final String STOP_ON_ERROR = "dartsass.compiler.stop.on.error";
-    private static final String DEPRECATION_WARNINGS = "dartsass.compiler.deprecation.warnings";
-    private static final String DEPRECATION_WARNINGS_FROM_DEPENDENCIES = "dartsass.compiler.deprecation.warnings.from.dependencies";
     /**
      * Contains the list of commands that are either not required, or only useful when calling the compiler directly
      * from a Terminal.
@@ -132,8 +126,7 @@ public class CompilerOptions implements Serializable {
      * @return A String list containing the expected configuration parameters for the compiler.
      */
     public List<String> generate() {
-        final List<String> commands = new ArrayList<>();
-        commands.addAll(DEFAULT_COMMANDS);
+        final List<String> commands = new ArrayList<>(DEFAULT_COMMANDS);
         if (this.verbose()) {
             commands.add(SassCommands.VERBOSE.enable());
         }
@@ -166,15 +159,16 @@ public class CompilerOptions implements Serializable {
      */
     private enum SassCommands {
 
-        VERBOSE("--verbose", ""),
-        EXPANDED_CSS("--style=expanded", "--style=compressed"),
-        ERROR_IN_CSS("--error-css", "--no-error-css"),
-        STOP_ON_ERROR("--stop-on-error", ""),
-        DEPRECATION_WARNINGS("", "--quiet"),
-        DEPRECATION_WARNINGS_FROM_DEPENDENCIES("", "--quiet-deps");
+        VERBOSE("--verbose", "", "dartsass.compiler.verbose"),
+        EXPANDED_CSS("--style=expanded", "--style=compressed", "dartsass.compiler.expanded.css"),
+        ERROR_IN_CSS("--error-css", "--no-error-css", "dartsass.compiler.error.in.css"),
+        STOP_ON_ERROR("--stop-on-error", "", "dartsass.compiler.stop.on.error"),
+        DEPRECATION_WARNINGS("", "--quiet", "dartsass.compiler.deprecation.warnings"),
+        DEPRECATION_WARNINGS_FROM_DEPENDENCIES("", "--quiet-deps", "dartsass.compiler.deprecation.warnings.from.dependencies");
 
         private final String enabledCommand;
         private final String disabledCommand;
+        private final String attributeKey;
 
         /**
          * Specifies the appropriate command used to enable and disable this specific property for the Dart SASS
@@ -182,10 +176,13 @@ public class CompilerOptions implements Serializable {
          *
          * @param enabledCommand  The command to enable this configuration parameter -- if required.
          * @param disabledCommand The command to enable this configuration parameter -- if required.
+         * @param attributeKey    The key that allows you to customize the value of this compile parameter via the
+         * {@code dotmarketing-config.properties} file.
          */
-        SassCommands(final String enabledCommand, final String disabledCommand) {
+        SassCommands(final String enabledCommand, final String disabledCommand, final String attributeKey) {
             this.enabledCommand = enabledCommand;
             this.disabledCommand = disabledCommand;
+            this.attributeKey = attributeKey;
         }
 
         /**
@@ -206,6 +203,16 @@ public class CompilerOptions implements Serializable {
             return this.disabledCommand;
         }
 
+        /**
+         * Returns the parameter key for retrieving this property's value from the {@code dotmarketing-config
+         * .properties} file.
+         *
+         * @return The attribute key.
+         */
+        public String key() {
+            return this.attributeKey;
+        }
+
     }
 
     /**
@@ -213,14 +220,19 @@ public class CompilerOptions implements Serializable {
      */
     public static final class Builder {
 
-        private Lazy<Boolean> verbose = Lazy.of(() -> Config.getBooleanProperty(VERBOSE, Boolean.FALSE));
-        private Lazy<Boolean> expandedCss = Lazy.of(() -> Config.getBooleanProperty(ENABLE_EXPANDED_CSS, Boolean.TRUE));
-        private Lazy<Boolean> errorInCss = Lazy.of(() -> Config.getBooleanProperty(ERROR_IN_CSS, Boolean.TRUE));
-        private Lazy<Boolean> stopOnError = Lazy.of(() -> Config.getBooleanProperty(STOP_ON_ERROR, Boolean.TRUE));
-        private Lazy<Boolean> deprecationWarnings = Lazy.of(() -> Config.getBooleanProperty(DEPRECATION_WARNINGS,
+        private Lazy<Boolean> verbose = Lazy.of(() -> Config.getBooleanProperty(SassCommands.VERBOSE.key(),
                 Boolean.FALSE));
+        private Lazy<Boolean> expandedCss = Lazy.of(() -> Config.getBooleanProperty(SassCommands.EXPANDED_CSS.key(),
+                Boolean.TRUE));
+        private Lazy<Boolean> errorInCss = Lazy.of(() -> Config.getBooleanProperty(SassCommands.ERROR_IN_CSS.key(),
+                Boolean.TRUE));
+        private Lazy<Boolean> stopOnError = Lazy.of(() -> Config.getBooleanProperty(SassCommands.STOP_ON_ERROR.key(),
+                Boolean.TRUE));
+        private Lazy<Boolean> deprecationWarnings =
+                Lazy.of(() -> Config.getBooleanProperty(SassCommands.DEPRECATION_WARNINGS.key(), Boolean.FALSE));
         private Lazy<Boolean> deprecationWarningsFromDependencies =
-                Lazy.of(() -> Config.getBooleanProperty(DEPRECATION_WARNINGS_FROM_DEPENDENCIES, Boolean.FALSE));
+                Lazy.of(() -> Config.getBooleanProperty(SassCommands.DEPRECATION_WARNINGS_FROM_DEPENDENCIES.key(),
+                        Boolean.FALSE));
 
         /**
          * Default class constructor.

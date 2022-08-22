@@ -18,10 +18,11 @@ import java.util.Optional;
  * Provides Dart SASS Compilation capabilities in dotCMS. This implementation shells out and calls the appropriate Dart
  * SASS binary under the covers. Dart Sass is the primary implementation of Sass, which means it gets new features
  * before any other implementation. It's very fast and easy to deploy.
- * <p>It's worth noting that the Dart SASS binaries used to compile SCSS files are specific to your current Operating
- * System and architecture. In order to make things easier to handle and configure, the
- * {@link SassCommandStrategyResolver} allows you to specify the way the compiler command must be assembled for a
- * specific environment.</p>
+ * <p>Nevertheless, it's worth noting that the Dart SASS binaries used to compile SCSS files are specific to your
+ * current Operating System and architecture. This aspect incorporates some complexity when upgrading the compiler
+ * version as it requires updating several binaries for each supported environment, as it cannot be handled
+ * programmatically. So, in order to make things easier to handle and configure, the {@link SassCommandStrategyResolver}
+ * allows you to determine the way the compiler command must be assembled for a specific environment.</p>
  *
  * @author Jose Castro
  * @since Jul 26th, 2022
