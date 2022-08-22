@@ -1,4 +1,4 @@
-Build started: Tue Jun 28 2022 18:27:29 GMT-0600 (Central Standard Time)
+Build started: Mon Aug 22 2022 16:27:13 GMT-0600 (Central Standard Time)
 Build application version: 1.17.2 (c950c9a)
 Messages:
 info(100) Assumed module uses legacy loader API.
@@ -121,8 +121,8 @@ info(100) Assumed module uses legacy loader API.
 	module: dojox/xmpp/xmppSession
 	module: dojox/xmpp/widget/ChatSession
 info(103) Optimizing module complete.
-	/Users/morera/dev/dotcms/core/dotCMS/src/main/webapp/html/js/dojo/custom-build/dojo/dojo.js (compile time:1.076s)
-	/Users/morera/dev/dotcms/core/dotCMS/src/main/webapp/html/js/dojo/custom-build/build/build.js (compile time:6.348s)
+	/Users/alfredo-li/code/core/dotCMS/src/main/webapp/html/js/dojo/custom-build/dojo/dojo.js (compile time:5.136s)
+	/Users/alfredo-li/code/core/dotCMS/src/main/webapp/html/js/dojo/custom-build/build/build.js (compile time:23.247s)
 info(107) Package Version:
 	package: dojo; version: 1.17.2
 	package: dijit; version: 1.17.2
@@ -130,7 +130,7 @@ info(107) Package Version:
 warn(205) Module not tagged as pure AMD yet it contains AMD API applications.
 	module: build/build
 warn(209) Missing or empty package.json.
-	filename: /Users/morera/dev/dotcms/core/dotCMS/src/main/webapp/html/js/dojo/src/dojo-release-1.17.2-src/build/package.json
+	filename: /Users/alfredo-li/code/core/dotCMS/src/main/webapp/html/js/dojo/src/dojo-release-1.17.2-src/build/package.json
 warn(216) dojo/has plugin resource could not be resolved during build-time.
 	plugin resource id: dojo-firebug?./_firebug/firebug; reference module id: dojo/main
 	plugin resource id: dom-addeventlistener?:./aspect; reference module id: dojo/on
@@ -508,15 +508,15 @@ build/build:
 	dojox/widget/Calendar
 
 Optimizer Messages:
-/Users/morera/dev/dotcms/core/dotCMS/src/main/webapp/html/js/dojo/custom-build/dojo/dojo.js:
-Done (compile time:1.076s)
-/Users/morera/dev/dotcms/core/dotCMS/src/main/webapp/html/js/dojo/custom-build/dojo/dojo.js:
-Done (compile time:1.076s)
-/Users/morera/dev/dotcms/core/dotCMS/src/main/webapp/html/js/dojo/custom-build/build/build.js:
-Done (compile time:6.348s)
+/Users/alfredo-li/code/core/dotCMS/src/main/webapp/html/js/dojo/custom-build/dojo/dojo.js:
+Done (compile time:5.136s)
+/Users/alfredo-li/code/core/dotCMS/src/main/webapp/html/js/dojo/custom-build/dojo/dojo.js:
+Done (compile time:5.136s)
+/Users/alfredo-li/code/core/dotCMS/src/main/webapp/html/js/dojo/custom-build/build/build.js:
+Done (compile time:23.247s)
 
 
 Process finished normally
 	errors: 0
 	warnings: 63
-	build time: 8.087 seconds
+	build time: 27.533 seconds

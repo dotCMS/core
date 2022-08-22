@@ -47,18 +47,13 @@ table.dijitInline {
 
 .dijitHidden {
 	/* To hide unselected panes in StackContainer etc. */
-	position: absolute; /* remove from normal document flow to simulate display: none */
-	visibility: hidden; /* hide element from view, but don't break scrolling, see #18612 */
-}
-.dijitHidden * {
-	visibility: hidden !important; /* hide visibility:visible descendants of class=dijitHidden nodes, see #18799 */
+	display: none !important;
 }
 
 .dijitVisible {
 	/* To show selected pane in StackContainer etc. */
 	display: block !important;	/* override user's display:none setting via style setting or indirectly via class */
 	position: relative;			/* to support setting width/height, see #2033 */
-	visibility: visible;
 }
 
 .dj_ie6 .dijitComboBox .dijitInputContainer,
