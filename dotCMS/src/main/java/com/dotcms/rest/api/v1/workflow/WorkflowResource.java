@@ -2099,22 +2099,22 @@ public class WorkflowResource {
         final FireActionByNameForm.Builder fireActionFormBuilder = new FireActionByNameForm.Builder();
         final Tuple2<Map<String,Object>, List<File>> multiPartContent =
                 this.multiPartUtils.getBodyMapAndBinariesFromMultipart(multipart);
-        final LinkedHashSet<String> binaryFields = this.getBinaryFields(multiPartContent._1);
+        final LinkedHashSet<String> incomingBinaryFields = this.getBinaryFields(multiPartContent._1);
 
         if (multiPartContent._1.containsKey(CONTENTLET)) {
 
-            contentletMap = this.convertoToContentletMap((JSONObject)multiPartContent._1.get(CONTENTLET));
+            contentletMap = this.convertToContentletMap((JSONObject)multiPartContent._1.get(CONTENTLET));
         }
 
-        this.validateMultiPartContent    (contentletMap, binaryFields);
-        this.processFireActionFormValues (fireActionFormBuilder, multiPartContent._1);
-        this.processFiles                (contentletMap, multiPartContent._2, binaryFields, user);
-        fireActionFormBuilder.contentlet (contentletMap);
+        this.validateMultiPartContent(contentletMap, incomingBinaryFields);
+        this.processFireActionFormValues(fireActionFormBuilder, multiPartContent._1);
+        this.processFiles(contentletMap, multiPartContent._2, incomingBinaryFields, user);
+        fireActionFormBuilder.contentlet(contentletMap);
 
         return fireActionFormBuilder.build();
     }
 
-    private Map<String, Object> convertoToContentletMap(final JSONObject contentletJson) throws IOException {
+    private Map<String, Object> convertToContentletMap(final JSONObject contentletJson) throws IOException {
 
         return DotObjectMapperProvider.getInstance().getDefaultObjectMapper().
                 readValue(contentletJson.toString(), Map.class);
@@ -2184,7 +2184,13 @@ public class WorkflowResource {
                     final Field field = fieldsMap.get(fieldName);
                     // if more fields than files passed, set them to null.
                     final File binary = i < binaryFiles.size()? binaryFiles.get(i): null;
-                    contentMap.put(field.variable(), binary);
+                    if(binary != null){
+                        // if we send null in this map the underlying APIs will understand it as if the binary needs to be removed from the map
+                        // Therefore the new version of the contentlet will end up losing pieces of content
+                        // if we want to remove the binary the we need to explicitly set something like image=null in the map
+                        // Not sending the binary will cause no difference.
+                        contentMap.put(field.variable(), binary);
+                    }
                 }
             }
         }
