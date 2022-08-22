@@ -170,6 +170,7 @@ import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
 import com.dotmarketing.util.ResourceCollectorUtilTest;
 import com.dotmarketing.util.TestConfig;
+import com.dotmarketing.util.contentlet.pagination.ContentletsPaginatedIntegrationTest;
 import com.liferay.portal.language.LanguageUtilTest;
 import org.apache.velocity.tools.view.tools.CookieToolTest;
 import org.junit.runner.RunWith;
@@ -559,7 +560,8 @@ import org.junit.runners.Suite.SuiteClasses;
         BundlerUtilTest.class,
         MenuResourceTest.class,
         AWSS3PublisherTest.class,
-        ContentTypeInitializerTest.class
+        ContentTypeInitializerTest.class,
+        ContentletsPaginatedIntegrationTest.class
 })
 public class MainSuite {
 

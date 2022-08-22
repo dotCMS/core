@@ -13,9 +13,15 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
-import org.jetbrains.annotations.NotNull;
 
-public class ContentletsPaginated implements Iterable<Contentlet> {
+/**
+ * It is a {@link Iterable} of {@link Contentlet}.
+ * The {@link Contentlet} are got from Elastic Search using a lucene query using pagination,
+ * the size of each page can be set by {@link PaginatedContentlets#perPage} attribute.
+ * Just the {@link Contentlet}'s Inode are storage into memory and before return each of them the
+ * {@link Contentlet} object is load from cache or database.
+ */
+public class PaginatedContentlets implements Iterable<Contentlet> {
 
     private static int NOT_LOAD = -1;
     private User user;
@@ -28,7 +34,16 @@ public class ContentletsPaginated implements Iterable<Contentlet> {
     private long totalHits = NOT_LOAD;
     private List<String> currentPageContentletInodes = null;
 
-    ContentletsPaginated(final String luceneQuery, final User user, final boolean respectFrontendRoles,
+    /**
+     * Create a PaginatedContentlet
+     *
+     * @param luceneQuery lucene query to get the contentlets
+     * @param user User to check permission
+     * @param respectFrontendRoles true if you want to respect Front end roles
+     * @param perPage Page size limit
+     * @param contentletAPI
+     */
+    PaginatedContentlets(final String luceneQuery, final User user, final boolean respectFrontendRoles,
             final int perPage, final ContentletAPI contentletAPI) {
         this.user = user;
         this.luceneQuery = luceneQuery;
@@ -43,11 +58,10 @@ public class ContentletsPaginated implements Iterable<Contentlet> {
         }
     }
 
-    ContentletsPaginated(final String luceneQuery, final User user, final boolean respectFrontendRoles, final int perPage) {
+    PaginatedContentlets(final String luceneQuery, final User user, final boolean respectFrontendRoles, final int perPage) {
         this(luceneQuery, user, respectFrontendRoles, perPage, APILocator.getContentletAPI());
     }
 
-    @NotNull
     @Override
     public Iterator<Contentlet> iterator() {
         return new ContentletIterator();
@@ -97,7 +111,7 @@ public class ContentletsPaginated implements Iterable<Contentlet> {
 
                 final String inode = currentPageContentletInodes.get(currentIndex);
                 totalIndex++;
-                return ContentletsPaginated.this.contentletAPI.find(inode, user, respectFrontendRoles);
+                return PaginatedContentlets.this.contentletAPI.find(inode, user, respectFrontendRoles);
             } catch (DotSecurityException | DotDataException e) {
                 Logger.error(ContentletIterator.class, e.getMessage());
                 throw new NoSuchElementException(e.getMessage());

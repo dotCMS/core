@@ -19,8 +19,8 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.PaginatedArrayList;
-import com.dotmarketing.util.contentet.pagination.ContentletPaginatedBuilder;
-import com.dotmarketing.util.contentet.pagination.ContentletsPaginated;
+import com.dotmarketing.util.contentet.pagination.PaginatedContentletBuilder;
+import com.dotmarketing.util.contentet.pagination.PaginatedContentlets;
 import java.util.Iterator;
 import java.util.List;
 import org.junit.BeforeClass;
@@ -35,7 +35,7 @@ public class ContentletsPaginatedIntegrationTest {
     }
 
     /**
-     * Method to test: {@link ContentletsPaginated}, really al the behavior as {@link Iterable}
+     * Method to test: {@link PaginatedContentlets}, really al the behavior as {@link Iterable}
      * When:
      * - Create 4 contentlets in the same Host.
      * - Set the ContentletsPaginated's perPage attribute to a really big amount
@@ -69,17 +69,17 @@ public class ContentletsPaginatedIntegrationTest {
                 .nextPersisted();
 
         final List<Contentlet> expected = list(contentlet1, contentlet2, contentlet3, contentlet4);
-        final ContentletsPaginated contentletsPaginated = new ContentletPaginatedBuilder()
+        final PaginatedContentlets paginatedContentlets = new PaginatedContentletBuilder()
                 .setLuceneQuery("+conHost:" + host.getIdentifier())
                 .setUser(APILocator.systemUser())
                 .setRespectFrontendRoles(false)
                 .build();
 
 
-        assertEquals("Should return all the Contentlets", expected.size(), contentletsPaginated.size());
+        assertEquals("Should return all the Contentlets", expected.size(), paginatedContentlets.size());
 
         int i = 0;
-        for (Contentlet contentlet : contentletsPaginated) {
+        for (Contentlet contentlet : paginatedContentlets) {
             final Contentlet contentletExpected = expected.get(i++);
 
             assertEquals("The contentlets should be in order", contentletExpected.getIdentifier(), contentlet.getIdentifier());
@@ -89,7 +89,7 @@ public class ContentletsPaginatedIntegrationTest {
 
 
     /**
-     * Method to test: {@link ContentletsPaginated}, really al the behavior as {@link Iterable}
+     * Method to test: {@link PaginatedContentlets}, really al the behavior as {@link Iterable}
      * When:
      * - Create 4 contentlets in the same Host.
      * - Set the ContentletsPaginated's perPage attribute to a really big amount
@@ -124,17 +124,17 @@ public class ContentletsPaginatedIntegrationTest {
                 .nextPersisted();
 
         final List<Contentlet> expected = list(contentlet1, contentlet2, contentlet3, contentlet4);
-        final ContentletsPaginated contentletsPaginated = new ContentletPaginatedBuilder()
+        final PaginatedContentlets paginatedContentlets = new PaginatedContentletBuilder()
                 .setLuceneQuery("+conHost:" + host.getIdentifier())
                 .setUser(APILocator.systemUser())
                 .setRespectFrontendRoles(false)
                 .build();
 
 
-        assertEquals("Should return all the Contentlets", expected.size(), contentletsPaginated.size());
+        assertEquals("Should return all the Contentlets", expected.size(), paginatedContentlets.size());
 
         int i = 0;
-        final Iterator<Contentlet> iterator = contentletsPaginated.iterator();
+        final Iterator<Contentlet> iterator = paginatedContentlets.iterator();
         while(iterator.hasNext()){
             Contentlet contentlet = iterator.next();
             final Contentlet contentletExpected = expected.get(i++);
@@ -146,7 +146,7 @@ public class ContentletsPaginatedIntegrationTest {
     }
 
     /**
-     * Method to test: {@link ContentletsPaginated}, really al the behavior as {@link Iterable}
+     * Method to test: {@link PaginatedContentlets}, really al the behavior as {@link Iterable}
      * When:
      * - Create 4 contentlets in the same Host.
      * - Set the ContentletsPaginated's perPage attribute to 2
@@ -180,17 +180,17 @@ public class ContentletsPaginatedIntegrationTest {
                 .nextPersisted();
 
         final List<Contentlet> expected = list(contentlet1, contentlet2, contentlet3, contentlet4);
-        final ContentletsPaginated contentletsPaginated = new ContentletPaginatedBuilder()
+        final PaginatedContentlets paginatedContentlets = new PaginatedContentletBuilder()
                 .setLuceneQuery("+conHost:" + host.getIdentifier())
                 .setUser(APILocator.systemUser())
                 .setRespectFrontendRoles(false)
                 .setPerPage(2)
                 .build();
 
-        assertEquals("Should return all the Contentlets", expected.size(), contentletsPaginated.size());
+        assertEquals("Should return all the Contentlets", expected.size(), paginatedContentlets.size());
 
         int i = 0;
-        for (Contentlet contentlet : contentletsPaginated) {
+        for (Contentlet contentlet : paginatedContentlets) {
             final Contentlet contentletExpected = expected.get(i++);
 
             assertEquals("The contentlets should be in order", contentletExpected.getIdentifier(), contentlet.getIdentifier());
@@ -199,7 +199,7 @@ public class ContentletsPaginatedIntegrationTest {
     }
 
     /**
-     * Method to test: {@link ContentletsPaginated}, really al the behavior as {@link Iterable}
+     * Method to test: {@link PaginatedContentlets}, really al the behavior as {@link Iterable}
      * When:
      * - Create 4 contentlets in the same Host.
      * - Set the ContentletsPaginated's perPage attribute to 2
@@ -263,7 +263,7 @@ public class ContentletsPaginatedIntegrationTest {
         when(contentletAPIMock.find(contentlet3.getInode(), APILocator.systemUser(), false)).thenReturn(contentlet3);
         when(contentletAPIMock.find(contentlet4.getInode(), APILocator.systemUser(), false)).thenReturn(contentlet4);
 
-        final ContentletsPaginated contentletsPaginated = new ContentletPaginatedBuilder()
+        final PaginatedContentlets paginatedContentlets = new PaginatedContentletBuilder()
                 .setLuceneQuery(luceneQuery)
                 .setUser(APILocator.systemUser())
                 .setRespectFrontendRoles(false)
@@ -271,10 +271,10 @@ public class ContentletsPaginatedIntegrationTest {
                 .setContentletAPI(contentletAPIMock)
                 .build();
 
-        assertEquals("Should return all the Contentlets", expected.size(), contentletsPaginated.size());
+        assertEquals("Should return all the Contentlets", expected.size(), paginatedContentlets.size());
 
         int i = 0;
-        for (Contentlet contentlet : contentletsPaginated) {
+        for (Contentlet contentlet : paginatedContentlets) {
             final Contentlet contentletExpected = expected.get(i++);
 
             assertEquals("The contentlets should be in order", contentletExpected.getIdentifier(), contentlet.getIdentifier());
@@ -319,14 +319,14 @@ public class ContentletsPaginatedIntegrationTest {
                 .host(host)
                 .setProperty("title", "D_" + currentTimeMillis)
                 .nextPersisted();
-        final ContentletsPaginated contentletsPaginated = new ContentletPaginatedBuilder()
+        final PaginatedContentlets paginatedContentlets = new PaginatedContentletBuilder()
                 .setLuceneQuery("+conHost:not_exists")
                 .setUser(APILocator.systemUser())
                 .setRespectFrontendRoles(false)
                 .setPerPage(2)
                 .build();
 
-        assertEquals("Should not return any Contentlets", 0, contentletsPaginated.size());
+        assertEquals("Should not return any Contentlets", 0, paginatedContentlets.size());
 
     }
 }

@@ -24,7 +24,7 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships.Content
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.contentet.pagination.ContentletsPaginated;
+import com.dotmarketing.util.contentet.pagination.PaginatedContentlets;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import java.io.Serializable;
@@ -247,7 +247,16 @@ public interface ContentletAPI {
 	 */
 	public List<Contentlet> findContentletsByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
-	public ContentletsPaginated findContentletsPaginatedByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	/**
+	 * Gets a list of paginated {@link Contentlet} from a given parent host, retrieves the working version of content
+	 * The {@link Contentlet} are got using pagination, it means that it is going to do multiple request
+	 * to Elasticserach it depends on the amount of {@link Contentlet}
+	 *
+	 * @param parentHost
+	 * @return PaginatedContentlets
+	 * @throws DotSecurityException
+	 */
+	public PaginatedContentlets findContentletsPaginatedByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Gets a list of Contentlets from a given parent host, retrieves the working version of content. The difference between this method and the other one
@@ -264,7 +273,25 @@ public interface ContentletAPI {
 	 */
 	public List<Contentlet> findContentletsByHost(Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
-	public ContentletsPaginated findContentletsPaginatedByHost(Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	/**
+	 * Gets a list of {@link Contentlet} from a given parent host, retrieves the working version of content.
+	 * The difference between this method and the other one is that the user can specify which content type want to include and exclude.
+	 * NOTE: If the parameters includingContentTypes and excludingContentTypes are empty it will return all the contentlets.
+	 *
+	 * The {@link Contentlet} are got using pagination, it means that it is going to do multiple request
+	 * to Elasticserach it depends on the amount of {@link Contentlet}
+	 *
+	 * @param parentHost
+	 * @param includingContentTypes this is a list of content types that you would like to include in the results
+	 * @param excludingContentTypes this is a list of content types that you would like to exclude in the results
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return PaginatedContentlets {@link Iterable} of contentlets
+	 *
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public PaginatedContentlets findContentletsPaginatedByHost(Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 *

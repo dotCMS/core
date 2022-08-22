@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
@@ -30,7 +29,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.contentet.pagination.ContentletsPaginated;
+import com.dotmarketing.util.contentet.pagination.PaginatedContentlets;
 import com.liferay.portal.model.User;
 import org.elasticsearch.action.search.SearchResponse;
 
@@ -962,12 +961,12 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
 
 
-	public ContentletsPaginated findContentletsPaginatedByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+	public PaginatedContentlets findContentletsPaginatedByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		return findContentletsPaginatedByHost(parentHost, null, null, user, respectFrontendRoles);
 	}
 
 	@Override
-	public ContentletsPaginated findContentletsPaginatedByHost(
+	public PaginatedContentlets findContentletsPaginatedByHost(
 			final Host parentHost,
 			final List<Integer> includingContentTypes,
 			final List<Integer> excludingContentTypes,
@@ -982,7 +981,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 			}
 		}
 
-		final ContentletsPaginated contentletsPaginatedByHost = conAPI.findContentletsPaginatedByHost(
+		final PaginatedContentlets paginatedContentletsByHost = conAPI.findContentletsPaginatedByHost(
 				parentHost, includingContentTypes,
 				excludingContentTypes, user, respectFrontendRoles);
 
@@ -990,7 +989,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 			post.findContentletsByHost(parentHost, includingContentTypes,
 					excludingContentTypes, user, respectFrontendRoles);
 		}
-		return contentletsPaginatedByHost;
+		return paginatedContentletsByHost;
 	}
 
 

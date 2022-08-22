@@ -114,8 +114,8 @@ import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.*;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
-import com.dotmarketing.util.contentet.pagination.ContentletPaginatedBuilder;
-import com.dotmarketing.util.contentet.pagination.ContentletsPaginated;
+import com.dotmarketing.util.contentet.pagination.PaginatedContentletBuilder;
+import com.dotmarketing.util.contentet.pagination.PaginatedContentlets;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -649,12 +649,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public ContentletsPaginated findContentletsPaginatedByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+    public PaginatedContentlets findContentletsPaginatedByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         return findContentletsPaginatedByHost(parentHost, null, null, user, respectFrontendRoles);
     }
 
 
-    public ContentletsPaginated findContentletsPaginatedByHost(final Host parentHost,
+    public PaginatedContentlets findContentletsPaginatedByHost(final Host parentHost,
             final List<Integer> includingContentTypes,
             final List<Integer> excludingContentTypes,
             final User user,
@@ -663,7 +663,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final String query = getContentletByHostQuery(parentHost, includingContentTypes,
                 excludingContentTypes);
 
-        return new ContentletPaginatedBuilder()
+        return new PaginatedContentletBuilder()
                 .setLuceneQuery(query)
                 .setUser(user)
                 .setRespectFrontendRoles(respectFrontendRoles)

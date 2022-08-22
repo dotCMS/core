@@ -8,7 +8,10 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 
-public class ContentletPaginatedBuilder {
+/**
+ * Builder for {@link PaginatedContentlets}
+ */
+public class PaginatedContentletBuilder {
 
     private String luceneQuery;
     private User user = APILocator.systemUser();
@@ -17,33 +20,33 @@ public class ContentletPaginatedBuilder {
     private int perPage = -1;
     private Lazy<Integer> perPageDefaultValue = Lazy.of(() -> Config.getIntProperty("CONTENTLET_PER_PAGE", 1000));
 
-    public ContentletPaginatedBuilder setLuceneQuery(String luceneQuery) {
+    public PaginatedContentletBuilder setLuceneQuery(String luceneQuery) {
         this.luceneQuery = luceneQuery;
         return this;
     }
 
-    public ContentletPaginatedBuilder setUser(User user) {
+    public PaginatedContentletBuilder setUser(User user) {
         this.user = user;
         return this;
     }
 
-    public ContentletPaginatedBuilder setRespectFrontendRoles(boolean respectFrontendRoles) {
+    public PaginatedContentletBuilder setRespectFrontendRoles(boolean respectFrontendRoles) {
         this.respectFrontendRoles = respectFrontendRoles;
         return this;
     }
 
     @VisibleForTesting
-    public ContentletPaginatedBuilder setContentletAPI(ContentletAPI contentletAPI) {
+    public PaginatedContentletBuilder setContentletAPI(ContentletAPI contentletAPI) {
         this.contentletAPI = contentletAPI;
         return this;
     }
 
-    public ContentletPaginatedBuilder setPerPage(int perPage) {
+    public PaginatedContentletBuilder setPerPage(int perPage) {
         this.perPage = perPage;
         return this;
     }
 
-    public ContentletsPaginated build(){
+    public PaginatedContentlets build(){
         if (!UtilMethods.isSet(contentletAPI)) {
             contentletAPI = APILocator.getContentletAPI();
         }
@@ -52,6 +55,6 @@ public class ContentletPaginatedBuilder {
             perPage = perPageDefaultValue.get();
         }
 
-        return new ContentletsPaginated(luceneQuery, user, respectFrontendRoles, perPage, contentletAPI);
+        return new PaginatedContentlets(luceneQuery, user, respectFrontendRoles, perPage, contentletAPI);
     }
 }
