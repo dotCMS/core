@@ -14,8 +14,10 @@
 </div>
 
 <ng-template #emptyBlock>
-    <div class="empty">
-        <p [innerHTML]="noResultsMessage"></p>
-        <button *ngIf="!isFilterActive" (mousedown)="handleBackButton($event)">Back</button>
-    </div>
+    <dot-empty-message
+        [title]="noResultsMessage"
+        [showBackBtn]="!isFilterActive"
+        (back)="handleBackButton()"
+    >
+    </dot-empty-message>
 </ng-template>

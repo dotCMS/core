@@ -5,7 +5,8 @@ import {
     QueryList,
     AfterViewInit,
     ContentChildren,
-    OnDestroy
+    OnDestroy,
+    HostBinding
 } from '@angular/core';
 import { FocusKeyManager } from '@angular/cdk/a11y';
 
@@ -24,6 +25,7 @@ import { takeUntil } from 'rxjs/operators';
 })
 export class SuggestionListComponent implements AfterViewInit, OnDestroy {
     @ContentChildren(SuggestionsListItemComponent) items: QueryList<SuggestionsListItemComponent>;
+    @HostBinding('attr.id') id = 'editor-suggestion-list';
     @Input() suggestionItems: DotMenuItem[] = [];
 
     keyManager: FocusKeyManager<SuggestionsListItemComponent>;
@@ -33,6 +35,36 @@ export class SuggestionListComponent implements AfterViewInit, OnDestroy {
     @HostListener('mouseover', ['$event'])
     onMouseMove() {
         this.mouseMove = true;
+    }
+
+    /**
+     * Handle the active item on menu events
+     *
+     * @param {MouseEvent} e
+     * @memberof SuggestionListComponent
+     */
+    @HostListener('mouseover', ['$event'])
+    onMouseOver(e: MouseEvent) {
+        const element = e.target as HTMLElement;
+        const value = element.dataset?.index as unknown;
+
+        if (isNaN(value as number) || !this.mouseMove) {
+            return;
+        }
+
+        const index = Number(element?.dataset.index);
+        this.updateActiveItem(index);
+    }
+
+    /**
+     * Avoid closing the suggestions on manual scroll
+     *
+     * @param {MouseEvent} e
+     * @memberof SuggestionListComponent
+     */
+    @HostListener('mousedown', ['$event'])
+    onMouseDownHandler(e: MouseEvent) {
+        e.preventDefault();
     }
 
     ngAfterViewInit() {
@@ -104,33 +136,5 @@ export class SuggestionListComponent implements AfterViewInit, OnDestroy {
     updateActiveItem(index: number): void {
         this.keyManager.activeItem?.unfocus();
         this.keyManager.setActiveItem(index);
-    }
-
-    /**
-     * Avoid closing the suggestions on manual scroll
-     *
-     * @param {MouseEvent} e
-     * @memberof SuggestionListComponent
-     */
-    onMouseDownHandler(e: MouseEvent) {
-        e.preventDefault();
-    }
-
-    /**
-     * Handle the active item on menu events
-     *
-     * @param {MouseEvent} e
-     * @memberof SuggestionListComponent
-     */
-    onMouseOver(e: MouseEvent) {
-        const element = e.target as HTMLElement;
-        const value = element.dataset?.index as unknown;
-
-        if (isNaN(value as number) || !this.mouseMove) {
-            return;
-        }
-
-        const index = Number(element?.dataset.index);
-        this.updateActiveItem(index);
     }
 }

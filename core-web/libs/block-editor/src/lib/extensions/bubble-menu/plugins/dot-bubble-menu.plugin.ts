@@ -11,14 +11,13 @@ import {
     BubbleMenuItem,
     DotBubbleMenuPluginProps,
     DotBubbleMenuViewProps,
-    CustomNodeTypes,
     // Suggestions
     suggestionOptions,
     SuggestionsComponent,
     // Utils
     getNodePosition,
-    NodeTypes,
-    findParentNode
+    deleteByRange,
+    deleteByNode
 } from '@dotcms/block-editor';
 
 import { LINK_FORM_PLUGIN_KEY } from '@dotcms/block-editor';
@@ -43,6 +42,7 @@ export const DotBubbleMenuPlugin = (options: DotBubbleMenuPluginProps) => {
             handleKeyDown(_view: EditorView, event: KeyboardEvent) {
                 const { key } = event;
                 const { changeToIsOpen } = options.editor?.storage.bubbleMenu || {};
+
                 if (changeToIsOpen) {
                     if (key === 'Escape') {
                         component.toggleChangeTo.emit();
@@ -215,12 +215,22 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         this.component.changeDetectorRef.detectChanges();
     }
 
+    /**
+     * Update Change To Component before showing the component
+     *
+     * @memberof DotBubbleMenuPluginView
+     */
     updateChangeTo() {
         this.changeTo.instance.items = this.changeToItems();
         this.changeTo.changeDetectorRef.detectChanges();
         this.updateListActiveItem();
     }
 
+    /**
+     * Update the current Active Item in the Change To List.
+     *
+     * @memberof DotBubbleMenuPluginView
+     */
     updateListActiveItem() {
         const { index } = this.getActiveNode();
         requestAnimationFrame(() => {
@@ -320,12 +330,13 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                 break;
 
             case 'deleteNode':
-                if (this.selectionNodesCount > 1) {
-                    this.deleteByRange();
-                } else {
-                    this.deleteByNode();
-                }
-
+                this.selectionNodesCount > 1
+                    ? deleteByRange(this.editor, this.selectionRange)
+                    : deleteByNode({
+                          editor: this.editor,
+                          nodeType: this.selectionNode.type.name,
+                          selectionRange: this.selectionRange
+                      });
                 break;
 
             case 'clearAll':
@@ -336,11 +347,9 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
     }
 
     toggleTextAlign(alignment, active) {
-        if (active) {
-            this.editor.commands.unsetTextAlign();
-        } else {
-            this.editor.commands.setTextAlign(alignment);
-        }
+        active
+            ? this.editor.commands.unsetTextAlign()
+            : this.editor.commands.setTextAlign(alignment);
     }
 
     changeToItems() {
@@ -444,62 +453,6 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
     hanlderScroll() {
         if (this.tippyChangeTo?.state.isVisible) {
             this.tippyChangeTo?.hide();
-        }
-    }
-
-    // TODO: Move this methods to `prosemirror.utils`
-    // Looks like we can reuse them.
-    private deleteByNode() {
-        if (CustomNodeTypes.includes(this.selectionNode.type.name)) {
-            this.deleteSelectedCustomNodeType();
-        } else {
-            this.deleteSelectionNode();
-        }
-    }
-
-    private deleteByRange() {
-        const from = this.selectionRange.$from.pos;
-        const to = this.selectionRange.$to.pos + 1;
-        this.editor.chain().deleteRange({ from, to }).blur().run();
-    }
-
-    private deleteSelectedCustomNodeType() {
-        const from = this.selectionRange.$from.pos;
-        const to = from + 1;
-
-        // TODO: Try to make the `deleteNode` command works with custom nodes.
-        this.editor.chain().deleteRange({ from, to }).blur().run();
-    }
-
-    private deleteSelectionNode() {
-        const selectionParentNode = findParentNode(this.selectionRange.$from);
-        const nodeSelectionNodeType: NodeTypes = selectionParentNode.type.name;
-
-        const closestOrderedOrBulletNode = findParentNode(this.selectionRange.$from, [
-            NodeTypes.ORDERED_LIST,
-            NodeTypes.BULLET_LIST
-        ]);
-
-        const { childCount } = closestOrderedOrBulletNode;
-
-        switch (nodeSelectionNodeType) {
-            case NodeTypes.ORDERED_LIST:
-
-            // eslint-disable-next-line no-fallthrough
-            case NodeTypes.BULLET_LIST:
-                if (childCount > 1) {
-                    //delete only the list item selected
-                    this.editor.chain().deleteNode(NodeTypes.LIST_ITEM).blur().run();
-                } else {
-                    // delete the order/bullet node
-                    this.editor.chain().deleteNode(closestOrderedOrBulletNode.type).blur().run();
-                }
-
-                break;
-
-            default:
-                this.editor.chain().deleteNode(selectionParentNode.type).blur().run();
-                break;
         }
     }
 }

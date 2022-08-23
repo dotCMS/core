@@ -1,6 +1,9 @@
 import { ResolvedPos } from 'prosemirror-model';
-import { NodeTypes } from '@dotcms/block-editor';
 import { EditorView } from 'prosemirror-view';
+import { SelectionRange } from 'prosemirror-state';
+import { Editor } from '@tiptap/core';
+
+import { NodeTypes, CustomNodeTypes } from '@dotcms/block-editor';
 
 /**
  * Get the parent node of the ResolvedPos sent
@@ -57,4 +60,81 @@ export const getPosAtDocCoords = (view: EditorView, event: MouseEvent) => {
     const { pos } = view.posAtCoords({ left, top });
 
     return pos;
+};
+
+/**
+ *
+ *
+ * @param {*} { editor, nodeType, selectionRange }
+ */
+export const deleteByNode = ({ editor, nodeType, selectionRange }) => {
+    if (CustomNodeTypes.includes(nodeType)) {
+        deleteSelectedCustomNodeType(editor, selectionRange);
+    } else {
+        deleteSelectionNode(editor, selectionRange);
+    }
+};
+
+/**
+ *
+ *
+ * @param {Editor} editor
+ * @param {SelectionRange} selectionRange
+ */
+export const deleteByRange = (editor: Editor, selectionRange: SelectionRange) => {
+    const from = selectionRange.$from.pos;
+    const to = selectionRange.$to.pos + 1;
+    editor.chain().deleteRange({ from, to }).blur().run();
+};
+
+/**
+ *
+ *
+ * @param {Editor} editor
+ * @param {SelectionRange} selectionRange
+ */
+export const deleteSelectedCustomNodeType = (editor: Editor, selectionRange: SelectionRange) => {
+    const from = selectionRange.$from.pos;
+    const to = from + 1;
+
+    // TODO: Try to make the `deleteNode` command works with custom nodes.
+    editor.chain().deleteRange({ from, to }).blur().run();
+};
+
+/**
+ *
+ *
+ * @param {Editor} editor
+ * @param {SelectionRange} selectionRange
+ */
+export const deleteSelectionNode = (editor: Editor, selectionRange: SelectionRange) => {
+    const selectionParentNode = findParentNode(selectionRange.$from);
+    const nodeSelectionNodeType: NodeTypes = selectionParentNode.type.name;
+
+    const closestOrderedOrBulletNode = findParentNode(selectionRange.$from, [
+        NodeTypes.ORDERED_LIST,
+        NodeTypes.BULLET_LIST
+    ]);
+
+    const { childCount } = closestOrderedOrBulletNode;
+
+    switch (nodeSelectionNodeType) {
+        case NodeTypes.ORDERED_LIST:
+
+        // eslint-disable-next-line no-fallthrough
+        case NodeTypes.BULLET_LIST:
+            if (childCount > 1) {
+                //delete only the list item selected
+                editor.chain().deleteNode(NodeTypes.LIST_ITEM).blur().run();
+            } else {
+                // delete the order/bullet node
+                editor.chain().deleteNode(closestOrderedOrBulletNode.type).blur().run();
+            }
+
+            break;
+
+        default:
+            editor.chain().deleteNode(selectionParentNode.type).blur().run();
+            break;
+    }
 };

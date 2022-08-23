@@ -14,12 +14,10 @@
 </div>
 
 <ng-template #loadingBlock>
-    <dot-suggestion-loading-list *ngIf="loading"></dot-suggestion-loading-list>
+    <dot-suggestion-loading-list></dot-suggestion-loading-list>
 </ng-template>
 
 <ng-template #emptyBlock>
-    <div class="empty">
-        <p [innerHTML]="title"></p>
-        <button (mousedown)="handleBackButton($event)">Back</button>
-    </div>
+    <dot-empty-message [title]="title" [showBackBtn]="true" (back)="handleBackButton()">
+    </dot-empty-message>
 </ng-template>

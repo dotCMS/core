@@ -1,6 +1,6 @@
 @use "libs/block-editor/src/lib/scss/variables" as *;
 
-.suggestion-list-container {
+:host {
     width: 100%;
     height: 100%;
     max-height: $form-width;

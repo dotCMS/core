@@ -9,6 +9,7 @@ import {
     SuggestionListComponent,
     SuggestionsListItemComponent,
     SuggestionLoadingListComponent,
+    EmptyMessageComponent,
     ContentletStatePipe
 } from './';
 
@@ -19,14 +20,16 @@ import {
         SuggestionListComponent,
         SuggestionsListItemComponent,
         SuggestionLoadingListComponent,
-        ContentletStatePipe
+        ContentletStatePipe,
+        EmptyMessageComponent
     ],
     providers: [SuggestionsService],
     exports: [
         SuggestionsComponent,
         SuggestionListComponent,
         SuggestionsListItemComponent,
-        SuggestionLoadingListComponent
+        SuggestionLoadingListComponent,
+        EmptyMessageComponent
     ]
 })
 export class SharedModule {}
