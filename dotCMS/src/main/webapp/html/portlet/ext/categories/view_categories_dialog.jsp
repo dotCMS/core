@@ -219,6 +219,7 @@
 				structure : layout,
 				plugins : {
 					pagination : {
+					    pageSizes : [ "10", "All" ],
 						description : "45%",
 						sizeSwitch : "260px",
 						pageStepper : "30em",
