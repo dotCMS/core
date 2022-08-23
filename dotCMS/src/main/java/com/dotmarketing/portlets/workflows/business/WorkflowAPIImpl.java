@@ -77,6 +77,8 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -1784,7 +1786,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public void saveAction(final WorkflowAction action,
 						   final List<Permission> permissions,
 						   final User user) throws DotDataException {
-
+		ObjectMapper objectMapper = new ObjectMapper();
+		try {
+			Logger.info(this,String.format("108203 Debug => WorkflowAPIImpl saveAction action: '%s', User: '%s', permissions: '%s'",objectMapper.writeValueAsString(action),user.getFullName(),objectMapper.writeValueAsString(permissions)));
+		} catch (JsonProcessingException e) {
+			throw new RuntimeException(e);
+		}
 		DotPreconditions.isTrue(UtilMethods.isSet(action.getSchemeId()) && this.existsScheme(action.getSchemeId()),
 				()-> {
 					Logger.error(this, String.format("Workflow Scheme '%s' doesn't exist.", action.getSchemeId()));

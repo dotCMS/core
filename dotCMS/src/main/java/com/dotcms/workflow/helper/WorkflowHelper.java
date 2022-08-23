@@ -70,6 +70,8 @@ import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.web.VelocityWebUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.language.LanguageException;
@@ -1445,6 +1447,13 @@ public class WorkflowHelper {
     @WrapInTransaction
     public WorkflowAction updateAction(final String actionId, final WorkflowActionForm workflowActionForm, final User user) {
         WorkflowAction action = null;
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        try {
+            Logger.info(this,String.format("108203 Debug => WorkflowHelper updateAction actionId: '%s' workflowActionForm: '%s' user: '%s' ",actionId,objectMapper.writeValueAsString(workflowActionForm),user.getFullName()));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
         try {
             if(workflowAPI.findAction(actionId, user) != null){
                action = saveAction(actionId, workflowActionForm, user);
@@ -1514,7 +1523,13 @@ public class WorkflowHelper {
      */
     @WrapInTransaction
     public WorkflowAction saveAction(final String actionId, final WorkflowActionForm workflowActionForm, final User user) {
+        ObjectMapper objectMapper = new ObjectMapper();
 
+        try {
+            Logger.info(this,String.format("108203 Debug => WorkflowHelper saveAction actionId: '%s' workflowActionForm: '%s', ",actionId,objectMapper.writeValueAsString(workflowActionForm)));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
         String actionNextAssign     = workflowActionForm.getActionNextAssign();
         if (actionNextAssign != null && actionNextAssign.startsWith("role-")) {
             actionNextAssign  = actionNextAssign.replaceAll("role-", StringPool.BLANK);
