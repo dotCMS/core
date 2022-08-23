@@ -1,8 +1,24 @@
 package com.dotcms.rendering.velocity.services;
 
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.CheckboxField;
+import com.dotcms.contenttype.model.field.ConstantField;
+import com.dotcms.contenttype.model.field.DateField;
+import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FileField;
+import com.dotcms.contenttype.model.field.HiddenField;
+import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImageField;
+import com.dotcms.contenttype.model.field.RadioField;
+import com.dotcms.contenttype.model.field.SelectField;
+import com.dotcms.contenttype.model.field.StoryBlockField;
+import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -27,10 +43,19 @@ import org.apache.velocity.exception.ResourceNotFoundException;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 /**
- * @author will
+ * Provides the Velocity Engine with the objects that are or can be used when rendering content.
+ *
+ * @author Will Ezell
+ * @since Dec 27th, 2017
  */
 public class ContentletLoader implements DotLoader {
 
@@ -46,18 +71,27 @@ public class ContentletLoader implements DotLoader {
 
     private final long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
-
-    public InputStream buildVelocity(Contentlet content, PageMode mode, String filePath)
+    /**
+     * Builds the appropriate Velocity code for a given Contentlet in dotCMS. This is done by traversing the list of
+     * "renderable" fields in the content and other significant properties, and generating the code that allows
+     * developers and dotCMS itself to interact with it. The Velocity Engine will then read this generated code and will
+     * render it, for instance, in an HTML Page.
+     *
+     * @param content  The {@link Contentlet} that will be rendered.
+     * @param mode     The {@link PageMode} representing the scenario in which the Contentlet is being rendered: Live
+     *                Mode, Edit Mode, Admin Mode, etc.
+     * @param filePath The location of the file that will contain the generated Velocity code.
+     *
+     * @return The Velocity code in the form of {@link InputStream}.
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException An error occurred when accessing restricted APIs or data.
+     */
+    public InputStream buildVelocity(final Contentlet content, final PageMode mode, final String filePath)
             throws DotDataException, DotSecurityException {
-        StringBuilder sb = new StringBuilder();
-
-        ContentletAPI conAPI = APILocator.getContentletAPI();
-
-        User systemUser = sysUser();
-
-        // let's write this puppy out to our file
-
-
+        final StringBuilder sb = new StringBuilder();
+        final ContentletAPI conAPI = APILocator.getContentletAPI();
+        final User systemUser = sysUser();
 
         // CONTENTLET CONTROLS BEGIN
         sb.append("#if($EDIT_MODE)");
@@ -132,11 +166,17 @@ public class ContentletLoader implements DotLoader {
             String contFieldValue = null;
             Object contFieldValueObject = null;
 
-            if(field instanceof StoryBlockField) {
+            if (field instanceof StoryBlockField) {
                 contFieldValueObject = conAPI.getFieldValue(content, field);
-                sb.append("#set($")
-                        .append(field.variable())
-                        .append("= $json.generate(" + contFieldValueObject + "))");
+                sb.append("#set($").append(field.variable());
+                if (JsonUtil.isJson(contFieldValueObject.toString())) {
+                    sb.append("= $json.generate(").append(contFieldValueObject).append("))");
+                } else {
+                    Logger.warn(this, String.format("Story Block field '%s' in contentlet with ID '%s' does not " +
+                                                            "contain valid JSON data. Please try to re-publish it.",
+                            field.variable(), content.getIdentifier()));
+                    sb.append("= \"").append(contFieldValueObject).append("\")");
+                }
                 continue;
             }
 

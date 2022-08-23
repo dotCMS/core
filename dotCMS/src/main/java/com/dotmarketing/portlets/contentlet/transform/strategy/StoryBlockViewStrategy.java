@@ -4,6 +4,7 @@ import com.dotcms.api.APIProvider;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.StoryBlockField;
+import com.dotcms.util.JsonUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -11,8 +12,9 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.liferay.portal.model.User;
-
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,8 +39,8 @@ public class StoryBlockViewStrategy extends AbstractTransformStrategy<Contentlet
     }
 
     @Override
-    protected Map<String, Object> transform(Contentlet source, Map<String, Object> map, Set<TransformOptions> options,
-                                            User user) throws DotDataException, DotSecurityException {
+    protected Map<String, Object> transform(final Contentlet source, final Map<String, Object> map, final Set<TransformOptions> options,
+                                            final User user) throws DotDataException, DotSecurityException {
         if (null == source.getContentType() || UtilMethods.isNotSet(source.getContentType().id())) {
             throw new DotDataException(
                     String.format("Content Type in Contentlet '%s' is not set", source.getIdentifier()));
@@ -47,17 +49,23 @@ public class StoryBlockViewStrategy extends AbstractTransformStrategy<Contentlet
         if (UtilMethods.isSet(storyBlockFields)) {
             storyBlockFields.forEach(field -> {
 
-                LinkedHashMap jsonAsMap = null;
-                try {
-                    jsonAsMap = new LinkedHashMap(ContentletJsonHelper.INSTANCE.get().objectMapper()
-                            .readValue(Try.of(()->source.get(field.variable()).toString())
-                                    .getOrElse(""), LinkedHashMap.class));
-                } catch (final JsonProcessingException e) {
-                    Logger.warn(StoryBlockField.class, String.format(
-                            "An error occurred when transforming Story Block JSON data in field '%s' [%s] into a Map: %s",
-                            field.variable(), field.id(), e.getMessage()));
+                final String fieldValue = source.get(field.variable()).toString();
+                if (!JsonUtil.isJson(fieldValue)) {
+                    map.put(field.variable(), fieldValue);
+                } else {
+                    LinkedHashMap jsonAsMap = null;
+                    try {
+                        jsonAsMap =
+                                new LinkedHashMap(ContentletJsonHelper.INSTANCE.get().objectMapper().readValue(
+                                        Try.of(() -> fieldValue).getOrElse(StringPool.BLANK), LinkedHashMap.class));
+                    } catch (final JsonProcessingException e) {
+                        Logger.warn(StoryBlockField.class, String.format("An error occurred when transforming Story " +
+                                                                                 "Block JSON data in field '%s' [%s] " +
+                                                                                 "into a Map: %s", field.variable(),
+                                field.id(), e.getMessage()));
+                    }
+                    map.put(field.variable(), jsonAsMap);
                 }
-                map.put(field.variable(), jsonAsMap);
 
             });
         }

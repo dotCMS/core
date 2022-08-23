@@ -663,7 +663,61 @@ public class TestDataUtils {
 
         return richTextLike;
     }
-    
+
+    /**
+     * Creates a simple Content Type similar to the Rich Text type with the following fields:
+     * <ol>
+     *     <li>Site or Folder.</li>
+     *     <li>Title, of type "text".</li>
+     *     <li>Description, of type "WYSIWYG".</li>
+     * </ol>
+     *
+     * @param contentTypeName The name of the test Content Type.
+     * @param site            The Site where this Content Type will live in.
+     * @param workflowIds     The workflows assigned to this type. This can be null.
+     *
+     * @return The new test Content Type.
+     */
+    @WrapInTransaction
+    public static ContentType getWysiwygLikeContentType(final String contentTypeName, final Host site,
+                                                        final Set<String> workflowIds) {
+        ContentType wysiwygType = Try.of(() -> APILocator.getContentTypeAPI(APILocator.systemUser())
+                                                       .find(contentTypeName)).getOrNull();
+        try {
+            if (wysiwygType == null) {
+                final List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
+                if (null != site) {
+                    fields.add(new FieldDataGen()
+                                       .sortOrder(1)
+                                       .name("Site or Folder")
+                                       .velocityVarName("hostfolder")
+                                       .required(Boolean.TRUE)
+                                       .type(HostFolderField.class).next());
+                }
+                fields.add(new FieldDataGen()
+                                   .sortOrder(2)
+                                   .name("Title")
+                                   .velocityVarName("title").next());
+                fields.add(new FieldDataGen()
+                                   .sortOrder(3)
+                                   .name("Description")
+                                   .velocityVarName("description")
+                                   .type(WysiwygField.class).next());
+                final ContentTypeDataGen contentTypeDataGen = new ContentTypeDataGen()
+                                                                .name(contentTypeName)
+                                                                .velocityVarName(contentTypeName)
+                                                                .workflowId(workflowIds)
+                                                                .fields(fields);
+                if (null != site) {
+                    contentTypeDataGen.host(site);
+                }
+                wysiwygType = contentTypeDataGen.nextPersisted();
+            }
+        } catch (final Exception e) {
+            throw new DotRuntimeException(String.format("Error creating test type '%s'", contentTypeName), e);
+        }
+        return wysiwygType;
+    }
     
     public static ContentType getWikiLikeContentType() {
         return getWikiLikeContentType("Wiki" + System.currentTimeMillis(), null);
