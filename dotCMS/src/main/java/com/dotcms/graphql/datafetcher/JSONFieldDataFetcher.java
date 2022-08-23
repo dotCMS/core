@@ -3,15 +3,16 @@ package com.dotcms.graphql.datafetcher;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.google.common.collect.ImmutableList;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import io.vavr.control.Try;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
+
+/**
+ * DataFetcher to resolve fields of type {@link com.dotcms.contenttype.model.field.JSONField}
+ * when requested via GraphQL
+ */
 
 public class JSONFieldDataFetcher implements DataFetcher<Map<String, Object>> {
     
