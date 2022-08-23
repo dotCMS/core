@@ -55,6 +55,8 @@ import com.dotmarketing.portlets.personas.business.PersonaFactory;
 import com.dotmarketing.portlets.personas.business.PersonaFactoryImpl;
 import com.dotmarketing.portlets.templates.business.TemplateFactory;
 import com.dotmarketing.portlets.templates.business.TemplateFactoryImpl;
+import com.dotmarketing.portlets.variant.business.VariantFactory;
+import com.dotmarketing.portlets.variant.business.VariantFactoryImpl;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.business.WorkflowFactoryImpl;
 import com.dotmarketing.tag.business.TagFactory;
@@ -238,6 +240,15 @@ public class FactoryLocator extends Locator<FactoryIndex>{
         return (HostFactory) getInstance(FactoryIndex.HOST_FACTORY);
     }
 
+    /**
+     * Returns the Factory object that handles operations related to {@link com.dotmarketing.portlets.variant.model.Variant} in dotCMS.
+     *
+     * @return An instance of the {@link VariantFactory} object.
+     */
+    public static VariantFactory getVariantFactory() {
+        return (VariantFactory)getInstance(FactoryIndex.VARIANT_FACTORY);
+    }
+
     private static Object getInstance(FactoryIndex index) {
 
 		if(instance == null){
@@ -311,7 +322,8 @@ enum FactoryIndex
 	CONTENTTYPE_FACTORY_2,
 	RELATIONSHIP_FACTORY,
 	FIELD_FACTORY_2,
-    FileAsset_Factory;
+    FileAsset_Factory,
+    VARIANT_FACTORY;
 
 	Object create() {
 		switch(this) {
@@ -350,6 +362,7 @@ enum FactoryIndex
             case TAG_FACTORY: return new TagFactoryImpl();
             case FileAsset_Factory: return new FileAssetFactoryImpl();
             case HOST_FACTORY : return new HostFactoryImpl();
+            case VARIANT_FACTORY:_FACTORY : return new VariantFactoryImpl();
 		}
 		throw new AssertionError("Unknown Factory Index: " + this);
 	}

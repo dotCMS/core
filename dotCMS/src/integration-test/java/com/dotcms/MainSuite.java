@@ -117,6 +117,8 @@ import com.dotmarketing.portlets.folders.business.FolderFactoryImplTest;
 import com.dotmarketing.portlets.folders.model.FolderTest;
 import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtilTest;
 import com.dotmarketing.portlets.templates.business.TemplateFactoryImplTest;
+import com.dotmarketing.portlets.variant.business.VariantAPITest;
+import com.dotmarketing.portlets.variant.business.VariantFactoryTest;
 import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletAbortTest;
@@ -559,7 +561,9 @@ import org.junit.runners.Suite.SuiteClasses;
         BundlerUtilTest.class,
         MenuResourceTest.class,
         AWSS3PublisherTest.class,
-        ContentTypeInitializerTest.class
+        ContentTypeInitializerTest.class,
+        VariantFactoryTest.class,
+        VariantAPITest.class
 })
 public class MainSuite {
 
