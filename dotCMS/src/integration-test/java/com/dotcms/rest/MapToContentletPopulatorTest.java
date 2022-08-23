@@ -513,7 +513,7 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
 
 
     /**
-     * Scenario: This time we pass a a set of valid category values Expectation: everytime we must
+     * Scenario: This time we pass a set of valid category values Expectation: everytime we must
      * recover a category
      */
     @Test
@@ -537,6 +537,32 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
         final List<Category> recovered = populator.getCategories(withCategoryField,
                 APILocator.systemUser(), false);
         assertFalse(" I couldn't find categories using object " + list, recovered.isEmpty());
+
+    }
+
+    /**
+     * Scenario: This time we pass an empty collection
+     * Expectation: Empty array of categories should be returned
+     */
+    @Test
+    public void Test_Pass_Empty_List_Of_Categories() throws DotDataException, DotSecurityException {
+
+        final ContentType contentType = contentTypeWithCategoryField();
+        //Make sure we have a field of type Category
+        final Optional<Field> first = contentType.fields(CategoryField.class).stream().findFirst();
+        assertTrue(first.isPresent());
+
+        final MapToContentletPopulator populator = new MapToContentletPopulator();
+
+        final String varName = first.get().variable();
+        final List<String> list = ImmutableList.of();
+
+        final Contentlet withCategoryField = new Contentlet();
+        withCategoryField.setContentTypeId(contentType.id());
+        withCategoryField.setProperty(varName, list);
+        final List<Category> recovered = populator.getCategories(withCategoryField,
+                APILocator.systemUser(), false);
+        assertTrue(" Recovered categories should be empty " + list, recovered.isEmpty());
 
     }
 

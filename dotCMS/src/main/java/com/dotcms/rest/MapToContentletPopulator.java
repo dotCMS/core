@@ -368,7 +368,7 @@ public class MapToContentletPopulator  {
                 continue;
             }
             if (object == null && map.containsKey(field.variable()) ){
-                //something was set to null a cat on purpose
+                //something was set to null on purpose
                 //The requirement says that null must not even be considered
                 //We should only remove a category if an empty array is passed
                 map.remove(field.variable());
@@ -404,7 +404,7 @@ public class MapToContentletPopulator  {
                     Category category = Try.of(()->categoryAPI.find(categoryValue, user, respectFrontendRoles)).getOrNull();
                     if (category != null && InodeUtils.isSet(category.getCategoryId())) {
                         categories.add(category);
-                        Logger.info(MapToContentletPopulator.class, String.format(" value [%s] resolved as a valid Category-Inode.", categoryValue));
+                        Logger.debug(MapToContentletPopulator.class, String.format(" value [%s] resolved as a valid Category-Inode.", categoryValue));
                         continue;
                     }
 
@@ -412,7 +412,7 @@ public class MapToContentletPopulator  {
                     category = Try.of(()->categoryAPI.findByKey(categoryValue, user, respectFrontendRoles)).getOrNull();
                     if (category != null && InodeUtils.isSet(category.getCategoryId())) {
                         categories.add(category);
-                        Logger.info(MapToContentletPopulator.class, String.format(" value [%s] resolved as a valid Category-Key.", categoryValue));
+                        Logger.debug(MapToContentletPopulator.class, String.format(" value [%s] resolved as a valid Category-Key.", categoryValue));
                         continue;
                     }
 
@@ -420,7 +420,7 @@ public class MapToContentletPopulator  {
                     category = Try.of(()->categoryAPI.findByVariable(categoryValue, user, respectFrontendRoles)).getOrNull();
                     if (category != null && InodeUtils.isSet(category.getCategoryId())) {
                         categories.add(category);
-                        Logger.info(MapToContentletPopulator.class, String.format(" value [%s] resolved as a valid Category-Variable.", categoryValue));
+                        Logger.debug(MapToContentletPopulator.class, String.format(" value [%s] resolved as a valid Category-Variable.", categoryValue));
                         continue;
                     }
 
