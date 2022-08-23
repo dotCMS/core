@@ -24,6 +24,10 @@ public class JsonUtil {
         return JSON_MAPPER.readValue(json, Map.class);
     }
 
+    public static String getJsonAsString(final Map<String, Object> json) throws IOException {
+        return JSON_MAPPER.writeValueAsString(json);
+    }
+
     public static String getJsonFileContentAsString(final String path) throws IOException {
 
         ClassLoader classLoader = JsonUtil.class.getClassLoader();

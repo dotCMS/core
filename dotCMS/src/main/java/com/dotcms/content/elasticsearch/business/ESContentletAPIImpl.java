@@ -6318,7 +6318,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         }else if(fieldAPI.isElementConstant(field)){
             Logger.debug(this, "Cannot set contentlet field value on field type constant. Value is saved to the field not the contentlet");
-        }else if(field.getFieldContentlet().startsWith("text")){
+        }else if(field.getFieldContentlet().startsWith("text") &&
+                !FieldType.JSON_FIELD.toString().equals(field.getFieldType())){
             try{
                 contentlet.setStringProperty(field.getVelocityVarName(), (String)value);
             }catch (Exception e) {
@@ -6413,15 +6414,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }catch (IOException e) {
                 throw new DotContentletStateException("Unable to set binary file Object: " + e.getMessage(),e);
             }
-        }else if(field.getFieldContentlet().startsWith("system_field")){
-            if(value.getClass()==java.lang.String.class){
-                try{
-                    contentlet.setStringProperty(field.getVelocityVarName(), (String)value);
-                }catch (Exception e) {
-                    contentlet.setStringProperty(field.getVelocityVarName(),value.toString());
+        }else if(field.getFieldContentlet().startsWith("system_field")) {
+            if (value.getClass() == java.lang.String.class) {
+                try {
+                    contentlet.setStringProperty(field.getVelocityVarName(), (String) value);
+                } catch (Exception e) {
+                    contentlet.setStringProperty(field.getVelocityVarName(), value.toString());
                 }
             }
-        }else{
+        } else if(FieldType.JSON_FIELD.toString().equals(field.getFieldType())) {
+                if(value instanceof Map){
+                    contentlet.setStringProperty(field.getVelocityVarName(),
+                            Try.of(()->JsonUtil.getJsonAsString((Map<String, Object>) value))
+                                    .getOrElse("{}"));
+                }
+        } else{
             throw new DotContentletStateException("Unable to set value : Unknown field type");
         }
     }
