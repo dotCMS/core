@@ -10,6 +10,9 @@ import com.dotmarketing.portlets.variant.model.Variant;
 import com.dotmarketing.util.UUIDGenerator;
 import java.util.Optional;
 
+/**
+ * API of {@link Variant}
+ */
 public class VariantAPIImpl implements VariantAPI {
     private VariantFactory variantFactory;
 
