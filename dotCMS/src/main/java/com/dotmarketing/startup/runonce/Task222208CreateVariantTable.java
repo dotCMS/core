@@ -12,13 +12,13 @@ import java.sql.SQLException;
 public class Task222208CreateVariantTable implements StartupTask {
 
     private final String POSTGRES_QUERY = "CREATE TABLE IF NOT EXISTS variant ("
-            + "  id varchar(36) primary key,"
+            + "  id varchar(255) primary key,"
             + "  name varchar(255) not null,"
             + "  deleted boolean NOT NULL default false"
             + ")";
 
     private final String MSSQL_QUERY = "CREATE TABLE IF NOT EXISTS variant ("
-            + "  id NVARCHAR(36) primary key,"
+            + "  id NVARCHAR(255) primary key,"
             + "  name NVARCHAR(255) not null,"
             + "  deleted tinyint not null"
             + ")";
