@@ -28,6 +28,7 @@ services:
       DB_USERNAME: "postgres"
       DB_PASSWORD: "postgres"
       DOT_ES_ENDPOINTS: 'http://elasticsearch:9200'
+      DOT_ES_PROTOCOL: 'http'
       DOT_DOTCMS_DEV_MODE: 'true'
       DB_MAX_TOTAL: 15
       DOT_INDEX_POLICY_SINGLE_CONTENT: "FORCE"
