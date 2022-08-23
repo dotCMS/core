@@ -46,11 +46,13 @@ table.dijitInline {
 }
 
 .dijitHidden {
+    /* A revert of styles in dijit.css file was done, there is no clear explanation from the author why this was changed, more information on https://github.com/dojo/dojo/issues/326 */
 	/* To hide unselected panes in StackContainer etc. */
 	display: none !important;
 }
 
 .dijitVisible {
+    /* A revert of styles in dijit.css file was done, there is no clear explanation from the author why this was changed, more information on https://github.com/dojo/dojo/issues/326 */
 	/* To show selected pane in StackContainer etc. */
 	display: block !important;	/* override user's display:none setting via style setting or indirectly via class */
 	position: relative;			/* to support setting width/height, see #2033 */
