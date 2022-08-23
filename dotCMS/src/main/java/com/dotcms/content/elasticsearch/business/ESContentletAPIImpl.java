@@ -224,8 +224,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private static final Supplier<String> ND_SUPPLIER = ()->"N/D";
     private ElasticReadOnlyCommand elasticReadOnlyCommand;
 
-    ObjectMapper mapper = new ObjectMapper();
-
     /**
      * Default class constructor.
      */
