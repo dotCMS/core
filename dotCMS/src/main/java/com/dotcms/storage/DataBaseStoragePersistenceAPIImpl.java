@@ -3,6 +3,10 @@ package com.dotcms.storage;
 import static com.dotcms.storage.model.BasicMetadataFields.SHA256_META_KEY;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.storage.repository.BinaryFileWrapper;
+import com.dotcms.storage.repository.FileRepositoryManager;
+import com.dotcms.storage.repository.LocalFileRepositoryManager;
+import com.dotcms.storage.repository.TempFileRepositoryManager;
 import com.dotcms.util.CloseUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.FileByteSplitter;
@@ -28,6 +32,8 @@ import com.liferay.util.HashBuilder;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,6 +54,8 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import org.apache.commons.io.output.DeferredFileOutputStream;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableObject;
@@ -63,6 +71,15 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
 
     private static final String DATABASE_STORAGE_JDBC_POOL_NAME = "DATABASE_STORAGE_JDBC_POOL_NAME";
     private static final String DB_STORAGE_CHUNK_SIZE = "DB_STORAGE_CHUNK_SIZE";
+    private final FileRepositoryManager fileRepositoryManager = this.getFileRepository();
+    private static final int DATABASE_FILE_BUFFER_SIZE = Config.getIntProperty("DATABASE_FILE_BUFFER_SIZE", 2000);
+
+    private FileRepositoryManager getFileRepository() {
+        return FileRepositoryManager.TEMP_REPO.equalsIgnoreCase(Config.getStringProperty(
+                "DATA_BASE_STORAGE_FILE_REPO_TYPE", FileRepositoryManager.TEMP_REPO))?
+                new TempFileRepositoryManager():
+                new LocalFileRepositoryManager();
+    }
 
     /**
      * custom external connection provider method in case we want to store stuff outside our db
@@ -693,8 +710,15 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
     }
 
     private File createJoinFile(final String hashId, final Connection connection) throws IOException, DotDataException {
-        final File file = FileUtil.createTemporaryFile("dot-db-storage-recovery", ".tmp", true); // todo this should be configurable in order to use temp or a dir
-        try (final FileJoinerImpl fileJoiner = new FileJoinerImpl(file)) {
+
+        if (this.fileRepositoryManager.exists(hashId)) {
+
+            return this.fileRepositoryManager.getOrCreateFile(hashId);
+        }
+
+        File file = this.fileRepositoryManager.getOrCreateFile(hashId);
+        final DeferredFileOutputStream deferredFileOutputStream = null;
+        try (final BinaryBlockFileJoinerImpl fileJoiner = new BinaryBlockFileJoinerImpl(file, DATABASE_FILE_BUFFER_SIZE)) {
             final HashBuilder fileHashBuilder = Try.of(Hashing::sha256)
                     .getOrElseThrow(DotRuntimeException::new);
 
@@ -725,6 +749,12 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
                         "The file hash `%s` isn't valid. it doesn't match the records in `storage_data/storage_x_data` or they don't exist. ",
                         hashId));
             }
+
+            // this means file is buffered and needs to wrap the binary
+            if (fileJoiner.getBytes() != null) {
+
+                file = new BinaryFileWrapper(file, fileJoiner.getBytes());
+            }
         } catch (Exception e) {
             throw new DotDataException(e.getMessage(), e);
         }
@@ -740,12 +770,16 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         final File file = pullFile(groupName, path);
 
         if (null != file) {
-            object = Try.of(() -> {
-                        try (InputStream inputStream = Files.newInputStream(file.toPath())) {
-                            return readerDelegate.read(inputStream);
-                        }
-                    }
-            ).getOrNull();
+            object =
+                    Try.of(() -> {
+                                try (InputStream inputStream = file instanceof BinaryFileWrapper?
+                                        new ByteArrayInputStream(BinaryFileWrapper.class.cast(file).getBufferByte()):
+                                        Files.newInputStream(file.toPath())) {
+
+                                    return readerDelegate.read(inputStream);
+                                }
+                            }
+                    ).getOrNull();
         }
 
         return object;

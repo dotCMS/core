@@ -32,6 +32,7 @@ public class FileJoinerImpl implements FileJoiner {
     private static final int CHUNK_SIZE = Config.getIntProperty("FILE_SPLITTER_CHUNK_SIZE", 2097152); // 2mb
 
 
+
     private static InputStream createCompressorOutputStream (final File file) {
 
         final String compressor   = Config.getStringProperty("FILE_SPLITTER_COMPRESSOR", "gzip");
@@ -86,6 +87,10 @@ public class FileJoinerImpl implements FileJoiner {
 
             throw new DotRuntimeException(e);
         }
+    }
+
+    protected OutputStream getOutputStream() {
+        return this.outputStream;
     }
 
     @Override

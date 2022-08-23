@@ -3,7 +3,6 @@ package com.dotcms.storage;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.util.FileUtil;
 import com.google.common.io.Files;
-import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
