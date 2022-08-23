@@ -38,7 +38,7 @@ services:
         "DB_DRIVER": 'oracle.jdbc.OracleDriver'
         "ES_ADMIN_PASSWORD": 'admin'
         "TZ": UTC
-        #"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20211201/starter-20211201.zip'
+        #"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20220713/starter-20220713.zip'
     depends_on:
       - elasticsearch
     volumes:
