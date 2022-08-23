@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { ButtonModule } from 'primeng/button';
 
 // Shared
 import { SuggestionsService } from './services';
@@ -14,7 +15,7 @@ import {
 } from './';
 
 @NgModule({
-    imports: [CommonModule, FormsModule, ReactiveFormsModule],
+    imports: [CommonModule, FormsModule, ReactiveFormsModule, ButtonModule],
     declarations: [
         SuggestionsComponent,
         SuggestionListComponent,

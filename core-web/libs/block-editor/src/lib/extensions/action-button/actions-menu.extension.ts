@@ -65,7 +65,6 @@ function getTippyInstance({
     onHide?: () => void;
 }) {
     return tippy(element, {
-        appendTo: document.body,
         content: content,
         placement: 'bottom',
         popperOptions: {
@@ -133,7 +132,7 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
     function onStart({ editor, range, clientRect }: SuggestionProps | FloatingActionsProps): void {
         setUpSuggestionComponent(editor, range);
         myTippy = getTippyInstance({
-            element: editor.view.dom,
+            element: editor.options.element.parentElement,
             content: suggestionsComponent.location.nativeElement,
             rect: clientRect,
             onHide: () => {

@@ -63,7 +63,7 @@ export const getPosAtDocCoords = (view: EditorView, event: MouseEvent) => {
 };
 
 /**
- *
+ * Resolve the correct method to remove a node.
  *
  * @param {*} { editor, nodeType, selectionRange }
  */
@@ -76,7 +76,7 @@ export const deleteByNode = ({ editor, nodeType, selectionRange }) => {
 };
 
 /**
- *
+ * Delete a node given a selection range.
  *
  * @param {Editor} editor
  * @param {SelectionRange} selectionRange
@@ -88,7 +88,7 @@ export const deleteByRange = (editor: Editor, selectionRange: SelectionRange) =>
 };
 
 /**
- *
+ *  Delete Custom Node.
  *
  * @param {Editor} editor
  * @param {SelectionRange} selectionRange
@@ -102,7 +102,7 @@ export const deleteSelectedCustomNodeType = (editor: Editor, selectionRange: Sel
 };
 
 /**
- *
+ * Delete node given a selection. This method also works with nested lists.
  *
  * @param {Editor} editor
  * @param {SelectionRange} selectionRange
