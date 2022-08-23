@@ -20,6 +20,10 @@ public class JsonUtil {
         return JSON_MAPPER.readValue(getJsonFileContentAsString(path), Map.class);
     }
 
+    public static Map<String, Object> getJsonFromString(final String json) throws IOException {
+        return JSON_MAPPER.readValue(json, Map.class);
+    }
+
     public static String getJsonFileContentAsString(final String path) throws IOException {
 
         ClassLoader classLoader = JsonUtil.class.getClassLoader();
@@ -36,4 +40,5 @@ public class JsonUtil {
         }
         return true;
     }
+
 }
