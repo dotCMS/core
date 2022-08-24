@@ -5,7 +5,6 @@ import { DotEditPageMainComponent } from './main/dot-edit-page-main/dot-edit-pag
 import { DotEditPageResolver } from './shared/services/dot-edit-page-resolver/dot-edit-page-resolver.service';
 import { LayoutEditorCanDeactivateGuardService } from '@services/guards/layout-editor-can-deactivate-guard.service';
 import { DotExperimentFeatureFlagResolver } from '@portlets/dot-experiments';
-import { DotExperimentsStore } from '@portlets/dot-experiments/shared/services/dot-experiments-store.service';
 
 const dotEditPage: Routes = [
     {
@@ -65,7 +64,6 @@ const dotEditPage: Routes = [
 
 @NgModule({
     exports: [RouterModule],
-    imports: [RouterModule.forChild(dotEditPage)],
-    providers: [DotExperimentsStore]
+    imports: [RouterModule.forChild(dotEditPage)]
 })
 export class DotEditPageRoutingModule {}
