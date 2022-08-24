@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.experiments;
 
 import com.dotcms.experiments.model.Experiment.Status;
+import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TrafficProportion;
 import com.dotcms.rest.api.Validated;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -17,14 +18,7 @@ public class ExperimentForm extends Validated {
     private String pageId;
     private float trafficAllocation=-1;
     private TrafficProportion trafficProportion;
-    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
-    @JsonSerialize(using = LocalDateTimeSerializer.class)
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime startDate;
-    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
-    @JsonSerialize(using = LocalDateTimeSerializer.class)
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime endDate;
+    private Scheduling scheduling;
 
     public void setName(String name) {
         this.name = name;
@@ -74,19 +68,11 @@ public class ExperimentForm extends Validated {
         this.trafficProportion = trafficProportion;
     }
 
-    public LocalDateTime getStartDate() {
-        return startDate;
+    public Scheduling getScheduling() {
+        return scheduling;
     }
 
-    public void setStartDate(LocalDateTime startDate) {
-        this.startDate = startDate;
-    }
-
-    public LocalDateTime getEndDate() {
-        return endDate;
-    }
-
-    public void setEndDate(LocalDateTime endDate) {
-        this.endDate = endDate;
+    public void setScheduling(Scheduling scheduling) {
+        this.scheduling = scheduling;
     }
 }

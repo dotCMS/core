@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.immutables.value.Value.Immutable;
 
 /**
- * TextArea-Field json representation
+ * JSON-Field json representation
  */
 @ValueType
 @Immutable

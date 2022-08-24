@@ -28,7 +28,8 @@ class DotContentletTransformerImpl implements DotContentletTransformer {
 
     static final Set<TransformOptions> defaultOptions = EnumSet.of(
 
-            COMMON_PROPS, CONSTANTS, VERSION_INFO, BINARIES, CATEGORIES_NAME, TAGS, STORY_BLOCK_VIEW
+            COMMON_PROPS, CONSTANTS, VERSION_INFO, BINARIES, CATEGORIES_NAME, TAGS, STORY_BLOCK_VIEW,
+            JSON_VIEW
 
     );
 

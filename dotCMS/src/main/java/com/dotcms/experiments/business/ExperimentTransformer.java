@@ -1,6 +1,7 @@
 package com.dotcms.experiments.business;
 
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TrafficProportion;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.transform.DBTransformer;
@@ -50,10 +51,7 @@ public class ExperimentTransformer implements DBTransformer {
                 .trafficAllocation((Float) map.get("traffic_allocation"))
                 .modDate(Try.of(()->((java.sql.Timestamp) map.get("mod_date")).toLocalDateTime())
                         .getOrNull())
-                .startDate(Try.of(()->((java.sql.Timestamp) map.get("start_date")).toLocalDateTime())
-                        .getOrNull())
-                .endDate(Try.of(()->((java.sql.Timestamp) map.get("end_date")).toLocalDateTime())
-                        .getOrNull())
+                .scheduling(getScheduling(map.get("scheduling")))
                 .readyToStart(ConversionUtils.toBooleanFromDb(map.get("ready_to_start")))
                 .archived(ConversionUtils.toBooleanFromDb(map.get("archived")))
                 .build();
@@ -64,6 +62,17 @@ public class ExperimentTransformer implements DBTransformer {
             PGobject json = (PGobject) traffic_proportion;
             return Try.of(()->mapper.readValue(json.getValue(), TrafficProportion.class))
                             .getOrNull();
+        } else  {
+            // TODO pending for mssql
+            return null;
+        }
+    }
+
+    private static Scheduling getScheduling(Object scheduling) {
+        if(DbConnectionFactory.isPostgres()) {
+            PGobject json = (PGobject) scheduling;
+            return Try.of(()->mapper.readValue(json.getValue(), Scheduling.class))
+                    .getOrNull();
         } else  {
             // TODO pending for mssql
             return null;

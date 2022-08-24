@@ -7546,6 +7546,11 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
     }
 
+    /**
+     * Given scenario: Contentlet with a {@link JSONField} and a VALID value for the field
+     * Expected result: should persist the contentlet with the provided value
+     *
+     */
     @Test
     public void saveContentWithValidJSONField_ShouldSucceed() throws Exception {
         // create content type with JSON field
@@ -7566,6 +7571,11 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals(testJSON, contentletWithJSON.get(jsonField.variable()));
     }
 
+    /**
+     * Given scenario: Contentlet with a {@link JSONField} and a INVALID value for the field
+     * Expected result: should throw ValidationException
+     *
+     */
     @Test(expected = DotContentletValidationException.class)
     public void saveContentWithInvalidJSONField_ShouldThrowException() throws Exception {
         // create content type with JSON field

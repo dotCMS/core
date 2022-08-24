@@ -2695,8 +2695,7 @@ create table experiment (
     traffic_proportion NVARCHAR(MAX),
     traffic_allocation float,
     mod_date datetimeoffset(3),
-    start_date datetimeoffset(3),
-    end_date datetimeoffset(3),
+    scheduling NVARCHAR(MAX),
     ready_to_start tinyint,
     archived tinyint
 );

@@ -13,22 +13,18 @@ import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import org.immutables.value.Value;
 
-public final class Experiment implements Serializable, ManifestItem {
+//@Value.Style(typeImmutable="*", typeAbstract="Abstract*")
+//@@Value.Immutable
+public class Experiment implements Serializable, ManifestItem {
     private String name;
     private String description;
     private String id;
     private Status status;
     private TrafficProportion trafficProportion;
+    private Scheduling scheduling;
     private float trafficAllocation;
-    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
-    @JsonSerialize(using = LocalDateTimeSerializer.class)
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime startDate;
-    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
-    @JsonSerialize(using = LocalDateTimeSerializer.class)
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime endDate;
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     @JsonSerialize(using = LocalDateTimeSerializer.class)
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
@@ -53,9 +49,8 @@ public final class Experiment implements Serializable, ManifestItem {
         private String id;
         private Status status = Status.DRAFT;
         private TrafficProportion trafficProportion = TrafficProportion.createSplitEvenlyTraffic();
+        private Scheduling scheduling;
         private float trafficAllocation = 100;
-        private LocalDateTime startDate;
-        private LocalDateTime endDate;
         private LocalDateTime modDate = LocalDateTime.now();
         private boolean readyToStart;
         private boolean archived;
@@ -73,8 +68,7 @@ public final class Experiment implements Serializable, ManifestItem {
             this.status = val.status;
             this.trafficProportion = val.trafficProportion;
             this.trafficAllocation = val.trafficAllocation;
-            this.startDate = val.startDate;
-            this.endDate = val.endDate;
+            this.scheduling = val.scheduling;
             this.modDate = val.modDate;
             this.pageId = val.pageId;
             this.readyToStart = val.readyToStart;
@@ -110,13 +104,8 @@ public final class Experiment implements Serializable, ManifestItem {
             return this;
         }
 
-        public Builder startDate(final LocalDateTime val) {
-            startDate = val;
-            return this;
-        }
-
-        public Builder endDate(final LocalDateTime val) {
-            endDate = val;
+        public Builder scheduling(final Scheduling val) {
+            scheduling = val;
             return this;
         }
 
@@ -149,10 +138,10 @@ public final class Experiment implements Serializable, ManifestItem {
                 && builder.trafficAllocation<=100, "trafficAllocation must be between 0 and 100");
         DotPreconditions.checkNotNull(builder.modDate, DotStateException.class, "modDate is mandatory");
 
-        if(UtilMethods.isSet(builder.startDate) && UtilMethods.isSet(builder.endDate)) {
-           DotPreconditions.checkArgument(builder.endDate.isAfter(builder.startDate),
-                    "endDate must be after startDate");
-        }
+//        if(UtilMethods.isSet(builder.startDate) && UtilMethods.isSet(builder.endDate)) {
+//           DotPreconditions.checkArgument(builder.endDate.isAfter(builder.startDate),
+//                    "endDate must be after startDate");
+//        }
 
         this.name = builder.name;
         this.description = builder.description;
@@ -160,8 +149,7 @@ public final class Experiment implements Serializable, ManifestItem {
         this.status = builder.status;
         this.trafficProportion = builder.trafficProportion;
         this.trafficAllocation = builder.trafficAllocation;
-        this.startDate = builder.startDate;
-        this.endDate = builder.endDate;
+        this.scheduling = builder.scheduling;
         this.modDate = builder.modDate;
         this.pageId = builder.pageId;
         this.readyToStart = builder.readyToStart;
@@ -191,12 +179,8 @@ public final class Experiment implements Serializable, ManifestItem {
         return trafficAllocation;
     }
 
-    public LocalDateTime getStartDate() {
-        return startDate;
-    }
-
-    public LocalDateTime getEndDate() {
-        return endDate;
+    public Scheduling getScheduling() {
+        return scheduling;
     }
 
     public LocalDateTime getModDate() {

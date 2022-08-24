@@ -20,12 +20,12 @@ public class ExperimentsFactoryImpl implements
     final ObjectWriter objectWriter = JsonMapper.mapper.writer().withDefaultPrettyPrinter();
 
     public static final String INSERT_EXPERIMENT = "INSERT INTO experiment(id, page_id, name, description, status, " +
-            "traffic_type, traffic_proportion, traffic_allocation, mod_date, start_date, end_date, ready_to_start, "
+            "traffic_proportion, traffic_allocation, mod_date, scheduling, ready_to_start, "
             + "archived) "
-            + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)";
+            + "VALUES(?,?,?,?,?,?,?,?,?,?,?)";
 
     public static final String UPDATE_EXPERIMENT = "UPDATE experiment set name=?, description=?, status=?, " +
-            "traffic_type=?, traffic_proportion=?, traffic_allocation=?, mod_date=?, start_date=?, end_date=?, "
+            "traffic_proportion=?, traffic_allocation=?, mod_date=?, scheduling=?, "
             + "ready_to_start=?, archived=?"
             + "WHERE id=?";
 
@@ -84,7 +84,7 @@ public class ExperimentsFactoryImpl implements
         dc.addParam(experiment.getName());
         dc.addParam(experiment.getDescription());
         dc.addParam(experiment.getStatus().name());
-        dc.addParam(experiment.getTrafficProportion().getType().name());
+
         final String trafficProportionAsJSON = Try.of(()->
                         objectWriter.writeValueAsString(experiment.getTrafficProportion()))
                 .getOrNull();
@@ -97,10 +97,23 @@ public class ExperimentsFactoryImpl implements
         } else {
             dc.addParam(trafficProportionAsJSON);
         }
+
         dc.addParam(experiment.getTrafficAllocation());
         dc.addParam(experiment.getModDate());
-        dc.addParam(experiment.getStartDate());
-        dc.addParam(experiment.getEndDate());
+
+        final String schedulingAsJSON = Try.of(()->
+                        objectWriter.writeValueAsString(experiment.getScheduling()))
+                .getOrNull();
+        if(DbConnectionFactory.isPostgres()) {
+            PGobject jsonObject = new PGobject();
+            jsonObject.setType("json");
+            Try.run(() -> jsonObject.setValue(schedulingAsJSON)).getOrElseThrow(
+                    () -> new DotDataException("Invalid Scheduling"));
+            dc.addObject(jsonObject);
+        } else {
+            dc.addParam(schedulingAsJSON);
+        }
+
         dc.addParam(experiment.isReadyToStart());
         dc.addParam(experiment.isArchived());
         dc.loadResult();
@@ -112,7 +125,6 @@ public class ExperimentsFactoryImpl implements
         dc.addParam(experiment.getName());
         dc.addParam(experiment.getDescription());
         dc.addParam(experiment.getStatus().name());
-        dc.addParam(experiment.getTrafficProportion().getType().name());
         final String trafficProportionAsJSON = Try.of(()->
                         objectWriter.writeValueAsString(experiment.getTrafficProportion()))
                 .getOrNull();
@@ -127,8 +139,18 @@ public class ExperimentsFactoryImpl implements
         }
         dc.addParam(experiment.getTrafficAllocation());
         dc.addParam(experiment.getModDate());
-        dc.addParam(experiment.getStartDate());
-        dc.addParam(experiment.getEndDate());
+        final String schedulingAsJSON = Try.of(()->
+                        objectWriter.writeValueAsString(experiment.getScheduling()))
+                .getOrNull();
+        if(DbConnectionFactory.isPostgres()) {
+            PGobject jsonObject = new PGobject();
+            jsonObject.setType("json");
+            Try.run(() -> jsonObject.setValue(schedulingAsJSON)).getOrElseThrow(
+                    () -> new DotDataException("Invalid Scheduling Proportion"));
+            dc.addObject(jsonObject);
+        } else {
+            dc.addParam(schedulingAsJSON);
+        }
         dc.addParam(experiment.isReadyToStart());
         dc.addParam(experiment.isArchived());
         dc.addParam(experiment.getId());

@@ -142,12 +142,8 @@ public class ExperimentsResource {
             builder.status(experimentForm.getStatus());
         }
 
-        if(experimentForm.getStartDate()!=null) {
-            builder.startDate(experimentForm.getStartDate());
-        }
-
-        if(experimentForm.getEndDate()!=null) {
-            builder.endDate(experimentForm.getEndDate());
+        if(experimentForm.getScheduling()!=null) {
+            builder.scheduling(experimentForm.getScheduling());
         }
 
         return builder.build();

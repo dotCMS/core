@@ -2489,12 +2489,10 @@ create table experiment (
      name varchar(255) not null,
      description varchar(64) not null,
      status varchar(64) not null,
-     traffic_type varchar(64) not null,
      traffic_proportion jsonb,
      traffic_allocation float4,
      mod_date timestamptz,
-     start_date timestamptz,
-     end_date timestamptz,
+     scheduling jsonb,
      ready_to_start bool,
      archived bool
 );
