@@ -22,13 +22,8 @@ jobs:
       RELEASE_VERSION: ${{ github.event.inputs.release_version }}
       DEBUG: true
     steps:
-      - name: GITHUB CONTEXT
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "${GITHUB_CONTEXT}"
-        if: env.DEBUG == 'true'
       - name: Checkout core
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Set Common Vars
         run: |
           BUILD_ID=$(basename "${{ github.ref }}")
@@ -50,6 +45,25 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           FROM_BRANCH: ${{ github.event.inputs.from_branch }}
           NODE_VERSION: ${{ github.event.inputs.node_version }}
+  pre-release-process-image:
+    name: Pre-Release Image Publishing
+    runs-on: ubuntu-latest
+    needs: pre-release-process
+    env:
+      DOT_CICD_BRANCH: master
+      RELEASE_VERSION: ${{ github.event.inputs.release_version }}
+      DEBUG: true
+    steps:
+      - name: Checkout core
+        uses: actions/checkout@v3
+      - name: Set Common Vars
+        run: |
+          BUILD_ID=$(basename "${{ github.ref }}")
+          BUILD_HASH=$(git log -1 --pretty=%h)
+
+          echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
+          echo "BUILD_HASH=${BUILD_HASH}" >> $GITHUB_ENV
+          echo "RELEASE_VERSION=${RELEASE_VERSION}" >> $GITHUB_ENV
       - name: Discover docker tags
         id: discover-docker-tags
         uses: dotcms/discover-docker-tags-action@main
@@ -68,7 +82,7 @@ jobs:
           github_user_token: ${{ secrets.CICD_GITHUB_TOKEN }}
           docker_hub_username: ${{ secrets.DOCKER_USERNAME }}
           docker_hub_token: ${{ secrets.DOCKER_TOKEN }}
-#       For testing purposes remember to switch webhook channel to an account that can be used for testing
+#             For testing purposes remember to switch webhook channel to an account that can be used for testing
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2
         env:

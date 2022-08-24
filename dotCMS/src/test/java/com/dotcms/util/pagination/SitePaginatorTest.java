@@ -43,6 +43,11 @@ public class SitePaginatorTest {
         hosts.add( mock( Host.class ) );
     }
 
+    /**
+     * <b>Method to test:</b> {@link SitePaginator#getItems(User, String, int, int, String, OrderDirection, Map)} <br></br>
+     * <b>Given Scenario:</b> SitePaginator is invoked with a dummy filter<br></br>
+     * <b>Expected Result:</b> {@link HostAPI#search(String, boolean, int, int, User, boolean)} is expected to be called<br></br>
+     */
     @Test
     public void testGetItems(){
         final String filter = "filter";
@@ -59,6 +64,12 @@ public class SitePaginatorTest {
         assertEquals(hosts, items);
     }
 
+    /**
+     * <b>Method to test:</b> {@link SitePaginator#getItems(User, String, int, int, String, OrderDirection, Map)} <br></br>
+     * <b>Given Scenario:</b> SitePaginator is invoked with a dummy filter to get archived items<br></br>
+     * <b>Expected Result:</b> {@link HostAPI#search(String, boolean, boolean, boolean, int, int, User, boolean)} is expected to be called<br></br>
+     */
+    @Test
     public void testGetItemsWithArchived(){
         final String filter = "filter";
         final boolean showArchived = true;
@@ -66,15 +77,21 @@ public class SitePaginatorTest {
         final int offset = 4;
         final User user = new User();
 
-        when(hostAPI.search( filter, showArchived,false, limit, offset, user, false ))
+        when(hostAPI.search( filter, showArchived, true, false, limit, offset, user, false ))
                 .thenReturn( hosts );
 
         final PaginatedArrayList<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null,
-                map(SitePaginator.ARCHIVED_PARAMETER_NAME, showArchived));
+                map(SitePaginator.ARCHIVED_PARAMETER_NAME, showArchived, SitePaginator.LIVE_PARAMETER_NAME, null));
         assertEquals(totalRecords, items.getTotalResults());
         assertEquals(hosts, items);
     }
 
+    /**
+     * <b>Method to test:</b> {@link SitePaginator#getItems(User, String, int, int, String, OrderDirection, Map)} <br></br>
+     * <b>Given Scenario:</b> SitePaginator is invoked with a dummy filter to get stopped hosts<br></br>
+     * <b>Expected Result:</b> {@link HostAPI#searchByStopped(String, boolean, boolean, int, int, User, boolean)} is expected to be called<br></br>
+     */
+    @Test
     public void testGetItemsWithStopped(){
         final String filter = "filter";
         final boolean showStopped = true;
@@ -82,16 +99,22 @@ public class SitePaginatorTest {
         final int offset = 4;
         final User user = new User();
 
-        when(hostAPI.searchByStopped( filter, !showStopped,false, limit, offset, user, false ))
+        when(hostAPI.searchByStopped( filter, showStopped,false, limit, offset, user, false ))
                 .thenReturn( hosts );
 
         final PaginatedArrayList<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null,
-                map(SitePaginator.LIVE_PARAMETER_NAME, !showStopped));
+                map(SitePaginator.LIVE_PARAMETER_NAME, !showStopped, SitePaginator.ARCHIVED_PARAMETER_NAME, null));
 
         assertEquals(totalRecords, items.getTotalResults());
         assertEquals(hosts, items);
     }
 
+    /**
+     * <b>Method to test:</b> {@link SitePaginator#getItems(User, String, int, int, String, OrderDirection, Map)} <br></br>
+     * <b>Given Scenario:</b> SitePaginator is invoked with a dummy filter to get stopped and archived hosts<br></br>
+     * <b>Expected Result:</b> {@link HostAPI#search(String, boolean, boolean, boolean, int, int, User, boolean)} is expected to be called<br></br>
+     */
+    @Test
     public void testGetItemsWithStoppedAndArchived(){
         final String filter = "filter";
         final boolean showArchived = true;
@@ -100,7 +123,7 @@ public class SitePaginatorTest {
         final int offset = 4;
         final User user = new User();
 
-        when(hostAPI.search( filter, showArchived, !showStopped,false, limit, offset, user, false ))
+        when(hostAPI.search( filter, showArchived, showStopped,false, limit, offset, user, false ))
                 .thenReturn( hosts );
 
         final PaginatedArrayList<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null,
@@ -110,6 +133,13 @@ public class SitePaginatorTest {
         assertEquals(hosts, items);
     }
 
+
+    /**
+     * <b>Method to test:</b> {@link SitePaginator#getItems(User, String, int, int, String, OrderDirection, Map)} <br></br>
+     * <b>Given Scenario:</b> SitePaginator is invoked with a dummy filter setting showSystemHost param<br></br>
+     * <b>Expected Result:</b> {@link HostAPI#search(String, boolean, int, int, User, boolean)} is expected to be called<br></br>
+     */
+    @Test
     public void testGetItemsWithSystem(){
         final String filter = "filter";
         final int limit = 5;

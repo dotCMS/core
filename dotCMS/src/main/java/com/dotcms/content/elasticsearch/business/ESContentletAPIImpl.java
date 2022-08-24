@@ -3454,6 +3454,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             APILocator.getVanityUrlAPI().invalidateVanityUrl(contentlet);
         }
         publishRelatedHtmlPages(contentlet);
+        if(contentlet.isHTMLPage()){
+            CacheLocator.getNavToolCache().removeNav(
+                    contentlet.getHost(), contentlet.getFolder(),
+                    contentlet.getLanguageId());
+        }
     }
 
     private void cleanFileAssetCache(final Contentlet contentlet, final User user,

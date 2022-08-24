@@ -5,8 +5,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
@@ -18,6 +20,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -31,8 +34,10 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.WebKeys;
 import com.liferay.util.FileUtil;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -480,4 +485,108 @@ public class NavToolTest extends IntegrationTestBase{
         assertEquals(Host.SYSTEM_HOST, systemFolder.getHostId());
     }
 
+    final String HTMLPAGE_CURRENT_LANGUAGE = com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE + ".current";
+
+    /**
+     *
+     * @throws Exception
+     */
+    @Test
+    @UseDataProvider("liveAndAdminModes")
+    public void Test_Render_Menu_Items_On_Live_And_Admin_Page_Mode(final PageMode pageMode) throws Exception{
+
+        final User mockedUSer = mock(User.class);
+        Mockito.when(mockedUSer.isBackendUser()).thenReturn(true);
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        Mockito.when(request.getAttribute(WebKeys.USER)).thenReturn(mockedUSer);
+        Mockito.when(request.getParameter(com.dotmarketing.util.WebKeys.PAGE_MODE_PARAMETER)).thenReturn(pageMode.name());
+        Mockito.when(request.getAttribute(HTMLPAGE_CURRENT_LANGUAGE)).thenReturn(1);
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
+        final ViewContext viewContext = mock(ViewContext.class);
+        when(viewContext.getRequest()).thenReturn(request);
+
+        final NavTool navTool =  new NavTool();
+        navTool.init(viewContext);
+
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
+        final Template template = new TemplateDataGen().nextPersisted();
+
+        final HTMLPageAsset pageAsset1 = new HTMLPageDataGen(folder, template).showOnMenu(true).languageId(1).nextPersisted();
+        pageAsset1.setIndexPolicy(IndexPolicy.FORCE);
+        APILocator.getContentletAPI().publish(pageAsset1, user, true);
+
+        final HTMLPageAsset pageAsset2 = new HTMLPageDataGen(folder, template).showOnMenu(true).languageId(1).nextPersisted();
+        pageAsset2.setIndexPolicy(IndexPolicy.FORCE);
+        APILocator.getContentletAPI().publish(pageAsset2, user, true);
+
+        final NavResult navResult1 = navTool.getNav(site, folder.getPath());
+        assertNotNull(navResult1);
+        final List<? extends NavResult> children1 = navResult1.getChildren();
+        assertEquals("Both items should appear in the nav result as they're both published. ",2,children1.size());
+        APILocator.getContentletAPI().unpublish(pageAsset2, user, true);
+        assertFalse(pageAsset2.isLive());
+
+        final NavResult navResult2 = navTool.getNav(site, folder.getPath());
+        final List<? extends NavResult> children2 = navResult2.getChildren();
+        assertEquals("Now only 1 item should appear in the nav result as we unpublished second entry. ",1, children2.size());
+        assertEquals(children2.get(0).getTitle(), pageAsset1.getTitle());
+    }
+
+    @DataProvider
+    public static Object[] liveAndAdminModes() {
+        return new Object[]{PageMode.LIVE,PageMode.ADMIN_MODE};
+    }
+
+    @Test
+    @UseDataProvider("editAndPreviewModes")
+    public void Test_Render_Menu_Items_On_Edit_Mode_Page_Mode(final PageMode pageMode) throws Exception{
+
+        final User mockedUSer = mock(User.class);
+        Mockito.when(mockedUSer.isBackendUser()).thenReturn(true);
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        Mockito.when(request.getAttribute(WebKeys.USER)).thenReturn(mockedUSer);
+        Mockito.when(request.getParameter(com.dotmarketing.util.WebKeys.PAGE_MODE_PARAMETER)).thenReturn(pageMode.name());
+        Mockito.when(request.getAttribute(HTMLPAGE_CURRENT_LANGUAGE)).thenReturn(1);
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
+        final ViewContext viewContext = mock(ViewContext.class);
+        when(viewContext.getRequest()).thenReturn(request);
+
+        final NavTool navTool =  new NavTool();
+        navTool.init(viewContext);
+
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
+        final Template template = new TemplateDataGen().nextPersisted();
+
+        final HTMLPageAsset pageAsset1 = new HTMLPageDataGen(folder, template).showOnMenu(true).languageId(1).nextPersisted();
+        pageAsset1.setIndexPolicy(IndexPolicy.FORCE);
+        APILocator.getContentletAPI().publish(pageAsset1, user, true);
+
+        final HTMLPageAsset pageAsset2 = new HTMLPageDataGen(folder, template).showOnMenu(true).languageId(1).nextPersisted();
+        pageAsset2.setIndexPolicy(IndexPolicy.FORCE);
+        APILocator.getContentletAPI().publish(pageAsset2, user, true);
+
+        final NavResult navResult1 = navTool.getNav(site, folder.getPath());
+        assertNotNull(navResult1);
+        final List<? extends NavResult> children1 = navResult1.getChildren();
+        assertEquals("Both items should appear in the nav result as they're both published. ",2,children1.size());
+        APILocator.getContentletAPI().unpublish(pageAsset2, user, true);
+        assertFalse(pageAsset2.isLive());
+
+        final NavResult navResult2 = navTool.getNav(site, folder.getPath());
+        final List<? extends NavResult> children2 = navResult2.getChildren();
+        assertEquals("Now 2 items should appear in the nav result as we are simulating rendering on Edit mode ",2, children2.size());
+        assertEquals(children2.get(0).getTitle(), pageAsset1.getTitle());
+        assertEquals(children2.get(1).getTitle(), pageAsset2.getTitle());
+    }
+
+    @DataProvider
+    public static Object[] editAndPreviewModes() {
+        return new Object[]{PageMode.EDIT_MODE,PageMode.PREVIEW_MODE};
+    }
 }
