@@ -44,6 +44,12 @@ class MockDotLicenseService {
         return observableOf(false);
     }
 }
+@Injectable()
+class MockDotPropertiesService {
+    getKey(): Observable<true> {
+        return observableOf(true);
+    }
+}
 
 @Injectable()
 class MockDotPropertiesService {
@@ -135,7 +141,7 @@ describe('DotEditPageNavComponent', () => {
         it('should have basic menu items', () => {
             fixture.detectChanges();
             const menuListItems = fixture.debugElement.queryAll(By.css('.edit-page-nav__item'));
-            expect(menuListItems.length).toEqual(4);
+            expect(menuListItems.length).toEqual(5);
 
             const labels = ['Content', 'Layout', 'Rules', 'Properties', 'Experiments'];
             const icons = ['insert_drive_file', 'view_quilt', 'tune', 'more_horiz', 'dataset'];
@@ -197,7 +203,7 @@ describe('DotEditPageNavComponent', () => {
             );
             const iconClass = menuListItems[0].query(By.css('i')).nativeElement.innerHTML.trim();
 
-            expect(menuListItems.length).toEqual(4);
+            expect(menuListItems.length).toEqual(5);
             expect(iconClass).toEqual('insert_drive_file');
             expect(menuListItems[0].nativeElement.textContent).toContain('Content');
             expect(menuListItems[1].nativeElement.textContent).toContain('Layout');

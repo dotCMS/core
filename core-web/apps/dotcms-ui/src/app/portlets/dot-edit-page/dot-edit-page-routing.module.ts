@@ -6,6 +6,7 @@ import { DotEditPageResolver } from './shared/services/dot-edit-page-resolver/do
 import { LayoutEditorCanDeactivateGuardService } from '@services/guards/layout-editor-can-deactivate-guard.service';
 import { DotFeatureFlagResolver } from '@portlets/shared/resolvers/dot-feature-flag-resolver.service';
 import { FeaturedFlags } from '@portlets/shared/models/shared-models';
+import { DotExperimentsStore } from '@portlets/dot-experiments/shared/services/dot-experiments-store.service';
 
 const dotEditPage: Routes = [
     {
@@ -69,6 +70,7 @@ const dotEditPage: Routes = [
 
 @NgModule({
     exports: [RouterModule],
-    imports: [RouterModule.forChild(dotEditPage)]
+    imports: [RouterModule.forChild(dotEditPage)],
+    providers: [DotExperimentsStore]
 })
 export class DotEditPageRoutingModule {}

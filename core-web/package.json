@@ -132,7 +132,7 @@
     "@nrwl/storybook": "14.6.3",
     "@nrwl/workspace": "14.6.3",
     "@nxext/stencil": "14.0.6",
-    "@stencil/core": "^2.15.1",
+    "@stencil/core": "2.15.1",
     "@stencil/sass": "1.4.1",
     "@storybook/addon-actions": "^6.5.10",
     "@storybook/addon-docs": "^6.5.10",
