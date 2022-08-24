@@ -62,7 +62,8 @@ public class ConfigurationResource implements Serializable {
 
 	private static final Set<String> WHITE_LIST = ImmutableSet.copyOf(
 			Config.getStringArrayProperty("CONFIGURATION_WHITE_LIST",
-					new String[] {"EMAIL_SYSTEM_ADDRESS", "CHARSET","CONTENT_PALETTE_HIDDEN_CONTENT_TYPES" }));
+					new String[] {"EMAIL_SYSTEM_ADDRESS", "CHARSET","CONTENT_PALETTE_HIDDEN_CONTENT_TYPES",
+					"EXPERIMENTS_FEATURE_ENABLE"}));
 
 
 	private boolean isOnBlackList(final String key) {
