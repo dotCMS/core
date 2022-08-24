@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 
-import { DotExperimentsStore } from '../services/dot-experiments-store.service';
+import { DotExperimentsStore } from './dot-experiments-store.service';
 
 import { LoadingState } from '@portlets/shared/models/shared-models';
 

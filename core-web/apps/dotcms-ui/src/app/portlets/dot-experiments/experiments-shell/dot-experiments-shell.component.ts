@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { DotExperimentsStore } from '../shared/services/dot-experiments-store.service';
+import { DotExperimentsStore } from '../shared/stores/dot-experiments-store.service';
 
 @Component({
     selector: 'dot-experiments-shell',

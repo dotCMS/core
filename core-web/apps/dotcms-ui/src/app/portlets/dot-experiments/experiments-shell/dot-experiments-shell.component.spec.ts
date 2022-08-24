@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotExperimentsShellComponent } from './dot-experiments-shell.component';
 import { of } from 'rxjs';
 import { LoadingState } from '@portlets/shared/models/shared-models';
-import { DotExperimentsStore } from '../shared/services/dot-experiments-store.service';
+import { DotExperimentsStore } from '../shared/stores/dot-experiments-store.service';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
 const storeMock = {
