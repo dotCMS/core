@@ -47,7 +47,7 @@ public class VariantAPITest {
 
         assertEquals(variantSaved.getName(), variantFromDataBase.getName());
         assertEquals(variantSaved.getIdentifier(), variantFromDataBase.getIdentifier());
-        assertFalse(variantFromDataBase.isDeleted());
+        assertFalse(variantFromDataBase.isArchived());
     }
 
     /**
@@ -86,7 +86,7 @@ public class VariantAPITest {
 
         assertEquals(variantUpdated.getName(), variantFromDataBase.getName());
         assertEquals(variantUpdated.getIdentifier(), variantFromDataBase.getIdentifier());
-        assertFalse(variantFromDataBase.isDeleted());
+        assertFalse(variantFromDataBase.isArchived());
     }
 
     /**
@@ -128,7 +128,7 @@ public class VariantAPITest {
 
         assertNotNull(variant);
         assertNotNull(variant.getIdentifier());
-        assertFalse(variant.isDeleted());
+        assertFalse(variant.isArchived());
 
         final Variant variantUpdated = new Variant(variant.getIdentifier(),
                 variant.getName(), true);
@@ -139,7 +139,7 @@ public class VariantAPITest {
 
         assertEquals(variantUpdated.getName(), variantFromDataBase.getName());
         assertEquals(variantUpdated.getIdentifier(), variantFromDataBase.getIdentifier());
-        assertTrue(variantFromDataBase.isDeleted());
+        assertTrue(variantFromDataBase.isArchived());
     }
 
     /**
@@ -161,7 +161,7 @@ public class VariantAPITest {
         final Variant variantFromDataBase = getVariantFromDataBase(variant);
         assertEquals(variantFromDataBase.getName(), variantFromDataBase.getName());
         assertEquals(variantFromDataBase.getIdentifier(), variantFromDataBase.getIdentifier());
-        assertTrue(variantFromDataBase.isDeleted());
+        assertTrue(variantFromDataBase.isArchived());
     }
 
     /**
@@ -178,14 +178,14 @@ public class VariantAPITest {
 
     /**
      * Method to test: {@link VariantFactory#delete(String)}
-     * When: Try to delete a {@link Variant} object
+     * When: Try to delete a archived {@link Variant} object
      * Should: remove it from Data base.
      *
      * @throws DotDataException
      */
     @Test
     public void delete() throws DotDataException {
-        final Variant variant = new VariantDataGen().nextPersisted();
+        final Variant variant = new VariantDataGen().archived(true).nextPersisted();
 
         ArrayList results = getResults(variant);
         assertFalse(results.isEmpty());
@@ -194,6 +194,25 @@ public class VariantAPITest {
 
         results = getResults(variant);
         assertTrue(results.isEmpty());
+    }
+
+    /**
+     * Method to test: {@link VariantFactory#delete(String)}
+     * When: Try to delete a not archived {@link Variant} object
+     * Should: throw a {@link IllegalStateException}
+     *
+     * @throws DotDataException
+     *
+     * @throws IllegalStateException
+     */
+    @Test(expected = IllegalStateException.class)
+    public void deleteNotArchived() throws DotDataException {
+        final Variant variant = new VariantDataGen().archived(false).nextPersisted();
+
+        ArrayList results = getResults(variant);
+        assertFalse(results.isEmpty());
+
+        APILocator.getVariantAPI().delete(variant.getIdentifier());
     }
 
     /**
@@ -257,6 +276,6 @@ public class VariantAPITest {
         assertEquals(1, results.size());
         final Map resultMap = (Map) results.get(0);
         return new Variant(resultMap.get("id").toString(), resultMap.get("name").toString(),
-                ConversionUtils.toBooleanFromDb(resultMap.get("deleted")));
+                ConversionUtils.toBooleanFromDb(resultMap.get("archived")));
     }
 }

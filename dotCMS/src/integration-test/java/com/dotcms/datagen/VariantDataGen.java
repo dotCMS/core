@@ -9,7 +9,7 @@ public class VariantDataGen extends AbstractDataGen<Variant> {
 
     private String id;
     private String name;
-    private boolean deleted = false;
+    private boolean archived = false;
 
     public VariantDataGen id(final String id) {
         this.id = id;
@@ -21,8 +21,8 @@ public class VariantDataGen extends AbstractDataGen<Variant> {
         return this;
     }
 
-    public VariantDataGen deleted(final boolean deleted) {
-        this.deleted = deleted;
+    public VariantDataGen archived(final boolean deleted) {
+        this.archived = deleted;
         return this;
     }
 
@@ -31,7 +31,7 @@ public class VariantDataGen extends AbstractDataGen<Variant> {
 
         final String innerId = id == null ? UUIDGenerator.generateUuid() : id;
         final String innerName = name == null ? "Variant_" + System.currentTimeMillis() : name;
-        return new Variant(innerId, innerName, deleted);
+        return new Variant(innerId, innerName, archived);
     }
 
     @Override

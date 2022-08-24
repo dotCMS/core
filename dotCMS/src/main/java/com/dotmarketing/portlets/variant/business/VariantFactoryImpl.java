@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.variant.business;
 
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.rest.validation.Preconditions;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -13,8 +12,8 @@ import java.util.Optional;
 
 public class VariantFactoryImpl implements VariantFactory{
 
-    private String VARIANT_INSERT_QUERY = "INSERT INTO variant (id, name, deleted) VALUES (?, ?, ?)";
-    private String VARIANT_UPDATE_QUERY = "UPDATE variant SET name = ?, deleted = ? WHERE id =?";
+    private String VARIANT_INSERT_QUERY = "INSERT INTO variant (id, name, archived) VALUES (?, ?, ?)";
+    private String VARIANT_UPDATE_QUERY = "UPDATE variant SET name = ?, archived = ? WHERE id =?";
     private String VARIANT_DELETE_QUERY = "DELETE from variant WHERE id =?";
     private String VARIANT_SELECT_QUERY = "SELECT * from variant WHERE id =?";
 
@@ -33,7 +32,7 @@ public class VariantFactoryImpl implements VariantFactory{
         new DotConnect().setSQL(VARIANT_INSERT_QUERY)
                 .addParam(identifier)
                 .addParam(variant.getName())
-                .addParam(variant.isDeleted())
+                .addParam(variant.isArchived())
                 .loadResult();
 
         return new Variant(identifier, variant.getName(), false);
@@ -50,7 +49,7 @@ public class VariantFactoryImpl implements VariantFactory{
     public void update(Variant variant) throws DotDataException {
         new DotConnect().setSQL(VARIANT_UPDATE_QUERY)
                 .addParam(variant.getName())
-                .addParam(variant.isDeleted())
+                .addParam(variant.isArchived())
                 .addParam(variant.getIdentifier())
                 .loadResult();
     }
@@ -58,9 +57,19 @@ public class VariantFactoryImpl implements VariantFactory{
     @Override
     @WrapInTransaction
     public void delete(final String id) throws DotDataException {
-        new DotConnect().setSQL(VARIANT_DELETE_QUERY)
-                .addParam(id)
-                .loadResult();
+
+        final Optional<Variant> variant = get(id);
+
+        if (variant.isPresent()) {
+
+            if (!variant.get().isArchived()) {
+                throw new IllegalStateException("The Variant must be archived to be able to delete it");
+            }
+
+            new DotConnect().setSQL(VARIANT_DELETE_QUERY)
+                    .addParam(id)
+                    .loadResult();
+        }
     }
 
     @Override
@@ -75,7 +84,7 @@ public class VariantFactoryImpl implements VariantFactory{
                     new Variant(
                         resultMap.get("id").toString(),
                         resultMap.get("name").toString(),
-                        ConversionUtils.toBooleanFromDb(resultMap.get("deleted"))
+                        ConversionUtils.toBooleanFromDb(resultMap.get("archived"))
                 )
             );
         } else {

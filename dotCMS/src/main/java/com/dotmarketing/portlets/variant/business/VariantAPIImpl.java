@@ -3,11 +3,9 @@ package com.dotmarketing.portlets.variant.business;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rest.validation.Preconditions;
 import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.variant.model.Variant;
-import com.dotmarketing.util.UUIDGenerator;
 import java.util.Optional;
 
 /**
@@ -33,7 +31,7 @@ public class VariantAPIImpl implements VariantAPI {
 
         Preconditions.checkNotNull(variant.getName(), "Variant name should not be null");
 
-        if (variant.isDeleted()) {
+        if (variant.isArchived()) {
             throw new IllegalArgumentException("Variant can not be created as archive");
         }
 

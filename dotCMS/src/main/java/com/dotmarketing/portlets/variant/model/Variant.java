@@ -20,12 +20,12 @@ package com.dotmarketing.portlets.variant.model;
 public class Variant {
     private String identifier;
     private String name;
-    private boolean deleted;
+    private boolean archived;
 
     public Variant(final String identifier, final String name, final boolean deleted) {
         this.identifier = identifier;
         this.name = name;
-        this.deleted = deleted;
+        this.archived = deleted;
     }
 
     public String getIdentifier() {
@@ -36,7 +36,7 @@ public class Variant {
         return name;
     }
 
-    public boolean isDeleted() {
-        return deleted;
+    public boolean isArchived() {
+        return archived;
     }
 }

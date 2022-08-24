@@ -46,7 +46,7 @@ public class VariantFactoryTest {
 
         assertEquals(variantSaved.getName(), variantFromDataBase.getName());
         assertEquals(variantSaved.getIdentifier(), variantFromDataBase.getIdentifier());
-        assertFalse(variantFromDataBase.isDeleted());
+        assertFalse(variantFromDataBase.isArchived());
     }
 
     /**
@@ -93,7 +93,7 @@ public class VariantFactoryTest {
 
         assertEquals(variantUpdated.getName(), variantFromDataBase.getName());
         assertEquals(variantUpdated.getIdentifier(), variantFromDataBase.getIdentifier());
-        assertFalse(variantFromDataBase.isDeleted());
+        assertFalse(variantFromDataBase.isArchived());
     }
 
     /**
@@ -111,7 +111,7 @@ public class VariantFactoryTest {
 
         assertNotNull(variantSaved);
         assertNotNull(variantSaved.getIdentifier());
-        assertFalse(variantSaved.isDeleted());
+        assertFalse(variantSaved.isArchived());
 
         final Variant variantUpdated = new Variant(variantSaved.getIdentifier(),
                 variantSaved.getName(), true);
@@ -122,7 +122,7 @@ public class VariantFactoryTest {
 
         assertEquals(variantUpdated.getName(), variantFromDataBase.getName());
         assertEquals(variantUpdated.getIdentifier(), variantFromDataBase.getIdentifier());
-        assertTrue(variantFromDataBase.isDeleted());
+        assertTrue(variantFromDataBase.isArchived());
     }
 
     /**
@@ -219,7 +219,7 @@ public class VariantFactoryTest {
      */
     @Test
     public void getArchived() throws DotDataException {
-        final Variant variant = new VariantDataGen().deleted(true).nextPersisted();
+        final Variant variant = new VariantDataGen().archived(true).nextPersisted();
 
         ArrayList results = getResults(variant);
         assertFalse(results.isEmpty());
@@ -228,7 +228,7 @@ public class VariantFactoryTest {
 
         assertTrue(variantFromDataBase.isPresent());
         assertEquals(variant.getIdentifier(), variantFromDataBase.get().getIdentifier());
-        assertTrue(variantFromDataBase.get().isDeleted());
+        assertTrue(variantFromDataBase.get().isArchived());
     }
 
     /**
@@ -260,6 +260,6 @@ public class VariantFactoryTest {
         assertEquals(1, results.size());
         final Map resultMap = (Map) results.get(0);
         return new Variant(resultMap.get("id").toString(), resultMap.get("name").toString(),
-                ConversionUtils.toBooleanFromDb(resultMap.get("deleted")));
+                ConversionUtils.toBooleanFromDb(resultMap.get("archived")));
     }
 }
