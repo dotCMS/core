@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
@@ -30,6 +29,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.contentet.pagination.PaginatedContentlets;
 import com.liferay.portal.model.User;
 import org.elasticsearch.action.search.SearchResponse;
 
@@ -959,7 +959,41 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         return c;
     }
 
-    @Override
+
+
+	public PaginatedContentlets findContentletsPaginatedByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		return findContentletsPaginatedByHost(parentHost, null, null, user, respectFrontendRoles);
+	}
+
+	@Override
+	public PaginatedContentlets findContentletsPaginatedByHost(
+			final Host parentHost,
+			final List<Integer> includingContentTypes,
+			final List<Integer> excludingContentTypes,
+			final User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException{
+		for (ContentletAPIPreHook pre : preHooks) {
+			boolean preResult = pre.findContentletsByHost(parentHost, includingContentTypes,
+					excludingContentTypes, user, respectFrontendRoles);
+			if (!preResult) {
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed "
+						+ pre.getClass().getName());
+			}
+		}
+
+		final PaginatedContentlets paginatedContentletsByHost = conAPI.findContentletsPaginatedByHost(
+				parentHost, includingContentTypes,
+				excludingContentTypes, user, respectFrontendRoles);
+
+		for (ContentletAPIPostHook post : postHooks) {
+			post.findContentletsByHost(parentHost, includingContentTypes,
+					excludingContentTypes, user, respectFrontendRoles);
+		}
+		return paginatedContentletsByHost;
+	}
+
+
+	@Override
 	public List<Contentlet> findContentletsByHostBaseType(Host parentHost,
 												  List<Integer> includingBaseTypes, User user,
 												  boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
