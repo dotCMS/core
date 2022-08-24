@@ -26,13 +26,13 @@ public class Task222208CreateVariantTableTest {
     private final Map<String, String> POSTGRES_EXPECTED = map(
             "id", "varchar",
             "name", "varchar",
-            "deleted", "bool"
+            "archived", "bool"
     );
 
     private final Map<String, String> MSSQL_EXPECTED = map(
             "id", "nvarchar",
             "name", "nvarchar",
-            "deleted", "tinyint"
+            "archived", "tinyint"
     );
 
 
