@@ -1,0 +1,19 @@
+:host {
+    display: flex;
+    flex-direction: row;
+    height: 50px;
+    align-items: center;
+    background-color: #fff;
+    border-bottom: 1px #b1aeb6;
+    color: #7e7b86;
+    column-gap: 15px;
+    a {
+        padding-left: 15px;
+        align-items: center;
+        display: flex;
+        height: 100%;
+        color: #52505c;
+        cursor: pointer;
+        border-right: 1px solid #b1aeb6;
+    }
+}
