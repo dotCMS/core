@@ -6,6 +6,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.datagen.VariantDataGen;
+import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -211,6 +212,27 @@ public class VariantFactoryTest {
 
     /**
      * Method to test: {@link VariantFactory#get(String)}
+     * When: Try to get  archived {@link Variant} by id
+     * Should: get it
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void getArchived() throws DotDataException {
+        final Variant variant = new VariantDataGen().deleted(true).nextPersisted();
+
+        ArrayList results = getResults(variant);
+        assertFalse(results.isEmpty());
+
+        final Optional<Variant> variantFromDataBase = FactoryLocator.getVariantFactory().get(variant.getIdentifier());
+
+        assertTrue(variantFromDataBase.isPresent());
+        assertEquals(variant.getIdentifier(), variantFromDataBase.get().getIdentifier());
+        assertTrue(variantFromDataBase.get().isDeleted());
+    }
+
+    /**
+     * Method to test: {@link VariantFactory#get(String)}
      * When: Try to get  {@link Variant} by id that not exists
      * Should: return a {@link Optional#empty()}
      *
@@ -238,6 +260,6 @@ public class VariantFactoryTest {
         assertEquals(1, results.size());
         final Map resultMap = (Map) results.get(0);
         return new Variant(resultMap.get("id").toString(), resultMap.get("name").toString(),
-                resultMap.get("deleted").equals("t"));
+                ConversionUtils.toBooleanFromDb(resultMap.get("deleted")));
     }
 }

@@ -37,7 +37,7 @@ public class VariantDataGen extends AbstractDataGen<Variant> {
     @Override
     public Variant persist(final Variant variant) {
         try {
-            return FactoryLocator.getVariantFactory().save(variant);
+            return  FactoryLocator.getVariantFactory().save(variant);
         } catch (DotDataException e) {
             throw new RuntimeException(e);
         }

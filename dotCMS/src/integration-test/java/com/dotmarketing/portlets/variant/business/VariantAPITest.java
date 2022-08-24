@@ -6,6 +6,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.datagen.VariantDataGen;
+import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -256,6 +257,6 @@ public class VariantAPITest {
         assertEquals(1, results.size());
         final Map resultMap = (Map) results.get(0);
         return new Variant(resultMap.get("id").toString(), resultMap.get("name").toString(),
-                resultMap.get("deleted").equals("t"));
+                ConversionUtils.toBooleanFromDb(resultMap.get("deleted")));
     }
 }

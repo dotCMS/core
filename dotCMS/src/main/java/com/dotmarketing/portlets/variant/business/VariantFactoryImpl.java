@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.variant.business;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rest.validation.Preconditions;
+import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.variant.model.Variant;
@@ -12,7 +13,7 @@ import java.util.Optional;
 
 public class VariantFactoryImpl implements VariantFactory{
 
-    private String VARIANT_INSERT_QUERY = "INSERT INTO variant (id, name) VALUES (?, ?)";
+    private String VARIANT_INSERT_QUERY = "INSERT INTO variant (id, name, deleted) VALUES (?, ?, ?)";
     private String VARIANT_UPDATE_QUERY = "UPDATE variant SET name = ?, deleted = ? WHERE id =?";
     private String VARIANT_DELETE_QUERY = "DELETE from variant WHERE id =?";
     private String VARIANT_SELECT_QUERY = "SELECT * from variant WHERE id =?";
@@ -32,6 +33,7 @@ public class VariantFactoryImpl implements VariantFactory{
         new DotConnect().setSQL(VARIANT_INSERT_QUERY)
                 .addParam(identifier)
                 .addParam(variant.getName())
+                .addParam(variant.isDeleted())
                 .loadResult();
 
         return new Variant(identifier, variant.getName(), false);
@@ -73,7 +75,7 @@ public class VariantFactoryImpl implements VariantFactory{
                     new Variant(
                         resultMap.get("id").toString(),
                         resultMap.get("name").toString(),
-                        resultMap.get("deleted").equals("t")
+                        ConversionUtils.toBooleanFromDb(resultMap.get("deleted"))
                 )
             );
         } else {
