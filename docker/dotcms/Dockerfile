@@ -32,7 +32,7 @@ RUN chmod -R 666 /srv && find /srv/ -type d -exec chmod a+x {} \;
 # Stage 2:  Construct our container using the minimal-java image
 #           and copying the prebuilt dotcms
 # ----------------------------------------------
-FROM dotcms/java-base:11.0.16.9.1-amzn as container-base
+FROM dotcms/java-base:11.0.16-amzn as container-base
 
 WORKDIR /srv
 
