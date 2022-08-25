@@ -2,6 +2,7 @@ package com.dotcms.rest;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -16,6 +17,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
@@ -33,7 +35,9 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
+import io.vavr.control.Try;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -196,8 +200,11 @@ public class MapToContentletPopulator  {
                     // it can be hostId, folderId, hostname, hostname:/folder/path
                     this.processHostOrFolderField(contentlet, type, value);
                 } else if (field.getFieldType().equals(FieldType.CATEGORY.toString())) {
-
-                    contentlet.setStringProperty(field.getVelocityVarName(),  value != null ? value.toString() : null);
+                   if(value instanceof String){
+                       contentlet.setStringProperty(field.getVelocityVarName(), value.toString());
+                   } else {
+                       contentlet.setProperty(field.getVelocityVarName(), value);
+                   }
                 } else if (
                          (field.getFieldType().equals(FieldType.FILE.toString()) || field.getFieldType().equals(FieldType.IMAGE.toString()))
                                  && (value != null && value.toString().startsWith("//"))
@@ -332,44 +339,97 @@ public class MapToContentletPopulator  {
         DotPreconditions.checkNotNull(contentlet, IllegalArgumentException.class, "Invalid Contentlet");
         DotPreconditions.checkNotNull(contentlet.getContentType(), IllegalArgumentException.class, "Invalid Content Type");
 
-        final List<Category> categories = new ArrayList<>();
-        final List<Field> fields = new LegacyFieldTransformer(
-                APILocator.getContentTypeAPI(APILocator.systemUser()).
-                        find(contentlet.getContentType().inode()).fields()).asOldFieldList();
+        return categories(contentlet, user, respectFrontendRoles);
+    }
 
-        for (final Field field : fields) {
-            if (field.getFieldType().equals(FieldType.CATEGORY.toString())) {
+    /**
+     * This basically works at the contentlet level to extract the respective field value that represents the category
+     * @param contentlet
+     * @param user
+     * @param respectFrontendRoles
+     * @return
+     */
+    List<Category> categories(final Contentlet contentlet, final User user, final boolean respectFrontendRoles) {
+        List<Category> categories = new ArrayList<>();
+        final List<com.dotcms.contenttype.model.field.Field> fields = contentlet.getContentType()
+                .fields(CategoryField.class);
+        for (final com.dotcms.contenttype.model.field.Field field: fields) {
+            final Map<String, Object> map = contentlet.getMap();
+            final Object object = map.get(field.variable());
+            if(object instanceof Collection){
+                final Collection<?> list = (Collection<?>) object;
+                final String joinedCategories = list.stream().map(Object::toString).collect(
+                        Collectors.joining(","));
+                buildUpCategories(categories, joinedCategories, user, respectFrontendRoles);
+                continue;
+            }
+            if(object instanceof String){
+                buildUpCategories(categories, (String)object, user, respectFrontendRoles);
+                continue;
+            }
+            if (object == null && map.containsKey(field.variable()) ){
+                //something was set to null on purpose
+                //The requirement says that null must not even be considered
+                //We should only remove a category if an empty array is passed
+                map.remove(field.variable());
+                continue;
+            }
+            if(object == null){
+                //the value wasn't set. Just ignore it.
+                continue;
+            }
 
-                final String catValue = contentlet.getStringProperty(field.getVelocityVarName());
-                if (UtilMethods.isSet(catValue)) {
-                    for (final String categoryValue : catValue.split("\\s*,\\s*")) {
-                        // take it as catId
-                        Category category = APILocator.getCategoryAPI()
-                                .find(categoryValue, user, respectFrontendRoles);
-                        if (category != null && InodeUtils.isSet(category.getCategoryId())) {
-                            categories.add(category);
-                        } else {
-                            // try it as catKey
-                            category = APILocator.getCategoryAPI()
-                                    .findByKey(categoryValue, user, respectFrontendRoles);
-                            if (category != null && InodeUtils.isSet(category.getCategoryId())) {
-                                categories.add(category);
-                            } else {
-                                // try it as variable
-                                category = APILocator.getCategoryAPI()
-                                        .findByVariable(categoryValue, user, respectFrontendRoles);
-                                if (category != null && InodeUtils.isSet(category.getCategoryId())) {
-                                    categories.add(category);
-                                }
-                            }
-                        }
+            throw new IllegalArgumentException(String.format(
+                    "Attempt to set unrecognized object [%s] as category. This field only accepts arrays like ['cat-key','cat-var','cat-inode'] or a string like 'cat-key','cat-var','cat-inode' ",
+                    object));
+        }
+        return categories;
+    }
 
+    /**
+     * given a List and a string representation of a category
+     * This will try to find different criterion to get the respective category
+     * @param categories
+     * @param stringValue
+     * @param user
+     * @param respectFrontendRoles
+     */
+    private void buildUpCategories(final List<Category> categories, final String stringValue,
+            final User user, boolean respectFrontendRoles) {
+        if (UtilMethods.isSet(stringValue)) {
+            final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+            for (final String categoryValue : stringValue.split("\\s*,\\s*")) {
+
+                    // try it as catId
+                    Category category = Try.of(()->categoryAPI.find(categoryValue, user, respectFrontendRoles)).getOrNull();
+                    if (category != null && InodeUtils.isSet(category.getCategoryId())) {
+                        categories.add(category);
+                        Logger.debug(MapToContentletPopulator.class, String.format(" value [%s] resolved as a valid Category-Inode.", categoryValue));
+                        continue;
                     }
-                }
+
+                    // try it as catKey
+                    category = Try.of(()->categoryAPI.findByKey(categoryValue, user, respectFrontendRoles)).getOrNull();
+                    if (category != null && InodeUtils.isSet(category.getCategoryId())) {
+                        categories.add(category);
+                        Logger.debug(MapToContentletPopulator.class, String.format(" value [%s] resolved as a valid Category-Key.", categoryValue));
+                        continue;
+                    }
+
+                    // try it as variable
+                    category = Try.of(()->categoryAPI.findByVariable(categoryValue, user, respectFrontendRoles)).getOrNull();
+                    if (category != null && InodeUtils.isSet(category.getCategoryId())) {
+                        categories.add(category);
+                        Logger.debug(MapToContentletPopulator.class, String.format(" value [%s] resolved as a valid Category-Variable.", categoryValue));
+                        continue;
+                    }
+
+                throw new IllegalArgumentException(String.format(
+                        "I wasn't able to resolve the value [%s] as a valid cat-id,cat-key, nor as a cat-var.",
+                        categoryValue));
+
             }
         }
-
-        return categories;
     }
 
     /**
