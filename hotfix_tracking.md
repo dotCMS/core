@@ -155,7 +155,6 @@ This maintenance release includes the following code fixes:
 83. https://github.com/dotCMS/core/issues/19569 : Rely on Tomcat's RemoteIpValve for dns resolution - was: External service interaction (DNS) #19569
 84. https://github.com/dotCMS/core/issues/21619 : ContentTypeFactoryImpl Getting Config values cause unneeded load #21619
 85. https://github.com/dotCMS/core/issues/21624 : [Push Publishing] : Pushing single archived content un-publishes all its versions in receiving instance #21624
-86. https://github.com/dotCMS/core/issues/21849 : Upgrade tomcat to latest minor version #21849
 87. https://github.com/dotCMS/core/issues/22124 : When logged in to front end, automatically redirect to back-end edit mode #22124
 88. https://github.com/dotCMS/core/issues/22204 : We are not notifying the UI about the bad request error changing password #22204
 89. https://github.com/dotCMS/core/issues/22149 : The push publish button in the expansion menu on the users portlet doesn't just push the selected user, it pushes all users #22149
