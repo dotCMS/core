@@ -68,17 +68,13 @@ public class VariantAPIImpl implements VariantAPI {
     @Override
     @WrapInTransaction
     public void delete(String id) throws DotDataException {
-        final Optional<Variant> variant = get(id);
-
-        if (variant.isPresent()) {
-
-            if (!variant.get().isArchived()) {
-                throw new IllegalStateException("The Variant must be archived to be able to delete it");
-            }
-
-            Logger.debug(this, ()-> "Deleting Variant: " + variant);
-            variantFactory.delete(id);
+        final Variant variant = get(id).orElseThrow(() -> new DoesNotExistException("The variant must exists"));
+        if (!variant.isArchived()) {
+            throw new IllegalStateException("The Variant must be archived to be able to delete it");
         }
+
+        Logger.debug(this, ()-> "Deleting Variant: " + variant);
+        variantFactory.delete(id);
     }
 
     /**

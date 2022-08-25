@@ -98,8 +98,8 @@ public class VariantAPITest {
      */
     @Test(expected = DoesNotExistException.class)
     public void updateNotExists() throws DotDataException {
-        final Variant variantToUpdated = new Variant("Not_Exists",
-                "Name", false);
+        final Variant variantToUpdated = new VariantDataGen()
+                .id("Not_Exists").next();
 
         APILocator.getVariantAPI().update(variantToUpdated);
     }
@@ -209,6 +209,20 @@ public class VariantAPITest {
 
         results = getResults(variant);
         assertTrue(results.isEmpty());
+    }
+
+    /**
+     * Method to test: {@link VariantFactory#delete(String)}
+     * When: Try to delete a not exists {@link Variant} object
+     * Should: throw a {@link DoesNotExistException}
+     *
+     * @throws DotDataException
+     */
+    @Test(expected = DoesNotExistException.class)
+    public void deleteNotExists() throws DotDataException {
+        final Variant variant = new VariantDataGen().id("Not Exists").archived(true).next();
+
+        APILocator.getVariantAPI().delete(variant.getIdentifier());
     }
 
     /**
