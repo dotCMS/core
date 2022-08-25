@@ -791,6 +791,7 @@ public class BrowserAjax {
     			fileMap.put("mimeType", mimeType);
     			fileMap.put("path", fileAsset.getPath());
     			fileMap.put("type", "contentlet");
+				fileMap.put("title", cont.getTitle());
     			return fileMap;
 			}
 			else if(cont.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE) {
@@ -810,10 +811,9 @@ public class BrowserAjax {
 					fileMap.put("mimeType", mimeType);
 					fileMap.put("path",          "/dA/" + cont.getIdentifier() + StringPool.SLASH);
 					fileMap.put("type", "dotasset");
-					fileMap.put("type", "dotasset");
 					fileMap.put("name",     fileName);
 					fileMap.put("fileName", fileName);
-
+					fileMap.put("title", cont.getTitle());
 					return fileMap;
 				}
 			}
