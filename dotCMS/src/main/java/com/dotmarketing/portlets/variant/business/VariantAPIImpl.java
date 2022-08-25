@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.variant.business;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rest.validation.Preconditions;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.variant.model.Variant;
@@ -58,7 +59,16 @@ public class VariantAPIImpl implements VariantAPI {
      */
     @Override
     public void delete(String id) throws DotDataException {
-        variantFactory.delete(id);
+        final Optional<Variant> variant = get(id);
+
+        if (variant.isPresent()) {
+
+            if (!variant.get().isArchived()) {
+                throw new IllegalStateException("The Variant must be archived to be able to delete it");
+            }
+
+            variantFactory.delete(id);
+        }
     }
 
     /**

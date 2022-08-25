@@ -57,19 +57,9 @@ public class VariantFactoryImpl implements VariantFactory{
     @Override
     @WrapInTransaction
     public void delete(final String id) throws DotDataException {
-
-        final Optional<Variant> variant = get(id);
-
-        if (variant.isPresent()) {
-
-            if (!variant.get().isArchived()) {
-                throw new IllegalStateException("The Variant must be archived to be able to delete it");
-            }
-
-            new DotConnect().setSQL(VARIANT_DELETE_QUERY)
-                    .addParam(id)
-                    .loadResult();
-        }
+        new DotConnect().setSQL(VARIANT_DELETE_QUERY)
+                .addParam(id)
+                .loadResult();
     }
 
     @Override
