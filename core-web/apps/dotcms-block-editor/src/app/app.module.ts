@@ -12,7 +12,7 @@ import { DotBlockEditorComponent } from './dot-block-editor/dot-block-editor.com
 
 import { createCustomElement } from '@angular/elements';
 import { AppComponent } from './app.component';
-import { NgxTiptapModule } from '@dotcms/block-editor';
+import { BlockEditorModule } from '@dotcms/block-editor';
 import { HttpClientModule } from '@angular/common/http';
 
 @NgModule({
@@ -22,7 +22,7 @@ import { HttpClientModule } from '@angular/common/http';
         BrowserAnimationsModule,
         CommonModule,
         FormsModule,
-        NgxTiptapModule,
+        BlockEditorModule,
         OrderListModule,
         ListboxModule,
         HttpClientModule
