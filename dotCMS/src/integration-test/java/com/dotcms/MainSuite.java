@@ -55,7 +55,6 @@ import com.dotcms.publisher.receiver.BundlePublisherTest;
 import com.dotcms.publisher.util.DependencyManagerTest;
 import com.dotcms.publisher.util.DependencyModDateUtilTest;
 import com.dotcms.publishing.BundlerUtilTest;
-import com.dotcms.publishing.BundlerUtilTest;
 import com.dotcms.publishing.PublisherFilterImplTest;
 import com.dotcms.publishing.PushPublishFiltersInitializerTest;
 import com.dotcms.publishing.job.SiteSearchJobImplTest;
@@ -172,6 +171,7 @@ import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
 import com.dotmarketing.util.ResourceCollectorUtilTest;
 import com.dotmarketing.util.TestConfig;
+import com.dotmarketing.util.contentlet.pagination.PaginatedContentletsIntegrationTest;
 import com.liferay.portal.language.LanguageUtilTest;
 import org.apache.velocity.tools.view.tools.CookieToolTest;
 import org.junit.runner.RunWith;
@@ -563,7 +563,8 @@ import org.junit.runners.Suite.SuiteClasses;
         AWSS3PublisherTest.class,
         ContentTypeInitializerTest.class,
         VariantFactoryTest.class,
-        VariantAPITest.class
+        VariantAPITest.class,
+        PaginatedContentletsIntegrationTest.class
 })
 public class MainSuite {
 
