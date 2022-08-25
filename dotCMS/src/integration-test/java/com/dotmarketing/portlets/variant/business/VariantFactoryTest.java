@@ -10,8 +10,10 @@ import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.variant.model.Variant;
+import com.microsoft.sqlserver.jdbc.SQLServerException;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
@@ -64,7 +66,13 @@ public class VariantFactoryTest {
             FactoryLocator.getVariantFactory().save(variant);
             throw new AssertionError("DotDataException Expected");
         }catch (DotDataException e) {
-            assertEquals(PSQLException.class, e.getCause().getClass());
+            if (DbConnectionFactory.isPostgres()) {
+                assertEquals(PSQLException.class, e.getCause().getClass());
+            } else if (DbConnectionFactory.isMsSql()){
+                assertEquals(SQLServerException.class, e.getCause().getClass());
+            } else {
+                throw new AssertionError("Database not expected");
+            }
         }
     }
 
@@ -148,7 +156,13 @@ public class VariantFactoryTest {
             variantFactory.update(variantUpdated);
             throw new AssertionError("DotDataException Expected");
         }catch (DotDataException e) {
-          assertEquals(PSQLException.class, e.getCause().getClass());
+            if (DbConnectionFactory.isPostgres()) {
+                assertEquals(PSQLException.class, e.getCause().getClass());
+            } else if (DbConnectionFactory.isMsSql()){
+                assertEquals(SQLServerException.class, e.getCause().getClass());
+            } else {
+                throw new AssertionError("Database not expected");
+            }
         }
     }
 
