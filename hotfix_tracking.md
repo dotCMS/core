@@ -165,3 +165,4 @@ This maintenance release includes the following code fixes:
 93. https://github.com/dotCMS/core/issues/22696 : Can't save changes in Work Flow if user with special characters or new user is added. #22696
 94. https://github.com/dotCMS/core/issues/20491 : Many-to-many relationships between a single content type removes relationships on save/publish #20491
 95. https://github.com/dotCMS/core/issues/21482 : [REST] : Updating one Binary Field is removing the value from the other Binary Field #21482
+96. https://github.com/dotCMS/core/issues/22852 : Update java version of java-base #22852
