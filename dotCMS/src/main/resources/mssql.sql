@@ -2688,5 +2688,5 @@ CREATE TABLE shedlock(name VARCHAR(64) NOT NULL, lock_until datetime NOT NULL,
 create table variant (
      id NVARCHAR(255) primary key,
      name NVARCHAR(255) not null,
-     archived tinyint not null,
+     archived tinyint not null default 0,
 );
