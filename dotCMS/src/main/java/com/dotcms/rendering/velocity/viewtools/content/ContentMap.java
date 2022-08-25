@@ -3,6 +3,7 @@
  */
 package com.dotcms.rendering.velocity.viewtools.content;
 
+import com.dotcms.contenttype.business.DotAssetAPI;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
@@ -210,15 +211,35 @@ public class ContentMap {
 					return null;
 				}
 
-				String inode =  EDIT_OR_PREVIEW_MODE ? cvi.get().getWorkingInode() : cvi.get().getLiveInode();
-				Contentlet fileAsset  =  APILocator.getContentletAPI().find(inode, user!=null?user:APILocator.getUserAPI().getAnonymousUser(), true);
-					
-				if(fileAsset != null && UtilMethods.isSet(fileAsset.getInode())){
-	                FileAssetMap fam = FileAssetMap.of(fileAsset);
+				
+				
+				
+				
+				
+                String inode = EDIT_OR_PREVIEW_MODE ? cvi.get().getWorkingInode() : cvi.get().getLiveInode();
+                Contentlet asset = APILocator.getContentletAPI().find(inode,
+                                user != null ? user : APILocator.getUserAPI().getAnonymousUser(), true);
+
+                if (asset == null || UtilMethods.isEmpty(asset.getInode())) {
+                    return null;
+                }
+
+                if (asset.isFileAsset()) {
+                    FileAssetMap fam = FileAssetMap.of(asset);
                     // Store file asset map into fieldValueMap
                     addFieldValue(f, fam);
                     return fam;
-				  }
+                }
+                if (asset.isDotAsset()) {
+                    BinaryMap binmap = new BinaryMap(asset, asset.getContentType().fieldMap().get("asset"));
+                    // Store file asset map into fieldValueMap
+                    addFieldValue(f, binmap);
+                    return binmap;
+                }
+                
+				
+				
+				
 					
 				
 			}else if(f != null && f.getFieldType().equals(Field.FieldType.BINARY.toString())){
