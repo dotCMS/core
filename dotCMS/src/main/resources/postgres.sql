@@ -561,6 +561,7 @@ create table contentlet_version_info (
    locked_on timestamptz,
    version_ts timestamptz not null,
    variant_id varchar(255),
+   variant_id varchar(255) default '1',
    primary key (identifier, lang)
 );
 create table fixes_audit (
@@ -2489,5 +2490,3 @@ create table variant (
      name varchar(255) not null,
      archived boolean NOT NULL default false
 );
-
-alter table contentlet_version_info add constraint fk_variant_id foreign key (variant_id) references variant(id);

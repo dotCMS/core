@@ -5,6 +5,9 @@ import com.dotmarketing.portlets.variant.model.Variant;
 import java.util.Optional;
 
 public interface VariantAPI {
+
+    Variant DEFAULT_VARIANT = new Variant("1", "DEFAULT", false);
+
     /**
      * Save a new {@link Variant}.
      * if the the {@link Variant}'s identifier value is not null then it will be ignored.
