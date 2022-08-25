@@ -215,7 +215,7 @@ insert into Company (companyId, portalURL, homeURL, mx, name, shortName, type_, 
 update Company set street = '1220 Brea Canyon Rd.', city = 'Diamond Bar', state = 'CA', zip = '91789' where companyId = 'liferay.com';
 
 insert into PollsDisplay (layoutId, userId, portletId, questionId) values ('1.1', 'group.1', '59', '1');
-    insert into PollsChoice (choiceId, questionId, description) values ('a', '1', 'Chocolate');
+insert into PollsChoice (choiceId, questionId, description) values ('a', '1', 'Chocolate');
 insert into PollsChoice (choiceId, questionId, description) values ('b', '1', 'Strawberry');
 insert into PollsChoice (choiceId, questionId, description) values ('c', '1', 'Vanilla');
 insert into PollsQuestion (questionId, portletId, groupId, companyId, userId, userName, createDate, modifiedDate, title, description) values ('1', '25', '-1', 'liferay.com', 'liferay.com.1', 'John Wayne', current_timestamp, current_timestamp, 'What is your favorite ice cream flavor?', 'What is your favorite ice cream flavor?');
@@ -560,6 +560,7 @@ create table contentlet_version_info (
    locked_by varchar(100),
    locked_on timestamptz,
    version_ts timestamptz not null,
+   variant_id varchar(255),
    primary key (identifier, lang)
 );
 create table fixes_audit (
@@ -2489,3 +2490,4 @@ create table variant (
      archived boolean NOT NULL default false
 );
 
+alter table contentlet_version_info add constraint fk_variant_id foreign key (variant_id) references variant(id);
