@@ -1,6 +1,6 @@
 {
     "name": "dotcms-ui",
-    "version": "22.9.0-rc.9",
+    "version": "22.9.0-rc.10",
     "license": "MIT",
     "engines": {
         "node": ">=16.13.2"
