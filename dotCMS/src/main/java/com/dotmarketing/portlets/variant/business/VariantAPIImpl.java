@@ -29,7 +29,7 @@ public class VariantAPIImpl implements VariantAPI {
      */
     @Override
     @WrapInTransaction
-    public Variant save(final Variant variant) throws DotDataException {
+    public Variant save(final Variant variant) {
 
         Preconditions.checkNotNull(variant.getName(), "Variant name should not be null");
 
@@ -39,7 +39,11 @@ public class VariantAPIImpl implements VariantAPI {
 
         Logger.debug(this, ()-> "Saving Variant: " + variant);
 
-        return variantFactory.save(variant);
+        try {
+            return variantFactory.save(variant);
+        } catch (DotDataException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -50,15 +54,19 @@ public class VariantAPIImpl implements VariantAPI {
      */
     @Override
     @WrapInTransaction
-    public void update(final Variant variant) throws DotDataException {
+    public void update(final Variant variant) {
         Preconditions.checkNotNull(variant.getName(), "Variant name should not be null");
         Preconditions.checkNotNull(variant.getIdentifier(), "Variant ID should not be null");
 
-        get(variant.getIdentifier())
-                .orElseThrow(() -> new DoesNotExistException("The variant does not exists"));
+        try {
+            get(variant.getIdentifier())
+                    .orElseThrow(() -> new DoesNotExistException("The variant does not exists"));
 
-        Logger.debug(this, ()-> "Updating Variant: " + variant);
-        variantFactory.update(variant);
+            Logger.debug(this, () -> "Updating Variant: " + variant);
+            variantFactory.update(variant);
+        } catch (DotDataException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -67,14 +75,19 @@ public class VariantAPIImpl implements VariantAPI {
      */
     @Override
     @WrapInTransaction
-    public void delete(String id) throws DotDataException {
+    public void delete(String id) {
         final Variant variant = get(id).orElseThrow(() -> new DoesNotExistException("The variant must exists"));
         if (!variant.isArchived()) {
             throw new IllegalStateException("The Variant must be archived to be able to delete it");
         }
 
         Logger.debug(this, ()-> "Deleting Variant: " + variant);
-        variantFactory.delete(id);
+
+        try {
+            variantFactory.delete(id);
+        } catch (DotDataException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -83,12 +96,13 @@ public class VariantAPIImpl implements VariantAPI {
      */
     @Override
     @WrapInTransaction
-    public void archive(final String id) throws DotDataException {
+    public void archive(final String id) {
         final Variant variant = get(id)
                 .orElseThrow(() -> new DoesNotExistException("The Variant does not exists"));
 
-        final Variant variantArchived = new Variant(variant.getIdentifier(), variant.getName(), true);
-        Logger.debug(this, ()-> "Archiving Variant: " + variant);
+        final Variant variantArchived = new Variant(variant.getIdentifier(), variant.getName(),
+                true);
+        Logger.debug(this, () -> "Archiving Variant: " + variant);
         update(variantArchived);
     }
 
@@ -99,9 +113,14 @@ public class VariantAPIImpl implements VariantAPI {
      * @return
      */
     @Override
-    public Optional<Variant> get(final String identifier) throws DotDataException {
+    public Optional<Variant> get(final String identifier)  {
         Preconditions.checkNotNull(identifier, "Variant ID should not be null");
         Logger.debug(this, ()-> "Getting Variant: " + identifier);
-        return variantFactory.get(identifier);
+
+        try {
+            return variantFactory.get(identifier);
+        } catch (DotDataException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
