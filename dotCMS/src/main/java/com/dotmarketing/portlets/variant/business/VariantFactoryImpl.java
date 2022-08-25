@@ -25,7 +25,6 @@ public class VariantFactoryImpl implements VariantFactory{
      * @throws DotDataException
      */
     @Override
-    @WrapInTransaction
     public Variant save(final Variant variant) throws DotDataException {
         final String identifier = UUIDGenerator.generateUuid();
 
@@ -45,7 +44,6 @@ public class VariantFactoryImpl implements VariantFactory{
      * @throws DotDataException
      */
     @Override
-    @WrapInTransaction
     public void update(Variant variant) throws DotDataException {
         new DotConnect().setSQL(VARIANT_UPDATE_QUERY)
                 .addParam(variant.getName())
@@ -55,7 +53,6 @@ public class VariantFactoryImpl implements VariantFactory{
     }
 
     @Override
-    @WrapInTransaction
     public void delete(final String id) throws DotDataException {
         new DotConnect().setSQL(VARIANT_DELETE_QUERY)
                 .addParam(id)

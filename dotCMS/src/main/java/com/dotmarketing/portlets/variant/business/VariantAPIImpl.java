@@ -7,6 +7,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.variant.model.Variant;
+import com.dotmarketing.util.Logger;
 import java.util.Optional;
 
 /**
@@ -36,6 +37,8 @@ public class VariantAPIImpl implements VariantAPI {
             throw new IllegalArgumentException("Variant can not be created as archive");
         }
 
+        Logger.debug(this, ()-> "Saving Variant: " + variant);
+
         return variantFactory.save(variant);
     }
 
@@ -46,10 +49,15 @@ public class VariantAPIImpl implements VariantAPI {
      * @throws DotDataException
      */
     @Override
+    @WrapInTransaction
     public void update(final Variant variant) throws DotDataException {
         Preconditions.checkNotNull(variant.getName(), "Variant name should not be null");
         Preconditions.checkNotNull(variant.getIdentifier(), "Variant ID should not be null");
 
+        get(variant.getIdentifier())
+                .orElseThrow(() -> new DoesNotExistException("The variant does not exists"));
+
+        Logger.debug(this, ()-> "Updating Variant: " + variant);
         variantFactory.update(variant);
     }
 
@@ -58,6 +66,7 @@ public class VariantAPIImpl implements VariantAPI {
      * @param id Variant's id to be deleted
      */
     @Override
+    @WrapInTransaction
     public void delete(String id) throws DotDataException {
         final Optional<Variant> variant = get(id);
 
@@ -67,6 +76,7 @@ public class VariantAPIImpl implements VariantAPI {
                 throw new IllegalStateException("The Variant must be archived to be able to delete it");
             }
 
+            Logger.debug(this, ()-> "Deleting Variant: " + variant);
             variantFactory.delete(id);
         }
     }
@@ -76,12 +86,13 @@ public class VariantAPIImpl implements VariantAPI {
      * @param id Variant's id to be archive
      */
     @Override
+    @WrapInTransaction
     public void archive(final String id) throws DotDataException {
         final Variant variant = get(id)
                 .orElseThrow(() -> new DoesNotExistException("The Variant does not exists"));
 
         final Variant variantArchived = new Variant(variant.getIdentifier(), variant.getName(), true);
-
+        Logger.debug(this, ()-> "Archiving Variant: " + variant);
         update(variantArchived);
     }
 
@@ -94,6 +105,7 @@ public class VariantAPIImpl implements VariantAPI {
     @Override
     public Optional<Variant> get(final String identifier) throws DotDataException {
         Preconditions.checkNotNull(identifier, "Variant ID should not be null");
+        Logger.debug(this, ()-> "Getting Variant: " + identifier);
         return variantFactory.get(identifier);
     }
 }

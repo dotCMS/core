@@ -90,6 +90,21 @@ public class VariantAPITest {
     }
 
     /**
+     * Method to test: {@link VariantFactory#update(Variant)}
+     * When: Try to update a {@link Variant} object that not exists
+     * Should: thorw a {@link DoesNotExistException}
+     *
+     * @throws DotDataException
+     */
+    @Test(expected = DoesNotExistException.class)
+    public void updateNotExists() throws DotDataException {
+        final Variant variantToUpdated = new Variant("Not_Exists",
+                "Name", false);
+
+        APILocator.getVariantAPI().update(variantToUpdated);
+    }
+
+    /**
      * Method to test: {@link VariantFactory#save(Variant)}
      * When: Try to update a {@link Variant} object without name
      * Should: throw {@link NullPointerException}

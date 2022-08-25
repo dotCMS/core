@@ -39,4 +39,13 @@ public class Variant {
     public boolean isArchived() {
         return archived;
     }
+
+    @Override
+    public String toString() {
+        return "Variant{" +
+                "identifier='" + identifier + '\'' +
+                ", name='" + name + '\'' +
+                ", archived=" + archived +
+                '}';
+    }
 }
