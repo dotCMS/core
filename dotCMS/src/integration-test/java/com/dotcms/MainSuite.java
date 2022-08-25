@@ -566,8 +566,6 @@ import org.junit.runners.Suite.SuiteClasses;
         VariantFactoryTest.class,
         VariantAPITest.class,
         PaginatedContentletsIntegrationTest.class,
-        VariantFactoryTest.class,
-        VariantAPITest.class,
         Task222408CreateDefaultVariantTest.class
 })
 public class MainSuite {
