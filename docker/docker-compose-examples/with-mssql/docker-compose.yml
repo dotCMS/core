@@ -34,7 +34,7 @@ services:
         "DB_DRIVER": 'com.microsoft.sqlserver.jdbc.SQLServerDriver'
         "ES_ADMIN_PASSWORD": 'admin'
         "DOT_INITIAL_ADMIN_PASSWORD": 'admin'
-        #"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20220504/starter-20220504.zip'
+        #"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20220713/starter-20220713.zip'
     depends_on:
       - elasticsearch
       - db-dev
