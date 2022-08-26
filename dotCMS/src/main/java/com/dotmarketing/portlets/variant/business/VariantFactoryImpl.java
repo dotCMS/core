@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.variant.business;
 
-import com.dotcms.business.WrapInTransaction;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;

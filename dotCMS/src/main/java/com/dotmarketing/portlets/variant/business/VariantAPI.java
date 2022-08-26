@@ -13,6 +13,7 @@ public interface VariantAPI {
      * @param variant
      *
      * @throws NullPointerException if the {@link Variant}'s name is null
+     * @throws IllegalArgumentException if the {@link Variant#isArchived()} is true
      */
     Variant save(final Variant variant);
 

@@ -57,9 +57,22 @@ public class VariantAPITest {
      *
      * @throws DotDataException
      */
-    @Test(expected = NullPointerException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void saveWithoutName() throws DotDataException {
         final Variant variant = new Variant("1", null, false);
+        APILocator.getVariantAPI().save(variant);
+    }
+
+    /**
+     * Method to test: {@link VariantFactory#save(Variant)}
+     * When: Try to save a archived {@link Variant} object without name
+     * Should: throw {@link NullPointerException}
+     *
+     * @throws DotDataException
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void saveArchive() throws DotDataException {
+        final Variant variant = new VariantDataGen().archived(true).next();
         APILocator.getVariantAPI().save(variant);
     }
 
@@ -111,7 +124,7 @@ public class VariantAPITest {
      *
      * @throws DotDataException
      */
-    @Test(expected = NullPointerException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void updateWithoutName() throws DotDataException {
         final Variant variant = new Variant("1", null, false);
         APILocator.getVariantAPI().update(variant);
@@ -124,7 +137,7 @@ public class VariantAPITest {
      *
      * @throws DotDataException
      */
-    @Test(expected = NullPointerException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void updateWithoutID() throws DotDataException {
         final Variant variant = new Variant(null, "NAME", false);
         APILocator.getVariantAPI().update(variant);

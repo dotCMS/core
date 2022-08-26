@@ -2,8 +2,8 @@ package com.dotmarketing.portlets.variant.business;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rest.validation.Preconditions;
+import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.variant.model.Variant;
@@ -31,11 +31,9 @@ public class VariantAPIImpl implements VariantAPI {
     @WrapInTransaction
     public Variant save(final Variant variant) {
 
-        Preconditions.checkNotNull(variant.getName(), "Variant name should not be null");
-
-        if (variant.isArchived()) {
-            throw new IllegalArgumentException("Variant can not be created as archive");
-        }
+        DotPreconditions.checkNotNull(variant.getName(), IllegalArgumentException.class,
+                "Variant name should not be null");
+        DotPreconditions.checkArgument(!variant.isArchived(), "Variant can not be created as archive");
 
         Logger.debug(this, ()-> "Saving Variant: " + variant);
 
@@ -55,8 +53,10 @@ public class VariantAPIImpl implements VariantAPI {
     @Override
     @WrapInTransaction
     public void update(final Variant variant) {
-        Preconditions.checkNotNull(variant.getName(), "Variant name should not be null");
-        Preconditions.checkNotNull(variant.getIdentifier(), "Variant ID should not be null");
+        Preconditions.checkNotNull(variant.getName(), IllegalArgumentException.class,
+                "Variant name should not be null");
+        Preconditions.checkNotNull(variant.getIdentifier(), IllegalArgumentException.class ,
+                "Variant ID should not be null");
 
         try {
             get(variant.getIdentifier())
@@ -77,9 +77,8 @@ public class VariantAPIImpl implements VariantAPI {
     @WrapInTransaction
     public void delete(String id) {
         final Variant variant = get(id).orElseThrow(() -> new DoesNotExistException("The variant must exists"));
-        if (!variant.isArchived()) {
-            throw new IllegalStateException("The Variant must be archived to be able to delete it");
-        }
+
+        DotPreconditions.checkArgument(!variant.isArchived(), "The Variant must be archived to be able to delete it");
 
         Logger.debug(this, ()-> "Deleting Variant: " + variant);
 
