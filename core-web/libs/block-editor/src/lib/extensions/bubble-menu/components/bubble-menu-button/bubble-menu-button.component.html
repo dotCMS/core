@@ -1,3 +1,4 @@
-<button [ngClass]="{ 'btn-bubble-menu': true, 'btn-active': active }">
-    <span class="material-icons">{{ item.icon }}</span>
+<button [ngClass]="{ 'btn-bubble-menu': true, 'btn-active': active, text: item.text }">
+    <span *ngIf="item.icon" class="material-icons">{{ item.icon }}</span>
+    <span *ngIf="item.text">{{ item.text }}</span>
 </button>

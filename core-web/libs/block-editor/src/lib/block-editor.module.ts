@@ -34,6 +34,7 @@ import {
 
 // Shared
 import { SharedModule } from './shared/shared.module';
+import { BubbleFormComponent } from './extensions/bubble-form/bubble-form.component';
 
 @NgModule({
     imports: [
@@ -57,7 +58,8 @@ import { SharedModule } from './shared/shared.module';
         BubbleMenuComponent,
         BubbleMenuButtonComponent,
         BubbleLinkFormComponent,
-        FormActionsComponent
+        FormActionsComponent,
+        BubbleFormComponent
     ],
     providers: [DotImageService, LoggerService, StringUtils],
     exports: [
@@ -65,6 +67,7 @@ import { SharedModule } from './shared/shared.module';
         ActionButtonComponent,
         BubbleMenuComponent,
         BubbleLinkFormComponent,
+        BubbleFormComponent,
         ReactiveFormsModule,
         CheckboxModule,
         ButtonModule,

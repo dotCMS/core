@@ -1,0 +1,36 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div>
+        <label for="path">Path</label>
+        <input type="text" formControlName="src" pInputText id="path" [style]="{ width: '100%' }" />
+    </div>
+    <div>
+        <label for="alt">Alt</label>
+        <input type="text" formControlName="alt" pInputText id="alt" [style]="{ width: '100%' }" />
+    </div>
+    <div>
+        <label for="caption">Caption</label>
+        <input
+            type="text"
+            formControlName="title"
+            pInputText
+            id="caption"
+            [style]="{ width: '100%' }"
+        />
+    </div>
+    <div class="form-action">
+        <button
+            pButton
+            type="button"
+            label="Cancel"
+            class="p-button-outlined"
+            [style]="{ width: '120px' }"
+        ></button>
+        <button
+            pButton
+            type="submit"
+            label="APPLAY"
+            class="p-button-outlined p-button-danger"
+            [style]="{ width: '120px' }"
+        ></button>
+    </div>
+</form>

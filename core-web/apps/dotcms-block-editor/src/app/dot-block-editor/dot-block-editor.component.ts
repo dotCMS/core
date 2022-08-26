@@ -13,7 +13,9 @@ import {
     DragHandler,
     ImageBlock,
     ImageUpload,
-    DotConfigExtension
+    DotConfigExtension,
+    BubbleFormExtension,
+    ImageNode
 } from '@dotcms/block-editor';
 
 // Marks Extensions
@@ -45,7 +47,8 @@ export class DotBlockEditorComponent implements OnInit {
     _allowedBlocks = [];
     editor: Editor;
 
-    value = ''; // can be HTML or JSON, see https://www.tiptap.dev/api/editor#content
+    value =
+        '<p>HOLA</p> <img src="https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885__480.jpg" />'; // can be HTML or JSON, see https://www.tiptap.dev/api/editor#content
 
     constructor(private injector: Injector, public viewContainerRef: ViewContainerRef) {}
 
@@ -67,9 +70,11 @@ export class DotBlockEditorComponent implements OnInit {
             ImageUpload(this.injector, this.viewContainerRef),
             BubbleLinkFormExtension(this.viewContainerRef),
             DotBubbleMenuExtension(this.viewContainerRef),
+            BubbleFormExtension(this.viewContainerRef),
+            ImageNode,
             // Marks Extensions
             Underline,
-            TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'dotImage'] }),
+            TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'image'] }),
             Highlight.configure({ HTMLAttributes: { style: 'background: #accef7;' } }),
             Link.configure({ openOnClick: false }),
             Placeholder.configure({

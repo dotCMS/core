@@ -49,20 +49,20 @@ export const ImageBlock = (injector: Injector): Node => {
             };
         },
 
-        addCommands() {
-            return {
-                setImageLink:
-                    (attributes) =>
-                    ({ commands }) => {
-                        return commands.updateAttributes('dotImage', attributes);
-                    },
-                unsetImageLink:
-                    () =>
-                    ({ commands }) => {
-                        return commands.updateAttributes('dotImage', { href: '' });
-                    }
-            };
-        },
+        // addCommands() {
+        //     return {
+        //         setImageLink:
+        //             (attributes) =>
+        //             ({ commands }) => {
+        //                 return commands.updateAttributes('dotImage', attributes);
+        //             },
+        //         unsetImageLink:
+        //             () =>
+        //             ({ commands }) => {
+        //                 return commands.updateAttributes('dotImage', { href: '' });
+        //             }
+        //     };
+        // },
 
         parseHTML(): ParseRule[] {
             return [{ tag: 'dotcms-image-block' }];

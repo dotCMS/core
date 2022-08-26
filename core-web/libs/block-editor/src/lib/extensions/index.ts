@@ -2,6 +2,10 @@
 export * from './action-button/actions-menu.extension';
 export * from './action-button/action-button.component';
 
+// Bubble Form
+export * from './bubble-form/bubble-form.extension';
+export * from './bubble-form/bubble-form.component';
+
 // Bubble Link
 export * from './bubble-link-form/bubble-link-form.extension';
 export * from './bubble-link-form/bubble-link-form.component';

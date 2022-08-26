@@ -75,6 +75,7 @@
         "@tiptap/extension-bubble-menu": "^2.0.0-beta.55",
         "@tiptap/extension-floating-menu": "^2.0.0-beta.50",
         "@tiptap/extension-highlight": "^2.0.0-beta.33",
+        "@tiptap/extension-image": "^2.0.0-beta.30",
         "@tiptap/extension-link": "^2.0.0-beta.36",
         "@tiptap/extension-placeholder": "^2.0.0-beta.48",
         "@tiptap/extension-text-align": "^2.0.0-beta.29",

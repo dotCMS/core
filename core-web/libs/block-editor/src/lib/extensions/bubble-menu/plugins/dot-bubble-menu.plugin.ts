@@ -24,6 +24,7 @@ import {
 import { LINK_FORM_PLUGIN_KEY } from '@dotcms/block-editor';
 
 import { bubbleMenuImageItems, bubbleMenuItems, isListNode, popperModifiers } from '../utils';
+import { BUBBLE_FORM_PLUGIN_KEY } from '../../bubble-form/bubble-form.extension';
 
 export const DotBubbleMenuPlugin = (options: DotBubbleMenuPluginProps) => {
     const component = options.component.instance;
@@ -168,7 +169,12 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
         this.tippy?.setProps({
             getReferenceClientRect: () => {
-                if (isNodeSelection(selection)) {
+                // isObject(value) && value instanceof NodeSelection
+                // console.log(isObject(state.selection) && state.selection instanceof NodeSelection);
+                // console.log( state.selection.constructor?.toString().substring(0, 5))
+                // console.log(view.nodeDOM(from));
+                if (isNodeSelection(state.selection)) {
+                    // console.log("PASAMOS?");
                     const node = view.nodeDOM(from) as HTMLElement;
 
                     if (node) {
@@ -237,11 +243,10 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
     setMenuItems(doc, from) {
         const node = doc.nodeAt(from);
-        const isDotImage = node?.type.name == 'dotImage';
+        const isImage = node?.type.name == 'image';
 
         this.selectionNode = node;
-
-        this.component.instance.items = isDotImage ? bubbleMenuImageItems : bubbleMenuItems;
+        this.component.instance.items = isImage ? bubbleMenuImageItems : bubbleMenuItems;
     }
 
     /* Run commands */
@@ -304,6 +309,12 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                 isOpen
                     ? this.editor.view.focus()
                     : this.editor.commands.openLinkForm({ openOnClick: false });
+                break;
+
+            case 'properties':
+                // eslint-disable-next-line
+                const { open } = BUBBLE_FORM_PLUGIN_KEY.getState(this.editor.state);
+                open ? this.editor.commands.closeForm() : this.editor.commands.openForm();
                 break;
 
             case 'deleteNode':
