@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 import io.vavr.Tuple;
@@ -179,7 +180,7 @@ public class ContentletTransformer implements DBTransformer {
                                         !(inode.equals(versionInfo.getWorkingInode()) || inode.equals(versionInfo.getLiveInode()))) {
 
                                     // the inode stored on the json does not match with any top inode, so the information stored is old and need refresh
-                                    refreshBlockEditorDataMap(dataMap, versionInfo)
+                                    refreshBlockEditorDataMap(dataMap, versionInfo, Collections.emptySet());
                                 }
                             }
                         }
@@ -191,37 +192,22 @@ public class ContentletTransformer implements DBTransformer {
         }
     }
 
-    private static void refreshBlockEditorDataMap(final Map dataMap, final VersionInfo versionInfo) {
+    private static void refreshBlockEditorDataMap(final Map dataMap, final VersionInfo versionInfo, final Set<String> skipFieldSet) throws DotDataException, DotSecurityException {
         // todo: not sure which inode should use to refresh the reference
-        final Contentlet contentlet = null; /// todo: find contentlet by
-        dataMap.put("hostName", contentlet.getHost());
-              /*  "modDate": "2022-08-26 21:22:25.46",
-                "publishDate": "2022-08-26 21:22:25.46",
-                "language": "en-US",
-                "title": "Test1",
-                "body": "<p>Test1</p>",
-                "contentTypeIcon": "wysiwyg",
-                "baseType": "CONTENT",
-                "inode": "0f653922-1f80-412c-9034-004c5322f871",
-                "archived": false,
-                "host": "48190c8c-42c4-46af-8d1a-0cd5db894797",
-                "working": true,
-                "locked": false,
-                "stInode": "2a3e91e4-fbbf-4876-8c5b-2233c1739b05",
-                "contentType": "webPageContent",
-                "live": true,
-                "owner": "dotcms.org.1",
-                "identifier": "b05b967bc49ccd34bf87ecb2603aaf97",
-                "languageId": 1,
-                "__icon__": "contentIcon",
-                "url": "/content.0f653922-1f80-412c-9034-004c5322f871",
-                "titleImage": "TITLE_IMAGE_NOT_FOUND",
-                "modUserName": "Admin User",
-                "hasLiveVersion": true,
-                "folder": "SYSTEM_FOLDER",
-                "hasTitleImage": false,
-                "sortOrder": 0,
-                "modUser": "dotcms.org.1"*/
+        final Contentlet contentlet = APILocator.getContentletAPI().find(
+                versionInfo.getWorkingInode(), APILocator.systemUser(), false); /// todo: find contentlet by working or live
+        final Set contenteFieldNames = dataMap.keySet();
+        for (Object contentFieldName : contenteFieldNames) {
+
+            if (!skipFieldSet.contains(contentFieldName)) {  // if it is not a field already edit by the client
+
+                final Object value = contentlet.get(contentFieldName.toString());
+                if (null != value) {
+
+                    dataMap.put(contentFieldName, value);
+                }
+            }
+        }
     }
 
 
