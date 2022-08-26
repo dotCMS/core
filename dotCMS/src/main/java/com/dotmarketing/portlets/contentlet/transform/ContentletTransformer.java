@@ -148,7 +148,11 @@ public class ContentletTransformer implements DBTransformer {
             if (field instanceof StoryBlockField) {
 
                 final Object blockEditorValue = contentlet.get(field.variable());
-                refreshBlockEditorValueReferences(blockEditorValue);
+                final Tuple2<Boolean, Object> resultOfRefresh = refreshBlockEditorValueReferences(blockEditorValue);
+                if (resultOfRefresh._1()) {
+
+                    contentlet.setProperty(field.variable(), resultOfRefresh._2());
+                }
             }
         }
     }
