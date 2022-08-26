@@ -1,7 +1,9 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
 import com.dotcms.content.business.json.ContentletJsonAPI;
+import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
+import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
@@ -9,7 +11,9 @@ import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.transform.DBTransformer;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -22,6 +26,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
@@ -29,9 +34,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
+import io.vavr.control.Try;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -109,6 +119,8 @@ public class ContentletTransformer implements DBTransformer {
            if(!hasJsonFields) {
                populateFields(contentlet, map);
            }
+
+            refreshBlockEditorReferences(contentlet);
             populateWysiwyg(map, contentlet);
             populateFolderAndHost(contentlet, contentletId, contentTypeId);
         } catch (final Exception e) {
@@ -122,6 +134,96 @@ public class ContentletTransformer implements DBTransformer {
 
         return contentlet;
     }
+
+    /**
+     * In the case the content type has block editor fields, the dotContentlet references must be merge with the new references
+     * @param contentlet
+     */
+    private static void refreshBlockEditorReferences(final Contentlet contentlet) {
+
+        final List<com.dotcms.contenttype.model.field.Field> fields = contentlet.getContentType().fields();
+        for (final com.dotcms.contenttype.model.field.Field field : fields) {
+
+            if (field instanceof StoryBlockField) {
+
+                final Object blockEditorValue = contentlet.get(field.variable());
+                refreshBlockEditorValueReferences(blockEditorValue);
+            }
+        }
+    }
+
+    private static void refreshBlockEditorValueReferences(final Object blockEditorValue) {
+
+        try {
+
+            final LinkedHashMap blockEditorMap = ContentletJsonHelper.INSTANCE.get().objectMapper()
+                    .readValue(Try.of(()->blockEditorValue.toString())
+                            .getOrElse(""), LinkedHashMap.class);
+            final Map contentMap = (Map) blockEditorMap.get("content");
+            if (null != contentMap) {
+
+                if ("dotContent".equals(contentMap.get("type"))) {
+
+                    final Map attrsMap = (Map) blockEditorMap.get("attrs");
+                    if (null != attrsMap) {
+
+                        final Map dataMap = (Map) blockEditorMap.get("data");
+                        if (null != dataMap) {
+
+                            final String identifier = (String)dataMap.get("identifier");
+                            final String inode = (String)dataMap.get("inode");
+                            if (null != identifier && null != inode) {
+
+                                final VersionInfo versionInfo = APILocator.getVersionableAPI().getVersionInfo(identifier);
+                                if (null != versionInfo &&
+                                        !(inode.equals(versionInfo.getWorkingInode()) || inode.equals(versionInfo.getLiveInode()))) {
+
+                                    // the inode stored on the json does not match with any top inode, so the information stored is old and need refresh
+                                    refreshBlockEditorDataMap(dataMap, versionInfo)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (final Exception e) {
+            Logger.debug(ContentletTransformer.class, e.getMessage());
+        }
+    }
+
+    private static void refreshBlockEditorDataMap(final Map dataMap, final VersionInfo versionInfo) {
+        // todo: not sure which inode should use to refresh the reference
+        final Contentlet contentlet = null; /// todo: find contentlet by
+        dataMap.put("hostName", contentlet.getHost());
+              /*  "modDate": "2022-08-26 21:22:25.46",
+                "publishDate": "2022-08-26 21:22:25.46",
+                "language": "en-US",
+                "title": "Test1",
+                "body": "<p>Test1</p>",
+                "contentTypeIcon": "wysiwyg",
+                "baseType": "CONTENT",
+                "inode": "0f653922-1f80-412c-9034-004c5322f871",
+                "archived": false,
+                "host": "48190c8c-42c4-46af-8d1a-0cd5db894797",
+                "working": true,
+                "locked": false,
+                "stInode": "2a3e91e4-fbbf-4876-8c5b-2233c1739b05",
+                "contentType": "webPageContent",
+                "live": true,
+                "owner": "dotcms.org.1",
+                "identifier": "b05b967bc49ccd34bf87ecb2603aaf97",
+                "languageId": 1,
+                "__icon__": "contentIcon",
+                "url": "/content.0f653922-1f80-412c-9034-004c5322f871",
+                "titleImage": "TITLE_IMAGE_NOT_FOUND",
+                "modUserName": "Admin User",
+                "hasLiveVersion": true,
+                "folder": "SYSTEM_FOLDER",
+                "hasTitleImage": false,
+                "sortOrder": 0,
+                "modUser": "dotcms.org.1"*/
+    }
+
 
     private static void populateFolderAndHost(final Contentlet contentlet, final String contentletId,
             final String contentTypeId) throws DotDataException, DotSecurityException {
