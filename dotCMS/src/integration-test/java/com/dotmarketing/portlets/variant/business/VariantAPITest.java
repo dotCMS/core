@@ -279,6 +279,26 @@ public class VariantAPITest {
 
     /**
      * Method to test: {@link VariantFactory#get(String)}
+     * When: Try to get  {@link Variant} by name
+     * Should: get it
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void getByName() throws DotDataException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        ArrayList results = getResults(variant);
+        assertFalse(results.isEmpty());
+
+        final Optional<Variant> variantFromDataBase = APILocator.getVariantAPI().getByName(variant.getName());
+
+        assertTrue(variantFromDataBase.isPresent());
+        assertEquals(variant.getIdentifier(), variantFromDataBase.get().getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link VariantFactory#get(String)}
      * When: Try to get  {@link Variant} by id that not exists
      * Should: return a {@link Optional#empty()}
      *
@@ -303,6 +323,34 @@ public class VariantAPITest {
     @Test(expected = NullPointerException.class)
     public void getWithNull() throws DotDataException {
         APILocator.getVariantAPI().get(null);
+    }
+
+    /**
+     * Method to test: {@link VariantFactory#get(String)}
+     * When: Try to get  {@link Variant} by id that not exists
+     * Should: return a {@link Optional#empty()}
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void getByNameNotExists() throws DotDataException {
+
+        final Optional<Variant> variantFromDataBase = APILocator.getVariantAPI()
+                .getByName("Not_Exists");
+
+        assertFalse(variantFromDataBase.isPresent());
+    }
+
+    /**
+     * Method to test: {@link VariantFactory#get(String)}
+     * When: Try to get  {@link Variant} by id equals to NULL
+     * Should:
+     *
+     * @throws DotDataException
+     */
+    @Test(expected = NullPointerException.class)
+    public void getByNameWithNull() throws DotDataException {
+        APILocator.getVariantAPI().getByName(null);
     }
 
     private ArrayList getResults(Variant variant) throws DotDataException {
