@@ -153,43 +153,60 @@ public class ContentletTransformer implements DBTransformer {
         }
     }
 
-    private static void refreshBlockEditorValueReferences(final Object blockEditorValue) {
+    private static Tuple2<Boolean, Object> refreshBlockEditorValueReferences(final Object blockEditorValue) {
 
+        boolean refreshed = false;
         try {
 
             final LinkedHashMap blockEditorMap = ContentletJsonHelper.INSTANCE.get().objectMapper()
                     .readValue(Try.of(()->blockEditorValue.toString())
                             .getOrElse(""), LinkedHashMap.class);
-            final Map contentMap = (Map) blockEditorMap.get("content");
-            if (null != contentMap) {
+            final List contentsMap = (List) blockEditorMap.get("content");
 
-                if ("dotContent".equals(contentMap.get("type"))) {
+            for (final Object contentMapObject : contentsMap) {
 
-                    final Map attrsMap = (Map) blockEditorMap.get("attrs");
-                    if (null != attrsMap) {
+                final Map contentMap = (Map) contentMapObject;
+                if (null != contentMap) {
 
-                        final Map dataMap = (Map) blockEditorMap.get("data");
-                        if (null != dataMap) {
+                    if ("dotContent".equals(contentMap.get("type"))) {
 
-                            final String identifier = (String)dataMap.get("identifier");
-                            final String inode = (String)dataMap.get("inode");
-                            if (null != identifier && null != inode) {
+                        final Map attrsMap = (Map) contentMap.get("attrs");
+                        if (null != attrsMap) {
 
-                                final VersionInfo versionInfo = APILocator.getVersionableAPI().getVersionInfo(identifier);
-                                if (null != versionInfo &&
-                                        !(inode.equals(versionInfo.getWorkingInode()) || inode.equals(versionInfo.getLiveInode()))) {
+                            final Map dataMap = (Map) attrsMap.get("data");
+                            if (null != dataMap) {
 
-                                    // the inode stored on the json does not match with any top inode, so the information stored is old and need refresh
-                                    refreshBlockEditorDataMap(dataMap, versionInfo, Collections.emptySet());
+                                final String identifier = (String) dataMap.get("identifier");
+                                final String inode = (String) dataMap.get("inode");
+                                if (null != identifier && null != inode) {
+
+                                    final VersionInfo versionInfo = APILocator.getVersionableAPI().getVersionInfo(identifier);
+                                    if (null != versionInfo &&
+                                            !(inode.equals(versionInfo.getWorkingInode()) || inode.equals(versionInfo.getLiveInode()))) {
+
+                                        refreshed = true;
+                                        // the inode stored on the json does not match with any top inode, so the information stored is old and need refresh
+                                        refreshBlockEditorDataMap(dataMap, versionInfo, Collections.emptySet());
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
+
+            if (refreshed) {
+
+                final String blockEditJsonValueString = ContentletJsonHelper.INSTANCE.get().objectMapper()
+                        .writeValueAsString(blockEditorMap);
+
+                return Tuple.of(true, blockEditJsonValueString); // has changed and the now json is returned
+            }
         } catch (final Exception e) {
             Logger.debug(ContentletTransformer.class, e.getMessage());
         }
+
+        return Tuple.of(false, blockEditorValue); // return the original value and says didn't change
     }
 
     private static void refreshBlockEditorDataMap(final Map dataMap, final VersionInfo versionInfo, final Set<String> skipFieldSet) throws DotDataException, DotSecurityException {
