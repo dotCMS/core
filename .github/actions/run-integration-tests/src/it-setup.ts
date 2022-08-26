@@ -183,7 +183,7 @@ const getOverrides = (propertyMap: Map<string, string>): OverrideProperties => {
           },
           {
             original: '^ES_HOSTNAME=.*$',
-            replacement: 'ES_HOSTNAME=localhost'
+            replacement: '#ES_HOSTNAME=localhost'
           }
         ]
       },
@@ -248,6 +248,10 @@ const getAppends = (propertyMap: Map<string, string>): AppendProperties => {
           'dotcms.concurrent.locks.disable=false',
           `system.felix.base.dir=${systemFelixFolder}`
         ]
+      },
+      {
+        file: `${itResourcesFolder}/it-dotcms-config-cluster.properties`,
+        lines: ['ES_ENDPOINTS=http://localhost:9200', 'ES_PROTOCOL=http']
       },
       {
         file: `${dotCmsFolder}/src/main/webapp/WEB-INF/elasticsearch/config/elasticsearch-override.yml`,

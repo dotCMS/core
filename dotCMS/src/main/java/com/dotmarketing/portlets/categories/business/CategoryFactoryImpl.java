@@ -129,7 +129,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 		DotPreconditions.checkArgument(UtilMethods.isSet(variable));
 
 		final List<Map<String, Object>> result = new DotConnect()
-				.setSQL(" SELECT * FROM category WHERE category_velocity_var_name = ?")
+				.setSQL(" SELECT * FROM category WHERE lower(category_velocity_var_name) = ?")
 				.addParam(variable)
 				.loadObjectResults();
 

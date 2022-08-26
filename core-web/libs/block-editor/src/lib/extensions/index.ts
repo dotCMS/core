@@ -6,6 +6,7 @@ export * from './action-button/action-button.component';
 export * from './bubble-link-form/bubble-link-form.extension';
 export * from './bubble-link-form/bubble-link-form.component';
 export * from './bubble-link-form/components/form-actions/form-actions.component';
+export * from './bubble-link-form/components/suggestion-page/suggestion-page.component';
 
 // Bubble Menu
 export * from './bubble-menu/dot-bubble-menu.extension';
