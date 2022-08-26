@@ -405,8 +405,8 @@
 							"    pm.expect(jsonData.entity[0].name).equal(\"my patched experiment\");",
 							"    pm.expect(jsonData.entity[0].pageId).equal(\"e424abd7e2e7a9031c5a0a3c18182f1b\");",
 							"    pm.expect(jsonData.entity[0].modDate).is.not.null;",
-							"    pm.expect(jsonData.entity[0].startDate).equal(\"2022-08-20 14:50:03\");",
-							"    pm.expect(jsonData.entity[0].endDate).equal(\"2022-08-21 14:50:03\");",
+							"    pm.expect(jsonData.entity[0].scheduling.startDate).equal(\"2022-08-20 14:50:03\");",
+							"    pm.expect(jsonData.entity[0].scheduling.endDate).equal(\"2022-08-21 14:50:03\");",
 							"    pm.expect(jsonData.entity[0].status).equal(\"ENDED\");",
 							"    pm.expect(jsonData.entity[0].trafficAllocation).equal(20.0);",
 							"    pm.expect(jsonData.entity[0].trafficProportion.type).equal(\"CUSTOM_PERCENTAGES\");",
@@ -439,7 +439,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"startDate\": \"2022-08-20 14:50:03\",\n    \"endDate\": \"2022-08-21 14:50:03\"\n    \n}",
+					"raw": "{\"scheduling\": {\n    \"startDate\": \"2022-08-20 14:50:03\",\n    \"endDate\": \"2022-08-21 14:50:03\"\n    \n}}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -513,15 +513,6 @@
 				},
 				"method": "PUT",
 				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"startDate\": \"2022-08-20 14:50:03\",\n    \"endDate\": \"2022-08-21 14:50:03\"\n    \n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
 				"url": {
 					"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}/_archive",
 					"host": [
