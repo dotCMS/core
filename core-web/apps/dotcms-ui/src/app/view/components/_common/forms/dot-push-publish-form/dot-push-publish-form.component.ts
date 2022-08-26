@@ -23,7 +23,6 @@ import { SelectItem } from 'primeng/api';
 import { DotFormModel } from '@models/dot-form/dot-form.model';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotcmsConfigService, DotTimeZone } from '@dotcms/dotcms-js';
-import { Dropdown } from 'primeng/dropdown';
 
 @Component({
     selector: 'dot-push-publish-form',
@@ -50,8 +49,6 @@ export class DotPushPublishFormComponent
     @Output() valid = new EventEmitter<boolean>();
 
     @ViewChild('customCode', { static: true }) customCodeContainer: ElementRef;
-    @ViewChild('filterPushOptions', { static: false })
-    filterPushOptions: Dropdown;
 
     private defaultFilterKey: string;
     private _filterOptions: SelectItem[] = null;
@@ -76,10 +73,6 @@ export class DotPushPublishFormComponent
                     .pipe(take(1))
                     .subscribe(() => {
                         this.loadData(this.data);
-                        setTimeout(() => {
-                            this.filterPushOptions.focus();
-                        }, 0);
-            
                     });
             }
         }

@@ -21,10 +21,8 @@ export class DotAlertConfirmComponent implements OnInit, OnDestroy {
         this.dotAlertConfirmService.confirmDialogOpened$
             .pipe(takeUntil(this.destroy$))
             .subscribe(() => {
-                setTimeout(() => {
-                    const btn = this.confirmBtn || this.acceptBtn;
-                    btn.nativeElement.focus();
-                });
+                const btn = this.confirmBtn || this.acceptBtn;
+                btn.nativeElement.focus();
             });
     }
 

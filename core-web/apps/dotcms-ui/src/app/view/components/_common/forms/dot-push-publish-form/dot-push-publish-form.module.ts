@@ -12,12 +12,14 @@ import { CalendarModule } from 'primeng/calendar';
 import { DropdownModule } from 'primeng/dropdown';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
+import { AutoFocusModule } from 'primeng/autofocus';
 
 @NgModule({
     declarations: [DotPushPublishFormComponent],
     exports: [DotPushPublishFormComponent],
     imports: [
         CommonModule,
+        AutoFocusModule,
         FormsModule,
         CalendarModule,
         DotDialogModule,

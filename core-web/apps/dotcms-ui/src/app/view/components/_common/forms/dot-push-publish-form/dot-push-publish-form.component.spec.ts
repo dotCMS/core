@@ -37,6 +37,7 @@ import {
     DotcmsConfigServiceMock,
     mockDotTimeZones
 } from '@dotcms/app/test/dot-timezone-service.mock';
+import { AutoFocusModule } from 'primeng/autofocus';
 
 const messageServiceMock = new MockDotMessageService({
     'contenttypes.content.push_publish.action.push': 'Push',
@@ -130,6 +131,7 @@ describe('DotPushPublishFormComponent', () => {
                 ConfirmationService
             ],
             imports: [
+                AutoFocusModule,
                 FormsModule,
                 CalendarModule,
                 DotDialogModule,
@@ -169,11 +171,12 @@ describe('DotPushPublishFormComponent', () => {
     });
 
     it('should load filters on load', () => {
-        const filterDropDown: Dropdown = fixture.debugElement.query(
+        const filterDropDown = fixture.debugElement.query(
             By.css('p-dropdown')
-        ).componentInstance;
+        );
 
-        expect(filterDropDown.options).toEqual(optionsLabels);
+        expect(filterDropDown.attributes['ng-reflect-autofocus']).toBe('true');
+        expect(filterDropDown.componentInstance.options).toEqual(optionsLabels);
     });
 
     it('should set 1 previous day as a minDate for Publish Date', () => {

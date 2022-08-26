@@ -13,6 +13,7 @@ import { By } from '@angular/platform-browser';
 import { DotIconModule } from '@dotcms/ui';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
+import { AutoFocusModule } from 'primeng/autofocus';
 
 const messageServiceMock = new MockDotMessageService({
     next: 'Next',
@@ -45,6 +46,7 @@ describe('DotTemplateSelectorComponent', () => {
                 }
             ],
             imports: [
+                AutoFocusModule,
                 DotMessagePipeModule,
                 DotIconModule,
                 ReactiveFormsModule,
@@ -150,7 +152,7 @@ describe('DotTemplateSelectorComponent', () => {
     });
 
     describe('button', () => {
-        it('it should close the dialog', () => {
+        it('it should autofocus on NEXT button and close the dialog', () => {
             const button = de.query(By.css('[data-testId="button"]'));
             button.triggerEventHandler('click', {});
 
@@ -162,18 +164,10 @@ describe('DotTemplateSelectorComponent', () => {
             fixture.detectChanges();
             button.triggerEventHandler('click', {});
 
+            expect(button.attributes['ng-reflect-autofocus']).toBe('true');
             expect(dynamicDialogRef.close).toHaveBeenCalledTimes(2);
             expect(dynamicDialogRef.close).toHaveBeenCalledWith('designer');
             expect(dynamicDialogRef.close).toHaveBeenCalledWith('advanced');
-        });
-
-        it('it should close the dialog when pressed Enter key', () => {
-            const container = de.query(By.css('.wrapper '));
-            container.triggerEventHandler('keydown.enter', {
-                stopImmediatePropagation: jasmine.createSpy('')
-            });
-
-            expect(dynamicDialogRef.close).toHaveBeenCalledTimes(1);
         });
     });
 });
