@@ -243,12 +243,6 @@ public abstract class CategoryFactory {
 	abstract protected List<Category> findTopLevelCategoriesByFilter(String filter, String sort) throws DotDataException;
 	
 	/**
-	 * Deletes all the Children of a given parent inode
-	 * @return
-	 */
-	abstract protected void deleteChildren(String inode);
-	
-	/**
 	 * Returns the children categories of the category with the supplied inode filtered by a string  
 	 * @return
 	 * @throws DotDataException
@@ -269,5 +263,7 @@ public abstract class CategoryFactory {
 	abstract protected String suggestVelocityVarName (String categoryVelVarName) throws DotDataException;
 
 	abstract protected  void clearCache();
+
+	abstract protected List<Category> getAllChildren(Categorizable parent) throws DotDataException ;
 	
 }
