@@ -334,110 +334,43 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	}
 	
 	
-	class AllCategoryChildren implements Categorizable, Serializable{
 
-	    private final String id;
-	    
-	    public AllCategoryChildren(String id){
-	        this.id=id;
-	    }
-	    
-        @Override
-        public String getCategoryId() {
-
-            return "all-category-children:" + id;
-        }
-
-
-
-        @Override
-        public String getPermissionId() {
-            return null;
-        }
-
-
-
-        @Override
-        public String getOwner() {
-
-            return null;
-        }
-
-
-
-        @Override
-        public void setOwner(String owner) {
-
-            
-        }
-
-
-
-        @Override
-        public List<PermissionSummary> acceptedPermissions() {
-            return null;
-        }
-
-
-
-        @Override
-        public List<RelatedPermissionableGroup> permissionDependencies(int requiredPermission) {
-            return null;
-        }
-
-
-
-        @Override
-        public Permissionable getParentPermissionable() throws DotDataException {
-            return null;
-        }
-
-
-
-        @Override
-        public String getPermissionType() {
-            return null;
-        }
-
-
-
-        @Override
-        public boolean isParentPermissionable() {
-            return false;
-        }
-	    
-	    
-	    
-	}
-	
 	
     @SuppressWarnings("unchecked")
     @Override
     protected List<Category> getAllChildren(final Categorizable parentCategory) throws DotDataException {
 
-        final AllCategoryChildren allChildrenKey = new AllCategoryChildren(parentCategory.getCategoryId());
-        final List<Category> cachedChildren = catCache.getChildren(allChildrenKey);
+        final Category allChildrenKey = new Category();
+        allChildrenKey.setInode(parentCategory.getCategoryId()+ ":all-children");
+        
+        List<Category> cachedChildren = catCache.getChildren(allChildrenKey);
         if(cachedChildren!=null) {
             return cachedChildren;
         }
         
-        final List<Category> categoryTree = new ArrayList<Category>();
-        final LinkedList<Category> children = new LinkedList<Category>(getChildren(parentCategory));
-        if (children != null) {
-            while(children.size() > 0) {
-                Category child = children.poll();
-                children.addAll(getChildren(child));
-                categoryTree.add(child);
+        synchronized (allChildrenKey.getCategoryId().intern()) {
+            cachedChildren = catCache.getChildren(allChildrenKey);
+            if(cachedChildren!=null) {
+                return cachedChildren;
             }
+            
+            final List<Category> categoryTree = new ArrayList<Category>();
+            final LinkedList<Category> children = new LinkedList<Category>(getChildren(parentCategory));
+            if (children != null) {
+                while(children.size() > 0) {
+                    Category child = children.poll();
+                    children.addAll(getChildren(child));
+                    categoryTree.add(child);
+                }
+            }
+            try {
+                catCache.putChildren(allChildrenKey, categoryTree);
+            } catch (DotCacheException e) {
+                throw new DotDataException(e.getMessage(), e);
+            }
+            
+            return categoryTree;
         }
-        try {
-            catCache.putChildren(allChildrenKey, categoryTree);
-        } catch (DotCacheException e) {
-            throw new DotDataException(e.getMessage(), e);
-        }
-        
-
-        return categoryTree;
     }
 
 
