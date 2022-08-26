@@ -68,7 +68,8 @@ public class StrategyResolverImpl implements StrategyResolver {
                  FILEASSET_VIEW,  ()-> new  FileViewStrategy(toolBox),
                  SITE_VIEW,       ()-> new  SiteViewStrategy(toolBox),
                  STORY_BLOCK_VIEW,()-> new  StoryBlockViewStrategy(toolBox),
-                 RENDER_FIELDS,   ()-> new  RenderFieldStrategy(toolBox)
+                 RENDER_FIELDS,   ()-> new  RenderFieldStrategy(toolBox),
+                 JSON_VIEW,   ()-> new  JSONViewStrategy(toolBox)
              ),
              ()-> new DefaultTransformStrategy(toolBox)
         );
