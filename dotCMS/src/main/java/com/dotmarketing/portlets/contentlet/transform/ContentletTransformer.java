@@ -217,8 +217,8 @@ public class ContentletTransformer implements DBTransformer {
         // todo: not sure which inode should use to refresh the reference
         final Contentlet contentlet = APILocator.getContentletAPI().find(
                 versionInfo.getWorkingInode(), APILocator.systemUser(), false); /// todo: find contentlet by working or live
-        final Set contenteFieldNames = dataMap.keySet();
-        for (Object contentFieldName : contenteFieldNames) {
+        final Set contentFieldNames = dataMap.keySet();
+        for (Object contentFieldName : contentFieldNames) {
 
             if (!skipFieldSet.contains(contentFieldName)) {  // if it is not a field already edit by the client
 
