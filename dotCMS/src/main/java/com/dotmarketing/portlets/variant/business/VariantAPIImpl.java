@@ -14,7 +14,7 @@ import java.util.Optional;
  * API of {@link Variant}
  */
 public class VariantAPIImpl implements VariantAPI {
-    private VariantFactory variantFactory;
+    private final VariantFactory variantFactory;
 
     public VariantAPIImpl(){
         variantFactory = FactoryLocator.getVariantFactory();

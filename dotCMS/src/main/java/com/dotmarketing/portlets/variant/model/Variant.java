@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.variant.model;
 
+import java.io.Serializable;
+
 /**
  * Represent a new set of versions to a {@link com.dotmarketing.portlets.contentlet.model.Contentlet}.
  *
@@ -18,9 +20,9 @@ package com.dotmarketing.portlets.variant.model;
  * - Spanish Contentlet version
  */
 public class Variant {
-    private String identifier;
-    private String name;
-    private boolean archived;
+    private final String identifier;
+    private final String name;
+    private final boolean archived;
 
     public Variant(final String identifier, final String name, final boolean deleted) {
         this.identifier = identifier;
