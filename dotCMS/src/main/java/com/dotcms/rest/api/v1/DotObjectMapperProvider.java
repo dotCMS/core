@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 
 /**
  * Encapsulates the configuration for the Object Mapper on the Resources.
@@ -42,6 +43,7 @@ public class DotObjectMapperProvider {
             result.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);
             result.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
         }
+        result.registerModule(new Jdk8Module());
         return result;
     }
 

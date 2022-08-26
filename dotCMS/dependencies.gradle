@@ -3,7 +3,7 @@ println( "loading dependencies")
 println( "loading dependencies")
 dependencies {
 
-    def immutablesVersion = "2.9.0"
+    def immutablesVersion = "2.9.1"
     def byteBuddyVersion = "1.12.6"
     annotationProcessor "org.immutables:value:$immutablesVersion" // <--- this is important
 

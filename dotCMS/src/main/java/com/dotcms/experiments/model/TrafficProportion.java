@@ -1,5 +1,6 @@
 package com.dotcms.experiments.model;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Map;
@@ -14,6 +15,7 @@ public class TrafficProportion implements Serializable {
     private Type type;
     private Map<String, Float> percentages;
 
+    @VisibleForTesting
     public TrafficProportion() {
     }
 

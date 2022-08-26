@@ -52,6 +52,7 @@ import com.dotmarketing.portlets.folders.exception.InvalidFolderNameException;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import com.google.common.base.Throwables;
 import org.glassfish.jersey.server.ResourceConfig;

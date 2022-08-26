@@ -2,8 +2,8 @@ package com.dotcms.experiments.business;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
-import com.dotcms.experiments.model.Experiment.Status;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -33,7 +33,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             DotSecurityException, DotDataException {
 
         final Contentlet pageAsContent = contentletAPI
-                .findContentletByIdentifierAnyLanguage(experiment.getPageId(), false);
+                .findContentletByIdentifierAnyLanguage(experiment.pageId(), false);
 
         DotPreconditions.isTrue(pageAsContent!=null
                 && UtilMethods.isSet(pageAsContent.getIdentifier()),
@@ -44,9 +44,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             throw new DotSecurityException("You don't have permission to save the Experiment.");
         }
 
-        Experiment.Builder builder = experiment.toBuilder();
+        Experiment.Builder builder = Experiment.builder().from(experiment);
 
-        if(!UtilMethods.isSet(experiment.getId())) {
+        if(experiment.id().isEmpty()) {
             builder.id(UUIDGenerator.generateUuid());
         }
 
@@ -68,7 +68,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         if(experiment.isPresent()) {
             final Contentlet pageAsContent = contentletAPI
-                    .findContentletByIdentifierAnyLanguage(experiment.get().getPageId(), false);
+                    .findContentletByIdentifierAnyLanguage(experiment.get().pageId(), false);
 
             if (!permissionAPI.doesUserHavePermission(pageAsContent, PermissionLevel.EDIT.getType(),
                     user)) {
@@ -89,7 +89,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         if(persistedExperiment.isPresent()) {
             final Contentlet pageAsContent = contentletAPI
-                    .findContentletByIdentifierAnyLanguage(persistedExperiment.get().getPageId(), false);
+                    .findContentletByIdentifierAnyLanguage(persistedExperiment.get().pageId(), false);
 
             if (!permissionAPI.doesUserHavePermission(pageAsContent, PermissionLevel.EDIT.getType(),
                     user)) {
@@ -97,11 +97,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 throw new DotSecurityException("You don't have permission to get the Experiment.");
             }
 
-            if(persistedExperiment.get().getStatus()!= Status.ENDED) {
+            if(persistedExperiment.get().status()!= Status.ENDED) {
                 throw new DotStateException("Only ended experiments can be archived");
             }
 
-            final Experiment archived = persistedExperiment.get().toBuilder().archived(true).build();
+            final Experiment archived = persistedExperiment.get().withArchived(true);
             return factory.save(archived);
         } else {
             throw new NotFoundInDbException("Experiment with provided id not found");
@@ -118,7 +118,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         if(persistedExperiment.isPresent()) {
             final Contentlet pageAsContent = contentletAPI
-                    .findContentletByIdentifierAnyLanguage(persistedExperiment.get().getPageId(), false);
+                    .findContentletByIdentifierAnyLanguage(persistedExperiment.get().pageId(), false);
 
             if (!permissionAPI.doesUserHavePermission(pageAsContent, PermissionLevel.EDIT.getType(),
                     user)) {
@@ -126,7 +126,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 throw new DotSecurityException("You don't have permission to get the Experiment.");
             }
 
-            if(persistedExperiment.get().getStatus()!= Status.DRAFT) {
+            if(persistedExperiment.get().status()!= Status.DRAFT) {
                 throw new DotStateException("Only draft experiments can be deleted");
             }
 

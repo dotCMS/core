@@ -60,8 +60,8 @@ public class ExperimentsResource {
 
     @NotNull
     private Experiment createExperimentFromForm(ExperimentForm experimentForm) {
-        return new Experiment.Builder(experimentForm.getPageId(), experimentForm.getName(),
-                experimentForm.getDescription())
+        return Experiment.builder().pageId(experimentForm.getPageId()).name(experimentForm.getName())
+                .description(experimentForm.getDescription())
                 .build();
     }
 
@@ -95,8 +95,7 @@ public class ExperimentsResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public ResponseEntityExperimentView archive(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("experimentId") final String experimentId,
-            final ExperimentForm experimentForm) throws DotDataException, DotSecurityException {
+            @PathParam("experimentId") final String experimentId) throws DotDataException, DotSecurityException {
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
         final Experiment archivedExperiment =  experimentsAPI.archive(experimentId, user);
@@ -120,7 +119,7 @@ public class ExperimentsResource {
     private Experiment patchExperiment(final Experiment experimentToUpdate,
             final ExperimentForm experimentForm) {
 
-        final Experiment.Builder builder = experimentToUpdate.toBuilder();
+        final Experiment.Builder builder = Experiment.builder().from(experimentToUpdate);
 
         if(experimentForm.getName()!=null) {
             builder.name(experimentForm.getName());

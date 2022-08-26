@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.postgresql.util.PGobject;
 
 /**
@@ -43,15 +44,15 @@ public class ExperimentTransformer implements DBTransformer {
     }
 
     private static Experiment transform(Map<String, Object> map)  {
-        return new Experiment.Builder((String) map.get("page_id"), (String) map.get("name"),
-                (String) map.get("description"))
+        return Experiment.builder().pageId((String) map.get("page_id")).name((String) map.get("name"))
+                .description((String) map.get("description"))
                 .id((String) map.get("id"))
                 .status(Experiment.Status.valueOf((String) map.get("status")))
                 .trafficProportion(getTrafficProportion(map.get("traffic_proportion")))
                 .trafficAllocation((Float) map.get("traffic_allocation"))
                 .modDate(Try.of(()->((java.sql.Timestamp) map.get("mod_date")).toLocalDateTime())
                         .getOrNull())
-                .scheduling(getScheduling(map.get("scheduling")))
+                .scheduling(Optional.ofNullable(getScheduling(map.get("scheduling"))))
                 .readyToStart(ConversionUtils.toBooleanFromDb(map.get("ready_to_start")))
                 .archived(ConversionUtils.toBooleanFromDb(map.get("archived")))
                 .build();
