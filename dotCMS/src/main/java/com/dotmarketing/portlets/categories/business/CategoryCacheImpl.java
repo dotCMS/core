@@ -134,7 +134,7 @@ public class CategoryCacheImpl extends CategoryCache {
 	
     @SuppressWarnings ("unchecked")
     @Override
-    void removeChildren ( String parentId ) throws DotDataException, DotCacheException {
+    protected void removeChildren ( String parentId ) throws DotDataException, DotCacheException {
         removeChildrenInternal(parentId);
         removeChildrenInternal(parentId + CategoryFactory.ALL_CHILDREN_SUFFIX);
 	
@@ -149,7 +149,6 @@ public class CategoryCacheImpl extends CategoryCache {
      * @throws DotCacheException
      */
     @SuppressWarnings ("unchecked")
-    @Override
     private void removeChildrenInternal ( String parentId ) throws DotDataException, DotCacheException {
         List<Category> childrenIds = null;
         try {

@@ -1486,7 +1486,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     return List.of();
                 }
                 final List<Category> availableCategories = this.categoryAPI
-                        .getAllChildren(categoryField, currentUser, respectFrontEndRoles);
+                        .getAllChildren(categoryField, APILocator.systemUser(), false);
                 if(availableCategories.isEmpty()) {
                     return List.of();
                 }
