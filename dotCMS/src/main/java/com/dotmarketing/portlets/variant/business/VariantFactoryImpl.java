@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.variant.business;
 
 import com.dotcms.util.ConversionUtils;
+import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.variant.model.Variant;
@@ -28,6 +29,9 @@ public class VariantFactoryImpl implements VariantFactory{
      */
     @Override
     public Variant save(final Variant variant) throws DotDataException {
+
+        DotPreconditions.checkNotNull(variant.getName(), IllegalArgumentException.class,
+                "Name must not be null");
         final String identifier = getId(variant);
 
         new DotConnect().setSQL(VARIANT_INSERT_QUERY)

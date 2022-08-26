@@ -43,6 +43,10 @@ public class VariantFactoryTest {
 
         final Variant variantSaved = FactoryLocator.getVariantFactory().save(variant);
 
+        checkFromDataBase(variantSaved);
+    }
+
+    private void checkFromDataBase(Variant variantSaved) throws DotDataException {
         assertNotNull(variantSaved);
         assertNotNull(variantSaved.getIdentifier());
 
@@ -51,6 +55,64 @@ public class VariantFactoryTest {
         assertEquals(variantSaved.getName(), variantFromDataBase.getName());
         assertEquals(variantSaved.getIdentifier(), variantFromDataBase.getIdentifier());
         assertFalse(variantFromDataBase.isArchived());
+    }
+
+    /**
+     * Method to test: {@link VariantFactory#save(Variant)}
+     * When: Try to save a {@link Variant} object with duplicated name
+     * Should: throw a {@link DotDataException}
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void saveDuplicatedNamed() throws DotDataException {
+        final Variant variant = new VariantDataGen().next();
+
+        final Variant variantSaved = FactoryLocator.getVariantFactory().save(variant);
+        checkFromDataBase(variantSaved);
+
+        final Variant variantWithNameDuplicated = new VariantDataGen().name(variant.getName()).next();
+
+        try {
+            FactoryLocator.getVariantFactory().save(variantWithNameDuplicated);
+            throw new AssertionError("DotDataException expected");
+        } catch (DotDataException e) {
+            if (DbConnectionFactory.isMsSql()) {
+                assertTrue(e.getCause().getClass().equals(SQLServerException.class));
+            } else {
+                assertTrue(e.getCause().getClass().equals(PSQLException.class));
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link VariantFactory#save(Variant)}
+     * When: Try to save a {@link Variant} object with duplicated name
+     * Should: throw a {@link DotDataException}
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void updateDuplicatedNamed() throws DotDataException {
+        final Variant variant = new VariantDataGen().next();
+
+        final Variant variantSaved = FactoryLocator.getVariantFactory().save(variant);
+        checkFromDataBase(variantSaved);
+
+        final Variant variant_2 = new VariantDataGen().nextPersisted();
+
+        final Variant variantWithNameDuplicated = new Variant(variant_2.getIdentifier(), variant.getName(), variant_2.isArchived());
+
+        try {
+            FactoryLocator.getVariantFactory().update(variantWithNameDuplicated);
+            throw new AssertionError("DotDataException expected");
+        } catch (DotDataException e) {
+            if (DbConnectionFactory.isMsSql()) {
+                assertTrue(e.getCause().getClass().equals(SQLServerException.class));
+            } else {
+                assertTrue(e.getCause().getClass().equals(PSQLException.class));
+            }
+        }
     }
 
     /**
@@ -104,22 +166,10 @@ public class VariantFactoryTest {
      *
      * @throws DotDataException
      */
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void saveWithoutName() throws DotDataException {
         final Variant variant = new Variant("1", null, false);
-
-        try {
-            FactoryLocator.getVariantFactory().save(variant);
-            throw new AssertionError("DotDataException Expected");
-        }catch (DotDataException e) {
-            if (DbConnectionFactory.isPostgres()) {
-                assertEquals(PSQLException.class, e.getCause().getClass());
-            } else if (DbConnectionFactory.isMsSql()){
-                assertEquals(SQLServerException.class, e.getCause().getClass());
-            } else {
-                throw new AssertionError("Database not expected");
-            }
-        }
+        FactoryLocator.getVariantFactory().save(variant);
     }
 
     /**
