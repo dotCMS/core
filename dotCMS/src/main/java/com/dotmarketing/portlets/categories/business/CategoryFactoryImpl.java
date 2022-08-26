@@ -356,13 +356,12 @@ public class CategoryFactoryImpl extends CategoryFactory {
             
             final List<Category> categoryTree = new ArrayList<Category>();
             final LinkedList<Category> children = new LinkedList<Category>(getChildren(parentCategory));
-            if (children != null) {
-                while(children.size() > 0) {
-                    Category child = children.poll();
-                    children.addAll(getChildren(child));
-                    categoryTree.add(child);
-                }
+            while(children.size() > 0) {
+                Category child = children.poll();
+                children.addAll(getChildren(child));
+                categoryTree.add(child);
             }
+            
             try {
                 catCache.putChildren(allChildrenKey, categoryTree);
             } catch (DotCacheException e) {
