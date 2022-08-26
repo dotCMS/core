@@ -11,6 +11,7 @@ import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.DbConnectionFactory.DataBaseType;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.UUIDGenerator;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -42,12 +43,22 @@ public class Task222208CreateVariantTableTest {
 
         assertTrue(new DotDatabaseMetaData().tableExists(
                 DbConnectionFactory.getConnection(), "variant"));
+
+        checkNotAllowDuplicatedName();
     }
 
+    /**
+     * Method to test: {@link Task222208CreateVariantTable#executeUpgrade()}
+     * When: the method is run
+     * Should: create the variant table
+     *
+     * @throws DotDataException
+     * @throws SQLException
+     */
     @Test
     public void createVariantTable() throws DotDataException, SQLException {
         final Connection connection = DbConnectionFactory.getConnection();
-        new DotConnect().setSQL("DROP TABLE variant").loadResult();
+        clean();
 
         final DotDatabaseMetaData dotDatabaseMetaData = new DotDatabaseMetaData();
 
@@ -77,13 +88,61 @@ public class Task222208CreateVariantTableTest {
         assertEquals(3, count);
     }
 
+    private void clean() throws DotDataException {
+        new DotConnect().setSQL("DROP TABLE variant").loadResult();
+    }
 
+    /**
+     * Method to test: {@link Task222208CreateVariantTable#executeUpgrade()}
+     * When: the method is run twice
+     * Should: not throw any exception
+     *
+     * @throws DotDataException
+     * @throws SQLException
+     */
     @Test
     public void runTUTwice() throws DotDataException, SQLException {
+        clean();
         final Task222208CreateVariantTable task222208CreateVariantTable = new Task222208CreateVariantTable();
         task222208CreateVariantTable.executeUpgrade();
         task222208CreateVariantTable.executeUpgrade();
 
         assertTrue(new DotDatabaseMetaData().tableExists(DbConnectionFactory.getConnection(), "variant"));
+    }
+
+    /**
+     * Method to test: {@link Task222208CreateVariantTable#executeUpgrade()}
+     * When: try to insert to variant with the same name after running the executeUpgrade
+     * Should: throw
+     *
+     * @throws DotDataException
+     * @throws SQLException
+     */
+    @Test
+    public void nameDuplicated() throws DotDataException {
+        clean();
+
+        final Task222208CreateVariantTable task222208CreateVariantTable = new Task222208CreateVariantTable();
+        task222208CreateVariantTable.executeUpgrade();
+        checkNotAllowDuplicatedName();
+    }
+
+    private static void checkNotAllowDuplicatedName() throws DotDataException {
+        new DotConnect().setSQL("INSERT INTO variant (id, name, archived) VALUES (?, ?, ?)")
+                .addParam(UUIDGenerator.generateUuid())
+                .addParam("Same Name")
+                .addParam(false)
+                .loadResult();
+
+        try {
+            new DotConnect().setSQL("INSERT INTO variant (id, name, archived) VALUES (?, ?, ?)")
+                    .addParam(UUIDGenerator.generateUuid())
+                    .addParam("Same Name")
+                    .addParam(false)
+                    .loadResult();
+            throw new AssertionError("Exceeption expected because the same name is duplicated");
+        } catch (DotDataException e) {
+            //expected
+        }
     }
 }
