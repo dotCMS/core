@@ -2484,15 +2484,17 @@ CREATE TABLE shedlock(name VARCHAR(64) NOT NULL, lock_until timestamptz NOT NULL
                       locked_at timestamptz NOT NULL, locked_by VARCHAR(255) NOT NULL, PRIMARY KEY (name));
 
 create table experiment (
-     id  varchar(36) not null,
-     page_id varchar(36) not null,
+     id  varchar(255) not null,
+     page_id varchar(255) not null,
      name varchar(255) not null,
-     description varchar(64) not null,
-     status varchar(64) not null,
-     traffic_proportion jsonb,
-     traffic_allocation float4,
-     mod_date timestamptz,
+     description varchar(255) not null,
+     status varchar(255) not null,
+     traffic_proportion jsonb not null,
+     traffic_allocation float4 not null,
+     mod_date timestamptz not null,
      scheduling jsonb,
-     ready_to_start bool,
-     archived bool
+     archived bool not null,
+     creation_date timestamptz not null,
+     created_by varchar(255) not null,
+     last_modified_by varchar(255) not null
 );

@@ -3,6 +3,7 @@ package com.dotcms.experiments.business;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TrafficProportion;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.transform.DBTransformer;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -23,7 +24,8 @@ import org.postgresql.util.PGobject;
 public class ExperimentTransformer implements DBTransformer {
     final List<Experiment> list;
 
-    final static ObjectMapper mapper = new ObjectMapper();
+    final static ObjectMapper mapper = DotObjectMapperProvider.getInstance()
+            .getDefaultObjectMapper();
 
 
     public ExperimentTransformer(List<Map<String, Object>> initList){
@@ -49,12 +51,15 @@ public class ExperimentTransformer implements DBTransformer {
                 .id((String) map.get("id"))
                 .status(Experiment.Status.valueOf((String) map.get("status")))
                 .trafficProportion(getTrafficProportion(map.get("traffic_proportion")))
-                .trafficAllocation((Float) map.get("traffic_allocation"))
-                .modDate(Try.of(()->((java.sql.Timestamp) map.get("mod_date")).toLocalDateTime())
+                .trafficAllocation(((Double) map.get("traffic_allocation")).floatValue())
+                .modDate(Try.of(()->((java.sql.Timestamp) map.get("mod_date")).toInstant())
                         .getOrNull())
                 .scheduling(Optional.ofNullable(getScheduling(map.get("scheduling"))))
-                .readyToStart(ConversionUtils.toBooleanFromDb(map.get("ready_to_start")))
                 .archived(ConversionUtils.toBooleanFromDb(map.get("archived")))
+                .creationDate(Try.of(()->((java.sql.Timestamp) map.get("creation_date")).toInstant())
+                        .getOrNull())
+                .createdBy((String) map.get("created_by"))
+                .lastModifiedBy((String) map.get("last_modified_by"))
                 .build();
     }
 
@@ -64,8 +69,8 @@ public class ExperimentTransformer implements DBTransformer {
             return Try.of(()->mapper.readValue(json.getValue(), TrafficProportion.class))
                             .getOrNull();
         } else  {
-            // TODO pending for mssql
-            return null;
+            return Try.of(()->mapper.readValue((String) traffic_proportion, TrafficProportion.class))
+                    .getOrNull();
         }
     }
 
@@ -75,8 +80,8 @@ public class ExperimentTransformer implements DBTransformer {
             return Try.of(()->mapper.readValue(json.getValue(), Scheduling.class))
                     .getOrNull();
         } else  {
-            // TODO pending for mssql
-            return null;
+            return Try.of(()->mapper.readValue((String) scheduling, Scheduling.class))
+                    .getOrNull();
         }
     }
 }

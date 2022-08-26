@@ -48,20 +48,18 @@ public class ExperimentsResource {
             @Context final HttpServletResponse response,
             final ExperimentForm experimentForm) throws DotDataException, DotSecurityException {
         final InitDataObject initData = getInitData(request, response);
-
         final User user = initData.getUser();
-
-        final Experiment experiment = createExperimentFromForm(experimentForm);
-
+        final Experiment experiment = createExperimentFromForm(experimentForm, user);
         final Experiment persistedExperiment = experimentsAPI.save(experiment, user);
-
         return new ResponseEntityExperimentView(Collections.singletonList(persistedExperiment));
     }
 
     @NotNull
-    private Experiment createExperimentFromForm(ExperimentForm experimentForm) {
+    private Experiment createExperimentFromForm(final ExperimentForm experimentForm,
+            final User user) {
         return Experiment.builder().pageId(experimentForm.getPageId()).name(experimentForm.getName())
-                .description(experimentForm.getDescription())
+                .description(experimentForm.getDescription()).createdBy(user.getUserId())
+                .lastModifiedBy(user.getUserId())
                 .build();
     }
 
@@ -83,7 +81,8 @@ public class ExperimentsResource {
             throw new NotFoundException("Experiment with id: " + experimentId + " not found.");
         }
 
-        final Experiment patchedExperiment = patchExperiment(experimentToUpdate.get(), experimentForm);
+        final Experiment patchedExperiment = patchExperiment(experimentToUpdate.get(), experimentForm,
+                user);
         final Experiment persistedExperiment = experimentsAPI.save(patchedExperiment, user);
         return new ResponseEntityExperimentView(Collections.singletonList(persistedExperiment));
     }
@@ -107,17 +106,17 @@ public class ExperimentsResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityView delete(@Context final HttpServletRequest request,
+    public ResponseEntityView<String> delete(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("experimentId") final String experimentId) throws DotDataException, DotSecurityException {
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
         experimentsAPI.delete(experimentId, user);
-        return new ResponseEntityView<>("Experiment deleted");
+        return new ResponseEntityView<String>("Experiment deleted");
     }
 
     private Experiment patchExperiment(final Experiment experimentToUpdate,
-            final ExperimentForm experimentForm) {
+            final ExperimentForm experimentForm, final User user) {
 
         final Experiment.Builder builder = Experiment.builder().from(experimentToUpdate);
 

@@ -18,6 +18,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -50,7 +51,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             builder.id(UUIDGenerator.generateUuid());
         }
 
-        builder.modDate(LocalDateTime.now());
+        builder.modDate(Instant.now());
+        builder.lastModifiedBy(user.getUserId());
 
         final Experiment experimentToSave = builder.build();
 

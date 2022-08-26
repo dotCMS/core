@@ -2,71 +2,73 @@ package com.dotcms.experiments.model;
 
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
-import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Optional;
 import org.immutables.value.Value;
 
 @Value.Style(typeImmutable="*", typeAbstract="Abstract*")
 @Value.Immutable
 public interface AbstractExperiment extends Serializable, ManifestItem {
-    @JsonGetter("name")
+    @JsonProperty("name")
     String name();
 
-    @JsonGetter("description")
+    @JsonProperty("description")
     String description();
 
-    @JsonGetter("id")
+    @JsonProperty("id")
     Optional<String> id();
 
-    @JsonGetter("status")
+    @JsonProperty("status")
     @Value.Default
     default Status status() {
         return Status.DRAFT;
     }
 
-    @JsonGetter("trafficProportion")
+    @JsonProperty("trafficProportion")
     @Value.Default
     default TrafficProportion trafficProportion() {
         return TrafficProportion.createSplitEvenlyTraffic();
     }
 
-    @JsonGetter("scheduling")
+    @JsonProperty("scheduling")
     Optional<Scheduling> scheduling();
 
-    @JsonGetter("trafficAllocation")
+    @JsonProperty("trafficAllocation")
     @Value.Default
     default float trafficAllocation() {
         return 100;
     }
-    @JsonDeserialize(using = LocalDateTimeDeserializer.class, converter = OptionalConverter.class)
-    @JsonSerialize(using = LocalDateTimeSerializer.class, converter = OptionalConverter.class)
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    @JsonGetter("modDate")
-    Optional<LocalDateTime> modDate();
 
-    @JsonGetter("pageId")
-    String pageId();
-
-    @JsonGetter("readyToStart")
+    @JsonProperty("creationDate")
     @Value.Default
-    default boolean readyToStart() {
-        return false;
+    default Instant creationDate() {
+        return Instant.now();
     }
 
-    @JsonGetter("archived")
+    @JsonProperty("modDate")
+    @Value.Default
+    default Instant modDate() {
+        return Instant.now();
+    }
+
+    @JsonProperty("pageId")
+    String pageId();
+
+    @JsonProperty("archived")
     @Value.Default
     default boolean archived() {
         return false;
     }
 
-    @Value.Default
+    @JsonProperty("createdBy")
+    String createdBy();
+
+    @JsonProperty("lastModifiedBy")
+    String lastModifiedBy();
+
+    @Value.Derived
     @Override
     default ManifestInfo getManifestInfo() {
         return new ManifestInfoBuilder()

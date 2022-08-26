@@ -1,15 +1,16 @@
 package com.dotcms.experiments.business;
 
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.htmlpageasset.business.render.page.JsonMapper;
 import com.dotmarketing.util.Logger;
-import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vavr.control.Try;
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -18,17 +19,18 @@ import org.postgresql.util.PGobject;
 public class ExperimentsFactoryImpl implements
         ExperimentsFactory {
 
-    final ObjectWriter objectWriter = JsonMapper.mapper.writer().withDefaultPrettyPrinter();
+    final ObjectMapper mapper = DotObjectMapperProvider.getInstance()
+            .getDefaultObjectMapper();
 
     public static final String INSERT_EXPERIMENT = "INSERT INTO experiment(id, page_id, name, description, status, " +
-            "traffic_proportion, traffic_allocation, mod_date, scheduling, ready_to_start, "
-            + "archived) "
-            + "VALUES(?,?,?,?,?,?,?,?,?,?,?)";
+            "traffic_proportion, traffic_allocation, mod_date, scheduling, "
+            + "archived, creation_date, created_by, last_modified_by) "
+            + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     public static final String UPDATE_EXPERIMENT = "UPDATE experiment set name=?, description=?, status=?, " +
-            "traffic_proportion=?, traffic_allocation=?, mod_date=?, scheduling=?, "
-            + "ready_to_start=?, archived=?"
-            + "WHERE id=?";
+            "traffic_proportion=?, traffic_allocation=?, mod_date=?, scheduling=?, archived=?, "
+            + " creation_date=?, created_by=?, last_modified_by=?"
+            + " WHERE id=?";
 
     public static final String FIND_EXPERIMENT_BY_ID = "SELECT * FROM experiment WHERE id = ?";
 
@@ -36,13 +38,20 @@ public class ExperimentsFactoryImpl implements
 
     @Override
     public Experiment save(Experiment experiment) throws DotDataException {
+        String experimentId;
         if(experiment.id().isEmpty() || find(experiment.id().get()).isEmpty()) {
-            insertInDB(experiment);
+            experimentId = insertInDB(experiment);
         } else {
-            updateInDB(experiment);
+            experimentId = updateInDB(experiment);
         }
 
-        return experiment;
+        final Optional<Experiment> saved = find(experimentId);
+
+        if(saved.isEmpty()) {
+            throw new DotDataException("Unable to retrieve saved/updated Experiment");
+        }
+
+        return saved.get();
     }
 
     @Override
@@ -80,10 +89,8 @@ public class ExperimentsFactoryImpl implements
         return Optional.of(experiment);
     }
 
-    private void insertInDB(final Experiment experiment) throws DotDataException {
+    private String insertInDB(final Experiment experiment) throws DotDataException {
         DotPreconditions.checkArgument(experiment.id().isPresent(), "Experiment id is "
-                + "required for saves ");
-        DotPreconditions.checkArgument(experiment.modDate().isPresent(), "Experiment id is "
                 + "required for saves ");
 
         DotConnect dc = new DotConnect();
@@ -93,45 +100,27 @@ public class ExperimentsFactoryImpl implements
         dc.addParam(experiment.name());
         dc.addParam(experiment.description());
         dc.addParam(experiment.status().name());
-
-        final String trafficProportionAsJSON = Try.of(()->
-                        objectWriter.writeValueAsString(experiment.trafficProportion()))
-                .getOrNull();
-        if(DbConnectionFactory.isPostgres()) {
-            PGobject jsonObject = new PGobject();
-            jsonObject.setType("json");
-            Try.run(() -> jsonObject.setValue(trafficProportionAsJSON)).getOrElseThrow(
-                    () -> new DotDataException("Invalid Traffic Proportion"));
-            dc.addObject(jsonObject);
-        } else {
-            dc.addParam(trafficProportionAsJSON);
-        }
-
+        setJSONParam(dc, experiment.trafficProportion());
         dc.addParam(experiment.trafficAllocation());
-        dc.addParam(experiment.modDate().get());
+        dc.addParam(Timestamp.from(experiment.modDate()));
 
-        final String schedulingAsJSON = Try.of(()->
-                        objectWriter.writeValueAsString(experiment.scheduling()))
-                .getOrNull();
-        if(DbConnectionFactory.isPostgres()) {
-            PGobject jsonObject = new PGobject();
-            jsonObject.setType("json");
-            Try.run(() -> jsonObject.setValue(schedulingAsJSON)).getOrElseThrow(
-                    () -> new DotDataException("Invalid Scheduling"));
-            dc.addObject(jsonObject);
+        if(experiment.scheduling().isPresent()) {
+            setJSONParam(dc, experiment.scheduling().get());
         } else {
-            dc.addParam(schedulingAsJSON);
+            dc.addObject(null);
         }
 
-        dc.addParam(experiment.readyToStart());
         dc.addParam(experiment.archived());
+        dc.addParam(Timestamp.from(experiment.creationDate()));
+        dc.addParam(experiment.createdBy());
+        dc.addParam(experiment.lastModifiedBy());
         dc.loadResult();
+
+        return experiment.id().get();
     }
 
-    private void updateInDB(final Experiment experiment) throws DotDataException {
+    private String updateInDB(final Experiment experiment) throws DotDataException {
         DotPreconditions.checkArgument(experiment.id().isPresent(), "Experiment id is "
-                + "required for updates ");
-        DotPreconditions.checkArgument(experiment.modDate().isPresent(), "Experiment id is "
                 + "required for updates ");
 
         DotConnect dc = new DotConnect();
@@ -139,35 +128,38 @@ public class ExperimentsFactoryImpl implements
         dc.addParam(experiment.name());
         dc.addParam(experiment.description());
         dc.addParam(experiment.status().name());
-        final String trafficProportionAsJSON = Try.of(()->
-                        objectWriter.writeValueAsString(experiment.trafficProportion()))
+        setJSONParam(dc, experiment.trafficProportion());
+        dc.addParam(experiment.trafficAllocation());
+        dc.addParam(Timestamp.from(experiment.modDate()));
+
+        if(experiment.scheduling().isPresent()) {
+            setJSONParam(dc, experiment.scheduling().get());
+        } else {
+            dc.addObject(null);
+        }
+
+        dc.addParam(experiment.archived());
+        dc.addParam(Timestamp.from(experiment.creationDate()));
+        dc.addParam(experiment.createdBy());
+        dc.addParam(experiment.lastModifiedBy());
+        dc.addParam(experiment.id().get());
+        dc.loadResult();
+
+        return experiment.id().get();
+    }
+
+    private void setJSONParam(final DotConnect dc, Object json) throws DotDataException {
+        final String jsonStr = Try.of(()->
+                        mapper.writeValueAsString(json))
                 .getOrNull();
         if(DbConnectionFactory.isPostgres()) {
             PGobject jsonObject = new PGobject();
             jsonObject.setType("json");
-            Try.run(() -> jsonObject.setValue(trafficProportionAsJSON)).getOrElseThrow(
+            Try.run(() -> jsonObject.setValue(jsonStr)).getOrElseThrow(
                     () -> new DotDataException("Invalid Traffic Proportion"));
             dc.addObject(jsonObject);
         } else {
-            dc.addParam(trafficProportionAsJSON);
+            dc.addParam(jsonStr);
         }
-        dc.addParam(experiment.trafficAllocation());
-        dc.addParam(experiment.modDate().get());
-        final String schedulingAsJSON = Try.of(()->
-                        objectWriter.writeValueAsString(experiment.scheduling()))
-                .getOrNull();
-        if(DbConnectionFactory.isPostgres()) {
-            PGobject jsonObject = new PGobject();
-            jsonObject.setType("json");
-            Try.run(() -> jsonObject.setValue(schedulingAsJSON)).getOrElseThrow(
-                    () -> new DotDataException("Invalid Scheduling Proportion"));
-            dc.addObject(jsonObject);
-        } else {
-            dc.addParam(schedulingAsJSON);
-        }
-        dc.addParam(experiment.readyToStart());
-        dc.addParam(experiment.archived());
-        dc.addParam(experiment.id().get());
-        dc.loadResult();
     }
 }
