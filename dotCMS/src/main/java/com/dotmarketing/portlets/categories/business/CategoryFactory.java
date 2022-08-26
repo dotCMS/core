@@ -12,7 +12,7 @@ import com.dotmarketing.portlets.categories.model.Category;
  *
  */
 public abstract class CategoryFactory {
-
+    final static String ALL_CHILDREN_SUFFIX=":all-children";
 	/**
 	 * Totally removes a category from the system
 	 * @param object
@@ -264,6 +264,14 @@ public abstract class CategoryFactory {
 
 	abstract protected  void clearCache();
 
-	abstract protected List<Category> getAllChildren(Categorizable parent) throws DotDataException ;
+    /**
+     * This method recurses down the category tree returns all the children, grandchildren, great
+     * grandchildren, etc under this category
+     * 
+     * @param parent
+     * @return
+     * @throws DotDataException
+     */
+    abstract protected List<Category> getAllChildren(Categorizable parent) throws DotDataException;
 	
 }

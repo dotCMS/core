@@ -43,7 +43,9 @@ public class CategoryFactoryImpl extends CategoryFactory {
 
 	CategoryCache catCache;
 	final CategorySQL categorySQL;
-
+	
+	
+	
 	public CategoryFactoryImpl () {
 		catCache = CacheLocator.getCategoryCache();
 		this.categorySQL = CategorySQL.getInstance();
@@ -334,44 +336,41 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	}
 	
 	
-
-	
     @SuppressWarnings("unchecked")
     @Override
     protected List<Category> getAllChildren(final Categorizable parentCategory) throws DotDataException {
 
         final Category allChildrenKey = new Category();
-        allChildrenKey.setInode(parentCategory.getCategoryId()+ ":all-children");
-        
+        allChildrenKey.setInode(parentCategory.getCategoryId() + ALL_CHILDREN_SUFFIX);
+
         List<Category> cachedChildren = catCache.getChildren(allChildrenKey);
-        if(cachedChildren!=null) {
+        if (cachedChildren != null) {
             return cachedChildren;
         }
-        
+
         synchronized (allChildrenKey.getCategoryId().intern()) {
             cachedChildren = catCache.getChildren(allChildrenKey);
-            if(cachedChildren!=null) {
+            if (cachedChildren != null) {
                 return cachedChildren;
             }
-            
+
             final List<Category> categoryTree = new ArrayList<Category>();
             final LinkedList<Category> children = new LinkedList<Category>(getChildren(parentCategory));
-            while(children.size() > 0) {
+            while (children.size() > 0) {
                 Category child = children.poll();
                 children.addAll(getChildren(child));
                 categoryTree.add(child);
             }
-            
+
             try {
                 catCache.putChildren(allChildrenKey, categoryTree);
             } catch (DotCacheException e) {
                 throw new DotDataException(e.getMessage(), e);
             }
-            
+
             return categoryTree;
         }
     }
-
 
 
 	@SuppressWarnings("unchecked")
@@ -827,19 +826,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
      * @throws DotCacheException
      */
     private void cleanParentChildrenCaches ( final Category category ) throws DotDataException, DotCacheException {
-
-		final List<String> parentIds = catCache.getParents( category );
-        if ( parentIds != null ) {
-            for ( String parentId : parentIds ) {
-                catCache.removeChildren( parentId );
-            }
-        }
-		final List<Category> children = catCache.getChildren( category );
-		if ( children != null ) {
-			for ( final Category child : children ) {
-				catCache.removeParents( child.getCategoryId() );
-			}
-		}
+        catCache.clearCache();
     }
 
     protected String suggestVelocityVarName(final String categoryVelVarName) throws DotDataException {
