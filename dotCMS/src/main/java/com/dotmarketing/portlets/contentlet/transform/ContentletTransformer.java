@@ -149,7 +149,7 @@ public class ContentletTransformer implements DBTransformer {
 
                 final Object blockEditorValue = contentlet.get(field.variable());
                 final Tuple2<Boolean, Object> resultOfRefresh = refreshBlockEditorValueReferences(blockEditorValue);
-                if (resultOfRefresh._1()) {
+                if (resultOfRefresh._1()) { // the block editor value has changed and has to be override
 
                     contentlet.setProperty(field.variable(), resultOfRefresh._2());
                 }
@@ -210,7 +210,7 @@ public class ContentletTransformer implements DBTransformer {
             Logger.debug(ContentletTransformer.class, e.getMessage());
         }
 
-        return Tuple.of(false, blockEditorValue); // return the original value and says didn't change
+        return Tuple.of(false, blockEditorValue); // return the original value and value didn't change
     }
 
     private static void refreshBlockEditorDataMap(final Map dataMap, final VersionInfo versionInfo, final Set<String> skipFieldSet) throws DotDataException, DotSecurityException {
