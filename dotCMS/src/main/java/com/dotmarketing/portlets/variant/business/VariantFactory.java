@@ -45,4 +45,11 @@ public interface VariantFactory {
      */
     Optional<Variant> get(final String identifier) throws DotDataException;
 
+    /**
+     * Return a {@link Variant} by Name
+     * @param name {@link Variant}'s name
+     * @return {@link Variant}
+     */
+    Optional<Variant> getByName(final String name) throws DotDataException;
+
 }

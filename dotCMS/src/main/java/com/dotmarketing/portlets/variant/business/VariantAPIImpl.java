@@ -114,10 +114,27 @@ public class VariantAPIImpl implements VariantAPI {
     @Override
     public Optional<Variant> get(final String identifier)  {
         Preconditions.checkNotNull(identifier, "Variant ID should not be null");
-        Logger.debug(this, ()-> "Getting Variant: " + identifier);
+        Logger.debug(this, ()-> "Getting Variant by ID: " + identifier);
 
         try {
             return variantFactory.get(identifier);
+        } catch (DotDataException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Implementation for {@link VariantAPI#getByName(String)} (String)}
+     *
+     * @param name {@link Variant}'s identifier
+     * @return
+     */
+    public Optional<Variant> getByName(final String name) {
+        Preconditions.checkNotNull(name, "Variant Name should not be null");
+        Logger.debug(this, ()-> "Getting Variant by Name: " + name);
+
+        try {
+            return variantFactory.getByName(name);
         } catch (DotDataException e) {
             throw new RuntimeException(e);
         }

@@ -48,4 +48,11 @@ public interface VariantAPI {
      * @return {@link Variant}
      */
     Optional<Variant> get(final String identifier);
+
+    /**
+     * Return a {@link Variant} by Name
+     * @param name {@link Variant}'s name
+     * @return {@link Variant}
+     */
+    Optional<Variant> getByName(final String name);
 }

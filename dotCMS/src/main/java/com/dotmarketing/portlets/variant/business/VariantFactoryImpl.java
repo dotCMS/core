@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.jetbrains.annotations.NotNull;
 
 public class VariantFactoryImpl implements VariantFactory{
 
@@ -16,6 +17,7 @@ public class VariantFactoryImpl implements VariantFactory{
     private String VARIANT_UPDATE_QUERY = "UPDATE variant SET name = ?, archived = ? WHERE id =?";
     private String VARIANT_DELETE_QUERY = "DELETE from variant WHERE id =?";
     private String VARIANT_SELECT_QUERY = "SELECT * from variant WHERE id =?";
+    private String VARIANT_SELECT_BY_NAME_QUERY = "SELECT * from variant WHERE name =?";
 
     /**
      * Implementation for {@link VariantFactory#save(Variant)}
@@ -85,15 +87,31 @@ public class VariantFactoryImpl implements VariantFactory{
 
         if (!loadResults.isEmpty()) {
             final Map resultMap = (Map) loadResults.get(0);
-            return Optional.of(
-                    new Variant(
-                        resultMap.get("id").toString(),
-                        resultMap.get("name").toString(),
-                        ConversionUtils.toBooleanFromDb(resultMap.get("archived"))
-                )
-            );
+            return Optional.of(createVariant(resultMap));
         } else {
             return Optional.empty();
         }
+    }
+
+    public Optional<Variant> getByName(final String name) throws DotDataException {
+        final ArrayList loadResults = new DotConnect().setSQL(VARIANT_SELECT_BY_NAME_QUERY)
+                .addParam(name)
+                .loadResults();
+
+        if (!loadResults.isEmpty()) {
+            final Map resultMap = (Map) loadResults.get(0);
+            return Optional.of(createVariant(resultMap));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    @NotNull
+    private Variant createVariant(Map resultMap) {
+        return new Variant(
+                resultMap.get("id").toString(),
+                resultMap.get("name").toString(),
+                ConversionUtils.toBooleanFromDb(resultMap.get("archived"))
+        );
     }
 }

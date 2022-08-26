@@ -272,6 +272,26 @@ public class VariantFactoryTest {
 
     /**
      * Method to test: {@link VariantFactory#get(String)}
+     * When: Try to get  {@link Variant} by namee
+     * Should: get it
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void getByName() throws DotDataException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        ArrayList results = getResults(variant);
+        assertFalse(results.isEmpty());
+
+        final Optional<Variant> variantFromDataBase = FactoryLocator.getVariantFactory().getByName(variant.getName());
+
+        assertTrue(variantFromDataBase.isPresent());
+        assertEquals(variant.getIdentifier(), variantFromDataBase.get().getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link VariantFactory#get(String)}
      * When: Try to get  archived {@link Variant} by id
      * Should: get it
      *
@@ -303,6 +323,22 @@ public class VariantFactoryTest {
 
         final Optional<Variant> variantFromDataBase = FactoryLocator.getVariantFactory()
                 .get("Not_Exists");
+
+        assertFalse(variantFromDataBase.isPresent());
+    }
+
+    /**
+     * Method to test: {@link VariantFactory#get(String)}
+     * When: Try to get  {@link Variant} by name that not exists
+     * Should: return a {@link Optional#empty()}
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void getNotExistsByName() throws DotDataException {
+
+        final Optional<Variant> variantFromDataBase = FactoryLocator.getVariantFactory()
+                .getByName("Not_Exists");
 
         assertFalse(variantFromDataBase.isPresent());
     }
