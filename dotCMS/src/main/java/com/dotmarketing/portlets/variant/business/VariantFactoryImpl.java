@@ -8,6 +8,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.commons.codec.digest.DigestUtils;
 
 public class VariantFactoryImpl implements VariantFactory{
 
@@ -25,7 +26,7 @@ public class VariantFactoryImpl implements VariantFactory{
      */
     @Override
     public Variant save(final Variant variant) throws DotDataException {
-        final String identifier = UUIDGenerator.generateUuid();
+        final String identifier = getId(variant);
 
         new DotConnect().setSQL(VARIANT_INSERT_QUERY)
                 .addParam(identifier)
@@ -34,6 +35,24 @@ public class VariantFactoryImpl implements VariantFactory{
                 .loadResult();
 
         return new Variant(identifier, variant.getName(), false);
+    }
+
+    private String getId(final Variant variant) {
+
+        final String deterministicID = DigestUtils.sha256Hex(variant.getName());
+
+        final Optional<Variant> variantFromDataBase;
+        try {
+            variantFromDataBase = get(deterministicID);
+
+            if (variantFromDataBase.isPresent()) {
+                return UUIDGenerator.generateUuid();
+            } else {
+                return deterministicID;
+            }
+        } catch (DotDataException e) {
+            return UUIDGenerator.generateUuid();
+        }
     }
 
     /**

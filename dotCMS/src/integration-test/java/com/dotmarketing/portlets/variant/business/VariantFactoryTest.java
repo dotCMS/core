@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.variant.business;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -17,6 +18,7 @@ import com.microsoft.sqlserver.jdbc.SQLServerException;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.postgresql.util.PSQLException;
@@ -49,6 +51,50 @@ public class VariantFactoryTest {
         assertEquals(variantSaved.getName(), variantFromDataBase.getName());
         assertEquals(variantSaved.getIdentifier(), variantFromDataBase.getIdentifier());
         assertFalse(variantFromDataBase.isArchived());
+    }
+
+    /**
+     * Method to test: {@link VariantFactory#save(Variant)}
+     * When: Save a Variant it's id should be deterministic
+     * Should: Calculate the id value as hash of the name
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void saveCalculateID() throws DotDataException {
+        final Variant variant = new VariantDataGen().next();
+
+        final Variant variantSaved = FactoryLocator.getVariantFactory().save(variant);
+
+        assertNotNull(variantSaved);
+        assertNotNull(variantSaved.getIdentifier());
+        assertEquals("The ID should be a hash of the name", DigestUtils.sha256Hex(variant.getName()), variantSaved.getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link VariantFactory#save(Variant)}
+     * When: Save a Variant it's id should be deterministic but if it already exists a Variant with the
+     * deterministic ID then it is re calculate with a no deterministic ID
+     * Should: Calculate the id value as hash of the name
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void saveCalculateRepeatID() throws DotDataException {
+        final Variant variant = new VariantDataGen().next();
+
+        new DotConnect().setSQL("INSERT INTO variant (id, name, archived) VALUES (?, ?, ?)")
+                .addParam(DigestUtils.sha256Hex(variant.getName()))
+                .addParam("Any name")
+                .addParam(false)
+                .loadResult();
+
+        final Variant variantSaved = FactoryLocator.getVariantFactory().save(variant);
+
+        assertNotNull(variantSaved);
+        assertNotNull(variantSaved.getIdentifier());
+        assertNotEquals("The ID should not be a hash of the name",
+                DigestUtils.sha256Hex(variant.getName()), variantSaved.getIdentifier());
     }
 
     /**
