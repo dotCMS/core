@@ -38,14 +38,7 @@ import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.util.ActivityLogger;
-import com.dotmarketing.util.Constants;
-import com.dotmarketing.util.HostUtil;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -1068,4 +1061,65 @@ public class ContainerResource implements Serializable {
         }
     }
 
+    /**
+     * Copies container to the specified host
+     *
+     * @param request
+     * @param response
+     * @param id       id identifier to copy.
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @POST
+    @Path("/{id}/_copy")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response copy(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("id") final String id) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).requiredBackendUser(true)
+                .rejectWhenNoUser(true).init();
+        final User user = initData.getUser();
+        final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+        final PageMode pageMode = PageMode.get(request);
+
+        if (!UtilMethods.isSet(id)) {
+
+            Logger.error(this, "The container id is required");
+            throw new IllegalArgumentException("The container id is required");
+        }
+
+        if (!UUIDUtil.isUUID(id)) {
+
+            Logger.error(this, "Container 'id' should be a uuid");
+            return ExceptionMapperUtil.createResponse(null, "Container 'id' should be a uuid");
+        }
+
+        final Container sourceContainer = this.getContainerWorking(id, user,
+                WebAPILocator.getHostWebAPI().getHost(request));
+
+        if (null != sourceContainer && InodeUtils.isSet(sourceContainer.getInode())) {
+
+            ActivityLogger.logInfo(this.getClass(), "Copy Container",
+                    "User " + user.getPrimaryKey() + " saved " + sourceContainer.getTitle(),
+                    host.getHostname());
+
+            Container copiedContainer = this.containerAPI.copy(sourceContainer, host, user,
+                    pageMode.respectAnonPerms);
+
+            Logger.debug(this,
+                    () -> "The container: " + sourceContainer.getIdentifier() + " has been copied");
+
+            return Response.ok(new ResponseEntityView(new ContainerView(copiedContainer))).build();
+        } else {
+
+            Logger.error(this, "Container with Id: " + id + " does not exist");
+            throw new DoesNotExistException("Container with Id: " + id + " does not exist");
+        }
+    }
 }
