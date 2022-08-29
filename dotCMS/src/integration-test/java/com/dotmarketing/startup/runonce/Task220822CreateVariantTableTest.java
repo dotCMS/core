@@ -9,20 +9,16 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.DbConnectionFactory.DataBaseType;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UUIDGenerator;
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class Task222208CreateVariantTableTest {
+public class Task220822CreateVariantTableTest {
 
     private final Map<String, String> POSTGRES_EXPECTED = map(
             "id", "varchar",
@@ -48,7 +44,7 @@ public class Task222208CreateVariantTableTest {
     }
 
     /**
-     * Method to test: {@link Task222208CreateVariantTable#executeUpgrade()}
+     * Method to test: {@link Task220822CreateVariantTable#executeUpgrade()}
      * When: the method is run
      * Should: create the variant table
      *
@@ -64,7 +60,7 @@ public class Task222208CreateVariantTableTest {
 
         assertFalse(dotDatabaseMetaData.tableExists(connection, "variant"));
 
-        final Task222208CreateVariantTable task222208CreateVariantTable = new Task222208CreateVariantTable();
+        final Task220822CreateVariantTable task222208CreateVariantTable = new Task220822CreateVariantTable();
         task222208CreateVariantTable.executeUpgrade();
 
         assertTrue(dotDatabaseMetaData.tableExists(connection, "variant"));
@@ -93,7 +89,7 @@ public class Task222208CreateVariantTableTest {
     }
 
     /**
-     * Method to test: {@link Task222208CreateVariantTable#executeUpgrade()}
+     * Method to test: {@link Task220822CreateVariantTable#executeUpgrade()}
      * When: the method is run twice
      * Should: not throw any exception
      *
@@ -103,7 +99,7 @@ public class Task222208CreateVariantTableTest {
     @Test
     public void runTUTwice() throws DotDataException, SQLException {
         clean();
-        final Task222208CreateVariantTable task222208CreateVariantTable = new Task222208CreateVariantTable();
+        final Task220822CreateVariantTable task222208CreateVariantTable = new Task220822CreateVariantTable();
         task222208CreateVariantTable.executeUpgrade();
         task222208CreateVariantTable.executeUpgrade();
 
@@ -111,7 +107,7 @@ public class Task222208CreateVariantTableTest {
     }
 
     /**
-     * Method to test: {@link Task222208CreateVariantTable#executeUpgrade()}
+     * Method to test: {@link Task220822CreateVariantTable#executeUpgrade()}
      * When: try to insert to variant with the same name after running the executeUpgrade
      * Should: throw
      *
@@ -122,7 +118,7 @@ public class Task222208CreateVariantTableTest {
     public void nameDuplicated() throws DotDataException {
         clean();
 
-        final Task222208CreateVariantTable task222208CreateVariantTable = new Task222208CreateVariantTable();
+        final Task220822CreateVariantTable task222208CreateVariantTable = new Task220822CreateVariantTable();
         task222208CreateVariantTable.executeUpgrade();
         checkNotAllowDuplicatedName();
     }
