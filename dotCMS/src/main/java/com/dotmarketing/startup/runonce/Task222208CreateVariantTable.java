@@ -13,13 +13,17 @@ public class Task222208CreateVariantTable implements StartupTask {
 
     private final String POSTGRES_QUERY = "CREATE TABLE IF NOT EXISTS variant ("
             + "  id varchar(255) primary key,"
-            + "  name varchar(255) not null,"
+            + "  name varchar(255) not null UNIQUE,"
             + "  archived boolean NOT NULL default false"
             + ")";
 
-    private final String MSSQL_QUERY = "CREATE TABLE IF NOT EXISTS variant ("
+    private static final String MSSQL_VALIDATE	=	"SELECT COUNT(*) as exist " +
+            "FROM sysobjects " +
+            "WHERE name = 'variant'";
+
+    private final String MSSQL_QUERY = "CREATE TABLE variant ("
             + "  id NVARCHAR(255) primary key,"
-            + "  name NVARCHAR(255) not null,"
+            + "  name NVARCHAR(255) not null UNIQUE,"
             + "  archived tinyint not null"
             + ")";
 
@@ -36,7 +40,17 @@ public class Task222208CreateVariantTable implements StartupTask {
 
     @Override
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
-        final String query = DbConnectionFactory.isMsSql() ? MSSQL_QUERY : POSTGRES_QUERY;
-        new DotConnect().setSQL(query).loadResult();
+        final DotConnect dotConnect = new DotConnect();
+
+        if (DbConnectionFactory.isMsSql()) {
+            dotConnect.setSQL(MSSQL_VALIDATE);
+            int existTable = (Integer) dotConnect.loadObjectResults().get(0).get("exist");
+
+            if(existTable == 0){
+                dotConnect.setSQL(MSSQL_QUERY).loadResult();
+            }
+        } else {
+            dotConnect.setSQL(POSTGRES_QUERY).loadResult();
+        }
     }
 }

@@ -16,6 +16,7 @@ public interface VariantAPI {
      * @param variant
      *
      * @throws NullPointerException if the {@link Variant}'s name is null
+     * @throws IllegalArgumentException if the {@link Variant#isArchived()} is true
      */
     Variant save(final Variant variant);
 
@@ -50,4 +51,11 @@ public interface VariantAPI {
      * @return {@link Variant}
      */
     Optional<Variant> get(final String identifier);
+
+    /**
+     * Return a {@link Variant} by Name
+     * @param name {@link Variant}'s name
+     * @return {@link Variant}
+     */
+    Optional<Variant> getByName(final String name);
 }

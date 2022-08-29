@@ -2,8 +2,8 @@ package com.dotmarketing.portlets.variant.business;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rest.validation.Preconditions;
+import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.variant.model.Variant;
@@ -14,7 +14,7 @@ import java.util.Optional;
  * API of {@link Variant}
  */
 public class VariantAPIImpl implements VariantAPI {
-    private VariantFactory variantFactory;
+    private final VariantFactory variantFactory;
 
     public VariantAPIImpl(){
         variantFactory = FactoryLocator.getVariantFactory();
@@ -31,11 +31,9 @@ public class VariantAPIImpl implements VariantAPI {
     @WrapInTransaction
     public Variant save(final Variant variant) {
 
-        Preconditions.checkNotNull(variant.getName(), "Variant name should not be null");
-
-        if (variant.isArchived()) {
-            throw new IllegalArgumentException("Variant can not be created as archive");
-        }
+        DotPreconditions.checkNotNull(variant.getName(), IllegalArgumentException.class,
+                "Variant name should not be null");
+        DotPreconditions.checkArgument(!variant.isArchived(), "Variant can not be created as archive");
 
         Logger.debug(this, ()-> "Saving Variant: " + variant);
 
@@ -55,8 +53,10 @@ public class VariantAPIImpl implements VariantAPI {
     @Override
     @WrapInTransaction
     public void update(final Variant variant) {
-        Preconditions.checkNotNull(variant.getName(), "Variant name should not be null");
-        Preconditions.checkNotNull(variant.getIdentifier(), "Variant ID should not be null");
+        Preconditions.checkNotNull(variant.getName(), IllegalArgumentException.class,
+                "Variant name should not be null");
+        Preconditions.checkNotNull(variant.getIdentifier(), IllegalArgumentException.class ,
+                "Variant ID should not be null");
 
         try {
             get(variant.getIdentifier())
@@ -77,9 +77,8 @@ public class VariantAPIImpl implements VariantAPI {
     @WrapInTransaction
     public void delete(String id) {
         final Variant variant = get(id).orElseThrow(() -> new DoesNotExistException("The variant must exists"));
-        if (!variant.isArchived()) {
-            throw new IllegalStateException("The Variant must be archived to be able to delete it");
-        }
+
+        DotPreconditions.checkArgument(variant.isArchived(), "The Variant must be archived to be able to delete it");
 
         Logger.debug(this, ()-> "Deleting Variant: " + variant);
 
@@ -115,10 +114,27 @@ public class VariantAPIImpl implements VariantAPI {
     @Override
     public Optional<Variant> get(final String identifier)  {
         Preconditions.checkNotNull(identifier, "Variant ID should not be null");
-        Logger.debug(this, ()-> "Getting Variant: " + identifier);
+        Logger.debug(this, ()-> "Getting Variant by ID: " + identifier);
 
         try {
             return variantFactory.get(identifier);
+        } catch (DotDataException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Implementation for {@link VariantAPI#getByName(String)} (String)}
+     *
+     * @param name {@link Variant}'s identifier
+     * @return
+     */
+    public Optional<Variant> getByName(final String name) {
+        Preconditions.checkNotNull(name, "Variant Name should not be null");
+        Logger.debug(this, ()-> "Getting Variant by Name: " + name);
+
+        try {
+            return variantFactory.getByName(name);
         } catch (DotDataException e) {
             throw new RuntimeException(e);
         }

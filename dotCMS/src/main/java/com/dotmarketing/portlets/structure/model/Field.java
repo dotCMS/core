@@ -56,7 +56,8 @@ public class Field extends Inode implements  FieldIf
 		KEY_VALUE("key_value"),
 	  	ROW("row"),
 	  	COLUMN("column"),
-	  	STORY_BLOCK_FIELD("story_block_field");
+	  	STORY_BLOCK_FIELD("story_block_field"),
+	    JSON_FIELD("json_field");
 
 		private String value;
 

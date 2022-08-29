@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.variant.business;
 
-import com.dotcms.business.WrapInTransaction;
 import com.dotcms.util.ConversionUtils;
+import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.variant.model.Variant;
@@ -9,6 +9,8 @@ import com.dotmarketing.util.UUIDGenerator;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.jetbrains.annotations.NotNull;
 
 public class VariantFactoryImpl implements VariantFactory{
 
@@ -16,6 +18,7 @@ public class VariantFactoryImpl implements VariantFactory{
     private String VARIANT_UPDATE_QUERY = "UPDATE variant SET name = ?, archived = ? WHERE id =?";
     private String VARIANT_DELETE_QUERY = "DELETE from variant WHERE id =?";
     private String VARIANT_SELECT_QUERY = "SELECT * from variant WHERE id =?";
+    private String VARIANT_SELECT_BY_NAME_QUERY = "SELECT * from variant WHERE name =?";
 
     /**
      * Implementation for {@link VariantFactory#save(Variant)}
@@ -26,7 +29,10 @@ public class VariantFactoryImpl implements VariantFactory{
      */
     @Override
     public Variant save(final Variant variant) throws DotDataException {
-        final String identifier = UUIDGenerator.generateUuid();
+
+        DotPreconditions.checkNotNull(variant.getName(), IllegalArgumentException.class,
+                "Name must not be null");
+        final String identifier = getId(variant);
 
         new DotConnect().setSQL(VARIANT_INSERT_QUERY)
                 .addParam(identifier)
@@ -35,6 +41,24 @@ public class VariantFactoryImpl implements VariantFactory{
                 .loadResult();
 
         return new Variant(identifier, variant.getName(), false);
+    }
+
+    private String getId(final Variant variant) {
+
+        final String deterministicID = DigestUtils.sha256Hex(variant.getName());
+
+        final Optional<Variant> variantFromDataBase;
+        try {
+            variantFromDataBase = get(deterministicID);
+
+            if (variantFromDataBase.isPresent()) {
+                return UUIDGenerator.generateUuid();
+            } else {
+                return deterministicID;
+            }
+        } catch (DotDataException e) {
+            return UUIDGenerator.generateUuid();
+        }
     }
 
     /**
@@ -67,15 +91,31 @@ public class VariantFactoryImpl implements VariantFactory{
 
         if (!loadResults.isEmpty()) {
             final Map resultMap = (Map) loadResults.get(0);
-            return Optional.of(
-                    new Variant(
-                        resultMap.get("id").toString(),
-                        resultMap.get("name").toString(),
-                        ConversionUtils.toBooleanFromDb(resultMap.get("archived"))
-                )
-            );
+            return Optional.of(createVariant(resultMap));
         } else {
             return Optional.empty();
         }
+    }
+
+    public Optional<Variant> getByName(final String name) throws DotDataException {
+        final ArrayList loadResults = new DotConnect().setSQL(VARIANT_SELECT_BY_NAME_QUERY)
+                .addParam(name)
+                .loadResults();
+
+        if (!loadResults.isEmpty()) {
+            final Map resultMap = (Map) loadResults.get(0);
+            return Optional.of(createVariant(resultMap));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    @NotNull
+    private Variant createVariant(Map resultMap) {
+        return new Variant(
+                resultMap.get("id").toString(),
+                resultMap.get("name").toString(),
+                ConversionUtils.toBooleanFromDb(resultMap.get("archived"))
+        );
     }
 }

@@ -1,26 +1,20 @@
 package com.dotmarketing.portlets.variant.model;
 
+import java.io.Serializable;
+
 /**
- * Represent a new set of versions to a {@link com.dotmarketing.portlets.contentlet.model.Contentlet}.
+ * Variants represent branches or workspaces for {@link com.dotmarketing.portlets.contentlet.model.Contentlet}.
  *
- * We cann think a <code>Variant</code> as a {@link com.dotmarketing.portlets.contentlet.model.Contentlet}
- * branches so into each Variant we can have several {@link com.dotmarketing.portlets.contentlet.model.Contentlet}'s
- * versions with different languages and in WORKING or LIVE mode.
+ * In the future it should include also: {@link com.dotmarketing.portlets.templates.model.Template}
+ * and {@link com.dotmarketing.portlets.containers.model.Container}.
  *
- * Then we can have something like:
- *
- * **Default variant**
- * - English Contentlet version
- * - Spanish Contentlet version
- *
- * **Redesign 2022 variant**
- * - English Contentlet version
- * - Spanish Contentlet version
+ * They are a new dimension in addition to languages which means you can have a content version in
+ * a language and in a variation.
  */
 public class Variant {
-    private String identifier;
-    private String name;
-    private boolean archived;
+    private final String identifier;
+    private final String name;
+    private final boolean archived;
 
     public Variant(final String identifier, final String name, final boolean deleted) {
         this.identifier = identifier;

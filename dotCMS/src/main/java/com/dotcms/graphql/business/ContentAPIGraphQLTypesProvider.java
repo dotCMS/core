@@ -19,6 +19,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FileField;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.ImageField;
+import com.dotcms.contenttype.model.field.JSONField;
 import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.RelationshipsTabField;
@@ -35,6 +36,7 @@ import com.dotcms.graphql.datafetcher.CategoryFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.DotJSONDataFetcher;
 import com.dotcms.graphql.datafetcher.FieldDataFetcher;
 import com.dotcms.graphql.datafetcher.FileFieldDataFetcher;
+import com.dotcms.graphql.datafetcher.JSONFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.KeyValueFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.MultiValueFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.SiteOrFolderFieldDataFetcher;
@@ -43,8 +45,10 @@ import com.dotcms.graphql.datafetcher.TagsFieldDataFetcher;
 import com.dotcms.graphql.exception.FieldGenerationException;
 import com.dotcms.graphql.util.TypeUtil;
 import com.dotcms.util.DotPreconditions;
+import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
@@ -55,6 +59,8 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
+import graphql.schema.PropertyDataFetcher;
+import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -63,6 +69,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * This singleton class provides all the {@link GraphQLType}s needed for the Content Delivery API
@@ -94,6 +101,7 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         this.fieldClassGraphqlTypeMap
                 .put(HostFolderField.class, CustomFieldType.SITE_OR_FOLDER.getType());
         this.fieldClassGraphqlTypeMap.put(StoryBlockField.class,CustomFieldType.STORY_BLOCK.getType());
+        this.fieldClassGraphqlTypeMap.put(JSONField.class,ExtendedScalars.Json);
 
         // custom data fetchers
         this.fieldClassGraphqlDataFetcher.put(BinaryField.class, new BinaryFieldDataFetcher());
@@ -109,6 +117,7 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         this.fieldClassGraphqlDataFetcher
                 .put(HostFolderField.class, new SiteOrFolderFieldDataFetcher());
         this.fieldClassGraphqlDataFetcher.put(StoryBlockField.class,new StoryBlockFieldDataFetcher());
+        this.fieldClassGraphqlDataFetcher.put(JSONField.class, new JSONFieldDataFetcher());
     }
 
     @Override

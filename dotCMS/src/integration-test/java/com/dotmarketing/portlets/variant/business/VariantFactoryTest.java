@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.variant.business;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -17,6 +18,7 @@ import com.microsoft.sqlserver.jdbc.SQLServerException;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.postgresql.util.PSQLException;
@@ -41,6 +43,10 @@ public class VariantFactoryTest {
 
         final Variant variantSaved = FactoryLocator.getVariantFactory().save(variant);
 
+        checkFromDataBase(variantSaved);
+    }
+
+    private void checkFromDataBase(Variant variantSaved) throws DotDataException {
         assertNotNull(variantSaved);
         assertNotNull(variantSaved.getIdentifier());
 
@@ -53,27 +59,117 @@ public class VariantFactoryTest {
 
     /**
      * Method to test: {@link VariantFactory#save(Variant)}
+     * When: Try to save a {@link Variant} object with duplicated name
+     * Should: throw a {@link DotDataException}
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void saveDuplicatedNamed() throws DotDataException {
+        final Variant variant = new VariantDataGen().next();
+
+        final Variant variantSaved = FactoryLocator.getVariantFactory().save(variant);
+        checkFromDataBase(variantSaved);
+
+        final Variant variantWithNameDuplicated = new VariantDataGen().name(variant.getName()).next();
+
+        try {
+            FactoryLocator.getVariantFactory().save(variantWithNameDuplicated);
+            throw new AssertionError("DotDataException expected");
+        } catch (DotDataException e) {
+            if (DbConnectionFactory.isMsSql()) {
+                assertTrue(e.getCause().getClass().equals(SQLServerException.class));
+            } else {
+                assertTrue(e.getCause().getClass().equals(PSQLException.class));
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link VariantFactory#save(Variant)}
+     * When: Try to save a {@link Variant} object with duplicated name
+     * Should: throw a {@link DotDataException}
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void updateDuplicatedNamed() throws DotDataException {
+        final Variant variant = new VariantDataGen().next();
+
+        final Variant variantSaved = FactoryLocator.getVariantFactory().save(variant);
+        checkFromDataBase(variantSaved);
+
+        final Variant variant_2 = new VariantDataGen().nextPersisted();
+
+        final Variant variantWithNameDuplicated = new Variant(variant_2.getIdentifier(), variant.getName(), variant_2.isArchived());
+
+        try {
+            FactoryLocator.getVariantFactory().update(variantWithNameDuplicated);
+            throw new AssertionError("DotDataException expected");
+        } catch (DotDataException e) {
+            if (DbConnectionFactory.isMsSql()) {
+                assertTrue(e.getCause().getClass().equals(SQLServerException.class));
+            } else {
+                assertTrue(e.getCause().getClass().equals(PSQLException.class));
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link VariantFactory#save(Variant)}
+     * When: Save a Variant it's id should be deterministic
+     * Should: Calculate the id value as hash of the name
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void saveCalculateID() throws DotDataException {
+        final Variant variant = new VariantDataGen().next();
+
+        final Variant variantSaved = FactoryLocator.getVariantFactory().save(variant);
+
+        assertNotNull(variantSaved);
+        assertNotNull(variantSaved.getIdentifier());
+        assertEquals("The ID should be a hash of the name", DigestUtils.sha256Hex(variant.getName()), variantSaved.getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link VariantFactory#save(Variant)}
+     * When: Save a Variant it's id should be deterministic but if it already exists a Variant with the
+     * deterministic ID then it is re calculate with a no deterministic ID
+     * Should: Calculate the id value as hash of the name
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void saveCalculateRepeatID() throws DotDataException {
+        final Variant variant = new VariantDataGen().next();
+
+        new DotConnect().setSQL("INSERT INTO variant (id, name, archived) VALUES (?, ?, ?)")
+                .addParam(DigestUtils.sha256Hex(variant.getName()))
+                .addParam("Any name")
+                .addParam(false)
+                .loadResult();
+
+        final Variant variantSaved = FactoryLocator.getVariantFactory().save(variant);
+
+        assertNotNull(variantSaved);
+        assertNotNull(variantSaved.getIdentifier());
+        assertNotEquals("The ID should not be a hash of the name",
+                DigestUtils.sha256Hex(variant.getName()), variantSaved.getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link VariantFactory#save(Variant)}
      * When: Try to save a {@link Variant} object without name
      * Should: throw {@link NullPointerException}
      *
      * @throws DotDataException
      */
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void saveWithoutName() throws DotDataException {
         final Variant variant = new Variant("1", null, false);
-
-        try {
-            FactoryLocator.getVariantFactory().save(variant);
-            throw new AssertionError("DotDataException Expected");
-        }catch (DotDataException e) {
-            if (DbConnectionFactory.isPostgres()) {
-                assertEquals(PSQLException.class, e.getCause().getClass());
-            } else if (DbConnectionFactory.isMsSql()){
-                assertEquals(SQLServerException.class, e.getCause().getClass());
-            } else {
-                throw new AssertionError("Database not expected");
-            }
-        }
+        FactoryLocator.getVariantFactory().save(variant);
     }
 
     /**
@@ -226,6 +322,26 @@ public class VariantFactoryTest {
 
     /**
      * Method to test: {@link VariantFactory#get(String)}
+     * When: Try to get  {@link Variant} by namee
+     * Should: get it
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void getByName() throws DotDataException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        ArrayList results = getResults(variant);
+        assertFalse(results.isEmpty());
+
+        final Optional<Variant> variantFromDataBase = FactoryLocator.getVariantFactory().getByName(variant.getName());
+
+        assertTrue(variantFromDataBase.isPresent());
+        assertEquals(variant.getIdentifier(), variantFromDataBase.get().getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link VariantFactory#get(String)}
      * When: Try to get  archived {@link Variant} by id
      * Should: get it
      *
@@ -257,6 +373,22 @@ public class VariantFactoryTest {
 
         final Optional<Variant> variantFromDataBase = FactoryLocator.getVariantFactory()
                 .get("Not_Exists");
+
+        assertFalse(variantFromDataBase.isPresent());
+    }
+
+    /**
+     * Method to test: {@link VariantFactory#get(String)}
+     * When: Try to get  {@link Variant} by name that not exists
+     * Should: return a {@link Optional#empty()}
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void getNotExistsByName() throws DotDataException {
+
+        final Optional<Variant> variantFromDataBase = FactoryLocator.getVariantFactory()
+                .getByName("Not_Exists");
 
         assertFalse(variantFromDataBase.isPresent());
     }

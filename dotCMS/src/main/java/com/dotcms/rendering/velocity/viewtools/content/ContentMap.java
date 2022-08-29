@@ -10,6 +10,7 @@ import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.ContentsWebAPI;
+import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -348,6 +349,11 @@ public class ContentMap {
 				return getRelationshipInfo(f);
 			} else if(f != null && f.getFieldType().equals(FieldType.STORY_BLOCK_FIELD.toString())){
 				return new StoryBlockMap(f,content, this.context);
+			} else if(f != null && f.getFieldType().equals(FieldType.JSON_FIELD.toString())){
+				Field finalF = f;
+				return Try.of(()->JsonUtil.getJsonFromString(
+						(String)conAPI.getFieldValue(content, finalF)))
+						.getOrElse(Collections.emptyMap());
 			}
 
 			//ret could have been set by title
