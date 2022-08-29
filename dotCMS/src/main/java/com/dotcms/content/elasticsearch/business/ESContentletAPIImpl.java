@@ -1,5 +1,11 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
+import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
+
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
@@ -16,7 +22,15 @@ import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategyResolver;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.ConstantField;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.JSONField;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
@@ -35,12 +49,11 @@ import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
-import com.dotcms.util.*;
-import com.dotmarketing.beans.*;
-import com.dotmarketing.business.*;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DotPreconditions;
+import com.dotcms.util.FunctionUtils;
+import com.dotcms.util.JsonUtil;
 import com.dotcms.util.ThreadContextUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -70,7 +83,12 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
-import com.dotmarketing.exception.*;
+import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.TreeFactory;
@@ -78,7 +96,14 @@ import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.business.*;
+import com.dotmarketing.portlets.contentlet.business.BinaryFileFilter;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.ContentletCache;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
+import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
+import com.dotmarketing.portlets.contentlet.business.DotLockException;
+import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -114,8 +139,25 @@ import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.HostUtil;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.RegExMatch;
+import com.dotmarketing.util.TrashUtils;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.dotmarketing.util.contentet.pagination.PaginatedContentletBuilder;
+import com.dotmarketing.util.contentet.pagination.PaginatedContentlets;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -134,6 +176,36 @@ import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.activation.MimeType;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -143,30 +215,6 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import javax.activation.MimeType;
-import javax.servlet.http.HttpServletRequest;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
-import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
-import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -649,26 +697,56 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
+    public PaginatedContentlets findContentletsPaginatedByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        return findContentletsPaginatedByHost(parentHost, null, null, user, respectFrontendRoles);
+    }
+
+
+    public PaginatedContentlets findContentletsPaginatedByHost(final Host parentHost,
+            final List<Integer> includingContentTypes,
+            final List<Integer> excludingContentTypes,
+            final User user,
+            final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+        final String query = getContentletByHostQuery(parentHost, includingContentTypes,
+                excludingContentTypes);
+
+        return new PaginatedContentletBuilder()
+                .setLuceneQuery(query)
+                .setUser(user)
+                .setRespectFrontendRoles(respectFrontendRoles)
+                .build();
+    }
+
+    @CloseDBIfOpened
+    @Override
     public List<Contentlet> findContentletsByHost(Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         try {
-            StringBuilder query = new StringBuilder();
-            query.append("+conHost:").append(parentHost.getIdentifier()).append(" +working:true");
+            final String query = getContentletByHostQuery(parentHost, includingContentTypes,
+                    excludingContentTypes);
 
-            // Including content types
-            if(includingContentTypes != null && !includingContentTypes.isEmpty()) {
-                query.append(" +structureType:(").append(StringUtils.join(includingContentTypes, " ")).append(")");
-            }
-
-            // Excluding content types
-            if(excludingContentTypes != null && !excludingContentTypes.isEmpty()) {
-                query.append(" -structureType:(").append(StringUtils.join(excludingContentTypes, " ")).append(")");
-            }
-
-            return permissionAPI.filterCollection(search(query.toString(), -1, 0, null , user, respectFrontendRoles), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+            return permissionAPI.filterCollection(search(query, -1, 0, null , user, respectFrontendRoles), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         } catch (Exception e) {
             Logger.error(this.getClass(), e.getMessage(), e);
             throw new DotRuntimeException(e.getMessage(), e);
         }
+    }
+
+    private String getContentletByHostQuery(Host parentHost, List<Integer> includingContentTypes,
+            List<Integer> excludingContentTypes) {
+        final StringBuilder query = new StringBuilder();
+        query.append("+conHost:").append(parentHost.getIdentifier()).append(" +working:true");
+
+        // Including content types
+        if(includingContentTypes != null && !includingContentTypes.isEmpty()) {
+            query.append(" +structureType:(").append(StringUtils.join(includingContentTypes, " ")).append(")");
+        }
+
+        // Excluding content types
+        if(excludingContentTypes != null && !excludingContentTypes.isEmpty()) {
+            query.append(" -structureType:(").append(StringUtils.join(excludingContentTypes, " ")).append(")");
+        }
+        return query.toString();
     }
 
     @CloseDBIfOpened
@@ -6322,7 +6400,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         }else if(fieldAPI.isElementConstant(field)){
             Logger.debug(this, "Cannot set contentlet field value on field type constant. Value is saved to the field not the contentlet");
-        }else if(field.getFieldContentlet().startsWith("text")){
+        }else if(field.getFieldContentlet().startsWith("text") &&
+                !FieldType.JSON_FIELD.toString().equals(field.getFieldType())){
             try{
                 contentlet.setStringProperty(field.getVelocityVarName(), (String)value);
             }catch (Exception e) {
@@ -6417,15 +6496,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }catch (IOException e) {
                 throw new DotContentletStateException("Unable to set binary file Object: " + e.getMessage(),e);
             }
-        }else if(field.getFieldContentlet().startsWith("system_field")){
-            if(value.getClass()==java.lang.String.class){
-                try{
-                    contentlet.setStringProperty(field.getVelocityVarName(), (String)value);
-                }catch (Exception e) {
-                    contentlet.setStringProperty(field.getVelocityVarName(),value.toString());
+        }else if(field.getFieldContentlet().startsWith("system_field")) {
+            if (value.getClass() == java.lang.String.class) {
+                try {
+                    contentlet.setStringProperty(field.getVelocityVarName(), (String) value);
+                } catch (Exception e) {
+                    contentlet.setStringProperty(field.getVelocityVarName(), value.toString());
                 }
             }
-        }else{
+        } else if(FieldType.JSON_FIELD.toString().equals(field.getFieldType())) {
+                if(value instanceof Map){
+                    contentlet.setStringProperty(field.getVelocityVarName(),
+                            Try.of(()->JsonUtil.getJsonAsString((Map<String, Object>) value))
+                                    .getOrElse("{}"));
+                }
+        } else{
             throw new DotContentletStateException("Unable to set value : Unknown field type");
         }
     }
@@ -6498,9 +6583,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final Set<String> nullValueProperties = contentlet.getNullProperties();
         for (final Field field : fields) {
             final Object fieldValue = (nullValueProperties.contains(field.getVelocityVarName()) ? null : contentletMap.get(field.getVelocityVarName()));
+            final com.dotcms.contenttype.model.field.Field newField = LegacyFieldTransformer.from(field);
             // Validate Field Type
             if(fieldValue != null){
-                if(isFieldTypeString(field)){
+                if(isFieldTypeString(field) && !(newField instanceof JSONField)){
 
                     if(fieldValue instanceof Map && FieldType.KEY_VALUE.toString().equals(field.getFieldType())){
                         //That's fine we're handling now keyValues directly as maps
@@ -6549,6 +6635,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         hasError = true;
                         continue;
                     }
+                }else if(newField instanceof JSONField) {
+                    if(!(fieldValue instanceof String) || !(JsonUtil.isValidJSON(fieldValue.toString()))){
+                        cve.addBadTypeField(field);
+                        Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type JSON");
+                        hasError = true;
+                        continue;
+                    }
+                    //  binary field validation
                 }else if(isFieldTypeSystem(field) || isFieldTypeConstant(field)){
                     // Do not validate system or constant field values
                 }else{

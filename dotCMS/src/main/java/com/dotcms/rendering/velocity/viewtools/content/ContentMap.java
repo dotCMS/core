@@ -1,10 +1,13 @@
 package com.dotcms.rendering.velocity.viewtools.content;
 
+import com.dotcms.contenttype.business.DotAssetAPI;
+import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.ContentsWebAPI;
+import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -226,17 +229,25 @@ public class ContentMap {
 					return null;
 				}
 
-				String inode =  EDIT_OR_PREVIEW_MODE ? cvi.get().getWorkingInode() : cvi.get().getLiveInode();
-				Contentlet fileAsset  =  APILocator.getContentletAPI().find(inode, user!=null?user:APILocator.getUserAPI().getAnonymousUser(), true);
-					
-				if(fileAsset != null && UtilMethods.isSet(fileAsset.getInode())){
-	                FileAssetMap fam = FileAssetMap.of(fileAsset);
+                String inode = EDIT_OR_PREVIEW_MODE ? cvi.get().getWorkingInode() : cvi.get().getLiveInode();
+                Contentlet asset = APILocator.getContentletAPI().find(inode,
+                                user != null ? user : APILocator.getUserAPI().getAnonymousUser(), true);
+
+                if (asset == null || UtilMethods.isEmpty(asset.getInode())) {
+                    return null;
+                }
+                if (asset.isFileAsset()) {
+                    FileAssetMap fam = FileAssetMap.of(asset);
                     // Store file asset map into fieldValueMap
                     addFieldValue(f, fam);
                     return fam;
-				  }
-					
-				
+                }
+                if (asset.isDotAsset()) {
+                    BinaryMap binmap = new BinaryMap(asset, asset.getContentType().fieldMap().get("asset"));
+                    // Store file asset map into fieldValueMap
+                    addFieldValue(f, binmap);
+                    return binmap;
+                }
 			}else if(f != null && f.getFieldType().equals(Field.FieldType.BINARY.toString())){
                 // Check if fileAsset or binaryMap is in fieldValueMap hashmap
                 Object fieldvalue = retriveFieldValue(f);
@@ -346,6 +357,11 @@ public class ContentMap {
 				return getRelationshipInfo(f);
 			} else if(f != null && f.getFieldType().equals(FieldType.STORY_BLOCK_FIELD.toString())){
 				return new StoryBlockMap(f,content, this.context);
+			} else if(f != null && f.getFieldType().equals(FieldType.JSON_FIELD.toString())){
+				Field finalF = f;
+				return Try.of(()->JsonUtil.getJsonFromString(
+						(String)conAPI.getFieldValue(content, finalF)))
+						.getOrElse(Collections.emptyMap());
 			}
 
 			//ret could have been set by title

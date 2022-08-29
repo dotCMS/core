@@ -1,6 +1,6 @@
 package com.dotcms.util;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
@@ -22,6 +22,14 @@ public class JsonUtil {
         return JSON_MAPPER.readValue(getJsonFileContentAsString(path), Map.class);
     }
 
+    public static Map<String, Object> getJsonFromString(final String json) throws IOException {
+        return JSON_MAPPER.readValue(json, Map.class);
+    }
+
+    public static String getJsonAsString(final Map<String, Object> json) throws IOException {
+        return JSON_MAPPER.writeValueAsString(json);
+    }
+
     public static String getJsonFileContentAsString(final String path) throws IOException {
 
         ClassLoader classLoader = JsonUtil.class.getClassLoader();
@@ -33,17 +41,17 @@ public class JsonUtil {
     /**
      * Checks whether the provided String represents valid JSON data or not.
      *
-     * @param data The String containing potential JSON data.
+     * @param fieldValue The String containing potential JSON data.
      *
      * @return If the String represents JSON data and has the appropriate format, returns {@code true}.
      */
-    public static boolean isJson(final String data) {
+    public static boolean isValidJSON(final String fieldValue) {
         try {
-            JSON_MAPPER.readTree(data);
-        } catch (final JsonProcessingException e) {
-            return Boolean.FALSE;
+            JSON_MAPPER.readTree(fieldValue);
+        } catch (final JacksonException e) {
+            return false;
         }
-        return Boolean.TRUE;
+        return true;
     }
 
 }
