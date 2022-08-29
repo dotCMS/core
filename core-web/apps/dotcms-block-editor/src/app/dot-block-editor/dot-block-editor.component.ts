@@ -14,7 +14,6 @@ import {
     ImageUpload,
     DotConfigExtension,
     BubbleFormExtension,
-    ImageBlock,
     ImageNode
 } from '@dotcms/block-editor';
 
@@ -70,7 +69,6 @@ export class DotBlockEditorComponent implements OnInit {
             BubbleLinkFormExtension(this.viewContainerRef),
             DotBubbleMenuExtension(this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
-            ImageNode,
             // Marks Extensions
             Underline,
             TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'image'] }),
@@ -88,7 +86,7 @@ export class DotBlockEditorComponent implements OnInit {
         ];
         const customExtensions: Map<string, AnyExtension> = new Map([
             ['contentlets', ContentletBlock(this.injector)],
-            ['dotImage', ImageBlock(this.injector)]
+            ['image', ImageNode]
         ]);
 
         return [

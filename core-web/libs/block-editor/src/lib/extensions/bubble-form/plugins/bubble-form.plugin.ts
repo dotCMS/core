@@ -10,6 +10,7 @@ import tippy, { Instance, Props } from 'tippy.js';
 import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
 import { BUBBLE_FORM_PLUGIN_KEY } from '../bubble-form.extension';
 import { BubbleFormComponent, DynamicControl } from '../bubble-form.component';
+import { Node } from 'prosemirror-model';
 
 export interface BubbleFormProps {
     pluginKey: PluginKey;
@@ -71,6 +72,8 @@ export const getNodePosition = (node: HTMLElement, type: string): DOMRect => {
 export class BubbleFormView extends BubbleMenuView {
     public editor: Editor;
 
+    public node: Node;
+
     public element: HTMLElement;
 
     public view: EditorView;
@@ -105,10 +108,14 @@ export class BubbleFormView extends BubbleMenuView {
         this.component.instance.buildForm();
 
         this.component.instance.formValues.pipe(takeUntil(this.$destroy)).subscribe((data) => {
-            this.editor.commands.setImage({ ...data });
+            const attr = this.node.attrs;
+            this.editor.commands.setImage({ ...attr, ...data });
             this.editor.commands.closeForm();
         });
 
+        this.component.instance.hide.pipe(takeUntil(this.$destroy)).subscribe(() => {
+            this.editor.commands.closeForm();
+        });
         this.element.addEventListener('mousedown', this.mousedownHandler, { capture: true });
         this.editor.on('focus', this.focusHandler);
     }
@@ -126,6 +133,8 @@ export class BubbleFormView extends BubbleMenuView {
 
         // Check that the current plugin state is different to previous plugin state.
         if (next?.open === prev?.open) {
+            this.tippy?.popperInstance?.forceUpdate();
+
             return;
         }
 
@@ -137,7 +146,8 @@ export class BubbleFormView extends BubbleMenuView {
                     const node = view.nodeDOM(from) as HTMLElement;
 
                     if (node) {
-                        const type = doc.nodeAt(from).type.name;
+                        this.node = doc.nodeAt(from);
+                        const type = this.node.type.name;
 
                         return getNodePosition(node, type);
                     }

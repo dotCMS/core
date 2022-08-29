@@ -28,7 +28,6 @@ import {
     DragHandlerComponent,
     FormActionsComponent,
     LoaderComponent,
-    ImageBlockComponent,
     DotImageService
 } from './extensions';
 
@@ -53,7 +52,6 @@ import { BubbleFormComponent } from './extensions/bubble-form/bubble-form.compon
         ContentletBlockComponent,
         ActionButtonComponent,
         DragHandlerComponent,
-        ImageBlockComponent,
         LoaderComponent,
         BubbleMenuComponent,
         BubbleMenuButtonComponent,

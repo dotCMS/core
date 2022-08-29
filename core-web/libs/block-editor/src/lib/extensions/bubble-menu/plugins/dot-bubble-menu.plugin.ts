@@ -1,7 +1,7 @@
 import { ComponentRef } from '@angular/core';
 import { EditorView } from 'prosemirror-view';
-import { isNodeSelection, posToDOMRect } from '@tiptap/core';
-import { EditorState, Plugin, PluginKey } from 'prosemirror-state';
+import { posToDOMRect } from '@tiptap/core';
+import { EditorState, Plugin, PluginKey, NodeSelection } from 'prosemirror-state';
 import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
 import tippy, { Instance } from 'tippy.js';
 
@@ -168,7 +168,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
         this.tippy?.setProps({
             getReferenceClientRect: () => {
-                if (isNodeSelection(selection)) {
+                if (selection instanceof NodeSelection) {
                     const node = view.nodeDOM(from) as HTMLElement;
 
                     if (node) {

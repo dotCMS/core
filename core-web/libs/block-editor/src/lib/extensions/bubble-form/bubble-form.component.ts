@@ -17,6 +17,7 @@ export interface DynamicControl<T> {
 })
 export class BubbleFormComponent {
     @Output() formValues = new EventEmitter();
+    @Output() hide = new EventEmitter<boolean>();
     @Input() dynamicControls: DynamicControl<string>[] = [];
     form: FormGroup;
 

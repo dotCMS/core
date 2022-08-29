@@ -10,7 +10,6 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { LoaderComponent, MessageType } from '@dotcms/block-editor';
 
 import { DotImageService } from './services/dot-image/dot-image.service';
-import { IMAGE_BLOCK_NAME } from './nodes/image-block/image-block.node';
 
 import { PlaceholderPlugin } from './plugins/placeholder.plugin';
 
@@ -44,7 +43,7 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
             function isImageBlockAllowed(): boolean {
                 const allowedBlocks: string[] = editor.storage.dotConfig.allowedBlocks;
 
-                return allowedBlocks.length > 1 ? allowedBlocks.includes(IMAGE_BLOCK_NAME) : true;
+                return allowedBlocks.length > 1 ? allowedBlocks.includes('image') : true;
             }
 
             function setPlaceHolder(view: EditorView, position: number, id: string) {

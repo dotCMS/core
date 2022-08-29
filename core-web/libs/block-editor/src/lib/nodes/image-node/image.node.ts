@@ -31,6 +31,13 @@ export const ImageNode = Image.extend({
         return {
             // Extend Attributes: https://tiptap.dev/guide/custom-extensions#extend-existing-attributes
             ...this.parent?.(),
+            style: {
+                default: null,
+                parseHTML: (element) => element.getAttribute('style'),
+                renderHTML: (attributes) => {
+                    return { style: attributes.style };
+                }
+            },
             href: {
                 default: null,
                 parseHTML: (element) => element.getAttribute('href'),
@@ -64,14 +71,6 @@ export const ImageNode = Image.extend({
                     return commands.updateAttributes('image', { href: '' });
                 }
         };
-    },
-
-    parseHTML() {
-        return [
-            {
-                tag: this.options.allowBase64 ? 'img[src]' : 'img[src]:not([src^="data:"])'
-            }
-        ];
     },
 
     renderHTML({ HTMLAttributes }) {
