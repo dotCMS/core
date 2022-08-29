@@ -19,7 +19,7 @@ arch=$(uname -m)
 if [[ "$arch" == 'x86_64' ]]
 then
   arch='x64'
-elif [[ "$arch" == 'aarm64' ]]
+elif [[ "$arch" == 'aarch64' ]]
 then
   arch='arm64'
 fi
