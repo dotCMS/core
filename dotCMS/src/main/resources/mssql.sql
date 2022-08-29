@@ -2705,4 +2705,5 @@ create table experiment (
     creation_date datetimeoffset(3) not null,
     created_by NVARCHAR(255) not null,
     last_modified_by NVARCHAR(255) not null
+
 );
