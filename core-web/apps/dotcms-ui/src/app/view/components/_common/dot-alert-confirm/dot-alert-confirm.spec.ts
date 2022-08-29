@@ -137,15 +137,20 @@ describe('DotAlertConfirmComponent', () => {
     });
 
     describe('alert dialog', () => {
-        it('should show', () => {
+        it('should show', (done) => {
             dialogService.alert({
                 header: '',
                 message: ''
             });
 
             fixture.detectChanges();
+            spyOn(component.acceptBtn.nativeElement, 'focus');
             const confirm = de.query(By.css('p-dialog'));
             expect(confirm === null).toBe(false);
+            setTimeout(() => {
+                expect(component.acceptBtn.nativeElement.focus).toHaveBeenCalledTimes(1);
+                done();
+            }, 100);
         });
 
         it('should have right attrs', () => {
