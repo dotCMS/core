@@ -6419,7 +6419,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             hasError = true;
                             cve.addPatternField(field);
                             Logger.warn(this, "Field with number regex [" + field.getVelocityVarName() + "] does not " +
-                                    "match");
+                                    "match. Regex: " + regext);
                             continue;
                         }
                     }else if(fieldValue instanceof String && UtilMethods.isSet(((String)fieldValue).trim())){
@@ -6429,7 +6429,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             hasError = true;
                             cve.addPatternField(field);
                             Logger.warn(this, "Field with string regex [" + field.getVelocityVarName() + "] does not " +
-                                    "match");
+                                    "match. Regex: " + regext);
                             continue;
                         }
                     }

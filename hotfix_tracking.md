@@ -330,3 +330,8 @@ This maintenance release includes the following code fixes:
 
 168. https://github.com/dotCMS/core/issues/22478 : NormalizationFilter does not set javax.servlet.forward.request_uri #22478
 169. https://github.com/dotCMS/core/issues/22498 : Normalization filter is too aggressive #22498
+
+**Release-5.3.8.13**
+
+170. https://github.com/dotCMS/core/issues/19774 : dotcontent viewtool method of pullRelated is not honoring the languageId that is passed in. #19774
+171. https://github.com/dotCMS/core/issues/19569 : Rely on Tomcat's RemoteIpValve for dns resolution - was: External service interaction (DNS) #19569
