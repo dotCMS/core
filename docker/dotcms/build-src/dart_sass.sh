@@ -16,7 +16,13 @@ tomcat_dir=$(basename /srv/dotserver/tomcat-*)
 file_name='dart-sass.tar.gz'
 dart_sass_lib="/srv/dotserver/${tomcat_dir}/webapps/ROOT/WEB-INF/bin/"
 arch=$(uname -m)
-[[ "$arch" == 'x86_64' ]] && arch='x64'
+if [[ "$arch" == 'x86_64' ]]
+then
+  arch='x64'
+elif [[ "$arch" == 'aarm64' ]]
+then
+  arch='arm64'
+fi
 folder_name="dart-sass-linux-$arch"
 
 curl -s -L -o $file_name https://github.com/sass/dart-sass/releases/download/$dart_sass_latest/dart-sass-$dart_sass_latest-linux-$arch.tar.gz
