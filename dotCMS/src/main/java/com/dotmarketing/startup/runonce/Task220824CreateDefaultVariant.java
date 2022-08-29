@@ -15,7 +15,7 @@ import java.util.ArrayList;
 /**
  * Create a new variant_id field in the contentlet_version_info table and create the DEFAULT variant
  */
-public class Task222408CreateDefaultVariant  implements StartupTask  {
+public class Task220824CreateDefaultVariant implements StartupTask  {
 
     @Override
     @WrapInTransaction

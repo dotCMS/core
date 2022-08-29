@@ -23,7 +23,7 @@ import java.util.Map;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class Task222408CreateDefaultVariantTest {
+public class Task220824CreateDefaultVariantTest {
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -68,7 +68,7 @@ public class Task222408CreateDefaultVariantTest {
     }
 
     /**
-     * Method to test: {@link Task222408CreateDefaultVariant#executeUpgrade()}
+     * Method to test: {@link Task220824CreateDefaultVariant#executeUpgrade()}
      * when: the UT run
      * Should: Create the default variant and add a new fiel in the contentlet_version_info
      */
@@ -77,7 +77,7 @@ public class Task222408CreateDefaultVariantTest {
 
         cleanAllBefore();
 
-        final Task222408CreateDefaultVariant upgradeTask = new Task222408CreateDefaultVariant();
+        final Task220824CreateDefaultVariant upgradeTask = new Task220824CreateDefaultVariant();
         upgradeTask.executeUpgrade();
 
         checkIfVariantDefaultExists();
@@ -85,10 +85,10 @@ public class Task222408CreateDefaultVariantTest {
     }
 
     /**
-     *  Method to test: {@link Task222408CreateDefaultVariant#executeUpgrade()}
-     *  When: Create a Contentlet before the {@link Task222408CreateDefaultVariant} run
+     *  Method to test: {@link Task220824CreateDefaultVariant#executeUpgrade()}
+     *  When: Create a Contentlet before the {@link Task220824CreateDefaultVariant} run
      *  Should: not going to have variant_id
-     *  When: Create a Contentlet after the {@link Task222408CreateDefaultVariant} run
+     *  When: Create a Contentlet after the {@link Task220824CreateDefaultVariant} run
      *  Should:  have a variant_id equals to 1
      *
      * @throws DotDataException
@@ -102,7 +102,7 @@ public class Task222408CreateDefaultVariantTest {
 
         checkNotExistVariant(contentletBefore);
 
-        final Task222408CreateDefaultVariant upgradeTask = new Task222408CreateDefaultVariant();
+        final Task220824CreateDefaultVariant upgradeTask = new Task220824CreateDefaultVariant();
         upgradeTask.executeUpgrade();
 
         final Contentlet contentletAfter = new ContentletDataGen(contentType).nextPersisted();
@@ -135,13 +135,13 @@ public class Task222408CreateDefaultVariantTest {
     public void runningTwice() throws DotDataException {
         cleanAllBefore();
 
-        final Task222408CreateDefaultVariant upgradeTask = new Task222408CreateDefaultVariant();
+        final Task220824CreateDefaultVariant upgradeTask = new Task220824CreateDefaultVariant();
         upgradeTask.executeUpgrade();
         upgradeTask.executeUpgrade();
     }
 
     /**
-     *  Method to test: {@link Task222408CreateDefaultVariant#forceRun()}
+     *  Method to test: {@link Task220824CreateDefaultVariant#forceRun()}
      *  When: the Default variant exists
      *  Should return false
      *  When: the Default variant does not  exists
@@ -151,7 +151,7 @@ public class Task222408CreateDefaultVariantTest {
     public void forceRun() throws DotDataException {
         cleanAllBefore();
 
-        final Task222408CreateDefaultVariant upgradeTask = new Task222408CreateDefaultVariant();
+        final Task220824CreateDefaultVariant upgradeTask = new Task220824CreateDefaultVariant();
         assertTrue(upgradeTask.forceRun());
 
         upgradeTask.executeUpgrade();

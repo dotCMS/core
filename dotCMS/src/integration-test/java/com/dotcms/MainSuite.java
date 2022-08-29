@@ -166,11 +166,8 @@ import com.dotmarketing.startup.runonce.Task220402UpdateDateTimezonesTest;
 import com.dotmarketing.startup.runonce.Task220413IncreasePublishedPushedAssetIdColTest;
 import com.dotmarketing.startup.runonce.Task220512UpdateNoHTMLRegexValueTest;
 import com.dotmarketing.startup.runonce.Task220606UpdatePushNowActionletNameTest;
-<<<<<<< HEAD
 import com.dotmarketing.startup.runonce.Task220824CreateDefaultVariantTest;
-=======
 import com.dotmarketing.startup.runonce.Task222208CreateVariantTableTest;
->>>>>>> origin/issue-22789-Variant-API-Factory
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
