@@ -490,11 +490,6 @@ public class FolderFactoryImpl extends FolderFactory {
 		for(IHTMLPage page : pageAssetList) {
 		    Contentlet cont = APILocator.getContentletAPI().find(page.getInode(), APILocator.getUserAPI().getSystemUser(), false);
             Contentlet newContent = APILocator.getContentletAPI().copyContentlet(cont, newFolder, APILocator.getUserAPI().getSystemUser(), false);
-            List<MultiTree> pageContents = APILocator.getMultiTreeAPI().getMultiTrees(cont.getIdentifier());
-            for(MultiTree m : pageContents){
-            	MultiTree mt = new MultiTree(newContent.getIdentifier(), m.getParent2(), m.getChild());
-            	APILocator.getMultiTreeAPI().saveMultiTree(mt);
-            }
             pagesCopied.put(cont.getInode(), new IHTMLPage[] {page , APILocator.getHTMLPageAssetAPI().fromContentlet(cont)});
 		}
 		
