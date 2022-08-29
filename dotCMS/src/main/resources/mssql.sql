@@ -2692,7 +2692,7 @@ create table variant (
 );
 
 create table experiment (
-    id  NVARCHAR(255) not null,
+    id  NVARCHAR(255) primary key,
     page_id NVARCHAR(255) not null,
     name NVARCHAR(255) not null,
     description NVARCHAR(255) not null,
@@ -2707,3 +2707,5 @@ create table experiment (
     last_modified_by NVARCHAR(255) not null
 
 );
+
+CREATE INDEX idx_exp_pageid ON experiment (page_id);

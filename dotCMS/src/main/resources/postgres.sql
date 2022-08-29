@@ -2483,8 +2483,15 @@ create table storage_x_data (
 CREATE TABLE shedlock(name VARCHAR(64) NOT NULL, lock_until timestamptz NOT NULL,
                       locked_at timestamptz NOT NULL, locked_by VARCHAR(255) NOT NULL, PRIMARY KEY (name));
 
+
+create table variant (
+     id varchar(255) primary key,
+     name varchar(255) not null UNIQUE,
+     archived boolean NOT NULL default false
+);
+
 create table experiment (
-     id  varchar(255) not null,
+     id  varchar(255) primary key,
      page_id varchar(255) not null,
      name varchar(255) not null,
      description varchar(255) not null,
@@ -2499,8 +2506,5 @@ create table experiment (
      last_modified_by varchar(255) not null
 );
 
-create table variant (
-     id varchar(255) primary key,
-     name varchar(255) not null UNIQUE,
-     archived boolean NOT NULL default false
-);
+CREATE INDEX idx_exp_pageid ON experiment (page_id);
+

@@ -4,6 +4,10 @@ import com.dotcms.experiments.model.Experiment;
 import com.dotmarketing.exception.DotDataException;
 import java.util.Optional;
 
+/**
+ * Interaction with the persistence layer for CRUD and other operations with {@link Experiment}s
+ */
+
 public interface ExperimentsFactory {
     Experiment save(final Experiment experiment) throws DotDataException;
 

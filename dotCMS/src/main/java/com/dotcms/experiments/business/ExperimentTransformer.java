@@ -1,16 +1,19 @@
 package com.dotcms.experiments.business;
 
+import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TrafficProportion;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.ConversionUtils;
+import com.dotcms.util.transform.DBColumnToJSONConverter;
 import com.dotcms.util.transform.DBTransformer;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.JsonMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import io.vavr.control.Try;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +24,7 @@ import org.postgresql.util.PGobject;
 /**
  * DBTransformer that converts DB objects into {@link Experiment} instances
  */
-public class ExperimentTransformer implements DBTransformer {
+public class ExperimentTransformer implements DBTransformer<Experiment> {
     final List<Experiment> list;
 
     final static ObjectMapper mapper = DotObjectMapperProvider.getInstance()
@@ -45,43 +48,23 @@ public class ExperimentTransformer implements DBTransformer {
         return this.list;
     }
 
-    private static Experiment transform(Map<String, Object> map)  {
+    private Experiment transform(Map<String, Object> map)  {
         return Experiment.builder().pageId((String) map.get("page_id")).name((String) map.get("name"))
                 .description((String) map.get("description"))
                 .id((String) map.get("id"))
-                .status(Experiment.Status.valueOf((String) map.get("status")))
-                .trafficProportion(getTrafficProportion(map.get("traffic_proportion")))
+                .status(Status.valueOf((String) map.get("status")))
+                .trafficProportion(DBColumnToJSONConverter.
+                        getObjectFromDBJson(map.get("traffic_proportion"), TrafficProportion.class))
                 .trafficAllocation(((Double) map.get("traffic_allocation")).floatValue())
-                .modDate(Try.of(()->((java.sql.Timestamp) map.get("mod_date")).toInstant())
+                .modDate(Try.of(()->((Timestamp) map.get("mod_date")).toInstant())
                         .getOrNull())
-                .scheduling(Optional.ofNullable(getScheduling(map.get("scheduling"))))
+                .scheduling(Optional.ofNullable(DBColumnToJSONConverter
+                        .getObjectFromDBJson(map.get("traffic_proportion"), Scheduling.class)))
                 .archived(ConversionUtils.toBooleanFromDb(map.get("archived")))
-                .creationDate(Try.of(()->((java.sql.Timestamp) map.get("creation_date")).toInstant())
+                .creationDate(Try.of(()->((Timestamp) map.get("creation_date")).toInstant())
                         .getOrNull())
                 .createdBy((String) map.get("created_by"))
                 .lastModifiedBy((String) map.get("last_modified_by"))
                 .build();
-    }
-
-    private static TrafficProportion getTrafficProportion(Object traffic_proportion) {
-        if(DbConnectionFactory.isPostgres()) {
-            PGobject json = (PGobject) traffic_proportion;
-            return Try.of(()->mapper.readValue(json.getValue(), TrafficProportion.class))
-                            .getOrNull();
-        } else  {
-            return Try.of(()->mapper.readValue((String) traffic_proportion, TrafficProportion.class))
-                    .getOrNull();
-        }
-    }
-
-    private static Scheduling getScheduling(Object scheduling) {
-        if(DbConnectionFactory.isPostgres()) {
-            PGobject json = (PGobject) scheduling;
-            return Try.of(()->mapper.readValue(json.getValue(), Scheduling.class))
-                    .getOrNull();
-        } else  {
-            return Try.of(()->mapper.readValue((String) scheduling, Scheduling.class))
-                    .getOrNull();
-        }
     }
 }

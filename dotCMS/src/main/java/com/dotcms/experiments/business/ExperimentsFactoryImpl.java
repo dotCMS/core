@@ -1,26 +1,18 @@
 package com.dotcms.experiments.business;
 
 import com.dotcms.experiments.model.Experiment;
-import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.vavr.control.Try;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.postgresql.util.PGobject;
 
 public class ExperimentsFactoryImpl implements
         ExperimentsFactory {
-
-    final ObjectMapper mapper = DotObjectMapperProvider.getInstance()
-            .getDefaultObjectMapper();
 
     public static final String INSERT_EXPERIMENT = "INSERT INTO experiment(id, page_id, name, description, status, " +
             "traffic_proportion, traffic_allocation, mod_date, scheduling, "
@@ -38,12 +30,9 @@ public class ExperimentsFactoryImpl implements
 
     @Override
     public Experiment save(Experiment experiment) throws DotDataException {
-        String experimentId;
-        if(experiment.id().isEmpty() || find(experiment.id().get()).isEmpty()) {
-            experimentId = insertInDB(experiment);
-        } else {
-            experimentId = updateInDB(experiment);
-        }
+        String experimentId = experiment.id().isEmpty() || find(experiment.id().get()).isEmpty()
+            ? insertInDB(experiment)
+            : updateInDB(experiment);
 
         final Optional<Experiment> saved = find(experimentId);
 
@@ -100,16 +89,10 @@ public class ExperimentsFactoryImpl implements
         dc.addParam(experiment.name());
         dc.addParam(experiment.description());
         dc.addParam(experiment.status().name());
-        setJSONParam(dc, experiment.trafficProportion());
+        dc.addJSONParam(experiment.trafficProportion());
         dc.addParam(experiment.trafficAllocation());
         dc.addParam(Timestamp.from(experiment.modDate()));
-
-        if(experiment.scheduling().isPresent()) {
-            setJSONParam(dc, experiment.scheduling().get());
-        } else {
-            dc.addObject(null);
-        }
-
+        experiment.scheduling().ifPresentOrElse(dc::addJSONParam, ()->dc.addObject(null));
         dc.addParam(experiment.archived());
         dc.addParam(Timestamp.from(experiment.creationDate()));
         dc.addParam(experiment.createdBy());
@@ -128,16 +111,10 @@ public class ExperimentsFactoryImpl implements
         dc.addParam(experiment.name());
         dc.addParam(experiment.description());
         dc.addParam(experiment.status().name());
-        setJSONParam(dc, experiment.trafficProportion());
+        dc.addJSONParam(experiment.trafficProportion());
         dc.addParam(experiment.trafficAllocation());
         dc.addParam(Timestamp.from(experiment.modDate()));
-
-        if(experiment.scheduling().isPresent()) {
-            setJSONParam(dc, experiment.scheduling().get());
-        } else {
-            dc.addObject(null);
-        }
-
+        experiment.scheduling().ifPresentOrElse(dc::addJSONParam, ()->dc.addObject(null));
         dc.addParam(experiment.archived());
         dc.addParam(Timestamp.from(experiment.creationDate()));
         dc.addParam(experiment.createdBy());
@@ -146,20 +123,5 @@ public class ExperimentsFactoryImpl implements
         dc.loadResult();
 
         return experiment.id().get();
-    }
-
-    private void setJSONParam(final DotConnect dc, Object json) throws DotDataException {
-        final String jsonStr = Try.of(()->
-                        mapper.writeValueAsString(json))
-                .getOrNull();
-        if(DbConnectionFactory.isPostgres()) {
-            PGobject jsonObject = new PGobject();
-            jsonObject.setType("json");
-            Try.run(() -> jsonObject.setValue(jsonStr)).getOrElseThrow(
-                    () -> new DotDataException("Invalid Traffic Proportion"));
-            dc.addObject(jsonObject);
-        } else {
-            dc.addParam(jsonStr);
-        }
     }
 }

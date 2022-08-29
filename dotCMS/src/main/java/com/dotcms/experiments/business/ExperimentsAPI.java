@@ -6,6 +6,12 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
 import java.util.Optional;
 
+/**
+ * Interface to interact with {@link Experiment}s. This includes operations like CRUD, and
+ * starting, stopping an experiment.
+ * This API needs License.
+ */
+
 public interface ExperimentsAPI {
 
     Experiment save(final Experiment experiment, final User user) throws DotSecurityException, DotDataException;
@@ -16,4 +22,5 @@ public interface ExperimentsAPI {
             throws DotDataException, DotSecurityException;
 
     void delete(String id, User user) throws DotDataException, DotSecurityException;
+
 }
