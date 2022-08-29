@@ -43,7 +43,7 @@ public class StoryBlockMap implements Renderable {
     public StoryBlockMap(final Field field, final Contentlet contentlet, final Context context) throws JSONException {
         final com.dotcms.contenttype.model.field.Field fieldTransformed = new LegacyFieldTransformer(field).from();
         final Object contFieldValue = APILocator.getContentletAPI().getFieldValue(contentlet,fieldTransformed);
-        if (JsonUtil.isJson(contFieldValue.toString())) {
+        if (JsonUtil.isValidJSON(contFieldValue.toString())) {
             this.jsonContFieldValue = new JSONObject(contFieldValue.toString());
             this.htmlContFieldValue = StringPool.BLANK;
             this.type = jsonContFieldValue.get(TYPE_KEY).toString();
@@ -58,7 +58,7 @@ public class StoryBlockMap implements Renderable {
     }
 
     public StoryBlockMap(final Object contFieldValue) throws JSONException {
-        if (JsonUtil.isJson(contFieldValue.toString())) {
+        if (JsonUtil.isValidJSON(contFieldValue.toString())) {
             this.jsonContFieldValue = new JSONObject(contFieldValue.toString());
             this.htmlContFieldValue = StringPool.BLANK;
             this.type = jsonContFieldValue.get(TYPE_KEY).toString();

@@ -50,7 +50,7 @@ public class StoryBlockViewStrategy extends AbstractTransformStrategy<Contentlet
             storyBlockFields.forEach(field -> {
 
                 final String fieldValue = source.get(field.variable()).toString();
-                if (!JsonUtil.isJson(fieldValue)) {
+                if (!JsonUtil.isValidJSON(fieldValue)) {
                     map.put(field.variable(), fieldValue);
                 } else {
                     LinkedHashMap jsonAsMap = null;

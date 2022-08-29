@@ -169,7 +169,7 @@ public class ContentletLoader implements DotLoader {
             if (field instanceof StoryBlockField) {
                 contFieldValueObject = conAPI.getFieldValue(content, field);
                 sb.append("#set($").append(field.variable());
-                if (JsonUtil.isJson(contFieldValueObject.toString())) {
+                if (JsonUtil.isValidJSON(contFieldValueObject.toString())) {
                     sb.append("= $json.generate(").append(contFieldValueObject).append("))");
                 } else {
                     Logger.warn(this, String.format("Story Block field '%s' in contentlet with ID '%s' does not " +
