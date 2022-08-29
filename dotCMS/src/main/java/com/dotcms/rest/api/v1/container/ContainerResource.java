@@ -1091,7 +1091,7 @@ public class ContainerResource implements Serializable {
         if (!UtilMethods.isSet(id)) {
 
             Logger.error(this, "The container id is required");
-            throw new IllegalArgumentException("The container id is required");
+            return ExceptionMapperUtil.createResponse(null, "The container id is required");
         }
 
         if (!UUIDUtil.isUUID(id)) {

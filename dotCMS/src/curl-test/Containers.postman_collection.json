@@ -1,9 +1,8 @@
 {
 	"info": {
-		"_postman_id": "4fc60ba5-b23a-4bc0-a910-34bbee3f021d",
+		"_postman_id": "59e11f1c-47cc-4661-a37d-291681491b3b",
 		"name": "Containers",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "4500400"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
@@ -1298,13 +1297,13 @@
 					"type": "basic",
 					"basic": [
 						{
-							"key": "username",
-							"value": "admin@dotcms.com",
+							"key": "password",
+							"value": "admin123",
 							"type": "string"
 						},
 						{
-							"key": "password",
-							"value": "admin",
+							"key": "username",
+							"value": "admin@dotcms.com",
 							"type": "string"
 						}
 					]
@@ -2486,6 +2485,341 @@
 				"description": "Deletes the container"
 			},
 			"response": []
+		},
+		{
+			"name": "CopyContainerCreateNewContainer",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"No errors\", function () {",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.errors.length).to.eql(0);",
+							"});",
+							"",
+							"pm.test(\"Information Saved Correctly\", function () {",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.entity.title).to.eql(\"abcd\");",
+							"    pm.expect(jsonData.entity.notes).to.eql(\"Notes\");",
+							"    ",
+							"    ",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"pm.collectionVariables.set(\"identifier\", jsonData.entity.identifier);",
+							"pm.collectionVariables.set(\"inode\", jsonData.entity.inode);",
+							"",
+							"pm.collectionVariables.set(\"containerToCopyId\", jsonData.entity.containerId);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin123",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"title\":\"abcd\",\n    \"friendlyName\":\"TestContainer description\",\n    \"maxContentlets\":1,\n    \"notes\":\"Notes\",\n    \"preLoop\":\"preLoop xxxx\",\n    \"postLoop\":\"postLoop xxxx\",\n    \"containerStructures\":[\n        {\n            \"structureId\":\"webPageContent\",\n            \"code\":\" code xxxx\"\n        },\n        {\n            \"structureId\":\"DotAsset\",\n            \"code\":\" tags: $!{tags}\"\n        }\n    ]\n\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/containers",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"containers"
+					]
+				},
+				"description": "Create a container"
+			},
+			"response": []
+		},
+		{
+			"name": "CopyContainer",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"No errors\", function () {",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.errors.length).to.eql(0);",
+							"});",
+							"",
+							"",
+							"pm.test(\"Status code is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin123",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/containers/{{containerToCopyId}}/_copy",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"containers",
+						"{{containerToCopyId}}",
+						"_copy"
+					]
+				},
+				"description": "Deletes the container"
+			},
+			"response": []
+		},
+		{
+			"name": "CopyContainerNotFoundContainer",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Not found container message\", function () {",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.message).to.contains(\"Can't find Container:12345678-abcd-1234-abcd-123456789abc\");  ",
+							"});",
+							"",
+							"pm.test(\"Status code is 404\", function () {",
+							"  pm.response.to.have.status(404);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin123",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/containers/12345678-abcd-1234-abcd-123456789abc/_copy",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"containers",
+						"12345678-abcd-1234-abcd-123456789abc",
+						"_copy"
+					]
+				},
+				"description": "Deletes the container"
+			},
+			"response": []
+		},
+		{
+			"name": "CopyContainerInvalidId",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Invalid container id message\", function () {",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.message).to.eql(\"Container 'id' should be a uuid\");  ",
+							"});",
+							"",
+							"pm.test(\"Status code is 400\", function () {",
+							"  pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin123",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/containers/invalidId/_copy",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"containers",
+						"invalidId",
+						"_copy"
+					]
+				},
+				"description": "Deletes the container"
+			},
+			"response": []
+		},
+		{
+			"name": "CopyContainerEmptyId",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Empty container id message\", function () {",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.message).to.eql(\"The container id is required\");  ",
+							"});",
+							"",
+							"pm.test(\"Status code is 400\", function () {",
+							"  pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin123",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/containers/ /_copy",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"containers",
+						" ",
+						"_copy"
+					]
+				},
+				"description": "Deletes the container"
+			},
+			"response": []
 		}
 	],
 	"variable": [
@@ -2503,6 +2837,10 @@
 		},
 		{
 			"key": "folderinode",
+			"value": ""
+		},
+		{
+			"key": "containerToCopyId",
 			"value": ""
 		}
 	]
