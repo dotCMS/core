@@ -24,7 +24,7 @@ const fakeContentType: DotCMSContentType = {
 };
 
 describe('DotRelationshipTreeComponent', () => {
-    describe('with dot', () => {
+    describe('with dot - is Child Field', () => {
         let component: DotRelationshipTreeComponent;
         let fixture: ComponentFixture<DotRelationshipTreeComponent>;
         let de: DebugElement;
@@ -48,6 +48,7 @@ describe('DotRelationshipTreeComponent', () => {
             de = fixture.debugElement;
             component.velocityVar = 'Parent.Children';
             component.contentType = fakeContentType;
+            component.isParentField = false;
             fixture.detectChanges();
         });
 
@@ -71,7 +72,7 @@ describe('DotRelationshipTreeComponent', () => {
         });
     });
 
-    describe('without dot', () => {
+    describe('without dot - is Parent Field', () => {
         let component: DotRelationshipTreeComponent;
         let fixture: ComponentFixture<DotRelationshipTreeComponent>;
         let de: DebugElement;
@@ -95,6 +96,7 @@ describe('DotRelationshipTreeComponent', () => {
             de = fixture.debugElement;
             component.velocityVar = 'Parent';
             component.contentType = fakeContentType;
+            component.isParentField = true;
             fixture.detectChanges();
         });
 

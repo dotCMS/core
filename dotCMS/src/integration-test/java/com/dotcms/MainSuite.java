@@ -55,7 +55,6 @@ import com.dotcms.publisher.receiver.BundlePublisherTest;
 import com.dotcms.publisher.util.DependencyManagerTest;
 import com.dotcms.publisher.util.DependencyModDateUtilTest;
 import com.dotcms.publishing.BundlerUtilTest;
-import com.dotcms.publishing.BundlerUtilTest;
 import com.dotcms.publishing.PublisherFilterImplTest;
 import com.dotcms.publishing.PushPublishFiltersInitializerTest;
 import com.dotcms.publishing.job.SiteSearchJobImplTest;
@@ -165,11 +164,13 @@ import com.dotmarketing.startup.runonce.Task220402UpdateDateTimezonesTest;
 import com.dotmarketing.startup.runonce.Task220413IncreasePublishedPushedAssetIdColTest;
 import com.dotmarketing.startup.runonce.Task220512UpdateNoHTMLRegexValueTest;
 import com.dotmarketing.startup.runonce.Task220606UpdatePushNowActionletNameTest;
+import com.dotmarketing.startup.runonce.Task220822CreateVariantTableTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
 import com.dotmarketing.util.ResourceCollectorUtilTest;
 import com.dotmarketing.util.TestConfig;
+import com.dotmarketing.util.contentlet.pagination.PaginatedContentletsIntegrationTest;
 import com.liferay.portal.language.LanguageUtilTest;
 import org.apache.velocity.tools.view.tools.CookieToolTest;
 import org.junit.runner.RunWith;
@@ -559,7 +560,9 @@ import org.junit.runners.Suite.SuiteClasses;
         BundlerUtilTest.class,
         MenuResourceTest.class,
         AWSS3PublisherTest.class,
-        ContentTypeInitializerTest.class
+        ContentTypeInitializerTest.class,
+        PaginatedContentletsIntegrationTest.class,
+        Task220822CreateVariantTableTest.class
 })
 public class MainSuite {
 
