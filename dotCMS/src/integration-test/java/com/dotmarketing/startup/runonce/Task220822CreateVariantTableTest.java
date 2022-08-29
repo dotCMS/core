@@ -22,7 +22,7 @@ import java.util.Set;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class Task222208CreateVariantTableTest {
+public class Task220822CreateVariantTableTest {
 
     private final Map<String, String> POSTGRES_EXPECTED = map(
             "id", "varchar",
