@@ -564,7 +564,6 @@ import org.junit.runners.Suite.SuiteClasses;
         AWSS3PublisherTest.class,
         ContentTypeInitializerTest.class,
         VariantFactoryTest.class,
-        VariantAPITest.class,
         PaginatedContentletsIntegrationTest.class,
         Task222208CreateVariantTableTest.class
 })
