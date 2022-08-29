@@ -320,7 +320,7 @@ public class TaskLocatorUtil {
 		.add(Task220413IncreasePublishedPushedAssetIdCol.class)
 		.add(Task220512UpdateNoHTMLRegexValue.class)
 		.add(Task220606UpdatePushNowActionletName.class)
-		.add(Task222208CreateVariantTable.class)
+		.add(Task220822CreateVariantTable.class)
 		.build();
         
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
@@ -353,7 +353,6 @@ public class TaskLocatorUtil {
 		ret.add(Task00006CreateSystemLayout.class);
 		ret.add(Task00007RemoveSitesearchQuartzJob.class);
 		ret.add(Task00002LoadClusterLicenses.class);
-		//ret.add(Task00030ClusterInitialize.class);
 		ret.add(Task00040CheckAnonymousUser.class);
 		ret.add(Task00050LoadAppsSecrets.class);
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
