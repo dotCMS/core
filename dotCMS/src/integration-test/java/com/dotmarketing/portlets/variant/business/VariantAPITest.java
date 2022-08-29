@@ -247,7 +247,7 @@ public class VariantAPITest {
      *
      * @throws IllegalStateException
      */
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void deleteNotArchived() throws DotDataException {
         final Variant variant = new VariantDataGen().archived(false).nextPersisted();
 

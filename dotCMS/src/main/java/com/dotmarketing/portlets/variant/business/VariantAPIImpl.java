@@ -78,7 +78,7 @@ public class VariantAPIImpl implements VariantAPI {
     public void delete(String id) {
         final Variant variant = get(id).orElseThrow(() -> new DoesNotExistException("The variant must exists"));
 
-        DotPreconditions.checkArgument(!variant.isArchived(), "The Variant must be archived to be able to delete it");
+        DotPreconditions.checkArgument(variant.isArchived(), "The Variant must be archived to be able to delete it");
 
         Logger.debug(this, ()-> "Deleting Variant: " + variant);
 
