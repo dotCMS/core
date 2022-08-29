@@ -1,0 +1,30 @@
+<form *ngIf="form" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div *ngFor="let control of dynamicControls; let i = index" class="form-row">
+        <label [for]="control.key">{{ control.label | titlecase }}</label>
+        <!-- [class.active]="i === 0" -->
+        <input
+            pInputText
+            type="control.type"
+            [formControlName]="control.key"
+            [id]="control.key"
+            [style]="{ width: '100%', fontSize: '14px', height: '40px' }"
+        />
+    </div>
+
+    <div class="form-action">
+        <button
+            pButton
+            type="button"
+            label="CANCEL"
+            class="p-button-outlined"
+            [style]="{ width: '120px' }"
+        ></button>
+        <button
+            pButton
+            type="submit"
+            label="APPLAY"
+            class="p-button"
+            [style]="{ padding: '11.5px 24px' }"
+        ></button>
+    </div>
+</form>

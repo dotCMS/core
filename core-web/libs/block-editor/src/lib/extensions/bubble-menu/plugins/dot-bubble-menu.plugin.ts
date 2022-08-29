@@ -21,7 +21,7 @@ import {
     findParentNode
 } from '@dotcms/block-editor';
 
-import { LINK_FORM_PLUGIN_KEY } from '@dotcms/block-editor';
+import { LINK_FORM_PLUGIN_KEY, BUBBLE_FORM_PLUGIN_KEY } from '@dotcms/block-editor';
 
 import { bubbleMenuImageItems, bubbleMenuItems, isListNode, popperModifiers } from '../utils';
 
@@ -237,11 +237,11 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
     setMenuItems(doc, from) {
         const node = doc.nodeAt(from);
-        const isDotImage = node?.type.name == 'dotImage';
+        const isImage = node?.type.name == 'image';
 
         this.selectionNode = node;
 
-        this.component.instance.items = isDotImage ? bubbleMenuImageItems : bubbleMenuItems;
+        this.component.instance.items = isImage ? bubbleMenuImageItems : bubbleMenuItems;
     }
 
     /* Run commands */
@@ -306,12 +306,14 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                     : this.editor.commands.openLinkForm({ openOnClick: false });
                 break;
 
+            case 'properties':
+                // eslint-disable-next-line
+                const { open } = BUBBLE_FORM_PLUGIN_KEY.getState(this.editor.state);
+                open ? this.editor.commands.closeForm() : this.editor.commands.openForm();
+                break;
+
             case 'deleteNode':
-                if (this.selectionNodesCount > 1) {
-                    this.deleteByRange();
-                } else {
-                    this.deleteByNode();
-                }
+                this.selectionNodesCount > 1 ? this.deleteByRange() : this.deleteByNode();
 
                 break;
 

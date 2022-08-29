@@ -255,6 +255,10 @@ export class BubbleLinkFormView {
     }
 
     private hanlderScroll(e: Event) {
+        if (!this.tippy?.state.isMounted) {
+            return;
+        }
+
         const element = e.target as HTMLElement;
         const parentElement = element?.parentElement?.parentElement;
         // If text is too long, the input fires the `scroll` event.

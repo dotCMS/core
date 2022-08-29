@@ -1,0 +1,35 @@
+@use "libs/block-editor/src/lib/scss/variables" as *;
+
+:host {
+    background: $white;
+    border-radius: $border-radius;
+    box-shadow: 0px 4px 10px rgba(10, 7, 37, 0.1);
+    display: flex;
+    flex-direction: column;
+    width: $form-width;
+    padding: $dot-editor-size;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: $dot-editor-size;
+}
+
+.form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25 * $dot-editor-size;
+
+    label {
+        font-size: 0.75 * $dot-editor-size;
+    }
+}
+
+.form-action {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: $dot-editor-size;
+    width: 100%;
+    gap: 0.625 * $dot-editor-size;
+}

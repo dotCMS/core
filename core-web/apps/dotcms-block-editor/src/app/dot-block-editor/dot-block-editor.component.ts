@@ -11,9 +11,11 @@ import {
     DEFAULT_LANG_ID,
     DotBubbleMenuExtension,
     DragHandler,
-    ImageBlock,
     ImageUpload,
-    DotConfigExtension
+    DotConfigExtension,
+    BubbleFormExtension,
+    ImageBlock,
+    ImageNode
 } from '@dotcms/block-editor';
 
 // Marks Extensions
@@ -67,9 +69,11 @@ export class DotBlockEditorComponent implements OnInit {
             ImageUpload(this.injector, this.viewContainerRef),
             BubbleLinkFormExtension(this.viewContainerRef),
             DotBubbleMenuExtension(this.viewContainerRef),
+            BubbleFormExtension(this.viewContainerRef),
+            ImageNode,
             // Marks Extensions
             Underline,
-            TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'dotImage'] }),
+            TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'image'] }),
             Highlight.configure({ HTMLAttributes: { style: 'background: #accef7;' } }),
             Link.configure({ openOnClick: false }),
             Placeholder.configure({

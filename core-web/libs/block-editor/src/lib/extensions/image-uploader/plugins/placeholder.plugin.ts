@@ -18,7 +18,7 @@ export const PlaceholderPlugin = new Plugin({
                 });
                 set = set.add(tr.doc, [deco]);
             } else if (action && action.remove) {
-                set = set.remove(set.find(null, null, (spec) => spec.id == action.remove.id));
+                set = set.remove(set.find(null, null, (spec) => spec.key == action.remove.id));
             }
 
             return set;

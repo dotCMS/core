@@ -59,7 +59,7 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
 
                 tr.setMeta(PlaceholderPlugin, {
                     add: {
-                        id: id,
+                        id,
                         pos: position,
                         element: loadingBlock.location.nativeElement
                     }
@@ -77,11 +77,15 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                     .subscribe(
                         (dotAssets: DotCMSContentlet[]) => {
                             const data = dotAssets[0][Object.keys(dotAssets[0])[0]];
+                            const { asset, name } = data;
                             const node = {
                                 attrs: {
-                                    data
+                                    data,
+                                    src: asset,
+                                    title: name,
+                                    alt: name
                                 },
-                                type: 'dotImage'
+                                type: 'image'
                             };
                             editor.commands.insertContentAt(position, node);
                         },

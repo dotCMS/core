@@ -63,8 +63,8 @@ export const isValidURL = (nodeText: string) => {
 
 export const getNodePosition = (node: HTMLElement, type: string): DOMRect => {
     const img = node.getElementsByTagName('img')[0];
-    // If is a dotImage Node, get the image position
-    if (type === 'dotImage' && img) {
+    // If is a image Node, get the image position
+    if (type === 'image' && img) {
         return img.getBoundingClientRect();
     }
 
@@ -177,12 +177,10 @@ export const bubbleMenuImageItems: Array<BubbleMenuItem> = [
         active: false,
         divider: true
     },
-
     {
-        icon: 'delete',
-        markAction: 'deleteNode',
-        active: false,
-        divider: false
+        text: 'Properties',
+        markAction: 'properties',
+        active: false
     }
 ];
 
