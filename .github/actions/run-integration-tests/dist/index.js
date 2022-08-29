@@ -488,7 +488,7 @@ const getOverrides = (propertyMap) => {
                     },
                     {
                         original: '^ES_HOSTNAME=.*$',
-                        replacement: 'ES_HOSTNAME=localhost'
+                        replacement: '#ES_HOSTNAME=localhost'
                     }
                 ]
             },
@@ -550,6 +550,13 @@ const getAppends = (propertyMap) => {
                     `felix.felix.undeployed.dir=${felixFolder}/undeploy`,
                     'dotcms.concurrent.locks.disable=false',
                     `system.felix.base.dir=${systemFelixFolder}`
+                ]
+            },
+            {
+                file: `${itResourcesFolder}/it-dotcms-config-cluster.properties`,
+                lines: [
+                    'ES_ENDPOINTS=http://localhost:9200',
+                    'ES_PROTOCOL=http'
                 ]
             },
             {

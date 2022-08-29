@@ -49,17 +49,15 @@
     </form>
 
     <!-- Suggestions -->
-    <dot-suggestions
+    <dot-suggestion-page
         #suggestions
         *ngIf="showSuggestions"
-        class="link-suggestions"
-        (goBack)="resetForm()"
+        [items]="items"
         [loading]="loading"
-        [onSelection]="onSelection.bind(this)"
-        [urlItem]="true"
         [title]="noResultsTitle"
+        (back)="resetForm()"
     >
-    </dot-suggestions>
+    </dot-suggestion-page>
 
     <!-- Form Actions -->
     <dot-form-actions

@@ -29,6 +29,7 @@ import io.vavr.Tuple2;
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -203,7 +204,7 @@ public class LegacyShortyIdApiTest {
      *                  get {@link ShortyId} using the uuid-shorty as key.
      * ExpectedResult: should get the same object(full uuid, type and subType), regardless using the uuid shorty
      */
-    @Test
+    @Ignore
     public void testShortyLookup() {
         for (final String[] values : expectedIds) {
             final String[] val = values;

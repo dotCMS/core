@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { By } from '@angular/platform-browser';
-import { ComponentFixture, waitForAsync, fakeAsync, tick, TestBed } from '@angular/core/testing';
+import { ComponentFixture, waitForAsync, fakeAsync, tick, TestBed, flush } from '@angular/core/testing';
 import { DebugElement, Component, Input } from '@angular/core';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
@@ -203,6 +203,7 @@ describe('SearchableDropdownComponent', () => {
 
         expect(overlay.componentInstance.styleClass).toBe('testClass');
         expect(overlay.componentInstance.style.width).toEqual('650px');
+        flush();
     }));
 
     it('should reset Panel Min Height', () => {
@@ -226,6 +227,7 @@ describe('SearchableDropdownComponent', () => {
     it('should display defaultFilterTemplate', () => {
         hostFixture.detectChanges();
         const searchInput = de.query(By.css('[data-testid="searchInput"]'));
+        expect(searchInput.attributes.autofocus).toBeDefined();
         expect(searchInput).not.toBeNull();
     });
 
