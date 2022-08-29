@@ -190,7 +190,7 @@ public class ContentletTransformer implements DBTransformer {
 
                                         refreshed = true;
                                         // the inode stored on the json does not match with any top inode, so the information stored is old and need refresh
-                                        refreshBlockEditorDataMap(dataMap, versionInfo, Collections.emptySet());
+                                        refreshBlockEditorDataMap(dataMap, versionInfo);
                                     }
                                 }
                             }
@@ -213,20 +213,17 @@ public class ContentletTransformer implements DBTransformer {
         return Tuple.of(false, blockEditorValue); // return the original value and value didn't change
     }
 
-    private static void refreshBlockEditorDataMap(final Map dataMap, final VersionInfo versionInfo, final Set<String> skipFieldSet) throws DotDataException, DotSecurityException {
-        // todo: not sure which inode should use to refresh the reference
+    private static void refreshBlockEditorDataMap(final Map dataMap, final VersionInfo versionInfo) throws DotDataException, DotSecurityException {
+
         final Contentlet contentlet = APILocator.getContentletAPI().find(
-                versionInfo.getWorkingInode(), APILocator.systemUser(), false); /// todo: find contentlet by working or live
+                versionInfo.getLiveInode(), APILocator.systemUser(), false);
         final Set contentFieldNames = dataMap.keySet();
         for (Object contentFieldName : contentFieldNames) {
 
-            if (!skipFieldSet.contains(contentFieldName)) {  // if it is not a field already edit by the client
+            final Object value = contentlet.get(contentFieldName.toString());
+            if (null != value) {
 
-                final Object value = contentlet.get(contentFieldName.toString());
-                if (null != value) {
-
-                    dataMap.put(contentFieldName, value);
-                }
+                dataMap.put(contentFieldName, value);
             }
         }
     }
