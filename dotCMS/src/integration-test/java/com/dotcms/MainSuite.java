@@ -69,6 +69,7 @@ import com.dotcms.rendering.velocity.viewtools.JSONToolTest;
 import com.dotcms.rendering.velocity.viewtools.MessageToolTest;
 import com.dotcms.rendering.velocity.viewtools.XmlToolTest;
 import com.dotcms.rendering.velocity.viewtools.content.StoryBlockMapTest;
+import com.dotcms.rendering.velocity.viewtools.content.StoryBlockTest;
 import com.dotcms.rest.BundlePublisherResourceIntegrationTest;
 import com.dotcms.rest.BundleResourceTest;
 import com.dotcms.rest.IntegrityResourceIntegrationTest;
@@ -562,7 +563,8 @@ import org.junit.runners.Suite.SuiteClasses;
         AWSS3PublisherTest.class,
         ContentTypeInitializerTest.class,
         PaginatedContentletsIntegrationTest.class,
-        Task220822CreateVariantTableTest.class
+        Task220822CreateVariantTableTest.class,
+        StoryBlockTest.class
 })
 public class MainSuite {
 
