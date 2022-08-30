@@ -97,7 +97,7 @@ public class SassCommandStrategyResolver {
     /**
      * Assembles the appropriate Dart SASS compiler command for Mac OS X environments and their respective architectures.
      */
-    private class MacOSSassCommandStrategyImpl implements SassCommandStrategy {
+    private static class MacOSSassCommandStrategyImpl implements SassCommandStrategy {
 
         private final Map<String, String> DART_SASS_CMD = Map.of(
                 RuntimeUtils.ARM64_ARCH, "dart-sass-macos-arm64/sass",
@@ -127,7 +127,7 @@ public class SassCommandStrategyResolver {
     /**
      * Assembles the appropriate Dart SASS compiler command for Linux environments and their respective architectures.
      */
-    private class LinuxSassCommandStrategyImpl implements SassCommandStrategy {
+    private static class LinuxSassCommandStrategyImpl implements SassCommandStrategy {
 
         private final Map<String, String> DART_SASS_CMD = Map.of(
                 RuntimeUtils.ARM64_ARCH, "dart-sass-linux-arm64/sass",
