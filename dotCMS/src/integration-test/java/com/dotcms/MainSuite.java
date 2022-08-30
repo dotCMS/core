@@ -165,7 +165,7 @@ import com.dotmarketing.startup.runonce.Task220413IncreasePublishedPushedAssetId
 import com.dotmarketing.startup.runonce.Task220512UpdateNoHTMLRegexValueTest;
 import com.dotmarketing.startup.runonce.Task220606UpdatePushNowActionletNameTest;
 import com.dotmarketing.startup.runonce.Task220822CreateVariantTableTest;
-import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTable;
+import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTableTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -564,7 +564,7 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentTypeInitializerTest.class,
         PaginatedContentletsIntegrationTest.class,
         Task220822CreateVariantTableTest.class,
-        Task220829CreateExperimentsTable.class
+        Task220829CreateExperimentsTableTest.class
 })
 public class MainSuite {
 
