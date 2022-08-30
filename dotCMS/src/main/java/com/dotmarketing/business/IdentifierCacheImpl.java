@@ -11,6 +11,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.variant.business.VariantAPI;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -236,12 +237,20 @@ public class IdentifierCacheImpl extends IdentifierCache {
 	}
 
     @Override
-    protected void addContentletVersionInfoToCache(ContentletVersionInfo contV) {
-        String key=contV.getIdentifier()+"-lang:"+contV.getLang();
+    protected void addContentletVersionInfoToCache(final ContentletVersionInfo contV) {
+        final String key = getKey(contV);
         cache.put(getVersionInfoGroup()+key, contV, getVersionInfoGroup());
     }
 
-    @Override
+	private String getKey(final ContentletVersionInfo contV) {
+		return String.format("%s-lang:%s-variant:%s", contV.getIdentifier(), contV.getLang(), contV.getVariant());
+	}
+
+	private String getKey(final String identifier, final long lang) {
+		return String.format("%s-lang:%s-variant:%s", identifier, lang, VariantAPI.DEFAULT_VARIANT.getIdentifier());
+	}
+
+	@Override
     protected void addVersionInfoToCache(VersionInfo versionInfo) {
         String key=versionInfo.getIdentifier();
         cache.put(getVersionInfoGroup()+key, versionInfo, getVersionInfoGroup());
@@ -251,7 +260,7 @@ public class IdentifierCacheImpl extends IdentifierCache {
     protected ContentletVersionInfo getContentVersionInfo(String identifier, long lang) {
         ContentletVersionInfo contV = null;
         try {
-            String key=identifier+"-lang:"+lang;
+            String key= getKey(identifier, lang);
             contV = (ContentletVersionInfo)cache.get(getVersionInfoGroup()+key, getVersionInfoGroup());
         }
         catch(Exception ex) {
@@ -274,7 +283,7 @@ public class IdentifierCacheImpl extends IdentifierCache {
 
     @Override
     public void removeContentletVersionInfoToCache(String identifier, long lang) {
-        String key=identifier+"-lang:"+lang;
+        String key = getKey(identifier, lang);
         cache.remove(getVersionInfoGroup()+key, getVersionInfoGroup());
     }
 

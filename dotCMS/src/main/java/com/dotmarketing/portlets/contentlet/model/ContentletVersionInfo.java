@@ -8,6 +8,18 @@ public class ContentletVersionInfo extends VersionInfo implements Serializable {
     private static final long serialVersionUID = 8952464908349482530L;
 
     private long lang;
+
+    private String variant;
+
+    public String getVariant() {
+        return variant;
+    }
+
+    public void setVariant(final String variant) {
+        this.variant = variant;
+    }
+
+
     public long getLang() {
         return lang;
     }
