@@ -45,7 +45,7 @@
             min-height: 100%;
             outline: none;
             padding: $dot-editor-size (4 * $dot-editor-size);
-            font: 14px/1.3;
+            font: $dot-editor-size;
 
             ul,
             ol {
@@ -63,7 +63,7 @@
             }
 
             li {
-                padding-top: 0.286em;
+                padding-top: 0.286 * $dot-editor-size;
             }
 
             li p {
@@ -72,38 +72,38 @@
             }
 
             h1 {
-                font-size: 2.43em;
-                line-height: 1.06em;
-                padding-top: 0.176em;
-                margin-bottom: 0.353em;
+                font-size: 2.43 * $dot-editor-size;
+                line-height: 2.5758 * $dot-editor-size;
+                padding-top: 0.43 * $dot-editor-size;
+                margin-bottom: 0.86 * $dot-editor-size;
             }
 
             h2 {
-                font-size: 1.93em;
-                line-height: 1.33em;
-                padding-top: 0.333em;
-                margin-bottom: 0.333em;
+                font-size: 1.93 * $dot-editor-size;
+                line-height: 2.57 * $dot-editor-size;
+                padding-top: 0.65 * $dot-editor-size;
+                margin-bottom: 0.65 * $dot-editor-size;
             }
 
             h3 {
-                font-size: 1.57em;
-                line-height: 1.64em;
-                padding-top: 0.5em;
-                margin-bottom: 0.318em;
+                font-size: 1.57 * $dot-editor-size;
+                line-height: 2.575 * $dot-editor-size;
+                padding-top: 2.575 * $dot-editor-size;
+                margin-bottom: 0.5 * $dot-editor-size;
             }
 
             h4 {
-                font-size: 1.29em;
-                line-height: 2em;
-                padding-top: 0.667em;
-                margin-bottom: 0.333em;
+                font-size: 1.29 * $dot-editor-size;
+                line-height: 2.58 * $dot-editor-size;
+                padding-top: 0.86 * $dot-editor-size;
+                margin-bottom: 0.43 * $dot-editor-size;
             }
 
             p {
-                font-size: 1em;
-                line-height: 1.29em;
-                padding-top: 0.286em;
-                margin-bottom: 1em;
+                font-size: $dot-editor-size;
+                line-height: 1.29 * $dot-editor-size;
+                padding-top: 0.286 * $dot-editor-size;
+                margin-bottom: $dot-editor-size;
             }
 
             blockquote {
