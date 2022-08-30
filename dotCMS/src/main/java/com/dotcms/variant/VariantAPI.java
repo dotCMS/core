@@ -5,7 +5,11 @@ import java.util.Optional;
 
 public interface VariantAPI {
 
-    Variant DEFAULT_VARIANT = new Variant("1", "DEFAULT", false);
+    Variant DEFAULT_VARIANT = Variant.builder()
+            .identifier("DEFAULT")
+            .name("DEFAULT")
+            .archived(false)
+            .build();
 
     /**
      * Save a new {@link Variant}.

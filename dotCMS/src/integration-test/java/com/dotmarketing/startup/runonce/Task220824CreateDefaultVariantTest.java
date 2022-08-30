@@ -9,12 +9,12 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.variant.business.VariantAPI;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -34,7 +34,7 @@ public class Task220824CreateDefaultVariantTest {
 
     private static void checkIfVariantDefaultExists() throws DotDataException {
 
-        final ArrayList results = new DotConnect().setSQL("SELECT * FROM variant WHERE id = '1'")
+        final ArrayList results = new DotConnect().setSQL("SELECT * FROM variant WHERE id = 'DEFAULT'")
                 .loadResults();
 
         assertEquals("The DEFAULT Variant should exists", 1, results.size());
@@ -70,7 +70,7 @@ public class Task220824CreateDefaultVariantTest {
     /**
      * Method to test: {@link Task220824CreateDefaultVariant#executeUpgrade()}
      * when: the UT run
-     * Should: Create the default variant and add a new fiel in the contentlet_version_info
+     * Should: Create the default variant and add a new field in the contentlet_version_info
      */
     @Test
     public void runningTU() throws DotDataException, SQLException {
@@ -128,7 +128,7 @@ public class Task220824CreateDefaultVariantTest {
                 .loadResults();
 
         assertEquals(1, results.size());
-        assertEquals("1", ((Map) results.get(0)).get("variant_id").toString());
+        assertEquals("DEFAULT", ((Map) results.get(0)).get("variant_id").toString());
     }
 
     @Test
@@ -164,7 +164,7 @@ public class Task220824CreateDefaultVariantTest {
 
         try {
             dotConnect.setSQL("DELETE FROM variant WHERE id = ?")
-                    .addParam(VariantAPI.DEFAULT_VARIANT.getIdentifier())
+                    .addParam(VariantAPI.DEFAULT_VARIANT.identifier())
                     .loadResult();
         } catch (Exception e) {
 
