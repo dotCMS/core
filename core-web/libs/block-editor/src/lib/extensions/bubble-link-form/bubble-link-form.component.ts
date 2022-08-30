@@ -5,7 +5,8 @@ import {
     ElementRef,
     EventEmitter,
     Output,
-    Input
+    Input,
+    HostListener
 } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { debounceTime, take } from 'rxjs/operators';
@@ -50,6 +51,23 @@ export class BubbleLinkFormComponent implements OnInit {
     loading = false;
     form: FormGroup;
     items = [];
+
+    /**
+     * Avoid loosing the `focus` target
+     *
+     * @param {MouseEvent} e
+     * @memberof SuggestionListComponent
+     */
+    @HostListener('mousedown', ['$event'])
+    onMouseDownHandler(e: MouseEvent) {
+        const { target } = e;
+
+        if (target === this.input.nativeElement) {
+            return;
+        }
+
+        e.preventDefault();
+    }
 
     // Getters
     get noResultsTitle() {
