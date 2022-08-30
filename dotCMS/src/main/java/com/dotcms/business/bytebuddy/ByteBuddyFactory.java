@@ -63,7 +63,7 @@ public class ByteBuddyFactory {
                 premain(null, ByteBuddyAgent.install());
                 Logger.info(ByteBuddyFactory.class, "Loaded ByteBuddy Advice");
             } catch (Exception e) {
-                Logger.error(ByteBuddyFactory.class, "Cannot install ByteBuddy Advice");
+                Logger.error(ByteBuddyFactory.class, "Cannot install ByteBuddy Advice", e);
             }
         }
     }
