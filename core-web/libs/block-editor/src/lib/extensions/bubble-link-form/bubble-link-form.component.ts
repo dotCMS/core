@@ -173,7 +173,7 @@ export class BubbleLinkFormComponent implements OnInit {
         if (e.key === 'Escape') {
             this.hide.emit(true);
 
-            return false;
+            return true;
         }
 
         if (!this.showSuggestions || !items?.length) {
