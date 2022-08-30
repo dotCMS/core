@@ -3,13 +3,19 @@ package com.dotcms.rest.api.v1.experiments;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TrafficProportion;
-import com.dotcms.repackage.org.hibernate.validator.constraints.Length;
+import com.dotcms.repackage.javax.validation.constraints.Size;
 import com.dotcms.rest.api.Validated;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+/**
+ * From to create/update an {@link com.dotcms.experiments.model.Experiment} from REST
+ */
+
 @JsonDeserialize(builder = ExperimentForm.Builder.class)
 public class ExperimentForm extends Validated {
+    @Size(min=1, max = 255)
     private final String name;
+    @Size(max = 255)
     private final String description;
     private final Status status;
     private final String pageId;
@@ -57,9 +63,7 @@ public class ExperimentForm extends Validated {
     }
 
     public static final class Builder {
-        @Length(max = 255)
         private String name;
-        @Length(max = 255)
         private String description;
         private Status status;
         private String pageId;

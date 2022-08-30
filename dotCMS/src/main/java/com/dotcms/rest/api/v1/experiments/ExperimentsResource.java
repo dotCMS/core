@@ -26,7 +26,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import org.glassfish.jersey.server.JSONP;
-import org.jetbrains.annotations.NotNull;
 
 @Path("/v1/experiments")
 @Tag(name = "Experiment")
@@ -54,12 +53,14 @@ public class ExperimentsResource {
         return new ResponseEntityExperimentView(Collections.singletonList(persistedExperiment));
     }
 
-    @NotNull
     private Experiment createExperimentFromForm(final ExperimentForm experimentForm,
             final User user) {
         return Experiment.builder().pageId(experimentForm.getPageId()).name(experimentForm.getName())
                 .description(experimentForm.getDescription()).createdBy(user.getUserId())
                 .lastModifiedBy(user.getUserId())
+                .trafficAllocation(experimentForm.getTrafficAllocation()>-1
+                        ? experimentForm.getTrafficAllocation()
+                        : 100)
                 .build();
     }
 
@@ -112,7 +113,7 @@ public class ExperimentsResource {
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
         experimentsAPI.delete(experimentId, user);
-        return new ResponseEntityView<String>("Experiment deleted");
+        return new ResponseEntityView<>("Experiment deleted");
     }
 
     private Experiment patchExperiment(final Experiment experimentToUpdate,

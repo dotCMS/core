@@ -55,11 +55,11 @@ public class ExperimentTransformer implements DBTransformer<Experiment> {
                 .status(Status.valueOf((String) map.get("status")))
                 .trafficProportion(DBColumnToJSONConverter.
                         getObjectFromDBJson(map.get("traffic_proportion"), TrafficProportion.class))
-                .trafficAllocation(((Double) map.get("traffic_allocation")).floatValue())
+                .trafficAllocation(ConversionUtils.toLong(map.get("traffic_allocation"), 0L))
                 .modDate(Try.of(()->((Timestamp) map.get("mod_date")).toInstant())
                         .getOrNull())
                 .scheduling(Optional.ofNullable(DBColumnToJSONConverter
-                        .getObjectFromDBJson(map.get("traffic_proportion"), Scheduling.class)))
+                        .getObjectFromDBJson(map.get("scheduling"), Scheduling.class)))
                 .archived(ConversionUtils.toBooleanFromDb(map.get("archived")))
                 .creationDate(Try.of(()->((Timestamp) map.get("creation_date")).toInstant())
                         .getOrNull())

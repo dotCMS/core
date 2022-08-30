@@ -29,7 +29,7 @@ public interface AbstractExperiment extends Serializable, ManifestItem {
     @JsonProperty("trafficProportion")
     @Value.Default
     default TrafficProportion trafficProportion() {
-        return TrafficProportion.createSplitEvenlyTraffic();
+        return TrafficProportion.builder().build();
     }
 
     @JsonProperty("scheduling")
