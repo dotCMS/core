@@ -282,7 +282,7 @@ public class VariantAPITest {
     /**
      * Method to test: {@link VariantFactory#get(String)}
      * When: Try to get  {@link Variant} by id equals to NULL
-     * Should:
+     * Should: throw a {@link NullPointerException}
      *
      * @throws DotDataException
      */
@@ -310,7 +310,7 @@ public class VariantAPITest {
     /**
      * Method to test: {@link VariantFactory#get(String)}
      * When: Try to get  {@link Variant} by id equals to NULL
-     * Should:
+     * Should: throw a {@link NullPointerException}
      *
      * @throws DotDataException
      */
