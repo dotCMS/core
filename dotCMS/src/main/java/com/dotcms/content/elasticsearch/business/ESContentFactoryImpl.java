@@ -86,6 +86,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Ints;
 import com.liferay.portal.model.User;
+import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.Serializable;
 import java.sql.Connection;
@@ -855,7 +856,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             if (CACHE_404_CONTENTLET.equals(contentlet.getInode())) {
                 return null;
             }
-            return contentlet;
+            return processContentletCache(contentlet);
         }
 
         final Optional<Contentlet> dbContentlet = this.findInDb(inode);
@@ -868,6 +869,26 @@ public class ESContentFactoryImpl extends ContentletFactory {
             return null;
         }
 
+    }
+
+    /*
+     * When a contentlet is being cached, may need some process since the value may be invalid.
+     * One of the things to check would be the contentlet references on the story block, if the contentlet
+     * has a story block field and contentlets referred in it, the code checks if the contentlets have been
+     * changed, if so updates the content and stores the json updated again to the contentlet
+     */
+    private Contentlet processContentletCache (final Contentlet contentletCached) {
+
+        final Tuple2<Boolean, Contentlet> storyBlockRefreshedResult =
+                APILocator.getStoryBlockAPI().refreshReferences(contentletCached);
+
+        if (storyBlockRefreshedResult._1()) {
+
+            contentletCache.add(storyBlockRefreshedResult._2().getInode(), storyBlockRefreshedResult._2());
+            return storyBlockRefreshedResult._2();
+        }
+
+        return contentletCached;
     }
 
 	@Override

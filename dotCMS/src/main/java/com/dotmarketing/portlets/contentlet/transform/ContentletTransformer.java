@@ -1,9 +1,7 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
 import com.dotcms.content.business.json.ContentletJsonAPI;
-import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
-import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
@@ -11,9 +9,7 @@ import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.transform.DBTransformer;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -26,7 +22,6 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
@@ -34,15 +29,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.StringTokenizer;
 
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
-import io.vavr.control.Try;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -121,7 +111,7 @@ public class ContentletTransformer implements DBTransformer {
                populateFields(contentlet, map);
            }
 
-            refreshBlockEditorReferences(contentlet);
+            refreshStoryBlockReferences(contentlet);
             populateWysiwyg(map, contentlet);
             populateFolderAndHost(contentlet, contentletId, contentTypeId);
         } catch (final Exception e) {
@@ -136,7 +126,7 @@ public class ContentletTransformer implements DBTransformer {
         return contentlet;
     }
 
-    private static void refreshBlockEditorReferences(final Contentlet contentlet) {
+    private static void refreshStoryBlockReferences(final Contentlet contentlet) {
 
         APILocator.getStoryBlockAPI().refreshReferences(contentlet);
     }

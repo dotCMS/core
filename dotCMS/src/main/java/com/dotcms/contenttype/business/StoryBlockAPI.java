@@ -19,6 +19,7 @@ public interface StoryBlockAPI {
     String DATA_KEY = "data";
     String IDENTIFIER_KEY = "identifier";
     String INODE_KEY = "inode";
+    String LANGUAGE_ID_KEY = "languageId";
 
     /**
      * Encapsulates the allowed types for contentlets on the story block
@@ -31,7 +32,7 @@ public interface StoryBlockAPI {
      * @param contentlet {@link Contentlet} to refresh
      * @return Contentlet content refreshed
      */
-    Contentlet refreshReferences(final Contentlet contentlet);
+    Tuple2<Boolean, Contentlet> refreshReferences(final Contentlet contentlet);
 
     /**
      * Refresh the story block references for a story block json (The argument storyBlockValue will be converted to string and parse as json)

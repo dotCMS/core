@@ -2,11 +2,13 @@ package com.dotcms.contenttype.business;
 
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.model.field.StoryBlockField;
+import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.transform.ContentletTransformer;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -15,11 +17,13 @@ import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -29,8 +33,9 @@ import java.util.Set;
 public class StoryBlockAPIImpl implements StoryBlockAPI {
 
     @Override
-    public Contentlet refreshReferences(final Contentlet contentlet) {
+    public Tuple2<Boolean, Contentlet> refreshReferences(final Contentlet contentlet) {
 
+        final MutableBoolean refreshed = new MutableBoolean(false);
         if (null != contentlet) {
 
             contentlet.getContentType().fields(StoryBlockField.class).forEach(field -> {
@@ -41,13 +46,14 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                     final Tuple2<Boolean, Object> result = this.refreshStoryBlockValueReferences(storyBlockValue);
                     if (result._1()) { // the story block value has been changed and has been overridden
 
+                        refreshed.setTrue();
                         contentlet.setProperty(field.variable(), result._2());
                     }
                 }
             });
         }
 
-        return contentlet;
+        return Tuple.of(refreshed.booleanValue(), contentlet);
     }
     @Override
     public  Tuple2<Boolean, Object> refreshStoryBlockValueReferences(final Object storyBlockValue) {
@@ -95,14 +101,15 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
 
                 final String identifier = (String) dataMap.get(IDENTIFIER_KEY);
                 final String inode      = (String) dataMap.get(INODE_KEY);
+                final long languageId = ConversionUtils.toLong(dataMap.get(LANGUAGE_ID_KEY), ()-> APILocator.getLanguageAPI().getDefaultLanguage().getId());
                 if (null != identifier && null != inode) {
 
-                    final VersionInfo versionInfo = APILocator.getVersionableAPI().getVersionInfo(identifier);
-                    if (null != versionInfo && null != versionInfo.getLiveInode()  &&
-                            !inode.equals(versionInfo.getLiveInode())) {
+                    final Optional<ContentletVersionInfo> versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, languageId);
+                    if (null != versionInfo && versionInfo.isPresent() && null != versionInfo.get().getLiveInode()  &&
+                            !inode.equals(versionInfo.get().getLiveInode())) {
 
                         // the inode stored on the json does not match with any top inode, so the information stored is old and need refresh
-                        this.refreshBlockEditorDataMap(dataMap, versionInfo);
+                        this.refreshBlockEditorDataMap(dataMap, versionInfo.get().getLiveInode());
                         refreshed = true;
                     }
                 }
@@ -183,10 +190,10 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                 .writeValueAsString(blockEditorMap);
     }
 
-    private void refreshBlockEditorDataMap(final Map dataMap, final VersionInfo versionInfo) throws DotDataException, DotSecurityException {
+    private void refreshBlockEditorDataMap(final Map dataMap, final String liveINode) throws DotDataException, DotSecurityException {
 
         final Contentlet contentlet = APILocator.getContentletAPI().find(
-                versionInfo.getLiveInode(), APILocator.systemUser(), false);
+                liveINode, APILocator.systemUser(), false);
         final Set contentFieldNames = dataMap.keySet();
         for (final Object contentFieldName : contentFieldNames) {
 
