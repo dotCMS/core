@@ -6,6 +6,7 @@ export * from './components/suggestions/suggestions.component';
 export * from './components/suggestion-list/suggestion-list.component';
 export * from './components/suggestion-list/components/suggestions-list-item/suggestions-list-item.component';
 export * from './components/suggestion-loading-list/suggestion-loading-list.component';
+export * from './components/empty-message/empty-message.component';
 
 // Services
 export * from './services';
