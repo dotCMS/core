@@ -4,6 +4,7 @@ import com.dotcms.experiments.model.Experiment;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -23,4 +24,5 @@ public interface ExperimentsAPI {
 
     void delete(String id, User user) throws DotDataException, DotSecurityException;
 
+    List<Experiment> list(final ExperimentFilter filter, final User user) throws DotDataException;
 }

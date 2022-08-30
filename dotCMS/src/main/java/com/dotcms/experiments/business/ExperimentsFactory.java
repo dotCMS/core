@@ -2,6 +2,7 @@ package com.dotcms.experiments.business;
 
 import com.dotcms.experiments.model.Experiment;
 import com.dotmarketing.exception.DotDataException;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -14,4 +15,6 @@ public interface ExperimentsFactory {
     void delete(final Experiment experiment) throws DotDataException;
 
     Optional<Experiment> find(String id) throws DotDataException;
+
+    List<Experiment> list(final ExperimentFilter filter) throws DotDataException;
 }
