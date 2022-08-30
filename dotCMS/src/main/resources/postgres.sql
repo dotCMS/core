@@ -560,7 +560,6 @@ create table contentlet_version_info (
    locked_by varchar(100),
    locked_on timestamptz,
    version_ts timestamptz not null,
-   variant_id varchar(255),
    variant_id varchar(255) default '1',
    primary key (identifier, lang)
 );
