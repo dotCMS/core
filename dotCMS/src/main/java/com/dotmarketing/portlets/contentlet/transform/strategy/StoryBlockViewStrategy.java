@@ -49,7 +49,8 @@ public class StoryBlockViewStrategy extends AbstractTransformStrategy<Contentlet
         if (UtilMethods.isSet(storyBlockFields)) {
             storyBlockFields.forEach(field -> {
 
-                final String fieldValue = source.get(field.variable()).toString();
+                final String fieldValue =
+                        Try.of(() -> source.get(field.variable()).toString()).getOrElse(StringPool.BLANK);
                 if (!JsonUtil.isValidJSON(fieldValue)) {
                     map.put(field.variable(), fieldValue);
                 } else {
