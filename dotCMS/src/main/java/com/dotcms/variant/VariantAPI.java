@@ -1,13 +1,11 @@
-package com.dotmarketing.portlets.variant.business;
+package com.dotcms.variant;
 
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.variant.model.Variant;
+import com.dotcms.variant.model.Variant;
 import java.util.Optional;
 
-/**
- * Factory for {@link com.dotmarketing.portlets.variant.model.Variant}
- */
-public interface VariantFactory {
+public interface VariantAPI {
+
+    Variant DEFAULT_VARIANT = new Variant("1", "DEFAULT", false);
 
     /**
      * Save a new {@link Variant}.
@@ -17,8 +15,9 @@ public interface VariantFactory {
      * @param variant
      *
      * @throws NullPointerException if the {@link Variant}'s name is null
+     * @throws IllegalArgumentException if the {@link Variant#archived()} is true
      */
-    Variant save(final Variant variant) throws DotDataException;
+    Variant save(final Variant variant);
 
     /**
      * Update a {@link Variant}, the {@link Variant}'s identifier should not be null or a
@@ -29,27 +28,33 @@ public interface VariantFactory {
      * @throws NullPointerException if the {@link Variant}'s identifier is null or
      *                              if {@link Variant}'s name is null
      */
-    void update(final Variant variant) throws DotDataException;
+    void update(final Variant variant);
 
     /**
      * Delete a {@link Variant}
      *
      * @param id Variant's id to be deleted
      */
-    void delete(final String id) throws DotDataException;
+    void delete(final String id);
+
+    /**
+     * Archive a {@link Variant}
+     *
+     * @param id Variant's id to be archive
+     */
+    void archive(final String id);
 
     /**
      * Return a {@link Variant} by Identifier
      * @param identifier {@link Variant}'s identifier
      * @return {@link Variant}
      */
-    Optional<Variant> get(final String identifier) throws DotDataException;
+    Optional<Variant> get(final String identifier);
 
     /**
      * Return a {@link Variant} by Name
      * @param name {@link Variant}'s name
      * @return {@link Variant}
      */
-    Optional<Variant> getByName(final String name) throws DotDataException;
-
+    Optional<Variant> getByName(final String name);
 }

@@ -55,8 +55,8 @@ import com.dotmarketing.portlets.personas.business.PersonaFactory;
 import com.dotmarketing.portlets.personas.business.PersonaFactoryImpl;
 import com.dotmarketing.portlets.templates.business.TemplateFactory;
 import com.dotmarketing.portlets.templates.business.TemplateFactoryImpl;
-import com.dotmarketing.portlets.variant.business.VariantFactory;
-import com.dotmarketing.portlets.variant.business.VariantFactoryImpl;
+import com.dotcms.variant.VariantFactory;
+import com.dotcms.variant.VariantFactoryImpl;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.business.WorkflowFactoryImpl;
 import com.dotmarketing.tag.business.TagFactory;
@@ -241,7 +241,7 @@ public class FactoryLocator extends Locator<FactoryIndex>{
     }
 
     /**
-     * Returns the Factory object that handles operations related to {@link com.dotmarketing.portlets.variant.model.Variant} in dotCMS.
+     * Returns the Factory object that handles operations related to {@link com.dotcms.variant.model.Variant} in dotCMS.
      *
      * @return An instance of the {@link VariantFactory} object.
      */

@@ -137,8 +137,8 @@ import com.dotmarketing.portlets.structure.business.StructureAPI;
 import com.dotmarketing.portlets.structure.business.StructureAPIImpl;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.business.TemplateAPIImpl;
-import com.dotmarketing.portlets.variant.business.VariantAPI;
-import com.dotmarketing.portlets.variant.business.VariantAPIImpl;
+import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.VariantAPIImpl;
 import com.dotmarketing.portlets.widget.business.WidgetAPI;
 import com.dotmarketing.portlets.widget.business.WidgetAPIImpl;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -1085,7 +1085,7 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
-	 * Creates a single instance of the {@link ContentletJsonAPI} class.
+	 * Creates a single instance of the {@link VariantAPI} class.
 	 * @return the instance
 	 */
 	public static VariantAPI getVariantAPI(){

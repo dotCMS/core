@@ -1,8 +1,8 @@
 package com.dotcms.datagen;
 
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.variant.model.Variant;
 import com.dotmarketing.util.UUIDGenerator;
 
 public class VariantDataGen extends AbstractDataGen<Variant> {
@@ -31,7 +31,11 @@ public class VariantDataGen extends AbstractDataGen<Variant> {
 
         final String innerId = id == null ? UUIDGenerator.generateUuid() : id;
         final String innerName = name == null ? "Variant_" + System.currentTimeMillis() : name;
-        return new Variant(innerId, innerName, archived);
+        return Variant.builder()
+                .identifier(innerId)
+                .name(innerName)
+                .archived(archived)
+                .build();
     }
 
     @Override
