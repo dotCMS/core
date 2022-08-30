@@ -28,6 +28,8 @@ import com.dotcms.contenttype.business.DotAssetAPI;
 import com.dotcms.contenttype.business.DotAssetAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.business.FieldAPIImpl;
+import com.dotcms.contenttype.business.StoryBlockAPI;
+import com.dotcms.contenttype.business.StoryBlockAPIImpl;
 import com.dotcms.device.DeviceAPI;
 import com.dotcms.device.DeviceAPIImpl;
 import com.dotcms.dotpubsub.DotPubSubProvider;
@@ -261,6 +263,10 @@ public class APILocator extends Locator<APIIndex>{
 	 */
 	public static CompanyAPI getCompanyAPI() {
 		return getAPILocatorInstance().getCompanyAPIImpl();
+	}
+
+	public static StoryBlockAPI getStoryBlockAPI() {
+		return (StoryBlockAPI)getInstance(APIIndex.STORY_BLOCK_API);
 	}
 
 	@VisibleForTesting
@@ -1228,7 +1234,9 @@ enum APIIndex
 	CONTENTLET_METADATA_API,
 	DEVICE_API,
 	DETERMINISTIC_IDENTIFIER_API,
-	CONTENTLET_JSON_API;
+	CONTENTLET_JSON_API,
+
+	STORY_BLOCK_API;
 
 
 
@@ -1315,6 +1323,7 @@ enum APIIndex
 			case DEVICE_API: return new DeviceAPIImpl();
 			case DETERMINISTIC_IDENTIFIER_API: return new DeterministicIdentifierAPIImpl();
 			case CONTENTLET_JSON_API: return new ContentletJsonAPIImpl();
+			case STORY_BLOCK_API: return new StoryBlockAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

@@ -136,96 +136,9 @@ public class ContentletTransformer implements DBTransformer {
         return contentlet;
     }
 
-    /**
-     * In the case the content type has block editor fields, the dotContentlet references must be merge with the new references
-     * @param contentlet
-     */
     private static void refreshBlockEditorReferences(final Contentlet contentlet) {
 
-        final List<com.dotcms.contenttype.model.field.Field> fields = contentlet.getContentType().fields();
-        for (final com.dotcms.contenttype.model.field.Field field : fields) {
-
-            if (field instanceof StoryBlockField) {
-
-                final Object blockEditorValue = contentlet.get(field.variable());
-                final Tuple2<Boolean, Object> resultOfRefresh = refreshBlockEditorValueReferences(blockEditorValue);
-                if (resultOfRefresh._1()) { // the block editor value has changed and has to be override
-
-                    contentlet.setProperty(field.variable(), resultOfRefresh._2());
-                }
-            }
-        }
-    }
-
-    private static Tuple2<Boolean, Object> refreshBlockEditorValueReferences(final Object blockEditorValue) {
-
-        boolean refreshed = false;
-        try {
-
-            final LinkedHashMap blockEditorMap = ContentletJsonHelper.INSTANCE.get().objectMapper()
-                    .readValue(Try.of(()->blockEditorValue.toString())
-                            .getOrElse(""), LinkedHashMap.class);
-            final List contentsMap = (List) blockEditorMap.get("content");
-
-            for (final Object contentMapObject : contentsMap) {
-
-                final Map contentMap = (Map) contentMapObject;
-                if (null != contentMap) {
-
-                    if ("dotContent".equals(contentMap.get("type"))) {
-
-                        final Map attrsMap = (Map) contentMap.get("attrs");
-                        if (null != attrsMap) {
-
-                            final Map dataMap = (Map) attrsMap.get("data");
-                            if (null != dataMap) {
-
-                                final String identifier = (String) dataMap.get("identifier");
-                                final String inode = (String) dataMap.get("inode");
-                                if (null != identifier && null != inode) {
-
-                                    final VersionInfo versionInfo = APILocator.getVersionableAPI().getVersionInfo(identifier);
-                                    if (null != versionInfo &&
-                                            !(inode.equals(versionInfo.getWorkingInode()) || inode.equals(versionInfo.getLiveInode()))) {
-
-                                        refreshed = true;
-                                        // the inode stored on the json does not match with any top inode, so the information stored is old and need refresh
-                                        refreshBlockEditorDataMap(dataMap, versionInfo);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (refreshed) {
-
-                final String blockEditJsonValueString = ContentletJsonHelper.INSTANCE.get().objectMapper()
-                        .writeValueAsString(blockEditorMap);
-
-                return Tuple.of(true, blockEditJsonValueString); // has changed and the now json is returned
-            }
-        } catch (final Exception e) {
-            Logger.debug(ContentletTransformer.class, e.getMessage());
-        }
-
-        return Tuple.of(false, blockEditorValue); // return the original value and value didn't change
-    }
-
-    private static void refreshBlockEditorDataMap(final Map dataMap, final VersionInfo versionInfo) throws DotDataException, DotSecurityException {
-
-        final Contentlet contentlet = APILocator.getContentletAPI().find(
-                versionInfo.getLiveInode(), APILocator.systemUser(), false);
-        final Set contentFieldNames = dataMap.keySet();
-        for (Object contentFieldName : contentFieldNames) {
-
-            final Object value = contentlet.get(contentFieldName.toString());
-            if (null != value) {
-
-                dataMap.put(contentFieldName, value);
-            }
-        }
+        APILocator.getStoryBlockAPI().refreshReferences(contentlet);
     }
 
 
