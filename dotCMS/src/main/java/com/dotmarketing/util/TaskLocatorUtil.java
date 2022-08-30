@@ -219,6 +219,7 @@ import com.dotmarketing.startup.runonce.Task220402UpdateDateTimezones;
 import com.dotmarketing.startup.runonce.Task220413IncreasePublishedPushedAssetIdCol;
 import com.dotmarketing.startup.runonce.Task220512UpdateNoHTMLRegexValue;
 import com.dotmarketing.startup.runonce.Task220606UpdatePushNowActionletName;
+import com.dotmarketing.startup.runonce.Task220822CreateVariantTable;
 import com.dotmarketing.startup.runonce.Task220825MakeSomeSystemFieldsRemovable;
 import com.google.common.collect.ImmutableList;
 
