@@ -513,6 +513,7 @@ public class TaskLocatorUtil {
 		.add(Task220413IncreasePublishedPushedAssetIdCol.class)
 		.add(Task220512UpdateNoHTMLRegexValue.class)
 		.add(Task220606UpdatePushNowActionletName.class)
+		.add(Task220822CreateVariantTable.class)
 		.add(Task220825MakeSomeSystemFieldsRemovable.class)
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
