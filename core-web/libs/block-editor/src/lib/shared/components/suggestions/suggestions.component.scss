@@ -2,7 +2,7 @@
 
 :host {
     display: block;
-    min-width: 15rem;
+    min-width: 15 * $dot-editor-size;
     box-shadow: 0px (0.25 * $dot-editor-size) (1.25 * $dot-editor-size) rgba(0, 0, 0, 0.1);
     padding: (0.5 * $dot-editor-size) 0;
     background: $white;
@@ -12,7 +12,7 @@
 h3 {
     text-transform: uppercase;
     font-size: $dot-editor-size;
-    margin: 0.5rem 1rem;
+    margin: (0.5 * $dot-editor-size) $dot-editor-size;
     color: #999999;
 }
 
