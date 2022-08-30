@@ -186,6 +186,7 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
         const { key } = event;
 
         if (key === 'Escape') {
+            event.stopImmediatePropagation();
             myTippy.hide();
 
             return true;

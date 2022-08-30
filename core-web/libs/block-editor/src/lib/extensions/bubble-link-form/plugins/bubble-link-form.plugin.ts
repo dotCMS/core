@@ -185,9 +185,10 @@ export class BubbleLinkFormView {
 
     setLinkValues({ link, blank = false }) {
         if (link.length > 0) {
+            const href = this.formatLink(link);
             this.isDotImageNode()
-                ? this.editor.commands.setImageLink({ href: link })
-                : this.editor.commands.setLink({ href: link, target: blank ? '_blank' : '_top' });
+                ? this.editor.commands.setImageLink({ href })
+                : this.editor.commands.setLink({ href, target: blank ? '_blank' : '_top' });
         }
     }
 
@@ -196,6 +197,17 @@ export class BubbleLinkFormView {
             ? this.editor.commands.unsetImageLink()
             : this.editor.commands.unsetLink();
         this.hide();
+    }
+
+    formatLink(link: string) {
+        if (!isValidURL(link)) {
+            return link;
+        }
+
+        const pattern = new RegExp('^(http|https)', 'i');
+        const startWithProtocol = pattern.test(link);
+
+        return startWithProtocol ? link : `http://${link}`;
     }
 
     setInputValues() {

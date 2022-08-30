@@ -150,11 +150,12 @@ export class BubbleLinkFormComponent implements OnInit {
      */
     onKeyDownEvent(e: KeyboardEvent) {
         const items = this.suggestionsComponent?.items;
+        e.stopImmediatePropagation();
 
         if (e.key === 'Escape') {
             this.hide.emit(true);
 
-            return true;
+            return false;
         }
 
         if (!this.showSuggestions || !items?.length) {
