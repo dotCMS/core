@@ -209,7 +209,7 @@ public class VariantAPITest {
     /**
      * Method to test: {@link VariantFactory#delete(String)}
      * When: Try to delete a not archived {@link Variant} object
-     * Should: throw a {@link DotDataException}
+     * Should: throw a {@link DotStateException}
      *
      * @throws DotDataException
      */
