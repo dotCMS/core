@@ -1,16 +1,15 @@
-package com.dotmarketing.portlets.variant.business;
+package com.dotcms.variant;
 
-import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DotPreconditions;
+import com.dotcms.variant.model.transform.VariantTransformer;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.variant.model.Variant;
 import com.dotmarketing.util.UUIDGenerator;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.jetbrains.annotations.NotNull;
 
 public class VariantFactoryImpl implements VariantFactory{
 
@@ -30,22 +29,25 @@ public class VariantFactoryImpl implements VariantFactory{
     @Override
     public Variant save(final Variant variant) throws DotDataException {
 
-        DotPreconditions.checkNotNull(variant.getName(), IllegalArgumentException.class,
+        DotPreconditions.checkNotNull(variant.name(), IllegalArgumentException.class,
                 "Name must not be null");
         final String identifier = getId(variant);
 
         new DotConnect().setSQL(VARIANT_INSERT_QUERY)
                 .addParam(identifier)
-                .addParam(variant.getName())
-                .addParam(variant.isArchived())
+                .addParam(variant.name())
+                .addParam(variant.archived())
                 .loadResult();
 
-        return new Variant(identifier, variant.getName(), false);
+        return Variant.builder()
+                .identifier(identifier)
+                .name(variant.name())
+                .archived(false).build();
     }
 
     private String getId(final Variant variant) {
 
-        final String deterministicID = DigestUtils.sha256Hex(variant.getName());
+        final String deterministicID = DigestUtils.sha256Hex(variant.name());
 
         final Optional<Variant> variantFromDataBase;
         try {
@@ -69,10 +71,13 @@ public class VariantFactoryImpl implements VariantFactory{
      */
     @Override
     public void update(Variant variant) throws DotDataException {
+        DotPreconditions.checkNotNull(variant.identifier(), IllegalArgumentException.class,
+                "The ID should not bee null");
+
         new DotConnect().setSQL(VARIANT_UPDATE_QUERY)
-                .addParam(variant.getName())
-                .addParam(variant.isArchived())
-                .addParam(variant.getIdentifier())
+                .addParam(variant.name())
+                .addParam(variant.archived())
+                .addParam(variant.identifier())
                 .loadResult();
     }
 
@@ -91,7 +96,7 @@ public class VariantFactoryImpl implements VariantFactory{
 
         if (!loadResults.isEmpty()) {
             final Map resultMap = (Map) loadResults.get(0);
-            return Optional.of(createVariant(resultMap));
+            return Optional.of(new VariantTransformer(resultMap).from());
         } else {
             return Optional.empty();
         }
@@ -104,18 +109,9 @@ public class VariantFactoryImpl implements VariantFactory{
 
         if (!loadResults.isEmpty()) {
             final Map resultMap = (Map) loadResults.get(0);
-            return Optional.of(createVariant(resultMap));
+            return Optional.of(new VariantTransformer(resultMap).from());
         } else {
             return Optional.empty();
         }
-    }
-
-    @NotNull
-    private Variant createVariant(Map resultMap) {
-        return new Variant(
-                resultMap.get("id").toString(),
-                resultMap.get("name").toString(),
-                ConversionUtils.toBooleanFromDb(resultMap.get("archived"))
-        );
     }
 }

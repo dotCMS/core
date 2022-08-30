@@ -1,4 +1,4 @@
-package com.dotmarketing.portlets.variant.business;
+package com.dotcms.variant;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -8,11 +8,12 @@ import static org.junit.Assert.assertTrue;
 import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.variant.model.Variant;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
@@ -41,26 +42,13 @@ public class VariantAPITest {
         final Variant variantSaved = APILocator.getVariantAPI().save(variant);
 
         assertNotNull(variantSaved);
-        assertNotNull(variantSaved.getIdentifier());
+        assertNotNull(variantSaved.identifier());
 
         final Variant variantFromDataBase = getVariantFromDataBase(variantSaved);
 
-        assertEquals(variantSaved.getName(), variantFromDataBase.getName());
-        assertEquals(variantSaved.getIdentifier(), variantFromDataBase.getIdentifier());
-        assertFalse(variantFromDataBase.isArchived());
-    }
-
-    /**
-     * Method to test: {@link VariantFactory#save(Variant)}
-     * When: Try to save a {@link Variant} object without name
-     * Should: throw {@link NullPointerException}
-     *
-     * @throws DotDataException
-     */
-    @Test(expected = IllegalArgumentException.class)
-    public void saveWithoutName() throws DotDataException {
-        final Variant variant = new Variant("1", null, false);
-        APILocator.getVariantAPI().save(variant);
+        assertEquals(variantSaved.name(), variantFromDataBase.name());
+        assertEquals(variantSaved.identifier(), variantFromDataBase.identifier());
+        assertFalse(variantFromDataBase.archived());
     }
 
     /**
@@ -88,18 +76,21 @@ public class VariantAPITest {
         final Variant variant = new VariantDataGen().nextPersisted();
 
         assertNotNull(variant);
-        assertNotNull(variant.getIdentifier());
+        assertNotNull(variant.identifier());
 
-        final Variant variantUpdated = new Variant(variant.getIdentifier(),
-                variant.getName() + "_updated", false);
+        final Variant variantUpdated = new VariantDataGen()
+                .id(variant.identifier())
+                .name(variant.name() + "_updated")
+                .archived(false)
+                .next();
 
         APILocator.getVariantAPI().update(variantUpdated);
 
         final Variant variantFromDataBase = getVariantFromDataBase(variant);
 
-        assertEquals(variantUpdated.getName(), variantFromDataBase.getName());
-        assertEquals(variantUpdated.getIdentifier(), variantFromDataBase.getIdentifier());
-        assertFalse(variantFromDataBase.isArchived());
+        assertEquals(variantUpdated.name(), variantFromDataBase.name());
+        assertEquals(variantUpdated.identifier(), variantFromDataBase.identifier());
+        assertFalse(variantFromDataBase.archived());
     }
 
     /**
@@ -110,7 +101,7 @@ public class VariantAPITest {
      * @throws DotDataException
      */
     @Test(expected = DoesNotExistException.class)
-    public void updateNotExists() throws DotDataException {
+    public void updateNotExists() {
         final Variant variantToUpdated = new VariantDataGen()
                 .id("Not_Exists").next();
 
@@ -118,62 +109,39 @@ public class VariantAPITest {
     }
 
     /**
-     * Method to test: {@link VariantFactory#save(Variant)}
-     * When: Try to update a {@link Variant} object without name
-     * Should: throw {@link NullPointerException}
-     *
-     * @throws DotDataException
-     */
-    @Test(expected = IllegalArgumentException.class)
-    public void updateWithoutName() throws DotDataException {
-        final Variant variant = new Variant("1", null, false);
-        APILocator.getVariantAPI().update(variant);
-    }
-
-    /**
-     * Method to test: {@link VariantFactory#save(Variant)}
-     * When: Try to update a {@link Variant} object without id
-     * Should: throw {@link NullPointerException}
-     *
-     * @throws DotDataException
-     */
-    @Test(expected = IllegalArgumentException.class)
-    public void updateWithoutID() throws DotDataException {
-        final Variant variant = new Variant(null, "NAME", false);
-        APILocator.getVariantAPI().update(variant);
-    }
-
-    /**
      * Method to test: {@link VariantFactory#update(Variant)}
-     * When: Try to update the {@link Variant}'s deleted attribute
+     * When: Try to update the {@link Variant}'s archived attribute
      * Should: Update it in Data base.
      *
      * @throws DotDataException
      */
     @Test
-    public void updateDeletedField() throws DotDataException {
+    public void updateArchivedField() throws DotDataException {
         final Variant variant = new VariantDataGen().nextPersisted();
 
         assertNotNull(variant);
-        assertNotNull(variant.getIdentifier());
-        assertFalse(variant.isArchived());
+        assertNotNull(variant.identifier());
+        assertFalse(variant.archived());
 
-        final Variant variantUpdated = new Variant(variant.getIdentifier(),
-                variant.getName(), true);
+        final Variant variantUpdated = new VariantDataGen()
+                .id(variant.identifier())
+                .name(variant.name())
+                .archived(true)
+                .next();
 
         APILocator.getVariantAPI().update(variantUpdated);
 
         final Variant variantFromDataBase = getVariantFromDataBase(variant);
 
-        assertEquals(variantUpdated.getName(), variantFromDataBase.getName());
-        assertEquals(variantUpdated.getIdentifier(), variantFromDataBase.getIdentifier());
-        assertTrue(variantFromDataBase.isArchived());
+        assertEquals(variantUpdated.name(), variantFromDataBase.name());
+        assertEquals(variantUpdated.identifier(), variantFromDataBase.identifier());
+        assertTrue(variantFromDataBase.archived());
     }
 
     /**
      * Method to test: {@link VariantFactory#delete(String)}
      * When: Try to archive a {@link Variant} object
-     * Should: save it with deleted equals to true
+     * Should: save it with archived equals to true
      *
      * @throws DotDataException
      */
@@ -184,12 +152,12 @@ public class VariantAPITest {
         ArrayList results = getResults(variant);
         assertFalse(results.isEmpty());
 
-        APILocator.getVariantAPI().archive(variant.getIdentifier());
+        APILocator.getVariantAPI().archive(variant.identifier());
 
         final Variant variantFromDataBase = getVariantFromDataBase(variant);
-        assertEquals(variantFromDataBase.getName(), variantFromDataBase.getName());
-        assertEquals(variantFromDataBase.getIdentifier(), variantFromDataBase.getIdentifier());
-        assertTrue(variantFromDataBase.isArchived());
+        assertEquals(variantFromDataBase.name(), variantFromDataBase.name());
+        assertEquals(variantFromDataBase.identifier(), variantFromDataBase.identifier());
+        assertTrue(variantFromDataBase.archived());
     }
 
     /**
@@ -200,7 +168,7 @@ public class VariantAPITest {
      * @throws DotDataException
      */
     @Test(expected = DoesNotExistException.class)
-    public void archiveNotExists() throws DotDataException {
+    public void archiveNotExists() {
         APILocator.getVariantAPI().archive("Not Exists");
     }
 
@@ -218,7 +186,7 @@ public class VariantAPITest {
         ArrayList results = getResults(variant);
         assertFalse(results.isEmpty());
 
-        APILocator.getVariantAPI().delete(variant.getIdentifier());
+        APILocator.getVariantAPI().delete(variant.identifier());
 
         results = getResults(variant);
         assertTrue(results.isEmpty());
@@ -232,29 +200,27 @@ public class VariantAPITest {
      * @throws DotDataException
      */
     @Test(expected = DoesNotExistException.class)
-    public void deleteNotExists() throws DotDataException {
+    public void deleteNotExists() {
         final Variant variant = new VariantDataGen().id("Not Exists").archived(true).next();
 
-        APILocator.getVariantAPI().delete(variant.getIdentifier());
+        APILocator.getVariantAPI().delete(variant.identifier());
     }
 
     /**
      * Method to test: {@link VariantFactory#delete(String)}
      * When: Try to delete a not archived {@link Variant} object
-     * Should: throw a {@link IllegalStateException}
+     * Should: throw a {@link DotDataException}
      *
      * @throws DotDataException
-     *
-     * @throws IllegalStateException
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = DotStateException.class)
     public void deleteNotArchived() throws DotDataException {
         final Variant variant = new VariantDataGen().archived(false).nextPersisted();
 
         ArrayList results = getResults(variant);
         assertFalse(results.isEmpty());
 
-        APILocator.getVariantAPI().delete(variant.getIdentifier());
+        APILocator.getVariantAPI().delete(variant.identifier());
     }
 
     /**
@@ -271,10 +237,10 @@ public class VariantAPITest {
         ArrayList results = getResults(variant);
         assertFalse(results.isEmpty());
 
-        final Optional<Variant> variantFromDataBase = APILocator.getVariantAPI().get(variant.getIdentifier());
+        final Optional<Variant> variantFromDataBase = APILocator.getVariantAPI().get(variant.identifier());
 
         assertTrue(variantFromDataBase.isPresent());
-        assertEquals(variant.getIdentifier(), variantFromDataBase.get().getIdentifier());
+        assertEquals(variant.identifier(), variantFromDataBase.get().identifier());
     }
 
     /**
@@ -291,10 +257,10 @@ public class VariantAPITest {
         ArrayList results = getResults(variant);
         assertFalse(results.isEmpty());
 
-        final Optional<Variant> variantFromDataBase = APILocator.getVariantAPI().getByName(variant.getName());
+        final Optional<Variant> variantFromDataBase = APILocator.getVariantAPI().getByName(variant.name());
 
         assertTrue(variantFromDataBase.isPresent());
-        assertEquals(variant.getIdentifier(), variantFromDataBase.get().getIdentifier());
+        assertEquals(variant.identifier(), variantFromDataBase.get().identifier());
     }
 
     /**
@@ -321,7 +287,7 @@ public class VariantAPITest {
      * @throws DotDataException
      */
     @Test(expected = NullPointerException.class)
-    public void getWithNull() throws DotDataException {
+    public void getWithNull() {
         APILocator.getVariantAPI().get(null);
     }
 
@@ -333,7 +299,7 @@ public class VariantAPITest {
      * @throws DotDataException
      */
     @Test
-    public void getByNameNotExists() throws DotDataException {
+    public void getByNameNotExists() {
 
         final Optional<Variant> variantFromDataBase = APILocator.getVariantAPI()
                 .getByName("Not_Exists");
@@ -349,23 +315,26 @@ public class VariantAPITest {
      * @throws DotDataException
      */
     @Test(expected = NullPointerException.class)
-    public void getByNameWithNull() throws DotDataException {
+    public void getByNameWithNull() {
         APILocator.getVariantAPI().getByName(null);
     }
 
     private ArrayList getResults(Variant variant) throws DotDataException {
         return new DotConnect().setSQL(
                         "SELECT * FROM variant where id = ?")
-                .addParam(variant.getIdentifier())
+                .addParam(variant.identifier())
                 .loadResults();
     }
 
-    private Variant getVariantFromDataBase(Variant variant) throws DotDataException {
+    private Variant getVariantFromDataBase(final Variant variant) throws DotDataException {
         final ArrayList results = getResults(variant);
 
         assertEquals(1, results.size());
         final Map resultMap = (Map) results.get(0);
-        return new Variant(resultMap.get("id").toString(), resultMap.get("name").toString(),
-                ConversionUtils.toBooleanFromDb(resultMap.get("archived")));
+        return Variant.builder()
+                .identifier(resultMap.get("id").toString())
+                .name(resultMap.get("name").toString())
+                .archived(ConversionUtils.toBooleanFromDb(resultMap.get("archived")))
+                .build();
     }
 }

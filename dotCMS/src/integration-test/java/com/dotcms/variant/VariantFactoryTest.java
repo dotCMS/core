@@ -1,4 +1,4 @@
-package com.dotmarketing.portlets.variant.business;
+package com.dotcms.variant;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -9,11 +9,11 @@ import static org.junit.Assert.assertTrue;
 import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.variant.model.Variant;
 import com.microsoft.sqlserver.jdbc.SQLServerException;
 import java.util.ArrayList;
 import java.util.Map;
@@ -48,13 +48,13 @@ public class VariantFactoryTest {
 
     private void checkFromDataBase(Variant variantSaved) throws DotDataException {
         assertNotNull(variantSaved);
-        assertNotNull(variantSaved.getIdentifier());
+        assertNotNull(variantSaved.identifier());
 
         final Variant variantFromDataBase = getVariantFromDataBase(variantSaved);
 
-        assertEquals(variantSaved.getName(), variantFromDataBase.getName());
-        assertEquals(variantSaved.getIdentifier(), variantFromDataBase.getIdentifier());
-        assertFalse(variantFromDataBase.isArchived());
+        assertEquals(variantSaved.name(), variantFromDataBase.name());
+        assertEquals(variantSaved.identifier(), variantFromDataBase.identifier());
+        assertFalse(variantFromDataBase.archived());
     }
 
     /**
@@ -71,7 +71,7 @@ public class VariantFactoryTest {
         final Variant variantSaved = FactoryLocator.getVariantFactory().save(variant);
         checkFromDataBase(variantSaved);
 
-        final Variant variantWithNameDuplicated = new VariantDataGen().name(variant.getName()).next();
+        final Variant variantWithNameDuplicated = new VariantDataGen().name(variant.name()).next();
 
         try {
             FactoryLocator.getVariantFactory().save(variantWithNameDuplicated);
@@ -101,7 +101,11 @@ public class VariantFactoryTest {
 
         final Variant variant_2 = new VariantDataGen().nextPersisted();
 
-        final Variant variantWithNameDuplicated = new Variant(variant_2.getIdentifier(), variant.getName(), variant_2.isArchived());
+        final Variant variantWithNameDuplicated = Variant.builder()
+                .identifier(variant_2.identifier())
+                .name(variant.name())
+                .archived(variant_2.archived())
+                .build();
 
         try {
             FactoryLocator.getVariantFactory().update(variantWithNameDuplicated);
@@ -129,8 +133,9 @@ public class VariantFactoryTest {
         final Variant variantSaved = FactoryLocator.getVariantFactory().save(variant);
 
         assertNotNull(variantSaved);
-        assertNotNull(variantSaved.getIdentifier());
-        assertEquals("The ID should be a hash of the name", DigestUtils.sha256Hex(variant.getName()), variantSaved.getIdentifier());
+        assertNotNull(variantSaved.identifier());
+        assertEquals("The ID should be a hash of the name",
+                DigestUtils.sha256Hex(variant.name()), variantSaved.identifier());
     }
 
     /**
@@ -146,30 +151,17 @@ public class VariantFactoryTest {
         final Variant variant = new VariantDataGen().next();
 
         new DotConnect().setSQL("INSERT INTO variant (id, name, archived) VALUES (?, ?, ?)")
-                .addParam(DigestUtils.sha256Hex(variant.getName()))
-                .addParam("Any name")
+                .addParam(DigestUtils.sha256Hex(variant.name()))
+                .addParam("Any name_" + System.currentTimeMillis())
                 .addParam(false)
                 .loadResult();
 
         final Variant variantSaved = FactoryLocator.getVariantFactory().save(variant);
 
         assertNotNull(variantSaved);
-        assertNotNull(variantSaved.getIdentifier());
+        assertNotNull(variantSaved.identifier());
         assertNotEquals("The ID should not be a hash of the name",
-                DigestUtils.sha256Hex(variant.getName()), variantSaved.getIdentifier());
-    }
-
-    /**
-     * Method to test: {@link VariantFactory#save(Variant)}
-     * When: Try to save a {@link Variant} object without name
-     * Should: throw {@link NullPointerException}
-     *
-     * @throws DotDataException
-     */
-    @Test(expected = IllegalArgumentException.class)
-    public void saveWithoutName() throws DotDataException {
-        final Variant variant = new Variant("1", null, false);
-        FactoryLocator.getVariantFactory().save(variant);
+                DigestUtils.sha256Hex(variant.name()), variantSaved.identifier());
     }
 
     /**
@@ -182,22 +174,24 @@ public class VariantFactoryTest {
     @Test
     public void update() throws DotDataException {
         final Variant variant = new VariantDataGen().next();
-
         final Variant variantSaved = FactoryLocator.getVariantFactory().save(variant);
 
         assertNotNull(variantSaved);
-        assertNotNull(variantSaved.getIdentifier());
+        assertNotNull(variantSaved.identifier());
 
-        final Variant variantUpdated = new Variant(variantSaved.getIdentifier(),
-                variantSaved.getName() + "_updated", false);
+        final Variant variantUpdated = new VariantDataGen()
+                .id(variantSaved.identifier())
+                .name(variantSaved.name() + "_updated")
+                .archived(false)
+                .next();
 
         FactoryLocator.getVariantFactory().update(variantUpdated);
 
         final Variant variantFromDataBase = getVariantFromDataBase(variantSaved);
 
-        assertEquals(variantUpdated.getName(), variantFromDataBase.getName());
-        assertEquals(variantUpdated.getIdentifier(), variantFromDataBase.getIdentifier());
-        assertFalse(variantFromDataBase.isArchived());
+        assertEquals(variantUpdated.name(), variantFromDataBase.name());
+        assertEquals(variantUpdated.identifier(), variantFromDataBase.identifier());
+        assertFalse(variantFromDataBase.archived());
     }
 
     /**
@@ -214,70 +208,22 @@ public class VariantFactoryTest {
         final Variant variantSaved = FactoryLocator.getVariantFactory().save(variant);
 
         assertNotNull(variantSaved);
-        assertNotNull(variantSaved.getIdentifier());
-        assertFalse(variantSaved.isArchived());
+        assertNotNull(variantSaved.identifier());
+        assertFalse(variantSaved.archived());
 
-        final Variant variantUpdated = new Variant(variantSaved.getIdentifier(),
-                variantSaved.getName(), true);
+        final Variant variantUpdated = new VariantDataGen()
+                .id(variantSaved.identifier())
+                .name(variantSaved.name())
+                .archived(true)
+                .next();
 
         FactoryLocator.getVariantFactory().update(variantUpdated);
 
         final Variant variantFromDataBase = getVariantFromDataBase(variantSaved);
 
-        assertEquals(variantUpdated.getName(), variantFromDataBase.getName());
-        assertEquals(variantUpdated.getIdentifier(), variantFromDataBase.getIdentifier());
-        assertTrue(variantFromDataBase.isArchived());
-    }
-
-    /**
-     * Method to test: {@link VariantFactory#update(Variant)}
-     * When: Try to update a {@link Variant} object with a Null name
-     * Should: throw a {@link NullPointerException}
-     *
-     * @throws DotDataException
-     */
-    @Test()
-    public void updateWithoutName() throws DotDataException {
-        final Variant variant = new VariantDataGen().next();
-
-        final VariantFactory variantFactory = new VariantFactoryImpl();
-        final Variant variantSaved = variantFactory.save(variant);
-
-        assertNotNull(variantSaved);
-        assertNotNull(variantSaved.getIdentifier());
-
-        final Variant variantUpdated = new Variant(variantSaved.getIdentifier(), null, false);
-
-        try {
-            variantFactory.update(variantUpdated);
-            throw new AssertionError("DotDataException Expected");
-        }catch (DotDataException e) {
-            if (DbConnectionFactory.isPostgres()) {
-                assertEquals(PSQLException.class, e.getCause().getClass());
-            } else if (DbConnectionFactory.isMsSql()){
-                assertEquals(SQLServerException.class, e.getCause().getClass());
-            } else {
-                throw new AssertionError("Database not expected");
-            }
-        }
-    }
-
-    /**
-     * Method to test: {@link VariantFactory#update(Variant)}
-     * When: Try to update a {@link Variant} object with a Null ID
-     * Should: throw a {@link NullPointerException}
-     *
-     * @throws DotDataException
-     */
-    @Test
-    public void updateIDNull() throws DotDataException {
-        final Variant variant = new Variant(null, "Name", false);
-
-       FactoryLocator.getVariantFactory().update(variant);
-
-        final ArrayList results = getResults(variant);
-
-        assertTrue(results.isEmpty());
+        assertEquals(variantUpdated.name(), variantFromDataBase.name());
+        assertEquals(variantUpdated.identifier(), variantFromDataBase.identifier());
+        assertTrue(variantFromDataBase.archived());
     }
 
     /**
@@ -294,7 +240,7 @@ public class VariantFactoryTest {
         ArrayList results = getResults(variant);
         assertFalse(results.isEmpty());
 
-        FactoryLocator.getVariantFactory().delete(variant.getIdentifier());
+        FactoryLocator.getVariantFactory().delete(variant.identifier());
 
         results = getResults(variant);
         assertTrue(results.isEmpty());
@@ -314,10 +260,10 @@ public class VariantFactoryTest {
         ArrayList results = getResults(variant);
         assertFalse(results.isEmpty());
 
-        final Optional<Variant> variantFromDataBase = FactoryLocator.getVariantFactory().get(variant.getIdentifier());
+        final Optional<Variant> variantFromDataBase = FactoryLocator.getVariantFactory().get(variant.identifier());
 
         assertTrue(variantFromDataBase.isPresent());
-        assertEquals(variant.getIdentifier(), variantFromDataBase.get().getIdentifier());
+        assertEquals(variant.identifier(), variantFromDataBase.get().identifier());
     }
 
     /**
@@ -334,10 +280,10 @@ public class VariantFactoryTest {
         ArrayList results = getResults(variant);
         assertFalse(results.isEmpty());
 
-        final Optional<Variant> variantFromDataBase = FactoryLocator.getVariantFactory().getByName(variant.getName());
+        final Optional<Variant> variantFromDataBase = FactoryLocator.getVariantFactory().getByName(variant.name());
 
         assertTrue(variantFromDataBase.isPresent());
-        assertEquals(variant.getIdentifier(), variantFromDataBase.get().getIdentifier());
+        assertEquals(variant.identifier(), variantFromDataBase.get().identifier());
     }
 
     /**
@@ -354,11 +300,11 @@ public class VariantFactoryTest {
         ArrayList results = getResults(variant);
         assertFalse(results.isEmpty());
 
-        final Optional<Variant> variantFromDataBase = FactoryLocator.getVariantFactory().get(variant.getIdentifier());
+        final Optional<Variant> variantFromDataBase = FactoryLocator.getVariantFactory().get(variant.identifier());
 
         assertTrue(variantFromDataBase.isPresent());
-        assertEquals(variant.getIdentifier(), variantFromDataBase.get().getIdentifier());
-        assertTrue(variantFromDataBase.get().isArchived());
+        assertEquals(variant.identifier(), variantFromDataBase.get().identifier());
+        assertTrue(variantFromDataBase.get().archived());
     }
 
     /**
@@ -396,16 +342,19 @@ public class VariantFactoryTest {
     private ArrayList getResults(Variant variant) throws DotDataException {
         return new DotConnect().setSQL(
                         "SELECT * FROM variant where id = ?")
-                .addParam(variant.getIdentifier())
+                .addParam(variant.identifier())
                 .loadResults();
     }
 
-    private Variant getVariantFromDataBase(Variant variant) throws DotDataException {
+    private Variant getVariantFromDataBase(final Variant variant) throws DotDataException {
         final ArrayList results = getResults(variant);
 
         assertEquals(1, results.size());
         final Map resultMap = (Map) results.get(0);
-        return new Variant(resultMap.get("id").toString(), resultMap.get("name").toString(),
-                ConversionUtils.toBooleanFromDb(resultMap.get("archived")));
+        return Variant.builder()
+                .identifier(resultMap.get("id").toString())
+                .name(resultMap.get("name").toString())
+                .archived(ConversionUtils.toBooleanFromDb(resultMap.get("archived")))
+                .build();
     }
 }

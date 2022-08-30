@@ -1,12 +1,13 @@
-package com.dotmarketing.portlets.variant.business;
+package com.dotcms.variant;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rest.validation.Preconditions;
 import com.dotcms.util.DotPreconditions;
+import com.dotcms.variant.model.Variant;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.variant.model.Variant;
 import com.dotmarketing.util.Logger;
 import java.util.Optional;
 
@@ -31,9 +32,9 @@ public class VariantAPIImpl implements VariantAPI {
     @WrapInTransaction
     public Variant save(final Variant variant) {
 
-        DotPreconditions.checkNotNull(variant.getName(), IllegalArgumentException.class,
+        DotPreconditions.checkNotNull(variant.name(), IllegalArgumentException.class,
                 "Variant name should not be null");
-        DotPreconditions.checkArgument(!variant.isArchived(), "Variant can not be created as archive");
+        DotPreconditions.checkArgument(!variant.archived(), "Variant can not be created as archive");
 
         Logger.debug(this, ()-> "Saving Variant: " + variant);
 
@@ -53,13 +54,13 @@ public class VariantAPIImpl implements VariantAPI {
     @Override
     @WrapInTransaction
     public void update(final Variant variant) {
-        Preconditions.checkNotNull(variant.getName(), IllegalArgumentException.class,
+        Preconditions.checkNotNull(variant.name(), IllegalArgumentException.class,
                 "Variant name should not be null");
-        Preconditions.checkNotNull(variant.getIdentifier(), IllegalArgumentException.class ,
+        Preconditions.checkNotNull(variant.identifier(), IllegalArgumentException.class ,
                 "Variant ID should not be null");
 
         try {
-            get(variant.getIdentifier())
+            get(variant.identifier())
                     .orElseThrow(() -> new DoesNotExistException("The variant does not exists"));
 
             Logger.debug(this, () -> "Updating Variant: " + variant);
@@ -78,7 +79,9 @@ public class VariantAPIImpl implements VariantAPI {
     public void delete(String id) {
         final Variant variant = get(id).orElseThrow(() -> new DoesNotExistException("The variant must exists"));
 
-        DotPreconditions.checkArgument(variant.isArchived(), "The Variant must be archived to be able to delete it");
+        DotPreconditions.checkArgument(variant.archived(),
+                DotStateException.class,
+                "The Variant must be archived to be able to delete it");
 
         Logger.debug(this, ()-> "Deleting Variant: " + variant);
 
@@ -99,8 +102,12 @@ public class VariantAPIImpl implements VariantAPI {
         final Variant variant = get(id)
                 .orElseThrow(() -> new DoesNotExistException("The Variant does not exists"));
 
-        final Variant variantArchived = new Variant(variant.getIdentifier(), variant.getName(),
-                true);
+        final Variant variantArchived = Variant.builder()
+                .identifier(variant.identifier())
+                .name(variant.name())
+                .archived(true)
+                .build();
+
         Logger.debug(this, () -> "Archiving Variant: " + variant);
         update(variantArchived);
     }
