@@ -8,6 +8,8 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { CardModule } from 'primeng/card';
+import { OrderListModule } from 'primeng/orderlist';
+import { ListboxModule } from 'primeng/listbox';
 
 // DotCMS JS
 import { LoggerService } from '@dotcms/dotcms-js';
@@ -36,6 +38,9 @@ import {
 // Shared
 import { SharedModule } from './shared/shared.module';
 
+//Editor
+import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
+
 @NgModule({
     imports: [
         CommonModule,
@@ -46,7 +51,9 @@ import { SharedModule } from './shared/shared.module';
         CheckboxModule,
         ButtonModule,
         InputTextModule,
-        SharedModule
+        SharedModule,
+        OrderListModule,
+        ListboxModule
     ],
     declarations: [
         EditorDirective,
@@ -59,7 +66,8 @@ import { SharedModule } from './shared/shared.module';
         BubbleMenuButtonComponent,
         BubbleLinkFormComponent,
         FormActionsComponent,
-        SuggestionPageComponent
+        SuggestionPageComponent,
+        DotBlockEditorComponent
     ],
     providers: [DotImageService, LoggerService, StringUtils],
     exports: [
@@ -71,7 +79,8 @@ import { SharedModule } from './shared/shared.module';
         CheckboxModule,
         ButtonModule,
         InputTextModule,
-        SharedModule
+        SharedModule,
+        DotBlockEditorComponent
     ]
 })
 export class BlockEditorModule {}

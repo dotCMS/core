@@ -40,6 +40,9 @@ import { DotPropertiesService } from '@services/dot-properties/dot-properties.se
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotContentletEventAddContentType } from './services/dot-edit-content-html/models/dot-contentlets-events.model';
 import { DotIframeEditEvent } from '@dotcms/dotcms-models';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
+
+export const EDIT_BLOCK_EDITOR_CUSTOM_EVENT = 'edit-block-editor';
 
 /**
  * Edit content page component, render the html of a page and bind all events to make it ediable.
@@ -93,7 +96,8 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         public iframeOverlayService: IframeOverlayService,
         private httpErrorManagerService: DotHttpErrorManagerService,
         private dotConfigurationService: DotPropertiesService,
-        private dotLicenseService: DotLicenseService
+        private dotLicenseService: DotLicenseService,
+        private dotEventsService: DotEventsService
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
@@ -137,6 +141,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 'cancel-save-menu-order': () => {
                     this.reorderMenuUrl = '';
                     this.reload(null);
+                },
+                'edit-block-editor': (element) => {
+                    this.dotEventsService.notify(EDIT_BLOCK_EDITOR_CUSTOM_EVENT, element);
                 }
             };
         }
@@ -152,7 +159,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         this.dotLoadingIndicatorService.show();
         this.setInitalData();
         this.subscribeSwitchSite();
-        this.subscribeIframeCustomEvents();
+        this.subscribeToNgEvents();
         this.subscribeIframeActions();
         this.subscribePageModelChange();
         this.subscribeOverlayService();
@@ -414,7 +421,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         return eventsHandlerMap[event];
     }
 
-    private subscribeIframeCustomEvents(): void {
+    private subscribeToNgEvents(): void {
         fromEvent(window.document, 'ng-event')
             .pipe(pluck('detail'), takeUntil(this.destroy$))
             .subscribe((customEvent: { name: string; data: unknown }) => {
