@@ -1,4 +1,4 @@
-<div class="icon-wrapper" [class.dot-contentlet]="data?.contentlet" [class.url-item]="urlItem">
+<div class="icon-wrapper" [class.dot-contentlet]="data?.contentlet" [class.page]="page">
     <i class="material-icons" *ngIf="icon; else thumbnail">{{ url }}</i>
 
     <ng-template #thumbnail>
@@ -13,13 +13,11 @@
 </div>
 <div class="data-wrapper">
     <span>{{ label }}</span>
-    <!-- <ng-template *ngIf="data?.contentlet"> -->
-    <span class="url" *ngIf="urlItem">{{ data.contentlet.url }}</span>
+    <span class="url" *ngIf="page">{{ data.contentlet.url }}</span>
     <div class="state" *ngIf="data?.contentlet">
         <dot-state-icon [state]="data.contentlet" size="16px"></dot-state-icon>
         <dot-badge bordered="true">{{ data.contentlet.language | lowercase }}</dot-badge>
     </div>
-    <!-- </ng-template> -->
 </div>
 
 <ng-template #image>

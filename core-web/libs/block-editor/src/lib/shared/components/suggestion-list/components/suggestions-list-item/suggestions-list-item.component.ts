@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostBinding, Input, OnInit } from '@angular/core';
+import { Component, ElementRef, HostBinding, Input, OnInit, HostListener } from '@angular/core';
 
 import { FocusableOption } from '@angular/cdk/a11y';
 
@@ -18,12 +18,18 @@ export class SuggestionsListItemComponent implements FocusableOption, OnInit {
     @Input() command: () => void;
     @Input() label = '';
     @Input() url = '';
-    @Input() urlItem = false;
+    @Input() page = false;
     @Input() data = null;
 
     icon = false;
 
     constructor(private element: ElementRef) {}
+
+    @HostListener('mousedown', ['$event'])
+    onMouseDown(e: MouseEvent) {
+        e.preventDefault();
+        this.command();
+    }
 
     ngOnInit() {
         this.icon = this.icon = typeof this.url === 'string' && !(this.url.split('/').length > 1);

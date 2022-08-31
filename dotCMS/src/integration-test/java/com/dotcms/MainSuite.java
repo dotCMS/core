@@ -69,6 +69,7 @@ import com.dotcms.rendering.velocity.viewtools.JSONToolTest;
 import com.dotcms.rendering.velocity.viewtools.MessageToolTest;
 import com.dotcms.rendering.velocity.viewtools.XmlToolTest;
 import com.dotcms.rendering.velocity.viewtools.content.StoryBlockMapTest;
+import com.dotcms.rendering.velocity.viewtools.content.StoryBlockTest;
 import com.dotcms.rest.BundlePublisherResourceIntegrationTest;
 import com.dotcms.rest.BundleResourceTest;
 import com.dotcms.rest.IntegrityResourceIntegrationTest;
@@ -166,6 +167,7 @@ import com.dotmarketing.startup.runonce.Task220512UpdateNoHTMLRegexValueTest;
 import com.dotmarketing.startup.runonce.Task220606UpdatePushNowActionletNameTest;
 import com.dotmarketing.startup.runonce.Task220825MakeSomeSystemFieldsRemovable;
 import com.dotmarketing.startup.runonce.Task220822CreateVariantTableTest;
+import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTableTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -565,6 +567,9 @@ import org.junit.runners.Suite.SuiteClasses;
         PaginatedContentletsIntegrationTest.class,
         Task220822CreateVariantTableTest.class,
         Task220825MakeSomeSystemFieldsRemovable.class
+        Task220822CreateVariantTableTest.class,
+        Task220829CreateExperimentsTableTest.class,
+        StoryBlockTest.class
 })
 public class MainSuite {
 

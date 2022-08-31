@@ -516,6 +516,8 @@ public class TaskLocatorUtil {
 		.add(Task220606UpdatePushNowActionletName.class)
 		.add(Task220822CreateVariantTable.class)
 		.add(Task220825MakeSomeSystemFieldsRemovable.class)
+    	.add(Task220822CreateVariantTable.class)
+		.add(Task220829CreateExperimentsTable.class)
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
