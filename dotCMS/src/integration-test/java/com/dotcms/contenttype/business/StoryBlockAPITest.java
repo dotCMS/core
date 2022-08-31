@@ -2,34 +2,20 @@ package com.dotcms.contenttype.business;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.business.json.ContentletJsonHelper;
-import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.response.BaseResponse;
-import com.dotcms.rendering.velocity.viewtools.content.StoryBlockMap;
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
-import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.VelocityUtil;
-import com.dotmarketing.util.json.JSONException;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import org.apache.velocity.context.Context;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -37,18 +23,15 @@ import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.IOException;
-import java.io.Reader;
-import java.io.StringReader;
-import java.io.StringWriter;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static junit.framework.TestCase.assertEquals;
-
+/**
+ * Test for {@link StoryBlockAPI}
+ * @author jsanca
+ */
 public class StoryBlockAPITest extends IntegrationTestBase {
 
     private static final String JSON =
@@ -181,9 +164,39 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         Assert.assertEquals(refreshedContentletMap.get("identifier"), newRichTextContentlet.getIdentifier());
         Assert.assertEquals("Title2", newRichTextContentlet.getStringProperty("title"));
         Assert.assertEquals("Body2",  newRichTextContentlet.getStringProperty("body"));
-
-
-
     }
 
+    /**
+     * Method to test: {@link StoryBlockAPI#getDependencies(Object)}
+     * Given Scenario: Creates a story block and adds 3 contentlets
+     * ExpectedResult: The contentlets added should be retrieved
+     *
+     */
+    @Test
+    public void test_get_dependencies() throws DotDataException, DotSecurityException, JsonProcessingException {
+
+        //1) create a rich text contentlets with some initial values
+        final ContentType contentTypeRichText = APILocator.getContentTypeAPI(APILocator.systemUser()).find("webPageContent");
+        final Contentlet richTextContentlet1   = new ContentletDataGen(contentTypeRichText).setProperty("title","Title1").setProperty("body","Body1").nextPersisted();
+        final Contentlet richTextContentlet2   = new ContentletDataGen(contentTypeRichText).setProperty("title","Title1").setProperty("body","Body1").nextPersisted();
+        final Contentlet richTextContentlet3   = new ContentletDataGen(contentTypeRichText).setProperty("title","Title1").setProperty("body","Body1").nextPersisted();
+
+        // 2) adds the contentlets to the static story block created previously
+        final Object newStoryBlockJson1        = APILocator.getStoryBlockAPI().addContentlet(JSON, richTextContentlet1);
+        final Object newStoryBlockJson2        = APILocator.getStoryBlockAPI().addContentlet(newStoryBlockJson1, richTextContentlet2);
+        final Object newStoryBlockJson3        = APILocator.getStoryBlockAPI().addContentlet(newStoryBlockJson2, richTextContentlet3);
+
+        // 3) convert the json to map, to start the test
+        final Map    newStoryBlockMap         = ContentletJsonHelper.INSTANCE.get().objectMapper()
+                .readValue(Try.of(() -> newStoryBlockJson3.toString())
+                        .getOrElse(StringPool.BLANK), LinkedHashMap.class);
+
+        Assert.assertNotNull(newStoryBlockMap);
+        final List<String> contentletIdList = APILocator.getStoryBlockAPI().getDependencies(newStoryBlockJson3);
+        Assert.assertNotNull(contentletIdList);
+        Assert.assertEquals(3, contentletIdList.size());
+        Assert.assertTrue(contentletIdList.contains(richTextContentlet1.getIdentifier()));
+        Assert.assertTrue(contentletIdList.contains(richTextContentlet2.getIdentifier()));
+        Assert.assertTrue(contentletIdList.contains(richTextContentlet3.getIdentifier()));
+    }
 }
