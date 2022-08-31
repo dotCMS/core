@@ -45,7 +45,7 @@ export class ContainerListComponent implements OnInit, OnDestroy {
             .subscribe(([isEnterPrise, hasEnvironments]: [boolean, boolean]) => {
                 this.isEnterPrise = isEnterPrise;
                 this.hasEnvironments = hasEnvironments;
-                this.tableColumns = this.setTemplateColumns();
+                this.tableColumns = this.setContainerColumns();
                 this.containerBulkActions = this.setContainerBulkActions();
             });
         this.setAddOptions();
@@ -56,26 +56,26 @@ export class ContainerListComponent implements OnInit, OnDestroy {
         this.destroy$.complete();
     }
 
-    private setTemplateColumns(): DataTableColumn[] {
+    private setContainerColumns(): DataTableColumn[] {
         return [
             {
                 fieldName: 'title',
-                header: this.dotMessageService.get('templates.fieldName.name'),
+                header: this.dotMessageService.get('containers.fieldName.name'),
                 sortable: true
             },
             {
                 fieldName: 'status',
-                header: this.dotMessageService.get('templates.fieldName.status'),
+                header: this.dotMessageService.get('containers.fieldName.status'),
                 width: '8%'
             },
             {
                 fieldName: 'friendlyName',
-                header: this.dotMessageService.get('templates.fieldName.description')
+                header: this.dotMessageService.get('containers.fieldName.description')
             },
             {
                 fieldName: 'modDate',
                 format: 'date',
-                header: this.dotMessageService.get('templates.fieldName.lastEdit'),
+                header: this.dotMessageService.get('containers.fieldName.lastEdit'),
                 sortable: true
             }
         ];
@@ -107,9 +107,9 @@ export class ContainerListComponent implements OnInit, OnDestroy {
 
     /**
      * get the attributes that define the state of a template.
-     * @param {DotTemplate} { live, working, deleted, hasLiveVersion}
+     * @param {DotContainer} { live, working, deleted, hasLiveVersion}
      * @returns DotContentState
-     * @memberof DotTemplateListComponent
+     * @memberof DotContainerListComponent
      */
     getContainerState({ live, working, deleted }: DotContainer): DotContentState {
         return { live, working, deleted, hasLiveVersion: live };
