@@ -590,7 +590,6 @@ public class VersionableAPIImpl implements VersionableAPI {
             }
             
             CacheLocator.getIdentifierCache().removeContentletVersionInfoToCache(info.get().getIdentifier(),contentlet.getLanguageId());
-            CacheLocator.getIdentifierCache().removeVersionInfoFromCache(info.get().getIdentifier());
         } else {
 
             final VersionInfo info = versionableFactory.findVersionInfoFromDb(identifier);
