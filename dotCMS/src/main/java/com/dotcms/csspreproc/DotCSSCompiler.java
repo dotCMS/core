@@ -1,6 +1,8 @@
 package com.dotcms.csspreproc;
 
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -32,10 +34,23 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.util.FileUtil;
+
+import javax.servlet.http.HttpServletRequest;
 import java.util.stream.Collectors;
 
+/**
+ * Provides important utility methods and specifies the basic behavior for CSS Compilers in dotCMS.
+ * <p>This abstract class makes sure that dotCMS has all the dependent SCSS Files required for a successful SCSS
+ * compilation. Therefore, it's very important that all related files are correctly scanned so their dependencies can
+ * be found and referenced as expected.</p>
+ *
+ * @author Will Ezell
+ * @since Jul 26th, 2019
+ */
 abstract class DotCSSCompiler {
-  protected final Set<String> allImportedURI = new HashSet<String>();
+
+  protected final HttpServletRequest req;
+  protected final Set<String> allImportedURI = new HashSet<>();
   protected byte[] output;
   protected final String inputURI;
   protected final Host inputHost;
@@ -49,38 +64,60 @@ abstract class DotCSSCompiler {
     return output;
   }
 
-  public DotCSSCompiler(Host host, String uri, boolean live) {
+  public DotCSSCompiler(final Host host, final String uri, final boolean live, final HttpServletRequest req) {
     inputHost = host;
     inputURI = uri;
     inputLive = live;
+    this.req = req;
   }
 
   public abstract void compile() throws DotSecurityException, DotStateException, DotDataException, IOException;
 
-  protected List<String> getImportedUris(File file) throws IOException {
-
-    List<String> imported = new ArrayList<String>();
-
-    String pattern = "^@import\\s+(\\(\\w+\\)\\s+)?(url\\(\\s*)?((\"(?<f1>[^\"]+)\")|('(?<f2>[^']+)'))";
-
-    // collect the file names
-    Pattern cssImport = Pattern.compile(pattern);
-    BufferedReader bin = new BufferedReader(new FileReader(file));
+  /**
+   * Reads the content of the specified SCSS File in order to extract the paths specified by the {@code @import}
+   * directive. Such paths will be used by dotCMS to read and import the associated SCSS files for SASS to compile them
+   * correctly. This method uses a special Regular Expression to extract folder and file paths from the {@code @import}
+   * directive, so please take this into consideration in case a given path is not read correctly.
+   *
+   * @param file The SCSS File containing potential imports.
+   *
+   * @return The list of SCSS Files and/or paths that must be included by dotCMS during the compilation process.
+   *
+   * @throws IOException An error occurred when reading the SCSS File being imported.
+   */
+  protected List<String> getImportedUris(final File file) throws IOException {
+    final List<String> imported = new ArrayList<>();
+    final String pattern = "^@import\\s+(\\(\\w+\\)\\s+)?(url\\(\\s*)?((\"(?<f1>[^\"]+)\")|('(?<f2>[^']+)'))";
+    // Use the RegEx to collect the file/folder paths from the @import directive
+    final Pattern cssImport = Pattern.compile(pattern);
+    final BufferedReader bin = new BufferedReader(new FileReader(file));
     String line;
     while ((line = bin.readLine()) != null) {
-      Matcher matcher = cssImport.matcher(line);
+      line = line.trim();
+      if (!UtilMethods.isSet(line) || !line.startsWith("@import")) {
+        continue;
+      }
+      final Matcher matcher = cssImport.matcher(line);
       while (matcher.find()) {
         try {
-          imported.add(matcher.group("f1"));
-        } catch (Exception ex) {
-          try {
-            imported.add(matcher.group("f2"));
-          } catch (Exception exx) {
+          String importUrl = matcher.group("f1");
+          if (UtilMethods.isSet(importUrl)) {
+            imported.add(importUrl);
+          } else {
+            // If RegEx group "f1" is empty, get group "f2" instead
+            importUrl = matcher.group("f2");
+            if (UtilMethods.isSet(importUrl)) {
+              imported.add(importUrl);
+            } else {
+              Logger.warn(this, String.format("Import directive from file '%s' could not be parsed!", file.getAbsolutePath()));
+            }
           }
+        } catch (final Exception ex) {
+          Logger.error(this, String.format("An error occurred when extracting CSS import from '%s', line [ %s ]: %s",
+                  file.getAbsolutePath(), line, ex.getMessage()), ex);
         }
       }
     }
-
     bin.close();
     return imported;
   }
