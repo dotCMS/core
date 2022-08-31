@@ -1,6 +1,7 @@
 package com.dotcms.variant;
 
 import com.dotcms.util.DotPreconditions;
+import com.dotcms.util.transform.TransformerLocator;
 import com.dotcms.variant.model.transform.VariantTransformer;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.common.db.DotConnect;
@@ -95,8 +96,7 @@ public class VariantFactoryImpl implements VariantFactory{
                 .loadResults();
 
         if (!loadResults.isEmpty()) {
-            final Map resultMap = (Map) loadResults.get(0);
-            return Optional.of(new VariantTransformer(resultMap).from());
+            return Optional.of(TransformerLocator.createVariantTransformer(loadResults).from());
         } else {
             return Optional.empty();
         }
@@ -109,7 +109,7 @@ public class VariantFactoryImpl implements VariantFactory{
 
         if (!loadResults.isEmpty()) {
             final Map resultMap = (Map) loadResults.get(0);
-            return Optional.of(new VariantTransformer(resultMap).from());
+            return Optional.of(TransformerLocator.createVariantTransformer(loadResults).from());
         } else {
             return Optional.empty();
         }
