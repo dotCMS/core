@@ -3604,7 +3604,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 .dbRelatedContent(relationship, contentlet, hasParent);
         cons = permissionAPI
                 .filterCollection(cons, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
-        FactoryLocator.getRelationshipFactory().deleteByContent(contentlet, relationship, cons);
+
+        for (final Contentlet relatedContent : cons) {
+            if (hasParent) {
+                TreeFactory.deleteTreesByParentAndChildAndRelationType(contentlet.getIdentifier(),
+                        relatedContent.getIdentifier(), relationship.getRelationTypeValue());
+            } else {
+                TreeFactory.deleteTreesByParentAndChildAndRelationType(relatedContent.getIdentifier(),
+                        contentlet.getIdentifier(), relationship.getRelationTypeValue());
+            }
+        }
 
         final List<String> identifiersToBeRelated = contentletsToBeRelated.stream().map(
                 Contentlet::getIdentifier).collect(Collectors.toList());
