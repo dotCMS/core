@@ -102,7 +102,6 @@ public abstract class PersonaContentType extends ContentType implements Expireab
 				.name("Other Tags")
 				.variable(PERSONA_OTHER_TAGS_FIELD_VAR)
 				.dataType(DataTypes.SYSTEM)
-
 				.sortOrder(5)
 				.fixed(true)
 				.indexed(true)
@@ -114,6 +113,7 @@ public abstract class PersonaContentType extends ContentType implements Expireab
 				.name("Description")
 				.variable(PERSONA_DESCRIPTION_FIELD_VAR)
 				.dataType(DataTypes.LONG_TEXT)
+				.forceIncludeInApi(true)
 				.sortOrder(6)
 				.indexed(true)
 				.searchable(true)
