@@ -3,6 +3,7 @@ package com.dotcms.util.transform;
 import com.dotcms.contenttype.transform.relationship.DbRelationshipTransformer;
 import com.dotcms.contenttype.transform.relationship.RelationshipTransformer;
 import com.dotcms.variant.model.transform.VariantTransformer;
+import com.dotcms.experiments.business.ExperimentTransformer;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Tree;
@@ -258,5 +259,16 @@ public class TransformerLocator {
             List<Map<String, Object>> initList) {
 
         return new VariantTransformer(initList);
+    }
+
+    /**
+     * Creates a DBTransformer for {@link com.dotcms.experiments.model.Experiment} objects
+     * @param initList List of DB results to be transformed
+     * @return
+     */
+    public static ExperimentTransformer createExperimentTransformer(
+            List<Map<String, Object>> initList) {
+
+        return new ExperimentTransformer(initList);
     }
 }

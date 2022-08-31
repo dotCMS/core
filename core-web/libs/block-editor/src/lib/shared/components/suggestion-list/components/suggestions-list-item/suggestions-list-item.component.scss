@@ -8,6 +8,10 @@
     background-color: $white;
     cursor: pointer;
     align-items: center;
+
+    * {
+        pointer-events: none;
+    }
 }
 
 .icon-wrapper {
@@ -34,7 +38,7 @@
         flex-basis: 2.625 * $dot-editor-size;
     }
 
-    &.url-item {
+    &.page {
         &,
         dot-contentlet-thumbnail {
             flex-basis: 4 * $dot-editor-size;
