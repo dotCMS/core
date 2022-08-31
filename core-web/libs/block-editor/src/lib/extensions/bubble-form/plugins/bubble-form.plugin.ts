@@ -11,6 +11,7 @@ import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
 import { BUBBLE_FORM_PLUGIN_KEY } from '../bubble-form.extension';
 import { BubbleFormComponent, DynamicControl } from '../bubble-form.component';
 import { Node } from 'prosemirror-model';
+import { ImageNode } from '../../../nodes/image-node/image.node';
 
 export interface BubbleFormProps {
     pluginKey: PluginKey;
@@ -55,7 +56,7 @@ interface PluginState {
 // Move this an util file.
 export const getNodePosition = (node: HTMLElement, type: string): DOMRect => {
     // If is a image Node, get the image position
-    if (type === 'image') {
+    if (type === ImageNode.name) {
         const rect = node.getElementsByTagName('img')[0].getBoundingClientRect().toJSON();
 
         const newRect = {
@@ -195,7 +196,7 @@ export class BubbleFormView extends BubbleMenuView {
     };
 
     show() {
-        const { alt, src, title } = this.editor.getAttributes('image');
+        const { alt, src, title } = this.editor.getAttributes(ImageNode.name);
         this.component.instance.setFormValues({ alt, src, title });
 
         this.tippy?.show();

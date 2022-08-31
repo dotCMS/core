@@ -71,7 +71,7 @@ export class DotBlockEditorComponent implements OnInit {
             BubbleFormExtension(this.viewContainerRef),
             // Marks Extensions
             Underline,
-            TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'image'] }),
+            TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'dotImage'] }),
             Highlight.configure({ HTMLAttributes: { style: 'background: #accef7;' } }),
             Link.configure({ openOnClick: false }),
             Placeholder.configure({

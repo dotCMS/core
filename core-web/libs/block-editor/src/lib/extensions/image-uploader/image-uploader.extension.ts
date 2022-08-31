@@ -12,6 +12,11 @@ import { LoaderComponent, MessageType } from '@dotcms/block-editor';
 import { DotImageService } from './services/dot-image/dot-image.service';
 
 import { PlaceholderPlugin } from './plugins/placeholder.plugin';
+import { ImageNode } from '@dotcms/block-editor';
+
+function checkImageURL(url) {
+    return url.match(/\.(jpeg|jpg|gif|png)$/) != null;
+}
 
 export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerRef) => {
     return Extension.create({
@@ -84,7 +89,7 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                                     title: name,
                                     alt: name
                                 },
-                                type: 'image'
+                                type: ImageNode.name
                             };
                             editor.commands.insertContentAt(position, node);
                         },
@@ -125,17 +130,45 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                     key: new PluginKey('imageUpload'),
                     props: {
                         handleDOMEvents: {
+                            click(view, event) {
+                                const { doc, selection } = view.state;
+                                const { ranges } = selection;
+                                const from = Math.min(...ranges.map((range) => range.$from.pos));
+                                const node = doc.nodeAt(from);
+                                const link = (event.target as HTMLElement)?.closest('a');
+
+                                if (link && node.type.name === ImageNode.name) {
+                                    event.preventDefault();
+
+                                    return true;
+                                }
+
+                                return true;
+                            },
                             paste(view, event: ClipboardEvent) {
+                                const url = event.clipboardData.getData('Text');
+
                                 if (isImageBlockAllowed() && areImageFiles(event)) {
                                     if (event.clipboardData.files.length !== 1) {
                                         alert('Can paste just one image at a time');
 
-                                        return false;
+                                        return true;
                                     }
 
                                     const { from } = getPositionFromCursor(view);
                                     const files = Array.from(event.clipboardData.files);
                                     uploadImages(view, files, from);
+
+                                    return true;
+                                } else if (checkImageURL(url)) {
+                                    const node = {
+                                        attrs: {
+                                            src: url
+                                        },
+                                        type: ImageNode.name
+                                    };
+                                    const { from } = getPositionFromCursor(view);
+                                    editor.commands.insertContentAt(from, node);
                                 }
 
                                 return false;

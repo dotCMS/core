@@ -1,5 +1,6 @@
 import { isTextSelection } from '@tiptap/core';
 import { BubbleMenuItem, ShouldShowProps, LINK_FORM_PLUGIN_KEY } from '@dotcms/block-editor';
+import { ImageNode } from '../../../nodes/image-node/image.node';
 
 const hideBubbleMenuOn = {
     dotContent: true
@@ -62,11 +63,11 @@ export const isValidURL = (nodeText: string) => {
 };
 
 export const getNodePosition = (node: HTMLElement, type: string): DOMRect => {
-    if (type === 'image') {
+    if (type === ImageNode.name) {
         const img = node.getElementsByTagName('img')[0];
 
         // If is a image Node, get the image position
-        return img.getBoundingClientRect();
+        return img?.getBoundingClientRect() || node.getBoundingClientRect();
     }
 
     return node.getBoundingClientRect();

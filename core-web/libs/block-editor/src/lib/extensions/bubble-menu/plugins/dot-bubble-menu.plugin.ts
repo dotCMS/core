@@ -21,7 +21,7 @@ import {
     findParentNode
 } from '@dotcms/block-editor';
 
-import { LINK_FORM_PLUGIN_KEY, BUBBLE_FORM_PLUGIN_KEY } from '@dotcms/block-editor';
+import { LINK_FORM_PLUGIN_KEY, BUBBLE_FORM_PLUGIN_KEY, ImageNode } from '@dotcms/block-editor';
 
 import { bubbleMenuImageItems, bubbleMenuItems, isListNode, popperModifiers } from '../utils';
 
@@ -237,7 +237,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
     setMenuItems(doc, from) {
         const node = doc.nodeAt(from);
-        const isImage = node?.type.name == 'image';
+        const isImage = node?.type.name == ImageNode.name;
 
         this.selectionNode = node;
 

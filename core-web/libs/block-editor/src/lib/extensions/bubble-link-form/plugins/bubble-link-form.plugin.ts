@@ -14,7 +14,7 @@ import { BubbleLinkFormComponent, NodeProps } from '../bubble-link-form.componen
 import { LINK_FORM_PLUGIN_KEY } from '../bubble-link-form.extension';
 
 // Utils
-import { getPosAtDocCoords, isValidURL } from '@dotcms/block-editor';
+import { getPosAtDocCoords, isValidURL, ImageNode } from '@dotcms/block-editor';
 import { openFormLinkOnclik } from '../utils';
 
 interface PluginState {
@@ -177,7 +177,7 @@ export class BubbleLinkFormView {
 
         // Check if the node is a dotImage
         const node = doc?.nodeAt(from);
-        const isNodeImage = node?.type.name === 'image';
+        const isNodeImage = node?.type.name === ImageNode.name;
 
         // If there is an overflow, use bubble menu position as a reference.
         return isOverflow || isNodeImage ? domRect : nodeClientRect;
@@ -227,7 +227,7 @@ export class BubbleLinkFormView {
     getLinkProps(): NodeProps {
         const { href = '', target } = this.editor.isActive('link')
             ? this.editor.getAttributes('link')
-            : this.editor.getAttributes('image');
+            : this.editor.getAttributes(ImageNode.name);
         const link = href || this.getLinkSelect();
         const blank = target ? target === '_blank' : true;
 
@@ -245,7 +245,7 @@ export class BubbleLinkFormView {
     isImageNode() {
         const { type } = this.editor.state.doc.nodeAt(this.editor.state.selection.from) || {};
 
-        return type?.name === 'image';
+        return type?.name === ImageNode.name;
     }
 
     destroy() {

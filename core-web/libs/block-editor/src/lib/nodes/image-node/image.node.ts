@@ -27,6 +27,8 @@ const imageElement = (attrs, newAttrs) => {
 };
 
 export const ImageNode = Image.extend({
+    name: 'dotImage',
+
     addAttributes() {
         return {
             // Extend Attributes: https://tiptap.dev/guide/custom-extensions#extend-existing-attributes
@@ -63,12 +65,12 @@ export const ImageNode = Image.extend({
             setImageLink:
                 (attributes) =>
                 ({ commands }) => {
-                    return commands.updateAttributes('image', attributes);
+                    return commands.updateAttributes(this.name, attributes);
                 },
             unsetImageLink:
                 () =>
                 ({ commands }) => {
-                    return commands.updateAttributes('image', { href: '' });
+                    return commands.updateAttributes(this.name, { href: '' });
                 }
         };
     },
