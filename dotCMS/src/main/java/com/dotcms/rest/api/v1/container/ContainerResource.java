@@ -43,6 +43,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.liferay.portal.model.User;
+import java.util.Collections;
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ResourceNotFoundException;
@@ -1075,9 +1076,8 @@ public class ContainerResource implements Serializable {
     @Path("/{id}/_copy")
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response copy(@Context final HttpServletRequest request,
+    public ResponseEntityContainerView copy(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("id") final String id) throws DotDataException, DotSecurityException {
 
@@ -1091,13 +1091,13 @@ public class ContainerResource implements Serializable {
         if (!UtilMethods.isSet(id)) {
 
             Logger.error(this, "The container id is required");
-            return ExceptionMapperUtil.createResponse(null, "The container id is required");
+            throw new IllegalArgumentException("The container id is required");
         }
 
         if (!UUIDUtil.isUUID(id)) {
 
             Logger.error(this, "Container 'id' should be a uuid");
-            return ExceptionMapperUtil.createResponse(null, "Container 'id' should be a uuid");
+            throw new IllegalArgumentException("Container 'id' should be a uuid");
         }
 
         final Container sourceContainer = this.getContainerWorking(id, user,
@@ -1115,7 +1115,7 @@ public class ContainerResource implements Serializable {
             Logger.debug(this,
                     () -> "The container: " + sourceContainer.getIdentifier() + " has been copied");
 
-            return Response.ok(new ResponseEntityView(new ContainerView(copiedContainer))).build();
+            return new ResponseEntityContainerView(Collections.singletonList(copiedContainer));
         } else {
 
             Logger.error(this, "Container with Id: " + id + " does not exist");

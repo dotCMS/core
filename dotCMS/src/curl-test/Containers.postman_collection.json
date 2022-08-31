@@ -2512,7 +2512,7 @@
 							"pm.collectionVariables.set(\"identifier\", jsonData.entity.identifier);",
 							"pm.collectionVariables.set(\"inode\", jsonData.entity.inode);",
 							"",
-							"pm.collectionVariables.set(\"containerToCopyId\", jsonData.entity.containerId);",
+							"pm.collectionVariables.set(\"containerToCopyId\", jsonData.entity.identifier);",
 							""
 						],
 						"type": "text/javascript"
@@ -2615,6 +2615,10 @@
 						"type": "text"
 					}
 				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": []
+				},
 				"url": {
 					"raw": "{{serverURL}}/api/v1/containers/{{containerToCopyId}}/_copy",
 					"host": [
