@@ -1,3 +1,9 @@
 @import "libs/dot-primeng-theme-styles/src/scss/variables";
 
 $dot-editor-size: 16px;
+
+// Spacing
+$spacing-1: 0.5 * $dot-editor-size;
+$spacing-2: 0.75 * $dot-editor-size;
+$spacing-3: $dot-editor-size;
+$spacing-4: 1.5 * $dot-editor-size;
