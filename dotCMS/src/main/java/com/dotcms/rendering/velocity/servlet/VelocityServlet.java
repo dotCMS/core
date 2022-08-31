@@ -6,7 +6,10 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
+import com.dotmarketing.business.web.UserWebAPI;
+import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.velocity.exception.ResourceNotFoundException;
@@ -29,11 +32,24 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.dotmarketing.util.LoginMode;
 
+import static com.dotmarketing.util.WebKeys.LOGIN_MODE_PARAMETER;
+
 public class VelocityServlet extends HttpServlet {
 
 
-    
-    private UserWebAPIImpl userApi = (UserWebAPIImpl) WebAPILocator.getUserWebAPI();
+
+    private final UserWebAPIImpl userApi;
+    private final HTMLPageAssetRenderedAPI htmlPageAssetRenderedAPI;
+
+    @VisibleForTesting
+    public VelocityServlet(final UserWebAPI userApi, final HTMLPageAssetRenderedAPI htmlPageAssetRenderedAPI) {
+        this.userApi = (UserWebAPIImpl)userApi;
+        this.htmlPageAssetRenderedAPI = htmlPageAssetRenderedAPI;
+    }
+
+    public VelocityServlet() {
+        this(WebAPILocator.getUserWebAPI(),APILocator.getHTMLPageAssetRenderedAPI());
+    }
     
     
     
@@ -90,7 +106,7 @@ public class VelocityServlet extends HttpServlet {
         }
         
         // if you are a backend user, redirect you to the page edit screen
-        if (user!=null && user.hasConsoleAccess() && !comeFromSomeWhere){
+        if (user!=null && user.hasConsoleAccess() && !isFrontendLogin(request) && !comeFromSomeWhere){
             goToEditPage(uri,request, response);
             return;
         } 
@@ -107,7 +123,7 @@ public class VelocityServlet extends HttpServlet {
         
         // try to get the page
         try {
-            final String pageHtml = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+            final String pageHtml = htmlPageAssetRenderedAPI.getPageHtml(
                     PageContextBuilder.builder()
                             .setPageUri(uri)
                             .setPageMode(mode)
@@ -153,9 +169,23 @@ public class VelocityServlet extends HttpServlet {
 
     @Override
     public void init(final ServletConfig config) throws ServletException {
-        Logger.info(this.getClass(), "Initing VelocityServlet");
+        Logger.info(this.getClass(), "Initializing VelocityServlet");
 
 
+    }
+
+    /**
+     * This revise if the use is logged in from the frontend
+     * @param request
+     * @return
+     */
+    private boolean isFrontendLogin(final HttpServletRequest request){
+        final HttpSession session = request.getSession(false);
+        if (null != session) {
+            final LoginMode mode = (LoginMode) session.getAttribute(LOGIN_MODE_PARAMETER);
+            return (LoginMode.FE == mode);
+        }
+        return false;
     }
 
   /**

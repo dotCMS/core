@@ -339,3 +339,4 @@ This maintenance release includes the following code fixes:
 173. https://github.com/dotCMS/core/issues/21482 : [REST] : Updating one Binary Field is removing the value from the other Binary Field #21482
 174. https://github.com/dotCMS/core/issues/21619 : ContentTypeFactoryImpl Getting Config values cause unneeded load #21619
 175. https://github.com/dotCMS/core/issues/21624 : [Push Publishing] : Pushing single archived content un-publishes all its versions in receiving instance #21624
+176. https://github.com/dotCMS/core/issues/22124 : When logged in to front end, automatically redirect to back-end edit mode #22124
