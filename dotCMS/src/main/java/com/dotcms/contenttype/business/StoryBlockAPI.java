@@ -55,4 +55,13 @@ public interface StoryBlockAPI {
      * @return List of contentlets on the story block referrer
      */
     List<String> getDependencies (final Object storyBlockValue);
+
+    /**
+     * Adds a contentlet to the story block value
+     * @param storyBlockValue {@link Object}
+     * @param contentlet {@link Contentlet}
+     * @return Object
+     */
+    Object addContentlet(final Object storyBlockValue, final Contentlet contentlet);
+
 }

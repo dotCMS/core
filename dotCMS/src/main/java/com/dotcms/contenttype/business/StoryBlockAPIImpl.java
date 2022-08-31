@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.business;
 
 import com.dotcms.content.business.json.ContentletJsonHelper;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.beans.VersionInfo;
@@ -84,7 +85,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
             }
         } catch (final Exception e) {
 
-            Logger.debug(ContentletTransformer.class, e.getMessage());
+            Logger.debug(StoryBlockAPIImpl.class, e.getMessage());
         }
 
         return Tuple.of(false, storyBlockValue); // return the original value and value didn't change
@@ -156,10 +157,70 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
             }
         } catch (final Exception e) {
 
-            Logger.debug(ContentletTransformer.class, e.getMessage());
+            Logger.debug(StoryBlockAPIImpl.class, e.getMessage());
         }
 
         return contentletIdentifierList.build();
+    }
+
+    @Override
+    public Object addContentlet(final Object storyBlockValue, final Contentlet contentlet) {
+
+        try {
+
+            final Map storyBlockValueMap = toMap(storyBlockValue);
+            this.addContentlet(storyBlockValueMap, contentlet);
+            return toJson(storyBlockValueMap);
+        } catch (JsonProcessingException e) {
+
+            Logger.debug(StoryBlockAPIImpl.class, e.getMessage());
+        }
+
+        return storyBlockValue;
+    }
+
+    private Map addContentlet(final Map storyBlockValueMap, final Contentlet contentlet) {
+
+        if (storyBlockValueMap.containsKey(StoryBlockAPI.CONTENT_KEY)) {
+
+            final List contentList = (List)storyBlockValueMap.get(StoryBlockAPI.CONTENT_KEY);
+            final Map dataMap   = new LinkedHashMap();
+            final List<Field> fields = contentlet.getContentType().fields();
+
+            dataMap.put("hostName", contentlet.getHost());
+            dataMap.put("modDate", contentlet.getModDate());
+            dataMap.put("title", contentlet.getTitle());
+            dataMap.put("contentTypeIcon", contentlet.getContentType().icon());
+            dataMap.put("baseType", contentlet.getContentType().baseType().getAlternateName());
+            dataMap.put("inode", contentlet.getInode());
+            dataMap.put("archived", Try.of(()->contentlet.isArchived()).getOrElse(false));
+            dataMap.put("working",  Try.of(()->contentlet.isWorking()).getOrElse(false));
+            dataMap.put("locked",   Try.of(()->contentlet.isLocked()).getOrElse(false));
+            dataMap.put("stInode",  contentlet.getContentType().inode());
+            dataMap.put("contentType",  contentlet.getContentType().variable());
+            dataMap.put("live",   Try.of(()->contentlet.isLive()).getOrElse(false));
+            dataMap.put("owner",  contentlet.getOwner());
+            dataMap.put("identifier", contentlet.getIdentifier());
+            dataMap.put("languageId", contentlet.getLanguageId());
+            dataMap.put("hasLiveVersion", Try.of(()->contentlet.hasLiveVersion()).getOrElse(false));
+            dataMap.put("folder", contentlet.getFolder());
+            dataMap.put("sortOrder", contentlet.getSortOrder());
+            dataMap.put("modUser", contentlet.getModUser());
+
+            for (final Field field : fields) {
+
+                dataMap.put(field.variable(), contentlet.get(field.variable()));
+            }
+
+            final Map attrsMap   = new LinkedHashMap();
+            attrsMap.put(StoryBlockAPI.DATA_KEY, dataMap);
+            final Map contentMap = new LinkedHashMap();
+            contentMap.put(StoryBlockAPI.ATTRS_KEY, attrsMap);
+            contentMap.put(StoryBlockAPI.TYPE_KEY, "dotContent");
+            contentList.add(contentMap);
+        }
+
+        return storyBlockValueMap;
     }
 
     private static void addDependencies(final ImmutableList.Builder<String> contentletIdentifierList,
