@@ -93,6 +93,7 @@ import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
 import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
+import com.dotcms.variant.VariantAPITest;
 import com.dotmarketing.beans.HostTest;
 import com.dotmarketing.business.DeterministicIdentifierAPITest;
 import com.dotmarketing.business.PermissionBitFactoryImplTest;
@@ -565,6 +566,7 @@ import org.junit.runners.Suite.SuiteClasses;
         AWSS3PublisherTest.class,
         ContentTypeInitializerTest.class,
         VariantFactoryTest.class,
+        VariantAPITest.class,
         PaginatedContentletsIntegrationTest.class,
         Task220822CreateVariantTableTest.class,
         Task220829CreateExperimentsTableTest.class,

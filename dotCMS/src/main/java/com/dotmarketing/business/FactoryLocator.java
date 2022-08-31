@@ -242,18 +242,17 @@ public class FactoryLocator extends Locator<FactoryIndex>{
         return (HostFactory) getInstance(FactoryIndex.HOST_FACTORY);
     }
 
-<<<<<<< HEAD
     /**
-     * Returns the Factory object that handles operations related to {@link com.dotcms.variant.model.Variant} in dotCMS.
+     * Returns the Factory object that handles operations related to {@link Variant} in dotCMS.
      *
      * @return An instance of the {@link VariantFactory} object.
      */
     public static VariantFactory getVariantFactory() {
-        return (VariantFactory)getInstance(FactoryIndex.VARIANT_FACTORY);
-=======
+        return (VariantFactory) getInstance(FactoryIndex.VARIANT_FACTORY);
+    }
+
     public static ExperimentsFactory getExperimentsFactory() {
         return (ExperimentsFactory) getInstance(FactoryIndex.EXPERIMENTS_FACTORY);
->>>>>>> origin/master
     }
 
     private static Object getInstance(FactoryIndex index) {
@@ -330,11 +329,8 @@ enum FactoryIndex
 	RELATIONSHIP_FACTORY,
 	FIELD_FACTORY_2,
     FileAsset_Factory,
-<<<<<<< HEAD
-    VARIANT_FACTORY;
-=======
+    VARIANT_FACTORY,
     EXPERIMENTS_FACTORY;
->>>>>>> origin/master
 
 	Object create() {
 		switch(this) {
@@ -373,11 +369,8 @@ enum FactoryIndex
             case TAG_FACTORY: return new TagFactoryImpl();
             case FileAsset_Factory: return new FileAssetFactoryImpl();
             case HOST_FACTORY : return new HostFactoryImpl();
-<<<<<<< HEAD
             case VARIANT_FACTORY:_FACTORY : return new VariantFactoryImpl();
-=======
             case EXPERIMENTS_FACTORY: return new ExperimentsFactoryImpl();
->>>>>>> origin/master
 		}
 		throw new AssertionError("Unknown Factory Index: " + this);
 	}
