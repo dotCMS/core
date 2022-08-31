@@ -821,7 +821,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
 
         api.invalidateSchema();
         api.getSchema();
-        verify(api, times(1)).generateSchema();
+        verify(api, times(1)).generateSchema(APILocator.systemUser());
     }
 
     /**
@@ -838,7 +838,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
         api.invalidateSchema();
         final GraphQLSchema nonCachedSchema = api.getSchema(); // generate schema is called
         final GraphQLSchema cachedSchema = api.getSchema(); // got from cache - generate schema is NOT called
-        verify(api, times(1)).generateSchema();
+        verify(api, times(1)).generateSchema(APILocator.systemUser());
         assertEquals(nonCachedSchema, cachedSchema);
     }
 
