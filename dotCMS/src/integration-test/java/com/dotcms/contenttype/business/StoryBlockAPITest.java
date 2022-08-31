@@ -4,10 +4,7 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.mock.request.FakeHttpRequest;
-import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -17,12 +14,9 @@ import com.liferay.util.StringPool;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,17 +87,6 @@ public class StoryBlockAPITest extends IntegrationTestBase {
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
-    }
-
-    @Before
-    public void before () {
-
-        final Host   host     = Try.of(()->APILocator.getHostAPI().findDefaultHost(
-                APILocator.systemUser(), false)).getOrNull();
-        final String hostname = null == host? host.getHostname():"dotcms.com"; // fake host
-        final HttpServletRequest requestProxy = new FakeHttpRequest(hostname, null).request();
-        final HttpServletResponse responseProxy = new BaseResponse().response();
-
     }
 
     /**
