@@ -159,23 +159,27 @@ public class Task220824CreateDefaultVariantTest {
         assertFalse(upgradeTask.forceRun());
     }
 
-    private void cleanAllBefore()  {
+    private void cleanAllBefore() throws DotDataException {
         final DotConnect dotConnect = new DotConnect();
 
-        try {
-            dotConnect.setSQL("DELETE FROM variant WHERE id = ?")
+        dotConnect.setSQL("DELETE FROM variant WHERE id = ?")
+                .addParam(VariantAPI.DEFAULT_VARIANT.identifier())
+                .loadResult();
+
+        if (DbConnectionFactory.isMsSql()) {
+            final ArrayList<Map> loadResults = dotConnect.setSQL("SELECT name "
+                            + "FROM sysobjects so JOIN sysconstraints sc ON so.id = sc.constid "
+                            + "WHERE object_name(so.parent_obj) = 'contentlet_version_info' AND "
+                            + "sc.colid in  (select colid from syscolumns where name = 'variant_id')")
                     .addParam(VariantAPI.DEFAULT_VARIANT.identifier())
-                    .loadResult();
-        } catch (Exception e) {
+                    .loadResults();
 
+            dotConnect.setSQL("ALTER TABLE contentlet_version_info DROP CONSTRAINT " + loadResults.get(0).get("name").toString() )
+                    .loadResult();
         }
 
-        try {
-            dotConnect
-                    .setSQL("ALTER TABLE contentlet_version_info DROP COLUMN variant_id")
-                    .loadResult();
-        }catch (Exception e){
-
-        }
+        dotConnect
+                .setSQL("ALTER TABLE contentlet_version_info DROP COLUMN variant_id")
+                .loadResult();
     }
 }

@@ -61,15 +61,18 @@ public class Task220824CreateDefaultVariant implements StartupTask  {
         final DotDatabaseMetaData databaseMetaData = new DotDatabaseMetaData();
 
         try {
-            if (databaseMetaData.hasColumn("contentlet_version_info", "variant_id")) {
+            if (!databaseMetaData.hasColumn("contentlet_version_info", "variant_id")) {
                 final String dataBaseFieldType = DbConnectionFactory.isMsSql() ? "NVARCHAR" : "varchar";
 
                 final String alterTableQuery = String.format(
-                        "ALTER TABLE contentlet_version_info ADD variant_id %s(255) default '1'",
+                        "ALTER TABLE contentlet_version_info ADD variant_id %s(255) default 'DEFAULT'",
                         dataBaseFieldType);
 
                 dotConnect
                         .setSQL(alterTableQuery)
+                        .loadResult();
+
+                dotConnect.setSQL("UPDATE contentlet_version_info SET variant_id = 'DEFAULT'")
                         .loadResult();
             }
         } catch (SQLException e) {
