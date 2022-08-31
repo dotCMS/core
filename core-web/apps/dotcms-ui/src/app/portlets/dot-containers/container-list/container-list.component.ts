@@ -11,6 +11,7 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { ActionHeaderOptions } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table';
 import { DotContainer } from '@models/container/dot-container.model';
+import { DotContentState } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-container-list',
@@ -68,7 +69,7 @@ export class ContainerListComponent implements OnInit, OnDestroy {
                 width: '8%'
             },
             {
-                fieldName: 'description',
+                fieldName: 'friendlyName',
                 header: this.dotMessageService.get('templates.fieldName.description')
             },
             {
@@ -88,6 +89,30 @@ export class ContainerListComponent implements OnInit, OnDestroy {
                 }
             }
         };
+    }
+
+    /**
+     * set the labels of dot-state-icon.
+     * @returns { [key: string]: string }
+     * @memberof DotContainerListComponent
+     */
+    setStateLabels(): { [key: string]: string } {
+        return {
+            archived: this.dotMessageService.get('Archived'),
+            published: this.dotMessageService.get('Published'),
+            revision: this.dotMessageService.get('Revision'),
+            draft: this.dotMessageService.get('Draft')
+        };
+    }
+
+    /**
+     * get the attributes that define the state of a template.
+     * @param {DotTemplate} { live, working, deleted, hasLiveVersion}
+     * @returns DotContentState
+     * @memberof DotTemplateListComponent
+     */
+    getContainerState({ live, working, deleted }: DotContainer): DotContentState {
+        return { live, working, deleted, hasLiveVersion: live };
     }
 
     /**
