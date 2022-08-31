@@ -736,6 +736,219 @@
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "pre_ImportBundleWithSecondPage",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Bundle uploaded sucessfully\", function () {",
+							"    pm.response.to.have.status(200);",
+							"",
+							"    var jsonData = pm.response.json();",
+							"    console.log(jsonData);",
+							"",
+							"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"second-experiment-page.tar.gz\");",
+							"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"type": "text",
+						"value": "application/octet-stream"
+					},
+					{
+						"key": "Content-Disposition",
+						"type": "text",
+						"value": "attachment"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "resources/Experiments/second-experiment-page.tar.gz"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/bundle?sync=true",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"bundle"
+					],
+					"query": [
+						{
+							"key": "sync",
+							"value": "true"
+						},
+						{
+							"key": "AUTH_TOKEN",
+							"value": "",
+							"disabled": true
+						}
+					]
+				},
+				"description": "Imports a Bundle that includes:\n* A piece of content with a tag field without any tags selected"
+			},
+			"response": []
+		},
+		{
+			"name": "pre_createExperimentInSecondPage",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json();",
+							"",
+							"",
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"pageId\": \"9044ec0fdb3788a814ccabf789f376d4\",\n    \"name\": \"second page experiment\",\n    \"description\": \"second page experiment description\" \n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/experiments/",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"experiments",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "listExperimentsNoFilter_shouldIncludeAll",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json();",
+							"",
+							"",
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Lists of experiments should not be empty\", function () {",
+							"    pm.expect(jsonData.entity.length).to.be.greaterThan(0);",
+							"});",
+							"",
+							"pm.test(\"All returned experiments should have the pageId in the filter\", function () {",
+							"    let experiment1 = jsonData.entity[0]",
+							"    pm.expect(experiment1.pageId).to.be.eq('e424abd7e2e7a9031c5a0a3c18182f1b');",
+							"",
+							"    let experiment2 = jsonData.entity[1]",
+							"    pm.expect(experiment2.pageId).to.be.eq('9044ec0fdb3788a814ccabf789f376d4');",
+							"});",
+							"",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/experiments",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"experiments"
+					]
+				}
+			},
+			"response": []
 		}
 	],
 	"variable": [
