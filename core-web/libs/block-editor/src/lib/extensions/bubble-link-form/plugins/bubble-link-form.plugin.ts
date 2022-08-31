@@ -213,7 +213,7 @@ export class BubbleLinkFormView {
     setInputValues() {
         const values = this.getLinkProps();
         this.component.instance.initialValues = values;
-        this.component.instance.setFormValue(values);
+        this.component.instance.setFormValue(values.link ? values : { link: this.getLinkSelect() });
     }
 
     setComponentEvents() {
@@ -236,10 +236,9 @@ export class BubbleLinkFormView {
     }
 
     getLinkProps(): NodeProps {
-        const { href = '', target } = this.editor.isActive('link')
+        const { href: link = '', target } = this.editor.isActive('link')
             ? this.editor.getAttributes('link')
             : this.editor.getAttributes('dotImage');
-        const link = href || this.getLinkSelect();
         const blank = target ? target === '_blank' : true;
 
         return { link, blank };

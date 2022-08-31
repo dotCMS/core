@@ -22,7 +22,7 @@ import { SuggestionPageComponent } from './components/suggestion-page/suggestion
 
 export interface NodeProps {
     link: string;
-    blank: boolean;
+    blank?: boolean;
 }
 
 @Component({
@@ -146,7 +146,7 @@ export class BubbleLinkFormComponent implements OnInit {
      * @param {NodeProps} { link, blank }
      * @memberof BubbleLinkFormComponent
      */
-    setFormValue({ link, blank }: NodeProps) {
+    setFormValue({ link = '', blank = true }: NodeProps) {
         this.form.setValue({ link, blank }, { emitEvent: false });
     }
 
