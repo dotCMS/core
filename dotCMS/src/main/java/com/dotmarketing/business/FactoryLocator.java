@@ -16,6 +16,8 @@ import com.dotcms.enterprise.cluster.ServerFactoryImpl;
 import com.dotcms.enterprise.cluster.action.business.ServerActionFactory;
 import com.dotcms.enterprise.linkchecker.LinkCheckerFactoryImpl;
 import com.dotcms.enterprise.rules.RulesFactory;
+import com.dotcms.experiments.business.ExperimentsFactory;
+import com.dotcms.experiments.business.ExperimentsFactoryImpl;
 import com.dotcms.notifications.business.NotificationFactory;
 import com.dotcms.notifications.business.NotificationFactoryImpl;
 import com.dotcms.publisher.assets.business.PushedAssetsFactory;
@@ -238,6 +240,10 @@ public class FactoryLocator extends Locator<FactoryIndex>{
         return (HostFactory) getInstance(FactoryIndex.HOST_FACTORY);
     }
 
+    public static ExperimentsFactory getExperimentsFactory() {
+        return (ExperimentsFactory) getInstance(FactoryIndex.EXPERIMENTS_FACTORY);
+    }
+
     private static Object getInstance(FactoryIndex index) {
 
 		if(instance == null){
@@ -311,7 +317,8 @@ enum FactoryIndex
 	CONTENTTYPE_FACTORY_2,
 	RELATIONSHIP_FACTORY,
 	FIELD_FACTORY_2,
-    FileAsset_Factory;
+    FileAsset_Factory,
+    EXPERIMENTS_FACTORY;
 
 	Object create() {
 		switch(this) {
@@ -350,6 +357,7 @@ enum FactoryIndex
             case TAG_FACTORY: return new TagFactoryImpl();
             case FileAsset_Factory: return new FileAssetFactoryImpl();
             case HOST_FACTORY : return new HostFactoryImpl();
+            case EXPERIMENTS_FACTORY: return new ExperimentsFactoryImpl();
 		}
 		throw new AssertionError("Unknown Factory Index: " + this);
 	}
