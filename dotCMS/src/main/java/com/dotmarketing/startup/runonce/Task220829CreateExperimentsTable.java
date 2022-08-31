@@ -7,6 +7,11 @@ import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.util.Logger;
 import java.sql.SQLException;
 
+/**
+ * Upgrade Task to create the model to represent {@link com.dotcms.experiments.model.Experiment}s
+ *
+ * Does not attempt to create the table if already existing.
+ */
 public class Task220829CreateExperimentsTable extends AbstractJDBCStartupTask {
 
     @Override

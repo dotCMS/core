@@ -65,7 +65,6 @@ function getTippyInstance({
     onHide?: () => void;
 }) {
     return tippy(element, {
-        appendTo: document.body,
         content: content,
         placement: 'bottom',
         popperOptions: {
@@ -133,7 +132,7 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
     function onStart({ editor, range, clientRect }: SuggestionProps | FloatingActionsProps): void {
         setUpSuggestionComponent(editor, range);
         myTippy = getTippyInstance({
-            element: editor.view.dom,
+            element: editor.options.element.parentElement,
             content: suggestionsComponent.location.nativeElement,
             rect: clientRect,
             onHide: () => {
@@ -156,10 +155,10 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
                 allowedBlocks.includes(item.id)
             );
             if (allowedBlocks.includes(CONTENT_SUGGESTION_ID)) {
-                suggestionsComponent.instance.addCContentletItem();
+                suggestionsComponent.instance.addContentletItem();
             }
         } else {
-            suggestionsComponent.instance.addCContentletItem();
+            suggestionsComponent.instance.addContentletItem();
         }
 
         suggestionsComponent.instance.onSelection = (item) => {
@@ -170,7 +169,7 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
 
         suggestionsComponent.instance.clearFilter.pipe(takeUntil(destroy$)).subscribe((type) => {
             const queryRange = {
-                to: range.to + suggestionKey.getState(editor.view.state).query.length,
+                to: range.to + suggestionKey.getState(editor.view.state).query?.length,
                 from: type === ItemsType.BLOCK ? range.from : range.from + 1
             };
             editor.chain().deleteRange(queryRange).run();
@@ -209,6 +208,7 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
 
     function onExit() {
         myTippy?.destroy();
+        suggestionsComponent.destroy();
         suggestionsComponent = null;
         destroy$.next(true);
         destroy$.complete();

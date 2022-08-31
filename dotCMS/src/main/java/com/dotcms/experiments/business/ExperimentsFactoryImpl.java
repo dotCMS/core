@@ -8,7 +8,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import java.sql.Timestamp;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -67,7 +66,7 @@ public class ExperimentsFactoryImpl implements
 
     @Override
     public Optional<Experiment> find(final String id) throws DotDataException {
-        Experiment experiment = null; // experimentsCache.get(id);
+        Experiment experiment = null; // experimentsCache.get(id); TODO
 
 //        if(experiment==null){
             final List<Map<String, Object>> results = new DotConnect()

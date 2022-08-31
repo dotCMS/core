@@ -7,6 +7,11 @@ import java.io.Serializable;
 import java.time.Instant;
 import org.immutables.value.Value;
 
+/**
+ * Immutable implementation of Scheduling
+ *
+ * A Scheduling comprises the start and end dates for an {@link Experiment}
+ */
 @Value.Style(typeImmutable="*", typeAbstract="Abstract*")
 @Value.Immutable
 @JsonSerialize(as = Scheduling.class)

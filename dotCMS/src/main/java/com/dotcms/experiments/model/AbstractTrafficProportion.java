@@ -8,6 +8,17 @@ import java.util.Collections;
 import java.util.Map;
 import org.immutables.value.Value;
 
+/**
+ * Immutable implementation of TrafficProportion
+ *
+ * A TrafficProportion represents how the traffic is going to be divided across the different
+ * HTML Page Variants.
+ *
+ * Defaults to {@link AbstractTrafficProportion.Type#SPLIT_EVENLY}
+ *
+ * It also holds a list of the percentages per variant according to the selected
+ * {@link AbstractTrafficProportion.Type}
+ */
 @Value.Style(typeImmutable="*", typeAbstract="Abstract*")
 @Value.Immutable
 @JsonSerialize(as = TrafficProportion.class)

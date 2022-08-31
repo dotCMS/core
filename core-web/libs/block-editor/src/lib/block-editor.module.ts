@@ -29,7 +29,8 @@ import {
     FormActionsComponent,
     LoaderComponent,
     ImageBlockComponent,
-    DotImageService
+    DotImageService,
+    SuggestionPageComponent
 } from './extensions';
 
 // Shared
@@ -57,7 +58,8 @@ import { SharedModule } from './shared/shared.module';
         BubbleMenuComponent,
         BubbleMenuButtonComponent,
         BubbleLinkFormComponent,
-        FormActionsComponent
+        FormActionsComponent,
+        SuggestionPageComponent
     ],
     providers: [DotImageService, LoggerService, StringUtils],
     exports: [
