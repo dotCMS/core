@@ -22,6 +22,12 @@ public abstract class ContentTypeSql {
         + "url_map_pattern , host, folder, expire_date_var , publish_date_var , mod_date "
         + "from inode, structure  where inode.type='structure' and inode.inode = structure.inode  ";
 
+	public static String SELECT_ONLY_INODE_FIELD = "select inode.inode as inode from inode, structure where inode.type='structure' and inode.inode = structure.inode ";
+	public static String SELECT_INODE_ONLY_QUERY_CONDITION = SELECT_ONLY_INODE_FIELD
+			+ " and (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) "  //search
+			+ " %s" //if we have a condition
+			+ " and structuretype>=? and structuretype<= ? order by %s";
+
 	public static String SELECT_BY_INODE = SELECT_ALL_STRUCTURE_FIELDS + " and inode.inode = ?";
     public static String SELECT_BY_VAR = SELECT_ALL_STRUCTURE_FIELDS + " and lower(structure.velocity_var_name) like ?";
 	public static String SELECT_ALL = SELECT_ALL_STRUCTURE_FIELDS + " order by %s  ";

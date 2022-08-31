@@ -337,3 +337,4 @@ This maintenance release includes the following code fixes:
 171. https://github.com/dotCMS/core/issues/19569 : Rely on Tomcat's RemoteIpValve for dns resolution - was: External service interaction (DNS) #19569
 172. https://github.com/dotCMS/core/issues/20491 : Many-to-many relationships between a single content type removes relationships on save/publish #20491
 173. https://github.com/dotCMS/core/issues/21482 : [REST] : Updating one Binary Field is removing the value from the other Binary Field #21482
+174. https://github.com/dotCMS/core/issues/21619 : ContentTypeFactoryImpl Getting Config values cause unneeded load #21619
