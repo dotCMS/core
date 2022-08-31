@@ -56,7 +56,7 @@ public class ExperimentsFactoryImpl implements
 
     @Override
     public Optional<Experiment> find(final String id) throws DotDataException {
-        Experiment experiment = null; // experimentsCache.get(id);
+        Experiment experiment = null; // experimentsCache.get(id); TODO
 
 //        if(experiment==null){
             final List<Map<String, Object>> results = new DotConnect()

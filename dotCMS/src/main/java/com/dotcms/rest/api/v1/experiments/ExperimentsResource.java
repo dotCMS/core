@@ -27,6 +27,11 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import org.glassfish.jersey.server.JSONP;
 
+/**
+ * REST API for {@link Experiment}s
+ *
+ * Includes all the CRUD operations
+ */
 @Path("/v1/experiments")
 @Tag(name = "Experiment")
 public class ExperimentsResource {
@@ -39,6 +44,13 @@ public class ExperimentsResource {
         experimentsAPI = APILocator.getExperimentsAPI();
     }
 
+    /**
+     * Creates a new Experiment with the information provided in JSON format and mapped to the {@link ExperimentForm}
+     * <p>
+     * An Experiment can be created with as minimum as a name and a description
+     *
+     * Returns the created Experiment.
+     */
     @POST
     @JSONP
     @NoCache
@@ -64,6 +76,13 @@ public class ExperimentsResource {
                 .build();
     }
 
+    /**
+     * Updates an existing experiment accepting partial updates (PATCH). This means it is not needed to send
+     * the entire Experiment information but only what it is desired to update only. The rest
+     * of the information will remain as previously persisted.
+     *
+     * Returns the updated version of the Experiment.
+     */
     @PATCH
     @Path("/{experimentId}")
     @JSONP
@@ -88,6 +107,12 @@ public class ExperimentsResource {
         return new ResponseEntityExperimentView(Collections.singletonList(persistedExperiment));
     }
 
+    /**
+     * Archives an Experiment. Archiving operation applies for experiments to whom there's already
+     * data collected and deletion is not wanted.
+     *
+     * Returns the archived version of the Experiment.
+     */
     @PUT
     @Path("/{experimentId}/_archive")
     @JSONP
@@ -102,6 +127,10 @@ public class ExperimentsResource {
         return new ResponseEntityExperimentView(Collections.singletonList(archivedExperiment));
     }
 
+    /**
+     * Deletes an Experiment. Deletion can only be performed to Experiments in
+     * {@link com.dotcms.experiments.model.AbstractExperiment.Status#DRAFT} state.
+     */
     @DELETE
     @Path("/{experimentId}")
     @JSONP

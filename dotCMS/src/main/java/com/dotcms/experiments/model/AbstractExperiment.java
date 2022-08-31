@@ -8,6 +8,16 @@ import java.time.Instant;
 import java.util.Optional;
 import org.immutables.value.Value;
 
+/**
+ * Immutable implementation of an Experiment.
+ * <p>
+ * Experiments are a way to test changes to HTML Pages by creating new versions of a Page
+ * and then get a report on which page performed better according to the decided goals.
+ * <p>
+ * The Experiment can be started now or scheduled to start and finish according to given dates
+ * <p>
+ *
+ */
 @Value.Style(typeImmutable="*", typeAbstract="Abstract*")
 @Value.Immutable
 public interface AbstractExperiment extends Serializable, ManifestItem {

@@ -99,7 +99,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 invalidLicenseMessageSupplier);
         DotPreconditions.checkArgument(UtilMethods.isSet(id), "id must be provided.");
 
-        final Optional<Experiment> persistedExperiment =  factory.find(id);
+        final Optional<Experiment> persistedExperiment =  find(id, user);
 
         if(persistedExperiment.isPresent()) {
             validatePermissions(user, persistedExperiment.get(),
@@ -126,7 +126,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 invalidLicenseMessageSupplier);
         DotPreconditions.checkArgument(UtilMethods.isSet(id), "id must be provided.");
 
-        final Optional<Experiment> persistedExperiment =  factory.find(id);
+        final Optional<Experiment> persistedExperiment =  find(id, user);
 
         if(persistedExperiment.isPresent()) {
             validatePermissions(user, persistedExperiment.get(),
