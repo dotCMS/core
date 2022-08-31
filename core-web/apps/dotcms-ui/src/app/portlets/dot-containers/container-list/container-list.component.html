@@ -1,4 +1,58 @@
 <dot-portlet-base>
     <dot-portlet-toolbar title="Containers"></dot-portlet-toolbar>
-    <p>container-list works!</p>
+
+    <dot-listing-data-table
+        #listing
+        [actionHeaderOptions]="actionHeaderOptions"
+        [columns]="tableColumns"
+        url="v1/containers"
+    >
+        <div class="container-listing__header-options">
+            <div>
+                <div class="container-listing__filter-controls">
+                    <dot-base-type-selector></dot-base-type-selector>
+                    <button
+                        type="button"
+                        class="p-button-secondary p-button"
+                        pButton
+                        [label]="'Search' | dm"
+                    ></button>
+                    <p-checkbox
+                        data-testid="archiveCheckbox"
+                        [label]="'Show-Archived' | dm"
+                        [binary]="true"
+                        (onChange)="handleArchivedFilter($event.checked)"
+                    ></p-checkbox>
+                </div>
+
+                <div>
+                    <button
+                        type="button"
+                        pButton
+                        class="p-button-secondary p-button"
+                        icon="pi pi-ellipsis-v"
+                        [label]="'Actions' | dm"
+                        (click)="actionsMenu.toggle($event)"
+                        attr.data-testid="bulkActions"
+                    ></button>
+
+                    <p-menu
+                        #actionsMenu
+                        [popup]="true"
+                        [model]="containerBulkActions"
+                        appendTo="body"
+                    ></p-menu>
+                </div>
+            </div>
+        </div>
+        <dot-empty-state
+            [rows]="10"
+            [colsTextWidth]="[60, 50, 60, 80]"
+            icon="web"
+            [title]="'message.template.empty.title' | dm"
+            [content]="'message.template.empty.content' | dm"
+            [buttonLabel]="'message.template.empty.button.label' | dm"
+        >
+        </dot-empty-state>
+    </dot-listing-data-table>
 </dot-portlet-base>

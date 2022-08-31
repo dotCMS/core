@@ -1,0 +1,16 @@
+@use "variables" as *;
+
+.container-listing__header-options {
+    width: 100%;
+
+    div {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 0 $spacing-1;
+
+        .container-listing__filter-controls {
+            gap: $spacing-3;
+        }
+    }
+}
