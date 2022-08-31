@@ -338,3 +338,4 @@ This maintenance release includes the following code fixes:
 172. https://github.com/dotCMS/core/issues/20491 : Many-to-many relationships between a single content type removes relationships on save/publish #20491
 173. https://github.com/dotCMS/core/issues/21482 : [REST] : Updating one Binary Field is removing the value from the other Binary Field #21482
 174. https://github.com/dotCMS/core/issues/21619 : ContentTypeFactoryImpl Getting Config values cause unneeded load #21619
+175. https://github.com/dotCMS/core/issues/21624 : [Push Publishing] : Pushing single archived content un-publishes all its versions in receiving instance #21624
