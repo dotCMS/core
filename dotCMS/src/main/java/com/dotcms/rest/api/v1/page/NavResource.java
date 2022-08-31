@@ -16,8 +16,10 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.ArrayList;
@@ -116,7 +118,8 @@ public class NavResource {
                     response, Config.CONTEXT);
 
             final String path = (!uri.startsWith("/")) ? "/" + uri : uri;
-
+            //Force NavTool to behave as Live when rendering items
+            PageMode.setPageMode(request, PageMode.LIVE);
             final NavTool tool = new NavTool();
             tool.init(ctx);
             final NavResult nav = tool.getNav(path, langId);
@@ -130,7 +133,7 @@ public class NavResource {
 
 
 
-            return Response.ok(new ResponseEntityView(navMap)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(navMap)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on NavResource exception message: " + e.getMessage(), e);

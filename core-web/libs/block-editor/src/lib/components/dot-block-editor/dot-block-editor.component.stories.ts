@@ -9,11 +9,11 @@ import { MenuModule } from 'primeng/menu';
 
 import { debounceTime, delay } from 'rxjs/operators';
 import { DotBlockEditorComponent } from './dot-block-editor.component';
-import { BubbleMenuLinkFormComponent } from '@dotcms/block-editor';
+import { BubbleLinkFormComponent } from '@dotcms/block-editor';
 import {
     ActionButtonComponent,
     ContentletBlockComponent,
-    NgxTiptapModule,
+    BlockEditorModule,
     SuggestionsComponent,
     SuggestionsService,
     ImageBlockComponent,
@@ -30,6 +30,7 @@ export default {
 const contentletsMock = [
     {
         name: 'Empty Content',
+        variable: 'empty',
         icon: 'hourglass_disabled',
         url: '/empty/empty-content',
         path: '/empty/empty-content',
@@ -50,7 +51,7 @@ const contentletsMock = [
         hasTitleImage: true,
         __icon__: 'contentIcon',
         contentTypeIcon: 'file_copy',
-        contentType: 'Blog'
+        contentType: 'empty'
     },
     {
         name: 'Blog',
@@ -209,7 +210,7 @@ export const primary = () => ({
             MenuModule,
             CommonModule,
             FormsModule,
-            NgxTiptapModule,
+            BlockEditorModule,
             OrderListModule,
             ListboxModule,
             BrowserAnimationsModule
@@ -243,8 +244,8 @@ export const primary = () => ({
                                 : contentletsMock
                         );
                     },
-                    getContentlets(type, filter = '') {
-                        if (type === 'empty') {
+                    getContentlets({ contentType, filter = '' }) {
+                        if (contentType === 'empty') {
                             return of([]).pipe(delay(800));
                         }
 
@@ -299,7 +300,7 @@ export const primary = () => ({
             DragHandlerComponent,
             ImageBlockComponent,
             LoaderComponent,
-            BubbleMenuLinkFormComponent
+            BubbleLinkFormComponent
         ]
     },
     component: DotBlockEditorComponent

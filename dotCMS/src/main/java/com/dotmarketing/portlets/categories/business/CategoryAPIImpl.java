@@ -784,7 +784,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 
 		final Category category = categoryFactory.findByVar(variable);
 
-		if(!InodeUtils.isSet(category.getCategoryId())) {
+		if( null == category || !InodeUtils.isSet(category.getCategoryId())) {
 			return null;
 		}
 

@@ -1,8 +1,6 @@
-/**
- *
- */
 package com.dotcms.rendering.velocity.viewtools.content;
 
+import com.dotcms.contenttype.business.DotAssetAPI;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
@@ -10,6 +8,7 @@ import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.ContentsWebAPI;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -38,16 +37,26 @@ import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
-import java.io.File;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.util.*;
-import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.velocity.Template;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
+
+import javax.servlet.http.HttpServletRequest;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * The purpose of this object is to provide an easy way on the frontend of dotCMS
@@ -88,7 +97,7 @@ public class ContentMap {
         this.host = host;
         this.context = context;
 	}
-	
+
 	/**
 	 * Use to get a value of the field on a content returned from the ContentTool Viewtool
 	 * This method gets called automatically when you place a "." after the contentmap object in Velocity<br/>
@@ -114,17 +123,17 @@ public class ContentMap {
 	 * @param fieldVariableName The velocity Variable name from the structure.
 	 * @return
 	 */
-	
+
 	public Object get(String fieldVariableName) {
 		return get(fieldVariableName, true);
 	}
-	
+
 	/**
 	 * Use to get an unparsed value of the field on a content returned from the ContentTool Viewtool, even if it contains velocity code
 	 * @param fieldVariableName The velocity Variable name from the structure.
 	 * @return
 	 */
-	
+
 	public Object getRaw(String fieldVariableName) {
 		return get(fieldVariableName, false);
 	}
@@ -147,36 +156,45 @@ public class ContentMap {
 		return Collections.emptyMap();
 	}
 
+		/**
+    	 * Recovery the field variables as a json object
+    	 * @param fieldVariableName String field var name
+    	 * @return Map
+    	 */
+    	public Object getFieldVariablesJson(final String fieldVariableName) {
+
+    		final  Map<String, FieldVariable> fieldMap =
+    				(Map<String, FieldVariable>) this.getFieldVariables(fieldVariableName);
+
+    		final JSONObject jsonObject = new JSONObject();
+
+    		for (final Map.Entry<String, FieldVariable> fieldKey : fieldMap.entrySet()) {
+
+    			final JSONObject jsonObjectFieldVariable = new JSONObject();
+
+    			jsonObjectFieldVariable.put("value", fieldKey.getValue().value());
+    			jsonObjectFieldVariable.put("fieldId", fieldKey.getValue().fieldId());
+    			jsonObjectFieldVariable.put("key", fieldKey.getValue().key());
+    			jsonObjectFieldVariable.put("id", fieldKey.getValue().id());
+    			jsonObjectFieldVariable.put("modDate", fieldKey.getValue().modDate());
+    			jsonObjectFieldVariable.put("userId", fieldKey.getValue().userId());
+    			jsonObjectFieldVariable.put("name", fieldKey.getValue().name());
+    			jsonObject.put(fieldKey.getKey(), jsonObjectFieldVariable);
+    		}
+
+    		return jsonObject;
+    	}
+
 	/**
-	 * Recovery the field variables as a json object
-	 * @param fieldVariableName String field var name
-	 * @return Map
+	 * Returns the value of the specified field on this content returned by the {@link ContentTool} ViewTool. This method
+	 * allows you to choose whether the value must have its Velocity code parsed or not.
+	 *
+	 * @param fieldVariableName The Velocity Variable Name for the specified field.
+	 * @param parseVelocity     If potential Velocity code must be parsed, set this to {@code true}.
+	 *
+	 * @return The value of the specified contentlet field.
 	 */
-	public Object getFieldVariablesJson(final String fieldVariableName) {
-
-		final  Map<String, FieldVariable> fieldMap =
-				(Map<String, FieldVariable>) this.getFieldVariables(fieldVariableName);
-
-		final JSONObject jsonObject = new JSONObject();
-
-		for (final Map.Entry<String, FieldVariable> fieldKey : fieldMap.entrySet()) {
-
-			final JSONObject jsonObjectFieldVariable = new JSONObject();
-
-			jsonObjectFieldVariable.put("value", fieldKey.getValue().value());
-			jsonObjectFieldVariable.put("fieldId", fieldKey.getValue().fieldId());
-			jsonObjectFieldVariable.put("key", fieldKey.getValue().key());
-			jsonObjectFieldVariable.put("id", fieldKey.getValue().id());
-			jsonObjectFieldVariable.put("modDate", fieldKey.getValue().modDate());
-			jsonObjectFieldVariable.put("userId", fieldKey.getValue().userId());
-			jsonObjectFieldVariable.put("name", fieldKey.getValue().name());
-			jsonObject.put(fieldKey.getKey(), jsonObjectFieldVariable);
-		}
-
-		return jsonObject;
-	}
-
-	private Object get(String fieldVariableName, Boolean parseVelocity) {
+	private Object get(final String fieldVariableName, final Boolean parseVelocity) {
 		try {
 			final boolean respectFrontEndRoles = PageMode.get(Try.of(()->(HttpServletRequest)context.get("request")).getOrNull()).respectAnonPerms;
 			Object ret = null;
@@ -185,8 +203,9 @@ public class ContentMap {
 				if("host".equalsIgnoreCase(fieldVariableName)){
 					try{
 						return new ContentMap(conAPI.findContentletByIdentifier( content.getHost() ,!EDIT_OR_PREVIEW_MODE, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, true ),user,EDIT_OR_PREVIEW_MODE,host,context);
-					}catch (IndexOutOfBoundsException e) {
-						Logger.debug(this, "Unable to get host on content");
+					} catch (final IndexOutOfBoundsException e) {
+						Logger.debug(this, String.format("Unable to get the Site object from content with ID '%s'",
+								this.content.getIdentifier()));
 						return null;
 					}
 				}else if("title".equalsIgnoreCase(fieldVariableName)){
@@ -224,7 +243,7 @@ public class ContentMap {
                 if (fieldvalue != null) {
                     return fieldvalue;
                 }
-			    
+
 			    final String fid = (String)conAPI.getFieldValue(content, f);
 				if(!UtilMethods.isSet(fid)){
 					return null;
@@ -242,17 +261,25 @@ public class ContentMap {
 					return null;
 				}
 
-				String inode =  EDIT_OR_PREVIEW_MODE ? cvi.get().getWorkingInode() : cvi.get().getLiveInode();
-				Contentlet fileAsset  =  APILocator.getContentletAPI().find(inode, user!=null?user:APILocator.getUserAPI().getAnonymousUser(), true);
-					
-				if(fileAsset != null && UtilMethods.isSet(fileAsset.getInode())){
-	                FileAssetMap fam = FileAssetMap.of(fileAsset);
+                String inode = EDIT_OR_PREVIEW_MODE ? cvi.get().getWorkingInode() : cvi.get().getLiveInode();
+                Contentlet asset = APILocator.getContentletAPI().find(inode,
+                                user != null ? user : APILocator.getUserAPI().getAnonymousUser(), true);
+
+                if (asset == null || UtilMethods.isEmpty(asset.getInode())) {
+                    return null;
+                }
+                if (asset.isFileAsset()) {
+                    FileAssetMap fam = FileAssetMap.of(asset);
                     // Store file asset map into fieldValueMap
                     addFieldValue(f, fam);
                     return fam;
-				  }
-					
-				
+                }
+                if (asset.isDotAsset()) {
+                    BinaryMap binmap = new BinaryMap(asset, asset.getContentType().fieldMap().get("asset"));
+                    // Store file asset map into fieldValueMap
+                    addFieldValue(f, binmap);
+                    return binmap;
+                }
 			}else if(f != null && f.getFieldType().equals(Field.FieldType.BINARY.toString())){
                 // Check if fileAsset or binaryMap is in fieldValueMap hashmap
                 Object fieldvalue = retriveFieldValue(f);
@@ -277,13 +304,15 @@ public class ContentMap {
                     return bm;
                 }
 			//if the property being served is URL and the ContentType is a page show URL using the identifier information
-			}else if("url".equalsIgnoreCase(fieldVariableName) 
+			}else if("url".equalsIgnoreCase(fieldVariableName)
 			        && BaseContentType.HTMLPAGE.equals(content.getContentType().baseType())){
 				Identifier identifier = APILocator.getIdentifierAPI().find(content.getIdentifier());
 				if(InodeUtils.isSet(identifier.getId())){
 					return identifier.getURI();
 				}else{
-					Logger.debug(this, "The URL can't be get from an empty identifier, the page might not exists on the identifier table.");
+					Logger.debug(this, String.format("Value of URL field '%s' could not be retrieved from page with ID" +
+															 " '%s'. It might not exist in the 'identifier' table.",
+							fieldVariableName, this.content.getIdentifier()));
 				}
 				return null;
 			}else if(f != null && f.getFieldType().equals(Field.FieldType.TAG.toString())){
@@ -311,8 +340,9 @@ public class ContentMap {
 				if(FolderAPI.SYSTEM_FOLDER.equals(content.getFolder())){
 					try{
 						return new ContentMap(conAPI.findContentletByIdentifier( content.getHost() ,!EDIT_OR_PREVIEW_MODE, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, true ),user,EDIT_OR_PREVIEW_MODE,host,context);
-					}catch (IndexOutOfBoundsException e) {
-						Logger.debug(this, "Unable to get host on content");
+					} catch (final IndexOutOfBoundsException e) {
+						Logger.debug(this, String.format("Unable to get the Site object from content with ID '%s'",
+								this.content.getIdentifier()));
 						return null;
 					}
 				}else{
@@ -359,6 +389,11 @@ public class ContentMap {
 				return getRelationshipInfo(f);
 			} else if(f != null && f.getFieldType().equals(FieldType.STORY_BLOCK_FIELD.toString())){
 				return new StoryBlockMap(f,content, this.context);
+			} else if(f != null && f.getFieldType().equals(FieldType.JSON_FIELD.toString())){
+				Field finalF = f;
+				return Try.of(()->JsonUtil.getJsonFromString(
+						(String)conAPI.getFieldValue(content, finalF)))
+						.getOrElse(Collections.emptyMap());
 			}
 
 			//ret could have been set by title
@@ -377,9 +412,11 @@ public class ContentMap {
 				ret = sw.toString();
 			}
 			return ret;
-		} catch (Exception e) {
-			Logger.warn(ContentMap.class,"Unable to retrive Field or Content: " + fieldVariableName + " "+ e.getMessage());
-			Logger.debug(ContentMap.class,"Unable to retrive Field or Content: " + fieldVariableName + " "+ e.getMessage(),e);
+		} catch (final Exception e) {
+			final String errorMsg = String.format("Unable to retrieve Field '%s' from Content with ID '%s': %s",
+					fieldVariableName, this.content.getIdentifier(), e.getMessage());
+			Logger.warn(ContentMap.class, errorMsg);
+			Logger.debug(ContentMap.class, errorMsg, e);
 			return null;
 		}
 	}
@@ -533,7 +570,7 @@ public class ContentMap {
     /**
      * Returns the value object using the velocity var name stored in the Field
      * object
-     * 
+     *
      * @param field
      * @returns field value object (FileAssetMap or BinaryMap)
      */
@@ -573,7 +610,7 @@ public class ContentMap {
 	}
 	public boolean isWorking() throws Exception {
 	    return content.isWorking();
-	}	
+	}
 
 	public String toString() {
 		getContentletsTitle();
@@ -587,7 +624,7 @@ public class ContentMap {
 
 	/**
 	 * Returns the {@link Contentlet} object this map is associated to.
-	 * 
+	 *
 	 * @return The {@link Contentlet} object.
 	 */
 	public Contentlet getContentObject() {

@@ -1,7 +1,7 @@
 <p-sidebar
     #sidebar
     [blockScroll]="true"
-    [visible]="!!this.data"
+    [visible]="!!blockEditorInput"
     position="right"
     [dismissible]="false"
     [showCloseIcon]="false"
@@ -9,14 +9,14 @@
     (onHide)="sidebar.destroyModal(); closeSidebar()"
     data-testid="sidebar"
 >
-    <div class="container" *ngIf="this.data">
+    <div class="container" *ngIf="blockEditorInput">
         <dot-block-editor
             #blockEditor
-            [lang]="data.language"
-            [allowedBlocks]="data.fieldVariables.allowedBlocks"
-            [allowedContentTypes]="data.fieldVariables.allowedContentTypes"
-            [value]="data.content"
-            [customStyles]="data.fieldVariables.styles"
+            [lang]="blockEditorInput.language"
+            [allowedBlocks]="blockEditorInput.fieldVariables.allowedBlocks"
+            [allowedContentTypes]="blockEditorInput.fieldVariables.allowedContentTypes"
+            [value]="blockEditorInput.content"
+            [customStyles]="blockEditorInput.fieldVariables.styles"
         >
         </dot-block-editor>
         <footer>

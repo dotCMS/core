@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { NgxTiptapModule } from '@dotcms/block-editor';
+import { BlockEditorModule } from '@dotcms/block-editor';
 import { CommonModule } from '@angular/common';
 import { SidebarModule } from 'primeng/sidebar';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
@@ -12,7 +12,7 @@ import { DotBlockEditorSidebarComponent } from '@portlets/dot-edit-page/componen
     exports: [DotBlockEditorSidebarComponent],
     imports: [
         FormsModule,
-        NgxTiptapModule,
+        BlockEditorModule,
         CommonModule,
         SidebarModule,
         DotMessagePipeModule,
