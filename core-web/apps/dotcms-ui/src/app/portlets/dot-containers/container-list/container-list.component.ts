@@ -5,12 +5,12 @@ import { pluck, take } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotContainer } from '@models/dot-edit-layout-designer';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { ActionHeaderOptions } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table';
+import { DotContainer } from '@models/container/dot-container.model';
 
 @Component({
     selector: 'dot-container-list',

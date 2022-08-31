@@ -1,4 +1,3 @@
-export * from './dot-container.model';
 export * from './dot-container-column-box.model';
 export * from './dot-layout-body.model';
 export * from './dot-layout-column.model';
