@@ -7,11 +7,11 @@
 package com.dotmarketing.business;
 
 import com.dotcms.uuid.shorty.ShortyIdCache;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.variant.business.VariantAPI;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -247,7 +247,7 @@ public class IdentifierCacheImpl extends IdentifierCache {
 	}
 
 	private String getKey(final String identifier, final long lang) {
-		return String.format("%s-lang:%s-variant:%s", identifier, lang, VariantAPI.DEFAULT_VARIANT.getIdentifier());
+		return String.format("%s-lang:%s-variant:%s", identifier, lang, VariantAPI.DEFAULT_VARIANT.identifier());
 	}
 
 	@Override
