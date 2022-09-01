@@ -6,6 +6,10 @@ import java.util.List;
 import java.util.Optional;
 import org.immutables.value.Value;
 
+/**
+ * Comprises the different parameters available to filter {@link com.dotcms.experiments.model.Experiment}s
+ * when retrieving then. 
+ */
 @Value.Style(typeImmutable="*", typeAbstract="Abstract*")
 @Value.Immutable
 public interface AbstractExperimentFilter extends Serializable {
