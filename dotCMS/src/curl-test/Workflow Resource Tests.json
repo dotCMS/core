@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "efea2057-c5d8-4f9c-8bf6-6adb554c3006",
+		"_postman_id": "13a54d9b-56e5-4639-95d1-b3221db1df36",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "4500400"
+		"_exporter_id": "10041132"
 	},
 	"item": [
 		{

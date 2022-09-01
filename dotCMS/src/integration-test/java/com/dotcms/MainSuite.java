@@ -70,6 +70,7 @@ import com.dotcms.rendering.velocity.viewtools.JSONToolTest;
 import com.dotcms.rendering.velocity.viewtools.MessageToolTest;
 import com.dotcms.rendering.velocity.viewtools.XmlToolTest;
 import com.dotcms.rendering.velocity.viewtools.content.StoryBlockMapTest;
+import com.dotcms.rendering.velocity.viewtools.content.StoryBlockTest;
 import com.dotcms.rest.BundlePublisherResourceIntegrationTest;
 import com.dotcms.rest.BundleResourceTest;
 import com.dotcms.rest.IntegrityResourceIntegrationTest;
@@ -93,6 +94,7 @@ import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
 import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
+import com.dotcms.variant.VariantAPITest;
 import com.dotmarketing.beans.HostTest;
 import com.dotmarketing.business.DeterministicIdentifierAPITest;
 import com.dotmarketing.business.PermissionBitFactoryImplTest;
@@ -117,6 +119,7 @@ import com.dotmarketing.portlets.folders.business.FolderFactoryImplTest;
 import com.dotmarketing.portlets.folders.model.FolderTest;
 import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtilTest;
 import com.dotmarketing.portlets.templates.business.TemplateFactoryImplTest;
+import com.dotcms.variant.VariantFactoryTest;
 import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletAbortTest;
@@ -165,6 +168,8 @@ import com.dotmarketing.startup.runonce.Task220402UpdateDateTimezonesTest;
 import com.dotmarketing.startup.runonce.Task220413IncreasePublishedPushedAssetIdColTest;
 import com.dotmarketing.startup.runonce.Task220512UpdateNoHTMLRegexValueTest;
 import com.dotmarketing.startup.runonce.Task220606UpdatePushNowActionletNameTest;
+import com.dotmarketing.startup.runonce.Task220822CreateVariantTableTest;
+import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTableTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -561,7 +566,12 @@ import org.junit.runners.Suite.SuiteClasses;
         MenuResourceTest.class,
         AWSS3PublisherTest.class,
         ContentTypeInitializerTest.class,
+        VariantFactoryTest.class,
+        VariantAPITest.class,
         PaginatedContentletsIntegrationTest.class,
+        Task220822CreateVariantTableTest.class,
+        Task220829CreateExperimentsTableTest.class,
+        StoryBlockTest.class,
         StoryBlockAPITest.class
 })
 public class MainSuite {

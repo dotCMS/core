@@ -7,20 +7,6 @@
     padding: (0.5 * $dot-editor-size) 0;
     background: $white;
     font-family: "Roboto", Helvetica, sans-serif, Arial;
-
-    &.link-suggestions ::ng-deep {
-        width: 100%;
-        box-shadow: none;
-        padding: 0;
-
-        .suggestion-list-container {
-            max-height: 20rem;
-        }
-
-        dotcms-suggestions-list-item {
-            padding: 8px;
-        }
-    }
 }
 
 h3 {
@@ -52,34 +38,4 @@ h3 {
     direction: ltr;
     -webkit-font-feature-settings: "liga";
     -webkit-font-smoothing: antialiased;
-}
-
-.empty {
-    align-items: center;
-    flex-direction: column;
-    display: flex;
-    justify-content: center;
-    padding: 1 * $dot-editor-size;
-    height: 15 * $dot-editor-size;
-}
-
-button {
-    background: none;
-    border-radius: $border-radius;
-    border: 0;
-    border: 1px solid $brand-secondary;
-    color: $brand-secondary;
-    cursor: pointer;
-    font-size: $font-size-medium;
-    font-weight: $font-weight-semi-bold;
-    line-height: normal;
-    padding: (0.75 * $dot-editor-size) (2 * $dot-editor-size);
-    text-transform: uppercase;
-}
-
-.empty button:hover,
-.empty button:active,
-.empty button:focus {
-    border-color: $brand-primary;
-    color: $brand-primary;
 }
