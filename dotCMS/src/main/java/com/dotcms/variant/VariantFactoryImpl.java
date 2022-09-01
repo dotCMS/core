@@ -108,7 +108,6 @@ public class VariantFactoryImpl implements VariantFactory{
                 .loadResults();
 
         if (!loadResults.isEmpty()) {
-            final Map resultMap = (Map) loadResults.get(0);
             return Optional.of(TransformerLocator.createVariantTransformer(loadResults).from());
         } else {
             return Optional.empty();
