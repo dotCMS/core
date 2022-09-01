@@ -43,7 +43,7 @@ public class VariantFactoryImpl implements VariantFactory{
         return Variant.builder()
                 .identifier(identifier)
                 .name(variant.name())
-                .archived(false).build();
+                .archived(variant.archived()).build();
     }
 
     private String getId(final Variant variant) {
