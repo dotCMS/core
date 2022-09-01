@@ -1,6 +1,5 @@
 package com.dotcms.variant;
 
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rest.validation.Preconditions;
@@ -33,6 +32,7 @@ public class VariantAPIImpl implements VariantAPI {
     @Override
     @WrapInTransaction
     public Variant save(final Variant variant) throws DotDataException {
+
         DotPreconditions.checkNotNull(variant.name(), IllegalArgumentException.class,
                 "Variant name should not be null");
         DotPreconditions.checkArgument(!variant.archived(), "Variant can not be created as archive");
@@ -51,7 +51,6 @@ public class VariantAPIImpl implements VariantAPI {
     @Override
     @WrapInTransaction
     public void update(final Variant variant) throws DotDataException {
-
         Preconditions.checkNotNull(variant.name(), IllegalArgumentException.class,
                 "Variant name should not be null");
         Preconditions.checkNotNull(variant.identifier(), IllegalArgumentException.class ,
