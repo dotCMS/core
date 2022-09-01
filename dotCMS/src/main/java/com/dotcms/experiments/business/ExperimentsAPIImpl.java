@@ -145,6 +145,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     @Override
+    @CloseDBIfOpened
     public List<Experiment> list(ExperimentFilter filter, User user) throws DotDataException {
         DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
                 invalidLicenseMessageSupplier);

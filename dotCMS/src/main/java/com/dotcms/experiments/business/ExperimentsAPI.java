@@ -1,5 +1,6 @@
 package com.dotcms.experiments.business;
 
+import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -41,6 +42,11 @@ public interface ExperimentsAPI {
 
     /**
      * Returns experiments based on the provided filters in {@link ExperimentFilter}
+     * <p>
+     * Available filters are :
+     * <li>pageId - Id of the parent page of the {@link com.dotcms.experiments.model.Experiment}
+     * <li>name - Name of the experiment. Provided name can be partial
+     * <li>statuses - List of {@link Status} to filter one. Zero to many.
      */
     List<Experiment> list(final ExperimentFilter filter, final User user) throws DotDataException;
 }

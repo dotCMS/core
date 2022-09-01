@@ -19,6 +19,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
@@ -159,7 +160,7 @@ public class ExperimentsResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public ResponseEntityExperimentView list(final @QueryParam("pageId") String pageId,
             final @QueryParam("name") String name,
-            final @QueryParam("status") List<Status> statuses,
+            final @QueryParam("status") Set<Status> statuses,
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response
             ) throws DotDataException, DotSecurityException {
