@@ -566,7 +566,7 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentTypeInitializerTest.class,
         PaginatedContentletsIntegrationTest.class,
         Task220822CreateVariantTableTest.class,
-        Task220825MakeSomeSystemFieldsRemovable.class
+        Task220825MakeSomeSystemFieldsRemovable.class,
         Task220822CreateVariantTableTest.class,
         Task220829CreateExperimentsTableTest.class,
         StoryBlockTest.class
