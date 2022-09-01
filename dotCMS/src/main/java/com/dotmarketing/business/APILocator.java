@@ -139,6 +139,8 @@ import com.dotmarketing.portlets.structure.business.StructureAPI;
 import com.dotmarketing.portlets.structure.business.StructureAPIImpl;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.business.TemplateAPIImpl;
+import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.VariantAPIImpl;
 import com.dotmarketing.portlets.widget.business.WidgetAPI;
 import com.dotmarketing.portlets.widget.business.WidgetAPIImpl;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -1085,6 +1087,14 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
+	 * Creates a single instance of the {@link VariantAPI} class.
+	 * @return the instance
+	 */
+	public static VariantAPI getVariantAPI() {
+		return (VariantAPI) getInstance(APIIndex.VARIANT_API);
+	}
+
+	/**
 	 * Creates a single instance of the {@link com.dotcms.experiments.business.ExperimentsAPI} class.
 	 * @return the instance
 	 */
@@ -1239,6 +1249,7 @@ enum APIIndex
 	DEVICE_API,
 	DETERMINISTIC_IDENTIFIER_API,
 	CONTENTLET_JSON_API,
+	VARIANT_API,
 	EXPERIMENTS_API;
 
 
@@ -1326,6 +1337,7 @@ enum APIIndex
 			case DEVICE_API: return new DeviceAPIImpl();
 			case DETERMINISTIC_IDENTIFIER_API: return new DeterministicIdentifierAPIImpl();
 			case CONTENTLET_JSON_API: return new ContentletJsonAPIImpl();
+			case VARIANT_API: return new VariantAPIImpl();
 			case EXPERIMENTS_API: return new ExperimentsAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
