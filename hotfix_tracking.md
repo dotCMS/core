@@ -342,3 +342,4 @@ This maintenance release includes the following code fixes:
 176. https://github.com/dotCMS/core/issues/22124 : When logged in to front end, automatically redirect to back-end edit mode #22124
 177. https://github.com/dotCMS/core/issues/22149 : The push publish button in the expansion menu on the users portlet doesn't just push the selected user, it pushes all users #22149
 178. https://github.com/dotCMS/core/issues/22237 : Limited User Can't Open Page if it has a content that doesn't have permissions over #22237
+179. https://github.com/dotCMS/core/issues/22266 : Issue with static push publishing when pushing with a default language other than English #22266
