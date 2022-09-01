@@ -15,7 +15,7 @@ import org.immutables.value.Value;
  */
 @Value.Style(typeImmutable="*", typeAbstract="Abstract*")
 @Value.Immutable
-public interface AbstractVariant {
+public interface AbstractVariant extends Serializable {
     @JsonProperty("identifier")
     String identifier();
 
