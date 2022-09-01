@@ -4,9 +4,12 @@ import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotcms.variant.model.transform.VariantTransformer;
 import com.dotcms.variant.model.Variant;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
@@ -40,10 +43,13 @@ public class VariantFactoryImpl implements VariantFactory{
                 .addParam(variant.archived())
                 .loadResult();
 
-        return Variant.builder()
+        final Variant variantWithID = Variant.builder()
                 .identifier(identifier)
                 .name(variant.name())
                 .archived(variant.archived()).build();
+
+        CacheLocator.getVariantCache().put(variantWithID);
+        return variantWithID;
     }
 
     private String getId(final Variant variant) {
@@ -71,7 +77,7 @@ public class VariantFactoryImpl implements VariantFactory{
      * @throws DotDataException
      */
     @Override
-    public void update(Variant variant) throws DotDataException {
+    public void update(final Variant variant) throws DotDataException {
         DotPreconditions.checkNotNull(variant.identifier(), IllegalArgumentException.class,
                 "The ID should not bee null");
 
@@ -80,38 +86,48 @@ public class VariantFactoryImpl implements VariantFactory{
                 .addParam(variant.archived())
                 .addParam(variant.identifier())
                 .loadResult();
+
+        CacheLocator.getVariantCache().put(variant);
     }
 
     @Override
     public void delete(final String id) throws DotDataException {
+        final Variant variant = get(id).orElseThrow(() ->
+                new DoesNotExistException(String.format("Variant with id %s does not exists", id)));
+
         new DotConnect().setSQL(VARIANT_DELETE_QUERY)
                 .addParam(id)
                 .loadResult();
+
+        CacheLocator.getVariantCache().remove(variant);
     }
 
     @Override
     public Optional<Variant> get(final String identifier) throws DotDataException {
-        final ArrayList loadResults = new DotConnect().setSQL(VARIANT_SELECT_QUERY)
-                .addParam(identifier)
-                .loadResults();
+        Variant variant = CacheLocator.getVariantCache().getById(identifier);
 
-        if (!loadResults.isEmpty()) {
-            return Optional.of(TransformerLocator.createVariantTransformer(loadResults).from());
-        } else {
-            return Optional.empty();
+        if (!UtilMethods.isSet(variant)) {
+            final ArrayList loadResults = new DotConnect().setSQL(VARIANT_SELECT_QUERY)
+                    .addParam(identifier)
+                    .loadResults();
+            variant = !loadResults.isEmpty() ? TransformerLocator.createVariantTransformer(loadResults).from() : null;
         }
+
+        return Optional.ofNullable(variant);
     }
 
     public Optional<Variant> getByName(final String name) throws DotDataException {
-        final ArrayList loadResults = new DotConnect().setSQL(VARIANT_SELECT_BY_NAME_QUERY)
-                .addParam(name)
-                .loadResults();
+        Variant variant = CacheLocator.getVariantCache().getByName(name);
 
-        if (!loadResults.isEmpty()) {
-            final Map resultMap = (Map) loadResults.get(0);
-            return Optional.of(TransformerLocator.createVariantTransformer(loadResults).from());
-        } else {
-            return Optional.empty();
+        if (!UtilMethods.isSet(variant)) {
+            final ArrayList loadResults = new DotConnect().setSQL(VARIANT_SELECT_BY_NAME_QUERY)
+                    .addParam(name)
+                    .loadResults();
+
+            variant = !loadResults.isEmpty() ?
+                    TransformerLocator.createVariantTransformer(loadResults).from() : null;
         }
+
+        return Optional.ofNullable(variant);
     }
 }

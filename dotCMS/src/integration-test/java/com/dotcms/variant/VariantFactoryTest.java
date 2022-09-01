@@ -4,15 +4,19 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.microsoft.sqlserver.jdbc.SQLServerException;
 import java.util.ArrayList;
@@ -44,6 +48,15 @@ public class VariantFactoryTest {
         final Variant variantSaved = FactoryLocator.getVariantFactory().save(variant);
 
         checkFromDataBase(variantSaved);
+        checkVariantFromCache(variantSaved);
+    }
+
+    private void checkVariantFromCache(Variant variant) throws DotDataException {
+        final Variant variantById = CacheLocator.getVariantCache().getById(variant.identifier());
+        checkFromDataBase(variantById);
+
+        final Variant variantByName = CacheLocator.getVariantCache().getByName(variant.name());
+        checkFromDataBase(variantByName);
     }
 
     private void checkFromDataBase(Variant variantSaved) throws DotDataException {
@@ -192,6 +205,8 @@ public class VariantFactoryTest {
         assertEquals(variantUpdated.name(), variantFromDataBase.name());
         assertEquals(variantUpdated.identifier(), variantFromDataBase.identifier());
         assertFalse(variantFromDataBase.archived());
+
+        checkVariantFromCache(variantUpdated);
     }
 
     /**
@@ -237,6 +252,9 @@ public class VariantFactoryTest {
     public void delete() throws DotDataException {
         final Variant variant = new VariantDataGen().nextPersisted();
 
+        assertNotNull(CacheLocator.getVariantCache().getById(variant.identifier()));
+        assertNotNull(CacheLocator.getVariantCache().getByName(variant.name()));
+
         ArrayList results = getResults(variant);
         assertFalse(results.isEmpty());
 
@@ -244,6 +262,21 @@ public class VariantFactoryTest {
 
         results = getResults(variant);
         assertTrue(results.isEmpty());
+
+        assertNull(CacheLocator.getVariantCache().getById(variant.identifier()));
+        assertNull(CacheLocator.getVariantCache().getByName(variant.name()));
+    }
+
+    /**
+     * Method to test: {@link VariantFactory#delete(String)}
+     * When: Try to delete a {@link Variant} object that not exists
+     * Should: throw a {@link DoesNotExistException}
+     *
+     * @throws DotDataException
+     */
+    @Test(expected = DoesNotExistException.class)
+    public void deleteNotExists() throws DotDataException {
+        FactoryLocator.getVariantFactory().delete("Not Exists");
     }
 
     /**
@@ -356,5 +389,59 @@ public class VariantFactoryTest {
                 .name(resultMap.get("name").toString())
                 .archived(ConversionUtils.toBooleanFromDb(resultMap.get("archived")))
                 .build();
+    }
+
+    /**
+     * Method to test: {@link VariantFactory#get(String)}
+     * When: Save a {@link Variant} and then UPDATE it directly in Data base
+     * Should: get the original one without the Data base change because it should get it from cache
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void getByCache() throws DotDataException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        assertNotNull(CacheLocator.getVariantCache().getByName(variant.name()));
+        assertNotNull(CacheLocator.getVariantCache().getById(variant.identifier()));
+
+        new DotConnect().setSQL("UPDATE variant SET name = ? WHERE id = ?")
+                .addParam(variant.name() + "_UPDATED")
+                .addParam(variant.identifier())
+                .loadResult();
+
+        final Optional<Variant> variantFromFactory = FactoryLocator.getVariantFactory().get(variant.identifier());
+
+        assertTrue(variantFromFactory.isPresent());
+        assertEquals(variant.identifier(), variantFromFactory.get().identifier());
+        assertEquals(variant.name(), variantFromFactory.get().name());
+        assertEquals(variant.archived(), variantFromFactory.get().archived());
+    }
+
+    /**
+     * Method to test: {@link VariantFactory#get(String)}
+     * When: Save a {@link Variant} and then UPDATE it directly in Data base
+     * Should: get the original one without the Data base change because it should get it from cache
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void getByNameCache() throws DotDataException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        assertNotNull(CacheLocator.getVariantCache().getByName(variant.name()));
+        assertNotNull(CacheLocator.getVariantCache().getById(variant.identifier()));
+
+        new DotConnect().setSQL("UPDATE variant SET name = ? WHERE id = ?")
+                .addParam(variant.name() + "_UPDATED")
+                .addParam(variant.identifier())
+                .loadResult();
+
+        final Optional<Variant> variantFromFactory = FactoryLocator.getVariantFactory().getByName(variant.name());
+
+        assertTrue(variantFromFactory.isPresent());
+        assertEquals(variant.identifier(), variantFromFactory.get().identifier());
+        assertEquals(variant.name(), variantFromFactory.get().name());
+        assertEquals(variant.archived(), variantFromFactory.get().archived());
     }
 }
