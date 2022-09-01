@@ -322,7 +322,7 @@ describe('dot-key-value', () => {
 
         describe('duplicatedKeyMessage', () => {
             it('should show default', async () => {
-                element.setProperty('value', 'hello|world,hola|mundo');
+                element.setProperty('value', '{"hello":"world&#x22;,&#x22;hola":"mundo"}');
                 await page.waitForChanges();
 
                 const form = await getForm();
@@ -349,12 +349,12 @@ describe('dot-key-value', () => {
 
         describe('value', () => {
             it('should set items', async () => {
-                element.setProperty('value', 'hello|world,hola|mundo');
+                element.setProperty('value', '{"hello":"world&#x22;,&#x22;ho&#x22;la":"mundo"}');
                 await page.waitForChanges();
                 const list = await getList();
                 expect(await list.getProperty('items')).toEqual([
                     { key: 'hello', value: 'world' },
-                    { key: 'hola', value: 'mundo' }
+                    { key: 'ho"la', value: 'mundo' }
                 ]);
             });
 
