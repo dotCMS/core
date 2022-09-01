@@ -340,5 +340,32 @@ public class SAMLHelperTest extends IntegrationTestBase {
         Assert.assertEquals("Sn", attrs.getLastName());
     }
 
+    /**
+     * Method to test: {@link SAMLHelper#hashIt(String, boolean)}
+     * Given Scenario: creates an uuid, does the hash for one call, and does not the hash for another call
+     * ExpectedResult: The hashed call will be diff to the original uuid, the non hashed uuid will be the same of uuid
+     *
+     */
+    @Test()
+    public void test_hash_user_id() throws NoSuchAlgorithmException {
+
+        final SamlAuthenticationService samlAuthenticationService         = new MockSamlAuthenticationService();
+        final CompanyAPI companyAPI                                       = mock(CompanyAPI.class);
+        final Company    company                                          = new Company();
+        final SAMLHelper           		samlHelper                        = new SAMLHelper(samlAuthenticationService, companyAPI);
+
+        company.setAuthType(Company.AUTH_TYPE_EA);
+        when(companyAPI.getDefaultCompany()).thenReturn(company);
+        final String uuid = UUID.randomUUID().toString();
+
+        final String hashUuid   = samlHelper.hashIt(uuid, true);
+        final String nohashUuid = samlHelper.hashIt(uuid, false);
+
+        Assert.assertNotNull(hashUuid);
+        Assert.assertNotNull(nohashUuid);
+        Assert.assertNotEquals(hashUuid, uuid);
+        Assert.assertEquals(nohashUuid, uuid);
+    }
+
 
 }

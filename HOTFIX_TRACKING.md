@@ -29,3 +29,7 @@ This maintenance release includes the following code fixes:
 21. https://github.com/dotCMS/core/issues/22381 : Update Date/Times before adding Timezone to date fields #22381
 22. https://github.com/dotCMS/core/issues/22475 : Update SSL conf for docker build #22475
 23. https://github.com/dotCMS/core/issues/22198 : We are changing the relationship selection once that you create the field #22198
+
+**Release-22.03.3**
+
+24. https://github.com/dotCMS/core/issues/22692 : We replace the UserID with a hashed version of the UserID when creating SAML users #22692
