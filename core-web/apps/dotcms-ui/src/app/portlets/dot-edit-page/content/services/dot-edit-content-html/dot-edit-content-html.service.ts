@@ -33,7 +33,6 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
 import { DotPage } from '@dotcms/app/shared/models/dot-page/dot-page.model';
 import { DotAddContentTypePayload } from './models/dot-contentlets-events.model';
 import { DotIframeEditEvent } from '@dotcms/dotcms-models';
-
 export enum DotContentletAction {
     EDIT,
     ADD
@@ -282,6 +281,7 @@ export class DotEditContentHtmlService {
      */
     renderAddedForm(formId: string, isDroppedForm = false): Observable<DotPageContainer[]> {
         const doc = this.getEditPageDocument();
+
         if (isDroppedForm) {
             this.setCurrentContainerOnContentDrop(doc);
         }
@@ -312,6 +312,7 @@ export class DotEditContentHtmlService {
                 .pipe(
                     map(({ content }: { content: { [key: string]: string } }) => {
                         const { identifier, inode } = content;
+
                         containerEl.replaceChild(
                             this.renderFormContentlet(identifier, inode),
                             contentletPlaceholder
@@ -367,6 +368,7 @@ export class DotEditContentHtmlService {
     private getContentletPlaceholder(): HTMLDivElement {
         const doc = this.getEditPageDocument();
         const placeholder = doc.createElement('div');
+
         placeholder.setAttribute('data-dot-object', 'contentlet');
         placeholder.appendChild(this.getLoadingIndicator());
 
@@ -506,6 +508,30 @@ export class DotEditContentHtmlService {
 
                     editModeNodes.forEach((node) => {
                         node.classList.add('dotcms__inline-edit-field');
+                    });
+                });
+        }
+    }
+
+    private injectInlineBlockEditor(): void {
+        const doc = this.getEditPageDocument();
+        const editBlockEditorNodes = doc.querySelectorAll('[data-block-editor-content]');
+        if (editBlockEditorNodes.length) {
+            this.dotLicenseService
+                .isEnterprise()
+                .pipe(
+                    take(1),
+                    filter((isEnterprise: boolean) => isEnterprise === true)
+                )
+                .subscribe(() => {
+                    editBlockEditorNodes.forEach((node) => {
+                        node.classList.add('dotcms__inline-edit-field');
+                        node.addEventListener('click', (event) => {
+                            const customEvent = new CustomEvent('ng-event', {
+                                detail: { name: 'edit-block-editor', data: event.target }
+                            });
+                            window.top.document.dispatchEvent(customEvent);
+                        });
                     });
                 });
         }
@@ -669,8 +695,8 @@ export class DotEditContentHtmlService {
                     if (this.updateContentletInode) {
                         this.currentContentlet.inode = contentlet.inode;
                     }
-
                     // because: https://github.com/dotCMS/core/issues/21818
+
                     setTimeout(() => {
                         this.renderEditedContentlet(this.currentContentlet);
                     }, 1800);
@@ -790,6 +816,7 @@ export class DotEditContentHtmlService {
         this.setEditContentletStyles();
         this.addContentToolBars();
         this.injectInlineEditingScripts();
+        this.injectInlineBlockEditor();
         this.dotDragDropAPIHtmlService.initDragAndDropContext(this.getEditPageIframe());
     }
 

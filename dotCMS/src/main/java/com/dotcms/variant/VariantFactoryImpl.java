@@ -77,6 +77,7 @@ public class VariantFactoryImpl implements VariantFactory{
      * @throws DotDataException
      */
     @Override
+
     public void update(final Variant variant) throws DotDataException {
         DotPreconditions.checkNotNull(variant.identifier(), IllegalArgumentException.class,
                 "The ID should not bee null");
