@@ -8,7 +8,7 @@ import org.immutables.value.Value;
 
 /**
  * Comprises the different parameters available to filter {@link com.dotcms.experiments.model.Experiment}s
- * when retrieving then. 
+ * when retrieving then.
  */
 @Value.Style(typeImmutable="*", typeAbstract="Abstract*")
 @Value.Immutable

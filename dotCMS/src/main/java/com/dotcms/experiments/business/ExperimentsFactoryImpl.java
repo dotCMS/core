@@ -34,7 +34,7 @@ public class ExperimentsFactoryImpl implements
 
     public static final String PAGE_ID_FILTER = "AND page_id = ? ";
 
-    public static final String NAME_FILTER = "AND name LIKE = ?";
+    public static final String NAME_FILTER = "AND name LIKE ?";
 
     public static final String STATUS_FILTER = "SELECT * from experiment WHERE status = ?";
 
@@ -101,9 +101,7 @@ public class ExperimentsFactoryImpl implements
         }
 
         if(filter.statuses().isPresent()) {
-            if(filter.pageId().isPresent() || filter.name().isPresent()) {
-                query.append("INTERSECT ");
-            }
+            query.append("INTERSECT ");
 
             final String statusFilter = filter.statuses().get().stream().map((status -> STATUS_FILTER) ).collect
                     (Collectors.joining(" UNION DISTINCT "));

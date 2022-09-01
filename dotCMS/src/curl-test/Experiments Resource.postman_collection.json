@@ -553,7 +553,7 @@
 							"    pm.expect(jsonData.entity[0].trafficProportion.type).equal(\"SPLIT_EVENLY\");",
 							"});",
 							"",
-							"pm.collectionVariables.set(\"experimentId\", jsonData.entity[0].id);",
+							"pm.collectionVariables.set(\"draftExperimentId\", jsonData.entity[0].id);",
 							"",
 							""
 						],
@@ -653,7 +653,7 @@
 					}
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}",
+					"raw": "{{serverURL}}/api/v1/experiments/{{draftExperimentId}}",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -661,7 +661,7 @@
 						"api",
 						"v1",
 						"experiments",
-						"{{experimentId}}"
+						"{{draftExperimentId}}"
 					]
 				}
 			},
@@ -686,6 +686,7 @@
 							"});",
 							"",
 							"pm.test(\"All returned experiments should have the pageId in the filter\", function () {",
+							"    pm.expect(jsonData.entity.length).to.be.eq(1);",
 							"    for(let i in jsonData.entity) {",
 							"        let experiment = jsonData.entity[i]",
 							"        pm.expect(experiment.pageId).to.be.eq('e424abd7e2e7a9031c5a0a3c18182f1b');",
@@ -836,6 +837,8 @@
 							"    pm.response.to.have.status(200);",
 							"});",
 							"",
+							"pm.collectionVariables.set(\"secondExperimentId\", jsonData.entity[0].id);",
+							"",
 							"",
 							""
 						],
@@ -903,13 +906,21 @@
 							"    pm.expect(jsonData.entity.length).to.be.greaterThan(0);",
 							"});",
 							"",
-							"pm.test(\"All returned experiments should have the pageId in the filter\", function () {",
-							"    let experiment1 = jsonData.entity[0]",
-							"    pm.expect(experiment1.pageId).to.be.eq('e424abd7e2e7a9031c5a0a3c18182f1b');",
-							"",
-							"    let experiment2 = jsonData.entity[1]",
-							"    pm.expect(experiment2.pageId).to.be.eq('9044ec0fdb3788a814ccabf789f376d4');",
+							"pm.test(\"The two experiments with different pageId are included\", function () {",
+							"    let experiment1ID = pm.collectionVariables.get(\"experimentId\")",
+							"    let experiment2ID = pm.collectionVariables.get(\"secondExperimentId\");",
+							"    pm.expect(isExperimentIncluded(experiment1ID)).to.be.true;",
+							"    pm.expect(isExperimentIncluded(experiment2ID)).to.be.true;",
 							"});",
+							"",
+							"function isExperimentIncluded(id) {",
+							"    for(let i in jsonData.entity) {",
+							"        let experiment = jsonData.entity[i]",
+							"        if(experiment.id===id) return true;",
+							"    }",
+							"",
+							"    return false;",
+							"}",
 							"",
 							"",
 							""
@@ -949,11 +960,375 @@
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "listExperimentsFilterBySingleStatus_shouldSucceed",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json();",
+							"",
+							"",
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Lists of experiments should not be empty\", function () {",
+							"    pm.expect(jsonData.entity.length).to.be.greaterThan(0);",
+							"});",
+							"",
+							"pm.test(\"All returned experiments should have the status DRAFT\", function () {",
+							"    for(let i in jsonData.entity) {",
+							"        let experiment = jsonData.entity[i]",
+							"        pm.expect(experiment.status).to.be.eq('DRAFT');",
+							"    }",
+							"});",
+							"",
+							"",
+							"",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/experiments?status=DRAFT",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"experiments"
+					],
+					"query": [
+						{
+							"key": "status",
+							"value": "DRAFT"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "listExperimentsFilterByMultipleStatuses_shouldSucceed",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json();",
+							"",
+							"",
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Lists of experiments should not be empty\", function () {",
+							"    pm.expect(jsonData.entity.length).to.be.greaterThan(0);",
+							"});",
+							"",
+							"pm.test(\"Experiments with DRAFT and ENDED statuses returned\", function () {",
+							"    for(let i in jsonData.entity) {",
+							"        let experiment = jsonData.entity[i]",
+							"        if(pm.collectionVariables.get(\"experimentId\")===experiment.id) {",
+							"            pm.expect(experiment.status).to.be.eq('ENDED');    ",
+							"        }",
+							"        if(pm.collectionVariables.get(\"secondExperimentId\")===experiment.id) {",
+							"            pm.expect(experiment.status).to.be.eq('DRAFT');    ",
+							"        }",
+							"        ",
+							"    }",
+							"});",
+							"",
+							"",
+							"",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/experiments?status=DRAFT&status=ENDED",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"experiments"
+					],
+					"query": [
+						{
+							"key": "status",
+							"value": "DRAFT"
+						},
+						{
+							"key": "status",
+							"value": "ENDED"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "pre_createExperimentUniqueName",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json();",
+							"",
+							"",
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"pageId\": \"9044ec0fdb3788a814ccabf789f376d4\",\n    \"name\": \"20220901\",\n    \"description\": \"second page experiment description\" \n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/experiments/",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"experiments",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "listExperimentsFilterByName_shouldSucceed",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json();",
+							"",
+							"",
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Lists of experiments should not be empty\", function () {",
+							"    pm.expect(jsonData.entity.length).to.be.greaterThan(0);",
+							"});",
+							"",
+							"pm.test(\"Experiments with DRAFT and ENDED statuses returned\", function () {",
+							"    pm.expect(jsonData.entity[0].name).to.be.eq('20220901')",
+							"});",
+							"",
+							"",
+							"",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/experiments?name=20220901",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"experiments"
+					],
+					"query": [
+						{
+							"key": "name",
+							"value": "20220901"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "listExperimentsFilterByPartialName_shouldSucceed",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json();",
+							"",
+							"",
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Lists of experiments should not be empty\", function () {",
+							"    pm.expect(jsonData.entity.length).to.be.greaterThan(0);",
+							"});",
+							"",
+							"pm.test(\"Experiments with DRAFT and ENDED statuses returned\", function () {",
+							"    pm.expect(jsonData.entity[0].name).to.be.eq('20220901')",
+							"});",
+							"",
+							"",
+							"",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/experiments?name=2022",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"experiments"
+					],
+					"query": [
+						{
+							"key": "name",
+							"value": "2022"
+						}
+					]
+				}
+			},
+			"response": []
 		}
 	],
 	"variable": [
 		{
 			"key": "experimentId",
+			"value": ""
+		},
+		{
+			"key": "secondExperimentId",
+			"value": ""
+		},
+		{
+			"key": "draftExperimentId",
 			"value": ""
 		}
 	]
