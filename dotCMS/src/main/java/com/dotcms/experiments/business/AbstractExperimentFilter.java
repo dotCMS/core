@@ -2,8 +2,8 @@ package com.dotcms.experiments.business;
 
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import java.io.Serializable;
-import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.immutables.value.Value;
 
 /**
@@ -20,5 +20,5 @@ import org.immutables.value.Value;
 public interface AbstractExperimentFilter extends Serializable {
     Optional<String> pageId();
     Optional<String> name();
-    Optional<List<Status>> statuses();
+    Optional<Set<Status>> statuses();
 }
