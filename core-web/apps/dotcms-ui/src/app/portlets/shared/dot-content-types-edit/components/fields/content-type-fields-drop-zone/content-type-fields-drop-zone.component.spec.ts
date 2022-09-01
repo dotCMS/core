@@ -1,7 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { waitForAsync, ComponentFixture, fakeAsync, tick, TestBed } from '@angular/core/testing';
-import { DebugElement, Component, Input, Output, EventEmitter, Injectable } from '@angular/core';
+import {
+    DebugElement,
+    Component,
+    Input,
+    Output,
+    EventEmitter,
+    Injectable,
+    Renderer2
+} from '@angular/core';
 import { ContentTypeFieldsDropZoneComponent } from '.';
 import { By } from '@angular/platform-browser';
 import { ContentTypeFieldsAddRowModule } from '..';
@@ -11,14 +19,14 @@ import {
     DotCMSContentTypeLayoutRow,
     DotCMSContentType
 } from '@dotcms/dotcms-models';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { LoginService, DotEventsSocket, CoreWebService } from '@dotcms/dotcms-js';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
-import { Observable, Subject } from 'rxjs';
+import { Observable, of, Subject } from 'rxjs';
 import { DotFormatDateService } from '@services/dot-format-date-service';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { FieldDragDropService } from '../service/index';
@@ -50,6 +58,9 @@ import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module
 import { TabViewModule } from 'primeng/tabview';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotConvertToBlockInfoComponent } from '../../dot-convert-to-block-info/dot-convert-to-block-info.component';
+import { DotConvertWysiwygToBlockComponent } from '../../dot-convert-wysiwyg-to-block/dot-convert-wysiwyg-to-block.component';
+import { CheckboxModule } from 'primeng/checkbox';
 
 const COLUMN_BREAK_FIELD = FieldUtil.createColumnBreak();
 
@@ -251,6 +262,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
 
     it('should have a dialog', () => {
         const dialog = de.query(By.css('dot-dialog'));
+        expect(dialog.attributes.width).toBe('45rem');
         expect(dialog).not.toBeNull();
     });
 
@@ -410,6 +422,8 @@ describe('Load fields and drag and drop', () => {
     let comp: ContentTypeFieldsDropZoneComponent;
     let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
+    let scrollIntoViewSpy;
+
     const mockRouter = {
         navigate: jasmine.createSpy('navigate')
     };
@@ -432,7 +446,9 @@ describe('Load fields and drag and drop', () => {
                 TestContentTypeFieldsPropertiesFormComponent,
                 TestDotContentTypeFieldsTabComponent,
                 TestHostComponent,
-                TestDotLoadingIndicatorComponent
+                TestDotLoadingIndicatorComponent,
+                DotConvertToBlockInfoComponent,
+                DotConvertWysiwygToBlockComponent
             ],
             imports: [
                 RouterTestingModule.withRoutes([
@@ -444,6 +460,8 @@ describe('Load fields and drag and drop', () => {
                 DragulaModule,
                 DotFieldValidationMessageModule,
                 DotContentTypeFieldsVariablesModule,
+                FormsModule,
+                CheckboxModule,
                 ReactiveFormsModule,
                 BrowserAnimationsModule,
                 DotActionButtonModule,
@@ -459,7 +477,31 @@ describe('Load fields and drag and drop', () => {
             providers: [
                 DragulaService,
                 FieldPropertyService,
-                FieldService,
+                {
+                    provide: FieldService,
+                    useValue: {
+                        loadFieldTypes() {
+                            return of([
+                                {
+                                    clazz: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
+                                    helpText:
+                                        'Show a rich text area for content input that allows a user to format content.',
+                                    id: 'wysiwyg',
+                                    label: 'WYSIWYG',
+                                    properties: [
+                                        'name',
+                                        'required',
+                                        'regexCheck',
+                                        'defaultValue',
+                                        'hint',
+                                        'searchable',
+                                        'indexed'
+                                    ]
+                                }
+                            ]);
+                        }
+                    }
+                },
                 DotFormatDateService,
                 LoginService,
                 DotEventsSocket,
@@ -480,6 +522,14 @@ describe('Load fields and drag and drop', () => {
         hostDe = fixture.debugElement;
         de = hostDe.query(By.css('dot-content-type-fields-drop-zone'));
         comp = de.componentInstance;
+        const rendered = de.injector.get(Renderer2);
+        scrollIntoViewSpy = jasmine.createSpy();
+
+        spyOn(rendered, 'selectRootElement').and.callFake(() => {
+            return {
+                scrollIntoView: scrollIntoViewSpy
+            };
+        });
 
         fakeFields = [
             {
@@ -504,7 +554,7 @@ describe('Load fields and drag and drop', () => {
                         fields: [
                             {
                                 ...dotcmsContentTypeFieldBasicMock,
-                                clazz: 'text',
+                                clazz: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
                                 id: '3',
                                 name: 'field 3',
                                 sortOrder: 2,
@@ -812,6 +862,74 @@ describe('Load fields and drag and drop', () => {
     });
 
     describe('Edit Field Dialog', () => {
+        describe('WYSIWYG field', () => {
+            let fieldBox;
+            const field = {
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
+                name: 'WYSIWYG',
+                id: '3'
+            };
+
+            beforeEach(() => {
+                fixture.detectChanges();
+
+                fieldBox = de.query(By.css('dot-content-type-fields-row'));
+                fieldBox.componentInstance.editField.emit(field);
+
+                fixture.detectChanges();
+            });
+            it('should show info box and scrollTo on click', () => {
+                const infoBox = de.query(By.css('dot-convert-to-block-info'));
+
+                expect(infoBox.componentInstance.currentField.id).toBe('3');
+                expect(infoBox.componentInstance.currentFieldType.id).toBe('wysiwyg');
+
+                infoBox.triggerEventHandler('action', {});
+
+                expect(scrollIntoViewSpy).toHaveBeenCalledWith({
+                    behavior: 'smooth',
+                    block: 'start',
+                    inline: 'nearest'
+                });
+            });
+
+            it('should show convert to block box and trigger convert', () => {
+                spyOn(comp.editField, 'emit');
+
+                const convertBox = de.query(By.css('dot-convert-wysiwyg-to-block'));
+
+                convertBox.triggerEventHandler('convert', {});
+
+                expect(comp.editField.emit).toHaveBeenCalledWith(
+                    jasmine.objectContaining({
+                        contentTypeId: '3b',
+                        fieldType: 'Story-Block',
+                        id: '3',
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField'
+                    })
+                );
+            });
+        });
+
+        it('should show block editor info message when create a WYSIWYG', () => {
+            fixture.detectChanges();
+
+            // Trigger create a field
+            testFieldDragDropService._fieldDropFromSource.next({
+                item: {
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
+                }
+            });
+
+            fixture.detectChanges();
+
+            const infoBox = de.query(By.css('dot-convert-to-block-info'));
+            expect(infoBox).not.toBeNull();
+
+            const convertBox = de.query(By.css('dot-convert-wysiwyg-to-block'));
+            expect(convertBox).toBeNull();
+        });
+
         it('should display dialog if a drop event happen from source', () => {
             fixture.detectChanges();
             const fieldToEdit: DotCMSContentTypeField = fakeFields[2].columns[0].fields[0];

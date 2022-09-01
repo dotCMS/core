@@ -16,6 +16,8 @@ import com.dotcms.enterprise.cluster.ServerFactoryImpl;
 import com.dotcms.enterprise.cluster.action.business.ServerActionFactory;
 import com.dotcms.enterprise.linkchecker.LinkCheckerFactoryImpl;
 import com.dotcms.enterprise.rules.RulesFactory;
+import com.dotcms.experiments.business.ExperimentsFactory;
+import com.dotcms.experiments.business.ExperimentsFactoryImpl;
 import com.dotcms.notifications.business.NotificationFactory;
 import com.dotcms.notifications.business.NotificationFactoryImpl;
 import com.dotcms.publisher.assets.business.PushedAssetsFactory;
@@ -246,7 +248,11 @@ public class FactoryLocator extends Locator<FactoryIndex>{
      * @return An instance of the {@link VariantFactory} object.
      */
     public static VariantFactory getVariantFactory() {
-        return (VariantFactory)getInstance(FactoryIndex.VARIANT_FACTORY);
+        return (VariantFactory) getInstance(FactoryIndex.VARIANT_FACTORY);
+    }
+
+    public static ExperimentsFactory getExperimentsFactory() {
+        return (ExperimentsFactory) getInstance(FactoryIndex.EXPERIMENTS_FACTORY);
     }
 
     private static Object getInstance(FactoryIndex index) {
@@ -323,7 +329,8 @@ enum FactoryIndex
 	RELATIONSHIP_FACTORY,
 	FIELD_FACTORY_2,
     FileAsset_Factory,
-    VARIANT_FACTORY;
+    VARIANT_FACTORY,
+    EXPERIMENTS_FACTORY;
 
 	Object create() {
 		switch(this) {
@@ -363,6 +370,7 @@ enum FactoryIndex
             case FileAsset_Factory: return new FileAssetFactoryImpl();
             case HOST_FACTORY : return new HostFactoryImpl();
             case VARIANT_FACTORY:_FACTORY : return new VariantFactoryImpl();
+            case EXPERIMENTS_FACTORY: return new ExperimentsFactoryImpl();
 		}
 		throw new AssertionError("Unknown Factory Index: " + this);
 	}

@@ -2,9 +2,12 @@ package com.dotmarketing.common.db;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.CloseUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
+import io.vavr.control.Try;
 import java.math.BigDecimal;
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -37,6 +40,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import org.postgresql.util.PGobject;
 
 /**
  * Description of the Class
@@ -68,6 +72,9 @@ public class DotConnect {
     boolean forceQuery = false;
 
     private static final Map<Class<?>, StatementObjectSetter> statementSetterHandlerMap = customStatementObjectSetterMap();
+
+    final ObjectMapper mapper = DotObjectMapperProvider.getInstance()
+            .getDefaultObjectMapper();
 
     public DotConnect() {
         Logger.debug(this, "------------ DotConnect() --------------------");
@@ -526,6 +533,27 @@ public class DotConnect {
         Logger.debug(this, "db.addParam " + paramList.size() + " (date): " + x);
         paramList.add(paramList.size(), x != null ? new Timestamp(x.getTime()) : x);
         return this;
+    }
+
+    /**
+     * Sets incoming JSON object according to the underlying DBMS
+     * @param json the JSON to set
+     * @return dotConnect
+     */
+
+    public DotConnect addJSONParam(Object json) {
+        final String jsonStr = Try.of(()->
+                        mapper.writeValueAsString(json))
+                .getOrNull();
+        if(DbConnectionFactory.isPostgres()) {
+            PGobject jsonObject = new PGobject();
+            jsonObject.setType("json");
+            Try.run(() -> jsonObject.setValue(jsonStr)).getOrElseThrow(
+                    () -> new IllegalArgumentException("Invalid Traffic Proportion"));
+            return addObject(jsonObject);
+        } else {
+            return addParam(jsonStr);
+        }
     }
 
     private void executeQuery() throws SQLException {

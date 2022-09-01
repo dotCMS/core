@@ -9,7 +9,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
 import java.sql.SQLException;
 
-public class Task222208CreateVariantTable implements StartupTask {
+public class Task220822CreateVariantTable implements StartupTask {
 
     private final String POSTGRES_QUERY = "CREATE TABLE IF NOT EXISTS variant ("
             + "  id varchar(255) primary key,"

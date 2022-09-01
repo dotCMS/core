@@ -169,7 +169,7 @@
 		if(value == undefined || value==null || value=="null"){
 			value="&nbsp;";
 		}
-		
+
 		return "<div style='width:100%;cursor:pointer;' onclick=\"addCat<%=counter%>("+index+")\" >"+value+"</div>";
 	};
 
@@ -219,7 +219,7 @@
 				structure : layout,
 				plugins : {
 					pagination : {
-						pageSizes : [  ],
+					    pageSizes : [ "10", "All" ],
 						description : "45%",
 						sizeSwitch : "260px",
 						pageStepper : "30em",
