@@ -560,8 +560,7 @@ create table contentlet_version_info (
    locked_by varchar(100),
    locked_on timestamptz,
    version_ts timestamptz not null,
-   variant_id varchar(255),
-   variant_id varchar(255) default '1',
+   variant_id varchar(255) default 'DEFAULT',
    primary key (identifier, lang)
 );
 create table fixes_audit (
@@ -2485,8 +2484,28 @@ create table storage_x_data (
 CREATE TABLE shedlock(name VARCHAR(64) NOT NULL, lock_until timestamptz NOT NULL,
                       locked_at timestamptz NOT NULL, locked_by VARCHAR(255) NOT NULL, PRIMARY KEY (name));
 
+
 create table variant (
      id varchar(255) primary key,
      name varchar(255) not null UNIQUE,
      archived boolean NOT NULL default false
 );
+
+create table experiment (
+     id  varchar(255) primary key,
+     page_id varchar(255) not null,
+     name varchar(255) not null,
+     description varchar(255) not null,
+     status varchar(255) not null,
+     traffic_proportion jsonb not null,
+     traffic_allocation float4 not null,
+     mod_date timestamptz not null,
+     scheduling jsonb,
+     archived bool not null,
+     creation_date timestamptz not null,
+     created_by varchar(255) not null,
+     last_modified_by varchar(255) not null
+);
+
+CREATE INDEX idx_exp_pageid ON experiment (page_id);
+

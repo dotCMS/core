@@ -1,4 +1,5 @@
 import { ViewContainerRef } from '@angular/core';
+import { PluginKey } from 'prosemirror-state';
 import BubbleMenu, { BubbleMenuOptions } from '@tiptap/extension-bubble-menu';
 import { Props } from 'tippy.js';
 
@@ -14,6 +15,8 @@ const defaultTippyOptions: Partial<Props> = {
     trigger: 'manual',
     interactive: true
 };
+
+export const BUBBLE_MENU_PLUGIN_KEY = new PluginKey('bubble-menu');
 
 export function DotBubbleMenuExtension(viewContainerRef: ViewContainerRef) {
     // Create Instance Component
@@ -35,6 +38,12 @@ export function DotBubbleMenuExtension(viewContainerRef: ViewContainerRef) {
             };
         },
 
+        addStorage() {
+            return {
+                changeToIsOpen: false
+            };
+        },
+
         addProseMirrorPlugins() {
             if (!bubbleMenuElement) {
                 return [];
@@ -42,14 +51,13 @@ export function DotBubbleMenuExtension(viewContainerRef: ViewContainerRef) {
 
             return [
                 DotBubbleMenuPlugin({
+                    ...this.options,
                     component: bubbleMenuComponent,
                     changeToComponent: changeToComponent,
-                    pluginKey: this.options.pluginKey,
+                    pluginKey: BUBBLE_MENU_PLUGIN_KEY,
                     editor: this.editor,
                     element: bubbleMenuElement,
-                    changeToElement: changeToElement,
-                    tippyOptions: this.options.tippyOptions,
-                    shouldShow: this.options.shouldShow
+                    changeToElement: changeToElement
                 })
             ];
         }

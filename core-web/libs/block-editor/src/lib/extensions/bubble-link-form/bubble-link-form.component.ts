@@ -8,13 +8,16 @@ import {
     Input
 } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
-import { debounceTime } from 'rxjs/operators';
+import { debounceTime, take } from 'rxjs/operators';
 
 // Components
-import { SuggestionsCommandProps, SuggestionsComponent } from '@dotcms/block-editor';
+import { SuggestionsCommandProps } from '@dotcms/block-editor';
 
 // Models
 import { isValidURL } from '../bubble-menu/utils';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { SuggestionsService, DotLanguageService, Languages } from '../../shared';
+import { SuggestionPageComponent } from './components/suggestion-page/suggestion-page.component';
 
 export interface NodeProps {
     link: string;
@@ -28,7 +31,7 @@ export interface NodeProps {
 })
 export class BubbleLinkFormComponent implements OnInit {
     @ViewChild('input') input: ElementRef;
-    @ViewChild('suggestions', { static: false }) suggestionsComponent: SuggestionsComponent;
+    @ViewChild('suggestions', { static: false }) suggestionsComponent: SuggestionPageComponent;
 
     @Output() hide: EventEmitter<boolean> = new EventEmitter(false);
     @Output() removeLink: EventEmitter<boolean> = new EventEmitter(false);
@@ -42,8 +45,11 @@ export class BubbleLinkFormComponent implements OnInit {
     };
 
     private minChars = 3;
+    private dotLangs: Languages;
+
     loading = false;
     form: FormGroup;
+    items = [];
 
     // Getters
     get noResultsTitle() {
@@ -58,9 +64,11 @@ export class BubbleLinkFormComponent implements OnInit {
         return this.form.get('link').value;
     }
 
-    constructor(private fb: FormBuilder) {
-        /* */
-    }
+    constructor(
+        private fb: FormBuilder,
+        private suggestionsService: SuggestionsService,
+        private dotLanguageService: DotLanguageService
+    ) {}
 
     ngOnInit() {
         this.form = this.fb.group({ ...this.initialValues });
@@ -74,13 +82,18 @@ export class BubbleLinkFormComponent implements OnInit {
                     return;
                 }
 
-                this.suggestionsComponent?.searchContentlets({ link });
+                this.searchContentlets({ link });
             });
         this.form
             .get('blank')
             .valueChanges.subscribe((blank) =>
                 this.setNodeProps.emit({ link: this.currentLink, blank })
             );
+
+        this.dotLanguageService
+            .getLanguages()
+            .pipe(take(1))
+            .subscribe((dotLang) => (this.dotLangs = dotLang));
     }
 
     /**
@@ -100,6 +113,7 @@ export class BubbleLinkFormComponent implements OnInit {
      */
     setLoading() {
         const shouldShow = this.newLink.length >= this.minChars && !isValidURL(this.newLink);
+        this.items = shouldShow ? this.items : [];
         this.showSuggestions = shouldShow;
         this.loading = shouldShow;
         if (shouldShow) {
@@ -183,5 +197,52 @@ export class BubbleLinkFormComponent implements OnInit {
     onSelection({ payload: { url } }: SuggestionsCommandProps) {
         this.setFormValue({ ...this.form.value, link: url });
         this.submitForm();
+    }
+
+    /**
+     * Search contentlets filtered by url
+     *
+     * @private
+     * @param {*} { link = '' }
+     * @memberof BubbleMenuLinkFormComponent
+     */
+    searchContentlets({ link = '' }) {
+        this.loading = true;
+        this.suggestionsService
+            .getContentletsUrlMap({ filter: link })
+            .pipe(take(1))
+            .subscribe((contentlets: DotCMSContentlet[]) => {
+                this.items = contentlets.map((contentlet) => {
+                    const { languageId } = contentlet;
+                    contentlet.language = this.getContentletLanguage(languageId);
+
+                    return {
+                        label: contentlet.title,
+                        icon: 'contentlet/image',
+                        data: {
+                            contentlet: contentlet
+                        },
+                        command: () => {
+                            this.onSelection({
+                                payload: contentlet,
+                                type: {
+                                    name: 'dotContent'
+                                }
+                            });
+                        }
+                    };
+                });
+                this.loading = false;
+            });
+    }
+
+    private getContentletLanguage(languageId: number): string {
+        const { languageCode, countryCode } = this.dotLangs[languageId];
+
+        if (!languageCode || !countryCode) {
+            return '';
+        }
+
+        return `${languageCode}-${countryCode}`;
     }
 }
