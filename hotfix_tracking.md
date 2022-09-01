@@ -340,3 +340,4 @@ This maintenance release includes the following code fixes:
 174. https://github.com/dotCMS/core/issues/21619 : ContentTypeFactoryImpl Getting Config values cause unneeded load #21619
 175. https://github.com/dotCMS/core/issues/21624 : [Push Publishing] : Pushing single archived content un-publishes all its versions in receiving instance #21624
 176. https://github.com/dotCMS/core/issues/22124 : When logged in to front end, automatically redirect to back-end edit mode #22124
+177. https://github.com/dotCMS/core/issues/22149 : The push publish button in the expansion menu on the users portlet doesn't just push the selected user, it pushes all users #22149

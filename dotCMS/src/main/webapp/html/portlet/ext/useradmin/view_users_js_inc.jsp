@@ -135,6 +135,7 @@
         //Connecting the action of clicking a user row
         dojo.connect( usersDataGrid, "onRowClick", function (evt) {
                 var id = evt.grid.getItem(evt.rowIndex).id[0];
+            window.selectedUser = id;
                 editUser(id);
         });
 
@@ -169,7 +170,11 @@
     };
 
     var remotePublishUsers = function () {
-        pushHandler.showDialog( "users_", true );
+        if (window.selectedUser) {
+            pushHandler.showDialog( "user_" + window.selectedUser, true );
+        }else{
+            pushHandler.showDialog( "users_", true );
+        }
     };
 
     var addToBundleUser = function () {
@@ -179,7 +184,11 @@
     };
 
     var addToBundleUsers = function () {
-        pushHandler.showAddToBundleDialog("users_", '<%=LanguageUtil.get(pageContext, "Add-To-Bundle")%>', true);
+        if (window.selectedUser) {
+            pushHandler.showAddToBundleDialog("user_" + window.selectedUser, '<%=LanguageUtil.get(pageContext, "Add-To-Bundle")%>');
+        }else{
+            pushHandler.showAddToBundleDialog("users_", '<%=LanguageUtil.get(pageContext, "Add-To-Bundle")%>', true);
+        }
     };
 
 	var filterUsersHandler;
@@ -246,6 +255,12 @@
 		if(userChanged && currentUser && userId != currentUser.id &&
 			!confirm(abondonUserChangesConfirm))
 			return;
+        <% if ( enterprise ) {%>
+        <% if ( endPoints ) {%>
+        document.getElementById('remotePublishUsersDiv_text').innerHTML = '<%=LanguageUtil.get(pageContext, "Remote-Publish")%>';
+        <%}%>
+        document.getElementById('addToBundleUsersDiv_text').innerHTML = '<%=LanguageUtil.get(pageContext, "Add-To-Bundle")%>';
+        <%}%>
 		dojo.byId('userProfileTabs').style.display = 'none';
 		dojo.byId('loadingUserProfile').style.display = '';
 	    dojo.byId('gravatarTextHolder').display='none';
