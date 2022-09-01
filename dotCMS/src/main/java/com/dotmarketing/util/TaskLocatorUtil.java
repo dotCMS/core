@@ -221,6 +221,7 @@ import com.dotmarketing.startup.runonce.Task220512UpdateNoHTMLRegexValue;
 import com.dotmarketing.startup.runonce.Task220606UpdatePushNowActionletName;
 import com.dotmarketing.startup.runonce.Task220822CreateVariantTable;
 import com.dotmarketing.startup.runonce.Task220825MakeSomeSystemFieldsRemovable;
+import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTable;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
