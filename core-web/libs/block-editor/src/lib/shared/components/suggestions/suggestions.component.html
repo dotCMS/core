@@ -1,39 +1,23 @@
-<div
-    (mousedown)="onMouseDownHandler($event)"
-    *ngIf="items.length; else isFilterActive ? noResults : emptyBlock"
-    class="inherited-styles"
->
-    <h3 *ngIf="!urlItem">{{ title }}</h3>
-
-    <!-- TODO: instace list-items inside list -->
-    <dot-suggestion-list class="suggestion-list-container" id="editor-suggestion-list" #list>
+<div *ngIf="items.length; else emptyBlock">
+    <h3>{{ title }}</h3>
+    <dot-suggestion-list #list>
         <dot-suggestions-list-item
             *ngFor="let item of items; let i = index"
-            (mousedown)="onMouseDown($event, item)"
-            (mouseenter)="onMouseEnter($event)"
             [command]="item.command"
             [index]="i"
             [label]="item.label"
             [url]="item.icon"
             [data]="item.data"
-            [urlItem]="urlItem"
         >
         </dot-suggestions-list-item>
     </dot-suggestion-list>
 </div>
 
-<!-- TODO: Move this to a custom `page-suggestions` -->
-<dot-suggestion-loading-list *ngIf="loading"></dot-suggestion-loading-list>
-
 <ng-template #emptyBlock>
-    <div class="empty" *ngIf="!loading">
-        <p [innerHTML]="title"></p>
-        <button (mousedown)="handleBackButton($event)">Back</button>
-    </div>
-</ng-template>
-
-<ng-template #noResults>
-    <div class="empty">
-        <p [innerHTML]="noResultsMessage"></p>
-    </div>
+    <dot-empty-message
+        [title]="noResultsMessage"
+        [showBackBtn]="!isFilterActive"
+        (back)="handleBackButton()"
+    >
+    </dot-empty-message>
 </ng-template>
