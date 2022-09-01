@@ -794,6 +794,7 @@ create table contentlet_version_info (
    locked_by NVARCHAR(100) null,
    locked_on datetimeoffset(3) null,
    version_ts datetimeoffset(3) not null,
+   variant_id NVARCHAR(255) default 'DEFAULT',
    primary key (identifier, lang)
 );
 create table fixes_audit (
@@ -2688,7 +2689,7 @@ CREATE TABLE shedlock(name VARCHAR(64) NOT NULL, lock_until datetime NOT NULL,
 create table variant (
      id NVARCHAR(255) primary key,
      name NVARCHAR(255) not null UNIQUE,
-     archived tinyint not null,
+     archived tinyint not null default 0,
 );
 
 create table experiment (
@@ -2709,3 +2710,4 @@ create table experiment (
 );
 
 CREATE INDEX idx_exp_pageid ON experiment (page_id);
+

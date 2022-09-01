@@ -57,6 +57,8 @@ import com.dotmarketing.portlets.personas.business.PersonaFactory;
 import com.dotmarketing.portlets.personas.business.PersonaFactoryImpl;
 import com.dotmarketing.portlets.templates.business.TemplateFactory;
 import com.dotmarketing.portlets.templates.business.TemplateFactoryImpl;
+import com.dotcms.variant.VariantFactory;
+import com.dotcms.variant.VariantFactoryImpl;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.business.WorkflowFactoryImpl;
 import com.dotmarketing.tag.business.TagFactory;
@@ -240,6 +242,16 @@ public class FactoryLocator extends Locator<FactoryIndex>{
         return (HostFactory) getInstance(FactoryIndex.HOST_FACTORY);
     }
 
+    /**
+     * Returns the Factory object that handles operations related to {@link com.dotcms.variant.model.Variant} in dotCMS.
+     * Returns the Factory object that handles operations related to {@link Variant} in dotCMS.
+     *
+     * @return An instance of the {@link VariantFactory} object.
+     */
+    public static VariantFactory getVariantFactory() {
+        return (VariantFactory) getInstance(FactoryIndex.VARIANT_FACTORY);
+    }
+
     public static ExperimentsFactory getExperimentsFactory() {
         return (ExperimentsFactory) getInstance(FactoryIndex.EXPERIMENTS_FACTORY);
     }
@@ -318,6 +330,7 @@ enum FactoryIndex
 	RELATIONSHIP_FACTORY,
 	FIELD_FACTORY_2,
     FileAsset_Factory,
+    VARIANT_FACTORY,
     EXPERIMENTS_FACTORY;
 
 	Object create() {
@@ -357,6 +370,7 @@ enum FactoryIndex
             case TAG_FACTORY: return new TagFactoryImpl();
             case FileAsset_Factory: return new FileAssetFactoryImpl();
             case HOST_FACTORY : return new HostFactoryImpl();
+            case VARIANT_FACTORY:_FACTORY : return new VariantFactoryImpl();
             case EXPERIMENTS_FACTORY: return new ExperimentsFactoryImpl();
 		}
 		throw new AssertionError("Unknown Factory Index: " + this);
