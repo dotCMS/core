@@ -7,6 +7,7 @@ import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.ContentsWebAPI;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -32,6 +33,8 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONObject;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import org.apache.commons.lang.builder.ToStringBuilder;
@@ -94,7 +97,7 @@ public class ContentMap {
         this.host = host;
         this.context = context;
 	}
-	
+
 	/**
 	 * Use to get a value of the field on a content returned from the ContentTool Viewtool
 	 * This method gets called automatically when you place a "." after the contentmap object in Velocity<br/>
@@ -120,17 +123,17 @@ public class ContentMap {
 	 * @param fieldVariableName The velocity Variable name from the structure.
 	 * @return
 	 */
-	
+
 	public Object get(String fieldVariableName) {
 		return get(fieldVariableName, true);
 	}
-	
+
 	/**
 	 * Use to get an unparsed value of the field on a content returned from the ContentTool Viewtool, even if it contains velocity code
 	 * @param fieldVariableName The velocity Variable name from the structure.
 	 * @return
 	 */
-	
+
 	public Object getRaw(String fieldVariableName) {
 		return get(fieldVariableName, false);
 	}
@@ -140,7 +143,7 @@ public class ContentMap {
 	 * @param fieldVariableName String field var name
 	 * @return Map
 	 */
-	public Object getFieldVariables(String fieldVariableName) {
+	public Object getFieldVariables(final String fieldVariableName) {
 
 		final  Map<String, com.dotcms.contenttype.model.field.Field> fieldMap =
 				this.content.getContentType().fieldMap();
@@ -152,6 +155,35 @@ public class ContentMap {
 
 		return Collections.emptyMap();
 	}
+
+		/**
+    	 * Recovery the field variables as a json object
+    	 * @param fieldVariableName String field var name
+    	 * @return Map
+    	 */
+    	public Object getFieldVariablesJson(final String fieldVariableName) {
+
+    		final  Map<String, FieldVariable> fieldMap =
+    				(Map<String, FieldVariable>) this.getFieldVariables(fieldVariableName);
+
+    		final JSONObject jsonObject = new JSONObject();
+
+    		for (final Map.Entry<String, FieldVariable> fieldKey : fieldMap.entrySet()) {
+
+    			final JSONObject jsonObjectFieldVariable = new JSONObject();
+
+    			jsonObjectFieldVariable.put("value", fieldKey.getValue().value());
+    			jsonObjectFieldVariable.put("fieldId", fieldKey.getValue().fieldId());
+    			jsonObjectFieldVariable.put("key", fieldKey.getValue().key());
+    			jsonObjectFieldVariable.put("id", fieldKey.getValue().id());
+    			jsonObjectFieldVariable.put("modDate", fieldKey.getValue().modDate());
+    			jsonObjectFieldVariable.put("userId", fieldKey.getValue().userId());
+    			jsonObjectFieldVariable.put("name", fieldKey.getValue().name());
+    			jsonObject.put(fieldKey.getKey(), jsonObjectFieldVariable);
+    		}
+
+    		return jsonObject;
+    	}
 
 	/**
 	 * Returns the value of the specified field on this content returned by the {@link ContentTool} ViewTool. This method
@@ -211,7 +243,7 @@ public class ContentMap {
                 if (fieldvalue != null) {
                     return fieldvalue;
                 }
-			    
+
 			    final String fid = (String)conAPI.getFieldValue(content, f);
 				if(!UtilMethods.isSet(fid)){
 					return null;
@@ -272,7 +304,7 @@ public class ContentMap {
                     return bm;
                 }
 			//if the property being served is URL and the ContentType is a page show URL using the identifier information
-			}else if("url".equalsIgnoreCase(fieldVariableName) 
+			}else if("url".equalsIgnoreCase(fieldVariableName)
 			        && BaseContentType.HTMLPAGE.equals(content.getContentType().baseType())){
 				Identifier identifier = APILocator.getIdentifierAPI().find(content.getIdentifier());
 				if(InodeUtils.isSet(identifier.getId())){
@@ -538,7 +570,7 @@ public class ContentMap {
     /**
      * Returns the value object using the velocity var name stored in the Field
      * object
-     * 
+     *
      * @param field
      * @returns field value object (FileAssetMap or BinaryMap)
      */
@@ -578,7 +610,7 @@ public class ContentMap {
 	}
 	public boolean isWorking() throws Exception {
 	    return content.isWorking();
-	}	
+	}
 
 	public String toString() {
 		getContentletsTitle();
@@ -592,7 +624,7 @@ public class ContentMap {
 
 	/**
 	 * Returns the {@link Contentlet} object this map is associated to.
-	 * 
+	 *
 	 * @return The {@link Contentlet} object.
 	 */
 	public Contentlet getContentObject() {

@@ -1094,7 +1094,7 @@ public class APILocator extends Locator<APIIndex>{
 		return (VariantAPI) getInstance(APIIndex.VARIANT_API);
 	}
 
-	/*
+	/**
 	 * Creates a single instance of the {@link com.dotcms.experiments.business.ExperimentsAPI} class.
 	 * @return the instance
 	 */

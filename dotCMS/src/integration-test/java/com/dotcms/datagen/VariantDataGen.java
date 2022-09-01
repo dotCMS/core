@@ -30,12 +30,15 @@ public class VariantDataGen extends AbstractDataGen<Variant> {
     public Variant next() {
 
         final String innerId = id == null ? UUIDGenerator.generateUuid() : id;
-        final String innerName = name == null ? "Variant_" + System.currentTimeMillis() : name;
-        return Variant.builder()
-                .identifier(innerId)
-                .name(innerName)
-                .archived(archived)
-                .build();
+
+        synchronized (VariantDataGen.class) {
+            final String innerName = name == null ? "Variant_" + System.currentTimeMillis() : name;
+            return Variant.builder()
+                    .identifier(innerId)
+                    .name(innerName)
+                    .archived(archived)
+                    .build();
+        }
     }
 
     @Override

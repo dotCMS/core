@@ -1,5 +1,7 @@
 package com.dotcms.variant;
 
+
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rest.validation.Preconditions;
 import com.dotcms.util.DotPreconditions;
@@ -30,19 +32,14 @@ public class VariantAPIImpl implements VariantAPI {
      */
     @Override
     @WrapInTransaction
-    public Variant save(final Variant variant) {
-
+    public Variant save(final Variant variant) throws DotDataException {
         DotPreconditions.checkNotNull(variant.name(), IllegalArgumentException.class,
                 "Variant name should not be null");
         DotPreconditions.checkArgument(!variant.archived(), "Variant can not be created as archive");
 
         Logger.debug(this, ()-> "Saving Variant: " + variant);
 
-        try {
-            return variantFactory.save(variant);
-        } catch (DotDataException e) {
-            throw new RuntimeException(e);
-        }
+        return variantFactory.save(variant);
     }
 
     /**
@@ -53,21 +50,18 @@ public class VariantAPIImpl implements VariantAPI {
      */
     @Override
     @WrapInTransaction
-    public void update(final Variant variant) {
+    public void update(final Variant variant) throws DotDataException {
+
         Preconditions.checkNotNull(variant.name(), IllegalArgumentException.class,
                 "Variant name should not be null");
         Preconditions.checkNotNull(variant.identifier(), IllegalArgumentException.class ,
                 "Variant ID should not be null");
 
-        try {
-            get(variant.identifier())
-                    .orElseThrow(() -> new DoesNotExistException("The variant does not exists"));
+        get(variant.identifier())
+                .orElseThrow(() -> new DoesNotExistException("The variant does not exists"));
 
-            Logger.debug(this, () -> "Updating Variant: " + variant);
-            variantFactory.update(variant);
-        } catch (DotDataException e) {
-            throw new RuntimeException(e);
-        }
+        Logger.debug(this, () -> "Updating Variant: " + variant);
+        variantFactory.update(variant);
     }
 
     /**
@@ -76,7 +70,7 @@ public class VariantAPIImpl implements VariantAPI {
      */
     @Override
     @WrapInTransaction
-    public void delete(String id) {
+    public void delete(String id) throws DotDataException {
         final Variant variant = get(id).orElseThrow(() -> new DoesNotExistException("The variant must exists"));
 
         DotPreconditions.checkArgument(variant.archived(),
@@ -85,11 +79,7 @@ public class VariantAPIImpl implements VariantAPI {
 
         Logger.debug(this, ()-> "Deleting Variant: " + variant);
 
-        try {
-            variantFactory.delete(id);
-        } catch (DotDataException e) {
-            throw new RuntimeException(e);
-        }
+        variantFactory.delete(id);
     }
 
     /**
@@ -98,7 +88,7 @@ public class VariantAPIImpl implements VariantAPI {
      */
     @Override
     @WrapInTransaction
-    public void archive(final String id) {
+    public void archive(final String id) throws DotDataException {
         final Variant variant = get(id)
                 .orElseThrow(() -> new DoesNotExistException("The Variant does not exists"));
 
@@ -119,15 +109,12 @@ public class VariantAPIImpl implements VariantAPI {
      * @return
      */
     @Override
-    public Optional<Variant> get(final String identifier)  {
+    @CloseDBIfOpened
+    public Optional<Variant> get(final String identifier) throws DotDataException {
         Preconditions.checkNotNull(identifier, "Variant ID should not be null");
         Logger.debug(this, ()-> "Getting Variant by ID: " + identifier);
 
-        try {
-            return variantFactory.get(identifier);
-        } catch (DotDataException e) {
-            throw new RuntimeException(e);
-        }
+        return variantFactory.get(identifier);
     }
 
     /**
@@ -136,14 +123,12 @@ public class VariantAPIImpl implements VariantAPI {
      * @param name {@link Variant}'s identifier
      * @return
      */
-    public Optional<Variant> getByName(final String name) {
+    @Override
+    @CloseDBIfOpened
+    public Optional<Variant> getByName(final String name) throws DotDataException {
         Preconditions.checkNotNull(name, "Variant Name should not be null");
         Logger.debug(this, ()-> "Getting Variant by Name: " + name);
 
-        try {
-            return variantFactory.getByName(name);
-        } catch (DotDataException e) {
-            throw new RuntimeException(e);
-        }
+        return variantFactory.getByName(name);
     }
 }

@@ -101,7 +101,7 @@ public class VariantAPITest {
      * @throws DotDataException
      */
     @Test(expected = DoesNotExistException.class)
-    public void updateNotExists() {
+    public void updateNotExists() throws DotDataException {
         final Variant variantToUpdated = new VariantDataGen()
                 .id("Not_Exists").next();
 
@@ -168,7 +168,7 @@ public class VariantAPITest {
      * @throws DotDataException
      */
     @Test(expected = DoesNotExistException.class)
-    public void archiveNotExists() {
+    public void archiveNotExists() throws DotDataException {
         APILocator.getVariantAPI().archive("Not Exists");
     }
 
@@ -200,7 +200,7 @@ public class VariantAPITest {
      * @throws DotDataException
      */
     @Test(expected = DoesNotExistException.class)
-    public void deleteNotExists() {
+    public void deleteNotExists() throws DotDataException {
         final Variant variant = new VariantDataGen().id("Not Exists").archived(true).next();
 
         APILocator.getVariantAPI().delete(variant.identifier());
@@ -287,7 +287,7 @@ public class VariantAPITest {
      * @throws DotDataException
      */
     @Test(expected = NullPointerException.class)
-    public void getWithNull() {
+    public void getWithNull() throws DotDataException {
         APILocator.getVariantAPI().get(null);
     }
 
@@ -299,7 +299,7 @@ public class VariantAPITest {
      * @throws DotDataException
      */
     @Test
-    public void getByNameNotExists() {
+    public void getByNameNotExists() throws DotDataException {
 
         final Optional<Variant> variantFromDataBase = APILocator.getVariantAPI()
                 .getByName("Not_Exists");
@@ -315,7 +315,7 @@ public class VariantAPITest {
      * @throws DotDataException
      */
     @Test(expected = NullPointerException.class)
-    public void getByNameWithNull() {
+    public void getByNameWithNull() throws DotDataException {
         APILocator.getVariantAPI().getByName(null);
     }
 

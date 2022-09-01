@@ -2710,3 +2710,4 @@ create table experiment (
 );
 
 CREATE INDEX idx_exp_pageid ON experiment (page_id);
+

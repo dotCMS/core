@@ -21,7 +21,7 @@ describe('DotEventsService', () => {
             randomEvent++;
         });
 
-        dotEventsService.notify('test', [1, 2, 3]);
+        dotEventsService.notify<number[]>('test', [1, 2, 3]);
         dotEventsService.notify('randomEvent');
 
         expect(timesCalled).toEqual(1);
@@ -34,7 +34,7 @@ describe('DotEventsService', () => {
             numbersArray = value.data as number[];
         });
 
-        dotEventsService.notify('test', [1, 2, 3]);
+        dotEventsService.notify<number[]>('test', [1, 2, 3]);
 
         expect(numbersArray).toEqual([1, 2, 3]);
     });
