@@ -44,11 +44,11 @@ export class DotGlobalMessageComponent implements OnInit, OnDestroy {
         this.dotEventsService
             .listen('dot-global-message')
             .pipe(
-                filter((event: DotEvent) => !!event.data),
+                filter((event: DotEvent<DotGlobalMessage>) => !!event.data),
                 takeUntil(this.destroy$)
             )
-            .subscribe((event: DotEvent) => {
-                this.message = event.data as DotGlobalMessage;
+            .subscribe((event: DotEvent<DotGlobalMessage>) => {
+                this.message = event.data;
                 this.visibility = true;
                 this.message.type = this.icons[this.message.type] || '';
 

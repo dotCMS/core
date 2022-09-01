@@ -30,7 +30,7 @@ function toTitleCase(str) {
 }
 
 @Component({
-    selector: 'dotcms-block-editor',
+    selector: 'dot-block-editor',
     templateUrl: './dot-block-editor.component.html',
     styleUrls: ['./dot-block-editor.component.scss']
 })
@@ -38,15 +38,17 @@ export class DotBlockEditorComponent implements OnInit {
     @Input() lang = DEFAULT_LANG_ID;
     @Input() allowedContentTypes = '';
     @Input() customStyles = '';
+    @Input() value: { [key: string]: string } | string = ''; // can be HTML or JSON, see https://www.tiptap.dev/api/editor#content
 
     @Input() set allowedBlocks(blocks: string) {
-        this._allowedBlocks = ['paragraph', ...blocks.replace(/ /g, '').split(',').filter(Boolean)];
+        this._allowedBlocks = [
+            ...this._allowedBlocks,
+            ...(blocks ? blocks.replace(/ /g, '').split(',').filter(Boolean) : [])
+        ];
     }
 
-    _allowedBlocks = [];
+    _allowedBlocks = ['paragraph']; //paragraph should be always.
     editor: Editor;
-
-    value = ''; // can be HTML or JSON, see https://www.tiptap.dev/api/editor#content
 
     constructor(private injector: Injector, public viewContainerRef: ViewContainerRef) {}
 
@@ -91,7 +93,7 @@ export class DotBlockEditorComponent implements OnInit {
 
         return [
             ...defaultExtensions,
-            ...(this.allowedBlocks
+            ...(this._allowedBlocks.length > 1
                 ? [
                       StarterKit.configure(this.setStarterKitOptions()),
                       ...this.setCustomExtensions(customExtensions)
@@ -120,7 +122,7 @@ export class DotBlockEditorComponent implements OnInit {
         //Heading types supported by default in the editor.
         ['heading1', 'heading2', 'heading3', 'heading4', 'heading5', 'heading6'].forEach(
             (heading) => {
-                if (this._allowedBlocks[heading]) {
+                if (this._allowedBlocks.includes(heading)) {
                     headingOptions.levels.push(+heading.slice(-1) as Level);
                 }
             }
@@ -131,7 +133,7 @@ export class DotBlockEditorComponent implements OnInit {
             ...staterKitOptions.reduce(
                 (object, item) => ({
                     ...object,
-                    ...(this._allowedBlocks[item] ? {} : { [item]: false })
+                    ...(this._allowedBlocks.includes(item) ? {} : { [item]: false })
                 }),
                 {}
             )
@@ -140,8 +142,10 @@ export class DotBlockEditorComponent implements OnInit {
 
     private setCustomExtensions(customExtensions: Map<string, AnyExtension>): AnyExtension[] {
         return [
-            ...(this._allowedBlocks['contentlets'] ? [customExtensions['contentlets']] : []),
-            ...(this._allowedBlocks['dotImage'] ? [customExtensions['dotImage']] : [])
+            ...(this._allowedBlocks.includes('contentlets')
+                ? [customExtensions.get('contentlets')]
+                : []),
+            ...(this._allowedBlocks.includes('dotImage') ? [customExtensions.get('dotImage')] : [])
         ];
     }
 }

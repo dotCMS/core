@@ -2,8 +2,6 @@ import { filter } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { DotEvent } from '@models/dot-event/dot-event';
-import { DotContentCompareEvent } from '@components/dot-content-compare/dot-content-compare.component';
-import { DotGlobalMessage } from '@models/dot-global-message/dot-global-message.model';
 
 /**
  * Provide a Global service to Subscribe to custom events and notify subscribers when those events occur.
@@ -11,25 +9,28 @@ import { DotGlobalMessage } from '@models/dot-global-message/dot-global-message.
  */
 @Injectable()
 export class DotEventsService {
-    private subject: Subject<DotEvent> = new Subject();
+    private subject: Subject<DotEvent<unknown>> = new Subject();
 
     /**
      * Method to register a listener of a specif event.
      *
      * @param string eventName
-     * @returns Observable<DotEvent>
+     * @returns Observable<DotEvent<T>>
      */
-    listen(eventName: string): Observable<DotEvent> {
+    listen<T>(eventName: string): Observable<DotEvent<T>> {
         // TODO: need to make this method to support multiple events
-        return this.subject.asObservable().pipe(filter((res) => res.name === eventName));
+        return this.subject
+            .asObservable()
+            .pipe(filter((res: DotEvent<T>) => res.name === eventName));
     }
 
     /**
      * Method to notify subscribers of a specific event.
      *
-     * @param DotEvent dotEvent
+     * @param string name
+     * @param <T> data
      */
-    notify(name: string, data?: DotGlobalMessage | DotContentCompareEvent | number[]): void {
+    notify<T>(name: string, data?: T): void {
         this.subject.next({
             name: name,
             data: data

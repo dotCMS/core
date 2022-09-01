@@ -8,6 +8,8 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { CardModule } from 'primeng/card';
+import { OrderListModule } from 'primeng/orderlist';
+import { ListboxModule } from 'primeng/listbox';
 
 // DotCMS JS
 import { LoggerService } from '@dotcms/dotcms-js';
@@ -28,12 +30,16 @@ import {
     DragHandlerComponent,
     FormActionsComponent,
     LoaderComponent,
-    DotImageService
+    DotImageService,
+    SuggestionPageComponent
 } from './extensions';
 
 // Shared
 import { SharedModule } from './shared/shared.module';
 import { BubbleFormComponent } from './extensions/bubble-form/bubble-form.component';
+
+//Editor
+import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
 
 @NgModule({
     imports: [
@@ -45,7 +51,9 @@ import { BubbleFormComponent } from './extensions/bubble-form/bubble-form.compon
         CheckboxModule,
         ButtonModule,
         InputTextModule,
-        SharedModule
+        SharedModule,
+        OrderListModule,
+        ListboxModule
     ],
     declarations: [
         EditorDirective,
@@ -57,7 +65,9 @@ import { BubbleFormComponent } from './extensions/bubble-form/bubble-form.compon
         BubbleMenuButtonComponent,
         BubbleLinkFormComponent,
         FormActionsComponent,
-        BubbleFormComponent
+        BubbleFormComponent,
+        SuggestionPageComponent,
+        DotBlockEditorComponent
     ],
     providers: [DotImageService, LoggerService, StringUtils],
     exports: [
@@ -70,7 +80,8 @@ import { BubbleFormComponent } from './extensions/bubble-form/bubble-form.compon
         ButtonModule,
         InputTextModule,
         SharedModule,
-        BubbleFormComponent
+        BubbleFormComponent,
+        DotBlockEditorComponent
     ]
 })
 export class BlockEditorModule {}

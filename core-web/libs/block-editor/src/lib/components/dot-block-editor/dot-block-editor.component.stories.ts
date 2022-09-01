@@ -29,6 +29,7 @@ export default {
 const contentletsMock = [
     {
         name: 'Empty Content',
+        variable: 'empty',
         icon: 'hourglass_disabled',
         url: '/empty/empty-content',
         path: '/empty/empty-content',
@@ -49,7 +50,7 @@ const contentletsMock = [
         hasTitleImage: true,
         __icon__: 'contentIcon',
         contentTypeIcon: 'file_copy',
-        contentType: 'Blog'
+        contentType: 'empty'
     },
     {
         name: 'Blog',
@@ -242,8 +243,8 @@ export const primary = () => ({
                                 : contentletsMock
                         );
                     },
-                    getContentlets(type, filter = '') {
-                        if (type === 'empty') {
+                    getContentlets({ contentType, filter = '' }) {
+                        if (contentType === 'empty') {
                             return of([]).pipe(delay(800));
                         }
 

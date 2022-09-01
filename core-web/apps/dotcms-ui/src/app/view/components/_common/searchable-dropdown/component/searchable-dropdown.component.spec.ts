@@ -1,7 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { By } from '@angular/platform-browser';
-import { ComponentFixture, waitForAsync, fakeAsync, tick, TestBed, flush } from '@angular/core/testing';
+import {
+    ComponentFixture,
+    waitForAsync,
+    fakeAsync,
+    tick,
+    TestBed,
+    flush
+} from '@angular/core/testing';
 import { DebugElement, Component, Input } from '@angular/core';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
