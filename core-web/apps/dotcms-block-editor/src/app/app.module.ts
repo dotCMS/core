@@ -8,15 +8,13 @@ import { CommonModule } from '@angular/common';
 import { OrderListModule } from 'primeng/orderlist';
 import { ListboxModule } from 'primeng/listbox';
 
-import { DotBlockEditorComponent } from './dot-block-editor/dot-block-editor.component';
-
 import { createCustomElement } from '@angular/elements';
 import { AppComponent } from './app.component';
-import { BlockEditorModule } from '@dotcms/block-editor';
+import { DotBlockEditorComponent, BlockEditorModule } from '@dotcms/block-editor';
 import { HttpClientModule } from '@angular/common/http';
 
 @NgModule({
-    declarations: [AppComponent, DotBlockEditorComponent],
+    declarations: [AppComponent],
     imports: [
         BrowserModule,
         BrowserAnimationsModule,
