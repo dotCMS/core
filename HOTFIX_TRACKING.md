@@ -33,3 +33,4 @@ This maintenance release includes the following code fixes:
 **Release-22.03.3**
 
 24. https://github.com/dotCMS/core/issues/22692 : We replace the UserID with a hashed version of the UserID when creating SAML users #22692
+25. https://github.com/dotCMS/core/issues/22864 : Categories - $contentlet.categories can be slow #22864
