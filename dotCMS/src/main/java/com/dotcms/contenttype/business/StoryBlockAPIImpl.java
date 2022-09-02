@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.business;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.StoryBlockField;
@@ -33,6 +34,7 @@ import java.util.Set;
  */
 public class StoryBlockAPIImpl implements StoryBlockAPI {
 
+    @CloseDBIfOpened
     @Override
     public StoryBlockReferenceResult refreshReferences(final Contentlet contentlet) {
 
@@ -56,6 +58,8 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
 
         return new StoryBlockReferenceResult(refreshed.booleanValue(), contentlet);
     }
+
+    @CloseDBIfOpened
     @Override
     public  StoryBlockReferenceResult refreshStoryBlockValueReferences(final Object storyBlockValue) {
 
@@ -86,6 +90,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         } catch (final Exception e) {
 
             Logger.debug(StoryBlockAPIImpl.class, e.getMessage());
+            throw new RuntimeException(e);
         }
 
         return new StoryBlockReferenceResult(false, storyBlockValue); // return the original value and value didn't change
@@ -120,6 +125,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         return refreshed;
     }
 
+    @CloseDBIfOpened
     @Override
     public List<String> getDependencies(final Contentlet contentlet) {
 
@@ -133,6 +139,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         return contentletIdentifierList.build();
     }
 
+    @CloseDBIfOpened
     @Override
     public  List<String> getDependencies (final Object storyBlockValue) {
 
@@ -158,6 +165,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         } catch (final Exception e) {
 
             Logger.debug(StoryBlockAPIImpl.class, e.getMessage());
+            throw new RuntimeException(e);
         }
 
         return contentletIdentifierList.build();
@@ -174,9 +182,8 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         } catch (JsonProcessingException e) {
 
             Logger.debug(StoryBlockAPIImpl.class, e.getMessage());
+            throw new RuntimeException(e);
         }
-
-        return storyBlockValue;
     }
 
     private Map addContentlet(final Map storyBlockValueMap, final Contentlet contentlet) {

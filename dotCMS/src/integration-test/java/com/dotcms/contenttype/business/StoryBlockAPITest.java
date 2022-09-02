@@ -29,7 +29,7 @@ import java.util.Optional;
 public class StoryBlockAPITest extends IntegrationTestBase {
 
     private static final String JSON =
-            
+
                     "{\n" +
                     "            \"type\":\"doc\",\n" +
                     "            \"content\":[\n" +
