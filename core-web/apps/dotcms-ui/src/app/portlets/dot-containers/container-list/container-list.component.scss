@@ -2,15 +2,17 @@
 
 .container-listing__header-options {
     width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 $spacing-3;
 
-    div {
+    .container-listing__filter-controls {
         display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin: 0 $spacing-1;
-
-        .container-listing__filter-controls {
-            gap: $spacing-3;
-        }
+        gap: $spacing-3;
     }
+}
+
+dot-base-type-selector {
+    margin-right: $spacing-3;
 }

@@ -65,6 +65,7 @@ export class DotListingDataTableComponent implements OnInit {
     @ContentChildren(PrimeTemplate) templates: QueryList<ElementRef>;
 
     @ContentChild('rowTemplate') rowTemplate: TemplateRef<unknown>;
+    @ContentChild('beforeSearchTemplate') beforeSearchTemplate: TemplateRef<unknown>;
     @ContentChild('headerTemplate') headerTemplate: TemplateRef<unknown>;
 
     readonly DATE_FORMAT = 'date';

@@ -11,41 +11,38 @@
         dataKey="inode"
     >
         <div class="container-listing__header-options">
+            <div class="container-listing__filter-controls">
+                <button
+                    type="button"
+                    class="p-button-secondary p-button"
+                    pButton
+                    [label]="'Search' | dm"
+                ></button>
+                <p-checkbox
+                    data-testid="archiveCheckbox"
+                    [label]="'Show-Archived' | dm"
+                    [binary]="true"
+                    (onChange)="handleArchivedFilter($event.checked)"
+                ></p-checkbox>
+            </div>
+
             <div>
-                <div class="container-listing__filter-controls">
-                    <dot-base-type-selector></dot-base-type-selector>
-                    <button
-                        type="button"
-                        class="p-button-secondary p-button"
-                        pButton
-                        [label]="'Search' | dm"
-                    ></button>
-                    <p-checkbox
-                        data-testid="archiveCheckbox"
-                        [label]="'Show-Archived' | dm"
-                        [binary]="true"
-                        (onChange)="handleArchivedFilter($event.checked)"
-                    ></p-checkbox>
-                </div>
+                <button
+                    type="button"
+                    pButton
+                    class="p-button-secondary p-button"
+                    icon="pi pi-ellipsis-v"
+                    [label]="'Actions' | dm"
+                    (click)="actionsMenu.toggle($event)"
+                    attr.data-testid="bulkActions"
+                ></button>
 
-                <div>
-                    <button
-                        type="button"
-                        pButton
-                        class="p-button-secondary p-button"
-                        icon="pi pi-ellipsis-v"
-                        [label]="'Actions' | dm"
-                        (click)="actionsMenu.toggle($event)"
-                        attr.data-testid="bulkActions"
-                    ></button>
-
-                    <p-menu
-                        #actionsMenu
-                        [popup]="true"
-                        [model]="containerBulkActions"
-                        appendTo="body"
-                    ></p-menu>
-                </div>
+                <p-menu
+                    #actionsMenu
+                    [popup]="true"
+                    [model]="containerBulkActions"
+                    appendTo="body"
+                ></p-menu>
             </div>
         </div>
         <dot-empty-state
@@ -57,6 +54,10 @@
             [buttonLabel]="'message.template.empty.button.label' | dm"
         >
         </dot-empty-state>
+
+        <ng-template #beforeSearchTemplate>
+            <dot-base-type-selector></dot-base-type-selector>
+        </ng-template>
 
         <ng-template #rowTemplate let-rowData="rowData">
             <td [ngStyle]="{ 'text-align': tableColumns[0].textAlign }">

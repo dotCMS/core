@@ -1,4 +1,5 @@
 <dot-action-header [options]="actionHeaderOptions">
+    <ng-container [ngTemplateOutlet]="beforeSearchTemplate"></ng-container>
     <input
         #gf
         (input)="dataTable.filterGlobal($event.target.value, 'contains')"
