@@ -2,7 +2,6 @@ package com.dotcms.contenttype.business;
 
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.google.common.collect.ImmutableSet;
-import io.vavr.Tuple2;
 
 import java.util.List;
 import java.util.Set;
@@ -32,14 +31,14 @@ public interface StoryBlockAPI {
      * @param contentlet {@link Contentlet} to refresh
      * @return Contentlet content refreshed
      */
-    Tuple2<Boolean, Contentlet> refreshReferences(final Contentlet contentlet);
+    StoryBlockReferenceResult refreshReferences(final Contentlet contentlet);
 
     /**
      * Refresh the story block references for a story block json (The argument storyBlockValue will be converted to string and parse as json)
      * @param storyBlockValue Object
      * @return Tuple2 boolean if there was something to refresh, the object is the new object refreshed; if not anything to refresh return the same object sent as an argument
      */
-    Tuple2<Boolean, Object> refreshStoryBlockValueReferences(final Object storyBlockValue);
+    StoryBlockReferenceResult refreshStoryBlockValueReferences(final Object storyBlockValue);
 
     /**
      * For each {@link com.dotcms.contenttype.model.field.StoryBlockField} field, retrieve contentlet ids referrer on the

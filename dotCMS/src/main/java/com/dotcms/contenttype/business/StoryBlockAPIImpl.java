@@ -34,7 +34,7 @@ import java.util.Set;
 public class StoryBlockAPIImpl implements StoryBlockAPI {
 
     @Override
-    public Tuple2<Boolean, Contentlet> refreshReferences(final Contentlet contentlet) {
+    public StoryBlockReferenceResult refreshReferences(final Contentlet contentlet) {
 
         final MutableBoolean refreshed = new MutableBoolean(false);
         if (null != contentlet) {
@@ -44,20 +44,20 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                 final Object storyBlockValue = contentlet.get(field.variable());
                 if (null != storyBlockValue) {
 
-                    final Tuple2<Boolean, Object> result = this.refreshStoryBlockValueReferences(storyBlockValue);
-                    if (result._1()) { // the story block value has been changed and has been overridden
+                    final StoryBlockReferenceResult result = this.refreshStoryBlockValueReferences(storyBlockValue);
+                    if (result.isRefreshed()) { // the story block value has been changed and has been overridden
 
                         refreshed.setTrue();
-                        contentlet.setProperty(field.variable(), result._2());
+                        contentlet.setProperty(field.variable(), result.getValue());
                     }
                 }
             });
         }
 
-        return Tuple.of(refreshed.booleanValue(), contentlet);
+        return new StoryBlockReferenceResult(refreshed.booleanValue(), contentlet);
     }
     @Override
-    public  Tuple2<Boolean, Object> refreshStoryBlockValueReferences(final Object storyBlockValue) {
+    public  StoryBlockReferenceResult refreshStoryBlockValueReferences(final Object storyBlockValue) {
 
         boolean refreshed = false;
         try {
@@ -81,14 +81,14 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
 
             if (refreshed) {
 
-                return Tuple.of(true, toJson(blockEditorMap)); // has changed and the now json is returned
+                return new StoryBlockReferenceResult(true, toJson(blockEditorMap)); // has changed and the now json is returned
             }
         } catch (final Exception e) {
 
             Logger.debug(StoryBlockAPIImpl.class, e.getMessage());
         }
 
-        return Tuple.of(false, storyBlockValue); // return the original value and value didn't change
+        return new StoryBlockReferenceResult(false, storyBlockValue); // return the original value and value didn't change
     }
 
     private boolean refreshStoryBlockMap(final Map contentMap) throws DotDataException, DotSecurityException {

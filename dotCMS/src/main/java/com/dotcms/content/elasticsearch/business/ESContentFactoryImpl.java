@@ -16,6 +16,7 @@ import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.contenttype.business.StoryBlockReferenceResult;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -879,13 +880,14 @@ public class ESContentFactoryImpl extends ContentletFactory {
      */
     private Contentlet processContentletCache (final Contentlet contentletCached) {
 
-        final Tuple2<Boolean, Contentlet> storyBlockRefreshedResult =
+        final StoryBlockReferenceResult storyBlockRefreshedResult =
                 APILocator.getStoryBlockAPI().refreshReferences(contentletCached);
 
-        if (storyBlockRefreshedResult._1()) {
+        if (storyBlockRefreshedResult.isRefreshed()) {
 
-            contentletCache.add(storyBlockRefreshedResult._2().getInode(), storyBlockRefreshedResult._2());
-            return storyBlockRefreshedResult._2();
+            final Contentlet refreshedContentlet  = (Contentlet) storyBlockRefreshedResult.getValue();
+            contentletCache.add(refreshedContentlet.getInode(), refreshedContentlet);
+            return refreshedContentlet;
         }
 
         return contentletCached;

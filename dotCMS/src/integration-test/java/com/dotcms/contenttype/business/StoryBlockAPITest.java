@@ -29,6 +29,7 @@ import java.util.Optional;
 public class StoryBlockAPITest extends IntegrationTestBase {
 
     private static final String JSON =
+            
                     "{\n" +
                     "            \"type\":\"doc\",\n" +
                     "            \"content\":[\n" +
@@ -130,13 +131,13 @@ public class StoryBlockAPITest extends IntegrationTestBase {
                 APILocator.getContentletAPI().checkin(newRichTextContentlet, APILocator.systemUser(), false), APILocator.systemUser(), false);
 
         // 5) ask for refreshing references, the new changes of the rich text contentlet should be reflected on the json
-        final Tuple2<Boolean, Object> refreshResult = APILocator.getStoryBlockAPI().refreshStoryBlockValueReferences(newStoryBlockJson);
+        final StoryBlockReferenceResult refreshResult = APILocator.getStoryBlockAPI().refreshStoryBlockValueReferences(newStoryBlockJson);
 
         // 6) check if the results are ok.
-        Assert.assertTrue(refreshResult._1());
-        Assert.assertNotNull(refreshResult._2());
+        Assert.assertTrue(refreshResult.isRefreshed());
+        Assert.assertNotNull(refreshResult.getValue());
         final Map    refreshedStoryBlockMap         = ContentletJsonHelper.INSTANCE.get().objectMapper()
-                .readValue(Try.of(() -> refreshResult._2().toString())
+                .readValue(Try.of(() -> refreshResult.getValue().toString())
                         .getOrElse(StringPool.BLANK), LinkedHashMap.class);
         final List refreshedContentList = (List) refreshedStoryBlockMap.get("content");
         final Optional<Object> refreshedfirstContentletMap = refreshedContentList.stream()
