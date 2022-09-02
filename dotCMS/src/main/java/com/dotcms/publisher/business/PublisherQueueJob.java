@@ -208,7 +208,7 @@ public class PublisherQueueJob implements StatefulJob {
 				}
 				Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job");
 			}
-		} catch (final Exception e) {
+		} catch (final Throwable e) {
 			Logger.error(PublisherQueueJob.class, "An error occurred when trying to publish bundles: " + e.getMessage
 					(), e);
 		}

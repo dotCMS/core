@@ -1,0 +1,23 @@
+<div *ngIf="items.length; else emptyBlock">
+    <h3>{{ title }}</h3>
+    <dot-suggestion-list #list>
+        <dot-suggestions-list-item
+            *ngFor="let item of items; let i = index"
+            [command]="item.command"
+            [index]="i"
+            [label]="item.label"
+            [url]="item.icon"
+            [data]="item.data"
+        >
+        </dot-suggestions-list-item>
+    </dot-suggestion-list>
+</div>
+
+<ng-template #emptyBlock>
+    <dot-empty-message
+        [title]="noResultsMessage"
+        [showBackBtn]="!isFilterActive"
+        (back)="handleBackButton()"
+    >
+    </dot-empty-message>
+</ng-template>
