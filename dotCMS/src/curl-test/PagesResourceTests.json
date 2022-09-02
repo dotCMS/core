@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "34e0845d-ae70-4f9a-9bed-bb7990c3518f",
+		"_postman_id": "423e3f39-d4c5-4389-acad-8f5496ccb9bb",
 		"name": "Page API - [api/v1/page]",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "4500400"
+		"_exporter_id": "781456"
 	},
 	"item": [
 		{
@@ -2974,6 +2974,453 @@
 			]
 		},
 		{
+			"name": "TestHostVariables",
+			"item": [
+				{
+					"name": "Create new Site For Test Host Variables",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Host check\", function () {",
+									"    pm.expect(jsonData.entity.siteName).to.eql('sitevariables.site.com');",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"siteIdTestHost\", jsonData.entity.identifier);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"siteName\":\"sitevariables.site.com\"\n\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Publish Site",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site/{{siteIdTestHost}}/_publish",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"{{siteIdTestHost}}",
+								"_publish"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Site Variable",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Host check\", function () {",
+									"    pm.expect(jsonData.entity.key).to.eql('onevar1');",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"sitevariableIdTestHost\", jsonData.entity.id);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"siteId\":\"{{siteIdTestHost}}\",\n    \"name\":\"onevar1\",\n    \"key\":\"onevar1\",\n    \"value\":\"onevar-value\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site/variable",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"variable"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CreateNewContainer Test Host Variables",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.title).to.eql(\"TestContainerHostVariables\");",
+									"    pm.expect(jsonData.entity.notes).to.eql(\"Notes\");",
+									"    ",
+									"    ",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"containeridentifier\", jsonData.entity.identifier);",
+									"pm.collectionVariables.set(\"inode\", jsonData.entity.inode);",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\":\"TestContainerHostVariables\",\n    \"friendlyName\":\"TestContainer description HostVariables\",\n    \"maxContentlets\":1,\n    \"notes\":\"Notes\",\n    \"preLoop\":\"preLoop $host_variable.onevar1\",\n    \"postLoop\":\"postLoop xxxx\",\n    \"containerStructures\":[\n        {\n            \"structureId\":\"webPageContent\",\n            \"code\":\"$title  on container\"\n        }\n    ]\n\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers"
+							]
+						},
+						"description": "Create a container"
+					},
+					"response": []
+				},
+				{
+					"name": "SavePublishNewTemplateTestHostVariables",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"live check\", function () {",
+									"    pm.expect(jsonData.entity.live).to.eql(true);",
+									"});",
+									"",
+									"",
+									"pm.test(\"Title check\", function () {",
+									"    pm.expect(jsonData.entity.title).to.eql('PostMan Test Save Publish Test Host Variables');",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"templateIdToPublishedHost\", jsonData.entity.identifier);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\":\"PostMan Test Save Publish Test Host Variables\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"#parseContainer('{{containeridentifier}}','1659543155955')\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_savepublish",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_savepublish"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Page using the template",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Path check\", function () {",
+									"    pm.expect(jsonData.entity.path).to.eql(\"/testpagehostvariables\");",
+									"});",
+									"",
+									"",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"pageUrlHostVariablestest\", pm.response.json().path);",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"htmlpageasset\",\n        \"hostFolder\": \"{{siteIdTestHost}}\",\n        \"title\": \"Test Page Host variables\",\n        \"url\": \"testpagehostvariables\",\n        \"template\":\"{{templateIdToPublishedHost}}\",\n        \"sortOrder\":1,\n        \"cachettl\":\"0\",\n        \"friendlyName\":\"testpagehostvariables\"\n\n    }\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						},
+						"description": "Fire any action using the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here.\n\n@Path(\"/actions/{actionId}/fire\")"
+					},
+					"response": []
+				},
+				{
+					"name": "Test the host variables",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var text = pm.response.text();",
+									"",
+									"pm.test(\"Path check\", function () {",
+									"    pm.expect(text).to.include(\"onevar-value\");",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/render/testpagehostvariables?language_id=1&host_id={{siteIdTestHost}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"render",
+								"testpagehostvariables"
+							],
+							"query": [
+								{
+									"key": "language_id",
+									"value": "1"
+								},
+								{
+									"key": "host_id",
+									"value": "{{siteIdTestHost}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "1.  This test creates a Host with two variables\n2.  Creates a container with the generic contentlet and use this two variables\n3.  Creates a template that uses this container\n4.  creates a page that uses this page\n5.  Check that the page exists."
+		},
+		{
 			"name": "Put Create Page With CacheTTL 100",
 			"event": [
 				{
@@ -3150,6 +3597,42 @@
 		{
 			"key": "serverURL",
 			"value": "http://localhost:8080"
+		},
+		{
+			"key": "siteIdTestHost",
+			"value": ""
+		},
+		{
+			"key": "sitevariableIdTestHost",
+			"value": ""
+		},
+		{
+			"key": "containeridentifier",
+			"value": ""
+		},
+		{
+			"key": "inode",
+			"value": ""
+		},
+		{
+			"key": "templateIdToPublishedHost",
+			"value": ""
+		},
+		{
+			"key": "contentletIdentifier",
+			"value": ""
+		},
+		{
+			"key": "contentletInode",
+			"value": ""
+		},
+		{
+			"key": "fireActionLanguageKey",
+			"value": ""
+		},
+		{
+			"key": "pageUrlHostVariablestest",
+			"value": ""
 		}
 	]
 }

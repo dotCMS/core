@@ -83,13 +83,16 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
                             actualLength
                         );
                         break;
+
                     default:
                         errorTranslated = NG_DEFAULT_VALIDATORS_ERRORS_MSG[key];
                         break;
                 }
+
                 errorMsgs = [...errorMsgs, errorTranslated];
             }
         });
+
         return errorMsgs;
     }
 
@@ -100,6 +103,7 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
                 errorMsgs = [...errorMsgs, value];
             }
         });
+
         return errorMsgs;
     }
 }

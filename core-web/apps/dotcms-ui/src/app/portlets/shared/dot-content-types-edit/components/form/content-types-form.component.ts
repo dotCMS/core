@@ -8,7 +8,12 @@ import {
     ViewChild,
     OnDestroy
 } from '@angular/core';
-import { UntypedFormGroup, UntypedFormBuilder, Validators, UntypedFormControl } from '@angular/forms';
+import {
+    UntypedFormGroup,
+    UntypedFormBuilder,
+    Validators,
+    UntypedFormControl
+} from '@angular/forms';
 
 import { Observable, Subject } from 'rxjs';
 import { take, takeUntil, filter } from 'rxjs/operators';
@@ -122,6 +127,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
 
     private setNameFieldLabel(): string {
         const type = this.data.baseType.toLowerCase();
+
         return `${this.dotMessageService.get(
             `contenttypes.content.${type}`
         )} ${this.dotMessageService.get('contenttypes.form.name')} *`;
@@ -204,8 +210,10 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     private getActionIdentifier(actionMap: DotCMSSystemActionMappings): string {
         if (Object.keys(actionMap).length) {
             const item = actionMap[DotCMSSystemActionType.NEW];
+
             return this.getWorkflowActionId(item);
         }
+
         return '';
     }
 
@@ -267,7 +275,10 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
 
     private setBaseTypeContentSpecificFields(): void {
         if (this.isBaseTypeContent()) {
-            this.form.addControl('detailPage', new UntypedFormControl(this.getProp(this.data.detailPage)));
+            this.form.addControl(
+                'detailPage',
+                new UntypedFormControl(this.getProp(this.data.detailPage))
+            );
             this.form.addControl(
                 'urlMapPattern',
                 new UntypedFormControl(this.getProp(this.data.urlMapPattern))
@@ -315,6 +326,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
             this.originalValue.systemActionMappings[DotCMSSystemActionType.NEW] =
                 workflowActionControl.value;
         }
+
         this.setSaveState();
     }
 

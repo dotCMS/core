@@ -61,6 +61,7 @@ export class DotPageStateService {
     getInternalNavigationState(): DotPageRenderState {
         if (this.isInternalNavigation) {
             this.isInternalNavigation = false;
+
             return this.currentState;
         }
 
@@ -181,6 +182,7 @@ export class DotPageStateService {
     requestPage(options: DotPageRenderOptions): Observable<DotPageRenderState> {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { url, ...extraParams } = this.dotRouterService.queryParams;
+
         return this.dotPageRenderService.get(options, extraParams).pipe(
             catchError((err) => this.handleSetPageStateFailed(err)),
             take(1),
@@ -188,6 +190,7 @@ export class DotPageStateService {
                 if (page) {
                     const pageState = new DotPageRenderState(this.getCurrentUser(), page);
                     this.setCurrentState(pageState);
+
                     return pageState;
                 }
 

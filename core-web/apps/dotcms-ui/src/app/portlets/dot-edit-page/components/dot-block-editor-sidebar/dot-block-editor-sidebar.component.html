@@ -1,0 +1,42 @@
+<p-sidebar
+    #sidebar
+    [blockScroll]="true"
+    [visible]="!!blockEditorInput"
+    position="right"
+    [dismissible]="false"
+    [showCloseIcon]="false"
+    [closeOnEscape]="false"
+    (onHide)="sidebar.destroyModal(); closeSidebar()"
+    data-testid="sidebar"
+>
+    <div class="container" *ngIf="blockEditorInput">
+        <dot-block-editor
+            #blockEditor
+            [lang]="blockEditorInput.language"
+            [allowedBlocks]="blockEditorInput.fieldVariables.allowedBlocks"
+            [allowedContentTypes]="blockEditorInput.fieldVariables.allowedContentTypes"
+            [value]="blockEditorInput.content"
+            [customStyles]="blockEditorInput.fieldVariables.styles"
+        >
+        </dot-block-editor>
+        <footer>
+            <button
+                pButton
+                class="p-button-secondary"
+                type="button"
+                (click)="closeSidebar()"
+                [label]="'Cancel' | dm"
+                data-testid="cancelBtn"
+            ></button>
+            <button
+                [disabled]="saving"
+                [loading]="saving"
+                pButton
+                type="button"
+                (click)="saveEditorChanges()"
+                [label]="'Update' | dm"
+                data-testid="updateBtn"
+            ></button>
+        </footer>
+    </div>
+</p-sidebar>

@@ -10,6 +10,7 @@ interface DotActionRequestOptions {
     contentType?: string;
     data: { [key: string]: string };
     action: ActionToFire;
+    individualPermissions?: { [key: string]: string[] };
 }
 
 enum ActionToFire {
@@ -84,11 +85,16 @@ export class DotWorkflowActionsFireService {
      * @returns {Observable<T>}
      * @memberof DotWorkflowActionsFireService
      */
-    publishContentlet<T>(contentType: string, data: { [key: string]: string }): Observable<T> {
+    publishContentlet<T>(
+        contentType: string,
+        data: { [key: string]: string },
+        individualPermissions?: { [key: string]: string[] }
+    ): Observable<T> {
         return this.request<T>({
             contentType,
             data,
-            action: ActionToFire.PUBLISH
+            action: ActionToFire.PUBLISH,
+            individualPermissions
         });
     }
     /**
@@ -118,16 +124,29 @@ export class DotWorkflowActionsFireService {
      */
     publishContentletAndWaitForIndex<T>(
         contentType: string,
-        data: { [key: string]: string }
+        data: { [key: string]: string | number },
+        individualPermissions?: { [key: string]: string[] }
     ): Observable<T> {
-        return this.publishContentlet(contentType, {
-            ...data,
-            ...{ indexPolicy: 'WAIT_FOR' }
-        });
+        return this.publishContentlet(
+            contentType,
+            {
+                ...data,
+                ...{ indexPolicy: 'WAIT_FOR' }
+            },
+            individualPermissions
+        );
     }
 
-    private request<T>({ contentType, data, action }: DotActionRequestOptions): Observable<T> {
+    private request<T>({
+        contentType,
+        data,
+        action,
+        individualPermissions
+    }: DotActionRequestOptions): Observable<T> {
         const contentlet = contentType ? { contentType: contentType, ...data } : data;
+        const bodyRequest = individualPermissions
+            ? { contentlet, individualPermissions }
+            : { contentlet };
 
         return this.coreWebService
             .requestView({
@@ -135,7 +154,7 @@ export class DotWorkflowActionsFireService {
                 url: `v1/workflow/actions/default/fire/${action}${
                     data.inode ? `?inode=${data.inode}` : ''
                 }`,
-                body: { contentlet }
+                body: bodyRequest
             })
             .pipe(take(1), pluck('entity'));
     }

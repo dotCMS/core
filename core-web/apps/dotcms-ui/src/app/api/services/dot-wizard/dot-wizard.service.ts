@@ -28,6 +28,7 @@ export class DotWizardService {
      */
     open<T = { [key: string]: string }>(data: DotWizardInput): Observable<T> {
         this.input.next(data);
+
         return this.output.asObservable() as Observable<T>;
     }
 }

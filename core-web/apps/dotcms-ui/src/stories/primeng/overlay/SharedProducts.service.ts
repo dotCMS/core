@@ -84,6 +84,7 @@ export class ProductService {
         };
 
         product.image = product.name.toLocaleLowerCase().split(/[ ,]+/).join('-') + '.jpg';
+
         return product;
     }
 

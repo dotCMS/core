@@ -25,6 +25,7 @@ export const mockKeyValue = [
         value: '*****'
     }
 ];
+
 @Component({
     selector: 'dot-test-host-component',
     template: `

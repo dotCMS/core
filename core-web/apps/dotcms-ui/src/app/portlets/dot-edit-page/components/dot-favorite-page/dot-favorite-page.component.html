@@ -1,0 +1,60 @@
+<dot-form-dialog
+    data-testId="dialogForm"
+    [saveButtonDisabled]="(isFormValid$ | async) === false"
+    (cancel)="onCancel()"
+    (save)="onSave()"
+    *ngIf="vm$ | async as vm"
+>
+    <form class="p-fluid" [formGroup]="form" data-testId="form" *ngIf="form">
+        <div class="field" data-testId="thumbnailField">
+            <label for="previewThumbnail" class="p-label-input-required">{{
+                'preview' | dm
+            }}</label>
+            <dot-html-to-image
+                [value]="vm.pageRenderedHtml"
+                [width]="vm.imgWidth"
+                [height]="vm.imgHeight"
+            ></dot-html-to-image>
+        </div>
+        <div class="field" data-testId="titleField">
+            <label for="title" class="p-label-input-required">{{ 'title' | dm }}</label>
+            <input
+                id="title"
+                pInputText
+                formControlName="title"
+                autofocus
+                data-testId="favoritePageTitleField"
+            />
+            <dot-field-validation-message
+                [field]="form.get('title')"
+            ></dot-field-validation-message>
+        </div>
+        <div class="field" data-testId="urlField">
+            <label for="url" class="p-label-input-required">{{ 'url' | dm }}</label>
+            <input id="url" pInputText formControlName="url" data-testId="favoritePageUrlField" />
+            <dot-field-validation-message [field]="form.get('url')"></dot-field-validation-message>
+        </div>
+        <div class="field" data-testId="orderField">
+            <label for="order" class="p-label-input-required">{{ 'order' | dm }}</label>
+            <input
+                id="order"
+                pInputText
+                formControlName="order"
+                data-testId="favoritePageOrderField"
+            />
+            <dot-field-validation-message
+                [field]="form.get('order')"
+            ></dot-field-validation-message>
+        </div>
+        <div class="field" data-testId="shareWithField" *ngIf="vm.isAdmin">
+            <label for="permissions">{{ 'favoritePage.dialog.field.shareWith' | dm }}</label>
+            <p-multiSelect
+                id="permissions"
+                [options]="vm.roleOptions"
+                formControlName="permissions"
+                optionLabel="name"
+                appendTo="body"
+            ></p-multiSelect>
+        </div>
+    </form>
+</dot-form-dialog>

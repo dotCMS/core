@@ -130,7 +130,7 @@ public class UpdatePageTemplatePathJob extends DotStatefulJob {
         }
         if (DbConnectionFactory.isMsSql()) {
             select = String
-                    .format("SELECT identifier, inode, JSON_VALUE(contentlet_as_json,'$.fields.template.value') as template FROM testing.dbo.contentlet WHERE JSON_VALUE(contentlet_as_json,'$.fields.template.type') = 'Custom' AND JSON_VALUE(contentlet_as_json,'$.fields.template.value') LIKE '%s' ",
+                    .format("SELECT identifier, inode, JSON_VALUE(contentlet_as_json,'$.fields.template.value') as template FROM contentlet WHERE JSON_VALUE(contentlet_as_json,'$.fields.template.type') = 'Custom' AND JSON_VALUE(contentlet_as_json,'$.fields.template.value') LIKE '%s' ",
                             templateName + "%");
         }
 
@@ -203,7 +203,7 @@ public class UpdatePageTemplatePathJob extends DotStatefulJob {
 
         long startTime = System.currentTimeMillis();
         final SimpleTrigger trigger = new SimpleTrigger(
-                "updatePageTemplatePathTrigger",
+                "updatePageTemplatePathTrigger-" + randomID,
                 "update_page_template_path_job_triggers",
                 new Date(startTime)
         );

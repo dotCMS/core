@@ -98,6 +98,7 @@ export class DotLicenseService {
             take(1),
             map((isEnterpriseUser: boolean) => {
                 const urlMatch = this.checksIfEnterpriseUrl(url);
+
                 return urlMatch ? urlMatch && isEnterpriseUser : true;
             })
         );
@@ -110,6 +111,7 @@ export class DotLicenseService {
         if (urlMatch.length) {
             this.unlicenseData.next(...urlMatch);
         }
+
         return !!urlMatch.length;
     }
 

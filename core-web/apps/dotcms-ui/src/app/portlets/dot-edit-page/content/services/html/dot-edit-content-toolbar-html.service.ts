@@ -218,6 +218,7 @@ export class DotEditContentToolbarHtmlService {
                         item,
                         container
                     );
+
                     return {
                         label: this.dotMessageService.get(
                             `editpage.content.container.menu.${item}`
@@ -249,6 +250,7 @@ export class DotEditContentToolbarHtmlService {
         const contentletsSize = Array.from(
             container.querySelectorAll('[data-dot-object="contentlet"]')
         ).length;
+
         return parseInt(container.dataset.maxContentlets, 10) <= contentletsSize;
     }
 

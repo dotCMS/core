@@ -11,6 +11,7 @@ import com.dotcms.model.config.ServiceBean;
 import io.quarkus.arc.DefaultBean;
 import io.quarkus.runtime.StartupEvent;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import javax.enterprise.context.ApplicationScoped;
@@ -110,6 +111,14 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
               this.token = credentials.token();
             }
         });
+    }
+
+    public void reset(){
+        this.user = null;
+        if(null != this.token && this.token.length > 0){
+             Arrays.fill(this.token,(char)0);
+        }
+        this.token = null;
     }
 
 }

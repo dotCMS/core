@@ -1,0 +1,10 @@
+@use "libs/block-editor/src/lib/scss/variables" as *;
+
+:host {
+    display: block;
+    margin-bottom: $dot-editor-size;
+
+    img {
+        max-width: 100%;
+    }
+}

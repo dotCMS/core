@@ -36,6 +36,8 @@ public abstract class RoleFactory {
 	protected abstract Role getRoleById(String roleId) throws DotDataException;
 	
 	protected abstract List<Role> getRolesByName(String filter, int start,int limit) throws DotDataException;
+
+	protected abstract  List<Role> getRolesByKeyFiltered(String filter, int start, int limit) throws DotDataException;
 	
 	protected abstract void delete(Role object) throws DotDataException;
 	
@@ -102,4 +104,6 @@ public abstract class RoleFactory {
 	 * @return Optional LayoutsROles
 	 */
 	protected abstract Optional<LayoutsRoles> findLayoutsRole(Layout layout, Role role);
+
+
 }

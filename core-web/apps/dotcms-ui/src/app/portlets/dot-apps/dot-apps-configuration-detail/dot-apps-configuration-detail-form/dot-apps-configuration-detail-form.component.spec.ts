@@ -259,6 +259,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
                         warnings: [`error ${i}`]
                     };
                 }
+
                 return item;
             });
             fixture.detectChanges();

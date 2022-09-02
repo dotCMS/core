@@ -29,6 +29,7 @@ export function createDotAsset(
             fetchAsset(options.url, data)
                 .then((response: Response) => {
                     options.updateCallback(filesCreated++);
+
                     return response;
                 })
                 .catch((e) => e)
@@ -48,6 +49,7 @@ export function createDotAsset(
                 } catch {
                     message = fallbackErrorMessages[res.status];
                 }
+
                 errors.push({
                     message: message,
                     status: res.status

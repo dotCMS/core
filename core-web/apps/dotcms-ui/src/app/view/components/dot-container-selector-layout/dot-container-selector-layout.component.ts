@@ -97,6 +97,7 @@ export class DotContainerSelectorLayoutComponent implements OnInit {
         return items.map((dotContainer) => {
             dotContainer.identifier =
                 this.templateContainersCacheService.getContainerReference(dotContainer);
+
             return dotContainer;
         });
     }

@@ -91,6 +91,7 @@ export class DotHttpErrorManagerService {
             message: this.dotMessageService.get('dot.common.http.error.403.message'),
             header: this.dotMessageService.get('dot.common.http.error.403.header')
         });
+
         return false;
     }
 
@@ -99,6 +100,7 @@ export class DotHttpErrorManagerService {
             message: this.dotMessageService.get('dot.common.http.error.403.license.message'),
             header: this.dotMessageService.get('dot.common.http.error.403.license.header')
         });
+
         return false;
     }
 
@@ -107,6 +109,7 @@ export class DotHttpErrorManagerService {
             message: this.dotMessageService.get('dot.common.http.error.404.message'),
             header: this.dotMessageService.get('dot.common.http.error.404.header')
         });
+
         return false;
     }
 
@@ -117,6 +120,7 @@ export class DotHttpErrorManagerService {
                 this.dotMessageService.get('dot.common.http.error.500.message'),
             header: this.dotMessageService.get('dot.common.http.error.500.header')
         });
+
         return false;
     }
 
@@ -127,6 +131,7 @@ export class DotHttpErrorManagerService {
                 this.dotMessageService.get('dot.common.http.error.400.message'),
             header: this.dotMessageService.get('dot.common.http.error.400.header')
         });
+
         return false;
     }
 
@@ -135,6 +140,7 @@ export class DotHttpErrorManagerService {
             message: this.dotMessageService.get('dot.common.http.error.204.message'),
             header: this.dotMessageService.get('dot.common.http.error.204.header')
         });
+
         return false;
     }
 
@@ -143,8 +149,10 @@ export class DotHttpErrorManagerService {
             this.handleForbidden();
         } else {
             this.dotRouterService.goToLogin();
+
             return true;
         }
+
         return false;
     }
 
@@ -155,6 +163,7 @@ export class DotHttpErrorManagerService {
         } else {
             msg = response['error'] ? response['error']['message'] : null;
         }
+
         return msg;
     }
 }

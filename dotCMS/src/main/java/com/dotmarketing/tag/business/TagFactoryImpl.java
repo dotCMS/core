@@ -119,6 +119,7 @@ public class TagFactoryImpl implements TagFactory {
     public List<Tag> getSuggestedTags(final String name, final String siteId) throws DotDataException {
         //Execute the search
         final DotConnect dc = new DotConnect();
+
         if ( UtilMethods.isSet(siteId) ) {
             dc.setSQL("SELECT * FROM tag WHERE tagname LIKE ? AND (host_id LIKE ? OR host_id LIKE ?) ORDER BY tagname, host_id");
         } else {
@@ -126,9 +127,9 @@ public class TagFactoryImpl implements TagFactory {
         }
 
         dc.addParam("%" + name.toLowerCase() + "%");
-        dc.addParam(Host.SYSTEM_HOST);
+        dc.addParam("%" + Host.SYSTEM_HOST + "%");
         if ( UtilMethods.isSet(siteId) ) {
-            dc.addParam(siteId);
+            dc.addParam("%" + siteId + "%");
         }
 
         //Convert and return the list of found tags excluding tags with the same tag name

@@ -24,6 +24,7 @@ const PasswordTemplate = `<input type="password" pPassword />`;
 
 const Template: Story<never> = (props: never) => {
     const template = PasswordTemplate;
+
     return {
         props,
         template

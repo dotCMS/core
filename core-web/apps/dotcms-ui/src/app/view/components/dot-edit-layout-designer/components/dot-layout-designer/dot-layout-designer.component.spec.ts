@@ -88,34 +88,33 @@ describe('DotLayoutDesignerComponent', () => {
     let component: DotLayoutDesignerComponent;
     let de: DebugElement;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [
-                    DotMessagePipe,
-                    TestHostComponent,
-                    DotLayoutDesignerComponent,
-                    MockDotEditLayoutGridComponent,
-                    MockDotEditLayoutSidebarComponent
-                ],
-                imports: [FormsModule, ReactiveFormsModule],
-                providers: [
-                    {
-                        provide: DotMessageService,
-                        useValue: {
-                            get(value) {
-                                const map = {
-                                    'editpage.layout.designer.header': 'HEADER',
-                                    'editpage.layout.designer.footer': 'FOOTER'
-                                };
-                                return map[value];
-                            }
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [
+                DotMessagePipe,
+                TestHostComponent,
+                DotLayoutDesignerComponent,
+                MockDotEditLayoutGridComponent,
+                MockDotEditLayoutSidebarComponent
+            ],
+            imports: [FormsModule, ReactiveFormsModule],
+            providers: [
+                {
+                    provide: DotMessageService,
+                    useValue: {
+                        get(value) {
+                            const map = {
+                                'editpage.layout.designer.header': 'HEADER',
+                                'editpage.layout.designer.footer': 'FOOTER'
+                            };
+
+                            return map[value];
                         }
                     }
-                ]
-            }).compileComponents();
-        })
-    );
+                }
+            ]
+        }).compileComponents();
+    }));
 
     beforeEach(() => {
         hostFixture = TestBed.createComponent(TestHostComponent);

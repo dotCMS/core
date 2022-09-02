@@ -119,6 +119,7 @@ export class DotNavItemComponent {
     private isThereEnoughTopSpace(subMenuHeight: number): boolean {
         const availableTopSpace =
             this.hostElRef.nativeElement.getBoundingClientRect().bottom - this.mainHeaderHeight;
+
         return availableTopSpace > subMenuHeight;
     }
 }

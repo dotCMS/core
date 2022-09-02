@@ -131,6 +131,7 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
                     this.dotGlobalMessageService.loading(
                         this.dotMessageService.get('dot.common.message.saving')
                     );
+
                     return this.dotPageLayoutService
                         .save(this.pageState.page.identifier, {
                             ...layout,

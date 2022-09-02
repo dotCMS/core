@@ -148,6 +148,7 @@ export const dotMenuMock1 = () => {
 };
 
 const basemockUser = {
+    admin: true,
     emailAddress: 'admin@dotcms.com',
     firstName: 'Admin',
     lastName: 'Admin',
@@ -169,69 +170,67 @@ describe('DotNavigationService', () => {
     let router;
     let titleService: Title;
 
-    beforeEach(
-        waitForAsync(() => {
-            const testbed = TestBed.configureTestingModule({
-                providers: [
-                    DotEventsService,
-                    DotNavigationService,
-                    {
-                        provide: DotcmsEventsService,
-                        useClass: DotcmsEventsServiceMock
-                    },
-                    {
-                        provide: Title,
-                        useClass: TitleServiceMock
-                    },
-                    {
-                        provide: DotMenuService,
-                        useClass: DotMenuServiceMock
-                    },
-                    {
-                        provide: LoginService,
-                        useClass: LoginServiceMock
-                    },
-                    {
-                        provide: Router,
-                        useClass: RouterMock
-                    },
-                    {
-                        provide: DotIframeService,
-                        useValue: {
-                            reload: jasmine.createSpy()
-                        }
-                    },
-                    {
-                        provide: DotRouterService,
-                        useValue: {
-                            currentPortlet: {
-                                id: '123-567'
-                            },
-                            reloadCurrentPortlet: jasmine.createSpy(),
-                            gotoPortlet: jasmine
-                                .createSpy()
-                                .and.returnValue(new Promise((resolve) => resolve(true)))
-                        }
+    beforeEach(waitForAsync(() => {
+        const testbed = TestBed.configureTestingModule({
+            providers: [
+                DotEventsService,
+                DotNavigationService,
+                {
+                    provide: DotcmsEventsService,
+                    useClass: DotcmsEventsServiceMock
+                },
+                {
+                    provide: Title,
+                    useClass: TitleServiceMock
+                },
+                {
+                    provide: DotMenuService,
+                    useClass: DotMenuServiceMock
+                },
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                },
+                {
+                    provide: Router,
+                    useClass: RouterMock
+                },
+                {
+                    provide: DotIframeService,
+                    useValue: {
+                        reload: jasmine.createSpy()
                     }
-                ],
-                imports: [RouterTestingModule]
-            });
+                },
+                {
+                    provide: DotRouterService,
+                    useValue: {
+                        currentPortlet: {
+                            id: '123-567'
+                        },
+                        reloadCurrentPortlet: jasmine.createSpy(),
+                        gotoPortlet: jasmine
+                            .createSpy()
+                            .and.returnValue(new Promise((resolve) => resolve(true)))
+                    }
+                }
+            ],
+            imports: [RouterTestingModule]
+        });
 
-            service = testbed.inject(DotNavigationService);
-            dotRouterService = testbed.inject(DotRouterService);
-            dotcmsEventsService = testbed.inject(DotcmsEventsService);
-            dotMenuService = testbed.inject(DotMenuService);
-            loginService = testbed.inject(LoginService);
-            dotEventService = testbed.inject(DotEventsService);
-            router = testbed.inject(Router);
-            titleService = testbed.inject(Title);
+        service = testbed.inject(DotNavigationService);
+        dotRouterService = testbed.inject(DotRouterService);
+        dotcmsEventsService = testbed.inject(DotcmsEventsService);
+        dotMenuService = testbed.inject(DotMenuService);
+        loginService = testbed.inject(LoginService);
+        dotEventService = testbed.inject(DotEventsService);
+        router = testbed.inject(Router);
+        titleService = testbed.inject(Title);
 
-            spyOn(titleService, 'setTitle');
-            spyOn(dotEventService, 'notify');
-            spyOn(dotMenuService, 'reloadMenu').and.callThrough();
-            localStorage.clear();
-        })
-    );
+        spyOn(titleService, 'setTitle');
+        spyOn(dotEventService, 'notify');
+        spyOn(dotMenuService, 'reloadMenu').and.callThrough();
+        localStorage.clear();
+    }));
 
     describe('goToFirstPortlet', () => {
         it('should go to first portlet: ', () => {
@@ -261,6 +260,7 @@ describe('DotNavigationService', () => {
                 } else {
                     expect(menus.map((menu: DotMenu) => menu.isOpen)).toEqual([false, false]);
                 }
+
                 counter++;
             });
             service.collapseMenu();
@@ -323,6 +323,7 @@ describe('DotNavigationService', () => {
                 } else {
                     expect(menus.map((menu: DotMenu) => menu.isOpen)).toEqual([false, false]);
                 }
+
                 counter++;
             });
 
@@ -376,6 +377,7 @@ describe('DotNavigationService', () => {
                 expect(menus[1].isOpen).toBe(false);
                 expect(menus[1].menuItems[0].active).toBe(false);
             }
+
             counter++;
         });
 

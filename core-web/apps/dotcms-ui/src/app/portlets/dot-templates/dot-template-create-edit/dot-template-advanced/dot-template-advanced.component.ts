@@ -102,6 +102,7 @@ export class DotTemplateAdvancedComponent implements OnInit, OnDestroy, OnChange
 
     private setContainerId({ identifier, parentPermissionable }: DotContainer): string {
         const regex = new RegExp('//' + parentPermissionable.hostname);
+
         return identifier?.includes(parentPermissionable.hostname)
             ? identifier.replace(regex, '')
             : identifier;

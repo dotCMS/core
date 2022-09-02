@@ -1,0 +1,7 @@
+@use "libs/block-editor/src/lib/scss/variables" as *;
+
+dotcms-message {
+    background-color: $gray-light;
+    display: block;
+    padding: $dot-editor-size;
+}

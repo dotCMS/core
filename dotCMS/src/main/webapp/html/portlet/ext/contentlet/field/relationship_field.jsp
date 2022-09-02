@@ -262,7 +262,9 @@
 		var <%= relationJsName %>_specialFields = { <%= jsSpecialFields %> };
 		var <%= relationJsName %>_showFields = [ <%= jsFieldNames %> ];
 
-		relationsName.push('.dataRow<%=relationJsName%>');
+		// Add the relation to the map, and set it to false.
+		relationsLoadedMap['<%=relationJsName%>'] = false;
+
         function getCurrentLanguageIndex(o) {
             var index = 0;
 
@@ -433,6 +435,8 @@
 			document.querySelector('#relationship-loading<%=relationJsName%>')?.remove();
 
 			if( data == null || (data != null && data.length == 0) ) {
+				// If it's empty, set the value to true as well.
+				relationsLoadedMap['<%=relationJsName%>'] = true;
 				renumberAndReorder<%= relationJsName %>();
 			  return;
 			}
@@ -477,6 +481,9 @@
             }
 
 			<%= relationJsName %>_Contents = <%= relationJsName %>_Contents.concat(dataNoRep);
+			// This function is called when relations are loaded or every time we add a new relation.
+			// So we set the map value to true.
+			relationsLoadedMap['<%=relationJsName%>'] = true;
 			renumberAndReorder<%= relationJsName %>();
 		}
 
@@ -769,7 +776,6 @@
                  var srcNode = document.getElementById("<%=relationJsName%>Table");
                  var row = document.createElement("tr");
                  row.id="<%=relationJsName%>TableMessage"
-				row.className = 'dataRow<%=relationJsName%>';
                  var cell = row.insertCell (0);
                  cell.setAttribute("colspan", "100");
                  cell.setAttribute("style","text-align:center");

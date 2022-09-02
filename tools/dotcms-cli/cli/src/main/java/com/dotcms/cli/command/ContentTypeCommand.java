@@ -1,14 +1,19 @@
 package com.dotcms.cli.command;
 
+import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import org.jboss.logging.Logger;
+import picocli.CommandLine;
+import picocli.CommandLine.ExitCode;
 
 @ActivateRequestContext
-public class ContentTypeCommand implements Runnable {
+public class ContentTypeCommand implements Callable<Integer> {
 
     @Override
-    public void run() {
+    public Integer call() {
 
+
+        return ExitCode.OK;
     }
 }

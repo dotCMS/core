@@ -223,8 +223,10 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
                 filter((site: Site) => {
                     if (currentHost === null) {
                         currentHost = site?.hostname;
+
                         return false;
                     }
+
                     return true;
                 })
             )

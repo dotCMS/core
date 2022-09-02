@@ -109,6 +109,7 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
             this.form.get('themeId').setValue(this.theme);
             this.updateModel();
         }
+
         if (changes.layout && !changes.layout.firstChange) {
             this.setFormValue(changes.layout.currentValue);
         }
@@ -208,6 +209,7 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
         if (_.isEqual(currentLayout, layout)) {
             return;
         }
+
         this.form.setValue(
             {
                 title: this.title,
@@ -287,6 +289,7 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
                 if (!res.redirected) {
                     this.dotRouterService.goToSiteBrowser();
                 }
+
                 this.currentTheme = err.status === 403 ? null : this.currentTheme;
             })
         );

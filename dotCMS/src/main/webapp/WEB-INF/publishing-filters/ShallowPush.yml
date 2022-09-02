@@ -1,4 +1,5 @@
 title: Only Selected Items
+sort: 5
 default: false
 roles: DOTCMS_BACK_END_USER
 filters:

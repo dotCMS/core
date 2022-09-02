@@ -94,6 +94,7 @@ type City = {
 
 const Template: Story<City[]> = (props: City[]) => {
     const template = FocusTrapTemplate;
+
     return {
         props,
         template
@@ -101,6 +102,7 @@ const Template: Story<City[]> = (props: City[]) => {
 };
 
 export const Primary: Story = Template.bind({});
+
 Primary.parameters = {
     docs: {
         source: {

@@ -271,6 +271,7 @@ export class FieldDragDropService {
         const isDragButton =
             handle.parentElement.classList.contains('row-header__drag') ||
             handle.classList.contains('row-header__drag');
+
         return noDrag && this.shouldDrag(source, isDragButton);
     }
 
@@ -291,6 +292,7 @@ export class FieldDragDropService {
         if (cantAddColumn) {
             this.clearCurrentFullRowEl();
             this.disableRowElement(target.parentElement.parentElement);
+
             return false;
         }
 

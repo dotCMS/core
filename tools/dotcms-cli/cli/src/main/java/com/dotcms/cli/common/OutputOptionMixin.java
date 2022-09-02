@@ -113,7 +113,7 @@ public class OutputOptionMixin implements MessageWriter {
 
     @Override
     public void error(String msg) {
-        out().println(colorScheme().errorText(ERROR_ICON + " " + msg));
+        err().println(colorScheme().errorText(ERROR_ICON + " " + msg));
     }
 
     @Override

@@ -1,4 +1,5 @@
 title: Force Push Everything
+sort: 4
 default: false
 roles: DOTCMS_BACK_END_USER
 filters:

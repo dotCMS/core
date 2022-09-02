@@ -416,6 +416,7 @@
         if(isContentAutoSaving){ // To avoid concurrent auto and normal saving.
             return;
         }
+
         if(isAutoSave && isContentSaving){
             return;
         }
@@ -427,8 +428,6 @@
         }
         // Check if the relations HTML have been loaded.
         await waitForRelation(relationsName);
-
-
 
         let textAreaData = "";
         let fmData = new Array();

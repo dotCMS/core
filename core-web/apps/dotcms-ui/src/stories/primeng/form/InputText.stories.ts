@@ -36,6 +36,7 @@ const InputTextTemplate = `
 
 const Template: Story<InputText> = (props: InputText) => {
     const template = InputTextTemplate;
+
     return {
         props,
         template

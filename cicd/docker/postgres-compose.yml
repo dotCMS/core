@@ -3,12 +3,15 @@ version: "3.7"
 services:
 
   database:
-    image: postgres:11-alpine
+    image: postgres:13-alpine
     environment:
       POSTGRES_USER:
       POSTGRES_PASSWORD:
       POSTGRES_DB:
+      MAX_LOCKS_PER_TRANSACTION:
     ports:
       - "5432:5432"
+    volumes:
+      - ./setup/db/postgres/init-scripts:/docker-entrypoint-initdb.d/
     tmpfs:
       - /var/lib/postgresql/data:rw

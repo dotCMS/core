@@ -135,6 +135,7 @@ export class DotPushPublishFormComponent
             });
             this.emitValues();
         }
+
         this.loadTimezones();
     }
 
@@ -174,23 +175,12 @@ export class DotPushPublishFormComponent
     private loadFilters(): Observable<unknown> {
         return this.dotPushPublishFiltersService.get().pipe(
             map((filterOptions: DotPushPublishFilter[]) => {
-                this._filterOptions = filterOptions
-                    .map((item: DotPushPublishFilter) => {
-                        return {
-                            label: item.title,
-                            value: item.key
-                        };
-                    })
-                    .sort((a: SelectItem, b: SelectItem) => {
-                        if (a.label > b.label) {
-                            return 1;
-                        }
-                        if (a.label < b.label) {
-                            return -1;
-                        }
-                        // a must be equal to b
-                        return 0;
-                    });
+                this._filterOptions = filterOptions.map((item: DotPushPublishFilter) => {
+                    return {
+                        label: item.title,
+                        value: item.key
+                    };
+                });
 
                 this.filterOptions = this._filterOptions;
 
@@ -201,6 +191,7 @@ export class DotPushPublishFormComponent
             }),
             catchError((error) => {
                 this.httpErrorManagerService.handle(error);
+
                 return of([]);
             })
         );
@@ -245,6 +236,7 @@ export class DotPushPublishFormComponent
                         enableFilters();
                         break;
                     }
+
                     case 'expire': {
                         publishDate.disable();
                         expireDate.enable();
@@ -253,6 +245,7 @@ export class DotPushPublishFormComponent
                         this.filterOptions = [];
                         break;
                     }
+
                     default: {
                         publishDate.enable();
                         expireDate.enable();

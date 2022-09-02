@@ -7,6 +7,7 @@ export class StringFormat {
                 const reg = new RegExp('\\{' + i + '\\}', 'gm');
                 s = s.replace(reg, args[i]);
             }
+
             return s;
         }
     }

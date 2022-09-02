@@ -84,6 +84,7 @@ class AngularNodeView extends NodeView<
         }
 
         this.maybeMoveContentDOM();
+
         return this.contentDOMElement;
     }
 

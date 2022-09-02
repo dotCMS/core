@@ -7546,4 +7546,59 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
     }
 
+    /**
+     * Given scenario: Contentlet with a {@link JSONField} and a VALID value for the field
+     * Expected result: should persist the contentlet with the provided value
+     *
+     */
+    @Test
+    public void saveContentWithValidJSONField_ShouldSucceed() throws Exception {
+        // create content type with JSON field
+        ContentType typeWithJSONField = new ContentTypeDataGen().nextPersisted();
+        com.dotcms.contenttype.model.field.Field jsonField = new FieldDataGen()
+                .type(JSONField.class)
+                .contentTypeId(typeWithJSONField.id())
+                .nextPersisted();
+
+        final String testJSON = "{\n"
+                + "                \"percentages\": {},\n"
+                + "                \"type\": \"SPLIT_EVENLY\"\n"
+                + "            }";
+
+        final Contentlet contentletWithJSON = new ContentletDataGen(typeWithJSONField)
+                .setProperty(jsonField.variable(), testJSON).nextPersisted();
+
+        assertEquals(testJSON, contentletWithJSON.get(jsonField.variable()));
+    }
+
+    /**
+     * Given scenario: Contentlet with a {@link JSONField} and a INVALID value for the field
+     * Expected result: should throw ValidationException
+     *
+     */
+    @Test(expected = DotContentletValidationException.class)
+    public void saveContentWithInvalidJSONField_ShouldThrowException() throws Exception {
+        // create content type with JSON field
+        ContentType typeWithJSONField = new ContentTypeDataGen().nextPersisted();
+        com.dotcms.contenttype.model.field.Field jsonField = new FieldDataGen()
+                .type(JSONField.class)
+                .contentTypeId(typeWithJSONField.id())
+                .nextPersisted();
+
+        final String testJSON = "{\n"
+                + "                \"INVALID JASON {},\n"
+                + "                \"type\": \"SPLIT_EVENLY\"\n"
+                + "            }";
+
+        try {
+            final Contentlet contentletWithJSON = new ContentletDataGen(typeWithJSONField)
+                    .setProperty(jsonField.variable(), testJSON).nextPersisted();
+        } catch(Exception e) {
+            if (ExceptionUtil.causedBy(e, DotContentletValidationException.class)) {
+                throw new DotContentletValidationException(e.getMessage());
+            }
+            fail("Should have thrown ValidationException");
+        }
+    }
+
 }

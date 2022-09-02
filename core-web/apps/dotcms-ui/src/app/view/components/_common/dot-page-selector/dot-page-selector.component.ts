@@ -184,6 +184,7 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
             //select the root folder of a host.
             this.handleFolderSelection(<DotFolder>data[0].payload);
         }
+
         this.suggestions$.next(data);
         this.autoComplete.show();
     }
@@ -197,24 +198,29 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
     private handleSearchType(query: string): Observable<DotPageSelectorItem[]> {
         if (this.isTwoStepSearch(query)) {
             this.searchType = this.folderSearch ? SearchType.FOLDER : SearchType.PAGE;
+
             return this.fullSearch(query);
         } else {
             this.currentHost = null;
             this.searchType = this.setSearchType(query);
+
             return this.getConditionalSearch(query);
         }
     }
 
     private fullSearch(param: string): Observable<DotPageSelectorItem[]> {
         const host = decodeURI(this.parseUrl(param).host);
+
         return this.dotPageSelectorService.getSites(host, true).pipe(
             take(1),
             switchMap((results: DotPageSelectorItem[]) => {
                 if (results.length) {
                     this.currentHost = <Site>results[0].payload;
+
                     return this.getSecondStepData(param);
                 } else {
                     this.invalidHost = true;
+
                     return of([]);
                 }
             })
@@ -251,12 +257,14 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
 
     private isHostAndPath(param: string): boolean {
         const url: DotSimpleURL | { [key: string]: string } = this.parseUrl(param);
+
         return url && !!(url.host && url.pathname.length > 0);
     }
 
     private parseUrl(query: string): DotSimpleURL {
         try {
             const url = new URL(`http:${query}`);
+
             return { host: url.host, pathname: url.pathname.substr(1) };
         } catch {
             return null;
@@ -287,7 +295,9 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
         } else {
             cleanedQuery = this.cleanPath(query);
         }
+
         this.autoComplete.inputEL.nativeElement.value = cleanedQuery;
+
         return cleanedQuery.startsWith('//')
             ? cleanedQuery
             : cleanedQuery.length >= 3
@@ -310,8 +320,10 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
         switch (type) {
             case 'site':
                 return this.dotMessageService.get('page.selector.no.sites.results');
+
             case 'page':
                 return this.dotMessageService.get('page.selector.no.page.results');
+
             case 'folder':
                 return this.dotMessageService.get('page.selector.no.folder.results');
         }

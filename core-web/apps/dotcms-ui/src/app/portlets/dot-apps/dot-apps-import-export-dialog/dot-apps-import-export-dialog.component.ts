@@ -9,7 +9,12 @@ import {
     Output,
     EventEmitter
 } from '@angular/core';
-import { UntypedFormGroup, UntypedFormBuilder, UntypedFormControl, Validators } from '@angular/forms';
+import {
+    UntypedFormGroup,
+    UntypedFormBuilder,
+    UntypedFormControl,
+    Validators
+} from '@angular/forms';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotAppsService } from '@services/dot-apps/dot-apps.service';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
@@ -193,6 +198,7 @@ export class DotAppsImportExportDialogComponent implements OnChanges, OnDestroy 
                 }
             });
         }
+
         return keySitesConf;
     }
 }

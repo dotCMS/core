@@ -4,6 +4,7 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.datagen.LinkDataGen;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Config;
 import java.util.List;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -83,29 +84,39 @@ public class MenuLinkAPITest extends IntegrationTestBase {
     
     @Test
     public void move() throws Exception {
-        
-        /*
-         * Make sure chaning from a folder to other respect target folder permissions and inheritance
-         */
-        Folder parent1 = fAPI.createFolders("/parent1/sub", host, user, false);
-        Folder parent2 = fAPI.createFolders("/parent2/sub", host, user, false);
-        pAPI.permissionIndividually(host, parent2, user);
-        
-        Link link = new Link();
-        link.setFriendlyName("test link");
-        link.setTitle(link.getFriendlyName());
-        link.setHostId(host.getIdentifier());
-        link.setLinkType(Link.LinkType.EXTERNAL.toString());
-        link.setUrl("google.com");
-        link.setProtocal("http://");
-        mAPI.save(link, parent1, user, false);
-        
-        // must be getting permissions from the host
-        assertEquals(host.getPermissionId(), pAPI.findParentPermissionable(link).getPermissionId());
-        assertTrue(mAPI.move(link, parent2, user, false));
-        // then it should live under parent2
-        assertEquals(parent2.getPermissionId(), pAPI.findParentPermissionable(link).getPermissionId());
-        
+        final boolean permissionReferencesUpdateAsyncOldValue = Config.getBooleanProperty(
+                "PERMISSION_REFERENCES_UPDATE_ASYNC", true);
+        Config.setProperty("PERMISSION_REFERENCES_UPDATE_ASYNC", false);
+
+        try {
+            /*
+             * Make sure chaning from a folder to other respect target folder permissions and inheritance
+             */
+            Folder parent1 = fAPI.createFolders("/parent1/sub", host, user, false);
+            Folder parent2 = fAPI.createFolders("/parent2/sub", host, user, false);
+            pAPI.permissionIndividually(host, parent2, user);
+
+            Link link = new Link();
+            link.setFriendlyName("test link");
+            link.setTitle(link.getFriendlyName());
+            link.setHostId(host.getIdentifier());
+            link.setLinkType(Link.LinkType.EXTERNAL.toString());
+            link.setUrl("google.com");
+            link.setProtocal("http://");
+            mAPI.save(link, parent1, user, false);
+
+            Logger.info(MenuLinkAPITest.class, "getPermissionId " + link.getPermissionId());
+            // must be getting permissions from the host
+            assertEquals(host.getPermissionId(),
+                    pAPI.findParentPermissionable(link).getPermissionId());
+            assertTrue(mAPI.move(link, parent2, user, false));
+
+            // then it should live under parent2
+            assertEquals(parent2.getPermissionId(),
+                    pAPI.findParentPermissionable(link).getPermissionId());
+        } finally {
+            Config.setProperty("PERMISSION_REFERENCES_UPDATE_ASYNC", permissionReferencesUpdateAsyncOldValue);
+        }
     }
     
     @Test

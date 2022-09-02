@@ -6,7 +6,6 @@ import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotNavLogoService } from '@services/dot-nav-logo/dot-nav-logo.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 
-
 @Component({
     selector: 'dot-root',
     templateUrl: './app.component.html',

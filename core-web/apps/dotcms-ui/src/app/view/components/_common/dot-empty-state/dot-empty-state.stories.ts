@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { Meta, Story } from '@storybook/angular/types-6-0';
 import { moduleMetadata } from '@storybook/angular';
 import { DotEmptyStateModule } from './dot-empty-state.module';

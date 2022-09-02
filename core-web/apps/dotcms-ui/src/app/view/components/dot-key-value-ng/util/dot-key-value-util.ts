@@ -35,6 +35,7 @@ export class DotKeyValueUtil {
         newVariable?: boolean
     ): boolean {
         const limitAllowed = newVariable ? 0 : 1;
+
         return (
             variablesList.filter((item: DotKeyValue) => item.key === variable.key).length >
             limitAllowed
@@ -60,6 +61,7 @@ export class DotKeyValueUtil {
      */
     static isKeyInput(event: KeyboardEvent): boolean {
         const element = <HTMLElement>event.srcElement;
+
         return element.classList.contains('field-key-input');
     }
 
@@ -79,6 +81,7 @@ export class DotKeyValueUtil {
                 break;
             }
         }
+
         return index;
     }
 }

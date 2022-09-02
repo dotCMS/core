@@ -33,6 +33,7 @@ const InputTextAreaTemplateAutoRezise = `
 
 const Template: Story<never> = (props: never) => {
     const template = InputTextAreaTemplate;
+
     return {
         props,
         template
@@ -40,6 +41,7 @@ const Template: Story<never> = (props: never) => {
 };
 
 export const Basic: Story = Template.bind({});
+
 export const AutoRezise: Story = Template.bind({});
 
 Basic.parameters = {
