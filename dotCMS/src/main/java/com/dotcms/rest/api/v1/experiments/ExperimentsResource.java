@@ -1,6 +1,8 @@
 package com.dotcms.rest.api.v1.experiments;
 
+import com.dotcms.experiments.business.ExperimentFilter;
 import com.dotcms.experiments.business.ExperimentsAPI;
+import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.PATCH;
@@ -11,18 +13,23 @@ import com.dotcms.rest.exception.NotFoundException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import org.glassfish.jersey.server.JSONP;
@@ -143,6 +150,38 @@ public class ExperimentsResource {
         final User user = initData.getUser();
         experimentsAPI.delete(experimentId, user);
         return new ResponseEntityView<>("Experiment deleted");
+    }
+
+    /**
+     * Returns a list of {@link Experiment}s optionally filtered by pageId, name or status.
+     */
+    @GET
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityExperimentView list(final @QueryParam("pageId") String pageId,
+            final @QueryParam("name") String name,
+            final @QueryParam("status") Set<Status> statuses,
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response
+            ) throws DotDataException, DotSecurityException {
+        final InitDataObject initData = getInitData(request, response);
+        final User user = initData.getUser();
+        final ExperimentFilter.Builder filterBuilder = ExperimentFilter.builder();
+
+        if(UtilMethods.isSet(pageId)) {
+            filterBuilder.pageId(pageId);
+        }
+
+        if(UtilMethods.isSet(name)) {
+            filterBuilder.name(name);
+        }
+
+        if(UtilMethods.isSet(statuses)) {
+            filterBuilder.statuses(statuses);
+        }
+
+        final List<Experiment> experiments = experimentsAPI.list(filterBuilder.build(), user);
+        return new ResponseEntityExperimentView(experiments);
     }
 
     private Experiment patchExperiment(final Experiment experimentToUpdate,
