@@ -237,7 +237,7 @@ describe('ContainerListComponent', () => {
 
     describe('with data', () => {
         beforeEach(fakeAsync(() => {
-            spyOn<any>(coreWebService, 'requestView').and.returnValue(
+            spyOn<CoreWebService>(coreWebService, 'requestView').and.returnValue(
                 of({
                     entity: containersMock,
                     header: (type) => (type === 'Link' ? 'test;test=test' : '10')
