@@ -2,6 +2,7 @@ package com.dotcms.experiments.business;
 
 import com.dotcms.experiments.model.Experiment;
 import com.dotmarketing.exception.DotDataException;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -9,7 +10,6 @@ import java.util.Optional;
  */
 
 public interface ExperimentsFactory {
-
     /**
      * Saves the provided Experiment in the persistence layer
      */
@@ -25,4 +25,10 @@ public interface ExperimentsFactory {
      * Returns Optional.empty() if not found
      */
     Optional<Experiment> find(String id) throws DotDataException;
+
+    /**
+     * Returns a list of experiments after applying the provided filters in
+     * {@link ExperimentFilter}
+     */
+    List<Experiment> list(final ExperimentFilter filter) throws DotDataException;
 }

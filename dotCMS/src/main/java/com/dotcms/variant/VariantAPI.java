@@ -5,6 +5,13 @@ import com.dotmarketing.exception.DotDataException;
 import java.util.Optional;
 
 public interface VariantAPI {
+
+    Variant DEFAULT_VARIANT = Variant.builder()
+            .identifier("DEFAULT")
+            .name("DEFAULT")
+            .archived(false)
+            .build();
+
     /**
      * Save a new {@link Variant}.
      * if the the {@link Variant}'s identifier value is not null then it will be ignored.

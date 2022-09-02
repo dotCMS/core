@@ -23,6 +23,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -141,6 +142,14 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         } else {
             throw new NotFoundInDbException("Experiment with provided id not found");
         }
+    }
+
+    @Override
+    @CloseDBIfOpened
+    public List<Experiment> list(ExperimentFilter filter, User user) throws DotDataException {
+        DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
+                invalidLicenseMessageSupplier);
+        return factory.list(filter);
     }
 
     private void validatePermissions(final User user, final Experiment persistedExperiment,
