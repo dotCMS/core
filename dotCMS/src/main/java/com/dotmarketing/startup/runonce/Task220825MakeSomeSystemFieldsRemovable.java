@@ -11,6 +11,7 @@ import java.util.Map;
 
 import static com.dotmarketing.db.DbConnectionFactory.isMsSql;
 import static com.dotmarketing.db.DbConnectionFactory.isPostgres;
+import static com.dotmarketing.db.DbConnectionFactory.getDBFalse;
 
 /**
  * There are several System fields that should be removable. Even though they should be present in the Base Content Type
@@ -64,21 +65,21 @@ public class Task220825MakeSomeSystemFieldsRemovable extends AbstractJDBCStartup
     private static final String PERSONA_BASE_TYPE_ID = "c938b15f-bcb6-49ef-8651-14d455a97045";
     private static final String HOST_TYPE_ID = "855a2d72-f2f3-4169-8b04-ac5157c4380c";
     private static final String FIND_CONTENT_TYPE_QUERY = "SELECT inode FROM structure WHERE inode = ?";
-    private static final String UPDATE_PAGE_ASSET_FIELDS_QUERY = "UPDATE field SET fixed = false WHERE velocity_var_name = 'friendlyName' AND structure_inode = '" + PAGE_ASSET_BASE_TYPE_ID + "';" +
-                                                                         "UPDATE field SET fixed = false WHERE velocity_var_name = 'showOnMenu' AND structure_inode = '" + PAGE_ASSET_BASE_TYPE_ID + "';" +
-                                                                         "UPDATE field SET fixed = false WHERE velocity_var_name = 'sortOrder' AND structure_inode = '" + PAGE_ASSET_BASE_TYPE_ID + "';" +
-                                                                         "UPDATE field SET fixed = false WHERE velocity_var_name = 'cachettl' AND structure_inode = '" + PAGE_ASSET_BASE_TYPE_ID + "';" +
-                                                                         "UPDATE field SET fixed = false WHERE velocity_var_name = 'redirecturl' AND structure_inode = '" + PAGE_ASSET_BASE_TYPE_ID + "';" +
-                                                                         "UPDATE field SET fixed = false WHERE velocity_var_name = 'httpsreq' AND structure_inode = '" + PAGE_ASSET_BASE_TYPE_ID + "';" +
-                                                                         "UPDATE field SET fixed = false WHERE velocity_var_name = 'seodescription' AND structure_inode = '" + PAGE_ASSET_BASE_TYPE_ID + "';" +
-                                                                         "UPDATE field SET fixed = false WHERE velocity_var_name = 'seokeywords' AND structure_inode = '" + PAGE_ASSET_BASE_TYPE_ID + "';" +
-                                                                         "UPDATE field SET fixed = false WHERE velocity_var_name = 'pagemetadata' AND structure_inode = '" + PAGE_ASSET_BASE_TYPE_ID + "';";
-    private static final String UPDATE_FILE_ASSET_FIELDS_QUERY = "UPDATE field SET fixed = false WHERE velocity_var_name = 'title' AND structure_inode = '" + FILE_ASSET_BASE_TYPE_ID + "';" +
-                                                                         "UPDATE field SET fixed = false WHERE velocity_var_name = 'showOnMenu' AND structure_inode = '" + FILE_ASSET_BASE_TYPE_ID + "';" +
-                                                                         "UPDATE field SET fixed = false WHERE velocity_var_name = 'sortOrder' AND structure_inode = '" + FILE_ASSET_BASE_TYPE_ID + "';" +
-                                                                         "UPDATE field SET fixed = false WHERE velocity_var_name = 'description' AND structure_inode = '" + FILE_ASSET_BASE_TYPE_ID + "';";
-    private static final String UPDATE_PERSONA_FIELDS_QUERY = "UPDATE field SET fixed = false WHERE velocity_var_name = 'description' AND structure_inode = '" + PERSONA_BASE_TYPE_ID + "';";
-    private static final String UPDATE_HOST_FIELDS_QUERY = "UPDATE field SET fixed = false WHERE velocity_var_name = 'hostThumbnail' AND structure_inode = '" + HOST_TYPE_ID + "';";
+    private static final String UPDATE_PAGE_ASSET_FIELDS_QUERY = "UPDATE field SET fixed = " + getDBFalse() + " WHERE velocity_var_name = 'friendlyName' AND structure_inode = '" + PAGE_ASSET_BASE_TYPE_ID + "';" +
+                                                                         "UPDATE field SET fixed = " + getDBFalse() + " WHERE velocity_var_name = 'showOnMenu' AND structure_inode = '" + PAGE_ASSET_BASE_TYPE_ID + "';" +
+                                                                         "UPDATE field SET fixed = " + getDBFalse() + " WHERE velocity_var_name = 'sortOrder' AND structure_inode = '" + PAGE_ASSET_BASE_TYPE_ID + "';" +
+                                                                         "UPDATE field SET fixed = " + getDBFalse() + " WHERE velocity_var_name = 'cachettl' AND structure_inode = '" + PAGE_ASSET_BASE_TYPE_ID + "';" +
+                                                                         "UPDATE field SET fixed = " + getDBFalse() + " WHERE velocity_var_name = 'redirecturl' AND structure_inode = '" + PAGE_ASSET_BASE_TYPE_ID + "';" +
+                                                                         "UPDATE field SET fixed = " + getDBFalse() + " WHERE velocity_var_name = 'httpsreq' AND structure_inode = '" + PAGE_ASSET_BASE_TYPE_ID + "';" +
+                                                                         "UPDATE field SET fixed = " + getDBFalse() + " WHERE velocity_var_name = 'seodescription' AND structure_inode = '" + PAGE_ASSET_BASE_TYPE_ID + "';" +
+                                                                         "UPDATE field SET fixed = " + getDBFalse() + " WHERE velocity_var_name = 'seokeywords' AND structure_inode = '" + PAGE_ASSET_BASE_TYPE_ID + "';" +
+                                                                         "UPDATE field SET fixed = " + getDBFalse() + " WHERE velocity_var_name = 'pagemetadata' AND structure_inode = '" + PAGE_ASSET_BASE_TYPE_ID + "';";
+    private static final String UPDATE_FILE_ASSET_FIELDS_QUERY = "UPDATE field SET fixed = " + getDBFalse() + " WHERE velocity_var_name = 'title' AND structure_inode = '" + FILE_ASSET_BASE_TYPE_ID + "';" +
+                                                                         "UPDATE field SET fixed = " + getDBFalse() + " WHERE velocity_var_name = 'showOnMenu' AND structure_inode = '" + FILE_ASSET_BASE_TYPE_ID + "';" +
+                                                                         "UPDATE field SET fixed = " + getDBFalse() + " WHERE velocity_var_name = 'sortOrder' AND structure_inode = '" + FILE_ASSET_BASE_TYPE_ID + "';" +
+                                                                         "UPDATE field SET fixed = " + getDBFalse() + " WHERE velocity_var_name = 'description' AND structure_inode = '" + FILE_ASSET_BASE_TYPE_ID + "';";
+    private static final String UPDATE_PERSONA_FIELDS_QUERY = "UPDATE field SET fixed = " + getDBFalse() + " WHERE velocity_var_name = 'description' AND structure_inode = '" + PERSONA_BASE_TYPE_ID + "';";
+    private static final String UPDATE_HOST_FIELDS_QUERY = "UPDATE field SET fixed = " + getDBFalse() + " WHERE velocity_var_name = 'hostThumbnail' AND structure_inode = '" + HOST_TYPE_ID + "';";
 
     private static final Map<String, Tuple2<String, String>> newBaseTypes = Map.of(
             "Page Asset", new Tuple2<>(PAGE_ASSET_BASE_TYPE_ID, UPDATE_PAGE_ASSET_FIELDS_QUERY),
