@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
 import com.dotcms.content.business.json.ContentletJsonAPI;
+import com.dotcms.contenttype.business.StoryBlockReferenceResult;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
@@ -128,7 +129,11 @@ public class ContentletTransformer implements DBTransformer {
 
     private static void refreshStoryBlockReferences(final Contentlet contentlet) {
 
-        APILocator.getStoryBlockAPI().refreshReferences(contentlet);
+        final StoryBlockReferenceResult result = APILocator.getStoryBlockAPI().refreshReferences(contentlet);
+        if (result.isRefreshed()) {
+            Logger.debug(ContentletTransformer.class,
+                    ()-> "Refreshed story block dependencies for the contentlet: " + contentlet.getIdentifier());
+        }
     }
 
 
