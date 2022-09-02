@@ -30,7 +30,8 @@ import {
         SuggestionListComponent,
         SuggestionsListItemComponent,
         SuggestionLoadingListComponent,
-        EmptyMessageComponent
+        EmptyMessageComponent,
+        ContentletStatePipe
     ]
 })
 export class SharedModule {}
