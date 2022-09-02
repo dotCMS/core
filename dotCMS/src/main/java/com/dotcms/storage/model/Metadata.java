@@ -24,7 +24,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-    public class Metadata implements Serializable {
+public class Metadata implements Serializable {
 
     public static final String CUSTOM_PROP_PREFIX = "dot:";
 
