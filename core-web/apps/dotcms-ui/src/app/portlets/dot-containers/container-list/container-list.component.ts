@@ -60,22 +60,22 @@ export class ContainerListComponent implements OnInit, OnDestroy {
         return [
             {
                 fieldName: 'title',
-                header: this.dotMessageService.get('containers.fieldName.name'),
+                header: this.dotMessageService.get('message.containers.fieldName.name'),
                 sortable: true
             },
             {
                 fieldName: 'status',
-                header: this.dotMessageService.get('containers.fieldName.status'),
+                header: this.dotMessageService.get('message.containers.fieldName.status'),
                 width: '8%'
             },
             {
                 fieldName: 'friendlyName',
-                header: this.dotMessageService.get('containers.fieldName.description')
+                header: this.dotMessageService.get('message.containers.fieldName.description')
             },
             {
                 fieldName: 'modDate',
                 format: 'date',
-                header: this.dotMessageService.get('containers.fieldName.lastEdit'),
+                header: this.dotMessageService.get('message.containers.fieldName.lastEdit'),
                 sortable: true
             }
         ];
