@@ -77,6 +77,16 @@
             <td [ngStyle]="{ 'text-align': tableColumns[3].textAlign }">
                 {{ rowData.modDate }}
             </td>
+            <td style="width: 5%; height: 3.85rem">
+                <dot-action-menu-button
+                    *ngIf="!rowData.disableInteraction"
+                    [attr.data-testid]="rowData.identifier"
+                    class="listing-datatable__action-button"
+                    [actions]="setContainerActions(rowData)"
+                    [item]="rowData"
+                >
+                </dot-action-menu-button>
+            </td>
         </ng-template>
     </dot-listing-data-table>
 </dot-portlet-base>
