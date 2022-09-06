@@ -15,6 +15,23 @@ public interface VariantCache extends Cachable {
     void put(final Variant variant);
 
     /**
+     * Add a {@link Variant} into the cache.
+     *
+     * @param id Id to use as key
+     * @param variant to be storage
+     */
+    void putById(final String id, final Variant variant);
+
+    /**
+     * Add a {@link Variant} into the cache.
+     *
+     * @param name Name to use as key
+     * @param variant to be storage
+     */
+    void putByName(final String name, final Variant variant);
+
+
+    /**
      * Get a {@link Variant} from cache by Id.
      *
      * @param id

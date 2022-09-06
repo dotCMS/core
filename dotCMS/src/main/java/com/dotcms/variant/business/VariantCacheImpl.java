@@ -78,7 +78,8 @@ public class VariantCacheImpl implements VariantCache{
         putById(variant.identifier(), variant);
     }
 
-    private void putById(final String id, final Variant variant) {
+    @Override
+    public void putById(final String id, final Variant variant) {
         DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
         cache.put(getKeyById(id), variant, getPrimaryGroup());
 
@@ -89,7 +90,8 @@ public class VariantCacheImpl implements VariantCache{
         putByName(variant.name(), variant);
     }
 
-    private void putByName(final String name, final Variant variant) {
+    @Override
+    public void putByName(final String name, final Variant variant) {
         DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
         cache.put(getKeyByName(name), variant, getPrimaryGroup());
 

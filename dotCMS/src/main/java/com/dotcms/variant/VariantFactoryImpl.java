@@ -107,28 +107,41 @@ public class VariantFactoryImpl implements VariantFactory{
     public Optional<Variant> get(final String identifier) throws DotDataException {
         Variant variant = CacheLocator.getVariantCache().getById(identifier);
 
-        if (!UtilMethods.isSet(variant)) {
-            final ArrayList loadResults = new DotConnect().setSQL(VARIANT_SELECT_QUERY)
-                    .addParam(identifier)
-                    .loadResults();
-            variant = !loadResults.isEmpty() ? TransformerLocator.createVariantTransformer(loadResults).from() : null;
-        }
+        return UtilMethods.isSet(variant) && !variant.equals(VARIANT_404) ?
+                Optional.of(variant) :
+                getFromDataBaseById(identifier).or(() -> {
+                    CacheLocator.getVariantCache().putById(identifier, VariantFactory.VARIANT_404);
+                    return Optional.empty();
+                });
+    }
 
-        return Optional.ofNullable(variant);
+    private Optional<Variant> getFromDataBaseById(final String identifier) throws DotDataException {
+        return getFromDataBase(VARIANT_SELECT_QUERY, identifier);
+    }
+
+    private Optional<Variant> getFromDataBaseByName(final String name) throws DotDataException {
+        return getFromDataBase(VARIANT_SELECT_BY_NAME_QUERY, name);
+    }
+
+    private Optional<Variant> getFromDataBase(final String query, final String parameter) throws DotDataException {
+        final ArrayList loadResults = new DotConnect().setSQL(query)
+                .addParam(parameter)
+                .loadResults();
+
+        return !loadResults.isEmpty() ?
+                Optional.of(TransformerLocator.createVariantTransformer(loadResults).from()) :
+                Optional.empty();
     }
 
     public Optional<Variant> getByName(final String name) throws DotDataException {
+
         Variant variant = CacheLocator.getVariantCache().getByName(name);
 
-        if (!UtilMethods.isSet(variant)) {
-            final ArrayList loadResults = new DotConnect().setSQL(VARIANT_SELECT_BY_NAME_QUERY)
-                    .addParam(name)
-                    .loadResults();
-
-            variant = !loadResults.isEmpty() ?
-                    TransformerLocator.createVariantTransformer(loadResults).from() : null;
-        }
-
-        return Optional.ofNullable(variant);
+        return UtilMethods.isSet(variant) && !variant.equals(VARIANT_404) ?
+                Optional.of(variant) :
+                getFromDataBaseByName(name).or(() -> {
+                    CacheLocator.getVariantCache().putByName(name, VariantFactory.VARIANT_404);
+                    return Optional.empty();
+                });
     }
 }

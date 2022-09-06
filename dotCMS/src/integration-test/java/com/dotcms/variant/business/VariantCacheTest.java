@@ -38,6 +38,25 @@ public class VariantCacheTest {
     }
 
     /**
+     * Method to test: {@link VariantCacheImpl#putById(String, Variant)} (Variant)} and {@link VariantCacheImpl#getById(String)}
+     * When: Put a Variant by ID
+     * Should: be able to get it by the same ID
+     */
+    @Test
+    public void putVariantById(){
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        CacheLocator.getVariantCache().putById("ANY_ID", variant);
+
+        final Variant variantById = CacheLocator.getVariantCache()
+                .getById("ANY_ID");
+
+        assertEquals(variant.identifier(), variantById.identifier());
+        assertEquals(variant.name(), variantById.name());
+        assertEquals(variant.archived(), variantById.archived());
+    }
+
+    /**
      * Method to test: {@link VariantCacheImpl#put(Variant)} and {@link VariantCacheImpl#getByName(String)} (String)}
      * When: Add a Variant
      * Should: be able to get it by Name
@@ -50,6 +69,26 @@ public class VariantCacheTest {
 
         final Variant variantById = CacheLocator.getVariantCache()
                 .getByName(variant.name());
+
+        assertEquals(variant.identifier(), variantById.identifier());
+        assertEquals(variant.name(), variantById.name());
+        assertEquals(variant.archived(), variantById.archived());
+    }
+
+
+    /**
+     * Method to test: {@link VariantCacheImpl#putByName(String, Variant)} (Variant)} and {@link VariantCacheImpl#getByName(String)} (String)}
+     * When: Add a Variant by name
+     * Should: be able to get it by the same Name
+     */
+    @Test
+    public void putVariantByName(){
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        CacheLocator.getVariantCache().putByName("ANY_NAME", variant);
+
+        final Variant variantById = CacheLocator.getVariantCache()
+                .getByName("ANY_NAME");
 
         assertEquals(variant.identifier(), variantById.identifier());
         assertEquals(variant.name(), variantById.name());

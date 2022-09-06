@@ -293,10 +293,14 @@ public class VariantFactoryTest {
         ArrayList results = getResults(variant);
         assertFalse(results.isEmpty());
 
+        assertTrue(FactoryLocator.getVariantFactory().get(variant.identifier()).isPresent());
+
         final Optional<Variant> variantFromDataBase = FactoryLocator.getVariantFactory().get(variant.identifier());
 
         assertTrue(variantFromDataBase.isPresent());
         assertEquals(variant.identifier(), variantFromDataBase.get().identifier());
+
+        assertTrue(FactoryLocator.getVariantFactory().get(variant.identifier()).isPresent());
     }
 
     /**
@@ -313,10 +317,14 @@ public class VariantFactoryTest {
         ArrayList results = getResults(variant);
         assertFalse(results.isEmpty());
 
+        assertTrue(FactoryLocator.getVariantFactory().getByName(variant.name()).isPresent());
+
         final Optional<Variant> variantFromDataBase = FactoryLocator.getVariantFactory().getByName(variant.name());
 
         assertTrue(variantFromDataBase.isPresent());
         assertEquals(variant.identifier(), variantFromDataBase.get().identifier());
+
+        assertTrue(FactoryLocator.getVariantFactory().getByName(variant.name()).isPresent());
     }
 
     /**
@@ -343,33 +351,46 @@ public class VariantFactoryTest {
     /**
      * Method to test: {@link VariantFactory#get(String)}
      * When: Try to get  {@link Variant} by id that not exists
-     * Should: return a {@link Optional#empty()}
+     * Should:
+     * - return a {@link Optional#empty()}
+     * - Storage as {@link VariantFactory#VARIANT_404} in the cache
+     * - Return null if the {@link VariantFactory#get(String)} is called twice
      *
      * @throws DotDataException
      */
     @Test
     public void getNotExists() throws DotDataException {
 
-        final Optional<Variant> variantFromDataBase = FactoryLocator.getVariantFactory()
-                .get("Not_Exists");
+        assertFalse(FactoryLocator.getVariantFactory().get("Not_Exists").isPresent());
 
-        assertFalse(variantFromDataBase.isPresent());
+        final Variant notExists = CacheLocator.getVariantCache().getById("Not_Exists");
+
+        assertNotNull(notExists);
+        assertEquals(VariantFactory.VARIANT_404, notExists);
+
+        assertFalse(FactoryLocator.getVariantFactory().get("Not_Exists").isPresent());
     }
 
     /**
      * Method to test: {@link VariantFactory#get(String)}
      * When: Try to get  {@link Variant} by name that not exists
-     * Should: return a {@link Optional#empty()}
-     *
+     * Should:
+     * - return a {@link Optional#empty()}
+     * - Storage as {@link VariantFactory#VARIANT_404} in the cache
+     * - Return null if the {@link VariantFactory#get(String)} is called twice
      * @throws DotDataException
      */
     @Test
     public void getNotExistsByName() throws DotDataException {
 
-        final Optional<Variant> variantFromDataBase = FactoryLocator.getVariantFactory()
-                .getByName("Not_Exists");
+        assertFalse(FactoryLocator.getVariantFactory().getByName("Not_Exists").isPresent());
 
-        assertFalse(variantFromDataBase.isPresent());
+        final Variant notExists = CacheLocator.getVariantCache().getByName("Not_Exists");
+
+        assertNotNull(notExists);
+        assertEquals(VariantFactory.VARIANT_404, notExists);
+
+        assertFalse(FactoryLocator.getVariantFactory().getByName("Not_Exists").isPresent());
     }
 
     private ArrayList getResults(Variant variant) throws DotDataException {
