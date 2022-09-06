@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnChanges } from '@angular/core';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 
 @Component({
@@ -6,7 +6,7 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
     templateUrl: './dot-relationship-tree.component.html',
     styleUrls: ['./dot-relationship-tree.component.scss']
 })
-export class DotRelationshipTreeComponent implements OnInit {
+export class DotRelationshipTreeComponent implements OnChanges {
     @Input() velocityVar: string;
     @Input() contentType: DotCMSContentType;
     @Input() isParentField: boolean;
@@ -14,7 +14,7 @@ export class DotRelationshipTreeComponent implements OnInit {
     child: string;
     parent: string;
 
-    ngOnInit(): void {
+    ngOnChanges(): void {
         this.setInitialValues();
     }
     /**
