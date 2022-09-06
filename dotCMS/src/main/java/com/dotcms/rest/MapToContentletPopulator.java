@@ -421,6 +421,7 @@ public class MapToContentletPopulator  {
                 map.remove(field.variable());
                 continue;
             }
+            //String Null is here to deal with JSONObject.NULL
             if (object == null || "null".equalsIgnoreCase(object.toString())) {
                 //the value wasn't set. Just ignore it.
                 continue;
@@ -538,16 +539,19 @@ public class MapToContentletPopulator  {
             throws DotDataException, DotSecurityException {
 
         final ImmutableMap.Builder<CategoryField, Set<Category>> builder = ImmutableMap.builder();
+        //Since we can not rely there will always be a inode on the incoming request  we must lookup the current working contentlet
         final Contentlet workingContentlet = APILocator.getContentletAPI()
                 .findContentletByIdentifier(contentlet.getIdentifier(), false,
                         contentlet.getLanguageId(), APILocator.systemUser(), false);
         if(null != workingContentlet){
             final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+            //Parents are the categories assigned to the contentlet. But they this does not tell you how they are assigned through the fields
             final List<Category> parents = categoryAPI.getParents(workingContentlet, user, false);
             final List<CategoryField> categoryFields = workingContentlet.getContentType()
                     .fields(CategoryField.class).stream().map(field -> (CategoryField) field)
                     .collect(Collectors.toList());
             for (final CategoryField categoryField : categoryFields) {
+                //We need to know how categories are saved by field on the given contentlet
                 final Set<Category> selected = findSelected(categoryField, parents, user);
                 if(null != selected){
                    builder.put(categoryField, selected);
@@ -558,7 +562,7 @@ public class MapToContentletPopulator  {
     }
 
     /**
-     * This is basically how we bind categories to the fields they belong to
+     * This is basically tells how we bind categories to the fields they belong to
      * @param categoryField
      * @param categories
      * @param user
@@ -575,6 +579,7 @@ public class MapToContentletPopulator  {
 
         if (categoryAPI.canUseCategory(parent, user, false)) {
             return categories.stream()
+                    //in order to make sure we include all categories We need to take into account also the actual parent and verify it against the current category
                     .filter(category -> category.equals(parent) || categoryAPI.isParent(category, parent, user, false))
                     .collect(Collectors.toSet());
         }
