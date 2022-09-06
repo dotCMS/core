@@ -35,6 +35,7 @@ import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTran
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -421,8 +422,7 @@ public class MapToContentletPopulator  {
                 map.remove(field.variable());
                 continue;
             }
-            //String Null is here to deal with JSONObject.NULL
-            if (object == null || "null".equalsIgnoreCase(object.toString())) {
+            if (null == object || JSONObject.NULL == object) {
                 //the value wasn't set. Just ignore it.
                 continue;
             }
@@ -474,7 +474,9 @@ public class MapToContentletPopulator  {
      */
     private Set<Category> getCategoriesFromStringValue(final String stringValue, final User user, boolean respectFrontendRoles) {
         Set<Category> categories = new HashSet<>();
-        if (UtilMethods.isSet(stringValue)) {
+        if (UtilMethods.isNotSet(stringValue)) {
+            throw new IllegalArgumentException(String.format("Unable to resolve the raw string value [%s] as a valid form of category name or identifier.",stringValue));
+        }
 
             final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
             final String[] parts = stringValue.split("\\s*,\\s*");
@@ -516,11 +518,8 @@ public class MapToContentletPopulator  {
                     continue;
                 }
 
-                throw new IllegalArgumentException(String.format(
-                        "I wasn't able to resolve the value [%s] as a valid cat-id,cat-key, nor as a cat-var.",
-                        categoryValue));
+                throw new IllegalArgumentException(String.format("Unable to resolve the string value [%s] as a valid form of category name/var/key or identifier.", categoryValue));
             }
-        }
         return categories;
     }
 
