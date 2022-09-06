@@ -115,5 +115,6 @@ export type DotCopyContentTypeDialogFormFields = {
 /** @private */
 interface Relationships {
     cardinality: number;
+    isParentField: boolean;
     velocityVar: string;
 }

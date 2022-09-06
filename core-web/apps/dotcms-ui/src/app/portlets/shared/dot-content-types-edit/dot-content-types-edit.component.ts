@@ -258,7 +258,8 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
             .updateField(this.data.id, fieldsToEdit)
             .pipe(take(1))
             .subscribe(
-                () => {
+                (fields: DotCMSContentTypeLayoutRow[]) => {
+                    this.layout = fields;
                     this.loadingFields = false;
                 },
                 (err) => {

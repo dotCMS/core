@@ -34,6 +34,7 @@
 <%@ page import="io.vavr.control.Try" %>
 <%@ page import="com.dotcms.contenttype.model.field.HostFolderField" %>
 <%@ page import="com.dotmarketing.beans.Host" %>
+<%@ page import="com.dotcms.contenttype.model.field.JSONField" %>
 
 
 <%
@@ -42,6 +43,7 @@
     final Contentlet contentlet = Contentlet.class.cast(request.getAttribute("contentlet"));
     long contentLanguage = contentlet.getLanguageId();
     final Field field = Field.class.cast(request.getAttribute("field"));
+    final com.dotcms.contenttype.model.field.Field newField = LegacyFieldTransformer.from(field);
 
     Object value = (Object) request.getAttribute("value");
     String hint = UtilMethods.isSet(field.getHint()) ? field.getHint() : null;
@@ -187,18 +189,29 @@
             <script>
 
                 /**
-                 * Do not use "<%=textValue%>" or '<%=textValue%>'
-                 * If we put it in quotes and the user adds a content that has quotes,
-                 * it will throw a syntax error
+                 * "textValue" can be a JSON or HTML now
+                 *  In this code we'll identify if is JSON or HTML and act accordingly
                  */
-                const data = <%=textValue%>;
+                const data = `<%=textValue%>`
+                let json;
+                let html;
+
+                /**
+                 * Try/catch will tell us if the content in the DB is html string (WYSIWYG)  
+                 * or JSON (block editor)
+                 */
+                try {
+                    json = JSON.parse(data);
+                } catch (error) {
+                    html = data;
+                }
 
                 const block = document.querySelector('dotcms-block-editor .ProseMirror');
                 const field = document.querySelector('#<%=field.getVelocityVarName()%>');
 
                 if (data) {
-                    block.editor.commands.setContent(data);
-                    field.value = JSON.stringify(data);
+                    block.editor.commands.setContent(json ? json : html);
+                    field.value = JSON.stringify(block.editor.getJSON());
                 }
 
                 block.editor.on('update', ({ editor }) => {
@@ -210,7 +223,9 @@
 
         //TEXTAREA kind of field rendering
         else if (field.getFieldType().equals(
-                Field.FieldType.TEXT_AREA.toString())) {
+                Field.FieldType.TEXT_AREA.toString())
+                || newField instanceof JSONField)
+        {
             String textValue = UtilMethods.isSet(value) ? (String) value : (UtilMethods.isSet(defaultValue) ? defaultValue : "");
             String keyValue = com.dotmarketing.util.WebKeys.VELOCITY;
             FieldAPI fieldAPI = APILocator.getFieldAPI();
