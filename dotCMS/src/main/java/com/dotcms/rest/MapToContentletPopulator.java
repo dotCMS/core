@@ -402,10 +402,13 @@ public class MapToContentletPopulator  {
             final Object object = map.get(field.variable());
             if (object instanceof Collection) {
                 final Collection<?> list = (Collection<?>) object;
-                final String joinedCategories = list.stream().map(Object::toString)
-                        .collect(Collectors.joining(","));
-                builder.put(field, getCategoriesFromStringValue(joinedCategories, user, respectFrontendRoles)
-                );
+                if(list.isEmpty()){
+                    //upfront en empty list must be interpreted as an attempt to wipe out categories from the current field.
+                    builder.put(field, ImmutableSet.of());
+                } else {
+                    final String joinedCategories = list.stream().map(Object::toString).collect(Collectors.joining(","));
+                    builder.put(field, getCategoriesFromStringValue(joinedCategories, user, respectFrontendRoles));
+                }
                 continue;
             }
             if (object instanceof String) {
