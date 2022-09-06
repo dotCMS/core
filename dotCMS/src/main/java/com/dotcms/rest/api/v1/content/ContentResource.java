@@ -1,26 +1,42 @@
 package com.dotcms.rest.api.v1.content;
 
+import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.rest.AnonymousAccess;
+import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.MapToContentletPopulator;
+import com.dotcms.rest.ResponseEntityContentletView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.util.DotPreconditions;
+import com.dotcms.workflow.form.FireActionByNameForm;
+import com.dotcms.workflow.form.FireActionForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
+import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -28,8 +44,11 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -41,9 +60,11 @@ import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -51,6 +72,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -85,6 +107,141 @@ public class ContentResource {
         this.contentletAPI  = contentletAPI;
         this.identifierAPI  = identifierAPI;
     }
+
+    /**
+     * Do a Save draft of the content
+     * @param request     {@link HttpServletRequest}
+     * @param inode       {@link String} (Optional) to save draft over the existing inode.
+     * @param identifier  {@link String} (Optional) to save draft over the existing identifier (in combination of language).
+     * @param indexPolicy {@link String} (Optional) to save draft over the existing index policy
+     * @param language    {@link String} (Optional) to save draft over the existing language (in combination of identifier).
+     * @param contentForm {@link ContentForm} ContentForm
+     * @return ResponseEntityContentletView
+     */
+    @PUT
+    @Path("/_draft")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes({MediaType.APPLICATION_JSON})
+    public final ResponseEntityContentletView saveDraft(@Context final HttpServletRequest request,
+                                                     @QueryParam("inode")                        final String inode,
+                                                     @QueryParam("identifier")                   final String identifier,
+                                                     @QueryParam("indexPolicy")                  final String indexPolicy,
+                                                     @DefaultValue("-1") @QueryParam("language") final String   language,
+                                                     final ContentForm contentForm) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initDataObject = new WebResource.InitBuilder()
+                .requestAndResponse(request, new MockHttpResponse())
+                .requiredAnonAccess(AnonymousAccess.WRITE)
+                .init();
+
+        Logger.debug(this, ()-> "On Saving Draft, inode = " + inode +
+                ", identifier = " + identifier + ", language = " + language + " indexPolicy = " + indexPolicy);
+        final long languageId = LanguageUtil.getLanguageId(language);
+        final PageMode mode   = PageMode.get(request);
+        //if inode is set we use it to look up a contentlet
+        final Contentlet contentlet = this.getContentlet
+                (inode, identifier, languageId,
+                        ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
+                        contentForm, initDataObject, mode);
+
+        if (UtilMethods.isSet(indexPolicy)) {
+            contentlet.setIndexPolicy(IndexPolicy.parseIndexPolicy(indexPolicy));
+        }
+
+        final List<Category> categories = MapToContentletPopulator.INSTANCE.getCategories
+                (contentlet, initDataObject.getUser(), mode.respectAnonPerms);
+
+        contentlet.setLowIndexPriority(true);
+        contentlet.setProperty(Contentlet.DONT_VALIDATE_ME, true);
+        contentlet.setProperty(Contentlet.DISABLE_WORKFLOW, true);
+        //Contentlet.RELATIONSHIP_KEY
+        final Contentlet savedDraftContentlet =
+                APILocator.getContentletAPI().saveDraft(contentlet, (ContentletRelationships)contentlet.get(Contentlet.RELATIONSHIP_KEY),
+                            categories, null, initDataObject.getUser(), false);
+
+        return new ResponseEntityContentletView(null == contentlet?Collections.emptyMap():
+                new DotTransformerBuilder().defaultOptions().content(contentlet).build()
+                        .toMaps().stream().findFirst().orElse(Collections.emptyMap())
+                );
+    }
+
+    private Contentlet getContentlet(final String paramInode,
+                                     final String paramIdentifier,
+                                     final long   paramLanguage,
+                                     final Supplier<Long> sessionLanguage,
+                                     final ContentForm contentForm,
+                                     final InitDataObject initDataObject,
+                                     final PageMode pageMode) throws DotDataException, DotSecurityException {
+
+        DotPreconditions.notNull(contentForm , ()-> "When no inode is sent the info on the Request body becomes mandatory.");
+        DotPreconditions.notNull(contentForm.getContentlet() , ()-> "When no inode is sent the info on the Request body becomes mandatory.");
+
+        PageMode mode = pageMode;
+        final String inode      = UtilMethods.isSet(paramInode)? paramInode:          (String)contentForm.getContentlet().get("inode");
+        final String identifier = UtilMethods.isSet(paramIdentifier)?paramIdentifier: (String)contentForm.getContentlet().get("identifier");
+        final long language     = UtilMethods.isSet(paramLanguage)?paramLanguage:     (Long)  contentForm.getContentlet().getOrDefault("languageId", -1);
+
+        if(UtilMethods.isSet(inode)) {
+
+            Logger.debug(this, ()-> "Looking for content by inode: " + inode);
+
+            final Contentlet currentContentlet = this.contentletAPI.find(inode, initDataObject.getUser(), mode.respectAnonPerms);
+
+            DotPreconditions.notNull(currentContentlet, ()-> "contentlet-was-not-found", DoesNotExistException.class);
+
+            return populateContentlet(contentForm, currentContentlet, initDataObject.getUser(), mode);
+        } else if (UtilMethods.isSet(identifier)) {
+
+            Logger.debug(this, ()-> "Looking for content by identifier: " + identifier + " and language id: " + language);
+
+            mode = PageMode.EDIT_MODE; // when asking for identifier it is always edit
+            final Optional<Contentlet> currentContentlet =  language <= 0?
+                    Optional.ofNullable(this.contentletAPI.findContentletByIdentifier(identifier, mode.showLive, sessionLanguage.get(), initDataObject.getUser(), mode.respectAnonPerms)):
+                    this.contentletAPI.findContentletByIdentifierOrFallback(identifier, mode.showLive, language, initDataObject.getUser(), mode.respectAnonPerms);
+
+            DotPreconditions.isTrue(currentContentlet.isPresent(), ()-> "contentlet-was-not-found", DoesNotExistException.class);
+
+            return populateContentlet(contentForm, currentContentlet.get(), initDataObject.getUser(), mode);
+        }
+
+         throw new DotContentletValidationException("Can not do save draft on new contentlets");
+    }
+
+    private Contentlet populateContentlet(final ContentForm contentForm,
+                                          final Contentlet paramContentletInput,
+                                          final User user,
+                                          final PageMode mode) throws DotSecurityException {
+
+        final Contentlet cloneContentlet = new Contentlet();
+        cloneContentlet.getMap().putAll(paramContentletInput.getMap());
+
+        final Contentlet contentlet = MapToContentletPopulator.INSTANCE.populate (cloneContentlet, contentForm.getContentlet());
+
+        if (null == contentlet || null == contentlet.getContentType()) {
+
+            throw new DotContentletValidationException("The Contentlet does not has content type");
+        }
+
+        try {
+            if (!APILocator.getPermissionAPI().doesUserHavePermission(contentlet.getContentType(),
+                    PermissionAPI.PERMISSION_EDIT, user, mode.respectAnonPerms)) {
+
+                throw new DotSecurityException("The user has not permissions to edit the contentlet");
+            }
+        } catch (DotDataException e) {
+            throw new DotSecurityException(e.getMessage(), e);
+        }
+
+        for(final Field constant : contentlet.getContentType().fields()) {
+            if(constant instanceof ConstantField)
+                contentlet.getMap().put(constant.variable(), constant.values());
+        }
+
+        return contentlet;
+    } // populateContentlet.
+
     /**
      * Retrieve a contentlet if exists, 404 otherwise
      * @param request
