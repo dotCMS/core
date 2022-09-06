@@ -794,8 +794,8 @@ create table contentlet_version_info (
    locked_by NVARCHAR(100) null,
    locked_on datetimeoffset(3) null,
    version_ts datetimeoffset(3) not null,
-   variant_id NVARCHAR(255) default 'DEFAULT',
-   primary key (identifier, lang)
+   variant_id NVARCHAR(255) default 'DEFAULT' not null,
+   primary key (identifier, lang, variant_id)
 );
 create table fixes_audit (
    id NVARCHAR(36) not null,

@@ -243,11 +243,15 @@ public class IdentifierCacheImpl extends IdentifierCache {
     }
 
 	private String getKey(final ContentletVersionInfo contV) {
-		return String.format("%s-lang:%s-variant:%s", contV.getIdentifier(), contV.getLang(), contV.getVariant());
+		return getKey(contV.getIdentifier(), contV.getLang(), contV.getVariant());
+	}
+
+	private String getKey(final String identifier, final long lang, final String variantId) {
+		return String.format("%s-lang:%s-variant:%s", identifier, lang, variantId);
 	}
 
 	private String getKey(final String identifier, final long lang) {
-		return String.format("%s-lang:%s-variant:%s", identifier, lang, VariantAPI.DEFAULT_VARIANT.identifier());
+		return getKey(identifier, lang, VariantAPI.DEFAULT_VARIANT.identifier());
 	}
 
 	@Override
@@ -256,17 +260,23 @@ public class IdentifierCacheImpl extends IdentifierCache {
         cache.put(getVersionInfoGroup()+key, versionInfo, getVersionInfoGroup());
     }
 
-    @Override
-    protected ContentletVersionInfo getContentVersionInfo(String identifier, long lang) {
-        ContentletVersionInfo contV = null;
-        try {
-            String key= getKey(identifier, lang);
-            contV = (ContentletVersionInfo)cache.get(getVersionInfoGroup()+key, getVersionInfoGroup());
-        }
-        catch(Exception ex) {
-            Logger.debug(this, identifier +" contentVersionInfo not found in cache");
-        }
-        return contV;
+	@Override
+	protected ContentletVersionInfo getContentVersionInfo(final String identifier,
+			final long lang, final String variantId){
+		ContentletVersionInfo contV = null;
+		try {
+			String key= getKey(identifier, lang, variantId);
+			contV = (ContentletVersionInfo)cache.get(getVersionInfoGroup()+key, getVersionInfoGroup());
+		}
+		catch(Exception ex) {
+			Logger.debug(this, identifier +" contentVersionInfo not found in cache");
+		}
+		return contV;
+	}
+
+	@Override
+    protected ContentletVersionInfo getContentVersionInfo(final String identifier, final long lang) {
+		return getContentVersionInfo(identifier, lang, VariantAPI.DEFAULT_VARIANT.identifier());
     }
 
     @Override

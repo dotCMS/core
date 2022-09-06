@@ -579,7 +579,7 @@ public class VersionableAPIImpl implements VersionableAPI {
             if(!info.isPresent()) {
                 // Not yet created
                 info = Optional.of(versionableFactory.createContentletVersionInfo(identifier,
-                        contentlet.getLanguageId(), versionable.getInode()));
+                        contentlet.getLanguageId(), versionable.getInode(), contentlet.getVariantId()));
             }
             else {
                 final ContentletVersionInfo oldInfo = info.get();
