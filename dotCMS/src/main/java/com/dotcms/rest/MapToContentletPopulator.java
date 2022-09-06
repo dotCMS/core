@@ -403,15 +403,15 @@ public class MapToContentletPopulator  {
                 final Collection<?> list = (Collection<?>) object;
                 final String joinedCategories = list.stream().map(Object::toString)
                         .collect(Collectors.joining(","));
-                builder.put(field,
-                        getCategoriesFromStringValue(joinedCategories, user, respectFrontendRoles)
+                builder.put(field, getCategoriesFromStringValue(joinedCategories, user, respectFrontendRoles)
                 );
                 continue;
             }
             if (object instanceof String) {
-                builder.put(field,
-                        getCategoriesFromStringValue((String) object, user, respectFrontendRoles)
-                );
+                final String value =  (String) object;
+                if(!"null".equalsIgnoreCase(value)){
+                   builder.put(field, getCategoriesFromStringValue(value, user, respectFrontendRoles));
+                }
                 continue;
             }
             if (object == null && map.containsKey(field.variable())) {
@@ -421,7 +421,7 @@ public class MapToContentletPopulator  {
                 map.remove(field.variable());
                 continue;
             }
-            if (object == null) {
+            if (object == null || "null".equalsIgnoreCase(object.toString())) {
                 //the value wasn't set. Just ignore it.
                 continue;
             }
@@ -575,7 +575,7 @@ public class MapToContentletPopulator  {
 
         if (categoryAPI.canUseCategory(parent, user, false)) {
             return categories.stream()
-                    .filter(category -> categoryAPI.isParent(category, parent, user, false))
+                    .filter(category -> category.equals(parent) || categoryAPI.isParent(category, parent, user, false))
                     .collect(Collectors.toSet());
         }
         return null;

@@ -35,6 +35,7 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -573,15 +574,20 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
         withCategoryField.setProperty(varName, list);
         final Optional<List<Category>> recovered = populator.fetchCategories(withCategoryField,
                 APILocator.systemUser(), false);
-        assertFalse(" Recovered categories should be empty " + list, recovered.isEmpty());
+        assertFalse(" Recovered Optional categories should be empty " + list, recovered.isEmpty());
 
     }
 
+    /**
+     * Scenario: We have a content with more than one category then we test that the values are preserved on other fields when we pass an empty list to wipe out the values from a specific field
+     * Expectation: Only the field with the categories we wanted to eliminate must be gone. Any other field should preserve their categories
+     */
     @Test
-    public void Test_Pass_Empty_List_Multiple_Category_Fields() throws DotDataException, DotSecurityException {
+    public void Test_Pass_Empty_List_Multiple_Category_Fields_Pass_Empty_List()
+            throws DotDataException, DotSecurityException {
 
         //Will only use two categories
-        final List<Category> categories = createParentCategories().subList(0,2);
+        final List<Category> categories = createParentCategories().subList(0, 2);
 
         final ContentType contentType = TestDataUtils.newContentTypeWithMultipleCategoryFields(
                 "WithMultipleCategoryFields" + System.currentTimeMillis(), null, categories);
@@ -595,7 +601,7 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
                 .languageId(1)
                 .setProperty("title", "lol");
 
-        for(final Category category:categories){
+        for (final Category category : categories) {
             dataGen.addCategory(category);
         }
 
@@ -604,18 +610,121 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
         final Contentlet persisted = dataGen.nextPersisted();
 
         final Contentlet contentlet = new Contentlet(persisted);
-        //contentlet.setProperty(fields.get(0).variable(),null);
-        contentlet.setProperty(fields.get(0).variable(),ImmutableList.of());
+        contentlet.setProperty(fields.get(0).variable(), ImmutableList.of());
 
         final Optional<List<Category>> optionalCategories = populator.fetchCategories(contentlet,
                 APILocator.systemUser(), false);
 
         assertFalse(optionalCategories.isEmpty());
+        final List<Category> present = optionalCategories.get();
+
         //Must have the categories from the second field
-        assertTrue("Must contain the categories on the field that was not modified", optionalCategories.get().contains(categories.get(1)));
-        assertFalse("Must not contain the categories that were removed", optionalCategories.get().contains(categories.get(0)));
+        assertTrue("Must contain the categories on the field that was not modified",
+                present.contains(categories.get(1)));
+        assertFalse("Must not contain the categories that were removed",
+                present.contains(categories.get(0)));
+    }
+
+    /**
+     * Nulls must be ignored
+     * Scenario: We have a content with multiple category fields here we test that no form of null affects the returned values.
+     * Expectation: Every category field must come back populated with the respective category fields they originally had in the db.
+     */
+    @UseDataProvider("formsOfNull")
+    @Test
+    public void Test_Pass_Empty_List_Multiple_Category_Fields_Pass_Null(final Object formOfNull)
+            throws DotDataException, DotSecurityException {
+
+        //Will only use two categories
+        final List<Category> categories = createParentCategories().subList(0, 2);
+
+        final ContentType contentType = TestDataUtils.newContentTypeWithMultipleCategoryFields(
+                "WithMultipleCategoryFields" + System.currentTimeMillis(), null, categories);
+
+        //Make sure we have a field of type Category
+        final List<Field> fields = contentType.fields(CategoryField.class);
+        final long count = fields.size();
+        assertEquals(count, categories.size());
+
+        final ContentletDataGen dataGen = new ContentletDataGen(contentType)
+                .languageId(1)
+                .setProperty("title", "lol");
+
+        for (final Category category : categories) {
+            dataGen.addCategory(category);
+        }
+
+        final MapToContentletPopulator populator = new MapToContentletPopulator();
+
+        final Contentlet persisted = dataGen.nextPersisted();
+
+        final Contentlet contentlet = new Contentlet(persisted);
+        contentlet.setProperty(fields.get(0).variable(), formOfNull);
+
+        final Optional<List<Category>> optionalCategories = populator.fetchCategories(contentlet,
+                APILocator.systemUser(), false);
+
+        assertFalse(optionalCategories.isEmpty());
+
+        final List<Category> present = optionalCategories.get();
+
+        //Must have the categories from both fields
+        assertTrue("Must contain category on field 1.", present.contains(categories.get(0)));
+        assertTrue("Must contain category on field 2.", present.contains(categories.get(1)));
+    }
+
+    @DataProvider
+    public static Object[] formsOfNull() {
+       return new Object[]{
+               null, JSONObject.NULL, "null"
+       };
     }
 
 
+    /**
+     * Scenario: We have a content with multiple category fields. The situation is a bit different here we test we deal with List of actual categories
+     * Expectation: Every category field must come back populated with the exact category value we're setting
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_Pass_Empty_List_Multiple_Category_Fields_Pass_List_Of_Category() throws DotDataException, DotSecurityException {
+
+        //Will only use two categories
+        final List<Category> categories = createParentCategories().subList(0,4);
+
+        final ContentType contentType = TestDataUtils.newContentTypeWithMultipleCategoryFields(
+                "WithMultipleCategoryFields" + System.currentTimeMillis(), null, categories);
+
+        //Make sure we have a field of type Category
+        final List<Field> fields = contentType.fields(CategoryField.class);
+        final long count = fields.size();
+        assertEquals(count, categories.size());
+
+        final ContentletDataGen dataGen = new ContentletDataGen(contentType)
+                .languageId(1)
+                .setProperty("title", "lol");
+
+        for(final Category category:categories.subList(0,2)){
+            dataGen.addCategory(category);
+        }
+        final Contentlet persisted = dataGen.nextPersisted();
+        final Contentlet contentlet = new Contentlet(persisted);
+        contentlet.setProperty(fields.get(0).variable(), ImmutableList.of(categories.get(0).getCategoryVelocityVarName().toLowerCase()));
+        contentlet.setProperty(fields.get(1).variable(), ImmutableList.of(categories.get(1).getCategoryId()));
+
+        final MapToContentletPopulator populator = new MapToContentletPopulator();
+        final Optional<List<Category>> optionalCategories = populator.fetchCategories(contentlet,
+                APILocator.systemUser(), false);
+
+        assertFalse(optionalCategories.isEmpty());
+
+        final List<Category> present = optionalCategories.get();
+        assertEquals("We're expecting exactly 2 categories.",present.size(),2);
+
+        //Must have the categories from both fields
+        assertTrue("Must contain category on field 1.", present.contains(categories.get(0)));
+        assertTrue("Must contain category on field 2.", present.contains(categories.get(1)));
+    }
 
 }
