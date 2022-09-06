@@ -1585,7 +1585,7 @@ public class WorkflowResource {
         final Optional<List<Category>>categories = MapToContentletPopulator.
                 INSTANCE.fetchCategories(contentlet, user, pageMode.respectAnonPerms);
 
-        //Must be compared against null. Empty collection implies removal, therefore we must allow it
+        //Empty collection implies removal, so only when a value is present we must pass the collection
         categories.ifPresent(formBuilder::categories);
 
         return Response.ok(
