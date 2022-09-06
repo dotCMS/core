@@ -7,7 +7,7 @@ import { map } from 'rxjs/operators';
 const FEATURED_FLAG_EXPERIMENTS = 'EXPERIMENTS_FEATURE_ENABLE';
 
 @Injectable()
-export class DotExperimentFeatureFlagResolver implements Resolve<Observable<boolean>> {
+export class DotFeatureFlagResolver implements Resolve<Observable<boolean>> {
     constructor(private readonly dotConfigurationService: DotPropertiesService) {}
 
     resolve() {

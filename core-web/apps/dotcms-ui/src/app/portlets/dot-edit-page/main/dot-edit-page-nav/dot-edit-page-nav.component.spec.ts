@@ -309,11 +309,15 @@ describe('DotEditPageNavComponent', () => {
     describe('experiments feature flag true', () => {
         it('should has Experiments item', () => {
             fixture.detectChanges();
-            const menuListItems = fixture.debugElement.queryAll(By.css('.edit-page-nav__item'));
+
+            const menuListItems = fixture.debugElement.queryAll(
+                By.css('[data-testId="menuListItems"]')
+            );
             expect(menuListItems.length).toEqual(5);
 
-            const iconClass = menuListItems[4].query(By.css('i')).nativeElement.innerHTML.trim();
-            const label = menuListItems[4].query(By.css('span')).nativeElement.innerHTML.trim();
+            const iconClass = menuListItems[4].query(By.css('i')).nativeElement.innerHTML;
+            const label = menuListItems[4].query(By.css('[data-testId="menuListItemText"]'))
+                .nativeElement.innerHTML;
 
             expect('dataset').toEqual(iconClass);
             expect('Experiments').toEqual(label);

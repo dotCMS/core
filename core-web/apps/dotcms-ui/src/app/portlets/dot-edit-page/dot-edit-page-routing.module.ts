@@ -4,7 +4,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { DotEditPageMainComponent } from './main/dot-edit-page-main/dot-edit-page-main.component';
 import { DotEditPageResolver } from './shared/services/dot-edit-page-resolver/dot-edit-page-resolver.service';
 import { LayoutEditorCanDeactivateGuardService } from '@services/guards/layout-editor-can-deactivate-guard.service';
-import { DotExperimentFeatureFlagResolver } from '@portlets/dot-experiments';
+import { DotFeatureFlagResolver } from '@portlets/dot-experiments';
 
 const dotEditPage: Routes = [
     {
@@ -12,7 +12,7 @@ const dotEditPage: Routes = [
         path: '',
         resolve: {
             content: DotEditPageResolver,
-            featuredFlagExperiment: DotExperimentFeatureFlagResolver
+            featuredFlagExperiment: DotFeatureFlagResolver
         },
         runGuardsAndResolvers: 'always',
         children: [
