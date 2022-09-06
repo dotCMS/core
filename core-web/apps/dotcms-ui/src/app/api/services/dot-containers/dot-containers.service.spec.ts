@@ -11,6 +11,7 @@ import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { DotTemplate } from '@models/dot-edit-layout-designer';
 import { DotActionBulkResult } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
 import { of } from 'rxjs';
+import { DotContainer } from '@models/container/dot-container.model';
 
 const mockBulkResponseSuccess: DotActionBulkResult = {
     skippedCount: 0,
@@ -136,9 +137,8 @@ describe('DotTemplatesService', () => {
         service
             .create({
                 name: '',
-                anonymous: true,
                 friendlyName: ''
-            } as DotTemplate)
+            } as DotContainer)
             .subscribe((template) => {
                 expect(template as any).toEqual({
                     identifier: '1234',
@@ -163,9 +163,8 @@ describe('DotTemplatesService', () => {
         service
             .update({
                 name: '',
-                anonymous: true,
                 friendlyName: ''
-            } as DotTemplate)
+            } as DotContainer)
             .subscribe((template) => {
                 expect(template as any).toEqual({
                     identifier: '1234',
@@ -189,9 +188,8 @@ describe('DotTemplatesService', () => {
         service
             .saveAndPublish({
                 name: '',
-                anonymous: true,
                 friendlyName: ''
-            } as DotTemplate)
+            } as DotContainer)
             .subscribe((template) => {
                 expect(template as any).toEqual({
                     identifier: '1234',
@@ -244,7 +242,7 @@ describe('DotTemplatesService', () => {
         req.flush(mockBulkResponseSuccess);
     });
     it('should publish a template', () => {
-        service.publish(['testId01']).subscribe();
+        service.publish('testId01').subscribe();
         const req = httpMock.expectOne(`${CONTAINER_API_URL}_publish`);
 
         expect(req.request.method).toBe('PUT');
