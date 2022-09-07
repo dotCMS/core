@@ -1,5 +1,6 @@
-import { mergeAttributes } from '@tiptap/core';
 import { Image } from '@tiptap/extension-image';
+
+import { parseIMGElement, imageLinkElement, imageElement } from './helpers';
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
@@ -16,33 +17,43 @@ declare module '@tiptap/core' {
     }
 }
 
-const imageLinkElement = (attrs, newAttrs) => {
-    const { href = null } = newAttrs;
-
-    return ['a', { href }, imageElement(attrs, newAttrs)];
-};
-
-const imageElement = (attrs, newAttrs) => {
-    return ['img', mergeAttributes(attrs, newAttrs)];
-};
-
 export const ImageNode = Image.extend({
     name: 'dotImage',
+    priority: 10000,
 
     addAttributes() {
         return {
-            // Extend Attributes: https://tiptap.dev/guide/custom-extensions#extend-existing-attributes
-            ...this.parent?.(),
+            src: {
+                default: null,
+                parseHTML: (element) => parseIMGElement(element).getAttribute('src'),
+                renderHTML: (attributes) => {
+                    return { src: attributes.src };
+                }
+            },
+            alt: {
+                default: null,
+                parseHTML: (element) => parseIMGElement(element).getAttribute('alt'),
+                renderHTML: (attributes) => {
+                    return { alt: attributes.alt };
+                }
+            },
+            title: {
+                default: null,
+                parseHTML: (element) => parseIMGElement(element).getAttribute('title'),
+                renderHTML: (attributes) => {
+                    return { title: attributes.title };
+                }
+            },
             style: {
                 default: null,
-                parseHTML: (element) => element.getAttribute('style'),
+                parseHTML: (element) => parseIMGElement(element).getAttribute('style'),
                 renderHTML: (attributes) => {
                     return { style: attributes.style };
                 }
             },
             href: {
                 default: null,
-                parseHTML: (element) => element.getAttribute('href'),
+                parseHTML: (element) => parseIMGElement(element).getAttribute('href'),
                 renderHTML: (attributes) => {
                     return { href: attributes.href };
                 }
@@ -50,13 +61,34 @@ export const ImageNode = Image.extend({
             data: {
                 default: null,
                 parseHTML: (element) => ({
-                    data: element.getAttribute('data')
+                    data: parseIMGElement(element).getAttribute('data')
                 }),
                 renderHTML: (attributes) => {
                     return { data: attributes.data };
                 }
             }
         };
+    },
+
+    parseHTML() {
+        return [
+            {
+                tag: this.options.allowBase64 ? 'img[src]' : 'img[src]:not([src^="data:"])'
+            },
+            {
+                tag: 'p',
+                getAttrs: (element) => {
+                    if (typeof element === 'string') {
+                        return false && null;
+                    }
+
+                    // Check if the element has an attribute
+                    const isImage = element.querySelector('img');
+
+                    return !!isImage && null;
+                }
+            }
+        ];
     },
 
     addCommands() {
