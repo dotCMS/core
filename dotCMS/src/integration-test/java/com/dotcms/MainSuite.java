@@ -167,8 +167,12 @@ import com.dotmarketing.startup.runonce.Task220402UpdateDateTimezonesTest;
 import com.dotmarketing.startup.runonce.Task220413IncreasePublishedPushedAssetIdColTest;
 import com.dotmarketing.startup.runonce.Task220512UpdateNoHTMLRegexValueTest;
 import com.dotmarketing.startup.runonce.Task220606UpdatePushNowActionletNameTest;
+
+import com.dotmarketing.startup.runonce.Task220824CreateDefaultVariantTest;
+
 import com.dotmarketing.startup.runonce.Task220822CreateVariantTableTest;
 import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTableTest;
+
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -568,6 +572,7 @@ import org.junit.runners.Suite.SuiteClasses;
         VariantFactoryTest.class,
         VariantAPITest.class,
         PaginatedContentletsIntegrationTest.class,
+        Task220824CreateDefaultVariantTest.class,
         Task220822CreateVariantTableTest.class,
         Task220829CreateExperimentsTableTest.class,
         StoryBlockTest.class

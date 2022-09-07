@@ -243,6 +243,7 @@ public class FactoryLocator extends Locator<FactoryIndex>{
     }
 
     /**
+     * Returns the Factory object that handles operations related to {@link com.dotcms.variant.model.Variant} in dotCMS.
      * Returns the Factory object that handles operations related to {@link Variant} in dotCMS.
      *
      * @return An instance of the {@link VariantFactory} object.

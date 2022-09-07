@@ -69,7 +69,7 @@ const clickEvent = {
         contentType: 'Blog',
         language: 2,
         inode: 'testInode',
-        content: '{"field":"field value"}'
+        blockEditorContent: '{"field":"field value"}'
     }
 };
 
@@ -124,19 +124,22 @@ describe('DotBlockEditorSidebarComponent', () => {
         expect(component).toBeTruthy();
     });
 
-    it('should set inputs to the block editor', () => {
+    it('should set inputs to the block editor', async () => {
         spyOn(dotContentTypeService, 'getContentType').and.callThrough();
         dotEventsService.notify('edit-block-editor', clickEvent);
+
+        await fixture.whenRenderingDone();
         fixture.detectChanges();
+
         const blockEditor: MockDotBlockEditorComponent = de.query(
-            By.css('dotcms-block-editor')
+            By.css('dot-block-editor')
         ).componentInstance;
 
         expect(dotContentTypeService.getContentType).toHaveBeenCalledWith('Blog');
         expect(blockEditor.lang).toEqual(clickEvent.dataset.language);
         expect(blockEditor.allowedBlocks).toEqual('heading1');
         expect(blockEditor.allowedContentTypes).toEqual('Activity');
-        expect(blockEditor.value).toEqual(JSON.parse(clickEvent.dataset.content));
+        expect(blockEditor.value).toEqual(JSON.parse(clickEvent.dataset.blockEditorContent));
         expect(blockEditor.customStyles).toEqual('height:50%');
     });
 
