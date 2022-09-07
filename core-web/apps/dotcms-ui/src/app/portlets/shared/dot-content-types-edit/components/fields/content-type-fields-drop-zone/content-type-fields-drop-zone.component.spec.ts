@@ -278,7 +278,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         );
     });
 
-    it('should reset values when close dialog', () => {
+    it('should reset values when close dialog', async () => {
         const fieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
         comp.fieldRows = [fieldRow];
 
@@ -291,13 +291,13 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         const dialog = de.query(By.css('dot-dialog')).componentInstance;
         dialog.hide.emit();
 
-        fixture.whenStable().then(() => {
-            expect(comp.displayDialog).toBe(false);
-            expect(comp.hideButtons).toBe(false);
-            expect(comp.currentField).toBe(null);
-            expect(comp.activeTab).toBe(0);
-            expect(comp.setDialogOkButtonState).toHaveBeenCalledWith(false);
-        });
+        await fixture.whenStable();
+
+        expect(comp.displayDialog).toBe(false);
+        expect(comp.hideButtons).toBe(false);
+        expect(comp.currentField).toBe(null);
+        expect(comp.activeTab).toBe(0);
+        expect(comp.setDialogOkButtonState).toHaveBeenCalledWith(false);
     });
 
     it('should emit removeFields event', () => {
