@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.experiments;
 
 import com.dotcms.experiments.model.AbstractExperiment.Status;
+import com.dotcms.experiments.model.Goals;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TrafficProportion;
 import com.dotcms.repackage.javax.validation.constraints.Size;
@@ -22,6 +23,7 @@ public class ExperimentForm extends Validated {
     private final float trafficAllocation;
     private final TrafficProportion trafficProportion;
     private final Scheduling scheduling;
+    private final Goals goals;
 
     private ExperimentForm(final Builder builder) {
         this.name = builder.name;
@@ -31,6 +33,7 @@ public class ExperimentForm extends Validated {
         this.trafficAllocation = builder.trafficAllocation;
         this.trafficProportion = builder.trafficProportion;
         this.scheduling = builder.scheduling;
+        this.goals = builder.goals;
         checkValid();
     }
 
@@ -62,6 +65,10 @@ public class ExperimentForm extends Validated {
         return scheduling;
     }
 
+    public Goals getGoals() {
+        return goals;
+    }
+
     public static final class Builder {
         private String name;
         private String description;
@@ -70,6 +77,7 @@ public class ExperimentForm extends Validated {
         private float trafficAllocation=-1;
         private TrafficProportion trafficProportion;
         private Scheduling scheduling;
+        private Goals goals;
 
         private Builder() {
         }
@@ -110,6 +118,11 @@ public class ExperimentForm extends Validated {
 
         public Builder withScheduling(Scheduling scheduling) {
             this.scheduling = scheduling;
+            return this;
+        }
+
+        public Builder withGoals(Goals goals) {
+            this.goals = goals;
             return this;
         }
 

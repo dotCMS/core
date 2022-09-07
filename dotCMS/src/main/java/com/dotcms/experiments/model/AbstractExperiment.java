@@ -78,6 +78,9 @@ public interface AbstractExperiment extends Serializable, ManifestItem {
     @JsonProperty("lastModifiedBy")
     String lastModifiedBy();
 
+    @JsonProperty("goals")
+    Optional<Goals> goals();
+
     @Value.Derived
     @Override
     default ManifestInfo getManifestInfo() {

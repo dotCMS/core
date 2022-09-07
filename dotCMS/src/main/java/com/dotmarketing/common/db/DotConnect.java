@@ -542,6 +542,10 @@ public class DotConnect {
      */
 
     public DotConnect addJSONParam(Object json) {
+        if(json==null) {
+            return addObject(json);
+        }
+
         final String jsonStr = Try.of(()->
                         mapper.writeValueAsString(json))
                 .getOrNull();

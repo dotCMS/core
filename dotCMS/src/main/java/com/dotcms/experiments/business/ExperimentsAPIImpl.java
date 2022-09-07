@@ -1,10 +1,15 @@
 package com.dotcms.experiments.business;
 
+import com.dotcms.analytics.metrics.Condition;
+import com.dotcms.analytics.metrics.Metric;
+import com.dotcms.analytics.metrics.MetricType;
+import com.dotcms.analytics.metrics.Parameter;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.experiments.model.Goals;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.LicenseValiditySupplier;
 import com.dotmarketing.beans.PermissionableProxy;
@@ -67,10 +72,25 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         builder.modDate(Instant.now());
         builder.lastModifiedBy(user.getUserId());
+        
+        if(experiment.goals().isPresent()) {
+            validateGoals(experiment.goals().get());
+        }
 
         final Experiment experimentToSave = builder.build();
 
         return factory.save(experimentToSave);
+    }
+
+    private void validateGoals(Goals goals) {
+        final Metric primaryGoal = goals.primary();
+        for (Condition condition : primaryGoal.conditions()) {
+            if(primaryGoal.type().availableParameters().stream().map(Parameter::name)
+                    .noneMatch((name)->name.equals(condition.parameter()))) {
+                throw new IllegalArgumentException("Invalid Condition Parameter provided:" +
+                        condition.parameter());
+            }
+        }
     }
 
     @CloseDBIfOpened
