@@ -373,8 +373,8 @@ public class MapToContentletPopulator  {
             final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
         DotPreconditions.checkNotNull(contentlet, IllegalArgumentException.class, "Invalid Contentlet");
-        DotPreconditions.checkNotNull(contentlet.getIdentifier(), IllegalArgumentException.class, "Contentlet must be provided with an identifier");
-        DotPreconditions.checkNotNull(contentlet.getContentType(), IllegalArgumentException.class, "Invalid Content Type");
+        DotPreconditions.checkNotNull(contentlet.getIdentifier(), IllegalArgumentException.class, "A valid identifier is mandatory");
+        DotPreconditions.checkNotNull(contentlet.getContentType(), IllegalArgumentException.class, "A valid Content Type or stInode is mandatory.");
 
         return internalFetchCategories(contentlet, user, respectFrontendRoles);
     }
