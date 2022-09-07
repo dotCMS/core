@@ -22,6 +22,7 @@ import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.RelationshipUtil;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -1623,7 +1624,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		map.put(VARIANT_ID, variantId);
     }
 	public String getVariantId() {
-		return UtilMethods.isSet(map.get(VARIANT_ID)) ? map.get(VARIANT_ID).toString() : null;
+		return UtilMethods.isSet(map.get(VARIANT_ID)) ? map.get(VARIANT_ID).toString() :
+				VariantAPI.DEFAULT_VARIANT.identifier();
 	}
 
     private class ContentletHashMap extends ConcurrentHashMap<String, Object> {
