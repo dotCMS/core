@@ -1,0 +1,16 @@
+<ng-container>
+    <div>
+        <p-inplace #editText>
+            <ng-template pTemplate="content">
+                <span class="p-input-icon-right">
+                    <i class="pi pi-times" (click)="editText.deactivate()"></i>
+                    <input type="text" pInputText />
+                </span>
+            </ng-template>
+            <ng-template pTemplate="display">
+                Click to Edit
+                <i class="pi pi-pencil"></i>
+            </ng-template>
+        </p-inplace>
+    </div>
+</ng-container>

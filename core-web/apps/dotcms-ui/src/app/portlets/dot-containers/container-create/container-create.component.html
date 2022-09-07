@@ -3,7 +3,9 @@
         <!--    <dot-portlet-toolbar title="Container Create"></dot-portlet-toolbar>-->
         <p-tabView class="container-create__tabs">
             <p-tabPanel [header]="'message.containers.tab.properties' | dm">
-                <ng-template pTemplate="content"> Complex Content to Lazy Load 1 </ng-template>
+                <ng-template pTemplate="content">
+                    <dot-container-properties></dot-container-properties>
+                </ng-template>
             </p-tabPanel>
             <p-tabPanel [header]="'message.containers.tab.permissions' | dm">
                 <ng-template pTemplate="content"> Complex Content to Lazy Load 2 </ng-template>
