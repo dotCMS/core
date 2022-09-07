@@ -14,12 +14,18 @@ import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.List;
 import org.immutables.value.Value;
+
+/**
+ * Provides the basic definition and field layout of the Page Asset Base Type. By default, all contents of type Page
+ * Asset will have the list of fields specified in this class.
+ *
+ * @author Will Ezell
+ * @since Jun 29th, 2016
+ */
 @JsonSerialize(as = ImmutablePageContentType.class)
 @JsonDeserialize(as = ImmutablePageContentType.class)
 @Value.Immutable
 public abstract class PageContentType extends ContentType implements Expireable{
-
-
 
 	private static final long serialVersionUID = 1L;
 
@@ -41,13 +47,17 @@ public abstract class PageContentType extends ContentType implements Expireable{
 		return  BaseContentType.HTMLPAGE;
 	}
 	public abstract static class Builder implements ContentTypeBuilder {}
-	
-	
-	
-	public  List<Field> requiredFields(){
+
+	/**
+	 * Returns the list of official or recommended fields for this Base Content Type. Some of them can be deleted by
+	 * the User via the UI if necessary.
+	 *
+	 * @return The list of {@link Field} objects that make up the Base Content Type.
+	 */
+	public List<Field> requiredFields(){
 		int i=0;
-		
-		List<Field> fields = new ArrayList<Field>();
+
+		final List<Field> fields = new ArrayList<>();
 		fields.add(
 				ImmutableCustomField.builder()
 				.name("Title")
@@ -105,19 +115,18 @@ public abstract class PageContentType extends ContentType implements Expireable{
 				.variable(PAGE_SHOW_ON_MENU_FIELD_VAR)
 				.values("|true")
 				.defaultValue("false")
-				.fixed(true)
+				.forceIncludeInApi(Boolean.TRUE)
 				.indexed(true)
 				.sortOrder(i++)
 				.build()
 		);
-		
 		fields.add(
 				ImmutableTextField.builder()
 				.name("Sort Order")
 				.dataType(DataTypes.INTEGER)
 				.variable(PAGE_SORT_ORDER_FIELD_VAR)
 				.required(true)
-				.fixed(true)
+				.forceIncludeInApi(Boolean.TRUE)
 				.searchable(true)
 				.defaultValue("0")
 				.indexed(true)
@@ -130,7 +139,7 @@ public abstract class PageContentType extends ContentType implements Expireable{
 				.dataType(DataTypes.TEXT)
 				.variable(PAGE_CACHE_TTL_FIELD_VAR)
 				.indexed(true)
-				.fixed(true)
+				.forceIncludeInApi(Boolean.TRUE)
 				.required(true)
 				.values("$velutil.mergeTemplate('/static/htmlpage_assets/cachettl_custom_field.vtl')")
 				.sortOrder(i++)
@@ -143,7 +152,7 @@ public abstract class PageContentType extends ContentType implements Expireable{
 				.dataType(DataTypes.TEXT)
 				.variable(PAGE_FRIENDLY_NAME_FIELD_VAR)
 				.indexed(true)
-				.fixed(true)
+				.forceIncludeInApi(Boolean.TRUE)
 				.sortOrder(i++)
 				.build()
 		);
@@ -154,68 +163,58 @@ public abstract class PageContentType extends ContentType implements Expireable{
 				.sortOrder(i++)
 				.build()
 		);
-
-
 		fields.add(
 				ImmutableCustomField.builder()
 				.name("Redirect URL")
 				.variable(PAGE_REDIRECT_URL_FIELD_VAR)
 				.values("$velutil.mergeTemplate('/static/htmlpage_assets/redirect_custom_field.vtl')")
 				.dataType(DataTypes.TEXT)
-				.fixed(true)
+				.forceIncludeInApi(Boolean.TRUE)
 				.listed(true)
 				.sortOrder(i++)
 				.build()
 		);
-		
-		
-
-		
-
 		fields.add(
 				ImmutableCheckboxField.builder()
 				.name("HTTPS Required")
 				.dataType(DataTypes.TEXT)
 				.variable(PAGE_HTTP_REQUIRED_FIELD_VAR)
-				.fixed(true)
+				.forceIncludeInApi(Boolean.TRUE)
 				.values("|true")
 				.defaultValue("false")
 				.sortOrder(i++)
 				.build()
 		);
-		
 		fields.add(
 				ImmutableTextAreaField.builder()
 				.name("SEO Description")
 				.dataType(DataTypes.LONG_TEXT)
 				.variable(PAGE_SEO_DESCRIPTION_FIELD_VAR)
 				.indexed(true)
-				.fixed(true)
+				.forceIncludeInApi(Boolean.TRUE)
 				.sortOrder(i++)
 				.build()
 		);
-		
 		fields.add(
 				ImmutableTextAreaField.builder()
 				.name("SEO Keywords")
 				.dataType(DataTypes.LONG_TEXT)
 				.variable(PAGE_SEO_KEYWORDS_FIELD_VAR)
 				.indexed(true)
-				.fixed(true)
+				.forceIncludeInApi(Boolean.TRUE)
 				.sortOrder(i++)
 				.build()
 		);
-		
 		fields.add(
 				ImmutableTextAreaField.builder()
 				.name("Page Metadata")
 				.dataType(DataTypes.LONG_TEXT)
 				.variable(PAGE_PAGE_METADATA_FIELD_VAR)
-				.fixed(true)
+				.forceIncludeInApi(Boolean.TRUE)
 				.sortOrder(i++)
 				.build()
 		);
-		
 		return ImmutableList.copyOf(fields);
 	}
+
 }

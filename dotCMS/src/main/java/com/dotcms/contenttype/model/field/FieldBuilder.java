@@ -33,6 +33,16 @@ public interface FieldBuilder {
     FieldBuilder listed(boolean listed);
     FieldBuilder values(String values);
     FieldBuilder relationType(String relationType);
+
+	/**
+	 * Determines whether the field must be returned by the API (for instance, the GraphQL API) or not, even if the
+	 * field is removable.
+	 *
+	 * @param include If the field must be returned by the API, set it to {@code true}.
+	 *
+	 * @return The current {@link FieldBuilder} instance.
+	 */
+	FieldBuilder forceIncludeInApi(boolean include);
     
 	public static FieldBuilder builder(Field field) throws DotStateException{
 		return builder(field.type()).from(field);
