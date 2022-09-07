@@ -25,6 +25,7 @@
 <%@page import="com.dotmarketing.util.Parameter"%>
 <%@page import="com.dotmarketing.util.PortletID"%>
 <%@page import="com.dotmarketing.util.VelocityUtil"%>
+<%@page import="com.dotmarketing.util.json.JSONObject"%>
 <%@ page import="com.dotcms.contenttype.model.type.ContentType" %>
 <%@ page import="com.dotcms.contenttype.model.type.BaseContentType" %>
 <%@ page import="com.dotmarketing.portlets.browser.BrowserUtil" %>
@@ -154,13 +155,19 @@
 
         // STORY BLOCK
         else if (field.getFieldType().equals(Field.FieldType.STORY_BLOCK_FIELD.toString())) {
-
-            // The extra single quotes indicate that it will return an empty string -> "''"
-            String textValue = UtilMethods.isSet(value) ? value.toString() : (UtilMethods.isSet(defaultValue) ? defaultValue : "''");
+            String textValue = UtilMethods.isSet(value) ? value.toString() : (UtilMethods.isSet(defaultValue) ? defaultValue : "");
             String customStyles = "";
             String customClassName = "";
             String allowedContentTypes = "";
             String allowedBlocks = "";
+            // By default this is an empty JSON `{}`.
+            JSONObject JSONValue = new JSONObject();
+            try {
+                JSONValue = new JSONObject(textValue);
+            } catch(Exception e) {
+                // Need it in case the value contains Single quote/backtick.
+                textValue = "`" + textValue.replaceAll("`", "&#96;") + "`";
+            }
 
             List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
             for(FieldVariable fv : acceptTypes){
@@ -189,28 +196,30 @@
             <script>
 
                 /**
-                 * "textValue" can be a JSON or HTML now
-                 *  In this code we'll identify if is JSON or HTML and act accordingly
+                 * "<%=JSONValue%>" is by default an empty Object.
+                 *  If that's the case we set "JSONValue" as null.
+                 *  Otherwise, we set "JSONValue" equals to "<%=JSONValue%>".
                  */
-                const data = `<%=textValue%>`
-                let json;
-                let html;
-
+                const JSONValue = JSON.stringify(<%=JSONValue%>) !== JSON.stringify({}) ? <%=JSONValue%> : null;
+                let content;
+ 
                 /**
                  * Try/catch will tell us if the content in the DB is html string (WYSIWYG)  
                  * or JSON (block editor)
                  */
                 try {
-                    json = JSON.parse(data);
+                    // If JSONValue is an valid Object, we use it as the Block Editor Content.
+                    // Otherwise, we try to parse the "<%=textValue%>".
+                    content = JSONValue || JSON.parse(<%=textValue%>);
                 } catch (error) {
-                    html = data;
+                    content = <%=textValue%>;
                 }
 
                 const block = document.querySelector('dotcms-block-editor .ProseMirror');
                 const field = document.querySelector('#<%=field.getVelocityVarName()%>');
 
-                if (data) {
-                    block.editor.commands.setContent(json ? json : html);
+                if (content) {
+                    block.editor.commands.setContent(content);
                     field.value = JSON.stringify(block.editor.getJSON());
                 }
 
