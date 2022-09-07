@@ -1098,9 +1098,6 @@ public class ContainerResource implements Serializable {
 
         DotPreconditions.checkArgument(UtilMethods.isSet(id),
                     "The container id is required");
-        
-	DotPreconditions.checkArgument(UUIDUtil.isUUID(id),
-		    "Container 'id' should be a uuid");
 
         final Container sourceContainer = this.getContainerWorking(id, user,
                 WebAPILocator.getHostWebAPI().getHost(request));
