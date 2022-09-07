@@ -1,8 +1,8 @@
 <form *ngIf="form" [formGroup]="form" (ngSubmit)="onSubmit()">
-    <div *ngFor="let control of dynamicControls; let i = index" class="form-row">
+    <div *ngFor="let control of dynamicControls" class="form-row">
         <label [for]="control.key">{{ control.label | titlecase }}</label>
-        <!-- [class.active]="i === 0" -->
         <input
+            #group
             pInputText
             type="control.type"
             [formControlName]="control.key"

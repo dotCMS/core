@@ -4,14 +4,19 @@ import { takeUntil } from 'rxjs/operators';
 
 import { EditorState, Plugin, PluginKey, Transaction, NodeSelection } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
+import { Node } from 'prosemirror-model';
+
 import { Editor, posToDOMRect } from '@tiptap/core';
+import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
 import tippy, { Instance, Props } from 'tippy.js';
 
-import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
-import { BUBBLE_FORM_PLUGIN_KEY } from '../bubble-form.extension';
-import { BubbleFormComponent, DynamicControl } from '../bubble-form.component';
-import { Node } from 'prosemirror-model';
-import { ImageNode } from '../../../nodes/image-node/image.node';
+import {
+    ImageNode,
+    getNodePosition,
+    BUBBLE_FORM_PLUGIN_KEY,
+    BubbleFormComponent,
+    DynamicControl
+} from '@dotcms/block-editor';
 
 export interface BubbleFormProps {
     pluginKey: PluginKey;
@@ -53,12 +58,14 @@ interface PluginState {
     open: boolean;
 }
 
-// Move this an util file.
-export const getNodePosition = (node: HTMLElement, type: string): DOMRect => {
+export const getImagePosition = (node: HTMLElement, type: string): DOMRect => {
     // If is a image Node, get the image position
     if (type === ImageNode.name) {
         const rect = node.getElementsByTagName('img')[0].getBoundingClientRect().toJSON();
 
+        // height: 20 because some image are way too big.
+        // By default tippy only allow set the tippy about/below an element.
+        // This trick it's going to help us to set the form inside the image bounderies.
         const newRect = {
             ...rect,
             height: 20
@@ -66,8 +73,6 @@ export const getNodePosition = (node: HTMLElement, type: string): DOMRect => {
 
         return newRect as DOMRect;
     }
-
-    return node.getBoundingClientRect();
 };
 
 export class BubbleFormView extends BubbleMenuView {
@@ -150,7 +155,7 @@ export class BubbleFormView extends BubbleMenuView {
                         this.node = doc.nodeAt(from);
                         const type = this.node.type.name;
 
-                        return getNodePosition(node, type);
+                        return getImagePosition(node, type) || getNodePosition(node, type);
                     }
                 }
 
@@ -185,6 +190,11 @@ export class BubbleFormView extends BubbleMenuView {
                         options: { fallbackPlacements: ['top'] }
                     }
                 ]
+            },
+            onShow: () => {
+                requestAnimationFrame(() =>
+                    this.component.instance.inputs.first.nativeElement.focus()
+                );
             }
         });
     }

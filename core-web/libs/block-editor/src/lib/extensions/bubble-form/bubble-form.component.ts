@@ -1,4 +1,12 @@
-import { Component, EventEmitter, Output, Input } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    Output,
+    Input,
+    ElementRef,
+    ViewChildren,
+    QueryList
+} from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 
 export interface DynamicControl<T> {
@@ -16,6 +24,7 @@ export interface DynamicControl<T> {
     styleUrls: ['./bubble-form.component.scss']
 })
 export class BubbleFormComponent {
+    @ViewChildren('group') inputs: QueryList<ElementRef>;
     @Output() formValues = new EventEmitter();
     @Output() hide = new EventEmitter<boolean>();
     @Input() dynamicControls: DynamicControl<string>[] = [];
@@ -29,7 +38,6 @@ export class BubbleFormComponent {
 
     setFormValues(values) {
         this.form.setValue(values);
-        // requestAnimationFrame(() => this.input.nativeElement.focus());
     }
 
     buildForm() {
