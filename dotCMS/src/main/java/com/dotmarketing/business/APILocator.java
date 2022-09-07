@@ -1252,9 +1252,6 @@ enum APIIndex
 	VARIANT_API,
 	EXPERIMENTS_API;
 
-
-
-
 	Object create() {
 		switch(this) {
     		case PERMISSION_API: return new PermissionBitAPIImpl();
