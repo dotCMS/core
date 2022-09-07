@@ -15,14 +15,14 @@ export class DotRelationshipTreeComponent implements OnChanges {
     parent: string;
 
     ngOnChanges(): void {
-        this.setInitialValues();
+        this.setValues();
     }
     /**
-     * Sets initial values of the relationship tree component
+     * Sets values of the relationship tree component
      *
      * @memberof DotRelationshipTreeComponent
      */
-    setInitialValues(): void {
+    setValues(): void {
         const [relatedContentType] = this.velocityVar?.split('.') || '';
         const contentTypeName = this.contentType?.name;
 
