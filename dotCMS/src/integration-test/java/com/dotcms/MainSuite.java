@@ -96,6 +96,7 @@ import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotcms.variant.VariantAPITest;
 import com.dotmarketing.beans.HostTest;
 import com.dotmarketing.business.DeterministicIdentifierAPITest;
+import com.dotmarketing.business.IdentifierCacheImplTest;
 import com.dotmarketing.business.PermissionBitFactoryImplTest;
 import com.dotmarketing.business.helper.PermissionHelperTest;
 import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
@@ -575,7 +576,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task220824CreateDefaultVariantTest.class,
         Task220822CreateVariantTableTest.class,
         Task220829CreateExperimentsTableTest.class,
-        StoryBlockTest.class
+        StoryBlockTest.class,
+        IdentifierCacheImplTest.class
 })
 public class MainSuite {
 
