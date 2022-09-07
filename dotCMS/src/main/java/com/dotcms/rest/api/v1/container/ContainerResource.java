@@ -1096,17 +1096,11 @@ public class ContainerResource implements Serializable {
         final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
         final PageMode pageMode = PageMode.get(request);
 
-        if (!UtilMethods.isSet(id)) {
-
-            Logger.error(this, "The container id is required");
-            throw new IllegalArgumentException("The container id is required");
-        }
-
-        if (!UUIDUtil.isUUID(id)) {
-
-            Logger.error(this, "Container 'id' should be a uuid");
-            throw new IllegalArgumentException("Container 'id' should be a uuid");
-        }
+        DotPreconditions.checkArgument(UtilMethods.isSet(id),
+                    "The container id is required");
+        
+	DotPreconditions.checkArgument(UUIDUtil.isUUID(id),
+		    "Container 'id' should be a uuid");
 
         final Container sourceContainer = this.getContainerWorking(id, user,
                 WebAPILocator.getHostWebAPI().getHost(request));
