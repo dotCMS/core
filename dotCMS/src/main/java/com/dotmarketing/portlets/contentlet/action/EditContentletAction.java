@@ -448,7 +448,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 						&& req.getParameter("contentcontainer_inode") != null) {
 					try {
 						Logger.debug(this, "I'm setting my contentlet parents");
-						_addToParents(req, res, config, form, user);
+						_addToParents(req);
 					} catch (Exception ae) {
 						_handleException(ae, req);
 						return;
@@ -969,18 +969,9 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	 * 
 	 * @param req
 	 *            - The Struts wrapper for the HTTP Request object.
-	 * @param res
-	 *            - The Struts wrapper for the HTTP Response object.
-	 * @param config
-	 *            - The configuration parameters for this portlet.
-	 * @param form
-	 *            - The form containing the information selected by the user in
-	 *            the UI.
-	 * @param user
 	 * @throws Exception
 	 */
-	private void _addToParents(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user)
-	throws Exception {
+	private void _addToParents(ActionRequest req) {
 
 		// wraps request to get session object
 		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
