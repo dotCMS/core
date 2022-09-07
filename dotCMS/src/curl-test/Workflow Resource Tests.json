@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "13a54d9b-56e5-4639-95d1-b3221db1df36",
+		"_postman_id": "dd54ae62-bca5-4701-b2a8-b7d71478b512",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -14583,7 +14583,7 @@
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);        ",
 									"    let jsonData = pm.response.json();",
-									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"issue-22756-categories-01GB39KX4SBA4VREWFMX9T3WGF.tar.gz\");",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"issue-22756-categories-01GCAK78NPY1JH8TRGX8SWCVN3.tar.gz\");",
 									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
 									"});",
 									"",
@@ -14626,7 +14626,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "resources/issue-22756-categories-01GB39KX4SBA4VREWFMX9T3WGF.tar.gz"
+									"src": "resources/issue-22756-categories-01GCAK78NPY1JH8TRGX8SWCVN3.tar.gz"
 								}
 							]
 						},
@@ -14653,9 +14653,9 @@
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200); ",
-									"    let jsonData = pm.response.json();",
-									"    let entiry = (jsonData.entity);",
-									"    let identifier = entiry.jsonObjectView.contentlets[0].identifier;       ",
+									"    const jsonData = pm.response.json();",
+									"    const entiry = (jsonData.entity);",
+									"    const identifier = entiry.jsonObjectView.contentlets[0].identifier;       ",
 									"    pm.collectionVariables.set(\"identifier22756\", identifier);",
 									"});"
 								],
@@ -14725,6 +14725,7 @@
 									"    let jsonData = pm.response.json();",
 									"    let entiry = (jsonData.entity);",
 									"    pm.expect(entiry.bikeType).to.eql([{\"MTB\":\"MTB\"},{\"Road\":\"Road\"}]);    ",
+									"    pm.expect(entiry.make).to.eql([{\"Norco\":\"Norco\"}]);    ",
 									"});"
 								],
 								"type": "text/javascript"
@@ -14760,7 +14761,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"actionName\": \"publish\",\n    \"comments\": \"Updated Norco Revolver\",\n    \"contentlet\":{\n       \"title\": \"Update Norco Revolver\",\n       \"contentHost\": \"demo.dotcms.com\",\n       \"identifier\": \"{{identifier22756}}\",              \n       \"contentType\":\"BikeNameAndCategory\",\n       \"bikeType\":[\"MTB\",\"Road\"]\n   }\n}",
+							"raw": "{\n    \"actionName\": \"publish\",\n    \"comments\": \"Updated Norco Revolver\",\n    \"contentlet\":{\n       \"title\": \"Update Norco Revolver\",\n       \"contentHost\": \"demo.dotcms.com\",\n       \"identifier\": \"{{identifier22756}}\",              \n       \"contentType\":\"BikeNameAndCategory\",\n       \"bikeType\":[\"MTB\",\"Road\"],\n       \"make\":[\"Norco\"]\n   }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -14784,6 +14785,154 @@
 					"response": []
 				},
 				{
+					"name": "update-contentlet-add-category-ignore-fields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);    ",
+									"    const jsonData = pm.response.json();",
+									"    const entiry = (jsonData.entity);",
+									"    pm.expect(entiry.bikeType).to.eql([{\"MTB\":\"MTB\"},{\"Road\":\"Road\"}]);    ",
+									"    pm.expect(entiry.make).to.eql([{\"Norco\":\"Norco\"}]);    ",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"actionName\": \"publish\",\n    \"comments\": \"Updated Norco Revolver\",\n    \"contentlet\":{\n       \"title\": \"Update Norco Revolver\",\n       \"contentHost\": \"demo.dotcms.com\",\n       \"identifier\": \"{{identifier22756}}\",              \n       \"contentType\":\"BikeNameAndCategory\"      \n   }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/fire",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"fire"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get-contentlet-identifier-by-contnet-type-verify-ignored-fields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200); ",
+									"    let jsonData = pm.response.json();",
+									"    let entiry = (jsonData.entity);",
+									"    let contentlets = entiry.jsonObjectView.contentlets;       ",
+									"",
+									"    let identifier = pm.collectionVariables.get(\"identifier22756\");",
+									"",
+									"    const result = contentlets.filter(con => con.identifier === identifier); ",
+									"    const entity = result[0];",
+									"    console.log(entity.bikeType);",
+									"    pm.expect(entity.bikeType).to.eql([{\"MTB\":\"MTB\"},{\"Road\":\"Road\"}]);    ",
+									"    pm.expect(entity.make).to.eql([{\"Norco\":\"Norco\"}]);    ",
+									"",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"query\":\"+contentType:BikeNameAndCategory +languageId:1 +deleted:false +working:true\",\"sort\":\"modDate desc\",\"offset\":0}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/content/_search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"content",
+								"_search"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "update-contentlet-remove-category",
 					"event": [
 						{
@@ -14792,9 +14941,10 @@
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);    ",
-									"    let jsonData = pm.response.json();",
-									"    let entiry = (jsonData.entity);",
+									"    const jsonData = pm.response.json();",
+									"    const entiry = (jsonData.entity);",
 									"    pm.expect(entiry.bikeType).to.eql(undefined);    ",
+									"    pm.expect(entiry.make).to.eql([{\"Norco\":\"Norco\"}]);    ",
 									"});"
 								],
 								"type": "text/javascript"
@@ -14863,7 +15013,7 @@
 									"pm.test(\"Status code is 400\", function () {",
 									"    pm.response.to.have.status(400);    ",
 									"    let jsonData = pm.response.json();    ",
-									"    pm.expect(jsonData.message).to.eql(\"I wasn't able to resolve the value [lol] as a valid cat-id,cat-key, nor as a cat-var.\");    ",
+									"    pm.expect(jsonData.message).to.eql(\"Unable to resolve the string value [lol] as a valid form of category name/var/key or identifier.\");    ",
 									"});"
 								],
 								"type": "text/javascript"
@@ -14970,6 +15120,76 @@
 						"body": {
 							"mode": "raw",
 							"raw": "{\n    \"actionName\": \"publish\",\n    \"comments\": \"Updated Norco Revolver\",\n    \"contentlet\":{\n       \"title\": \"Update Norco Revolver\",\n       \"contentHost\": \"demo.dotcms.com\",\n       \"identifier\": \"{{identifier22756}}\",              \n       \"contentType\":\"BikeNameAndCategory\",\n       \"bikeType\":\"MTB,Road\"\n   }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/fire",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"fire"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "update-contentlet-add-category-pass-null",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);    ",
+									"    let jsonData = pm.response.json();",
+									"    let entiry = (jsonData.entity);",
+									"    pm.expect(entiry.bikeType).to.eql([{\"MTB\":\"MTB\"},{\"Road\":\"Road\"}]);    ",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"actionName\": \"publish\",\n    \"comments\": \"Updated Norco Revolver\",\n    \"contentlet\":{\n       \"title\": \"Update Norco Revolver\",\n       \"contentHost\": \"demo.dotcms.com\",\n       \"identifier\": \"{{identifier22756}}\",              \n       \"contentType\":\"BikeNameAndCategory\",\n       \"bikeType\":null,\n       \"make\":null\n   }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
