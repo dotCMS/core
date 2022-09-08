@@ -7,6 +7,13 @@ import java.io.Serializable;
 import java.util.List;
 import org.immutables.value.Value;
 
+/**
+ * A Metric represents something that wants to be measured in the system.
+ * <p>
+ * It comprises a name, a {@link MetricType} and a List of {@link Condition}s.
+ * <p>
+ * The {@link Condition}s are filters for the Metric.
+ */
 
 @Value.Style(typeImmutable="*", typeAbstract="Abstract*")
 @Value.Immutable

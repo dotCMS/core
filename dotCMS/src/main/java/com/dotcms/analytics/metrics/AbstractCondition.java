@@ -2,8 +2,19 @@ package com.dotcms.analytics.metrics;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.util.HashSet;
+import java.util.Set;
 import org.immutables.value.Value;
 
+/**
+ * Represents a condition for a Metric. A Metric can have zero to many Conditions.
+ * <p>
+ * A condition comprises three parts:
+ * <p>
+ * <li>The 'parameter' can be an attribute of a page element, or a page URL, referrer, etc.
+ * <li>The 'operator' is whatever is chosen as a comparison. See {@link Operator} for the different values
+ * <li>The 'value' is the actual value that is desired to compare against. Can be a URL, referrer, id of an element, etc.
+ */
 @Value.Style(typeImmutable="*", typeAbstract="Abstract*")
 @Value.Immutable
 @JsonSerialize(as = Condition.class)
