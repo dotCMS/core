@@ -2,12 +2,10 @@ package com.dotcms.analytics.metrics;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import java.util.HashSet;
-import java.util.Set;
 import org.immutables.value.Value;
 
 /**
- * Represents a condition for a Metric. A Metric can have zero to many Conditions.
+ * Represents a condition for a {@link Metric}. A Metric can have zero to many Conditions.
  * <p>
  * A condition comprises three parts:
  * <p>

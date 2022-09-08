@@ -1,14 +1,11 @@
 package com.dotcms.experiments.business;
 
-import com.dotcms.analytics.metrics.Condition;
-import com.dotcms.analytics.metrics.Metric;
-import com.dotcms.analytics.metrics.Parameter;
+import com.dotcms.analytics.metrics.MetricsUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
-import com.dotcms.experiments.model.Goals;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.LicenseValiditySupplier;
 import com.dotmarketing.beans.PermissionableProxy;
@@ -29,9 +26,7 @@ import com.liferay.portal.model.User;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 public class ExperimentsAPIImpl implements ExperimentsAPI {
 
@@ -75,45 +70,12 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         builder.lastModifiedBy(user.getUserId());
         
         if(experiment.goals().isPresent()) {
-            validateGoals(experiment.goals().get());
+            MetricsUtil.INSTANCE.validateGoals(experiment.goals().get());
         }
 
         final Experiment experimentToSave = builder.build();
 
         return factory.save(experimentToSave);
-    }
-
-    private void validateGoals(Goals goals) {
-        final Metric primaryGoal = goals.primary();
-
-        final Set<String> availableParams = primaryGoal.type()
-                .availableParameters().stream().map(Parameter::name).collect(Collectors.toSet());
-
-        final Set<String> providedParams = primaryGoal.conditions()
-                .stream().map(Condition::parameter).collect(Collectors.toSet());
-
-        if(!availableParams.containsAll(providedParams)) {
-            providedParams.removeAll(availableParams);
-            throw new IllegalArgumentException("Invalid Parameters provided: " +
-                    providedParams);
-        }
-
-        final Set<String> requiredParams = primaryGoal.type()
-                .getAllRequiredParameters().stream().map(Parameter::name).collect(Collectors.toSet());
-
-        if(!providedParams.containsAll(requiredParams)) {
-            requiredParams.removeAll(providedParams);
-            throw new IllegalArgumentException("Missing required Parameters: " +
-                    requiredParams);
-        }
-
-        final Set<String> atLeastOneRequired = primaryGoal.type()
-                .getAnyRequiredParameters().stream().map(Parameter::name).collect(Collectors.toSet());
-
-        if(providedParams.stream().noneMatch(atLeastOneRequired::contains)) {
-            throw new IllegalArgumentException("At least one of these are required Parameters: " +
-                    atLeastOneRequired);
-        }
     }
 
     @CloseDBIfOpened
