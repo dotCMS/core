@@ -9,6 +9,12 @@ import java.util.Optional;
  */
 public interface VariantFactory {
 
+    Variant VARIANT_404 = Variant.builder()
+            .identifier("VARIANT_404")
+            .name("VARIANT_404")
+            .archived(false)
+            .build();
+
     /**
      * Save a new {@link Variant}.
      * if the the {@link Variant}'s identifier value is not null then it will be ignored.

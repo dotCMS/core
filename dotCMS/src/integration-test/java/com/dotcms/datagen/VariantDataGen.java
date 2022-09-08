@@ -4,6 +4,8 @@ import com.dotcms.variant.model.Variant;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UUIDGenerator;
+import org.apache.commons.lang.RandomStringUtils;
+
 
 public class VariantDataGen extends AbstractDataGen<Variant> {
 
@@ -31,14 +33,13 @@ public class VariantDataGen extends AbstractDataGen<Variant> {
 
         final String innerId = id == null ? UUIDGenerator.generateUuid() : id;
 
-        synchronized (VariantDataGen.class) {
-            final String innerName = name == null ? "Variant_" + System.currentTimeMillis() : name;
-            return Variant.builder()
-                    .identifier(innerId)
-                    .name(innerName)
-                    .archived(archived)
-                    .build();
-        }
+        final String randomAlphanumeric = RandomStringUtils.randomAlphanumeric(20);
+        final String innerName = name == null ? "Variant_" +  randomAlphanumeric : name;
+        return Variant.builder()
+                .identifier(innerId)
+                .name(innerName)
+                .archived(archived)
+                .build();
     }
 
     @Override
