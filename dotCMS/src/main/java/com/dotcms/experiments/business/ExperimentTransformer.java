@@ -61,7 +61,6 @@ public class ExperimentTransformer implements DBTransformer<Experiment> {
                         .getOrNull())
                 .scheduling(Optional.ofNullable(DBColumnToJSONConverter
                         .getObjectFromDBJson(map.get("scheduling"), Scheduling.class)))
-                .archived(ConversionUtils.toBooleanFromDb(map.get("archived")))
                 .creationDate(Try.of(()->((Timestamp) map.get("creation_date")).toInstant())
                         .getOrNull())
                 .createdBy((String) map.get("created_by"))

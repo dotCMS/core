@@ -18,7 +18,6 @@ public class ExperimentForm extends Validated {
     private final String name;
     @Size(max = 255)
     private final String description;
-    private final Status status;
     private final String pageId;
     private final float trafficAllocation;
     private final TrafficProportion trafficProportion;
@@ -28,7 +27,6 @@ public class ExperimentForm extends Validated {
     private ExperimentForm(final Builder builder) {
         this.name = builder.name;
         this.description = builder.description;
-        this.status = builder.status;
         this.pageId = builder.pageId;
         this.trafficAllocation = builder.trafficAllocation;
         this.trafficProportion = builder.trafficProportion;
@@ -47,10 +45,6 @@ public class ExperimentForm extends Validated {
 
     public String getPageId() {
         return pageId;
-    }
-
-    public Status getStatus() {
-        return status;
     }
 
     public float getTrafficAllocation() {

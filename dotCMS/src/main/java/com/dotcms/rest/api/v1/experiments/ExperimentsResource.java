@@ -230,10 +230,6 @@ public class ExperimentsResource {
             builder.trafficProportion(experimentForm.getTrafficProportion());
         }
 
-        if(experimentForm.getStatus()!=null) {
-            builder.status(experimentForm.getStatus());
-        }
-
         if(experimentForm.getScheduling()!=null) {
             builder.scheduling(experimentForm.getScheduling());
         }
