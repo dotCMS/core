@@ -2302,13 +2302,11 @@ public class TestDataUtils {
     @WrapInTransaction
     public static ContentType newContentTypeWithMultipleCategoryFields(final String contentTypeName, Set<String> workflowIds, final List<Category> parents) {
 
-        ContentType contentType = null;
+        ContentType contentType;
         try {
-            try {
-                contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentTypeName);
-            } catch (NotFoundInDbException e) {
-                //Do nothing...
-            }
+
+            contentType = Try.of(()->APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentTypeName)).getOrNull();
+
             if (contentType == null) {
 
                 final WorkflowScheme systemWorkflow = TestWorkflowUtils.getSystemWorkflow();

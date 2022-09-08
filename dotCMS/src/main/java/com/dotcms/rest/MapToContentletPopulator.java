@@ -2,6 +2,7 @@ package com.dotcms.rest;
 
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ASSIGN_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_COMMENTS_KEY;
+import static com.liferay.util.StringPool.*;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
@@ -346,7 +347,6 @@ public class MapToContentletPopulator  {
      * @throws DotSecurityException
      */
     @Deprecated
-    @CloseDBIfOpened
     public List<Category> getCategories (final Contentlet contentlet, final User user,
                                          final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
@@ -368,7 +368,6 @@ public class MapToContentletPopulator  {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    @CloseDBIfOpened
     public Optional<List<Category>> fetchCategories (final Contentlet contentlet, final User user,
             final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
@@ -386,7 +385,8 @@ public class MapToContentletPopulator  {
      * @param respectFrontendRoles
      * @return
      */
-    Optional<List<Category>> internalFetchCategories(final Contentlet contentlet, final User user,
+    @CloseDBIfOpened
+    private Optional<List<Category>> internalFetchCategories(final Contentlet contentlet, final User user,
             final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
         final ImmutableMap.Builder<CategoryField, Set<Category>> builder = ImmutableMap.builder();
@@ -406,7 +406,7 @@ public class MapToContentletPopulator  {
                     //upfront en empty list must be interpreted as an attempt to wipe out categories from the current field.
                     builder.put(field, ImmutableSet.of());
                 } else {
-                    final String joinedCategories = list.stream().map(Object::toString).collect(Collectors.joining(","));
+                    final String joinedCategories = list.stream().map(Object::toString).collect(Collectors.joining(COMMA));
                     builder.put(field, getCategoriesFromStringValue(joinedCategories, user, respectFrontendRoles));
                 }
                 continue;
@@ -454,7 +454,7 @@ public class MapToContentletPopulator  {
      * @param fetched fetched from the user request
      * @return
      */
-    final Map<CategoryField, Set<Category>> merge(final Map<CategoryField, Set<Category>> existing, final Map<CategoryField, Set<Category>> fetched){
+    private final Map<CategoryField, Set<Category>> merge(final Map<CategoryField, Set<Category>> existing, final Map<CategoryField, Set<Category>> fetched){
         if(existing.isEmpty()){
             return fetched;
         }
@@ -476,11 +476,12 @@ public class MapToContentletPopulator  {
      * @param respectFrontendRoles
      */
     private Set<Category> getCategoriesFromStringValue(final String stringValue, final User user, boolean respectFrontendRoles) {
-        Set<Category> categories = new HashSet<>();
+
         if (UtilMethods.isNotSet(stringValue)) {
             throw new IllegalArgumentException(String.format("Unable to resolve the raw string value [%s] as a valid form of category name or identifier.",stringValue));
         }
 
+            final Set<Category> categories = new HashSet<>();
             final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
             final String[] parts = stringValue.split("\\s*,\\s*");
             for (final String categoryValue : parts) {
@@ -537,7 +538,7 @@ public class MapToContentletPopulator  {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    Map<CategoryField, Set<Category>> fetchExistingCategories(final Contentlet contentlet, final User user)
+    private Map<CategoryField, Set<Category>> fetchExistingCategories(final Contentlet contentlet, final User user)
             throws DotDataException, DotSecurityException {
 
         final ImmutableMap.Builder<CategoryField, Set<Category>> builder = ImmutableMap.builder();
@@ -572,7 +573,7 @@ public class MapToContentletPopulator  {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    Set<Category> findSelected(final CategoryField categoryField, final List<Category> categories,
+    private Set<Category> findSelected(final CategoryField categoryField, final List<Category> categories,
             final User user)
             throws DotDataException, DotSecurityException {
         final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
@@ -727,7 +728,7 @@ public class MapToContentletPopulator  {
                                 contentlet.getLanguageId(),
                                 APILocator.getUserAPI().getSystemUser(), false);
                 APILocator.getContentletAPI().copyProperties(contentlet, existing.getMap());
-                contentlet.setInode(StringPool.BLANK);
+                contentlet.setInode(BLANK);
             } catch (Exception e) {
 
                 Logger.debug(this.getClass(),
