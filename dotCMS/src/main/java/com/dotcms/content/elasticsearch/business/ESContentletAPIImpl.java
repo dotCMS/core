@@ -8471,7 +8471,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             //get the latest and greatest from db
             final Contentlet working = contentFactory
                     .findContentletByIdentifier(contentlet.getIdentifier(), false,
-                            contentlet.getLanguageId());
+                            contentlet.getLanguageId(), contentlet.getVariantId());
 
             /*
              * Only draft if there is a working version that is not live

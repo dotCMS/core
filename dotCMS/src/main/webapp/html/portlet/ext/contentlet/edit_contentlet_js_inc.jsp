@@ -353,10 +353,10 @@
 
         }
 
-		var variantId = sessionStorage.getItem('<%=VariantAPI.VARIANT_KEY%>');
+		var variantName = sessionStorage.getItem('<%=VariantAPI.VARIANT_KEY%>');
 
-		if (variantId) {
-			formData[formData.length] = <%=VariantAPI.VARIANT_KEY%> +nameValueSeparator + variantId;
+		if (variantName) {
+			formData[formData.length] = '<%=VariantAPI.VARIANT_KEY%>' + nameValueSeparator + variantName;
 		}
 
         return formData;

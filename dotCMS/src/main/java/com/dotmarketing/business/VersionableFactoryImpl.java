@@ -53,7 +53,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 	TemplateAPI templateApi = null;
 
 	private static final String CREATE_CONTENTLET_VERSION_INFO_SQL = "INSERT INTO contentlet_version_info (identifier, lang, working_inode, deleted, locked_by, locked_on, version_ts, variant_id) VALUES (?,?,?,?,?,?,?, ?)";
-	private static final String INSERT_CONTENTLET_VERSION_INFO_SQL = "INSERT INTO contentlet_version_info (identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts, variant_id) VALUES (?,?,?,?,?,?,?,?)";
+	private static final String INSERT_CONTENTLET_VERSION_INFO_SQL = "INSERT INTO contentlet_version_info (identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts, variant_id) VALUES (?,?,?,?,?,?,?,?,?)";
 	private static final String UPDATE_CONTENTLET_VERSION_INFO_SQL = "UPDATE contentlet_version_info SET working_inode=?, live_inode=?, deleted=?, locked_by=?, locked_on=?, version_ts=? WHERE identifier=? AND lang=? AND variant_id = ?";
 
 	/**
@@ -333,7 +333,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 			final String identifier, final long lang, final String variantId) throws DotDataException, DotStateException{
 
 		if (DbConnectionFactory.inTransaction()) {
-			return findContentletVersionInfoInDB(identifier, lang);
+			return findContentletVersionInfoInDB(identifier, lang, variantId);
 		}
 
 		ContentletVersionInfo contentVersionInfo = this.icache.getContentVersionInfo(identifier, lang, variantId);

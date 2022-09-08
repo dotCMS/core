@@ -2,8 +2,10 @@ package com.dotmarketing.business;
 
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.transform.DBTransformer;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.util.UtilMethods;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -44,7 +46,12 @@ public class ContentletVersionInfoTransformer implements DBTransformer<Contentle
         versionInfo.setLockedBy((String) map.get("locked_by"));
         versionInfo.setLockedOn((Date) map.get("locked_on"));
         versionInfo.setVersionTs((Date) map.get("version_ts"));
-        versionInfo.setVariant(map.get(Contentlet.VARIANT_ID).toString());
+
+        final String variantId = UtilMethods.isSet(map.get(Contentlet.VARIANT_ID)) ?
+                (String) map.get(Contentlet.VARIANT_ID) :
+                VariantAPI.DEFAULT_VARIANT.identifier();
+
+        versionInfo.setVariant(variantId);
         return versionInfo;
     }
 }
