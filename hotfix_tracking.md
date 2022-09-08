@@ -345,3 +345,4 @@ This maintenance release includes the following code fixes:
 179. https://github.com/dotCMS/core/issues/22266 : Issue with static push publishing when pushing with a default language other than English #22266
 180. https://github.com/dotCMS/core/issues/22696 : Can't save changes in Work Flow if user with special characters or new user is added. #22696
 181. https://github.com/dotCMS/core/issues/22520 : Copy Site does not copy all content when a site has more than 10000 contentlets #22520
+182. https://github.com/dotCMS/core/issues/22763 : Copy folder duplicates content on pages #22763
