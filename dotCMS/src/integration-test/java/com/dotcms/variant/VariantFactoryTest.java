@@ -354,7 +354,7 @@ public class VariantFactoryTest {
      * Should:
      * - return a {@link Optional#empty()}
      * - Storage as {@link VariantFactory#VARIANT_404} in the cache
-     * - Return null if the {@link VariantFactory#get(String)} is called twice
+     * - Return {@link Optional#empty()} if the {@link VariantFactory#get(String)} is called twice
      *
      * @throws DotDataException
      */
@@ -377,7 +377,7 @@ public class VariantFactoryTest {
      * Should:
      * - return a {@link Optional#empty()}
      * - Storage as {@link VariantFactory#VARIANT_404} in the cache
-     * - Return null if the {@link VariantFactory#get(String)} is called twice
+     * - Return  {@link Optional#empty()}  if the {@link VariantFactory#get(String)} is called twice
      * @throws DotDataException
      */
     @Test
