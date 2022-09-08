@@ -18,7 +18,7 @@ public class DotGraphQLSchemaProvider implements GraphQLSchemaServletProvider {
     @Override
     public GraphQLSchema getSchema(final HttpServletRequest request) {
         final User user = getUser(request);
-        Logger.debug(DotGraphQLSchemaProvider.class, String.format("user [%s] requesting graphQL schema.", user));
+        Logger.debug(DotGraphQLSchemaProvider.class, ()->String.format("user [%s] requesting graphQL schema.", user));
         return getSchema(user);
     }
 
