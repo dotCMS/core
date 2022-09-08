@@ -10,17 +10,23 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.test.ContentTypeBaseTest;
 
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.factories.RelationshipCache;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import java.util.List;
 import org.junit.Test;
 
@@ -178,7 +184,126 @@ public class RelationshipFactoryImplTest extends ContentTypeBaseTest{
         }
     }
 
+    /**
+     * <b>Method to test:</b> {@link RelationshipFactory#dbRelatedContentByParent(String, String, boolean, String)}<br></br>
+     * <b>Given Scenario:</b> A new relationship between a parent and a couple of children is created. Children contain multilingual versions<br></br>
+     * <b>ExpectedResult:</b> Children must be returned respecting the relationship order (tree_order) and the multilingual versions
+     * must be returned respecting the language_id order
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void testGetDBRelatedChildrenMultilingualContent() throws DotSecurityException, DotDataException {
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        
+        final LanguageAPI languageAPI = APILocator.getLanguageAPI();
+        final Language defaultLanguage = languageAPI.getDefaultLanguage();
+        
+        //Creating multiple languages
+        final Language danish = new Language(System.currentTimeMillis(), "da", "DK ", "Danish", "Denmark");
+        languageAPI.saveLanguage(danish);
+
+        final Language german = new Language(System.currentTimeMillis(), "de", "DE", "German", "Germany");
+        languageAPI.saveLanguage(german);
+        
+        //Creating relationship and relating content
+        final Relationship relationship = saveRelationship();
+        
+        Contentlet parentContentlet = new ContentletDataGen(parentContentType.id()).next();
+        final Contentlet childInDefaultLanguage = new ContentletDataGen(childContentType.id()).languageId(defaultLanguage.getId()).nextPersisted();
+        final Contentlet childInDanish = new ContentletDataGen(childContentType.id()).languageId(danish.getId()).nextPersisted();
+
+        final ContentletRelationships contentletRelationships = new ContentletRelationships(
+                parentContentlet);
+        final ContentletRelationshipRecords records = contentletRelationships.new ContentletRelationshipRecords(
+                relationship, true);
+        records.setRecords( CollectionsUtils.list(childInDefaultLanguage, childInDanish));
+        contentletRelationships.getRelationshipsRecords().add(records);
+
+        parentContentlet = contentletAPI.checkin(parentContentlet, contentletRelationships, null, null, user, false);
+
+        //Adding multilingual versions of the children
+        Contentlet childInGerman = contentletAPI.checkout(childInDefaultLanguage.getInode(), user, false);
+        Contentlet child2InGerman = contentletAPI.checkout(childInDanish.getInode(), user, false);
+
+        childInGerman.setLanguageId(german.getId());
+        child2InGerman.setLanguageId(german.getId());
+        childInGerman = contentletAPI.checkin(childInGerman, user, false);
+        child2InGerman = contentletAPI.checkin(child2InGerman, user, false);
+
+        final List<Contentlet> contentletList = relationshipFactory.dbRelatedContentByParent(parentContentlet.getIdentifier(),relationship.getRelationTypeValue(),false,null);
+
+        //Children must be returned in order
+        assertEquals(4, contentletList.size());
+        assertEquals(childInDefaultLanguage.getInode(), contentletList.get(0).getInode());
+        assertEquals(childInGerman.getInode(), contentletList.get(1).getInode());
+        assertEquals(childInDanish.getInode(), contentletList.get(2).getInode());
+        assertEquals(child2InGerman.getInode(), contentletList.get(3).getInode());
+    }
+
+
+    /**
+     * <b>Method to test:</b> {@link RelationshipFactory#dbRelatedContentByChild(String, String, boolean, String)}<br></br>
+     * <b>Given Scenario:</b> A new relationship between a child and a couple of parent is created. Parents contain multilingual versions<br></br>
+     * <b>ExpectedResult:</b> Parents must be returned respecting the relationship order (tree_order) and the multilingual versions
+     * must be returned respecting the language_id order
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void testGetDBRelatedParentsMultilingualContent() throws DotSecurityException, DotDataException {
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+
+        final LanguageAPI languageAPI = APILocator.getLanguageAPI();
+        final Language defaultLanguage = languageAPI.getDefaultLanguage();
+
+        //Creating multiple languages
+        final Language danish = new Language(System.currentTimeMillis(), "da", "DK ", "Danish", "Denmark");
+        languageAPI.saveLanguage(danish);
+
+        final Language german = new Language(System.currentTimeMillis(), "de", "DE", "German", "Germany");
+        languageAPI.saveLanguage(german);
+
+        //Creating relationship and relating content
+        final Relationship relationship = saveRelationship(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
+
+        Contentlet childContentlet = new ContentletDataGen(childContentType.id()).next();
+        final Contentlet parentInDefaultLanguage = new ContentletDataGen(parentContentType.id()).languageId(defaultLanguage.getId()).nextPersisted();
+        final Contentlet parentInDanish = new ContentletDataGen(parentContentType.id()).languageId(danish.getId()).nextPersisted();
+
+        ContentletRelationships contentletRelationships = new ContentletRelationships(
+                childContentlet);
+        ContentletRelationshipRecords records = contentletRelationships.new ContentletRelationshipRecords(
+                relationship, false);
+        records.setRecords( CollectionsUtils.list(parentInDefaultLanguage, parentInDanish));
+        contentletRelationships.getRelationshipsRecords().add(records);
+
+        childContentlet = contentletAPI.checkin(childContentlet, contentletRelationships, null, null, user, false);
+
+        //Adding multilingual versions of the parents
+        Contentlet parentInGerman = contentletAPI.checkout(parentInDefaultLanguage.getInode(), user, false);
+        Contentlet parent2InGerman = contentletAPI.checkout(parentInDanish.getInode(), user, false);
+
+        parentInGerman.setLanguageId(german.getId());
+        parent2InGerman.setLanguageId(german.getId());
+        parentInGerman = contentletAPI.checkin(parentInGerman, user, false);
+        parent2InGerman = contentletAPI.checkin(parent2InGerman, user, false);
+
+        final List<Contentlet> contentletList = relationshipFactory.dbRelatedContentByChild(childContentlet.getIdentifier(),relationship.getRelationTypeValue(),false,null);
+
+        //Parents must be returned in order
+        assertEquals(4, contentletList.size());
+        assertEquals(parentInDefaultLanguage.getInode(), contentletList.get(0).getInode());
+        assertEquals(parentInGerman.getInode(), contentletList.get(1).getInode());
+        assertEquals(parentInDanish.getInode(), contentletList.get(2).getInode());
+        assertEquals(parent2InGerman.getInode(), contentletList.get(3).getInode());
+    }
+    
     private Relationship saveRelationship() throws DotSecurityException, DotDataException {
+        return saveRelationship(RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal());
+    }
+
+    private Relationship saveRelationship(final int cardinality) throws DotSecurityException, DotDataException {
 
         parentContentType = ContentTypeBuilder
                 .builder(BaseContentType.CONTENT.immutableClass())
@@ -202,7 +327,7 @@ public class RelationshipFactoryImplTest extends ContentTypeBaseTest{
         relationship.setChildStructureInode(childContentType.id());
         relationship.setParentRelationName(parentContentType.name());
         relationship.setChildRelationName(childContentType.name());
-        relationship.setCardinality(0);
+        relationship.setCardinality(cardinality);
         relationship.setParentRequired(false);
         relationship.setChildRequired(false);
         relationship.setRelationTypeValue(parentContentType.name() + "-" + childContentType.name());
