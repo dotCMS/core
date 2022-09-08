@@ -9,7 +9,7 @@ import java.util.Set;
 /**
  * A MetricType is anything that is desired to be measured on pages or sites in order to get analytic
  * insights. Examples can be Bounce Rate, Conversions, Custom Events, etc.
- * 
+ *
  */
 
 public enum MetricType {
@@ -104,6 +104,7 @@ public enum MetricType {
     public Set<Parameter> availableParameters() {
         final Set<Parameter> availableParameters = new HashSet<>(allRequiredParameters);
         availableParameters.addAll(optionalParameters);
+        availableParameters.addAll(anyRequiredParameters);
         return availableParameters;
     }
 }

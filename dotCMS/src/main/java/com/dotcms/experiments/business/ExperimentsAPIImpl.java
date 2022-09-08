@@ -106,6 +106,14 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             throw new IllegalArgumentException("Missing required Parameters: " +
                     requiredParams);
         }
+
+        final Set<String> atLeastOneRequired = primaryGoal.type()
+                .getAnyRequiredParameters().stream().map(Parameter::name).collect(Collectors.toSet());
+
+        if(providedParams.stream().noneMatch(atLeastOneRequired::contains)) {
+            throw new IllegalArgumentException("At least one of these are required Parameters: " +
+                    atLeastOneRequired);
+        }
     }
 
     @CloseDBIfOpened
