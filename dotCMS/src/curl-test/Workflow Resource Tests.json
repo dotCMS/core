@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "dd54ae62-bca5-4701-b2a8-b7d71478b512",
+		"_postman_id": "bab9b51b-731a-448a-ab05-c4511e518799",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -14640,7 +14640,8 @@
 								"bundle",
 								"sync"
 							]
-						}
+						},
+						"description": "This endpoint imports a bundle that contains an instance of a Content Type that contains 2 category fields."
 					},
 					"response": []
 				},
@@ -14654,8 +14655,8 @@
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200); ",
 									"    const jsonData = pm.response.json();",
-									"    const entiry = (jsonData.entity);",
-									"    const identifier = entiry.jsonObjectView.contentlets[0].identifier;       ",
+									"    const entity = (jsonData.entity);",
+									"    const identifier = entity.jsonObjectView.contentlets[0].identifier;       ",
 									"    pm.collectionVariables.set(\"identifier22756\", identifier);",
 									"});"
 								],
@@ -14709,7 +14710,8 @@
 								"content",
 								"_search"
 							]
-						}
+						},
+						"description": "Once the Content type that contains the category fields has been imported this request finds it and gets the identifier from it."
 					},
 					"response": []
 				},
@@ -14723,9 +14725,9 @@
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);    ",
 									"    let jsonData = pm.response.json();",
-									"    let entiry = (jsonData.entity);",
-									"    pm.expect(entiry.bikeType).to.eql([{\"MTB\":\"MTB\"},{\"Road\":\"Road\"}]);    ",
-									"    pm.expect(entiry.make).to.eql([{\"Norco\":\"Norco\"}]);    ",
+									"    let entity = (jsonData.entity);",
+									"    pm.expect(entity.bikeType).to.eql([{\"MTB\":\"MTB\"},{\"Road\":\"Road\"}]);    ",
+									"    pm.expect(entity.make).to.eql([{\"Norco\":\"Norco\"}]);    ",
 									"});"
 								],
 								"type": "text/javascript"
@@ -14780,7 +14782,8 @@
 								"actions",
 								"fire"
 							]
-						}
+						},
+						"description": "This is basically the happy path test. We validate that the content-type can be updated passing arrays of valid categories. Then verify the response to check the categories are the expected."
 					},
 					"response": []
 				},
@@ -14794,9 +14797,9 @@
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);    ",
 									"    const jsonData = pm.response.json();",
-									"    const entiry = (jsonData.entity);",
-									"    pm.expect(entiry.bikeType).to.eql([{\"MTB\":\"MTB\"},{\"Road\":\"Road\"}]);    ",
-									"    pm.expect(entiry.make).to.eql([{\"Norco\":\"Norco\"}]);    ",
+									"    const entity = (jsonData.entity);",
+									"    pm.expect(entity.bikeType).to.eql([{\"MTB\":\"MTB\"},{\"Road\":\"Road\"}]);    ",
+									"    pm.expect(entity.make).to.eql([{\"Norco\":\"Norco\"}]);    ",
 									"});"
 								],
 								"type": "text/javascript"
@@ -14851,7 +14854,8 @@
 								"actions",
 								"fire"
 							]
-						}
+						},
+						"description": "This test is meant to send a request without including any of the category fields. The categories on the target content should remain the same."
 					},
 					"response": []
 				},
@@ -14928,7 +14932,8 @@
 								"content",
 								"_search"
 							]
-						}
+						},
+						"description": "This request is intended to fetch the instance of our content with categories and verify it remains unmodified after the last request that had excluded the category fields."
 					},
 					"response": []
 				},
@@ -14942,9 +14947,9 @@
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);    ",
 									"    const jsonData = pm.response.json();",
-									"    const entiry = (jsonData.entity);",
-									"    pm.expect(entiry.bikeType).to.eql(undefined);    ",
-									"    pm.expect(entiry.make).to.eql([{\"Norco\":\"Norco\"}]);    ",
+									"    const entity = (jsonData.entity);",
+									"    pm.expect(entity.bikeType).to.eql(undefined);    ",
+									"    pm.expect(entity.make).to.eql([{\"Norco\":\"Norco\"}]);    ",
 									"});"
 								],
 								"type": "text/javascript"
@@ -14999,7 +15004,8 @@
 								"actions",
 								"fire"
 							]
-						}
+						},
+						"description": "Now we're gonna try removing the contents from one of the category fields and at the same time we're gonna ignore the second field.\n\nThe expected outcome is: Content withe the \"bikeType\" field cleared and the while \"make\" should still keep their values."
 					},
 					"response": []
 				},
@@ -15068,7 +15074,8 @@
 								"actions",
 								"fire"
 							]
-						}
+						},
+						"description": "In this request we want to test that when sending an invalid category name we can expect an invalid request response."
 					},
 					"response": []
 				},
@@ -15081,9 +15088,9 @@
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);    ",
-									"    let jsonData = pm.response.json();",
-									"    let entiry = (jsonData.entity);",
-									"    pm.expect(entiry.bikeType).to.eql([{\"MTB\":\"MTB\"},{\"Road\":\"Road\"}]);    ",
+									"    const jsonData = pm.response.json();",
+									"    const entity = (jsonData.entity);",
+									"    pm.expect(entity.bikeType).to.eql([{\"MTB\":\"MTB\"},{\"Road\":\"Road\"}]);    ",
 									"});"
 								],
 								"type": "text/javascript"
@@ -15138,7 +15145,8 @@
 								"actions",
 								"fire"
 							]
-						}
+						},
+						"description": "This request is intended to test that we can also update categories sending them on the request as a comma separated string."
 					},
 					"response": []
 				},
@@ -15152,8 +15160,8 @@
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);    ",
 									"    let jsonData = pm.response.json();",
-									"    let entiry = (jsonData.entity);",
-									"    pm.expect(entiry.bikeType).to.eql([{\"MTB\":\"MTB\"},{\"Road\":\"Road\"}]);    ",
+									"    let entity = (jsonData.entity);",
+									"    pm.expect(entity.bikeType).to.eql([{\"MTB\":\"MTB\"},{\"Road\":\"Road\"}]);    ",
 									"});"
 								],
 								"type": "text/javascript"
@@ -15208,11 +15216,13 @@
 								"actions",
 								"fire"
 							]
-						}
+						},
+						"description": "And finally we want to test that sending null as the value on the category field has the same effect as ignoring the field."
 					},
 					"response": []
 				}
-			]
+			],
+			"description": "Refer to issue 22756\n\nBasically we want to import an instance of a content-type that has two category fields in it.\n\nThen we perform various operations\n\n*   We update the content using an array and have updated\n*   We update again the CT but this time we do not send the categories on the request the we look-up the content to verify the result hasn't changed.\n*   Then we send another request intended to wipeout 1 of the categories. then we verify that the one intended to be deleted has been cleared but not the other one.\n*   Following to that we test sending an invalid value on the category field\n*   We also test updating the category field using a String with a valid category instead of a json List\n*   Lastly we send a null value on the category fields and verify this does not affect the field"
 		}
 	],
 	"event": [
