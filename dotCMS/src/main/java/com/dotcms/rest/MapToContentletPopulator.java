@@ -50,6 +50,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -406,7 +407,7 @@ public class MapToContentletPopulator  {
                     //upfront en empty list must be interpreted as an attempt to wipe out categories from the current field.
                     builder.put(field, ImmutableSet.of());
                 } else {
-                    final String joinedCategories = list.stream().map(Object::toString).collect(Collectors.joining(COMMA));
+                    final String joinedCategories = list.stream().filter(Objects::nonNull).map(Object::toString).collect(Collectors.joining(COMMA));
                     builder.put(field, getCategoriesFromStringValue(joinedCategories, user, respectFrontendRoles));
                 }
                 continue;
