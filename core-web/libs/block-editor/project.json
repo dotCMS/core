@@ -25,10 +25,13 @@
         "storybook": {
             "executor": "@storybook/angular:start-storybook",
             "options": {
-                "port": 6600,
+                "port": 4400,
                 "configDir": "libs/block-editor/.storybook",
                 "browserTarget": "block-editor:build-storybook",
-                "compodoc": false
+                "compodoc": false,
+                "stylePreprocessorOptions": {
+                    "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
+                }
             },
             "configurations": {
                 "ci": {
@@ -38,13 +41,15 @@
         },
         "build-storybook": {
             "executor": "@storybook/angular:build-storybook",
-            "outputs": ["{options.outputPath}"],
+            "outputs": ["{options.outputDir}"],
             "options": {
-                "deleteOutputPath": false,
-                "outputDir": "docs/block-editor",
+                "outputDir": "dist/storybook/block-editor",
                 "configDir": "libs/block-editor/.storybook",
                 "browserTarget": "block-editor:build-storybook",
-                "compodoc": false
+                "compodoc": false,
+                "stylePreprocessorOptions": {
+                    "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
+                }
             },
             "configurations": {
                 "ci": {

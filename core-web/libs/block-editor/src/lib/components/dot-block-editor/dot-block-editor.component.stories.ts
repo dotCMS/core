@@ -8,8 +8,8 @@ import { OrderListModule } from 'primeng/orderlist';
 import { MenuModule } from 'primeng/menu';
 
 import { debounceTime, delay } from 'rxjs/operators';
-import { DotBlockEditorComponent } from './dot-block-editor.component';
 import { BubbleLinkFormComponent } from '@dotcms/block-editor';
+
 import {
     ActionButtonComponent,
     ContentletBlockComponent,
@@ -20,7 +20,8 @@ import {
     DragHandlerComponent,
     LoaderComponent,
     DotImageService,
-    DotLanguageService
+    DotLanguageService,
+    DotBlockEditorComponent
 } from '@dotcms/block-editor';
 
 export default {
