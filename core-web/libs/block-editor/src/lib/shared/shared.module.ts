@@ -30,6 +30,7 @@ import {
         SuggestionListComponent,
         SuggestionsListItemComponent,
         SuggestionLoadingListComponent,
+        ContentletStatePipe,
         EmptyMessageComponent
     ]
 })
