@@ -38,8 +38,6 @@ public class VariantCacheTest {
     }
 
     /**
-<<<<<<< HEAD
-=======
      * Method to test: {@link VariantCacheImpl#putById(String, Variant)} (Variant)} and {@link VariantCacheImpl#getById(String)}
      * When: Put a Variant by ID
      * Should: be able to get it by the same ID
@@ -59,7 +57,6 @@ public class VariantCacheTest {
     }
 
     /**
->>>>>>> origin/master
      * Method to test: {@link VariantCacheImpl#put(Variant)} and {@link VariantCacheImpl#getByName(String)} (String)}
      * When: Add a Variant
      * Should: be able to get it by Name
