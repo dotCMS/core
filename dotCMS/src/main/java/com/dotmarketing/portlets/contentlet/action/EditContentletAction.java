@@ -448,7 +448,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 						&& req.getParameter("contentcontainer_inode") != null) {
 					try {
 						Logger.debug(this, "I'm setting my contentlet parents");
-						_addToParents(req, res, config, form, user);
+						_addToParents(req);
 					} catch (Exception ae) {
 						_handleException(ae, req);
 						return;
@@ -905,7 +905,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 		((ContentletForm)form).setStructureInode(contentType.getInode());
 
-		_loadContentletRelationshipsInRequest(req, contentlet, contentType, user);
+		req.setAttribute(WebKeys.CONTENTLET_RELATIONSHIPS_EDIT,
+				APILocator.getContentletAPI().getAllRelationships(contentlet));
 
 		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
 		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
@@ -966,70 +967,11 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 	/**
 	 * 
-	 * @param request
-	 * @param contentlet
-	 * @param structure
-	 * @param user
-	 * @throws DotDataException
-	 */
-	private void _loadContentletRelationshipsInRequest(ActionRequest request, Contentlet contentlet, Structure structure,User user) throws DotDataException {
-		ContentletAPI contentletService = APILocator.getContentletAPI();
-		contentlet.setStructureInode(structure.getInode());
-		ContentletRelationships cRelationships = contentletService.getAllRelationships(contentlet);
-
-		//DOTCMS-6097, if we don't have the related piece of content in the language the user is looking at, we show the flag of the language user is on but in gray.
-		List<ContentletRelationships.ContentletRelationshipRecords> relationshipRecords = cRelationships.getRelationshipsRecords();
-		for(ContentletRelationshipRecords contentletRelationshipRecords: relationshipRecords){
-			List<Contentlet> contentletsList = contentletRelationshipRecords.getRecords();
-			List<Contentlet> newContentletsList = new ArrayList<Contentlet>();
-			for(Contentlet con: contentletsList){
-				if(contentlet.getLanguageId() == con.getLanguageId()){
-					newContentletsList.add(con);
-				}else{
-					try {
-						List<Contentlet> allLangContentletsList = conAPI.getAllLanguages(con, null, user, false);
-						boolean isAdded = false;
-						for(Contentlet langCon: allLangContentletsList){
-							if(langCon.getLanguageId() == contentlet.getLanguageId()){
-								if(langCon.isLive() && !isAdded){
-									isAdded = true;
-									newContentletsList.add(langCon);
-								}else if(langCon.isWorking() && !isAdded){
-									isAdded = true;
-									newContentletsList.add(langCon);
-								}
-							}
-						}
-						if(!isAdded){
-							newContentletsList.add(con);
-						}
-					} catch (DotSecurityException e) {
-						Logger.error(this, e.getMessage());
-					}
-				}
-			}
-			contentletRelationshipRecords.setRecords(newContentletsList);
-		}
-
-		request.setAttribute(WebKeys.CONTENTLET_RELATIONSHIPS_EDIT, cRelationships);
-	}
-
-	/**
-	 * 
 	 * @param req
 	 *            - The Struts wrapper for the HTTP Request object.
-	 * @param res
-	 *            - The Struts wrapper for the HTTP Response object.
-	 * @param config
-	 *            - The configuration parameters for this portlet.
-	 * @param form
-	 *            - The form containing the information selected by the user in
-	 *            the UI.
-	 * @param user
 	 * @throws Exception
 	 */
-	private void _addToParents(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user)
-	throws Exception {
+	private void _addToParents(ActionRequest req) {
 
 		// wraps request to get session object
 		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
