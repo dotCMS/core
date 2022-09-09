@@ -1178,7 +1178,7 @@
         }
 
         final StringBuilder keyValueDataRaw = new StringBuilder("{");
-        final StringBuilder dotKeyValueDataRaw = new StringBuilder();
+        final StringBuilder dotKeyValueDataRaw = new StringBuilder("{");
 
         final Iterator<String> iterator = keyValueMap.keySet().iterator();
 
@@ -1186,16 +1186,16 @@
             final String key = iterator.next();
             final Object object = keyValueMap.get(key);
             if(null != object) {
-                final String sanitized = UtilMethods.htmlifyString(UtilMethods.escapeDoubleQuotes(object.toString()));
-                keyValueDataRaw.append(key).append(":").append(sanitized);
-                dotKeyValueDataRaw.append(key).append("|").append(sanitized);
+                keyValueDataRaw.append(key).append(":").append(object.toString());
+                dotKeyValueDataRaw.append("&#x22;" + key + "&#x22;").append(":").append("&#x22;" + object.toString() + "&#x22;");
                 if (iterator.hasNext()) {
                     keyValueDataRaw.append(',');
                     dotKeyValueDataRaw.append(',');
                 }
             }
         }
-        keyValueDataRaw.append('}');
+        keyValueDataRaw.append("}");
+        dotKeyValueDataRaw.append("}");
 
         List<FieldVariable> fieldVariables=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, true);
         String whiteListKeyValues = "";
@@ -1205,7 +1205,7 @@
             }
         }
     %>
-        <input type="hidden" class ="<%=field.getVelocityVarName()%>" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>" value="<%=keyValueDataRaw.toString()%>" />
+        <input type="hidden" class ="<%=field.getVelocityVarName()%>" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>" />
         <style>
             dot-key-value key-value-table tr {
                 cursor: move;
@@ -1265,11 +1265,24 @@
         </style>
 
         <dot-key-value id="<%=field.getVelocityVarName()%>KeyValue"></dot-key-value>
-
         <script>
+            function escapeQuoteAndBackSlash(value) {
+                return value.replaceAll('\"','&#34;').replaceAll(/\\/g, '&#92;');
+            }
+
+            function formatToJsonData(value) {
+                var removedBrackets = value.trim().substring(1, value.length-1);
+                var preformatted = removedBrackets.replaceAll(/:/g, '":"').replaceAll(/,/g, '","');
+                return `{"${preformatted}"}`;
+            }
+
+            // Escape chars and set value to hidden input
+            var dotKeyValueHiddenIput = document.getElementById('<%=field.getVelocityVarName()%>');
+            dotKeyValueHiddenIput.value = formatToJsonData(escapeQuoteAndBackSlash("<%=keyValueDataRaw%>"));
+
             var dotKeyValue = document.querySelector('#<%=field.getVelocityVarName()%>KeyValue');
             dotKeyValue.uniqueKeys = "true";
-            dotKeyValue.value = '<%=dotKeyValueDataRaw.toString()%>';
+            dotKeyValue.value = "<%=dotKeyValueDataRaw.toString()%>";
             dotKeyValue.disabled = '<%=field.isReadOnly()%>';
             dotKeyValue.whiteList = '<%=whiteListKeyValues%>';
             dotKeyValue.formKeyLabel = '<%= LanguageUtil.get(pageContext, "Key") %>'
@@ -1279,11 +1292,12 @@
             dotKeyValue.whiteListEmptyOptionLabel = '<%= LanguageUtil.get(pageContext, "Pick-an-option") %>'
             dotKeyValue.requiredMessage = '<%= LanguageUtil.get(pageContext, "message.fieldvariables.key.required") %>'
 
-                dotKeyValue.addEventListener('dotValueChange', function (event) {
-                    var formattedData = event.detail.value.replace(/[|]/g, ':');
-                    var keyfieldId = document.getElementById('<%=field.getVelocityVarName()%>');
-                    keyfieldId.value = `{${formattedData}}`
-                }, false);
+            dotKeyValue.addEventListener('dotValueChange', function (event) {
+                var escapedData = "{" + escapeQuoteAndBackSlash(event.detail.value) + "}";
+                var formattedData = formatToJsonData(escapedData);
+                var keyfieldId = document.getElementById('<%=field.getVelocityVarName()%>');
+                keyfieldId.value = event.detail.value;
+            }, false);
 
         </script>
     <%}%>
