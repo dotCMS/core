@@ -903,7 +903,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			contentType = this.getSelectedStructure(req, (ContentletForm) form, contentTypeAPI);
 		}
 
-		((ContentletForm)form).setStructureInode(contentType.getInode());
+		contentlet.setContentTypeId(contentType.id());
 
 		req.setAttribute(WebKeys.CONTENTLET_RELATIONSHIPS_EDIT,
 				APILocator.getContentletAPI().getAllRelationships(contentlet));
