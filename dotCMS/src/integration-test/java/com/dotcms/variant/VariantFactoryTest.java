@@ -46,9 +46,16 @@ public class VariantFactoryTest {
         final Variant variant = new VariantDataGen().next();
 
         final Variant variantSaved = FactoryLocator.getVariantFactory().save(variant);
-
+        checkNotInCache(variantSaved);
         checkFromDataBase(variantSaved);
-        checkVariantFromCache(variantSaved);
+    }
+
+    private void checkNotInCache(Variant variant) throws DotDataException {
+        final Variant variantById = CacheLocator.getVariantCache().getById(variant.identifier());
+        assertNull(variantById);
+
+        final Variant variantByName = CacheLocator.getVariantCache().getByName(variant.name());
+        assertNull(variantByName);
     }
 
     private void checkVariantFromCache(Variant variant) throws DotDataException {
@@ -198,6 +205,11 @@ public class VariantFactoryTest {
                 .archived(false)
                 .next();
 
+        final Variant variantFromCache = FactoryLocator.getVariantFactory()
+                .get(variantSaved.identifier()).orElseThrow(() -> new AssertionError("Variant expected"));
+
+        checkVariantFromCache(variantFromCache);
+
         FactoryLocator.getVariantFactory().update(variantUpdated);
 
         final Variant variantFromDataBase = getVariantFromDataBase(variantSaved);
@@ -206,7 +218,7 @@ public class VariantFactoryTest {
         assertEquals(variantUpdated.identifier(), variantFromDataBase.identifier());
         assertFalse(variantFromDataBase.archived());
 
-        checkVariantFromCache(variantUpdated);
+        checkNotInCache(variantUpdated);
     }
 
     /**
@@ -251,6 +263,8 @@ public class VariantFactoryTest {
     @Test
     public void delete() throws DotDataException {
         final Variant variant = new VariantDataGen().nextPersisted();
+
+        FactoryLocator.getVariantFactory().get(variant.identifier());
 
         assertNotNull(CacheLocator.getVariantCache().getById(variant.identifier()));
         assertNotNull(CacheLocator.getVariantCache().getByName(variant.name()));
@@ -301,6 +315,8 @@ public class VariantFactoryTest {
         assertEquals(variant.identifier(), variantFromDataBase.get().identifier());
 
         assertTrue(FactoryLocator.getVariantFactory().get(variant.identifier()).isPresent());
+
+        checkVariantFromCache(variant);
     }
 
     /**
@@ -325,6 +341,8 @@ public class VariantFactoryTest {
         assertEquals(variant.identifier(), variantFromDataBase.get().identifier());
 
         assertTrue(FactoryLocator.getVariantFactory().getByName(variant.name()).isPresent());
+
+        checkVariantFromCache(variant);
     }
 
     /**
@@ -337,6 +355,7 @@ public class VariantFactoryTest {
     @Test
     public void getArchived() throws DotDataException {
         final Variant variant = new VariantDataGen().archived(true).nextPersisted();
+
 
         ArrayList results = getResults(variant);
         assertFalse(results.isEmpty());
@@ -423,8 +442,10 @@ public class VariantFactoryTest {
     public void getByCache() throws DotDataException {
         final Variant variant = new VariantDataGen().nextPersisted();
 
-        assertNotNull(CacheLocator.getVariantCache().getByName(variant.name()));
-        assertNotNull(CacheLocator.getVariantCache().getById(variant.identifier()));
+        checkNotInCache(variant);
+
+        FactoryLocator.getVariantFactory().get(variant.identifier());
+        checkVariantFromCache(variant);
 
         new DotConnect().setSQL("UPDATE variant SET name = ? WHERE id = ?")
                 .addParam(variant.name() + "_UPDATED")
@@ -437,6 +458,9 @@ public class VariantFactoryTest {
         assertEquals(variant.identifier(), variantFromFactory.get().identifier());
         assertEquals(variant.name(), variantFromFactory.get().name());
         assertEquals(variant.archived(), variantFromFactory.get().archived());
+
+        assertNotNull(CacheLocator.getVariantCache().getById(variant.identifier()));
+        assertNotNull(CacheLocator.getVariantCache().getByName(variant.name()));
     }
 
     /**
@@ -449,9 +473,10 @@ public class VariantFactoryTest {
     @Test
     public void getByNameCache() throws DotDataException {
         final Variant variant = new VariantDataGen().nextPersisted();
+        checkNotInCache(variant);
 
-        assertNotNull(CacheLocator.getVariantCache().getByName(variant.name()));
-        assertNotNull(CacheLocator.getVariantCache().getById(variant.identifier()));
+        FactoryLocator.getVariantFactory().getByName(variant.name());
+        checkVariantFromCache(variant);
 
         new DotConnect().setSQL("UPDATE variant SET name = ? WHERE id = ?")
                 .addParam(variant.name() + "_UPDATED")
@@ -464,5 +489,8 @@ public class VariantFactoryTest {
         assertEquals(variant.identifier(), variantFromFactory.get().identifier());
         assertEquals(variant.name(), variantFromFactory.get().name());
         assertEquals(variant.archived(), variantFromFactory.get().archived());
+
+        assertNotNull(CacheLocator.getVariantCache().getById(variant.identifier()));
+        assertNotNull(CacheLocator.getVariantCache().getByName(variant.name()));
     }
 }
