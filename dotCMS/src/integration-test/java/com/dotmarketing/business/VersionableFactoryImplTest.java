@@ -282,7 +282,8 @@ public class VersionableFactoryImplTest {
         assertFalse(contentletVersionInfoBefore.isDeleted());
 
         new DotConnect()
-                .setSQL("UPDATE contentlet_version_info SET deleted = true WHERE identifier = ? AND variant_id = ? AND lang = ?")
+                .setSQL("UPDATE contentlet_version_info SET deleted = ? WHERE identifier = ? AND variant_id = ? AND lang = ?")
+                .addParam(true)
                 .addParam(contentlet.getIdentifier())
                 .addParam(VariantAPI.DEFAULT_VARIANT.identifier())
                 .addParam(language.getId())
@@ -334,7 +335,8 @@ public class VersionableFactoryImplTest {
         assertFalse(contentletVersionInfoBefore.isDeleted());
 
         new DotConnect()
-                .setSQL("UPDATE contentlet_version_info SET deleted = true WHERE identifier = ? AND variant_id = ? AND lang = ?")
+                .setSQL("UPDATE contentlet_version_info SET deleted = ? WHERE identifier = ? AND variant_id = ? AND lang = ?")
+                .addParam(true)
                 .addParam(contentlet.getIdentifier())
                 .addParam(variant.identifier())
                 .addParam(language.getId())
