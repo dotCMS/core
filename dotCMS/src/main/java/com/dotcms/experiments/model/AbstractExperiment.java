@@ -66,12 +66,6 @@ public interface AbstractExperiment extends Serializable, ManifestItem {
     @JsonProperty("pageId")
     String pageId();
 
-    @JsonProperty("archived")
-    @Value.Default
-    default boolean archived() {
-        return false;
-    }
-
     @JsonProperty("createdBy")
     String createdBy();
 
@@ -95,6 +89,7 @@ public interface AbstractExperiment extends Serializable, ManifestItem {
         RUNNING,
         SCHEDULED,
         ENDED,
-        DRAFT
+        DRAFT,
+        ARCHIVED
     }
 }

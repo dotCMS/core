@@ -116,7 +116,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 throw new DotStateException("Only ended experiments can be archived");
             }
 
-            final Experiment archived = persistedExperiment.get().withArchived(true);
+            final Experiment archived = persistedExperiment.get().withStatus(Status.ARCHIVED);
             return factory.save(archived);
         } else {
             throw new NotFoundInDbException("Experiment with provided id not found");

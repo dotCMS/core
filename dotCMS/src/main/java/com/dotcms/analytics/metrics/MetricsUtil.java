@@ -20,6 +20,7 @@ public enum MetricsUtil {
         final Set<String> providedParams = primaryGoal.conditions()
                 .stream().map(Condition::parameter).collect(Collectors.toSet());
 
+
         if(UtilMethods.isSet(availableParams) && !availableParams.containsAll(providedParams)) {
             providedParams.removeAll(availableParams);
             throw new IllegalArgumentException("Invalid Parameters provided: " +

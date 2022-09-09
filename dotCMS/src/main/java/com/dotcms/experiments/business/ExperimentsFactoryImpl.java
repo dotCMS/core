@@ -18,11 +18,12 @@ public class ExperimentsFactoryImpl implements
 
     public static final String INSERT_EXPERIMENT = "INSERT INTO experiment(id, page_id, name, description, status, " +
             "traffic_proportion, traffic_allocation, mod_date, scheduling, "
-            + "archived, creation_date, created_by, last_modified_by, goals) "
-            + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+            + "creation_date, created_by, last_modified_by, goals) "
+            + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     public static final String UPDATE_EXPERIMENT = "UPDATE experiment set name=?, description=?, status=?, " +
-            "traffic_proportion=?, traffic_allocation=?, mod_date=?, scheduling=?, archived=?, "
+            "traffic_proportion=?, traffic_allocation=?, mod_date=?, scheduling=?, "
+
             + " creation_date=?, created_by=?, last_modified_by=?, goals=?"
             + " WHERE id=?";
 
@@ -143,7 +144,6 @@ public class ExperimentsFactoryImpl implements
         dc.addParam(experiment.trafficAllocation());
         dc.addParam(Timestamp.from(experiment.modDate()));
         dc.addJSONParam(experiment.scheduling());
-        dc.addParam(experiment.archived());
         dc.addParam(Timestamp.from(experiment.creationDate()));
         dc.addParam(experiment.createdBy());
         dc.addParam(experiment.lastModifiedBy());
@@ -166,7 +166,6 @@ public class ExperimentsFactoryImpl implements
         dc.addParam(experiment.trafficAllocation());
         dc.addParam(Timestamp.from(experiment.modDate()));
         dc.addJSONParam(experiment.scheduling());
-        dc.addParam(experiment.archived());
         dc.addParam(Timestamp.from(experiment.creationDate()));
         dc.addParam(experiment.createdBy());
         dc.addParam(experiment.lastModifiedBy());
