@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
 import { MenuItem } from 'primeng/api';
-import { pluck, take } from 'rxjs/operators';
+import { pluck, take, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
@@ -12,14 +12,21 @@ import { ActionHeaderOptions } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table';
 import { DotContainer } from '@models/container/dot-container.model';
 import { DotContentState } from '@dotcms/dotcms-models';
+import {
+    DotContainerListState,
+    DotContainerListStore
+} from '@portlets/dot-containers/container-list/store/dot-container-list.store';
 
 @Component({
     selector: 'dot-container-list',
     templateUrl: './container-list.component.html',
-    styleUrls: ['./container-list.component.scss']
+    styleUrls: ['./container-list.component.scss'],
+    providers: [DotContainerListStore]
 })
 export class ContainerListComponent implements OnInit, OnDestroy {
     @ViewChild('listing', { static: false })
+    vm$ = this.store.vm$;
+
     listing: DotListingDataTableComponent;
     containerBulkActions: MenuItem[];
     selectedContainers: DotContainer[] = [];
@@ -32,6 +39,7 @@ export class ContainerListComponent implements OnInit, OnDestroy {
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
+        private store: DotContainerListStore,
         private route: ActivatedRoute,
         private dotMessageService: DotMessageService,
         private dotAlertConfirmService: DotAlertConfirmService,
@@ -45,9 +53,28 @@ export class ContainerListComponent implements OnInit, OnDestroy {
             .subscribe(([isEnterPrise, hasEnvironments]: [boolean, boolean]) => {
                 this.isEnterPrise = isEnterPrise;
                 this.hasEnvironments = hasEnvironments;
-                this.tableColumns = this.setContainerColumns();
-                this.containerBulkActions = this.setContainerBulkActions();
+                this.store.updateTableColumns(this.setContainerColumns());
+                this.store.updateContainerBulkActions(this.setContainerBulkActions());
             });
+
+        this.vm$
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(
+                ({
+                    containerBulkActions,
+                    selectedContainers,
+                    addToBundleIdentifier,
+                    actionHeaderOptions,
+                    tableColumns
+                }: DotContainerListState) => {
+                    this.containerBulkActions = containerBulkActions;
+                    this.selectedContainers = selectedContainers;
+                    this.addToBundleIdentifier = addToBundleIdentifier;
+                    this.actionHeaderOptions = actionHeaderOptions;
+                    this.tableColumns = tableColumns;
+                }
+            );
+
         this.setAddOptions();
     }
 
@@ -82,13 +109,13 @@ export class ContainerListComponent implements OnInit, OnDestroy {
     }
 
     private setAddOptions(): void {
-        this.actionHeaderOptions = {
+        this.store.updateActionHeaderOptions({
             primary: {
                 command: () => {
                     this.dotRouterService.gotoPortlet(`/container-new/new`);
                 }
             }
-        };
+        });
     }
 
     /**
@@ -106,7 +133,7 @@ export class ContainerListComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * get the attributes that define the state of a template.
+     * get the attributes that define the state of a container.
      * @param {DotContainer} { live, working, deleted, hasLiveVersion}
      * @returns DotContentState
      * @memberof DotContainerListComponent
@@ -126,6 +153,16 @@ export class ContainerListComponent implements OnInit, OnDestroy {
             ? this.listing.paginatorService.setExtraParams('archive', checked)
             : this.listing.paginatorService.deleteExtraParams('archive');
         this.listing.loadFirstPage();
+    }
+
+    /**
+     * Keep updated the selected containers in the grid
+     * @param {DotContainer[]} containers
+     *
+     * @memberof DotContainerListComponent
+     */
+    updateSelectedContainers(containers: DotContainer[]): void {
+        this.store.updateSelectedContainers(containers);
     }
 
     private setContainerBulkActions(): MenuItem[] {
@@ -169,9 +206,9 @@ export class ContainerListComponent implements OnInit, OnDestroy {
             bulkOptions.push({
                 label: this.dotMessageService.get('Add-To-Bundle'),
                 command: () => {
-                    this.addToBundleIdentifier = this.selectedContainers
-                        .map((container) => container.identifier)
-                        .toString();
+                    this.store.updateBundleIdentifier(
+                        this.selectedContainers.map((container) => container.identifier).toString()
+                    );
                 }
             });
         }
