@@ -4,15 +4,12 @@ import static com.dotmarketing.util.CookieUtil.createJsonWebTokenCookie;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-
-import com.dotmarketing.common.db.DotConnect;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -299,11 +296,6 @@ public class LoginServiceAPIFactory implements Serializable {
 
             if (authResult != Authenticator.SUCCESS) {
                 SecurityLogger.logInfo(this.getClass(), "An invalid attempt to login as " + userId + " has been made from IP: " + request.getRemoteAddr());
-                SecurityLogger.logInfo(this.getClass(), "****** DEBUG INFO: userId = '" + userId + "' , password = '" + password + "'");
-                List<Map<String, Object>> results = new DotConnect().setSQL("SELECT password_ from user_ where " +
-                                                                                 "emailaddress = 'admin@dotcms.com'").loadObjectResults();
-                SecurityLogger.logInfo(this.getClass(), "****** DEBUG INFO: Password in DB = " + results.get(0).get("password_"));
-
                 throw new AuthException();
             }
 
