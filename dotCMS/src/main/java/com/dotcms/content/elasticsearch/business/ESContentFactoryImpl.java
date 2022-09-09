@@ -1108,7 +1108,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
     for (String i : inodes) {
       final Contentlet contentlet = contentletCache.get(i);
       if (contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
-        conMap.put(contentlet.getInode(), contentlet);
+        conMap.put(contentlet.getInode(), processContentletCache(contentlet));
       }
     }
     
