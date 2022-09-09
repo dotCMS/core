@@ -12,6 +12,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.ContainerPaginator;
 import com.dotcms.util.pagination.OrderDirection;
@@ -50,6 +51,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.liferay.portal.model.User;
+import java.util.Collections;
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ResourceNotFoundException;
@@ -1068,4 +1070,55 @@ public class ContainerResource implements Serializable {
         }
     }
 
+    /**
+     * Copies container to the specified host
+     *
+     * @param request
+     * @param response
+     * @param id       id identifier to copy.
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @POST
+    @Path("/{id}/_copy")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityContainerView copy(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("id") final String id) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).requiredBackendUser(true)
+                .rejectWhenNoUser(true).init();
+        final User user = initData.getUser();
+        final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+        final PageMode pageMode = PageMode.get(request);
+
+        DotPreconditions.checkArgument(UtilMethods.isSet(id),
+                    "The container id is required");
+
+        final Container sourceContainer = this.getContainerWorking(id, user,
+                WebAPILocator.getHostWebAPI().getHost(request));
+
+        if (null != sourceContainer && InodeUtils.isSet(sourceContainer.getInode())) {
+
+            ActivityLogger.logInfo(this.getClass(), "Copy Container",
+                    "User " + user.getPrimaryKey() + " saved " + sourceContainer.getTitle(),
+                    host.getHostname());
+
+            Container copiedContainer = this.containerAPI.copy(sourceContainer, host, user,
+                    pageMode.respectAnonPerms);
+
+            Logger.debug(this,
+                    () -> "The container: " + sourceContainer.getIdentifier() + " has been copied");
+
+            return new ResponseEntityContainerView(Collections.singletonList(copiedContainer));
+        } else {
+
+            Logger.error(this, "Container with Id: " + id + " does not exist");
+            throw new DoesNotExistException("Container with Id: " + id + " does not exist");
+        }
+    }
 }
