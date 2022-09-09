@@ -23,7 +23,7 @@ import {
     getClassNames,
     getDotOptionsFromFieldValue,
     getOriginalStatus,
-    getStringFromDotKeyArray,
+    getJsonStringFromDotKeyArray,
     getTagError,
     getTagHint,
     updateStatus,
@@ -160,7 +160,19 @@ export class DotKeyValueComponent {
     @Watch('value')
     valueWatch(): void {
         this.value = checkProp<DotKeyValueComponent, string>(this, 'value', 'string');
-        this.items = getDotOptionsFromFieldValue(this.value).map(mapToKeyValue);
+
+        let formattedValue = '';
+        if (this.value) {
+            formattedValue = this.value
+                .replace(/[|]/gi, '&#124;')
+                .replace(/&#x22;:&#x22;/gi, '|')
+                .replace(/&#x22;,&#x22;/gi, ',')
+                .replace(/{&#x22;/gi, '')
+                .replace(/&#x22;}/gi, '')
+                .replace(/&#x22;/gi, '"');
+        }
+
+        this.items = getDotOptionsFromFieldValue(formattedValue).map(mapToKeyValue);
     }
 
     /**
@@ -346,7 +358,7 @@ export class DotKeyValueComponent {
     }
 
     private emitValueChange(): void {
-        const returnedValue = getStringFromDotKeyArray(this.items);
+        const returnedValue = getJsonStringFromDotKeyArray(this.items);
         this.dotValueChange.emit({
             name: this.name,
             value: returnedValue
