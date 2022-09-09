@@ -4,6 +4,7 @@ import com.dotcms.experiments.business.ExperimentFilter;
 import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.PATCH;
 import com.dotcms.rest.ResponseEntityView;
@@ -207,6 +208,36 @@ public class ExperimentsResource {
 
         final Experiment savedExperiment = experimentsAPI.save(experimentNoGoal, user);
         return new ResponseEntityExperimentView(Collections.singletonList(savedExperiment));
+    }
+
+    /**
+     * Starts an {@link Experiment}. In order to start an Experiment it needs to:
+     * <li>Have a {@link Status#DRAFT} status
+     * <li>Have at least one Variant
+     * <li>Have a primary goal set
+     * <p>
+     * The following considerations regarding {@link Experiment#scheduling()} are also taking place
+     * when starting an Experiment:
+     * <li>If no {@link Scheduling#startDate()} is provided, set it to now()
+     * <li>If no {@link Scheduling#endDate()} is provided, set it to four weeks
+     * <li>Unable to start if provided {@link Scheduling#startDate()} is in the past
+     * <li>Unable to start if provided {@link Scheduling#endDate()} is in the past
+     * <li>Unable to start if provided {@link Scheduling#endDate()} is not after provided {@link Scheduling#startDate()}
+     * <li>Unable to start if difference {@link Scheduling#endDate()} is not after provided {@link Scheduling#startDate()}
+     *
+     */
+    @PUT
+    @Path("/{experimentId}/_start")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityView<String> start(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("experimentId") final String experimentId) throws DotDataException, DotSecurityException {
+        final InitDataObject initData = getInitData(request, response);
+        final User user = initData.getUser();
+        experimentsAPI.start(experimentId, user);
+        return new ResponseEntityView<>("Experiment started");
     }
 
     private Experiment patchExperiment(final Experiment experimentToUpdate,

@@ -2,8 +2,10 @@ package com.dotcms.experiments.business;
 
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.experiments.model.Scheduling;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Optional;
@@ -15,6 +17,8 @@ import java.util.Optional;
  */
 
 public interface ExperimentsAPI {
+
+    int EXPERIMENT_MAX_DURATION = Config.getIntProperty("EXPERIMENT_MAX_DURATION", 35);
 
     /**
      * Save a new experiment when the Experiment doesn't have an id
@@ -49,4 +53,24 @@ public interface ExperimentsAPI {
      * <li>statuses - List of {@link Status} to filter one. Zero to many.
      */
     List<Experiment> list(final ExperimentFilter filter, final User user) throws DotDataException;
+
+    /**
+     * Starts an {@link Experiment}. In order to start an Experiment it needs to:
+     * <li>Have a {@link Status#DRAFT} status
+     * <li>Have at least one Variant
+     * <li>Have a primary goal set
+     * <p>
+     * The following considerations regarding {@link Experiment#scheduling()} are also taking place
+     * when starting an Experiment:
+     * <li>If no {@link Scheduling#startDate()} is provided, set it to now()
+     * <li>If no {@link Scheduling#endDate()} is provided, set it to four weeks
+     * <li>Unable to start if provided {@link Scheduling#startDate()} is in the past
+     * <li>Unable to start if provided {@link Scheduling#endDate()} is in the past
+     * <li>Unable to start if provided {@link Scheduling#endDate()} is not after provided {@link Scheduling#startDate()}
+     * <li>Unable to start if difference {@link Scheduling#endDate()} is not after provided {@link Scheduling#startDate()}
+     *
+     * @return
+     */
+    Experiment start(final String experimentId, final User user)
+            throws DotDataException, DotSecurityException;
 }

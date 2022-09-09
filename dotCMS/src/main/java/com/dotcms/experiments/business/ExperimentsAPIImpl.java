@@ -6,6 +6,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.LicenseValiditySupplier;
 import com.dotmarketing.beans.PermissionableProxy;
@@ -23,10 +24,13 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import org.jetbrains.annotations.NotNull;
 
 public class ExperimentsAPIImpl implements ExperimentsAPI {
 
@@ -113,7 +117,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                             + "Experiment Id: " + persistedExperiment.get().id());
 
             if(persistedExperiment.get().status()!= Status.ENDED) {
-                throw new DotStateException("Only ended experiments can be archived");
+                throw new DotStateException("Only ENDED experiments can be archived");
             }
 
             final Experiment archived = persistedExperiment.get().withStatus(Status.ARCHIVED);
@@ -140,7 +144,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                             + "Experiment Id: " + persistedExperiment.get().id());
 
             if(persistedExperiment.get().status()!= Status.DRAFT) {
-                throw new DotStateException("Only draft experiments can be deleted");
+                throw new DotStateException("Only DRAFT experiments can be deleted");
             }
 
             factory.delete(persistedExperiment.get());
@@ -155,6 +159,87 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
                 invalidLicenseMessageSupplier);
         return factory.list(filter);
+    }
+
+    @Override
+    public Experiment start(String experimentId, User user)
+            throws DotDataException, DotSecurityException {
+        DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
+                invalidLicenseMessageSupplier);
+        DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
+
+        final Optional<Experiment> persistedExperimentOpt =  find(experimentId, user);
+
+        if(persistedExperimentOpt.isPresent()) {
+
+            final Experiment experimentFromFactory = persistedExperimentOpt.get();
+            validatePermissions(user, experimentFromFactory,
+                    "You don't have permission to archive the Experiment. "
+                            + "Experiment Id: " + persistedExperimentOpt.get().id());
+
+            if(experimentFromFactory.status()!= Status.DRAFT) {
+                throw new DotStateException("Only DRAFT experiments can be started");
+            }
+
+            DotPreconditions.checkState(hasAtLeastOneVariant(experimentFromFactory), "The Experiment needs at "
+                    + "least one Page Variant in order to be started.");
+
+            DotPreconditions.checkState(experimentFromFactory.goals().isPresent(), "The Experiment needs to "
+                    + "have the Goal set.");
+
+            final Experiment experimentToStart;
+
+            if(experimentFromFactory.scheduling().isEmpty()) {
+                final Scheduling scheduling = startNowScheduling();
+                experimentToStart = experimentFromFactory.withScheduling(scheduling);
+            } else {
+                Scheduling scheduling = validateScheduling(experimentFromFactory.scheduling().get());
+                experimentToStart = experimentFromFactory.withScheduling(scheduling);
+            }
+
+            final Experiment running = experimentToStart.withStatus(Status.RUNNING);
+            return factory.save(running);
+
+        } else {
+            throw new NotFoundInDbException("Experiment with provided id not found");
+        }
+    }
+
+    private Scheduling startNowScheduling() {
+        return Scheduling.builder().startDate(Instant.now())
+                .endDate(Instant.now().plus(EXPERIMENT_MAX_DURATION, ChronoUnit.DAYS))
+                .build();
+    }
+
+    private Scheduling validateScheduling(final Scheduling scheduling) {
+        Scheduling toReturn = scheduling;
+        if(scheduling.startDate().isPresent() && scheduling.endDate().isEmpty()) {
+            DotPreconditions.checkState(scheduling.startDate().get().isBefore(Instant.now()),
+                "Experiment cannot be started because the start date is in the past");
+
+            toReturn = scheduling.withEndDate(scheduling.startDate().get()
+                    .plus(EXPERIMENT_MAX_DURATION, ChronoUnit.DAYS));
+        } else if(scheduling.startDate().isEmpty() && scheduling.endDate().isPresent()) {
+            DotPreconditions.checkState(scheduling.endDate().get().isBefore(Instant.now()),
+                    "Experiment cannot be started because the end date is in the past");
+            DotPreconditions.checkState(
+                    Instant.now().plus(EXPERIMENT_MAX_DURATION, ChronoUnit.DAYS)
+                            .isAfter(scheduling.endDate().get()),
+                                    "Experiment duration must be less than "
+                                            + EXPERIMENT_MAX_DURATION +" days. ");
+
+            toReturn = scheduling.withStartDate(Instant.now());
+        } else {
+            DotPreconditions.checkState(Duration.between(scheduling.startDate().get(),
+                    scheduling.endDate().get()).get(ChronoUnit.DAYS)>EXPERIMENT_MAX_DURATION,
+                    "Experiment duration must be less than "
+                            + EXPERIMENT_MAX_DURATION +" days. ");
+        }
+        return toReturn;
+    }
+
+    private boolean hasAtLeastOneVariant(final Experiment experiment) {
+        return !experiment.trafficProportion().variantsPercentagesMap().keySet().isEmpty();
     }
 
     private void validatePermissions(final User user, final Experiment persistedExperiment,
