@@ -52,8 +52,13 @@ public class VersionableFactoryImplTest {
         final Identifier identifier = APILocator.getIdentifierAPI()
                 .find(contentlet.getIdentifier());
 
-        FactoryLocator.getVersionableFactory()
+        final ContentletVersionInfo contentletVersionInfo = FactoryLocator.getVersionableFactory()
                 .createContentletVersionInfo(identifier, language.getId(), contentlet.getInode());
+
+        assertEquals(contentlet.getIdentifier(), contentletVersionInfo.getIdentifier());
+        assertEquals(language.getId(), contentletVersionInfo.getLang());
+        assertEquals("DEFAULT", contentletVersionInfo.getVariant());
+        assertEquals(contentlet.getInode(), contentletVersionInfo.getWorkingInode());
 
         final ArrayList results = new DotConnect().setSQL(
                         "select * from contentlet_version_info where identifier =? AND lang = ?")

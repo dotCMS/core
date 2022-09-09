@@ -46,12 +46,7 @@ public class ContentletVersionInfoTransformer implements DBTransformer<Contentle
         versionInfo.setLockedBy((String) map.get("locked_by"));
         versionInfo.setLockedOn((Date) map.get("locked_on"));
         versionInfo.setVersionTs((Date) map.get("version_ts"));
-
-        final String variantId = UtilMethods.isSet(map.get(Contentlet.VARIANT_ID)) ?
-                (String) map.get(Contentlet.VARIANT_ID) :
-                VariantAPI.DEFAULT_VARIANT.identifier();
-
-        versionInfo.setVariant(variantId);
+        versionInfo.setVariant(map.get("variant_id").toString());
         return versionInfo;
     }
 }
