@@ -96,6 +96,42 @@ function execCommand({
         heading: () => {
             editor.chain().addHeading({ range, type: props.type }).run();
         },
+        table: () => {
+            editor.chain().insertTable().focus().run();
+            // editor.commands
+            //     .openForm([
+            //         {
+            //             key: 'rows',
+            //             label: 'Rows',
+            //             required: true,
+            //             controlType: 'text',
+            //             type: 'text'
+            //         },
+            //         {
+            //             key: 'columns',
+            //             label: 'Columns',
+            //             required: true,
+            //             controlType: 'text',
+            //             type: 'text'
+            //         },
+            //         {
+            //             key: 'header',
+            //             label: 'Add Row Header',
+            //             required: true,
+            //             controlType: 'text',
+            //             type: 'checkbox'
+            //         }
+            //     ])
+            //     .pipe(take(1))
+            //     .subscribe((value) => {
+            //         editor.commands.insertTable({
+            //             rows: value.rows,
+            //             cols: value.columns,
+            //             withHeaderRow: !!value.header
+            //         });
+            //
+            //     });
+        },
         orderedList: () => {
             editor.chain().deleteRange(range).toggleOrderedList().focus().run();
         },
@@ -112,7 +148,6 @@ function execCommand({
             editor.chain().deleteRange(range).setHorizontalRule().focus().run();
         }
     };
-
     whatToDo[props.type.name]
         ? whatToDo[props.type.name]()
         : editor.chain().setTextSelection(range).focus().run();
@@ -208,7 +243,7 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
 
     function onExit() {
         myTippy?.destroy();
-        suggestionsComponent.destroy();
+        suggestionsComponent?.destroy();
         suggestionsComponent = null;
         destroy$.next(true);
         destroy$.complete();

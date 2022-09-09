@@ -1,0 +1,43 @@
+<form *ngIf="form" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div *ngFor="let control of dynamicControls" class="form-row">
+        <ng-container [ngSwitch]="control.type">
+            <ng-container *ngSwitchCase="'checkbox'">
+                <p-checkbox
+                    [formControlName]="control.key"
+                    [binary]="true"
+                    [id]="control.key"
+                ></p-checkbox>
+                <label [for]="control.key">{{ control.label | titlecase }}</label>
+            </ng-container>
+            <ng-container *ngSwitchDefault>
+                <label [for]="control.key">{{ control.label | titlecase }}</label>
+                <input
+                    #input
+                    pInputText
+                    [type]="control.type"
+                    [formControlName]="control.key"
+                    [id]="control.key"
+                    [style]="{ width: '100%', fontSize: '14px', height: '40px' }"
+                />
+            </ng-container>
+        </ng-container>
+    </div>
+
+    <div class="form-action">
+        <button
+            pButton
+            type="button"
+            label="CANCEL"
+            class="p-button-outlined"
+            [style]="{ width: '120px' }"
+            (click)="hide.emit(true)"
+        ></button>
+        <button
+            pButton
+            type="submit"
+            label="APPLAY"
+            class="p-button"
+            [style]="{ padding: '11.5px 24px' }"
+        ></button>
+    </div>
+</form>

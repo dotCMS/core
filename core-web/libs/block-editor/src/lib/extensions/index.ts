@@ -15,6 +15,10 @@ export * from './bubble-menu/components/bubble-menu-button/bubble-menu-button.co
 export * from './bubble-menu/models';
 export * from './bubble-menu/utils';
 
+// Bubble Form
+export * from './bubble-form/bubble-form.extension';
+export * from './bubble-form/bubble-form.component';
+
 // Dot Config
 export * from './dot-config/dot-config.extension';
 

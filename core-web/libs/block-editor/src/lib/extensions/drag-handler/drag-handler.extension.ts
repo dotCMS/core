@@ -4,6 +4,7 @@ import { NodeSelection, Plugin, PluginKey } from 'prosemirror-state';
 import { Extension } from '@tiptap/core';
 
 import { DragHandlerComponent } from './drag-handler.component';
+import { DOMNode } from 'prosemirror-view/src/dom';
 
 export const DragHandler = (viewContainerRef: ViewContainerRef) => {
     return Extension.create({
@@ -62,7 +63,12 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
             }
 
             // Get the direct child of the Editor. To cover cases when the user is hovering nested nodes.
-            function getDirectChild(node) {
+            function getDirectChild(node): DOMNode {
+                if (node) {
+                    // debugger;
+                    // console.log(node);
+                }
+
                 while (node && node.parentNode) {
                     if (
                         node.classList?.contains('ProseMirror') ||
@@ -144,8 +150,11 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                                     top: event.clientY
                                 };
                                 const position = view.posAtCoords(coords);
+                                nodeToBeDragged = getDirectChild(view.nodeDOM(position.inside));
+
                                 if (position && nodeHasContent(view, position.inside)) {
-                                    nodeToBeDragged = getDirectChild(view.nodeDOM(position.inside));
+                                    //console.log('nodeToBeDragged', nodeToBeDragged);
+
                                     if (canDragNode(nodeToBeDragged)) {
                                         const { top, left } = getPositon(
                                             view.dom.parentElement,
@@ -156,6 +165,7 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                                         dragHandler.style.top = top < 0 ? 0 : top + 'px';
                                         dragHandler.classList.add('visible');
                                     } else {
+                                        // console.log('visible', false);
                                         dragHandler.classList.remove('visible');
                                     }
                                 } else {

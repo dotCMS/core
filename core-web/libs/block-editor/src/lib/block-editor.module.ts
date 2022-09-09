@@ -40,6 +40,7 @@ import { SharedModule } from './shared/shared.module';
 
 //Editor
 import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
+import { BubbleFormComponent } from './extensions/bubble-form/bubble-form.component';
 
 @NgModule({
     imports: [
@@ -67,7 +68,8 @@ import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block
         BubbleLinkFormComponent,
         FormActionsComponent,
         SuggestionPageComponent,
-        DotBlockEditorComponent
+        DotBlockEditorComponent,
+        BubbleFormComponent
     ],
     providers: [DotImageService, LoggerService, StringUtils],
     exports: [
@@ -80,7 +82,8 @@ import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block
         ButtonModule,
         InputTextModule,
         SharedModule,
-        DotBlockEditorComponent
+        DotBlockEditorComponent,
+        BubbleFormComponent
     ]
 })
 export class BlockEditorModule {}

@@ -26,6 +26,14 @@ const headings = [...Array(3).keys()].map((level) => {
     };
 });
 
+const table = [
+    {
+        label: 'Table',
+        icon: sanitizeUrl(pIcon),
+        id: 'table'
+    }
+];
+
 const paragraph = [
     {
         label: 'Paragraph',
@@ -69,7 +77,13 @@ function sanitizeUrl(url: string): SafeUrl {
     return domSanitizer.bypassSecurityTrustUrl(url);
 }
 
-export const suggestionOptions: DotMenuItem[] = [...headings, ...paragraph, ...list, ...block];
+export const suggestionOptions: DotMenuItem[] = [
+    ...headings,
+    ...table,
+    ...paragraph,
+    ...list,
+    ...block
+];
 
 export const SuggestionPopperModifiers = [
     {
