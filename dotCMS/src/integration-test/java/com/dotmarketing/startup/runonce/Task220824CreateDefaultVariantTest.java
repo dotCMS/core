@@ -100,7 +100,9 @@ public class Task220824CreateDefaultVariantTest {
 
         cleanAllBefore();
 
-        checkNotExistVariant(contentletBefore);
+        if (!DbConnectionFactory.isMsSql()) {
+            checkNotExistVariant(contentletBefore);
+        }
 
         final Task220824CreateDefaultVariant upgradeTask = new Task220824CreateDefaultVariant();
         upgradeTask.executeUpgrade();

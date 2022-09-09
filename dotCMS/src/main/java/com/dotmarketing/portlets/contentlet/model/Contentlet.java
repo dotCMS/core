@@ -1624,8 +1624,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		map.put(VARIANT_ID, variantId);
     }
 	public String getVariantId() {
-		return UtilMethods.isSet(map.get(VARIANT_ID)) ? map.get(VARIANT_ID).toString() :
-				VariantAPI.DEFAULT_VARIANT.identifier();
+		return map.getOrDefault(VARIANT_ID, VariantAPI.DEFAULT_VARIANT.identifier()).toString();
 	}
 
     private class ContentletHashMap extends ConcurrentHashMap<String, Object> {
