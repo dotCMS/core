@@ -2,6 +2,7 @@ package com.dotcms.experiments.business;
 
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.experiments.model.Goals;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TrafficProportion;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
@@ -65,6 +66,8 @@ public class ExperimentTransformer implements DBTransformer<Experiment> {
                         .getOrNull())
                 .createdBy((String) map.get("created_by"))
                 .lastModifiedBy((String) map.get("last_modified_by"))
+                .goals(Optional.ofNullable(DBColumnToJSONConverter
+                        .getObjectFromDBJson(map.get("goals"), Goals.class)))
                 .build();
     }
 }

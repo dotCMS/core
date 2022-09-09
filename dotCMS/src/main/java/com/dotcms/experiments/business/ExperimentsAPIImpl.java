@@ -1,5 +1,6 @@
 package com.dotcms.experiments.business;
 
+import com.dotcms.analytics.metrics.MetricsUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -67,6 +68,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         builder.modDate(Instant.now());
         builder.lastModifiedBy(user.getUserId());
+        
+        if(experiment.goals().isPresent()) {
+            MetricsUtil.INSTANCE.validateGoals(experiment.goals().get());
+        }
 
         final Experiment experimentToSave = builder.build();
 
