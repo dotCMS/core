@@ -23,6 +23,7 @@ public class ExperimentsFactoryImpl implements
 
     public static final String UPDATE_EXPERIMENT = "UPDATE experiment set name=?, description=?, status=?, " +
             "traffic_proportion=?, traffic_allocation=?, mod_date=?, scheduling=?, "
+
             + " creation_date=?, created_by=?, last_modified_by=?, goals=?"
             + " WHERE id=?";
 
