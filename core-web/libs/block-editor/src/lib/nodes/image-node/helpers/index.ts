@@ -9,6 +9,3 @@ export const imageLinkElement = (attrs, newAttrs) => {
 export const imageElement = (attrs, newAttrs) => {
     return ['img', mergeAttributes(attrs, newAttrs)];
 };
-
-export const parseIMGElement = (element: HTMLElement) =>
-    element.tagName === 'IMG' ? element : element.querySelector('img');
