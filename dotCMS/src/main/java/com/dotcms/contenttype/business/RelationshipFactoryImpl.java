@@ -268,12 +268,12 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 
     @Override
     public List<Relationship> byContentType(final ContentTypeIf contentType){
-        return byContentType(contentType.id(),"inode");
+        return byContentType(null != contentType ? contentType.id() : "","inode");
     }
 
     @Override
     public List<Relationship> byContentType(final ContentTypeIf contentType, final String orderBy){
-	    return byContentType(contentType.id(),orderBy);
+	    return byContentType(null != contentType ? contentType.id() : "",orderBy);
     }
 
     @Override

@@ -923,11 +923,22 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
         }
     }
 
-    private <T> boolean isExcludeByFilter(final PusheableAsset pusheableAsset) {
-
+    /**
+     * Determines whether the specified "pusheable" object must be excluded from the bundle or not. The rules taken into
+     * consideration for doing this are set via the Push Publishing Filter YAML file.
+     * <p>For more information, please refer to the {@link PublisherFilter} and
+     * {@link com.dotcms.publishing.FilterDescriptor} classes.</p>
+     *
+     * @param pusheableAsset The type of object that is being pushed, either directly or by dependency.
+     *
+     * @return If the "pusheable" object must be excluded from the bundle, return {@code true}.
+     */
+    private boolean isExcludeByFilter(final PusheableAsset pusheableAsset) {
+        if (PusheableAsset.RELATIONSHIP == pusheableAsset) {
+            return !publisherFilter.isRelationships() && publisherFilter.doesExcludeDependencyClassesContainsType(pusheableAsset.getType());
+        }
         return (
-            !publisherFilter.isDependencies() ||
-            PusheableAsset.RELATIONSHIP == pusheableAsset && !publisherFilter.isRelationships()) ||
+            !publisherFilter.isDependencies()) ||
             publisherFilter.doesExcludeDependencyClassesContainsType(pusheableAsset.getType()
         );
     }
