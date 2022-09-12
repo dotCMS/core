@@ -1,5 +1,5 @@
 import { Component, Injector, Input, OnInit, ViewContainerRef } from '@angular/core';
-import { AnyExtension, Editor } from '@tiptap/core';
+import { AnyExtension, Content, Editor } from '@tiptap/core';
 import { HeadingOptions, Level } from '@tiptap/extension-heading';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -14,7 +14,8 @@ import {
     ImageUpload,
     DotConfigExtension,
     BubbleFormExtension,
-    ImageNode
+    ImageNode,
+    formatHTML
 } from '@dotcms/block-editor';
 
 // Marks Extensions
@@ -45,6 +46,12 @@ export class DotBlockEditorComponent implements OnInit {
             ...this._allowedBlocks,
             ...(blocks ? blocks.replace(/ /g, '').split(',').filter(Boolean) : [])
         ];
+    }
+
+    @Input() set setValue(content: Content) {
+        this.editor.commands.setContent(
+            typeof content === 'string' ? formatHTML(content) : content
+        );
     }
 
     _allowedBlocks = ['paragraph']; //paragraph should be always.

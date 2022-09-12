@@ -196,9 +196,9 @@
             <script>
 
                 /**
-                 * "<%=JSONValue%>" is by default an empty Object.
+                 * "JSONValue" is by default an empty Object.
                  *  If that's the case we set "JSONValue" as null.
-                 *  Otherwise, we set "JSONValue" equals to "<%=JSONValue%>".
+                 *  Otherwise, we set "JSONValue" equals to "JSONValue".
                  */
                 const JSONValue = JSON.stringify(<%=JSONValue%>) !== JSON.stringify({}) ? <%=JSONValue%> : null;
                 let content;
@@ -209,17 +209,18 @@
                  */
                 try {
                     // If JSONValue is an valid Object, we use it as the Block Editor Content.
-                    // Otherwise, we try to parse the "<%=textValue%>".
+                    // Otherwise, we try to parse the "textValue".
                     content = JSONValue || JSON.parse(<%=textValue%>);
                 } catch (error) {
                     content = <%=textValue%>;
                 }
 
+                const blockEditor = document.querySelector('dotcms-block-editor');
                 const block = document.querySelector('dotcms-block-editor .ProseMirror');
                 const field = document.querySelector('#<%=field.getVelocityVarName()%>');
 
                 if (content) {
-                    block.editor.commands.setContent(content);
+                    blockEditor.setValue = content;
                     field.value = JSON.stringify(block.editor.getJSON());
                 }
 
