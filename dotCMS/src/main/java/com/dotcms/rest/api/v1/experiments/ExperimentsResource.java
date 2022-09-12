@@ -75,13 +75,28 @@ public class ExperimentsResource {
 
     private Experiment createExperimentFromForm(final ExperimentForm experimentForm,
             final User user) {
-        return Experiment.builder().pageId(experimentForm.getPageId()).name(experimentForm.getName())
+        final Experiment.Builder builder = Experiment.builder();
+
+        builder.pageId(experimentForm.getPageId()).name(experimentForm.getName())
                 .description(experimentForm.getDescription()).createdBy(user.getUserId())
                 .lastModifiedBy(user.getUserId())
                 .trafficAllocation(experimentForm.getTrafficAllocation()>-1
                         ? experimentForm.getTrafficAllocation()
-                        : 100)
-                .build();
+                        : 100);
+
+        if(experimentForm.getTrafficProportion()!=null) {
+            builder.trafficProportion(experimentForm.getTrafficProportion());
+        }
+
+        if(experimentForm.getGoals()!=null) {
+            builder.goals(experimentForm.getGoals());
+        }
+
+        if(experimentForm.getScheduling()!=null) {
+            builder.scheduling(experimentForm.getScheduling());
+        }
+
+        return builder.build();
     }
 
     /**
@@ -226,18 +241,18 @@ public class ExperimentsResource {
      * <li>Unable to start if difference {@link Scheduling#endDate()} is not after provided {@link Scheduling#startDate()}
      *
      */
-    @PUT
+    @POST
     @Path("/{experimentId}/_start")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityView<String> start(@Context final HttpServletRequest request,
+    public ResponseEntityExperimentView start(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("experimentId") final String experimentId) throws DotDataException, DotSecurityException {
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
-        experimentsAPI.start(experimentId, user);
-        return new ResponseEntityView<>("Experiment started");
+        final Experiment startedExperiment = experimentsAPI.start(experimentId, user);
+        return new ResponseEntityExperimentView(Collections.singletonList(startedExperiment));
     }
 
     private Experiment patchExperiment(final Experiment experimentToUpdate,

@@ -5,6 +5,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
+import com.dotcms.experiments.model.AbstractScheduling;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.util.DotPreconditions;
@@ -176,6 +177,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             validatePermissions(user, experimentFromFactory,
                     "You don't have permission to archive the Experiment. "
                             + "Experiment Id: " + persistedExperimentOpt.get().id());
+            if(experimentFromFactory.status() == Status.RUNNING ||
+                    experimentFromFactory.status() == Status.SCHEDULED) {
+                throw new DotStateException("Cannot start an already started Experiment.");
+            }
 
             if(experimentFromFactory.status()!= Status.DRAFT) {
                 throw new DotStateException("Only DRAFT experiments can be started");
@@ -193,7 +198,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 final Scheduling scheduling = startNowScheduling();
                 experimentToStart = experimentFromFactory.withScheduling(scheduling);
             } else {
-                Scheduling scheduling = validateScheduling(experimentFromFactory.scheduling().get());
+                Scheduling scheduling = AbstractScheduling
+                        .validateScheduling(experimentFromFactory.scheduling().get());
                 experimentToStart = experimentFromFactory.withScheduling(scheduling);
             }
 
@@ -206,36 +212,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     private Scheduling startNowScheduling() {
-        return Scheduling.builder().startDate(Instant.now())
-                .endDate(Instant.now().plus(EXPERIMENT_MAX_DURATION, ChronoUnit.DAYS))
+        // Setting "now" with an additional minute to avoid failing validation
+        final Instant now = Instant.now().plus(1, ChronoUnit.MINUTES);
+        return Scheduling.builder().startDate(now)
+                .endDate(now.plus(EXPERIMENT_MAX_DURATION, ChronoUnit.DAYS))
                 .build();
-    }
-
-    private Scheduling validateScheduling(final Scheduling scheduling) {
-        Scheduling toReturn = scheduling;
-        if(scheduling.startDate().isPresent() && scheduling.endDate().isEmpty()) {
-            DotPreconditions.checkState(scheduling.startDate().get().isBefore(Instant.now()),
-                "Experiment cannot be started because the start date is in the past");
-
-            toReturn = scheduling.withEndDate(scheduling.startDate().get()
-                    .plus(EXPERIMENT_MAX_DURATION, ChronoUnit.DAYS));
-        } else if(scheduling.startDate().isEmpty() && scheduling.endDate().isPresent()) {
-            DotPreconditions.checkState(scheduling.endDate().get().isBefore(Instant.now()),
-                    "Experiment cannot be started because the end date is in the past");
-            DotPreconditions.checkState(
-                    Instant.now().plus(EXPERIMENT_MAX_DURATION, ChronoUnit.DAYS)
-                            .isAfter(scheduling.endDate().get()),
-                                    "Experiment duration must be less than "
-                                            + EXPERIMENT_MAX_DURATION +" days. ");
-
-            toReturn = scheduling.withStartDate(Instant.now());
-        } else {
-            DotPreconditions.checkState(Duration.between(scheduling.startDate().get(),
-                    scheduling.endDate().get()).get(ChronoUnit.DAYS)>EXPERIMENT_MAX_DURATION,
-                    "Experiment duration must be less than "
-                            + EXPERIMENT_MAX_DURATION +" days. ");
-        }
-        return toReturn;
     }
 
     private boolean hasAtLeastOneVariant(final Experiment experiment) {

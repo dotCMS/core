@@ -75,6 +75,7 @@ public class ExceptionUtil {
             .of(
                     AlreadyExistException.class,
                     IllegalArgumentException.class,
+                    IllegalStateException.class,
                     DotStateException.class,
                     DotContentletStateException.class,
                     DotDataValidationException.class,
