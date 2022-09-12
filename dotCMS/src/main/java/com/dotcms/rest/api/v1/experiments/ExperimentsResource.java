@@ -184,6 +184,31 @@ public class ExperimentsResource {
         return new ResponseEntityExperimentView(experiments);
     }
 
+    /**
+     * Deletes the primary Goal.
+     */
+    @DELETE
+    @Path("/{experimentId}/goals/primary")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityExperimentView deleteGoal(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("experimentId") final String experimentId) throws DotDataException, DotSecurityException {
+        final InitDataObject initData = getInitData(request, response);
+        final User user = initData.getUser();
+        final Optional<Experiment> existingExperiment =  experimentsAPI.find(experimentId, user);
+
+        if(existingExperiment.isEmpty()) {
+            throw new NotFoundException("Experiment with id: " + experimentId + " not found.");
+        }
+
+        final Experiment experimentNoGoal = existingExperiment.get().withGoals(Optional.empty());
+
+        final Experiment savedExperiment = experimentsAPI.save(experimentNoGoal, user);
+        return new ResponseEntityExperimentView(Collections.singletonList(savedExperiment));
+    }
+
     private Experiment patchExperiment(final Experiment experimentToUpdate,
             final ExperimentForm experimentForm, final User user) {
 
@@ -205,12 +230,12 @@ public class ExperimentsResource {
             builder.trafficProportion(experimentForm.getTrafficProportion());
         }
 
-        if(experimentForm.getStatus()!=null) {
-            builder.status(experimentForm.getStatus());
-        }
-
         if(experimentForm.getScheduling()!=null) {
             builder.scheduling(experimentForm.getScheduling());
+        }
+
+        if(experimentForm.getGoals()!=null) {
+            builder.goals(experimentForm.getGoals());
         }
 
         return builder.build();

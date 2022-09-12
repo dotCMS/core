@@ -147,10 +147,12 @@ describe('DotCrumbtrailService', () => {
         expect(firstCrumb).toEqual([
             {
                 label: 'menu',
+                target: '_self',
                 url: '#/menulink/first_portlet'
             },
             {
                 label: 'Potlet Label',
+                target: '_self',
                 url: '#/menulink/portlet'
             }
         ]);
@@ -163,10 +165,12 @@ describe('DotCrumbtrailService', () => {
         expect(secondCrumb).toEqual([
             {
                 label: 'menu',
+                target: '_self',
                 url: '#/menulink/first_portlet'
             },
             {
                 label: 'First Portlet Label',
+                target: '_self',
                 url: '#/menulink/first_portlet'
             }
         ]);
@@ -179,10 +183,12 @@ describe('DotCrumbtrailService', () => {
         expect(secondCrumb).toEqual([
             {
                 label: 'menu',
+                target: '_self',
                 url: '#/menulink/first_portlet'
             },
             {
                 label: 'First Portlet Label',
+                target: '_self',
                 url: '#/menulink/first_portlet'
             }
         ]);
@@ -199,10 +205,12 @@ describe('DotCrumbtrailService', () => {
         expect(secondCrumb).toEqual([
             {
                 label: 'Types & Tag',
+                target: '_self',
                 url: '#/content-types-angular'
             },
             {
                 label: 'Content Types',
+                target: '_self',
                 url: '#/content-types-angular'
             }
         ]);
@@ -236,14 +244,17 @@ describe('DotCrumbtrailService', () => {
         expect(secondCrumb).toEqual([
             {
                 label: 'Types & Tag',
+                target: '_self',
                 url: '#/content-types-angular'
             },
             {
                 label: 'Content Types',
+                target: '_self',
                 url: '#/content-types-angular'
             },
             {
                 label: 'Content Type Testing',
+                target: '_self',
                 url: ''
             }
         ]);
@@ -282,14 +293,17 @@ describe('DotCrumbtrailService', () => {
         expect(secondCrumb).toEqual([
             {
                 label: 'site',
+                target: '_self',
                 url: '#/c/site-browser'
             },
             {
                 label: 'Browser',
+                target: '_self',
                 url: '#/c/site-browser'
             },
             {
                 label: 'About Us',
+                target: '_self',
                 url: ''
             }
         ]);
@@ -326,6 +340,7 @@ describe('DotCrumbtrailService', () => {
         expect(secondCrumb).toEqual([
             {
                 label: 'Google Translate',
+                target: '_self',
                 url: ''
             }
         ]);
@@ -362,6 +377,7 @@ describe('DotCrumbtrailService', () => {
         expect(secondCrumb).toEqual([
             {
                 label: 'Template-01',
+                target: '_self',
                 url: ''
             }
         ]);
@@ -390,6 +406,7 @@ describe('DotCrumbtrailService', () => {
         expect(secondCrumb).toEqual([
             {
                 label: 'new',
+                target: '_self',
                 url: ''
             }
         ]);
