@@ -1187,7 +1187,7 @@
             final Object object = keyValueMap.get(key);
             if(null != object) {
                 keyValueDataRaw.append(key).append(":").append(object.toString());
-                dotKeyValueDataRaw.append("&#x22;" + key + "&#x22;").append(":").append("&#x22;" + object.toString() + "&#x22;");
+                dotKeyValueDataRaw.append("&#x22;" + key.replaceAll(":", "&#58;").replaceAll(",", "&#44;") + "&#x22;").append(":").append("&#x22;" + object.toString() + "&#x22;");
                 if (iterator.hasNext()) {
                     keyValueDataRaw.append(',');
                     dotKeyValueDataRaw.append(',');
