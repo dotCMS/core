@@ -48,9 +48,9 @@ export class LoggerService {
 
     debug(message?: any, ...optionalParams: any[]): void {
         if (optionalParams && optionalParams.length > 0) {
-            console.debug(this.wrapMessage(message), optionalParams);
+            // console.debug(this.wrapMessage(message), optionalParams);
         } else {
-            console.debug(this.wrapMessage(message));
+            // console.debug(this.wrapMessage(message));
         }
     }
 

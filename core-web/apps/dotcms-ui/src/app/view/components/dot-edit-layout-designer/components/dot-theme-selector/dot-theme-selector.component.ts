@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 
 import { fromEvent as observableFromEvent, Subject } from 'rxjs';
-import { debounceTime, take, takeUntil } from 'rxjs/operators';
+import { debounceTime, take, takeUntil, tap } from 'rxjs/operators';
 
 import { Site, SiteService } from '@dotcms/dotcms-js';
 import { DataView } from 'primeng/dataview';
@@ -93,7 +93,16 @@ export class DotThemeSelectorComponent implements OnInit, OnDestroy {
         this.paginatorService.deleteExtraParams(this.SEARCH_PARAM);
         this.paginatorService.paginationPerPage = 8;
         observableFromEvent(this.searchInput.nativeElement, 'keyup')
-            .pipe(debounceTime(500), takeUntil(this.destroy$))
+            .pipe(
+                // tap(() => {
+                //     // eslint-disable-next-line no-console
+                //     console.log('*** keyboard hit')
+                //     this.cd.detectChanges();
+                // }),
+
+                debounceTime(500),
+                takeUntil(this.destroy$)
+            )
             .subscribe((keyboardEvent: Event) => {
                 this.filterThemes(keyboardEvent.target['value']);
             });

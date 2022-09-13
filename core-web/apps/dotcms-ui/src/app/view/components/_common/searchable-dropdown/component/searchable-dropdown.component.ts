@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { debounceTime } from 'rxjs/operators';
 import {
     Component,
@@ -19,6 +20,7 @@ import {
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { fromEvent } from 'rxjs';
+import { tap } from 'rxjs/operators';
 import * as _ from 'lodash';
 import { OverlayPanel } from 'primeng/overlaypanel';
 import { DataView } from 'primeng/dataview';
@@ -140,6 +142,9 @@ export class SearchableDropdownComponent
     label: string;
     externalSelectTemplate: TemplateRef<unknown>;
 
+    selectedOptionIndex = 0;
+    selectedOptionValue = '';
+
     keyMap: string[] = [
         'Shift',
         'Alt',
@@ -169,9 +174,21 @@ export class SearchableDropdownComponent
     ngAfterViewInit(): void {
         if (this.searchInput) {
             fromEvent(this.searchInput.nativeElement, 'keyup')
-                .pipe(debounceTime(500))
+                .pipe(
+                    tap((keyboardEvent: KeyboardEvent) => {
+                        if (
+                            keyboardEvent.key === 'ArrowUp' ||
+                            keyboardEvent.key === 'ArrowDown' ||
+                            keyboardEvent.key === 'Enter'
+                        ) {
+                            this.selectDropdownOption(keyboardEvent.key);
+                        }
+                    }),
+                    debounceTime(500)
+                )
                 .subscribe((keyboardEvent: KeyboardEvent) => {
                     if (!this.isModifierKey(keyboardEvent.key)) {
+                        console.log('**filteremit');
                         this.filterChange.emit(keyboardEvent.target['value']);
                     }
                 });
@@ -189,6 +206,30 @@ export class SearchableDropdownComponent
         });
     }
 
+    selectDropdownOption(actionKey: string) {
+        console.log(this.options);
+        if (actionKey === 'ArrowDown' && this.options.length - 1 > this.selectedOptionIndex) {
+            this.selectedOptionIndex++;
+            this.selectedOptionValue = this.getItemLabel(this.options[this.selectedOptionIndex]);
+            // this.options[this.selectedOptionIndex][`${this.labelPropertyName}`];
+            console.log('***selectedOptionIndex', this.selectedOptionIndex);
+        } else if (actionKey === 'ArrowUp' && 0 < this.selectedOptionIndex) {
+            this.selectedOptionIndex--;
+            console.log('***selectedOptionIndex', this.selectedOptionIndex);
+            this.selectedOptionValue = this.getItemLabel(this.options[this.selectedOptionIndex]);
+            // this.options[this.selectedOptionIndex][`${this.labelPropertyName}`];
+        } else if (actionKey === 'Enter' && this.selectedOptionIndex !== null) {
+            console.log('ENTER', this.selectedOptionIndex, this.options);
+            this.handleClick(this.options[this.selectedOptionIndex]);
+        }
+
+        console.log('***this.selectedOptionValue', this.selectedOptionValue);
+        console.log(
+            '***this.labelPropertyName',
+            this.getItemLabel(this.options[this.selectedOptionIndex])
+        );
+    }
+
     /**
      * Emits hide event and clears any value on filter's input
      *
@@ -201,6 +242,7 @@ export class SearchableDropdownComponent
         }
 
         this.hide.emit();
+        this.selectedOptionIndex = null;
     }
 
     /**
@@ -365,6 +407,9 @@ export class SearchableDropdownComponent
 
                 return item;
             });
+            this.selectedOptionValue = this.getItemLabel(this.options[0]);
+            this.selectedOptionIndex = 0;
+            console.log('=== setooptions this.selectedOptionValue', this.selectedOptionValue);
         }
     }
 
