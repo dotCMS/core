@@ -105,8 +105,8 @@ jobs:
           echo "IS_LTS=${IS_LTS}" >> $GITHUB_ENV
           echo "RELEASE_LABEL=${RELEASE_LABEL}" >> $GITHUB_ENV
           echo "ALSO_LATEST=${ALSO_LATEST}" >> $GITHUB_ENV
-          - name: Discover docker tags
-      - id: discover-docker-tags
+      - name: Discover docker tags
+        id: discover-docker-tags
         uses: dotcms/discover-docker-tags-action@main
         with:
           version: ${{ env.RELEASE_VERSION }}
