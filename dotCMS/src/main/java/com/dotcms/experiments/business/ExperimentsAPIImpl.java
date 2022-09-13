@@ -148,7 +148,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 "You don't have permission to delete the Experiment. "
                         + "Experiment Id: " + persistedExperiment.get().id());
 
-        if(persistedExperiment.get().status() != DRAFT ||
+        if(persistedExperiment.get().status() != DRAFT &&
                 persistedExperiment.get().status() != Status.SCHEDULED) {
             throw new DotStateException("Only DRAFT or SCHEDULED experiments can be deleted");
         }
