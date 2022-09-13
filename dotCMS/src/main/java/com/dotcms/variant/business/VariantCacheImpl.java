@@ -13,6 +13,11 @@ public class VariantCacheImpl implements VariantCache{
 
     @Override
     public void put(final Variant variant) {
+
+        DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+        cache.put(VARIANT_BY_ID + variant.identifier(), variant, getPrimaryGroup());
+        cache.put(VARIANT_BY_NAME + variant.name(), variant, getPrimaryGroup());
+
         putById(variant);
         putByName(variant);
     }

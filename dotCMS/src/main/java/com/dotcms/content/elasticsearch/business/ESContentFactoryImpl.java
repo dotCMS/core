@@ -31,6 +31,7 @@ import com.dotcms.system.SimpleMapAppContext;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.I18NMessage;
 import com.dotcms.util.transform.TransformerLocator;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -1037,7 +1038,16 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	@Override
 	protected Contentlet findContentletByIdentifier(String identifier, Boolean live, Long languageId) throws DotDataException {
-        final Optional<ContentletVersionInfo> cvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, languageId);
+        return findContentletByIdentifier(identifier, live, languageId, VariantAPI.DEFAULT_VARIANT.identifier());
+    }
+
+    @Override
+    protected Contentlet findContentletByIdentifier(final String identifier, final Boolean live,
+            final Long languageId, final String variantId) throws DotDataException {
+
+        final Optional<ContentletVersionInfo> cvi = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(identifier, languageId, variantId);
+
         if(!cvi.isPresent() || UtilMethods.isEmpty(cvi.get().getIdentifier())
                 || (live && UtilMethods.isEmpty(cvi.get().getLiveInode()))) {
             return null;
