@@ -1,15 +1,24 @@
 package com.dotcms.http;
 
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import com.dotmarketing.util.DateUtil;
 import org.apache.commons.io.output.NullOutputStream;
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.dotcms.http.CircuitBreakerUrl.Method;
@@ -36,7 +45,45 @@ public class CircuitBreakerUrlTest {
     final static String HEADER_VALUE="SEEMS TO BE WORKING";
     final static String PARAM="X-MY-PARAM";
     final static String PARAM_VALUE="PARAM SEEMS TO BE WORKING";
-    
+
+    @Test()
+    public void test_circuitBreakerConnectionControl() throws Exception {
+
+        final DotSubmitter dotSubmitter = DotConcurrentFactory.getInstance().getSubmitter();
+        final CircuitBreakerUrl.CircuitBreakerConnectionControl circuitBreakerConnectionControl =
+                new CircuitBreakerUrl.CircuitBreakerConnectionControl(3);
+        final List<Future<Boolean>> threads = new ArrayList<>();
+
+        for (int i = 0; i < 10; ++i) {
+
+            threads.add(dotSubmitter.submit(()-> {
+
+                circuitBreakerConnectionControl.check("test");
+                try {
+
+                    circuitBreakerConnectionControl.start(Thread.currentThread().getId());
+                    DateUtil.sleep(1000);
+                    return true;
+                }  finally {
+                    circuitBreakerConnectionControl.end(Thread.currentThread().getId());
+                }
+            }));
+        }
+
+        try {
+            for (Future<Boolean> future : threads) {
+
+                future.get();
+            }
+        }catch (Exception e) {
+
+            Assert.assertTrue(ExceptionUtil.causedBy(e, RejectedExecutionException.class));
+            return;
+        }
+
+        Assert.fail("Not reject when reach the max");
+    }
+
     @Test
     public void testGoodBreaker() throws Exception {
 
