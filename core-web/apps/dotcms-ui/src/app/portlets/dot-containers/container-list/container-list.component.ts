@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
 import { MenuItem } from 'primeng/api';
 import { pluck, take, takeUntil } from 'rxjs/operators';
-import { Subject } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
@@ -28,11 +28,14 @@ export class ContainerListComponent implements OnInit, OnDestroy {
     vm$ = this.store.vm$;
 
     listing: DotListingDataTableComponent;
-    containerBulkActions: MenuItem[];
     selectedContainers: DotContainer[] = [];
-    addToBundleIdentifier: string;
-    actionHeaderOptions: ActionHeaderOptions;
-    tableColumns: DataTableColumn[];
+
+    containerBulkActions$: Observable<MenuItem[]>;
+    tableColumns$: Observable<DataTableColumn[]>;
+    actionHeaderOptions$: Observable<ActionHeaderOptions>;
+    addToBundleIdentifier$: Observable<string>;
+
+    updateBundleIdentifier = this.store.updateBundleIdentifier;
 
     private isEnterPrise: boolean;
     private hasEnvironments: boolean;
@@ -57,23 +60,28 @@ export class ContainerListComponent implements OnInit, OnDestroy {
                 this.store.updateContainerBulkActions(this.setContainerBulkActions());
             });
 
+        this.containerBulkActions$ = this.vm$.pipe(
+            takeUntil(this.destroy$),
+            pluck('containerBulkActions')
+        );
+
+        this.tableColumns$ = this.vm$.pipe(takeUntil(this.destroy$), pluck('tableColumns'));
+
+        this.actionHeaderOptions$ = this.vm$.pipe(
+            takeUntil(this.destroy$),
+            pluck('actionHeaderOptions')
+        );
+
+        this.addToBundleIdentifier$ = this.vm$.pipe(
+            takeUntil(this.destroy$),
+            pluck('addToBundleIdentifier')
+        );
+
         this.vm$
             .pipe(takeUntil(this.destroy$))
-            .subscribe(
-                ({
-                    containerBulkActions,
-                    selectedContainers,
-                    addToBundleIdentifier,
-                    actionHeaderOptions,
-                    tableColumns
-                }: DotContainerListState) => {
-                    this.containerBulkActions = containerBulkActions;
-                    this.selectedContainers = selectedContainers;
-                    this.addToBundleIdentifier = addToBundleIdentifier;
-                    this.actionHeaderOptions = actionHeaderOptions;
-                    this.tableColumns = tableColumns;
-                }
-            );
+            .subscribe(({ selectedContainers }: DotContainerListState) => {
+                this.selectedContainers = selectedContainers;
+            });
 
         this.setAddOptions();
     }

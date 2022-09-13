@@ -12,6 +12,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { MenuModule } from 'primeng/menu';
 import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
 import { DotContainerListResolver } from '@portlets/dot-containers/container-list/dot-container-list-resolver.service';
+import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 
 @NgModule({
     declarations: [ContainerListComponent],
@@ -25,7 +26,8 @@ import { DotContainerListResolver } from '@portlets/dot-containers/container-lis
         ButtonModule,
         CheckboxModule,
         MenuModule,
-        DotEmptyStateModule
+        DotEmptyStateModule,
+        DotAddToBundleModule
     ],
     providers: [DotContainerListResolver]
 })
