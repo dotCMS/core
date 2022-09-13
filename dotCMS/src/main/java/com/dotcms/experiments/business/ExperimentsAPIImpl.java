@@ -171,15 +171,14 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 invalidLicenseMessageSupplier);
         DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
 
-        final Optional<Experiment> persistedExperimentOpt =  find(experimentId, user);
+        final Experiment persistedExperiment =  find(experimentId, user).orElseThrow(
+                ()-> new IllegalArgumentException("Experiment with provided id not found")
+        );
 
-        DotPreconditions.isTrue(persistedExperimentOpt.isPresent(),()-> "Experiment with provided id not found",
-                DoesNotExistException.class);
-
-        final Experiment experimentFromFactory = persistedExperimentOpt.get();
+        final Experiment experimentFromFactory = persistedExperiment;
         validatePermissions(user, experimentFromFactory,
-                "You don't have permission to archive the Experiment. "
-                        + "Experiment Id: " + persistedExperimentOpt.get().id());
+                "You don't have permission to start the Experiment. "
+                        + "Experiment Id: " + persistedExperiment.id());
 
         DotPreconditions.isTrue(experimentFromFactory.status()!=Status.RUNNING ||
                         experimentFromFactory.status() == Status.SCHEDULED,()-> "Cannot start an already started Experiment.",
@@ -261,7 +260,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         // Setting "now" with an additional minute to avoid failing validation
         final Instant now = Instant.now().plus(1, ChronoUnit.MINUTES);
         return Scheduling.builder().startDate(now)
-                .endDate(now.plus(EXPERIMENT_MAX_DURATION, ChronoUnit.DAYS))
+                .endDate(now.plus(EXPERIMENT_MAX_DURATION.get(), ChronoUnit.DAYS))
                 .build();
     }
 
@@ -283,38 +282,40 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         }
     }
 
-    private Scheduling validateScheduling(final Scheduling scheduling) {
+    public Scheduling validateScheduling(final Scheduling scheduling) {
         Scheduling toReturn = scheduling;
+        final Instant NOW = Instant.now();
+
         if(scheduling.startDate().isPresent() && scheduling.endDate().isEmpty()) {
-            DotPreconditions.checkState(scheduling.startDate().get().isAfter(Instant.now()),
-                    "Experiment cannot be started because the start date is in the past");
+            DotPreconditions.checkState(scheduling.startDate().get().isAfter(NOW),
+                    "Invalid Scheduling. Start date is in the past");
 
             toReturn = scheduling.withEndDate(scheduling.startDate().get()
-                    .plus(EXPERIMENT_MAX_DURATION, ChronoUnit.DAYS));
+                    .plus(EXPERIMENT_MAX_DURATION.get(), ChronoUnit.DAYS));
         } else if(scheduling.startDate().isEmpty() && scheduling.endDate().isPresent()) {
-            DotPreconditions.checkState(scheduling.endDate().get().isAfter(Instant.now()),
-                    "Experiment cannot be started because the end date is in the past");
+            DotPreconditions.checkState(scheduling.endDate().get().isAfter(NOW),
+                    "Invalid Scheduling. End date is in the past");
             DotPreconditions.checkState(
-                    Instant.now().plus(EXPERIMENT_MAX_DURATION, ChronoUnit.DAYS)
+                    Instant.now().plus(EXPERIMENT_MAX_DURATION.get(), ChronoUnit.DAYS)
                             .isAfter(scheduling.endDate().get()),
                     "Experiment duration must be less than "
-                            + EXPERIMENT_MAX_DURATION +" days. ");
+                            + EXPERIMENT_MAX_DURATION.get() +" days. ");
 
             toReturn = scheduling.withStartDate(Instant.now());
         } else {
-            DotPreconditions.checkState(scheduling.startDate().get().isAfter(Instant.now()),
-                    "Experiment cannot be started because the start date is in the past");
+            DotPreconditions.checkState(scheduling.startDate().get().isAfter(NOW),
+                    "Invalid Scheduling. Start date is in the past");
 
-            DotPreconditions.checkState(scheduling.endDate().get().isAfter(Instant.now()),
-                    "Experiment cannot be started because the end date is in the past");
+            DotPreconditions.checkState(scheduling.endDate().get().isAfter(NOW),
+                    "Invalid Scheduling. End date is in the past");
 
             DotPreconditions.checkState(scheduling.endDate().get().isAfter(scheduling.startDate().get()),
-                    "Experiment cannot be started because the end date must be after the start date");
+                    "Invalid Scheduling. End date must be after the start date");
 
             DotPreconditions.checkState(Duration.between(scheduling.startDate().get(),
-                            scheduling.endDate().get()).toDays() <= EXPERIMENT_MAX_DURATION,
+                            scheduling.endDate().get()).toDays() <= EXPERIMENT_MAX_DURATION.get(),
                     "Experiment duration must be less than "
-                            + EXPERIMENT_MAX_DURATION +" days. ");
+                            + EXPERIMENT_MAX_DURATION.get() +" days. ");
         }
         return toReturn;
     }

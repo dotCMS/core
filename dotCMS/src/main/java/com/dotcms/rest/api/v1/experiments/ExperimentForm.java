@@ -1,18 +1,13 @@
 package com.dotcms.rest.api.v1.experiments;
 
-import static com.dotcms.experiments.business.ExperimentsAPI.EXPERIMENT_MAX_DURATION;
-
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Goals;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TrafficProportion;
 import com.dotcms.repackage.javax.validation.constraints.Size;
 import com.dotcms.rest.api.Validated;
-import com.dotcms.util.DotPreconditions;
+import com.dotmarketing.business.APILocator;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 
 /**
  * From to create/update an {@link com.dotcms.experiments.model.Experiment} from REST
@@ -77,7 +72,6 @@ public class ExperimentForm extends Validated {
     public static final class Builder {
         private String name;
         private String description;
-        private Status status;
         private String pageId;
         private float trafficAllocation=-1;
         private TrafficProportion trafficProportion;
@@ -98,11 +92,6 @@ public class ExperimentForm extends Validated {
 
         public Builder withDescription(String description) {
             this.description = description;
-            return this;
-        }
-
-        public Builder withStatus(Status status) {
-            this.status = status;
             return this;
         }
 
@@ -139,35 +128,6 @@ public class ExperimentForm extends Validated {
     private void validateScheduling(final Scheduling scheduling) {
         if(scheduling==null) return;
 
-        final Instant NOW = Instant.now().plus(1, ChronoUnit.MINUTES);
-
-        if(scheduling.startDate().isPresent() && scheduling.endDate().isEmpty()) {
-            DotPreconditions.checkState(scheduling.startDate().get().isAfter(NOW),
-                    "Invalid Scheduling. Start date is in the past");
-
-        } else if(scheduling.startDate().isEmpty() && scheduling.endDate().isPresent()) {
-            DotPreconditions.checkState(scheduling.endDate().get().isAfter(NOW),
-                    "Invalid Scheduling. End date is in the past");
-            DotPreconditions.checkState(
-                    Instant.now().plus(EXPERIMENT_MAX_DURATION, ChronoUnit.DAYS)
-                            .isAfter(scheduling.endDate().get()),
-                    "Experiment duration must be less than "
-                            + EXPERIMENT_MAX_DURATION +" days. ");
-
-        } else {
-            DotPreconditions.checkState(scheduling.startDate().get().isAfter(NOW),
-                    "Invalid Scheduling. Start date is in the past");
-
-            DotPreconditions.checkState(scheduling.endDate().get().isAfter(NOW),
-                    "Invalid Scheduling. End date is in the past");
-
-            DotPreconditions.checkState(scheduling.endDate().get().isAfter(scheduling.startDate().get()),
-                    "Invalid Scheduling. End date must be after the start date");
-
-            DotPreconditions.checkState(Duration.between(scheduling.startDate().get(),
-                            scheduling.endDate().get()).toDays() <= EXPERIMENT_MAX_DURATION,
-                    "Experiment duration must be less than "
-                            + EXPERIMENT_MAX_DURATION +" days. ");
-        }
+        APILocator.getExperimentsAPI().validateScheduling(scheduling);
     }
 }
