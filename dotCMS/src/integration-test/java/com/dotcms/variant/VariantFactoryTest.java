@@ -36,7 +36,7 @@ public class VariantFactoryTest {
     }
 
     @After
-    public static void closeTransaction() throws Exception {
+    public void closeTransaction() {
         DbConnectionFactory.closeSilently();
     }
 
