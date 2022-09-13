@@ -4,7 +4,6 @@ import { NodeSelection, Plugin, PluginKey } from 'prosemirror-state';
 import { Extension } from '@tiptap/core';
 
 import { DragHandlerComponent } from './drag-handler.component';
-import { DOMNode } from 'prosemirror-view/src/dom';
 
 export const DragHandler = (viewContainerRef: ViewContainerRef) => {
     return Extension.create({
@@ -63,12 +62,7 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
             }
 
             // Get the direct child of the Editor. To cover cases when the user is hovering nested nodes.
-            function getDirectChild(node): DOMNode {
-                if (node) {
-                    // debugger;
-                    // console.log(node);
-                }
-
+            function getDirectChild(node) {
                 while (node && node.parentNode) {
                     if (
                         node.classList?.contains('ProseMirror') ||
@@ -79,6 +73,7 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
 
                     node = node.parentNode;
                 }
+                // console.log('getDirectChild: ', node);
 
                 return node;
             }
@@ -105,6 +100,7 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
             }
 
             function canDragNode(node): boolean {
+                // console.log('canDragNode: ', node);
                 return (
                     node &&
                     !node.classList?.contains('ProseMirror') && // is not root node.
@@ -130,7 +126,13 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                     },
                     props: {
                         handleDOMEvents: {
-                            drop() {
+                            drop(editor, dragEvent) {
+                                const directChildNode = getDirectChild(dragEvent.target);
+                                // Disable the drop in the table node;
+                                if (directChildNode.nodeName === 'TABLE') {
+                                    return true;
+                                }
+
                                 setTimeout(() => {
                                     const node = document.querySelector(
                                         '.ProseMirror-hideselection'
@@ -150,7 +152,8 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                                     top: event.clientY
                                 };
                                 const position = view.posAtCoords(coords);
-                                nodeToBeDragged = getDirectChild(view.nodeDOM(position.inside));
+                                //console.log(position);
+                                nodeToBeDragged = getDirectChild(view.nodeDOM(position?.inside));
 
                                 if (position && nodeHasContent(view, position.inside)) {
                                     //console.log('nodeToBeDragged', nodeToBeDragged);

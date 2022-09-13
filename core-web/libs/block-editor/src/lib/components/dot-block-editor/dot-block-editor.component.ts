@@ -24,8 +24,9 @@ import { Underline } from '@tiptap/extension-underline';
 import { TableCell } from '@tiptap/extension-table-cell';
 import { TableRow } from '@tiptap/extension-table-row';
 import { TableHeader } from '@tiptap/extension-table-header';
-import { Table } from '@tiptap/extension-table';
 import { BubbleFormExtension } from '../../extensions/bubble-form/bubble-form.extension';
+import { Dropcursor } from '@tiptap/extension-dropcursor';
+import { DotTableExtension } from '../../extensions/dot-table/dot-table.extension';
 
 function toTitleCase(str) {
     return str.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {
@@ -88,12 +89,13 @@ export class DotBlockEditorComponent implements OnInit {
                     return 'Type "/" for commmands';
                 }
             }),
+            Dropcursor.configure({
+                class: 'dot-drop-cursor'
+            }),
             TableCell,
             TableRow,
             TableHeader,
-            Table.configure({
-                resizable: true
-            }),
+            DotTableExtension(),
             BubbleFormExtension(this.viewContainerRef)
         ];
         const customExtensions: Map<string, AnyExtension> = new Map([
