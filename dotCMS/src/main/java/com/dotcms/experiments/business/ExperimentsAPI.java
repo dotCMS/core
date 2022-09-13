@@ -7,6 +7,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,7 +19,7 @@ import java.util.Optional;
 
 public interface ExperimentsAPI {
 
-    int EXPERIMENT_MAX_DURATION = Config.getIntProperty("EXPERIMENT_MAX_DURATION", 35);
+    Lazy<Integer> EXPERIMENT_MAX_DURATION = Lazy.of(()->Config.getIntProperty("EXPERIMENT_MAX_DURATION", 35));
 
     /**
      * Save a new experiment when the Experiment doesn't have an id
@@ -79,4 +80,6 @@ public interface ExperimentsAPI {
      * {@link Status#RUNNING} status to be able to end it.
      */
     Experiment end(String experimentId, User user) throws DotDataException, DotSecurityException;
+
+    Scheduling validateScheduling(final Scheduling scheduling);
 }
