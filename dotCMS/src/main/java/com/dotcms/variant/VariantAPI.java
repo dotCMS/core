@@ -12,6 +12,8 @@ public interface VariantAPI {
             .archived(false)
             .build();
 
+    String VARIANT_KEY = "variantName";
+
     /**
      * Save a new {@link Variant}.
      * if the the {@link Variant}'s identifier value is not null then it will be ignored.

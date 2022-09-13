@@ -12,6 +12,8 @@ import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
+import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -817,6 +819,14 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			if(UtilMethods.isSet(contentletFormData.get("languageId")))
 				contentlet.setLanguageId(Long.parseLong(contentletFormData.get("languageId").toString()));
 
+			if(UtilMethods.isSet(contentletFormData.get(VariantAPI.VARIANT_KEY))) {
+				final String variantName = contentletFormData.get(VariantAPI.VARIANT_KEY).toString();
+
+				final Variant variant = APILocator.getVariantAPI().getByName(variantName)
+						.orElse(VariantAPI.DEFAULT_VARIANT);
+
+				contentlet.setVariantId(variant.identifier());
+			}
 
 			List<String> disabled = new ArrayList<>();
 			if(UtilMethods.isSet(contentletFormData.get("disabledWysiwyg")))
