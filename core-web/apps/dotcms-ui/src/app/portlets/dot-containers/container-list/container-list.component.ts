@@ -1,9 +1,8 @@
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
 import { MenuItem } from 'primeng/api';
-import { pluck, take, takeUntil } from 'rxjs/operators';
+import { pluck, takeUntil } from 'rxjs/operators';
 import { Observable, Subject } from 'rxjs';
-import { ActivatedRoute } from '@angular/router';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
@@ -43,7 +42,6 @@ export class ContainerListComponent implements OnInit, OnDestroy {
 
     constructor(
         private store: DotContainerListStore,
-        private route: ActivatedRoute,
         private dotMessageService: DotMessageService,
         private dotAlertConfirmService: DotAlertConfirmService,
         private dotPushPublishDialogService: DotPushPublishDialogService,
@@ -51,14 +49,8 @@ export class ContainerListComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit(): void {
-        this.route.data
-            .pipe(pluck('dotContainerListResolverData'), take(1))
-            .subscribe(([isEnterPrise, hasEnvironments]: [boolean, boolean]) => {
-                this.isEnterPrise = isEnterPrise;
-                this.hasEnvironments = hasEnvironments;
-                this.store.updateTableColumns(this.setContainerColumns());
-                this.store.updateContainerBulkActions(this.setContainerBulkActions());
-            });
+        this.store.updateTableColumns(this.setContainerColumns());
+        this.store.updateContainerBulkActions(this.setContainerBulkActions());
 
         this.containerBulkActions$ = this.vm$.pipe(
             takeUntil(this.destroy$),
@@ -81,6 +73,13 @@ export class ContainerListComponent implements OnInit, OnDestroy {
             .pipe(takeUntil(this.destroy$))
             .subscribe(({ selectedContainers }: DotContainerListState) => {
                 this.selectedContainers = selectedContainers;
+            });
+
+        this.vm$
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(({ isEnterPrise, hasEnvironments }: DotContainerListState) => {
+                this.isEnterPrise = isEnterPrise;
+                this.hasEnvironments = hasEnvironments;
             });
 
         this.setAddOptions();

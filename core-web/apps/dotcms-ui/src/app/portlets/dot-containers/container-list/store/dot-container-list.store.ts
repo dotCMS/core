@@ -4,6 +4,8 @@ import { MenuItem } from 'primeng/api';
 import { DotContainer } from '@models/container/dot-container.model';
 import { ActionHeaderOptions } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table';
+import { ActivatedRoute } from '@angular/router';
+import { pluck, take } from 'rxjs/operators';
 
 export interface DotContainerListState {
     containerBulkActions: MenuItem[];
@@ -11,6 +13,8 @@ export interface DotContainerListState {
     addToBundleIdentifier: string;
     actionHeaderOptions: ActionHeaderOptions;
     tableColumns: DataTableColumn[];
+    isEnterPrise: boolean;
+    hasEnvironments: boolean;
 }
 
 const defaultState: DotContainerListState = {
@@ -18,13 +22,22 @@ const defaultState: DotContainerListState = {
     selectedContainers: [],
     addToBundleIdentifier: '',
     actionHeaderOptions: {},
-    tableColumns: []
+    tableColumns: [],
+    isEnterPrise: false,
+    hasEnvironments: false
 };
 
 @Injectable()
 export class DotContainerListStore extends ComponentStore<DotContainerListState> {
-    constructor() {
+    constructor(private route: ActivatedRoute) {
         super(defaultState);
+
+        this.route.data
+            .pipe(pluck('dotContainerListResolverData'), take(1))
+            .subscribe(([isEnterPrise, hasEnvironments]: [boolean, boolean]) => {
+                this.updateIsEnterprise(isEnterPrise);
+                this.updateHasEnvironments(hasEnvironments);
+            });
     }
 
     readonly vm$ = this.select(
@@ -41,6 +54,24 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
                 addToBundleIdentifier,
                 actionHeaderOptions,
                 tableColumns
+            };
+        }
+    );
+
+    readonly updateIsEnterprise = this.updater<boolean>(
+        (state: DotContainerListState, isEnterPrise: boolean) => {
+            return {
+                ...state,
+                isEnterPrise
+            };
+        }
+    );
+
+    readonly updateHasEnvironments = this.updater<boolean>(
+        (state: DotContainerListState, hasEnvironments: boolean) => {
+            return {
+                ...state,
+                hasEnvironments
             };
         }
     );
