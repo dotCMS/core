@@ -9,13 +9,13 @@ import { Node } from 'prosemirror-model';
 import { Editor, posToDOMRect } from '@tiptap/core';
 import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
 import tippy, { Instance, Props } from 'tippy.js';
+import { imageFormControls } from '../utils';
 
 import {
     ImageNode,
     getNodePosition,
     BUBBLE_FORM_PLUGIN_KEY,
-    BubbleFormComponent,
-    DynamicControl
+    BubbleFormComponent
 } from '@dotcms/block-editor';
 
 export interface BubbleFormProps {
@@ -30,30 +30,6 @@ export type BubbleFormViewProps = BubbleFormProps & {
     view: EditorView;
 };
 
-const controls: DynamicControl<string>[] = [
-    {
-        key: 'src',
-        label: 'path',
-        required: true,
-        controlType: 'text',
-        type: 'text'
-    },
-    {
-        key: 'alt',
-        label: 'alt',
-        required: true,
-        controlType: 'text',
-        type: 'text'
-    },
-    {
-        key: 'title',
-        label: 'caption',
-        required: true,
-        controlType: 'text',
-        type: 'text'
-    }
-];
-
 interface PluginState {
     open: boolean;
 }
@@ -61,14 +37,15 @@ interface PluginState {
 export const getImagePosition = (node: HTMLElement, type: string): DOMRect => {
     // If is a image Node, get the image position
     if (type === ImageNode.name) {
-        const rect = node.getElementsByTagName('img')[0].getBoundingClientRect().toJSON();
+        const rect = node.getElementsByTagName('img')[0]?.getBoundingClientRect().toJSON();
+        const height = rect.height;
 
         // height: 20 because some image are way too big.
-        // By default tippy only allow set the tippy about/below an element.
+        // By default tippy only allow set the tippy above/below/next to an element.
         // This trick it's going to help us to set the form inside the image bounderies.
         const newRect = {
             ...rect,
-            height: 20
+            height: height > 80 ? 20 : height
         };
 
         return newRect as DOMRect;
@@ -110,8 +87,7 @@ export class BubbleFormView extends BubbleMenuView {
         this.pluginKey = pluginKey;
         this.component = component;
 
-        this.component.instance.dynamicControls = controls;
-        this.component.instance.buildForm();
+        this.component.instance.buildForm(imageFormControls);
 
         this.component.instance.formValues.pipe(takeUntil(this.$destroy)).subscribe((data) => {
             const attr = this.node.attrs;
@@ -214,7 +190,7 @@ export class BubbleFormView extends BubbleMenuView {
 
     destroy() {
         this.tippy?.destroy();
-        // this.editor.off('focus', this.focusHandler);
+        this.editor.off('focus', this.focusHandler);
         this.$destroy.next(true);
         this.component.destroy();
         this.component.instance.formValues.unsubscribe();

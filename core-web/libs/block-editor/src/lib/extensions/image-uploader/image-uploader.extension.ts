@@ -130,6 +130,7 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                     key: new PluginKey('imageUpload'),
                     props: {
                         handleDOMEvents: {
+                            // Avoid opening a image link on `click` in `dev` mode.
                             click(view, event) {
                                 const { doc, selection } = view.state;
                                 const { ranges } = selection;
@@ -146,20 +147,22 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                                 return true;
                             },
                             paste(view, event: ClipboardEvent) {
-                                const url = event.clipboardData.getData('Text');
+                                if (!isImageBlockAllowed()) {
+                                    return;
+                                }
 
-                                if (isImageBlockAllowed() && areImageFiles(event)) {
+                                const url = event.clipboardData.getData('Text');
+                                const { from } = getPositionFromCursor(view);
+
+                                if (areImageFiles(event)) {
                                     if (event.clipboardData.files.length !== 1) {
                                         alert('Can paste just one image at a time');
 
                                         return true;
                                     }
 
-                                    const { from } = getPositionFromCursor(view);
                                     const files = Array.from(event.clipboardData.files);
                                     uploadImages(view, files, from);
-
-                                    return true;
                                 } else if (checkImageURL(url)) {
                                     const node = {
                                         attrs: {
@@ -167,13 +170,9 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                                         },
                                         type: ImageNode.name
                                     };
-                                    const { from } = getPositionFromCursor(view);
                                     editor.commands.insertContentAt(from, node);
                                 }
-
-                                return false;
                             },
-
                             drop(view, event: DragEvent) {
                                 if (isImageBlockAllowed() && areImageFiles(event)) {
                                     event.preventDefault();
