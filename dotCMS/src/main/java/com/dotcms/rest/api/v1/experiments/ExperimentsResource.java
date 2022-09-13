@@ -255,6 +255,25 @@ public class ExperimentsResource {
         return new ResponseEntityExperimentView(Collections.singletonList(startedExperiment));
     }
 
+    /**
+     * Ends an already started {@link Experiment}. The Experiment needs to be in
+     * {@link Status#RUNNING} status to be able to end it.
+     */
+
+    @POST
+    @Path("/{experimentId}/_end")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityExperimentView end(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("experimentId") final String experimentId) throws DotDataException, DotSecurityException {
+        final InitDataObject initData = getInitData(request, response);
+        final User user = initData.getUser();
+        final Experiment endedExperiment = experimentsAPI.end(experimentId, user);
+        return new ResponseEntityExperimentView(Collections.singletonList(endedExperiment));
+    }
+
     private Experiment patchExperiment(final Experiment experimentToUpdate,
             final ExperimentForm experimentForm, final User user) {
 

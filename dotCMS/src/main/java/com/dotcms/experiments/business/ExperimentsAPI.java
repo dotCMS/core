@@ -73,4 +73,10 @@ public interface ExperimentsAPI {
      */
     Experiment start(final String experimentId, final User user)
             throws DotDataException, DotSecurityException;
+
+    /**
+     * Ends an already started {@link Experiment}. The Experiment needs to be in
+     * {@link Status#RUNNING} status to be able to end it.
+     */
+    Experiment end(String experimentId, User user) throws DotDataException, DotSecurityException;
 }

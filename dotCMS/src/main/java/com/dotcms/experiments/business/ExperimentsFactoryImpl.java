@@ -143,11 +143,11 @@ public class ExperimentsFactoryImpl implements
         dc.addJSONParam(experiment.trafficProportion());
         dc.addParam(experiment.trafficAllocation());
         dc.addParam(Timestamp.from(experiment.modDate()));
-        dc.addJSONParam(experiment.scheduling());
+        dc.addJSONParam(experiment.scheduling().isPresent()?experiment.scheduling().get():null);
         dc.addParam(Timestamp.from(experiment.creationDate()));
         dc.addParam(experiment.createdBy());
         dc.addParam(experiment.lastModifiedBy());
-        dc.addJSONParam(experiment.goals());
+        dc.addJSONParam(experiment.goals().isPresent()?experiment.goals().get():null);
         dc.loadResult();
 
         return experiment.id().get();
@@ -165,11 +165,11 @@ public class ExperimentsFactoryImpl implements
         dc.addJSONParam(experiment.trafficProportion());
         dc.addParam(experiment.trafficAllocation());
         dc.addParam(Timestamp.from(experiment.modDate()));
-        dc.addJSONParam(experiment.scheduling());
+        dc.addJSONParam(experiment.scheduling().isPresent()?experiment.scheduling().get():null);
         dc.addParam(Timestamp.from(experiment.creationDate()));
         dc.addParam(experiment.createdBy());
         dc.addParam(experiment.lastModifiedBy());
-        dc.addJSONParam(experiment.goals());
+        dc.addJSONParam(experiment.goals().isPresent()?experiment.goals().get():null);
         dc.addParam(experiment.id().get());
         dc.loadResult();
 
