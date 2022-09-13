@@ -10,6 +10,8 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.BulkResultView;
+import com.dotcms.rest.api.FailedResultView;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.DotPreconditions;
@@ -51,7 +53,9 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ResourceNotFoundException;
@@ -1121,4 +1125,62 @@ public class ContainerResource implements Serializable {
             throw new DoesNotExistException("Container with Id: " + id + " does not exist");
         }
     }
+
+    /**
+     * Deletes Container(s).
+     *
+     * This method receives a list of identifiers and deletes the containers.
+     * To delete a container successfully the user needs to have Edit Permissions over it.
+     * @param request            {@link HttpServletRequest}
+     * @param response           {@link HttpServletResponse}
+     * @param containersToDelete {@link String} container identifier to look for and then delete it
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @DELETE
+    @Path("bulkdelete")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response bulkDelete(@Context final HttpServletRequest  request,
+            @Context final HttpServletResponse response,
+            final List<String> containersToDelete) {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final PageMode pageMode = PageMode.get(request);
+        Long deletedContainersCount  = 0L;
+        final List<FailedResultView> failedToDelete  = new ArrayList<>();
+
+        DotPreconditions.checkArgument(UtilMethods.isSet(containersToDelete),
+                "The body must send a collection of container identifier such as: " +
+                        "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
+
+        for(final String containerId : containersToDelete){
+            try{
+                final Container container = this.getContainerWorking(containerId, user,
+                        WebAPILocator.getHostWebAPI().getHost(request));
+
+                if (null != container && InodeUtils.isSet(container.getInode())){
+                    this.containerAPI.delete(container, user, pageMode.respectAnonPerms);
+                    ActivityLogger.logInfo(this.getClass(), "Delete Container Action", "User " +
+                            user.getPrimaryKey() + " deleted template: " + container.getIdentifier());
+                    deletedContainersCount++;
+                } else {
+                    Logger.error(this, "Container with Id: " + containerId + " does not exist");
+                    failedToDelete.add(new FailedResultView(containerId,"Container does not exist"));
+                }
+            } catch(Exception e){
+                Logger.debug(this,e.getMessage(),e);
+                failedToDelete.add(new FailedResultView(containerId,e.getMessage()));
+            }
+        }
+
+        return Response.ok(new ResponseEntityView(
+                        new BulkResultView(deletedContainersCount,0L,failedToDelete)))
+                .build();
+    }
+
 }
