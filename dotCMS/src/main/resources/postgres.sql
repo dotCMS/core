@@ -2501,10 +2501,10 @@ create table experiment (
      traffic_allocation float4 not null,
      mod_date timestamptz not null,
      scheduling jsonb,
-     archived bool not null,
      creation_date timestamptz not null,
      created_by varchar(255) not null,
-     last_modified_by varchar(255) not null
+     last_modified_by varchar(255) not null,
+     goals jsonb
 );
 
 CREATE INDEX idx_exp_pageid ON experiment (page_id);
