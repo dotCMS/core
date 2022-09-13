@@ -274,6 +274,25 @@ public class ExperimentsResource {
         return new ResponseEntityExperimentView(Collections.singletonList(endedExperiment));
     }
 
+    /**
+     * Adds a new {@link com.dotcms.variant.model.Variant} to the {@link Experiment}
+     *
+     */
+    @PUT
+    @Path("/{experimentId}/variants")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityExperimentView addVariant(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("experimentId") final String experimentId,
+            final String variantName) throws DotDataException, DotSecurityException {
+        final InitDataObject initData = getInitData(request, response);
+        final User user = initData.getUser();
+        final Experiment updatedExperiment =  experimentsAPI.addVariant(experimentId, variantName, user);
+        return new ResponseEntityExperimentView(Collections.singletonList(updatedExperiment));
+    }
+
     private Experiment patchExperiment(final Experiment experimentToUpdate,
             final ExperimentForm experimentForm, final User user) {
 

@@ -245,6 +245,18 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         return factory.save(ended);
     }
 
+    @Override
+    public Experiment addVariant(String experimentId, String variantName, User user)
+            throws DotDataException, DotSecurityException {
+
+        final Experiment persistedExperimentOpt =  find(experimentId, user)
+                .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
+
+        
+
+
+    }
+
     private Scheduling startNowScheduling(final Experiment experiment) {
         // Setting "now" with an additional minute to avoid failing validation
         final Instant now = Instant.now().plus(1, ChronoUnit.MINUTES);

@@ -1,11 +1,16 @@
 package com.dotcms.experiments.model;
 
+import com.dotcms.util.DotPreconditions;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import io.vavr.control.Try;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import org.immutables.value.Value;
 
 /**
@@ -34,6 +39,17 @@ public interface AbstractTrafficProportion extends Serializable {
     @Value.Default
     default Map<String, Float> variantsPercentagesMap() {
         return Collections.emptyMap();
+    }
+
+    @Value.Check
+    default void check() {
+        if(UtilMethods.isSet(variantsPercentagesMap())) {
+            final Set<String> variants = variantsPercentagesMap().keySet();
+            DotPreconditions.isTrue(variants.stream()
+                    .allMatch((variant)-> Try.of(()-> APILocator.getVariantAPI()
+                            .getByName(variant).isPresent()
+                    ).getOrElse(false)), IllegalArgumentException.class, ()->"Invalid Variants provided");
+        }
     }
 
     enum Type {

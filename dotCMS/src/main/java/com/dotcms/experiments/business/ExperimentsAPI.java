@@ -79,4 +79,10 @@ public interface ExperimentsAPI {
      * {@link Status#RUNNING} status to be able to end it.
      */
     Experiment end(String experimentId, User user) throws DotDataException, DotSecurityException;
+
+    /**
+     * Adds a new {@link com.dotcms.variant.model.Variant} to the {@link Experiment} with the provided id
+     */
+    Experiment addVariant(String experimentId, String variantName, User user)
+            throws DotDataException, DotSecurityException;
 }
