@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.postgresql.util.PSQLException;
@@ -32,6 +33,11 @@ public class VariantFactoryTest {
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
+    }
+
+    @After
+    public static void closeTransaction() throws Exception {
+        DbConnectionFactory.closeSilently();
     }
 
     /**
