@@ -8,6 +8,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import com.liferay.util.StringPool;
 import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -102,7 +104,7 @@ public class MenuResource implements Serializable {
 			for (int layoutIndex = 0; layoutIndex < layouts.size(); layoutIndex++) {
 
 				final Layout layout  = layouts.get(layoutIndex);
-				final String tabName = LanguageUtil.get(mainUser, layout.getName());
+				final String tabName = getTranslation(mainUser, layout.getName());
 				final String tabIcon = StringEscapeUtils.escapeHtml(StringEscapeUtils
 						.escapeJavaScript(LanguageUtil.get(mainUser, layout.getDescription())));
 				final List<String> portletIds = layout.getPortletIds();
@@ -134,5 +136,31 @@ public class MenuResource implements Serializable {
 
 		return res; //menus;
 	} // getMenus.
+
+	/**
+	 * Look for the translation for the layout name
+	 * First tries the layout name replacing the spaces by ., for instance Dev Tools will be transform such as
+	 * dev.tools, if there is a language variable for this key will use, otherwise will continue with the normal behavior,
+	 * means use "Dev Tools" as a key (the fallback)
+	 * @param mainUser
+	 * @param layoutName
+	 * @return
+	 * @throws LanguageException
+	 */
+	protected String getTranslation (final User mainUser, final String layoutName) throws LanguageException {
+
+		if (null != layoutName && layoutName.contains(StringPool.SPACE)) {
+
+			final String key = layoutName.replaceAll("\\s+", StringPool.PERIOD).toLowerCase();
+			final String tabName = LanguageUtil.get(mainUser, key);
+			if (!key.equals(tabName)) {
+				return tabName;
+			}
+		}
+
+		final String tabName = LanguageUtil.get(mainUser, layoutName);
+
+		return tabName;
+	}
 
 } // E:O:F:MenuResource.

@@ -11,7 +11,7 @@ import {
     UserPermissions
 } from '@models/dot-current-user/dot-current-user';
 
-const userData = {
+export const CurrentUserDataMock = {
     email: 'admin@dotcms.com',
     givenName: 'TEST',
     roleId: 'e7d23sde-5127-45fc-8123-d424fd510e3',
@@ -27,7 +27,7 @@ const permissionsData: DotPermissionsType = {
 };
 class DotCurrentUserServiceMock {
     getCurrentUser() {
-        return of(userData);
+        return of(CurrentUserDataMock);
     }
 
     getUserPermissions(
@@ -42,23 +42,21 @@ class DotCurrentUserServiceMock {
 describe('DotStarterResolver', () => {
     let dotStarterResolver: DotStarterResolver;
 
-    beforeEach(
-        waitForAsync(() => {
-            const testbed = TestBed.configureTestingModule({
-                imports: [HttpClientTestingModule],
-                providers: [
-                    { provide: CoreWebService, useClass: CoreWebServiceMock },
-                    { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
-                    DotStarterResolver
-                ]
-            });
-            dotStarterResolver = testbed.inject(DotStarterResolver);
-        })
-    );
+    beforeEach(waitForAsync(() => {
+        const testbed = TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
+            providers: [
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
+                DotStarterResolver
+            ]
+        });
+        dotStarterResolver = testbed.inject(DotStarterResolver);
+    }));
 
     it('should get and return user & permissions data', () => {
         dotStarterResolver.resolve().subscribe(({ user, permissions }) => {
-            expect(user).toEqual(userData);
+            expect(user).toEqual(CurrentUserDataMock);
             expect(permissions).toEqual(permissionsData);
         });
     });

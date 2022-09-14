@@ -47,6 +47,7 @@ export class ColorUtil {
             return rgb;
         } else {
             rgb = rgb.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*(\d+(\.\d+)?))?\)$/);
+
             return '#' + this.hex(rgb[1]) + this.hex(rgb[2]) + this.hex(rgb[3]);
         }
     }

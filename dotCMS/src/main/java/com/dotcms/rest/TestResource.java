@@ -1,7 +1,6 @@
 package com.dotcms.rest;
 
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-import com.dotcms.util.XStreamFactory;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
@@ -80,7 +79,7 @@ public class TestResource {
                 mapResponse.put( "param1", param1 );
                 mapResponse.put( "param2", param2 );
 
-                XStream xstream = XStreamFactory.INSTANCE.getInstance();
+                XStream xstream = new XStream( new DomDriver() );
                 xstream.alias( "response", Map.class );
 
                 StringBuilder xmlBuilder = new StringBuilder();
@@ -171,7 +170,7 @@ public class TestResource {
                 mapResponse.put( "param1", param1 );
                 mapResponse.put( "param2", param2 );
 
-                XStream xstream = XStreamFactory.INSTANCE.getInstance();
+                XStream xstream = new XStream( new DomDriver() );
                 xstream.alias( "response", Map.class );
 
                 StringBuilder xmlBuilder = new StringBuilder();

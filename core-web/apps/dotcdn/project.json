@@ -1,6 +1,6 @@
 {
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
     "projectType": "application",
-    "root": "apps/dotcdn",
     "sourceRoot": "apps/dotcdn/src",
     "prefix": "dotcms",
     "targets": {
@@ -91,7 +91,7 @@
             "executor": "@nrwl/jest:jest",
             "outputs": ["coverage/apps/dotcdn"],
             "options": {
-                "jestConfig": "apps/dotcdn/jest.config.js",
+                "jestConfig": "apps/dotcdn/jest.config.ts",
                 "passWithNoTests": true,
                 "styles": [
                     "libs/dot-primeng-theme-styles/src/scss/styles.scss",

@@ -25,6 +25,7 @@ export default {
 const CalendarTemplate = `<p-calendar [showTime]="true" inputId="time" showButtonBar="true"></p-calendar>`;
 const Template: Story<Calendar> = (props: Calendar) => {
     const template = CalendarTemplate;
+
     return {
         props,
         template
@@ -32,6 +33,7 @@ const Template: Story<Calendar> = (props: Calendar) => {
 };
 
 export const Primary: Story = Template.bind({});
+
 Primary.parameters = {
     docs: {
         source: {

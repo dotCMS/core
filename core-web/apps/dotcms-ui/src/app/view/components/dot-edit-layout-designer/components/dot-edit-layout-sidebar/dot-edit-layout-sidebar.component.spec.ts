@@ -2,7 +2,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
-import { FormControl, FormGroup } from '@angular/forms';
+import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 
 import { DOTTestBed } from '@tests/dot-test-bed';
 import { DotContainerSelectorLayoutModule } from '@components/dot-container-selector-layout/dot-container-selector-layout.module';
@@ -24,10 +24,10 @@ let fakeValue: DotLayoutSideBar;
     </form>`
 })
 class TestHostComponent {
-    form: FormGroup;
+    form: UntypedFormGroup;
     constructor() {
-        this.form = new FormGroup({
-            sidebar: new FormControl(fakeValue)
+        this.form = new UntypedFormGroup({
+            sidebar: new UntypedFormControl(fakeValue)
         });
     }
 }
@@ -77,8 +77,8 @@ describe('DotEditLayoutSidebarComponent', () => {
     });
 
     it('should call the write value and transform the containers data', () => {
-        hostComponentfixture.componentInstance.form = new FormGroup({
-            sidebar: new FormControl({
+        hostComponentfixture.componentInstance.form = new UntypedFormGroup({
+            sidebar: new UntypedFormControl({
                 containers: [
                     { identifier: '5363c6c6-5ba0-4946-b7af-cf875188ac2e', uuid: '' },
                     { identifier: '56bd55ea-b04b-480d-9e37-5d6f9217dcc3', uuid: '' }

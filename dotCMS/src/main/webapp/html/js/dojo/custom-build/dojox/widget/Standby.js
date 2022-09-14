@@ -64,7 +64,7 @@ return declare("dojox.widget.Standby", [_Widget, _TemplatedMixin],{
 	//		and 'text'.
 	//		Default is 'image'.
 	centerIndicator: "image",
-	
+
 	// target: DOMNode||DOMID(String)||WidgetID(String)
 	//		The target to overlay when active.  Can be a widget id, a
 	//		dom id, or a direct node reference.
@@ -79,20 +79,20 @@ return declare("dojox.widget.Standby", [_Widget, _TemplatedMixin],{
 	//		Integer defining how long the show and hide effects should take in milliseconds.
 	//		Defaults to 500
 	duration: 500,
-	
+
 	// zIndex: String
 	//		Control that lets you specify if the zIndex for the overlay
 	//		should be auto-computed based off parent zIndex, or should be set
 	//		to a particular value.  This is useful when you want to overlay
 	//		things in digit.Dialogs, you can specify a base zIndex to append from.
 	zIndex: "auto",
-	
+
 	// opacity: float
 	//		The opacity to make the overlay when it is displayed/faded in.
 	//		The default is 0.75.  This does not affect the image opacity, only the
 	//		overlay.
-	opacity: 0.75,	
-	
+	opacity: 0.75,
+
 	// templateString: [protected] String
 	//		The template string defining out the basics of the widget.  No need for an external
 	//		file.
@@ -188,7 +188,7 @@ return declare("dojox.widget.Standby", [_Widget, _TemplatedMixin],{
 				baseWindow.body().appendChild(this._ieFixNode);
 			}
 			this.inherited(arguments);
-		}		
+		}
 	},
 
 	show: function(){
@@ -210,16 +210,25 @@ return declare("dojox.widget.Standby", [_Widget, _TemplatedMixin],{
 		// summary:
 		//		Function to hide the blocking overlay and status icon or text.
 		if(this._displayed){
-			if(this._anim){
-				this._anim.stop();
-				delete this._anim;
-			}
-			this._size();
-			this._fadeOut();
-			this._displayed = false;
-			if(this._resizeCheck !== null){
-				clearInterval(this._resizeCheck);
-				this._resizeCheck = null;
+			// Ideally would come up with something better than try/catch,
+			// but don't see another simple workaround for
+			// https://bugs.dojotoolkit.org/ticket/18196 and
+			// https://bugs.dojotoolkit.org/ticket/14984
+			try{
+				if(this._anim){
+					this._anim.stop();
+					delete this._anim;
+				}
+				this._size();
+			}catch(e){
+				console.error(e);
+			}finally{
+				this._fadeOut();
+				this._displayed = false;
+				if(this._resizeCheck !== null){
+					clearInterval(this._resizeCheck);
+					this._resizeCheck = null;
+				}
 			}
 		}
 	},
@@ -311,32 +320,37 @@ return declare("dojox.widget.Standby", [_Widget, _TemplatedMixin],{
 
 			if(this.zIndex === "auto"){
 				if(zi != "auto"){
-					ziUl = parseInt(ziUl, 10) + 1;
-					ziIn = parseInt(ziIn, 10) + 2;
+					// honor user-defined z-index
+					ziUl = parseInt(ziUl, 10);
+					ziIn = parseInt(ziIn, 10);
 				}else{
 					//We need to search up the chain to see if there
 					//are any parent zIndexs to overlay.
-					var cNode = target.parentNode;
-					var oldZi = -100000;
-					while(cNode && cNode !== baseWindow.body() && target !== baseWindow.body()){
-						zi = domStyle.get(cNode, "zIndex");
-						if(!zi || zi === "auto"){
-							cNode = cNode.parentNode;
-						}else{
-							var newZi = parseInt(zi, 10);
-							if(oldZi < newZi){
-								oldZi = newZi;
-								ziUl = newZi + 1;
-								ziIn = newZi + 2;
+					var cNode = target;
+					if(cNode && cNode !== baseWindow.body() && cNode !== baseWindow.doc){
+						cNode = target.parentNode;
+						var oldZi = -100000;
+						while(cNode && cNode !== baseWindow.body()){
+							zi = domStyle.get(cNode, "zIndex");
+							if(!zi || zi === "auto"){
+								cNode = cNode.parentNode;
+							}else{
+								var newZi = parseInt(zi, 10);
+								if(oldZi < newZi){
+									oldZi = newZi;
+									ziUl = newZi + 1;
+									ziIn = newZi + 1;
+								}
+								// Keep looking until we run out, we want the highest zIndex.
+								cNode = cNode.parentNode;
 							}
-							// Keep looking until we run out, we want the highest zIndex.
-							cNode = cNode.parentNode;
 						}
 					}
 				}
 			}else{
-				ziUl = parseInt(this.zIndex, 10) + 1;
-				ziIn = parseInt(this.zIndex, 10) + 2;
+				// honor user-defined z-index
+				ziUl = parseInt(this.zIndex, 10);
+				ziIn = parseInt(this.zIndex, 10);
 			}
 
 			domStyle.set(this._centerNode, "zIndex", ziIn);
@@ -347,7 +361,7 @@ return declare("dojox.widget.Standby", [_Widget, _TemplatedMixin],{
 			if(pn && pn !== baseWindow.body() &&
 				target !== baseWindow.body() &&
 				target !== baseWindow.doc){
-				
+
 				// If the parent is the body tag itself,
 				// we can avoid all this, the body takes
 				// care of overflow for me.  Besides, browser
@@ -366,7 +380,7 @@ return declare("dojox.widget.Standby", [_Widget, _TemplatedMixin],{
 					pnBox.w = Math.floor((pnBox.w + 0.9) / _ie7zoom);
 					pnBox.h = Math.floor((pnBox.h + 0.9) / _ie7zoom);
 				}
-				
+
 				//Shift the parent width/height a bit if scollers are present.
 				pnBox.w -= pn.scrollHeight > pn.clientHeight &&
 					pn.clientHeight > 0 ? scrollers.v: 0;
@@ -685,6 +699,20 @@ return declare("dojox.widget.Standby", [_Widget, _TemplatedMixin],{
 		}else{
 			this._centerNode = this._textNode;
 			domStyle.set(this._imageNode, "display", "none");
+		}
+	},
+
+	_setTargetAttr:function(target){
+		// summary:
+		//		Function to allow widget.attr to set the target used
+		// target: String
+		//		The target to use.
+	    if(typeof target === "string"){
+	        var w = registry.byId(target);
+	        this._set("target", w ? w.domNode : dom.byId(target));
+	    }
+	    else {
+			this._set("target", target);
 		}
 	},
 

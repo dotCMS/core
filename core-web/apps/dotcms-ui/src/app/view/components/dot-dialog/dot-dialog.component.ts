@@ -75,6 +75,7 @@ export class DotDialogComponent implements OnChanges {
             if (this.bindEvents) {
                 this.bindKeydown();
             }
+
             this.appendContainer();
         }
     }
@@ -152,6 +153,7 @@ export class DotDialogComponent implements OnChanges {
                 .pipe(
                     filter((event: MouseEvent) => {
                         const el = <HTMLElement>event.target;
+
                         return el.localName !== 'dot-dialog' && el.classList.contains('active');
                     })
                 )
@@ -174,9 +176,11 @@ export class DotDialogComponent implements OnChanges {
             case 'Escape':
                 this.cancelAction();
                 break;
+
             case 'Enter':
                 this.acceptAction();
                 break;
+
             default:
                 break;
         }

@@ -21,7 +21,7 @@ import { CommonModule } from '@angular/common';
 import { DotAppsConfigurationListModule } from './dot-apps-configuration-list/dot-apps-configuration-list.module';
 import { PaginatorService } from '@services/paginator';
 import { DotAppsConfigurationHeaderModule } from '../dot-apps-configuration-header/dot-apps-configuration-header.module';
-import { MarkdownService } from 'ngx-markdown';
+import { MarkdownModule } from 'ngx-markdown';
 import { DotAppsImportExportDialogModule } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.module';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
@@ -95,69 +95,56 @@ describe('DotAppsConfigurationComponent', () => {
 
     const messageServiceMock = new MockDotMessageService(messages);
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [
-                    RouterTestingModule.withRoutes([
-                        {
-                            component: DotAppsConfigurationComponent,
-                            path: ''
-                        }
-                    ]),
-                    InputTextModule,
-                    ButtonModule,
-                    CommonModule,
-                    DotActionButtonModule,
-                    DotAppsConfigurationHeaderModule,
-                    DotAppsImportExportDialogModule,
-                    DotAppsConfigurationListModule,
-                    HttpClientTestingModule,
-                    DotPipesModule
-                ],
-                declarations: [DotAppsConfigurationComponent],
-                providers: [
-                    { provide: DotMessageService, useValue: messageServiceMock },
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [
+                RouterTestingModule.withRoutes([
                     {
-                        provide: ActivatedRoute,
-                        useClass: ActivatedRouteMock
-                    },
-                    {
-                        provide: DotAppsService,
-                        useClass: MockDotAppsService
-                    },
-                    {
-                        provide: DotRouterService,
-                        useClass: MockDotRouterService
-                    },
-                    {
-                        provide: MarkdownService,
-                        useValue: {
-                            compile(text) {
-                                return text;
-                            },
+                        component: DotAppsConfigurationComponent,
+                        path: ''
+                    }
+                ]),
+                InputTextModule,
+                ButtonModule,
+                CommonModule,
+                DotActionButtonModule,
+                DotAppsConfigurationHeaderModule,
+                DotAppsImportExportDialogModule,
+                DotAppsConfigurationListModule,
+                HttpClientTestingModule,
+                DotPipesModule,
+                MarkdownModule.forRoot()
+            ],
+            declarations: [DotAppsConfigurationComponent],
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                {
+                    provide: ActivatedRoute,
+                    useClass: ActivatedRouteMock
+                },
+                {
+                    provide: DotAppsService,
+                    useClass: MockDotAppsService
+                },
+                {
+                    provide: DotRouterService,
+                    useClass: MockDotRouterService
+                },
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                DotAppsConfigurationResolver,
+                PaginatorService,
+                DotAlertConfirmService,
+                ConfirmationService
+            ]
+        });
 
-                            highlight() {
-                                //
-                            }
-                        }
-                    },
-                    { provide: CoreWebService, useClass: CoreWebServiceMock },
-                    DotAppsConfigurationResolver,
-                    PaginatorService,
-                    DotAlertConfirmService,
-                    ConfirmationService
-                ]
-            });
-
-            fixture = TestBed.createComponent(DotAppsConfigurationComponent);
-            component = fixture.debugElement.componentInstance;
-            dialogService = TestBed.inject(DotAlertConfirmService);
-            paginationService = TestBed.inject(PaginatorService);
-            appsServices = TestBed.inject(DotAppsService);
-            routerService = TestBed.inject(DotRouterService);
-        })
-    );
+        fixture = TestBed.createComponent(DotAppsConfigurationComponent);
+        component = fixture.debugElement.componentInstance;
+        dialogService = TestBed.inject(DotAlertConfirmService);
+        paginationService = TestBed.inject(PaginatorService);
+        appsServices = TestBed.inject(DotAppsService);
+        routerService = TestBed.inject(DotRouterService);
+    }));
 
     describe('With integrations count', () => {
         beforeEach(() => {
@@ -222,6 +209,7 @@ describe('DotAppsConfigurationComponent', () => {
             const listComp = fixture.debugElement.query(
                 By.css('dot-apps-configuration-list')
             ).componentInstance;
+            fixture.detectChanges();
             expect(listComp.siteConfigurations).toBe(component.apps.sites);
             expect(listComp.hideLoadDataButton).toBe(true);
             expect(listComp.itemsPerPage).toBe(component.paginationPerPage);

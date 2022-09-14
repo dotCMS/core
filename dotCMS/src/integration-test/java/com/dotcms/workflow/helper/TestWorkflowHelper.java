@@ -6,12 +6,15 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
+import com.dotmarketing.util.UUIDUtil;
 import com.liferay.portal.model.User;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -75,5 +78,23 @@ public class TestWorkflowHelper extends IntegrationTestBase {
         //5 looking for non-existing Action
         archiveActionId = workflowHelper.getActionIdOnList("Non Existing Action", contentletCheckin, user);
         Assert.assertNull("The action returned should be Archive", archiveActionId);
+    }
+
+    /**
+     * Method to test: {@link WorkflowHelper#resolveRole(String)}
+     * Given Scenario: Create a new user (will have the new deterministic id) and invoke the resolveRole, check it is not null returned
+     * ExpectedResult: Not null is being returned
+     *
+     */
+    @Test
+    public void test_resolveRole_for_new_user () throws Exception {
+
+        final String name   = "Test"+System.currentTimeMillis();
+        final User testUser = new UserDataGen().id("user-" + UUIDUtil.uuid()).active(true).firstName(name).lastName(name)
+                .emailAddress(name+"@dotcms.com").nextPersisted();
+        final WorkflowHelper workflowHelper = WorkflowHelper.getInstance();
+        final Role role = workflowHelper.resolveRole(testUser.getUserId());
+
+        Assert.assertNotNull(role);
     }
 }

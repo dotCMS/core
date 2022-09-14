@@ -5,7 +5,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { Component, DebugElement, Input, HostBinding, Output, EventEmitter } from '@angular/core';
 import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
-import { FormControl, FormGroup } from '@angular/forms';
+import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 
 import { NgGridModule } from '@dotcms/dot-layout-grid';
 
@@ -38,14 +38,14 @@ let fakeValue: DotLayoutBody;
     `
 })
 class TestHostComponent {
-    form: FormGroup;
+    form: UntypedFormGroup;
     constructor() {
         this.createForm();
     }
 
     createForm(): void {
-        this.form = new FormGroup({
-            body: new FormControl(fakeValue)
+        this.form = new UntypedFormGroup({
+            body: new UntypedFormControl(fakeValue)
         });
     }
 }
@@ -150,8 +150,8 @@ describe('DotEditLayoutGridComponent', () => {
     });
 
     it('should show set one element in the grid of 12 columns', () => {
-        hostComponentfixture.componentInstance.form = new FormGroup({
-            body: new FormControl({})
+        hostComponentfixture.componentInstance.form = new UntypedFormGroup({
+            body: new UntypedFormControl({})
         });
 
         hostComponentfixture.detectChanges();
@@ -194,8 +194,8 @@ describe('DotEditLayoutGridComponent', () => {
 
     it('should add a new add class button', () => {
         fakeValue.rows[0].columns[0].width = 12;
-        hostComponentfixture.componentInstance.form = new FormGroup({
-            body: new FormControl(fakeValue)
+        hostComponentfixture.componentInstance.form = new UntypedFormGroup({
+            body: new UntypedFormControl(fakeValue)
         });
 
         hostComponentfixture.detectChanges();
@@ -213,8 +213,8 @@ describe('DotEditLayoutGridComponent', () => {
 
     it('should add a new Container in a new row, when there is no space in the last row', () => {
         fakeValue.rows[0].columns[0].width = 12;
-        hostComponentfixture.componentInstance.form = new FormGroup({
-            body: new FormControl(fakeValue)
+        hostComponentfixture.componentInstance.form = new UntypedFormGroup({
+            body: new UntypedFormControl(fakeValue)
         });
 
         hostComponentfixture.detectChanges();
@@ -238,8 +238,8 @@ describe('DotEditLayoutGridComponent', () => {
 
     it('should create a new row with a basic configuration object', () => {
         fakeValue.rows[0].columns[0].width = 12;
-        hostComponentfixture.componentInstance.form = new FormGroup({
-            body: new FormControl(fakeValue)
+        hostComponentfixture.componentInstance.form = new UntypedFormGroup({
+            body: new UntypedFormControl(fakeValue)
         });
 
         hostComponentfixture.detectChanges();

@@ -5,13 +5,13 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.security.ContentSecurityPolicyUtil;
+import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.BlockPageCache;
-import com.dotmarketing.business.BlockPageCache.PageCacheParameters;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.PageCacheParameters;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -29,10 +29,11 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import java.nio.charset.StandardCharsets;
 import org.apache.velocity.context.Context;
-
+import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import static com.dotmarketing.filters.Constants.VANITY_URL_OBJECT;
 import java.io.*;
 import java.util.Optional;
 
@@ -137,25 +138,39 @@ public class VelocityLiveMode extends VelocityModeHandler {
             String userId = (user != null) ? user.getUserId() : APILocator.getUserAPI().getAnonymousUser().getUserId();
             String language = String.valueOf(langId);
             String urlMap = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE);
+            String vanityUrl =  request.getAttribute(VANITY_URL_OBJECT)!=null ? ((CachedVanityUrl)request.getAttribute(VANITY_URL_OBJECT)).vanityUrlId : "";
             String queryString = request.getQueryString();
             String persona = null;
             Optional<Visitor> v = visitorAPI.getVisitor(request, false);
             if (v.isPresent() && v.get().getPersona() != null) {
                 persona = v.get().getPersona().getKeyTag();
             }
+            final String originalUrl = (String)  request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI) ;
+            
+            
+            
             final Context context = VelocityUtil.getInstance().getContext(request, response);
 
             final PageCacheParameters cacheParameters =
-                    new BlockPageCache.PageCacheParameters(userId, language, urlMap, queryString, persona);
+                    new PageCacheParameters(userId, 
+                                    language, 
+                                    urlMap, 
+                                    queryString, 
+                                    persona,
+                                    originalUrl, 
+                                    htmlPage.getInode(), 
+                                    String.valueOf(htmlPage.getModDate()),
+                                    vanityUrl
+                                    );
             
-            final String cacheKey = VelocityUtil.getPageCacheKey(request, htmlPage);
+            final boolean shouldCache = VelocityUtil.shouldPageCache(request, htmlPage);
             if(response.getHeader("Cache-Control")==null) {
                 // set cache control headers based on page cache
                 final String cacheControl = htmlPage.getCacheTTL() >= 0 ? "max-age=" +  htmlPage.getCacheTTL() : "no-cache";
                 response.setHeader("Cache-Control",  cacheControl);
             }
             
-            if (cacheKey != null) {
+            if (shouldCache) {
 
                 final String cachedPage = CacheLocator.getBlockPageCache().get(htmlPage, cacheParameters);
                 if (cachedPage != null) {
@@ -165,7 +180,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
                 }
             }
             
-            try (final Writer tmpOut = (cacheKey != null) ? stringWriterLocal.get() : new BufferedWriter(new OutputStreamWriter(out))) {
+            try (final Writer tmpOut = shouldCache ? stringWriterLocal.get() : new BufferedWriter(new OutputStreamWriter(out))) {
 
                 if (ContentSecurityPolicyUtil.isConfig()) {
                     ContentSecurityPolicyUtil.init(request);
@@ -174,12 +189,15 @@ public class VelocityLiveMode extends VelocityModeHandler {
 
                 HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
                     this.getTemplate(htmlPage, mode).merge(context, tmpOut);
-                // We should only cache if status == 200
-                if (null != cacheKey && response.getStatus() == 200) {
+
+                if (shouldCache) {
                     final String trimmedPage = tmpOut.toString().trim();
                     out.write(trimmedPage.getBytes());
-                    synchronized (cacheKey.intern()) {
-                        CacheLocator.getBlockPageCache().add(htmlPage, trimmedPage, cacheParameters);
+
+                    if(response.getStatus() == 200) {
+                        CacheLocator.getBlockPageCache()
+                                .add(htmlPage, trimmedPage, cacheParameters);
+
                     }
                 }
             }

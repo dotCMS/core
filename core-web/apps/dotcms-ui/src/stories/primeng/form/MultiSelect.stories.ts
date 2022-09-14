@@ -36,6 +36,7 @@ const MultiSelectTemplate = `
 <p-multiSelect [options]="cities" defaultLabel="Select a City" optionLabel="name"></p-multiSelect>`;
 const Template: Story<MultiSelect> = (props: MultiSelect) => {
     const template = MultiSelectTemplate;
+
     return {
         props,
         template
@@ -43,6 +44,7 @@ const Template: Story<MultiSelect> = (props: MultiSelect) => {
 };
 
 export const Primary: Story = Template.bind({});
+
 Primary.parameters = {
     docs: {
         source: {

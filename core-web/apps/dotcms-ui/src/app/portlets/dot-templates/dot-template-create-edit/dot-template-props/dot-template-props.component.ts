@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { Observable } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
@@ -10,14 +10,14 @@ import { map, startWith } from 'rxjs/operators';
     styleUrls: ['./dot-template-props.component.scss']
 })
 export class DotTemplatePropsComponent implements OnInit {
-    form: FormGroup;
+    form: UntypedFormGroup;
 
     isFormValid$: Observable<boolean>;
 
     constructor(
         private ref: DynamicDialogRef,
         private config: DynamicDialogConfig,
-        private fb: FormBuilder
+        private fb: UntypedFormBuilder
     ) {}
 
     ngOnInit(): void {

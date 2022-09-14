@@ -301,7 +301,7 @@ public class ContentResource {
                     pullRelatedForm.getLimit(), pullRelatedForm.getOffset(), pullRelatedForm.getOrderBy(),
                     user, tmDate, pullParents, langId, editOrPreviewMode? null : true);
 
-            return Response.ok(new ResponseEntityView(retrievedContentlets.stream()
+            return Response.ok(new ResponseEntityView<>(retrievedContentlets.stream()
                         .map(contentItem -> WorkflowHelper.getInstance().contentletToMap(contentItem)).collect(Collectors.toList())
                     )).build();
         }

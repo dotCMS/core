@@ -29,7 +29,7 @@ define("dojox/gfx/utils", ["dojo/_base/kernel","dojo/_base/lang","./_base", "doj
 
 		serialize: function(object){
 			// summary:
-			//		Takes a shape or a surface and returns a JSON-like object, which describes underlying shapes.
+			//		Takes a shape or a surface and returns an object, which describes underlying shapes.
 			// object: dojox/gfx/shape.Surface|dojox/gfx/shape.Shape
 			//		The container to serialize.
 
@@ -309,6 +309,10 @@ define("dojox/gfx/utils", ["dojo/_base/kernel","dojo/_base/lang","./_base", "doj
 				svg = svg.replace(/\bdojoGfx\w*\s*=\s*(['"])\w*\1/g, "");
 				svg = svg.replace(/\b__gfxObject__\s*=\s*(['"])\w*\1/g, "");
 				svg = svg.replace(/[=]([^"']+?)(\s|>)/g,'="$1"$2');
+				
+				// Undefined strokes (IE 8 seralization weirdness) should be removed to  
+				// allow default.  'undefined' is not a valid value. 
+				svg = svg.replace(/\bstroke-opacity\w*\s*=\s*(['"])undefined\1/g, ""); 				
 			}
 			return svg;  //Cleaned SVG text.
 		}

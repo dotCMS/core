@@ -1,6 +1,7 @@
 title: Force Push Everything
 default: false
 roles: DOTCMS_BACK_END_USER
+sort: "20"
 filters:
    ## Lucene query that exclude content to be added to the bundle
    excludeQuery: ""

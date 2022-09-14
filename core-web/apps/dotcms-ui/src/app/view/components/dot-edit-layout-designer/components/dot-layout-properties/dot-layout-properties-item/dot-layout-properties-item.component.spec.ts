@@ -2,7 +2,7 @@
 
 import { DOTTestBed } from '../../../../../../test/dot-test-bed';
 import { DotLayoutPropertiesItemComponent } from './dot-layout-properties-item.component';
-import { FormGroup, FormControl } from '@angular/forms';
+import { UntypedFormGroup, UntypedFormControl } from '@angular/forms';
 import { ComponentFixture } from '@angular/core/testing';
 import { DebugElement, Component } from '@angular/core';
 import { By } from '@angular/platform-browser';
@@ -14,11 +14,11 @@ import { By } from '@angular/platform-browser';
     </form>`
 })
 class TestHostComponent {
-    group: FormGroup;
+    group: UntypedFormGroup;
     f;
     constructor() {
-        this.group = new FormGroup({
-            header: new FormControl({
+        this.group = new UntypedFormGroup({
+            header: new UntypedFormControl({
                 header: true
             })
         });

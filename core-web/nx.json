@@ -16,24 +16,16 @@
     "npmScope": "dotcms",
     "tasksRunnerOptions": {
         "default": {
-            "runner": "@nrwl/workspace/tasks-runners/default",
+            "runner": "nx/tasks-runners/default",
             "options": {
                 "cacheableOperations": ["build", "lint", "test", "e2e", "build-storybook"],
                 "parallel": 1
             }
         }
     },
-    "targetDependencies": {
-        "build": [
-            {
-                "target": "build",
-                "projects": "dependencies"
-            }
-        ]
-    },
     "cli": {
-        "defaultCollection": "@nrwl/angular",
-        "analytics": false
+        "analytics": false,
+        "defaultCollection": "@nxext/stencil"
     },
     "defaultProject": "dotcms-ui",
     "generators": {
@@ -60,6 +52,12 @@
         },
         "@nrwl/angular:component": {
             "style": "scss"
+        }
+    },
+    "$schema": "./node_modules/nx/schemas/nx-schema.json",
+    "targetDefaults": {
+        "build": {
+            "dependsOn": ["^build"]
         }
     }
 }

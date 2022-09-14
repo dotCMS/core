@@ -82,6 +82,7 @@ export class DotContentletWrapperComponent {
                     if (this.shouldRefresh(data)) {
                         this.dotIframeService.reload();
                     }
+
                     this.isContentletModified = false;
                 },
                 'edit-contentlet-loaded': (e: CustomEvent) => {

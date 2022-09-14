@@ -12,8 +12,8 @@ describe('DotEventsService', () => {
         dotEventsService = TestBed.get(DotEventsService);
     });
     it('should filter notifications based on event name', () => {
-        let timesCalled = 0,
-            randomEvent = 0;
+        let timesCalled = 0;
+        let randomEvent = 0;
         dotEventsService.listen('test').subscribe(() => {
             timesCalled++;
         });
@@ -21,7 +21,7 @@ describe('DotEventsService', () => {
             randomEvent++;
         });
 
-        dotEventsService.notify('test', [1, 2, 3]);
+        dotEventsService.notify<number[]>('test', [1, 2, 3]);
         dotEventsService.notify('randomEvent');
 
         expect(timesCalled).toEqual(1);
@@ -34,7 +34,7 @@ describe('DotEventsService', () => {
             numbersArray = value.data as number[];
         });
 
-        dotEventsService.notify('test', [1, 2, 3]);
+        dotEventsService.notify<number[]>('test', [1, 2, 3]);
 
         expect(numbersArray).toEqual([1, 2, 3]);
     });

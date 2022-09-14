@@ -18,6 +18,10 @@ const run = async () => {
   setOutput('tests_results_report_location', reportFolder)
   setOutput('tests_results_status', results.testsResultsStatus)
   setOutput('tests_results_skip_report', results.skipResultsReport)
+
+  if (results.testsRunExitCode !== 0) {
+    core.setFailed(`Postman tests failed: ${JSON.stringify(results)}`)
+  }
 }
 
 const setOutput = (name: string, value: string | boolean | number | undefined) => {

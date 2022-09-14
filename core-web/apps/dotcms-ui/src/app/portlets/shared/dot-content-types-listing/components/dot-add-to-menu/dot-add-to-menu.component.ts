@@ -9,7 +9,7 @@ import {
     ViewChild,
     ElementRef
 } from '@angular/core';
-import { FormGroup, FormBuilder, Validators } from '@angular/forms';
+import { UntypedFormGroup, UntypedFormBuilder, Validators } from '@angular/forms';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
@@ -26,7 +26,7 @@ import {
     templateUrl: 'dot-add-to-menu.component.html'
 })
 export class DotAddToMenuComponent implements OnInit, OnDestroy {
-    form: FormGroup;
+    form: UntypedFormGroup;
     menu$: Observable<DotMenu[]>;
     placeholder = '';
     dialogShow = false;
@@ -40,7 +40,7 @@ export class DotAddToMenuComponent implements OnInit, OnDestroy {
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
-        public fb: FormBuilder,
+        public fb: UntypedFormBuilder,
         private dotMessageService: DotMessageService,
         private dotMenuService: DotMenuService,
         private dotAddToMenuService: DotAddToMenuService
@@ -112,7 +112,7 @@ export class DotAddToMenuComponent implements OnInit, OnDestroy {
         });
     }
 
-    private setDialogConfig(form: FormGroup): void {
+    private setDialogConfig(form: UntypedFormGroup): void {
         this.dialogActions = {
             accept: {
                 action: () => {

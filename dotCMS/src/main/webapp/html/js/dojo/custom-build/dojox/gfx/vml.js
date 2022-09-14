@@ -56,11 +56,6 @@ function(lang, declare, arr, Color, has, config, dom, domGeom, kernel, g, gs, pa
 		// summary:
 		//		VML-specific implementation of dojox/gfx/shape.Shape methods
 
-		destroy: function(){
-			this.rawNode = null;
-			gs.Shape.prototype.destroy.apply(this, arguments);
-		},
-
 		setFill: function(fill){
 			// summary:
 			//		sets a fill object (VML)
@@ -305,7 +300,7 @@ function(lang, declare, arr, Color, has, config, dom, domGeom, kernel, g, gs, pa
 			rawNode.stroked = "f";
 			rawNode.filled  = "f";
 			this.rawNode = rawNode;
-			this.rawNode.__gfxObject__ = this.getUID();
+			this.rawNode.__gfxObject__ = this;
 		},
 
 		// move family
@@ -481,7 +476,7 @@ function(lang, declare, arr, Color, has, config, dom, domGeom, kernel, g, gs, pa
 				node.style.display = "inline-block";
 				vml._reparentEvents(node, this.rawNode);
 				this.rawNode = node;
-				this.rawNode.__gfxObject__ = this.getUID();						
+				this.rawNode.__gfxObject__ = this;
 			}else{
 				this.rawNode.arcsize = r;
 			}
@@ -1027,7 +1022,21 @@ function(lang, declare, arr, Color, has, config, dom, domGeom, kernel, g, gs, pa
 		_closePath: function(){
 			this.lastControl.type = "";	// no control point after this primitive
 			return ["x"];
-		}
+		},
+		_getRealBBox: function(){ 
+			//	summary: 
+			//		returns an array of four points or null 
+			//		This is called by setFill, which actually creates the path, so we want to avoid 
+			//		duping the path repeatedly in the shape by clearing the path before re-add. 
+			this._confirmSegmented(); 
+			if(this.tbbox){ 
+				return this.tbbox;	// Array 
+			} 
+			if(typeof this.shape.path == "string"){ 
+				this.shape.path = ""; 
+			} 
+			return this.inherited(arguments); 
+		} 		
 	});
 	vml.Path.nodeType = "shape";
 
@@ -1421,7 +1430,7 @@ function(lang, declare, arr, Color, has, config, dom, domGeom, kernel, g, gs, pa
 		// gfxElement: Object
 		//		The GFX target element
 		if (!event.gfxTarget) {
-			event.gfxTarget = gs.byId(event.target.__gfxObject__);
+			event.gfxTarget = event.target.__gfxObject__;
 		}
 		return true;
 	};

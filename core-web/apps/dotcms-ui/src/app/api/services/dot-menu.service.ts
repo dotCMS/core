@@ -79,6 +79,7 @@ export class DotMenuService {
      */
     reloadMenu(): Observable<DotMenu[]> {
         this.menu$ = null;
+
         return this.loadMenu();
     }
 

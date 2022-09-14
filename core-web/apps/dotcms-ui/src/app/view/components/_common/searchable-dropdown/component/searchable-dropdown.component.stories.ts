@@ -141,6 +141,7 @@ const getTemplate = (extraAttr = '') => {
         >
         </dot-searchable-dropdown>
     `;
+
     return template;
 };
 

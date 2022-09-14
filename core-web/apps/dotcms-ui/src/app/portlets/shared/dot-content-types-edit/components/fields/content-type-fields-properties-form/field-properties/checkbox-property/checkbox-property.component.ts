@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { FieldProperty } from '../field-properties.model';
-import { FormGroup } from '@angular/forms';
+import { UntypedFormGroup } from '@angular/forms';
 
 @Component({
     selector: 'dot-checkbox-property',
@@ -8,7 +8,7 @@ import { FormGroup } from '@angular/forms';
 })
 export class CheckboxPropertyComponent {
     property: FieldProperty;
-    group: FormGroup;
+    group: UntypedFormGroup;
 
     private readonly labelMap = {
         indexed: 'contenttypes.field.properties.system_indexed.label',

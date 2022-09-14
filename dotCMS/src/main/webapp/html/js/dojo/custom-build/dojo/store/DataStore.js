@@ -1,5 +1,5 @@
 define("dojo/store/DataStore", [
-	"../_base/lang", "../_base/declare", "../_base/Deferred", "../_base/array",
+	"../_base/lang", "../_base/declare", "../Deferred", "../_base/array",
 	"./util/QueryResults", "./util/SimpleQueryEngine" /*=====, "./api/Store" =====*/
 ], function(lang, declare, Deferred, array, QueryResults, SimpleQueryEngine /*=====, Store =====*/){
 
@@ -23,16 +23,16 @@ return declare("dojo.store.DataStore", base, {
 		//		This provides any configuration information that will be mixed into the store,
 		//		including a reference to the Dojo data store under the property "store".
 		lang.mixin(this, options);
- 		if(!"idProperty" in options){
-			var idAttribute; 
+ 		if(!("idProperty" in options)){
+			var idAttribute;
 			try{
-				idAttribute = this.store.getIdentityAttributes(); 
-			}catch(e){ 
-	 		// some store are not requiring an item instance to give us the ID attributes 
-	 		// but some other do and throw errors in that case. 
-			} 
-			// if no idAttribute we have implicit id 
-			this.idProperty = (!idAttribute || !idAttributes[0]) || this.idProperty; 
+				idAttribute = this.store.getIdentityAttributes();
+			}catch(e){
+	 		// some store are not requiring an item instance to give us the ID attributes
+	 		// but some other do and throw errors in that case.
+			}
+			// if no idAttribute we have implicit id
+			this.idProperty = (lang.isArray(idAttribute) ? idAttribute[0] : idAttribute) || this.idProperty;
 		}
 		var features = this.store.getFeatures();
 		// check the feature set and null out any methods that shouldn't be available
@@ -55,7 +55,7 @@ return declare("dojo.store.DataStore", base, {
 	// queryEngine: Function
 	//		Defines the query engine to use for querying the data store
 	queryEngine: SimpleQueryEngine,
-	
+
 	_objectConverter: function(callback){
 		var store = this.store;
 		var idProperty = this.idProperty;
@@ -87,7 +87,7 @@ return declare("dojo.store.DataStore", base, {
 			return object;
 		}
 		return function(item){
-			return callback(convert(item));
+			return callback(item && convert(item));
 		};
 	},
 	get: function(id, options){
@@ -106,9 +106,9 @@ return declare("dojo.store.DataStore", base, {
 				deferred.reject(returnedError = error);
 			}
 		});
-		if(returnedObject){
+		if(returnedObject !== undefined){
 			// if it was returned synchronously
-			return returnedObject;
+			return returnedObject == null ? undefined : returnedObject;
 		}
 		if(returnedError){
 			throw returnedError;
@@ -123,30 +123,70 @@ return declare("dojo.store.DataStore", base, {
 		// options: Object?
 		//		Additional metadata for storing the data.  Includes a reference to an id
 		//		that the object may be stored with (i.e. { id: "foo" }).
-		var id = options && typeof options.id != "undefined" || this.getIdentity(object);
+		options = options || {};
+		var id = typeof options.id != "undefined" ? options.id : this.getIdentity(object);
 		var store = this.store;
 		var idProperty = this.idProperty;
+		var deferred = new Deferred();
 		if(typeof id == "undefined"){
-			store.newItem(object);
-			store.save();
+			var item = store.newItem(object);
+			store.save({
+				onComplete: function(){
+					deferred.resolve(item);
+				},
+				onError: function(error){
+					deferred.reject(error);
+				}
+			});
 		}else{
 			store.fetchItemByIdentity({
 				identity: id,
 				onItem: function(item){
 					if(item){
+						if(options.overwrite === false){
+							return deferred.reject(new Error("Overwriting existing object not allowed"));
+						}
 						for(var i in object){
-							if(i != idProperty && // don't copy id properties since they are immutable and should be omitted for implicit ids 
+							if(i != idProperty && // don't copy id properties since they are immutable and should be omitted for implicit ids
+									object.hasOwnProperty(i) && // don't want to copy methods and inherited properties
 									store.getValue(item, i) != object[i]){
 								store.setValue(item, i, object[i]);
 							}
 						}
 					}else{
-						store.newItem(object);
+						if(options.overwrite === true){
+							return deferred.reject(new Error("Creating new object not allowed"));
+						}
+						var item = store.newItem(object);
 					}
-					store.save();
+					store.save({
+						onComplete: function(){
+							deferred.resolve(item);
+						},
+						onError: function(error){
+							deferred.reject(error);
+						}
+					});
+				},
+				onError: function(error){
+					deferred.reject(error);
 				}
 			});
 		}
+		return deferred.promise;
+	},
+	add: function(object, options){
+		// summary:
+		//		Creates an object, throws an error if the object already exists
+		// object: Object
+		//		The object to store.
+		// options: dojo/store/api/Store.PutDirectives?
+		//		Additional metadata for storing the data.  Includes an "id"
+		//		property if a specific id is to be used.
+		// returns: Number
+		(options = options || {}).overwrite = false;
+		// call put with overwrite being false
+		return this.put(object, options);
 	},
 	remove: function(id){
 		// summary:
@@ -154,13 +194,30 @@ return declare("dojo.store.DataStore", base, {
 		// id: Object
 		//		The identity to use to delete the object
 		var store = this.store;
+		var deferred = new Deferred();
+
 		this.store.fetchItemByIdentity({
 			identity: id,
 			onItem: function(item){
-				store.deleteItem(item);
-				store.save();
+				try{
+					if(item == null){
+						// no item found, return false
+						deferred.resolve(false);
+					}else{
+						// delete and save the change
+						store.deleteItem(item);
+						store.save();
+						deferred.resolve(true);
+					}
+				}catch(error){
+					deferred.reject(error);
+				}
+			},
+			onError: function(error){
+				deferred.reject(error);
 			}
 		});
+		return deferred.promise;
 	},
 	query: function(query, options){
 		// summary:

@@ -51,6 +51,7 @@ export class DotToolbarUserComponent implements OnInit {
      */
     logout(): boolean {
         this.dotRouterService.doLogOut();
+
         return false;
     }
 
@@ -85,6 +86,7 @@ export class DotToolbarUserComponent implements OnInit {
     tooggleLoginAs(): boolean {
         this.dropdown.closeIt();
         this.showLoginAs = !this.showLoginAs;
+
         return false;
     }
 
@@ -96,6 +98,7 @@ export class DotToolbarUserComponent implements OnInit {
      */
     toggleMyAccount(): boolean {
         this.showMyAccount = !this.showMyAccount;
+
         return false;
     }
 }

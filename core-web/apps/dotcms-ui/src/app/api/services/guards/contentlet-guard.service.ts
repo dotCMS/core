@@ -34,6 +34,7 @@ export class ContentletGuardService implements CanActivateChild {
                 if (!res) {
                     this.dotNavigationService.goToFirstPortlet();
                 }
+
                 return res;
             })
         );

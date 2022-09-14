@@ -39,9 +39,19 @@ exports.moduleMatches = void 0;
 const core = __importStar(require("@actions/core"));
 const node_fetch_1 = __importDefault(require("node-fetch"));
 const shelljs = __importStar(require("shelljs"));
+/**
+ * Resolves which field to use
+ *
+ * @param module {@link ModuleConf} module to get info from
+ * @returns value in resolved field
+ */
+const location = (module) => module.folder || module.module;
 const buildId = core.getInput('build_id');
 const current = core.getInput('current');
 const modulesConf = JSON.parse(core.getInput('modules'));
+const childModules = modulesConf
+    .filter(m => m.module !== current && m.parent === current)
+    .map(m => location(m));
 const pullRequest = core.getInput('pull_request');
 const commit = core.getInput('commit');
 /**
@@ -51,7 +61,7 @@ const commit = core.getInput('commit');
  */
 const moduleMatches = () => __awaiter(void 0, void 0, void 0, function* () {
     validateConf();
-    core.info(`Provided current momdule: ${current}`);
+    core.info(`Provided current module: ${current}`);
     core.info(`Provided modules configuration: ${JSON.stringify(modulesConf, null, 2)}`);
     const currentModule = modulesConf.find(conf => conf.module === current);
     if (!currentModule) {
@@ -101,7 +111,6 @@ const searchInCommits = (module, commits) => {
         const cmd = `git diff-tree --no-commit-id --name-only -r ${sha}`;
         core.info(`Searching in commit ${sha} by running:\n${cmd}`);
         const output = ((_a = shelljs.exec(cmd)) === null || _a === void 0 ? void 0 : _a.stdout) || '';
-        core.info(`Returned these changes:\n${output}`);
         const changed = output.split('\n');
         if (searchInChanges(module, changed)) {
             return true;
@@ -156,7 +165,6 @@ const resolveCommits = () => __awaiter(void 0, void 0, void 0, function* () {
 /**
  * Uses fetch function to send GET http request to Github API to get pull request commits data.
  *
- * @param pullRequest pull request
  * @returns {@link Response} object
  */
 const getPullRequestCommits = () => __awaiter(void 0, void 0, void 0, function* () {
@@ -167,13 +175,6 @@ const getPullRequestCommits = () => __awaiter(void 0, void 0, void 0, function* 
     return response;
 });
 /**
- * Resolves which field to use
- *
- * @param module {@link ModuleConf} module to get info from
- * @returns value in resolved field
- */
-const location = (module) => module.folder || module.module;
-/**
  * Evaluates if module is included in change for the cases when the module is configured as main and when is a "child" module.
  *
  * @param module {@link ModuleConf} module instance
@@ -182,9 +183,11 @@ const location = (module) => module.folder || module.module;
  */
 const doesCurrentMatch = (module, change) => {
     if (!!module.main) {
-        return !!shelljs
-            .ls('-A', module.folder || '.')
-            .find(file => change.startsWith(file));
+        const folder = module.folder || '.';
+        const list = shelljs
+            .ls('-A', folder)
+            .filter(file => !childModules.find(cm => file.startsWith(cm)));
+        return !!list.find(file => change.startsWith(file));
     }
     return change.startsWith(location(module));
 };

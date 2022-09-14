@@ -83,6 +83,7 @@ export class DotAddToMenuService {
      */
     addToLayout(params: DotCustomToolToLayout): Observable<string> {
         const portletId = `${this.cleanUpPorletId(params.portletName)}_${params.dataViewMode}`;
+
         return this.coreWebService
             .requestView({
                 method: 'PUT',

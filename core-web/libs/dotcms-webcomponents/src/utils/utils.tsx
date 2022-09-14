@@ -60,7 +60,9 @@ export function getDotOptionsFromFieldValue(rawString: string): DotOption[] {
               .split(',')
               .filter((item) => !!item.length)
               .map((item) => {
-                  const [label, value] = item.split('|');
+                  let [label, value] = item.split('|');
+                  label = decodeChars(label);
+                  value = decodeChars(value);
                   return { label, value };
               })
         : [];
@@ -125,13 +127,46 @@ export function getOriginalStatus(isValid?: boolean): DotFieldStatus {
 }
 
 /**
- * Returns a single string formatted as "Key|Value" separated with commas from a DotKeyValueField array
+ * Returns a string with chars encoded
+ *
+ * @param string value
+ * @returns string
+ */
+export function encodeChars(value: string): string {
+    let encodedValue = value
+        .replace(/\"/gi, '&#34;')
+        .replace(/\\/gi, '&#92;')
+        .replace(/:/gi, '&#58;')
+        .replace(/,/gi, '&#44;');
+    return encodedValue;
+}
+
+/**
+ * Returns a string with chars decoded
+ *
+ * @param string value
+ * @returns string
+ */
+ export function decodeChars(value: string): string {
+    let decodedValue = value
+        .replace(/&#34;/gi, '"')
+        .replace(/&#92;/gi, '\\')
+        .replace(/&#124;/gi, '|')
+        .replace(/&#58;/gi, ':')
+        .replace(/&#44;/gi, ',');
+    return decodedValue;
+}
+
+/**
+ * Returns a single JSON string formatted as "Key":"Value" separated with commas from a DotKeyValueField array
  *
  * @param DotKeyValueField[] values
  * @returns string
  */
-export function getStringFromDotKeyArray(values: DotKeyValueField[]): string {
-    return values.map((item: DotKeyValueField) => `${item.key}|${item.value}`).join(',');
+export function getJsonStringFromDotKeyArray(values: DotKeyValueField[]): string {
+    return `{${values
+        .map((item: DotKeyValueField) => `"${encodeChars(item.key)}":"${encodeChars(item.value)}"`)
+        .join(',')}}`;
 }
 
 /**

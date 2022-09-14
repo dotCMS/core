@@ -148,13 +148,16 @@ export class DotContentCompareStore extends ComponentStore<DotContentCompareStat
                         })
                         .join(',');
                 }
+
                 case FieldWhiteList['Key-Value']: {
                     let string = '';
                     Object.entries(value).forEach(([key, value]) => {
                         string += `${key}: ${value} <br/>`;
                     });
+
                     return string;
                 }
+
                 default: {
                     //is a Date related field.
                     return this.dotFormatDateService.formatTZ(
@@ -164,6 +167,7 @@ export class DotContentCompareStore extends ComponentStore<DotContentCompareStat
                 }
             }
         }
+
         return value as string;
     }
 

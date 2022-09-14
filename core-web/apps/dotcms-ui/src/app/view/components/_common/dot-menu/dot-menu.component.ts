@@ -59,6 +59,7 @@ export class DotMenuComponent {
     itemClick($event, item: MenuItem): void {
         if (item.disabled) {
             $event.preventDefault();
+
             return;
         }
 
@@ -68,6 +69,7 @@ export class DotMenuComponent {
                 item: item
             });
         }
+
         this.visible = false;
     }
 }

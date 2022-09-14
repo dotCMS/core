@@ -8,10 +8,15 @@ export interface DotContentletEvent<T = Record<string, unknown>> {
 }
 
 export type DotContentletEventDragAndDropDotAsset = DotContentletEvent<DotAssetPayload>;
+
 export type DotContentletEventAddContentType = DotContentletEvent<DotAddContentTypePayload>;
+
 export type DotContentletEventRelocate = DotContentletEvent<DotRelocatePayload>;
+
 export type DotContentletEventSelect = DotContentletEvent<DotPageContent>;
+
 export type DotContentletEventSave = DotContentletEvent<DotPageContent>;
+
 export type DotContentletEventContent = DotContentletEvent<DotContentletPayload>;
 
 export interface DotAssetPayload {

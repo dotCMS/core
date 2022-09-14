@@ -1,6 +1,6 @@
 {
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
     "projectType": "library",
-    "root": "libs/dotcms",
     "sourceRoot": "libs/dotcms/src",
     "prefix": "dotcms",
     "targets": {
@@ -27,7 +27,7 @@
             "executor": "@nrwl/jest:jest",
             "outputs": ["coverage/libs/dotcms"],
             "options": {
-                "jestConfig": "libs/dotcms/jest.config.js",
+                "jestConfig": "libs/dotcms/jest.config.ts",
                 "passWithNoTests": true
             }
         }

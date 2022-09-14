@@ -5,9 +5,13 @@ define("dojo/_base/array", ["./kernel", "../has", "./lang"], function(dojo, has,
 	// our old simple function builder stuff
 	var cache = {}, u;
 
-	function buildFn(fn){
-		return cache[fn] = new Function("item", "index", "array", fn); // Function
+	var buildFn;
+	if(!has("csp-restrictions")){
+		buildFn = function (fn){
+			return cache[fn] = new Function("item", "index", "array", fn); // Function
+		};
 	}
+
 	// magic snippet: if(typeof fn == "string") fn = cache[fn] || buildFn(fn);
 
 	// every & some
@@ -17,7 +21,14 @@ define("dojo/_base/array", ["./kernel", "../has", "./lang"], function(dojo, has,
 		return function(a, fn, o){
 			var i = 0, l = a && a.length || 0, result;
 			if(l && typeof a == "string") a = a.split("");
-			if(typeof fn == "string") fn = cache[fn] || buildFn(fn);
+			if(typeof fn == "string"){
+				if(has("csp-restrictions")){
+					throw new TypeError("callback must be a function");
+				}
+				else{
+					fn = cache[fn] || buildFn(fn);
+				}
+			}
 			if(o){
 				for(; i < l; ++i){
 					result = !fn.call(o, a[i], i, a);
@@ -141,15 +152,19 @@ define("dojo/_base/array", ["./kernel", "../has", "./lang"], function(dojo, has,
 			//		locates the first index of the provided value in the
 			//		passed array. If the value is not found, -1 is returned.
 			// description:
-			//		This method corresponds to the JavaScript 1.6 Array.indexOf method, with one difference: when
-			//		run over sparse arrays, the Dojo function invokes the callback for every index whereas JavaScript
-			//		1.6's indexOf skips the holes in the sparse array.
+			//		This method corresponds to the JavaScript 1.6 Array.indexOf method, with two differences:
+			//
+			//		1. when run over sparse arrays, the Dojo function invokes the callback for every index
+			//		   whereas JavaScript 1.6's indexOf skips the holes in the sparse array.
+			//		2. uses equality (==) rather than strict equality (===)
+			//
 			//		For details on this method, see:
 			//		https://developer.mozilla.org/en/Core_JavaScript_1.5_Reference/Objects/Array/indexOf
 			// arr: Array
 			// value: Object
 			// fromIndex: Integer?
 			// findLast: Boolean?
+			//		Makes indexOf() work like lastIndexOf().  Used internally; not meant for external usage.
 			// returns: Number
 		},
 		=====*/
@@ -161,11 +176,14 @@ define("dojo/_base/array", ["./kernel", "../has", "./lang"], function(dojo, has,
 			//		locates the last index of the provided value in the passed
 			//		array. If the value is not found, -1 is returned.
 			// description:
-			//		This method corresponds to the JavaScript 1.6 Array.lastIndexOf method, with one difference: when
-			//		run over sparse arrays, the Dojo function invokes the callback for every index whereas JavaScript
-			//		1.6's lastIndexOf skips the holes in the sparse array.
-			//		For details on this method, see:
-			//		https://developer.mozilla.org/en/Core_JavaScript_1.5_Reference/Objects/Array/lastIndexOf
+		 	//		This method corresponds to the JavaScript 1.6 Array.lastIndexOf method, with two differences:
+		 	//
+		 	//		1. when run over sparse arrays, the Dojo function invokes the callback for every index
+		 	//		   whereas JavaScript 1.6's lasIndexOf skips the holes in the sparse array.
+		 	//		2. uses equality (==) rather than strict equality (===)
+		 	//
+		 	//		For details on this method, see:
+		 	//		https://developer.mozilla.org/en/Core_JavaScript_1.5_Reference/Objects/Array/lastIndexOf
 			// arr: Array,
 			// value: Object,
 			// fromIndex: Integer?
@@ -234,7 +252,14 @@ define("dojo/_base/array", ["./kernel", "../has", "./lang"], function(dojo, has,
 
 			var i = 0, l = arr && arr.length || 0;
 			if(l && typeof arr == "string") arr = arr.split("");
-			if(typeof callback == "string") callback = cache[callback] || buildFn(callback);
+			if(typeof callback == "string"){
+				if(has("csp-restrictions")){
+					throw new TypeError("callback must be a function");
+				}
+				else{
+					callback = cache[callback] || buildFn(callback);
+				}
+			}
 			if(thisObject){
 				for(; i < l; ++i){
 					callback.call(thisObject, arr[i], i, arr);
@@ -272,7 +297,14 @@ define("dojo/_base/array", ["./kernel", "../has", "./lang"], function(dojo, has,
 			// TODO: why do we have a non-standard signature here? do we need "Ctr"?
 			var i = 0, l = arr && arr.length || 0, out = new (Ctr || Array)(l);
 			if(l && typeof arr == "string") arr = arr.split("");
-			if(typeof callback == "string") callback = cache[callback] || buildFn(callback);
+			if(typeof callback == "string"){
+				if(has("csp-restrictions")){
+					throw new TypeError("callback must be a function");
+				}
+				else{
+					callback = cache[callback] || buildFn(callback);
+				}
+			}
 			if(thisObject){
 				for(; i < l; ++i){
 					out[i] = callback.call(thisObject, arr[i], i, arr);
@@ -312,7 +344,14 @@ define("dojo/_base/array", ["./kernel", "../has", "./lang"], function(dojo, has,
 			// TODO: do we need "Ctr" here like in map()?
 			var i = 0, l = arr && arr.length || 0, out = [], value;
 			if(l && typeof arr == "string") arr = arr.split("");
-			if(typeof callback == "string") callback = cache[callback] || buildFn(callback);
+			if(typeof callback == "string"){
+				if(has("csp-restrictions")){
+					throw new TypeError("callback must be a function");
+				}
+				else{
+					callback = cache[callback] || buildFn(callback);
+				}
+			}
 			if(thisObject){
 				for(; i < l; ++i){
 					value = arr[i];

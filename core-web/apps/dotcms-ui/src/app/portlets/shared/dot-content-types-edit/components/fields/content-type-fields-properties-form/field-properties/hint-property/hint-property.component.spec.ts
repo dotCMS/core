@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { FormGroup, FormControl, ReactiveFormsModule } from '@angular/forms';
+import { UntypedFormGroup, UntypedFormControl, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
@@ -29,7 +29,7 @@ describe('HintPropertyComponent', () => {
     );
 
     it('should have a form', () => {
-        const group = new FormGroup({});
+        const group = new UntypedFormGroup({});
         comp.group = group;
         const divForm: DebugElement = fixture.debugElement.query(By.css('div'));
 
@@ -38,8 +38,8 @@ describe('HintPropertyComponent', () => {
     });
 
     it('should have a input', () => {
-        comp.group = new FormGroup({
-            name: new FormControl('')
+        comp.group = new UntypedFormGroup({
+            name: new UntypedFormControl('')
         });
         comp.property = {
             name: 'name',

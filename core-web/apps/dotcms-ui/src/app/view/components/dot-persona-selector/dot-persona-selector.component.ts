@@ -55,6 +55,7 @@ export class DotPersonaSelectorComponent implements OnInit {
             this.personaDialog.visible = true;
             this.personaDialog.personaName = this.personas.length ? '' : this.personaSeachQuery;
         };
+
         this.paginationService.paginationPerPage = this.paginationPerPage;
     }
 
@@ -105,6 +106,7 @@ export class DotPersonaSelectorComponent implements OnInit {
         if (!this.value || this.value.identifier !== persona.identifier) {
             this.selected.emit(persona);
         }
+
         this.searchableDropdown.toggleOverlayPanel();
     }
 

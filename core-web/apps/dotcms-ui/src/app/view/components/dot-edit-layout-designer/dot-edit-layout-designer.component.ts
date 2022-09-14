@@ -13,7 +13,7 @@ import {
     ChangeDetectorRef
 } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { FormGroup, FormBuilder } from '@angular/forms';
+import { UntypedFormGroup, UntypedFormBuilder } from '@angular/forms';
 
 import * as _ from 'lodash';
 
@@ -78,8 +78,8 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
     @Output()
     updateTemplate: EventEmitter<DotTemplate> = new EventEmitter();
 
-    form: FormGroup;
-    initialFormValue: FormGroup;
+    form: UntypedFormGroup;
+    initialFormValue: UntypedFormGroup;
     themeDialogVisibility = false;
 
     currentTheme: DotTheme;
@@ -95,7 +95,7 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
         private dotHttpErrorManagerService: DotHttpErrorManagerService,
         private dotRouterService: DotRouterService,
         private dotThemesService: DotThemesService,
-        private fb: FormBuilder,
+        private fb: UntypedFormBuilder,
         private cd: ChangeDetectorRef
     ) {}
 
@@ -109,6 +109,7 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
             this.form.get('themeId').setValue(this.theme);
             this.updateModel();
         }
+
         if (changes.layout && !changes.layout.firstChange) {
             this.setFormValue(changes.layout.currentValue);
         }
@@ -208,6 +209,7 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
         if (_.isEqual(currentLayout, layout)) {
             return;
         }
+
         this.form.setValue(
             {
                 title: this.title,
@@ -287,6 +289,7 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
                 if (!res.redirected) {
                     this.dotRouterService.goToSiteBrowser();
                 }
+
                 this.currentTheme = err.status === 403 ? null : this.currentTheme;
             })
         );

@@ -22,6 +22,7 @@
 @import url("../../icons/editorIcons_rtl.css");/* RTL sprite for editor icons to be used by all themes*/
 @import url("Menu_rtl.css");
 @import url("Tree_rtl.css");
+@import url("ProgressBar_rtl.css");
 @import url("TitlePane_rtl.css");
 @import url("layout/TabContainer_rtl.css");
 @import url("form/Slider_rtl.css");

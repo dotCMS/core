@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
-import { FormControl } from '@angular/forms';
+import { UntypedFormControl } from '@angular/forms';
 import { LoggerService } from '@dotcms/dotcms-js';
 import { GCircle } from '../../models/gcircle.model';
 
@@ -78,7 +78,7 @@ const UNITS = {
 export class VisitorsLocationComponent {
     @Input() circle: GCircle = { center: { lat: 38.89, lng: -77.04 }, radius: 10000 };
     @Input() comparisonValue: string;
-    @Input() comparisonControl: FormControl;
+    @Input() comparisonControl: UntypedFormControl;
     @Input() comparisonOptions: {}[];
     @Input() fromLabel = 'of';
     @Input() changedHook = 0;

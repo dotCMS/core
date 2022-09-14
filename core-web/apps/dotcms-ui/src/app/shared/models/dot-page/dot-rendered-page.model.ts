@@ -2,6 +2,7 @@ import { DotPage } from './dot-page.model';
 import { DotEditPageViewAs } from '@models/dot-edit-page-view-as/dot-edit-page-view-as.model';
 import { DotContainer, DotContainerStructure } from '@shared/models/container/dot-container.model';
 import { DotLayout, DotTemplate } from '@shared/models/dot-edit-layout-designer';
+import { DotSite } from '@dotcms/app/portlets/dot-edit-page/shared/models';
 
 export interface DotPageRenderParameters {
     layout?: DotLayout;
@@ -13,10 +14,12 @@ export interface DotPageRenderParameters {
         };
     };
     template?: DotTemplate;
+    site?: DotSite;
     canCreateTemplate: boolean;
     viewAs: DotEditPageViewAs;
     numberContents: number;
 }
+
 export class DotPageRender {
     constructor(private _params: DotPageRenderParameters) {}
 

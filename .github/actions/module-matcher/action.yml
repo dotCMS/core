@@ -10,7 +10,7 @@ inputs:
     description: 'Current module'
     required: true
   modules:
-    description: 'Modules configuration, space delimited list of modules'
+    description: 'Modules configuration, project module json based config'
     required: true
     default: |
             [
@@ -20,7 +20,11 @@ inputs:
                 "main": true
               },
               {
-                "module": "core-web"
+                "module": "core-web",
+                "parent": "core"
+              },
+              {
+                "module": "ui"
               },
               {
                 "module": "enterprise"

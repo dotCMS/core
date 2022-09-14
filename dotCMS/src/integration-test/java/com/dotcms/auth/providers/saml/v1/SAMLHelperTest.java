@@ -1,6 +1,7 @@
 package com.dotcms.auth.providers.saml.v1;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.company.CompanyAPI;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.saml.Attributes;
@@ -10,22 +11,29 @@ import com.dotcms.saml.SamlAuthenticationService;
 import com.dotcms.saml.SamlConfigurationService;
 import com.dotcms.saml.SamlName;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
+import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
+import org.eclipse.jetty.security.LoginService;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.Writer;
 import java.security.NoSuchAlgorithmException;
@@ -36,6 +44,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.mockito.ArgumentMatchers.anyObject;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -95,6 +105,34 @@ public class SAMLHelperTest extends IntegrationTestBase {
 
             return Stream.of((Object[])samlObject).map(Object::toString).collect(Collectors.toList());
         }
+    }
+
+    /**
+     * Method to test: testing the {@link SAMLHelper#doLogin(HttpServletRequest, HttpServletResponse, IdentityProviderConfiguration, User, LoginServiceAPI)}
+     * Given Scenario: tries to log in the admin user
+     * ExpectedResult: User must be log in
+     *
+     */
+    @Test()
+    public void testLoginUser() throws  SystemException, PortalException {
+
+        final SamlAuthenticationService samlAuthenticationService         = new MockSamlAuthenticationService();
+        final IdentityProviderConfiguration identityProviderConfiguration = mock(IdentityProviderConfiguration.class);
+        final CompanyAPI companyAPI                                       = mock(CompanyAPI.class);
+        final LoginServiceAPI loginServiceAPI                             = mock(LoginServiceAPI.class);
+        final Company    company                                          = new Company();
+        final SAMLHelper           		samlHelper                        = new SAMLHelper(samlAuthenticationService, companyAPI);
+        final HttpServletRequest request  = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final HttpSession session  = mock(HttpSession.class);
+        final User user = new UserDataGen().nextPersisted();
+        when(loginServiceAPI.doCookieLogin(EncryptorFactory.getInstance().getEncryptor().encryptString(user.getUserId()), request, response)).thenReturn(true);
+        when(request.getSession(false)).thenReturn(session);
+        when(request.getRequestURI()).thenReturn("/dotCMS/login");
+
+        samlHelper.doLogin(request, response, identityProviderConfiguration, user, loginServiceAPI);
+        final String userId = PrincipalThreadLocal.getName();
+        Assert.assertEquals("the User id on the Principal thread should be the same", userId, user.getUserId());
     }
 
     /**
@@ -338,6 +376,33 @@ public class SAMLHelperTest extends IntegrationTestBase {
         Assert.assertEquals(uuid+"@dotcms.com.cr", attrs.getEmail());
         Assert.assertEquals("John", attrs.getFirstName());
         Assert.assertEquals("Sn", attrs.getLastName());
+    }
+
+    /**
+     * Method to test: {@link SAMLHelper#hashIt(String, boolean)}
+     * Given Scenario: creates an uuid, does the hash for one call, and does not the hash for another call
+     * ExpectedResult: The hashed call will be diff to the original uuid, the non hashed uuid will be the same of uuid
+     *
+     */
+    @Test()
+    public void test_hash_user_id() throws NoSuchAlgorithmException {
+
+        final SamlAuthenticationService samlAuthenticationService         = new MockSamlAuthenticationService();
+        final CompanyAPI companyAPI                                       = mock(CompanyAPI.class);
+        final Company    company                                          = new Company();
+        final SAMLHelper           		samlHelper                        = new SAMLHelper(samlAuthenticationService, companyAPI);
+
+        company.setAuthType(Company.AUTH_TYPE_EA);
+        when(companyAPI.getDefaultCompany()).thenReturn(company);
+        final String uuid = UUID.randomUUID().toString();
+
+        final String hashUuid   = samlHelper.hashIt(uuid, true);
+        final String nohashUuid = samlHelper.hashIt(uuid, false);
+
+        Assert.assertNotNull(hashUuid);
+        Assert.assertNotNull(nohashUuid);
+        Assert.assertNotEquals(hashUuid, uuid);
+        Assert.assertEquals(nohashUuid, uuid);
     }
 
 

@@ -10,7 +10,7 @@ import { FileUploadModule } from 'primeng/fileupload';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { FormBuilder } from '@angular/forms';
+import { UntypedFormBuilder } from '@angular/forms';
 import { SiteSelectorFieldModule } from '@components/_common/dot-site-selector-field/dot-site-selector-field.module';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotAutocompleteTagsModule } from '@components/_common/dot-autocomplete-tags/dot-autocomplete-tags.module';
@@ -25,7 +25,7 @@ const FROM_INITIAL_VALUE = {
     tags: null
 };
 
-const mockDotCMSTempFile = {
+export const mockDotCMSTempFile = {
     fileName: 'temp-file_123.jpeg',
     folder: '',
     id: 'temp-file_123',
@@ -72,7 +72,7 @@ describe('DotCreatePersonaFormComponent', () => {
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: SiteService, useValue: siteServiceMock },
-                FormBuilder
+                UntypedFormBuilder
             ]
         });
 

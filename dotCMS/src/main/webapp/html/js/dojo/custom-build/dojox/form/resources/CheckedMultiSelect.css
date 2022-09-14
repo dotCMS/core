@@ -11,9 +11,9 @@
 .dojoxCheckedMultiSelect .dojoxCheckedMultiSelectWrapper {
 	border: solid black 1px;
 	margin: 1px 0;
-	overflow: scroll; 
-	overflow-y: scroll; 
-	overflow-x: hidden; 
+	overflow: scroll;
+	overflow-y: scroll;
+	overflow-x: hidden;
 	height: 100px;
 }
 
@@ -210,7 +210,7 @@
 	border: 1px solid #ffffff;
 	border-top: none;
 	background-color: #efefef;
-	background-image: url("../../../dijit/themes/claro/form/images/formHighlight.png");
+	background-image: url("../../../dijit/themes/claro/images/standardGradient.png");
 	background-repeat: repeat-x;
 }
 

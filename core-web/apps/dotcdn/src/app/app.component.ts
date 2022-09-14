@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { DotCDNState, ChartPeriod, CdnChartOptions } from './app.models';
-import { FormGroup, FormBuilder } from '@angular/forms';
+import { UntypedFormGroup, UntypedFormBuilder } from '@angular/forms';
 import { DotCDNStore } from './dotcdn.component.store';
 import { Observable } from 'rxjs';
 import { SelectItem } from 'primeng/api';
@@ -15,7 +15,7 @@ import { ChartOptions } from 'chart.js';
 })
 export class AppComponent implements OnInit {
     @ViewChild('chart', { static: true }) chart: UIChart;
-    purgeZoneForm: FormGroup;
+    purgeZoneForm: UntypedFormGroup;
     periodValues: SelectItem[] = [
         { label: 'Last 15 days', value: ChartPeriod.Last15Days },
         { label: 'Last 30 days', value: ChartPeriod.Last30Days },
@@ -35,7 +35,7 @@ export class AppComponent implements OnInit {
     chartHeight = '25rem';
     options: CdnChartOptions;
 
-    constructor(private fb: FormBuilder, private dotCdnStore: DotCDNStore) {}
+    constructor(private fb: UntypedFormBuilder, private dotCdnStore: DotCDNStore) {}
 
     ngOnInit(): void {
         this.setChartOptions();

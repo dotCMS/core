@@ -109,16 +109,6 @@ function urlEncode {
   echo "${encoded}"
 }
 
-# Resolves results path based on the definition INPUT_TEST_TYPE and DB_TYPE env-vars
-#
-# $1: path: initial path
-function resolveResultsPath {
-  local path="${1}"
-  [[ -n "${INPUT_TEST_TYPE}" ]] && path="${path}/${INPUT_TEST_TYPE}"
-  [[ -n "${INPUT_DB_TYPE}" ]] && path="${path}/${INPUT_DB_TYPE}"
-  echo "${path}"
-}
-
 # TODO: At some point, please change these vars to someone else :P
 DEFAULT_GITHUB_USER=victoralfaro-dotcms
 DEFAULT_GITHUB_USER_EMAIL='victor.alfaro@dotcms.com'

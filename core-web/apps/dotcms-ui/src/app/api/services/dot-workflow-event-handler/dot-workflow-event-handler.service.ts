@@ -98,6 +98,7 @@ export class DotWorkflowEventHandlerService {
                         type: DotMessageType.SIMPLE_MESSAGE
                     });
                 }
+
                 return false;
             })
         );
@@ -133,6 +134,7 @@ export class DotWorkflowEventHandlerService {
                 });
             }
         });
+
         return steps.length
             ? {
                   title: title,
@@ -175,7 +177,9 @@ export class DotWorkflowEventHandlerService {
             delete processedData.environment;
             delete processedData.pushActionSelected;
         }
+
         processedData['contentlet'] = {}; // needed for indexPolicy=WAIT_FOR
+
         return processedData as DotProcessedWorkflowPayload;
     }
 
@@ -196,6 +200,7 @@ export class DotWorkflowEventHandlerService {
         } else {
             return workflow.actionInputs;
         }
+
         return workflows;
     }
 
@@ -308,6 +313,7 @@ export class DotWorkflowEventHandlerService {
         } else {
             requestOptions['query'] = event.selectedInodes;
         }
+
         return requestOptions;
     }
 }

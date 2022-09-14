@@ -19,6 +19,7 @@ export class DotAppsConfigurationDetailResolver implements Resolve<DotApps> {
     resolve(route: ActivatedRouteSnapshot): Observable<DotApps> {
         const appKey = route.paramMap.get('appKey');
         const id = route.paramMap.get('id');
+
         return this.dotAppsService.getConfiguration(appKey, id).pipe(take(1));
     }
 }

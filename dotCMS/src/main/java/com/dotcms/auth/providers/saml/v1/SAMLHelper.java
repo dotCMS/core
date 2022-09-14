@@ -1,6 +1,9 @@
 package com.dotcms.auth.providers.saml.v1;
 
+import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.company.CompanyAPI;
+import com.dotcms.filters.interceptor.saml.AutoLoginResult;
+import com.dotcms.filters.interceptor.saml.SamlWebInterceptor;
 import com.dotcms.saml.Attributes;
 import com.dotcms.saml.DotSamlConstants;
 import com.dotcms.saml.DotSamlException;
@@ -9,6 +12,7 @@ import com.dotcms.saml.IdentityProviderConfiguration;
 import com.dotcms.saml.SamlAuthenticationService;
 import com.dotcms.saml.SamlConfigurationService;
 import com.dotcms.saml.SamlName;
+import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -32,6 +36,7 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.Encryptor;
@@ -39,9 +44,12 @@ import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -58,6 +66,8 @@ import static com.dotmarketing.util.UtilMethods.isSet;
  * @author jsanca
  */
 public class SAMLHelper {
+
+    private static final String DO_HASH_KEY = "hash.userid";
 
     private final HostWebAPI hostWebAPI;
     private final UserAPI    userAPI;
@@ -86,10 +96,72 @@ public class SAMLHelper {
                 SAMLHelper.thirdPartySamlConfigurationService: DotSamlProxyFactory.getInstance().samlConfigurationService();
     }
 
+    protected void doLogin(final HttpServletRequest request,
+                           final HttpServletResponse response,
+                           final IdentityProviderConfiguration identityProviderConfiguration,
+                           final User user,
+                           final LoginServiceAPI loginServiceAPI) {
+
+        // we are going to do the autologin, so if the session is null,
+        // create it!
+        try {
+
+            Logger.debug(this, "User with ID '" + user.getUserId()
+                    + "' has been returned by SAML Service. User " + "Map: " + user.toMap());
+        } catch (Exception e) {
+
+            Logger.error(this,
+                    "An error occurred when retrieving data from user '" + user.getUserId() + "': " + e.getMessage(), e);
+        }
+
+        final boolean doCookieLogin = loginServiceAPI
+                .doCookieLogin(EncryptorFactory.getInstance().getEncryptor().encryptString(user.getUserId()), request, response);
+
+        Logger.debug(this, ()->"Cookie Login by LoginService = " + doCookieLogin);
+
+        if (doCookieLogin) {
+
+            final HttpSession session = request.getSession(false);
+            if (null != session && null != user.getUserId()) {
+                // this is what the PortalRequestProcessor needs to check the login.
+                Logger.debug(this, ()->"Adding user ID '" + user.getUserId() + "' to the session");
+
+                final String uri = session.getAttribute(SamlWebInterceptor.ORIGINAL_REQUEST) != null?
+                        (String) session.getAttribute(SamlWebInterceptor.ORIGINAL_REQUEST):
+                        request.getRequestURI();
+
+                Logger.debug(this,"SAML, uri: " + uri);
+
+                session.removeAttribute(SamlWebInterceptor.ORIGINAL_REQUEST);
+
+                Logger.debug(this, ()->  "URI '" + uri + "' belongs to the back-end. Setting the user session data");
+                session.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
+                session.setAttribute(com.liferay.portal.util.WebKeys.USER,    user);
+                PrincipalThreadLocal.setName(user.getUserId());
+
+                try {
+
+                    final Host   host  = this.hostWebAPI.getCurrentHost(request);
+                    final String env   = request.getRequestURI().startsWith("/dotCMS/login") || request.getRequestURI().startsWith("/application/login")? "frontend" : "backend";
+                    final String log   = new Date() + ": Successfull SAML login for Site '" + host.getHostname() + "' with IdP " +
+                            "ID: " + identityProviderConfiguration.getId() + " (" + env + ") from " + request.getRemoteAddr() + " for user: " +
+                            user.getEmailAddress();
+
+                    // “$TIMEDATE: SAML login success for $host (frontend|backend) from $REQUEST_ADDR for user $username”
+                    SecurityLogger.logInfo(SecurityLogger.class, this.getClass() + " - " + log);
+                    Logger.info(this, log);
+                } catch (Exception e) {
+
+                    Logger.error(this, e.getMessage(), e);
+                }
+            }
+        }
+    } // doLogin.
+
     /*
     * Tries to load the user by id, if not found, tries to hash the user id in case the id was previously hashed.
      */
-    private User loadUserById (final String userId, final User currentUser) throws DotSecurityException, DotDataException {
+    private User loadUserById (final String userId, final User currentUser, final boolean doHash) throws DotSecurityException, DotDataException {
 
         User user = null;
 
@@ -99,7 +171,7 @@ public class SAMLHelper {
         if(null == user) {
 
             // not found, try hashed
-            final String hashedUserId= Try.of(()->this.hashIt(userId)).getOrNull();
+            final String hashedUserId= Try.of(()->this.hashIt(userId, doHash)).getOrNull();
 
             if (null != hashedUserId) {
 
@@ -137,8 +209,10 @@ public class SAMLHelper {
             systemUser             = this.userAPI.getSystemUser();
             final Company company  = companyAPI.getDefaultCompany();
             final String  authType = company.getAuthType();
+            final boolean doHash   = identityProviderConfiguration.containsOptionalProperty(DO_HASH_KEY)?
+                    BooleanUtils.toBoolean(identityProviderConfiguration.getOptionalProperty(DO_HASH_KEY).toString()):true;
             user                   = Company.AUTH_TYPE_ID.equals(authType)?
-                    this.loadUserById(nameId,      systemUser):
+                    this.loadUserById(nameId, systemUser, doHash):
                     this.userAPI.loadByUserByEmail(nameId, systemUser, false);
         } catch (NoSuchUserException e) {
 
@@ -492,14 +566,23 @@ public class SAMLHelper {
         return org.apache.commons.lang3.StringUtils.abbreviate(hashed, Config.getIntProperty("dotcms.user.id.maxlength", 100));
     }
 
+    @VisibleForTesting
+    protected String hashIt (final String token, final boolean doHash) throws NoSuchAlgorithmException {
+
+        return doHash? hashIt(token): token;
+    }
+
+
     protected User createNewUser(final User systemUser, final Attributes attributesBean,
                                  final IdentityProviderConfiguration identityProviderConfiguration) {
         User user = null;
 
         try {
 
+            final boolean doHash      = identityProviderConfiguration.containsOptionalProperty(DO_HASH_KEY)?
+                    BooleanUtils.toBoolean(identityProviderConfiguration.getOptionalProperty(DO_HASH_KEY).toString()):true;
             final String nameID       = this.samlAuthenticationService.getValue(attributesBean.getNameID());
-            final String hashedNameID = this.hashIt(nameID);
+            final String hashedNameID = this.hashIt(nameID, doHash);
             try {
 
                 user = this.userAPI.createUser(hashedNameID, attributesBean.getEmail());

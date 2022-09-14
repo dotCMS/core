@@ -47,13 +47,18 @@ table.dijitInline {
 
 .dijitHidden {
 	/* To hide unselected panes in StackContainer etc. */
-	display: none !important;
+	position: absolute; /* remove from normal document flow to simulate display: none */
+	visibility: hidden; /* hide element from view, but don't break scrolling, see #18612 */
+}
+.dijitHidden * {
+	visibility: hidden !important; /* hide visibility:visible descendants of class=dijitHidden nodes, see #18799 */
 }
 
 .dijitVisible {
 	/* To show selected pane in StackContainer etc. */
 	display: block !important;	/* override user's display:none setting via style setting or indirectly via class */
 	position: relative;			/* to support setting width/height, see #2033 */
+	visibility: visible;
 }
 
 .dj_ie6 .dijitComboBox .dijitInputContainer,
@@ -67,7 +72,7 @@ table.dijitInline {
 .dj_ie7 .dijitInputContainer {
 	float: left !important; /* needed by IE to squeeze the INPUT in */
 	clear: left;
-	display: inline-block !important; /* to fix wrong text alignment in rtl text box */
+	display: inline-block !important; /* to fix wrong text alignment in textdir=rtl text box */
 }
 
 .dj_ie .dijitSelect input,
@@ -81,6 +86,7 @@ table.dijitInline {
 }
 TABLE.dijitSelect {
 	padding: 0 !important; /* messes up border alignment */
+	border-collapse: separate; /* so jsfiddle works with Normalized CSS checked */
 }
 .dijitTextBox .dijitSpinnerButtonContainer,
 .dijitTextBox .dijitArrowButtonContainer,
@@ -103,9 +109,9 @@ TABLE.dijitSelect {
 	line-height:1px;
 }
 
-.dijitOffScreen { /* these class attributes should supercede any inline positioning style */
+.dijitOffScreen { /* these class attributes should supersede any inline positioning style */
 	position: absolute !important;
-	left: 50% !important;
+	left: -10000px !important;
 	top: -10000px !important;
 }
 
@@ -119,6 +125,7 @@ TABLE.dijitSelect {
 	margin: 0;
 	border: 0;
 	padding: 0;
+	-webkit-overflow-scrolling: touch;
 }
 
 .dijitPositionOnly {
@@ -343,6 +350,7 @@ td.dijitButtonContents {
 .dijitButtonNode,
 .dijitButtonNode * {
 	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
 }
 
 .dj_ie .dijitButtonNode {
@@ -396,7 +404,9 @@ div.dijitArrowButton {
 	position: absolute;
 	top: 0;
 	left: 0;
-	#filter: ""; /* make this showup in IE6 after the rendering of the widget */
+	#filter: ""; /* make this show up in IE6 after the rendering of the widget */
+	white-space: nowrap;
+	pointer-events: none;   /* so cut/paste context menu shows up when right clicking */
 }
 
 .dijitTimeTextBox {
@@ -668,8 +678,8 @@ div.dijitArrowButton {
 }
 
 .dijitCheckBoxInput {
-	/* place the actual input on top, but all-but-invisible */
-	opacity: 0.01;
+	/* place the actual input on top, but invisible */
+	opacity: 0;
 }
 
 .dj_ie .dijitCheckBoxInput {
@@ -915,21 +925,19 @@ body .dijitAlignClient { position: absolute; }
 	border-top:1px;
 	border-bottom:1px;
 	cursor: row-resize;
+	-webkit-tap-highlight-color: transparent;
 }
 .dijitSplitterV {
 	width: 7px;
 	border-left:1px;
 	border-right:1px;
 	cursor: col-resize;
+	-webkit-tap-highlight-color: transparent;
 }
 .dijitSplitContainer {
 	position: relative;
 	overflow: hidden;
 	display: block;
-}
-.dj_ff3 .dj_a11y div.dijitSplitter:focus {
-	outline-style:dotted;
-	outline-width: 2px;
 }
 
 .dijitSplitPane {
@@ -990,6 +998,7 @@ body .dijitAlignClient { position: absolute; }
 .dijitContentPane {
 	display: block;
 	overflow: auto;	/* if we don't have this (or overflow:hidden), then Widget.resizeTo() doesn't make sense for ContentPane */
+	-webkit-overflow-scrolling: touch;
 }
 
 .dijitContentPaneSingleChild {
@@ -1005,40 +1014,46 @@ body .dijitAlignClient { position: absolute; }
 	margin-right: 9px;
 }
 
-/* TitlePane */
+/* TitlePane and Fieldset */
 
 .dijitTitlePane {
 	display: block;
 	overflow: hidden;
 }
-.dijitTitlePaneTitle {
-	cursor: pointer;
+.dijitFieldset {
+	border: 1px solid gray;
 }
-.dijitFixedOpen, .dijitFixedClosed {
-	/* TitlePane that cannot be toggled */
+.dijitTitlePaneTitle, .dijitFieldsetTitle {
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+}
+.dijitTitlePaneTitleFixedOpen, .dijitTitlePaneTitleFixedClosed,
+.dijitFieldsetTitleFixedOpen, .dijitFieldsetTitleFixedClosed {
+	/* TitlePane or Fieldset that cannot be toggled */
 	cursor: default;
 }
-.dijitFixedOpen .dijitArrowNode, .dijitFixedOpen .dijitArrowNodeInner,
-.dijitFixedClosed .dijitArrowNode, .dijitFixedClosed .dijitArrowNodeInner{
-	/* don't show the open close icon, it makes the user think the pane is closable*/
-	display: none;
-}
-
 .dijitTitlePaneTitle * {
 	vertical-align: middle;
 }
-.dijitTitlePane .dijitArrowNodeInner {
+.dijitTitlePane .dijitArrowNodeInner, .dijitFieldset .dijitArrowNodeInner {
 	/* normally, hide arrow text in favor of icon */
 	display: none;
 }
-.dj_a11y .dijitTitlePane .dijitArrowNodeInner {
+.dj_a11y .dijitTitlePane .dijitArrowNodeInner, .dj_a11y .dijitFieldset .dijitArrowNodeInner {
 	/* ... except in a11y mode, then show text arrow */
-	display:inline !important;
+	display: inline;
 	font-family: monospace;		/* because - and + are different widths */
 }
-.dj_a11y .dijitTitlePane .dijitArrowNode {
-	/* ... and hide icon */
-	display:none;
+.dj_a11y .dijitTitlePane .dijitArrowNode, .dj_a11y .dijitFieldset .dijitArrowNode {
+	/* ... and hide icon (TODO: just point dijitIcon class on the icon, and it hides automatically) */
+	display: none;
+}
+.dijitTitlePaneTitleFixedOpen .dijitArrowNode, .dijitTitlePaneTitleFixedOpen .dijitArrowNodeInner,
+.dijitTitlePaneTitleFixedClosed .dijitArrowNode, .dijitTitlePaneTitleFixedClosed .dijitArrowNodeInner,
+.dijitFieldsetTitleFixedOpen .dijitArrowNode, .dijitFieldsetTitleFixedOpen .dijitArrowNodeInner,
+.dijitFieldsetTitleFixedClosed .dijitArrowNode, .dijitFieldsetTitleFixedClosed .dijitArrowNodeInner {
+	/* don't show the open close icon or text arrow; it makes the user think the pane is closable */
+	display: none !important;	/* !important to override above a11y rules to show text arrow */
 }
 
 .dj_ie6 .dijitTitlePaneContentOuter,
@@ -1130,6 +1145,7 @@ body .dijitAlignClient { position: absolute; }
 }
 .dijitAccordionTitle {
 	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
 }
 .dijitAccordionTitleSelected {
 	cursor: default;
@@ -1159,12 +1175,23 @@ body .dijitAlignClient { position: absolute; }
 
 /* Calendar */
 
-.dijitCalendarContainer {
+.dijitCalendarContainer table {
 	width: auto;	/* in case user has specified a width for the TABLE nodes, see #10553 */
+	clear: both;    /* clear margin created for left/right month arrows; needed on IE10 for CalendarLite */
 }
 .dijitCalendarContainer th, .dijitCalendarContainer td {
 	padding: 0;
 	vertical-align: middle;
+}
+
+.dijitCalendarMonthContainer {
+	text-align: center;
+}
+.dijitCalendarDecrementArrow {
+	float: left;
+}
+.dijitCalendarIncrementArrow {
+	float: right;
 }
 
 .dijitCalendarYearLabel {
@@ -1189,6 +1216,7 @@ body .dijitAlignClient { position: absolute; }
 .dijitCalendarPreviousYear,
 .dijitCalendarNextYear {
 	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
 }
 
 .dijitCalendarDisabledDate {
@@ -1233,6 +1261,7 @@ body .dijitAlignClient { position: absolute; }
 	white-space: nowrap;
 	padding:.1em .2em;
 	cursor:pointer;
+	-webkit-tap-highlight-color: transparent;
 }
 
 /*
@@ -1274,17 +1303,13 @@ Hiding the focus border also works around webkit bug https://code.google.com/p/c
 }
 
 .dijitMenuItemLabel {
-	position: relative;
 	vertical-align: middle;
 }
 
 .dj_a11y .dijitMenuItemSelected {
 	border: 1px dotted black !important;	/* for 2.0 use outline instead, to prevent jitter */
 }
-.dj_ff3 .dj_a11y .dijitMenuItem td {
-	padding: 0 !important;
-	background:none !important;
-}
+
 .dj_a11y .dijitMenuItemSelected .dijitMenuItemLabel {
 	border-width: 1px;
 	border-style: solid;
@@ -1320,19 +1345,17 @@ Hiding the focus border also works around webkit bug https://code.google.com/p/c
 	font-size: 1px;
 }
 
-/* the checked menu item */
-.dijitCheckedMenuItemIconChar {
-	vertical-align: middle;
-	visibility:hidden;
+/* CheckedMenuItem and RadioMenuItem */
+.dijitMenuItemIconChar {
+	display: none;		/* don't display except in high contrast mode */
+	visibility: hidden;	/* for high contrast mode when menuitem is unchecked: leave space for when it is checked */
 }
-.dijitCheckedMenuItemChecked .dijitCheckedMenuItemIconChar {
-	visibility: visible;
+.dj_a11y .dijitMenuItemIconChar {
+	display: inline;	/* display character in high contrast mode, since icon doesn't show */
 }
-.dj_a11y .dijitCheckedMenuItemIconChar {
-	display:inline !important;
-}
-.dj_a11y .dijitCheckedMenuItemIcon {
-	display: none;
+.dijitCheckedMenuItemChecked .dijitMenuItemIconChar,
+.dijitRadioMenuItemChecked .dijitMenuItemIconChar {
+	visibility: visible; /* menuitem is checked */
 }
 .dj_ie .dj_a11y .dijitMenuBar .dijitMenuItem {
 	/* so bottom border of MenuBar appears on IE7 in high-contrast mode */
@@ -1398,7 +1421,7 @@ Main class hierarchy:
 }
 .dijitTabListWrapper {
 	overflow: hidden;
-	z-index: 1;
+    z-index: 1;
 }
 
 .dj_a11y .tabStripButton img {
@@ -1443,6 +1466,7 @@ div.dijitTabDisabled, .dj_ie div.dijitTabDisabled {
 .dijitTab {
 	position:relative;
 	cursor:pointer;
+	-webkit-tap-highlight-color: transparent;
 	white-space:nowrap;
 	z-index:3;
 }
@@ -1559,6 +1583,12 @@ div.dijitTabDisabled, .dj_ie div.dijitTabDisabled {
 /* Tree */
 .dijitTree {
 	overflow: auto;	/* for scrollbars when Tree has a height setting, and to prevent wrapping around float elements, see #11491 */
+	-webkit-tap-highlight-color: transparent;
+	-moz-user-select: none;
+}
+
+.dijitTreeContainer {
+	float: left;	/* for correct highlighting during horizontal scroll, see #16132 */
 }
 
 .dijitTreeIndent {
@@ -1568,6 +1598,11 @@ div.dijitTabDisabled, .dj_ie div.dijitTabDisabled {
 
 .dijitTreeRow, .dijitTreeContent {
 	white-space: nowrap;
+}
+
+.dj_ie .dijitTreeLabel:focus {
+	/* workaround IE9 behavior where down arrowing through TreeNodes doesn't show focus outline */
+	outline: 1px dotted black;
 }
 
 .dijitTreeRow img {
@@ -1613,9 +1648,12 @@ div.dijitTabDisabled, .dj_ie div.dijitTabDisabled {
 }
 .dijitDialogCloseIcon {
 	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+}
+.dijitDialogPaneContent {
+	-webkit-overflow-scrolling: touch;
 }
 .dijitDialogUnderlayWrapper {
-	backdrop-filter: blur(5px);
 	position: absolute;
 	left: 0;
 	top: 0;
@@ -1675,6 +1713,7 @@ div.dijitTabDisabled, .dj_ie div.dijitTabDisabled {
 	width:0;
 	height:0;
 	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
 }
 .dj_iequirks .dj_a11y .dijitSliderImageHandle {
 	font-size: 0;
@@ -1706,6 +1745,7 @@ div.dijitTabDisabled, .dj_ie div.dijitTabDisabled {
 	border-style:solid;
 	border-color:black;
 	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
 }
 
 .dijitSliderBarContainerV {
@@ -1826,6 +1866,7 @@ div.dijitTabDisabled, .dj_ie div.dijitTabDisabled {
 }
 .dijitSliderButtonContainer * {
 	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
 }
 
 .dijitSlider .dijitButtonNode {
@@ -1932,9 +1973,6 @@ div.dijitTabDisabled, .dj_ie div.dijitTabDisabled {
 .dj_a11y .dijitSelect .dijitButtonText {
 	display: inline-block !important;
 }
-.dijitSelectError .dijitButtonContents .dijitButtonText {
-	display: none !important;
-}
 
 /* TextArea, SimpleTextArea */
 .dijitTextArea {
@@ -1983,6 +2021,27 @@ div.dijitTabDisabled, .dj_ie div.dijitTabDisabled {
 
 /* TimePicker */
 
+.dijitTimePicker {
+	background-color: white;
+}
+.dijitTimePickerItem {
+	cursor:pointer;
+	-webkit-tap-highlight-color: transparent;
+}
+.dijitTimePickerItemHover {
+	background-color:gray;
+	color:white;
+}
+.dijitTimePickerItemSelected {
+	font-weight:bold;
+	color:#333;
+	background-color:#b7cdee;
+}
+.dijitTimePickerItemDisabled {
+	color:gray;
+	text-decoration:line-through;
+}
+
 .dijitTimePickerItemInner {
 	text-align:center;
 	border:0;
@@ -2005,23 +2064,6 @@ div.dijitTabDisabled, .dj_ie div.dijitTabDisabled {
 .dijitTimePickerMarker {
 	color:black;
 	background-color:#CCC;
-}
-
-.dijitTimePickerItemSelected {
-	font-weight:bold;
-	color:#333;
-	background-color:#b7cdee;
-}
-
-.dijitTimePickerItemHover {
-	background-color:gray;
-	color:white;
-	cursor:pointer;
-}
-
-.dijitTimePickerItemDisabled {
-	color:gray;
-	text-decoration:line-through;
 }
 
 .dj_a11y .dijitTimePickerItemSelected .dijitTimePickerItemInner {
@@ -2090,6 +2132,19 @@ div.dijitTabDisabled, .dj_ie div.dijitTabDisabled {
 	text-align: inherit; /* input */
 }
 
+.dijitNumberTextBox input.dijitInputInner,
+.dijitCurrencyTextBox input.dijitInputInner,
+.dijitSpinner input.dijitInputInner {
+	text-align: right;
+}
+
+.dj_ie8 .dijitNumberTextBox input.dijitInputInner, .dj_ie9 .dijitNumberTextBox input.dijitInputInner,
+.dj_ie8 .dijitCurrencyTextBox input.dijitInputInner, .dj_ie9 .dijitCurrencyTextBox input.dijitInputInner,
+.dj_ie8 .dijitSpinner input.dijitInputInner, .dj_ie9 .dijitSpinner input.dijitInputInner {
+	/* workaround bug where caret invisible in empty textboxes */
+	padding-right: 1px !important;
+}
+
 .dijitToolbar .dijitSelect {
 	margin: 0;
 }
@@ -2131,13 +2186,6 @@ div.dijitTabDisabled, .dj_ie div.dijitTabDisabled {
 /* Fix the styling of the dropdown menu to be more combobox-like */
 .dijitSelectMenu {
 	border-width: 1px;
-}
-
-/* Style the different areas of the button to look like a "real" dropdown */
-/* Remove margins on the sub-table */
-.dijitSelectMenu .dijitMenuTable {
-	margin: 0;
-	background-color: transparent;
 }
 
 /* Used in cases, such as FullScreen plugin, when we need to force stuff to static positioning. */
@@ -2195,4 +2243,7 @@ div.dijitTabDisabled, .dj_ie div.dijitTabDisabled {
 .dj_gecko .dijitArrowButtonInner INPUT,
 .dj_gecko INPUT.dijitArrowButtonInner {
 	-moz-user-focus:ignore;
+}
+.dijitFocused .dijitMenuItemShortcutKey {
+	text-decoration: underline;
 }

@@ -28,6 +28,7 @@ const InputSwitchTemplate = `<p-inputSwitch [(ngModel)]="checked"></p-inputSwitc
 
 const Template: Story<InputSwitch> = (props: InputSwitch) => {
     const template = InputSwitchTemplate;
+
     return {
         props,
         template

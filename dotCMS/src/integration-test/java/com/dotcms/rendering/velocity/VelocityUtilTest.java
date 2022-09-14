@@ -89,30 +89,39 @@ public class VelocityUtilTest {
 
         //DotCache set to Refresh must return null (not use cached page)
         request.getSession().setAttribute(VelocityUtil.DOTCACHE, VelocityUtil.REFRESH);
-        String pageCacheKey = VelocityUtil.getPageCacheKey(request,page);
-        Assert.assertNull(pageCacheKey);
+        boolean pageCacheKey = VelocityUtil.shouldPageCache(request,page);
+        Assert.assertFalse(pageCacheKey);
 
         request.getSession().removeAttribute(VelocityUtil.DOTCACHE);
 
         //DotCache set to No must return null (not use cached page)
         request.getSession().setAttribute(VelocityUtil.DOTCACHE, VelocityUtil.NO);
-        pageCacheKey = VelocityUtil.getPageCacheKey(request,page);
-        Assert.assertNull(pageCacheKey);
+        pageCacheKey = VelocityUtil.shouldPageCache(request,page);
+        Assert.assertFalse(pageCacheKey);
 
         request.getSession().removeAttribute(VelocityUtil.DOTCACHE);
 
         //TTL of a page is set 0 must return null (not use cached page)
         page.setCacheTTL(0);
-        pageCacheKey = VelocityUtil.getPageCacheKey(request,page);
-        Assert.assertNull(pageCacheKey);
+        pageCacheKey = VelocityUtil.shouldPageCache(request,page);
+        Assert.assertFalse(pageCacheKey);
 
         page.setCacheTTL(15);
 
         //Use Cached Page Scenario
         when(request.getMethod()).thenReturn("GET");
-        pageCacheKey = VelocityUtil.getPageCacheKey(request,page);
-        Assert.assertNotNull(pageCacheKey);
+        pageCacheKey = VelocityUtil.shouldPageCache(request,page);
+        Assert.assertTrue(pageCacheKey);
 
+        
+        page.setCacheTTL(15);
+
+        //Use Cached Page Scenario
+        when(request.getMethod()).thenReturn("POST");
+        pageCacheKey = VelocityUtil.shouldPageCache(request,page);
+        Assert.assertFalse(pageCacheKey);
+        
+        
     }
     
     

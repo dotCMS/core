@@ -118,14 +118,18 @@
   _background-image: none;
   padding: 1px;
 }
-.claro .dijitToolbar .dijitComboButtonHover .dijitButtonNode, .claro .dijitToolbar .dijitComboButtonHover .dijitDownArrowButton {
+.claro .dijitToolbar .dijitComboButtonHover .dijitButtonNode,
+.claro .dijitToolbar .dijitComboButtonHover .dijitDownArrowButton {
   background-color: #f3ffff;
 }
-.claro .dijitToolbar .dijitComboButtonHover .dijitButtonNodeHover, .claro .dijitToolbar .dijitComboButtonHover .dijitDownArrowButtonHover {
+.claro .dijitToolbar .dijitComboButtonHover .dijitButtonNodeHover,
+.claro .dijitToolbar .dijitComboButtonHover .dijitDownArrowButtonHover {
   background-color: #abd6ff;
 }
 /* active status */
-.claro .dijitToolbar .dijitButtonActive .dijitButtonNode, .claro .dijitToolbar .dijitDropDownButtonActive .dijitButtonNode, .claro .dijitToolbar .dijitToggleButtonActive .dijitButtonNode {
+.claro .dijitToolbar .dijitButtonActive .dijitButtonNode,
+.claro .dijitToolbar .dijitDropDownButtonActive .dijitButtonNode,
+.claro .dijitToolbar .dijitToggleButtonActive .dijitButtonNode {
   border-width: 1px;
   background-color: #7dbdfa;
   background-image: url("images/activeGradient.png");
@@ -144,7 +148,8 @@
   border-width: 1px;
   padding: 0;
 }
-.claro .dijitToolbar .dijitComboButtonActive .dijitButtonNode, .claro .dijitToolbar .dijitComboButtonActive .dijitDownArrowButton {
+.claro .dijitToolbar .dijitComboButtonActive .dijitButtonNode,
+.claro .dijitToolbar .dijitComboButtonActive .dijitDownArrowButton {
   background-color: #f3ffff;
   padding: 2px;
 }
@@ -169,7 +174,8 @@
   _background-image: none;
 }
 /* Avoid double border between button and arrow */
-.claro .dijitToolbar .dijitComboButtonHover .dijitDownArrowButton, .claro .dijitToolbar .dijitComboButtonActive .dijitDownArrowButton {
+.claro .dijitToolbar .dijitComboButtonHover .dijitDownArrowButton,
+.claro .dijitToolbar .dijitComboButtonActive .dijitDownArrowButton {
   border-left-width: 0;
 }
 .claro .dijitToolbar .dijitComboButtonHover .dijitDownArrowButton {

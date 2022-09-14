@@ -5,7 +5,7 @@ import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/core';
 import { MockDotMessageService } from '@dotcms/app/test/dot-message-service.mock';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { NgControl, FormGroup, FormControl } from '@angular/forms';
+import { NgControl, UntypedFormGroup, UntypedFormControl } from '@angular/forms';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { By } from '@angular/platform-browser';
 import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
@@ -85,8 +85,8 @@ describe('DotRelationshipsPropertyComponent', () => {
                 }
             };
 
-            comp.group = new FormGroup({
-                relationship: new FormControl('')
+            comp.group = new UntypedFormGroup({
+                relationship: new UntypedFormControl('')
             });
         })
     );
@@ -127,7 +127,7 @@ describe('DotRelationshipsPropertyComponent', () => {
 
         it('should clean the relationships property value', () => {
             comp.group.setValue({
-                relationship: new FormControl({
+                relationship: new UntypedFormControl({
                     velocityVar: 'velocityVar'
                 })
             });
@@ -152,8 +152,8 @@ describe('DotRelationshipsPropertyComponent', () => {
                 }
             };
 
-            comp.group = new FormGroup({
-                relationship: new FormControl(comp.property.value)
+            comp.group = new UntypedFormGroup({
+                relationship: new UntypedFormControl(comp.property.value)
             });
         });
 

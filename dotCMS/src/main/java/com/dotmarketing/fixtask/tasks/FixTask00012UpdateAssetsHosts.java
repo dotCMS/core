@@ -1,6 +1,5 @@
 package com.dotmarketing.fixtask.tasks;
 
-import com.dotcms.util.XStreamFactory;
 import com.dotmarketing.beans.FixAudit;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
@@ -196,7 +195,7 @@ public class FixTask00012UpdateAssetsHosts implements FixTask {
 	
 	public List<Map<String, String>> getModifiedData() {
 		if (0 < modifiedData.size()) {
-			XStream _xstream = XStreamFactory.INSTANCE.getInstance();
+			XStream _xstream = new XStream(new DomDriver());
 			Date date = new Date();
 			SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
 			String lastmoddate = sdf.format(date);

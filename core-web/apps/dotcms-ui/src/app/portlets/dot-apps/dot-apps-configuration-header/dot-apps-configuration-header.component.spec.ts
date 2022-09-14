@@ -10,7 +10,7 @@ import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DebugElement } from '@angular/core';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { MarkdownModule, MarkdownService } from 'ngx-markdown';
+import { MarkdownService } from 'ngx-markdown';
 
 const messages = {
     'apps.configurations': 'Configurations',
@@ -38,39 +38,20 @@ describe('DotAppsConfigurationHeaderComponent', () => {
 
     const messageServiceMock = new MockDotMessageService(messages);
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [
-                    CommonModule,
-                    DotAvatarModule,
-                    DotCopyLinkModule,
-                    MarkdownModule,
-                    DotPipesModule
-                ],
-                declarations: [DotAppsConfigurationHeaderComponent],
-                providers: [
-                    { provide: DotMessageService, useValue: messageServiceMock },
-                    {
-                        provide: DotRouterService,
-                        useClass: MockDotRouterService
-                    },
-                    {
-                        provide: MarkdownService,
-                        useValue: {
-                            compile(text) {
-                                return text;
-                            },
-
-                            highlight() {
-                                //
-                            }
-                        }
-                    }
-                ]
-            }).compileComponents();
-        })
-    );
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [CommonModule, DotAvatarModule, DotCopyLinkModule, DotPipesModule],
+            declarations: [DotAppsConfigurationHeaderComponent],
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                {
+                    provide: DotRouterService,
+                    useClass: MockDotRouterService
+                },
+                MarkdownService
+            ]
+        }).compileComponents();
+    }));
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotAppsConfigurationHeaderComponent);

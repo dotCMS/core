@@ -1,6 +1,6 @@
 @import url("../common/domButtons/DomButtonGrayArrow-compat.css");
 
-@import url("../common/domButtons/DomButtonDarkBlueCheck-compat.css");
+@import url("../common/domButtons/DomButtonWhiteCheck-compat.css");
 /* dojox.mobile.ListItem */
 .mblListItemSelected {
   background-color: #3578b1;

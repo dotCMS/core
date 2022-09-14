@@ -32,6 +32,7 @@ const Template: Story<{
     checked: boolean;
 }> = (props: { checked: boolean }) => {
     const template = InputNumberTemplate;
+
     return {
         props,
         template

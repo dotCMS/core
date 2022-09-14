@@ -31,6 +31,7 @@ export class DotDOMHtmlUtilService {
     createStyleElement(css: string): HTMLStyleElement {
         const cssElement: HTMLStyleElement = document.createElement('style');
         cssElement.appendChild(document.createTextNode(css));
+
         return cssElement;
     }
 

@@ -2,6 +2,7 @@ package com.dotcms.rendering.velocity.viewtools.content;
 
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.json.JSONObject;
 import io.vavr.Lazy;
 
 import java.io.IOException;
@@ -88,5 +89,19 @@ public class LazyLoaderContentMap {
     public Contentlet getContentObject() {
 
         return load().getContentObject();
+    }
+
+    public Object getFieldVariables(String fieldVariableName) {
+        return load().getFieldVariables(fieldVariableName);
+    }
+
+    /**
+     * Recovery the field variables as a json object
+     * @param fieldVariableName String field var name
+     * @return Map
+     */
+    public Object getFieldVariablesJson(final String fieldVariableName) {
+
+        return load().getFieldVariablesJson(fieldVariableName);
     }
 }

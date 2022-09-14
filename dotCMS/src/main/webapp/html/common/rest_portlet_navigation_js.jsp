@@ -72,8 +72,8 @@ dojo.require("dojo.hash");
                                 return;
                         }
                         if (myCp) {
-                                myCp.destroyRecursive();
                                 myCp.attr("content","");
+                                myCp.destroyRecursive();
                         }
 
                         myCp = new dojox.layout.ContentPane({

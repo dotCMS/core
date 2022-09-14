@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import com.dotcms.UnitTestBase;
 import com.dotcms.api.web.WebSessionContext;
 import com.dotcms.cms.login.LoginServiceAPI;
+import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.util.UserUtilTest;
@@ -137,7 +138,7 @@ public class AuthenticationResourceTest extends UnitTestBase {
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
         assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0).getErrorCode().equals("authentication-failed"));
+        assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("authentication-failed"));
     }
 
     @Test
@@ -183,7 +184,7 @@ public class AuthenticationResourceTest extends UnitTestBase {
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
         assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0).getErrorCode().equals("authentication-failed"));
+        assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("authentication-failed"));
     }
 
     @Test
@@ -228,7 +229,7 @@ public class AuthenticationResourceTest extends UnitTestBase {
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
         assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0).getErrorCode().equals("authentication-failed"));
+        assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("authentication-failed"));
     }
 
     @Test
@@ -273,7 +274,7 @@ public class AuthenticationResourceTest extends UnitTestBase {
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
         assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0).getErrorCode().equals("authentication-failed"));
+        assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("authentication-failed"));
     }
 
     @Test
@@ -318,7 +319,7 @@ public class AuthenticationResourceTest extends UnitTestBase {
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
         assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0).getErrorCode().equals("user-without-portlet"));
+        assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("user-without-portlet"));
 
     }
 
@@ -364,7 +365,7 @@ public class AuthenticationResourceTest extends UnitTestBase {
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
         assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0).getErrorCode().equals("your-account-is-not-active"));
+        assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals("your-account-is-not-active"));
         System.out.println(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
     }
 

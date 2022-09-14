@@ -1,7 +1,6 @@
 package com.dotcms.contenttype.business.sql;
 
 
-import com.dotcms.util.XStreamFactory;
 import com.dotmarketing.beans.FixAudit;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -189,7 +188,7 @@ public class FixTaskFixStructureTable  implements FixTask {
 	public List <Map<String, String>> getModifiedData() {
 
 		if (modifiedData.size() > 0) {
-			XStream _xstream = XStreamFactory.INSTANCE.getInstance();;
+			XStream _xstream = new XStream(new DomDriver());
 			Date date = new Date();
 			SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
 			String lastmoddate = sdf.format(date);

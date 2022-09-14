@@ -4,7 +4,8 @@
   border-width: 0;
   padding: 2px;
 }
-.claro .dijitToolbar .dijitComboButtonRtlHover .dijitButtonNode, .claro .dijitToolbar .dijitComboButtonRtlActive .dijitButtonNode {
+.claro .dijitToolbar .dijitComboButtonRtlHover .dijitButtonNode,
+.claro .dijitToolbar .dijitComboButtonRtlActive .dijitButtonNode {
   border-width: 1px;
   padding: 1px;
 }
@@ -20,7 +21,8 @@
   -moz-border-radius: 2px 0 0 2px;
   border-radius: 2px 0 0 2px;
 }
-.claro .dijitToolbar .dijitComboButtonRtlHover .dijitArrowButton, .claro .dijitToolbar .dijitComboButtonRtlActive .dijitArrowButton {
+.claro .dijitToolbar .dijitComboButtonRtlHover .dijitArrowButton,
+.claro .dijitToolbar .dijitComboButtonRtlActive .dijitArrowButton {
   /* border between button and arrow */
 
   border-left-width: 1px;

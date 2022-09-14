@@ -156,17 +156,50 @@ public class RoleFactoryImpl extends RoleFactory {
 
 	@Override
 	protected List<Role> getRolesByName(String filter, int start, int limit) throws DotDataException {
-		if(filter==null) return new ArrayList<Role>();
+		if(filter==null) {
+			return new ArrayList<Role>();
+		}
 
 		filter = "%" + filter.toLowerCase() + "%";
 		return getRolesByNameFiltered(filter, start, limit);
 	}
 
-
 	@Override
-	protected List<Role> getRolesByNameFiltered(String filter, int start, int limit) throws DotDataException {
+	protected  List<Role> getRolesByNameFiltered(String filter, int start, int limit) throws DotDataException {
 		HibernateUtil hu = new HibernateUtil(Role.class);
 		hu.setQuery("from " + Role.class.getName() + " where lower(role_name) like ? order by role_name");
+		if(filter ==null) {
+			filter ="";
+		}
+
+		filter = filter.toLowerCase();
+		hu.setParam(filter);
+		hu.setFirstResult(start);
+		hu.setMaxResults(limit);
+		List<Role> roles = (List<Role>)hu.list();
+		try {
+			populatChildrenForRoles(roles);
+			for (Role role : roles) {
+				HibernateUtil.evict(role);
+				translateFQNFromDB(role);
+			}
+		} catch (Exception e) {
+			Logger.error(this, e.getMessage(), e);
+			throw new DotDataException(e.getMessage(), e);
+		}
+		if(roles != null){
+			for (Role role : roles) {
+				rc.add(role);
+			}
+		}
+		return roles;
+	}
+
+
+	@Override
+	protected List<Role> getRolesByKeyFiltered(String filter, int start, int limit) throws DotDataException {
+		HibernateUtil hu = new HibernateUtil(Role.class);
+		hu.setQuery("from " + Role.class.getName() + " where lower(role_key) like ? order by role_key");
 		if(filter ==null)filter ="";
 		filter = filter.toLowerCase();
 		hu.setParam(filter);

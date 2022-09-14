@@ -1,4 +1,4 @@
-define("dojox/encoding/digests/MD5", ["./_base"], function(dxd) {
+define("dojox/encoding/digests/MD5", ["./_base"], function(base) {
 
 /*	A port of Paul Johnstone's MD5 implementation
  *	http://pajhome.org.uk/crypt/md5/index.html
@@ -14,7 +14,7 @@ define("dojox/encoding/digests/MD5", ["./_base"], function(dxd) {
 
 	//	MD5 rounds functions
 	function R(n,c){ return (n<<c)|(n>>>(32-c)); }
-	function C(q,a,b,x,s,t){ return dxd.addWords(R(dxd.addWords(dxd.addWords(a, q), dxd.addWords(x, t)), s), b); }
+	function C(q,a,b,x,s,t){ return base.addWords(R(base.addWords(base.addWords(a, q), base.addWords(x, t)), s), b); }
 	function FF(a,b,c,d,x,s,t){ return C((b&c)|((~b)&d),a,b,x,s,t); }
 	function GG(a,b,c,d,x,s,t){ return C((b&d)|(c&(~d)),a,b,x,s,t); }
 	function HH(a,b,c,d,x,s,t){ return C(b^c^d,a,b,x,s,t); }
@@ -102,16 +102,16 @@ define("dojox/encoding/digests/MD5", ["./_base"], function(dxd) {
 			c=II(c,d,a,b,x[i+ 2],15, 718787259);
 			b=II(b,c,d,a,x[i+ 9],21,-343485551);
 
-			a=dxd.addWords(a, olda);
-			b=dxd.addWords(b, oldb);
-			c=dxd.addWords(c, oldc);
-			d=dxd.addWords(d, oldd);
+			a=base.addWords(a, olda);
+			b=base.addWords(b, oldb);
+			c=base.addWords(c, oldc);
+			d=base.addWords(d, oldd);
 		}
 		return [a,b,c,d];
 	}
 
 	function hmac(data, key){
-		var wa=dxd.stringToWord(key);
+		var wa=base.stringToWord(key);
 		if(wa.length>16){
 			wa=core(wa, key.length*chrsz);
 		}
@@ -120,53 +120,53 @@ define("dojox/encoding/digests/MD5", ["./_base"], function(dxd) {
 			l[i]=wa[i]^0x36363636;
 			r[i]=wa[i]^0x5c5c5c5c;
 		}
-		var h=core(l.concat(dxd.stringToWord(data)), 512+data.length*chrsz);
+		var h=core(l.concat(base.stringToWord(data)), 512+data.length*chrsz);
 		return core(r.concat(h), 640);
 	}
 
 	//	public function
-	dxd.MD5=function(/* string */data, /* dojox.encoding.digests.outputTypes? */outputType){
+	base.MD5=function(/* string */data, /* dojox.encoding.digests.outputTypes? */outputType){
 		// summary:
 		//		computes the digest of data, and returns the result according to type outputType
-		var out=outputType || dxd.outputTypes.Base64;
-		var wa=core(dxd.stringToWord(data), data.length*chrsz);
+		var out=outputType || base.outputTypes.Base64;
+		var wa=core(base.stringToWord(data), data.length*chrsz);
 		switch(out){
-			case dxd.outputTypes.Raw:{
+			case base.outputTypes.Raw:{
 				return wa;	//	word[]
 			}
-			case dxd.outputTypes.Hex:{
-				return dxd.wordToHex(wa);	//	string
+			case base.outputTypes.Hex:{
+				return base.wordToHex(wa);	//	string
 			}
-			case dxd.outputTypes.String:{
-				return dxd.wordToString(wa);	//	string
+			case base.outputTypes.String:{
+				return base.wordToString(wa);	//	string
 			}
 			default:{
-				return dxd.wordToBase64(wa);	//	string
+				return base.wordToBase64(wa);	//	string
 			}
 		}
 	};
 
 	//	make this private, for later use with a generic HMAC calculator.
-	dxd.MD5._hmac=function(/* string */data, /* string */key, /* dojox.encoding.digests.outputTypes? */outputType){
+	base.MD5._hmac=function(/* string */data, /* string */key, /* dojox.encoding.digests.outputTypes? */outputType){
 		// summary:
 		//		computes the digest of data, and returns the result according to type outputType
-		var out=outputType || dxd.outputTypes.Base64;
+		var out=outputType || base.outputTypes.Base64;
 		var wa=hmac(data, key);
 		switch(out){
-			case dxd.outputTypes.Raw:{
+			case base.outputTypes.Raw:{
 				return wa;	//	word[]
 			}
-			case dxd.outputTypes.Hex:{
-				return dxd.wordToHex(wa);	//	string
+			case base.outputTypes.Hex:{
+				return base.wordToHex(wa);	//	string
 			}
-			case dxd.outputTypes.String:{
-				return dxd.wordToString(wa);	//	string
+			case base.outputTypes.String:{
+				return base.wordToString(wa);	//	string
 			}
 			default:{
-				return dxd.wordToBase64(wa);	//	string
+				return base.wordToBase64(wa);	//	string
 			}
 		}
 	};
 
-	return dxd.MD5;
+	return base.MD5;
 });

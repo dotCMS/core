@@ -103,6 +103,7 @@ export class FieldPropertyService {
      */
     getProperties(fieldTypeClass: string): string[] {
         const fieldType = this.fieldTypes.get(fieldTypeClass);
+
         return fieldType !== undefined ? fieldType.properties : undefined;
     }
 

@@ -129,6 +129,9 @@ var clz = declare(/*===== "dojox.gesture.tap", =====*/Base, {
 	_isTap: function(/*Object*/data, /*Event*/e){
 		// summary:
 		//		Check whether it's an valid tap
+		if (!data.context) {
+			return false;
+		}
 		var dx = Math.abs(data.context.x - e.screenX);
 		var dy = Math.abs(data.context.y - e.screenY);
 		return dx <= this.tapRadius && dy <= this.tapRadius;

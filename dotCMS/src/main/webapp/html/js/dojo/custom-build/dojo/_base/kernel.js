@@ -1,4 +1,4 @@
-define("dojo/_base/kernel", ["../has", "./config", "require", "module"], function(has, config, require, module){
+define("dojo/_base/kernel", ["../global", "../has", "./config", "require", "module"], function(global, has, config, require, module){
 	// module:
 	//		dojo/_base/kernel
 
@@ -18,7 +18,7 @@ define("dojo/_base/kernel", ["../has", "./config", "require", "module"], functio
 
 			// notice dojo takes ownership of the value of the config module
 			config:config,
-			global:this,
+			global:global,
 			dijit:dijit,
 			dojox:dojox
 		};
@@ -67,7 +67,7 @@ define("dojo/_base/kernel", ["../has", "./config", "require", "module"], functio
 		item = scopeMap[p];
 		item[1]._scopeName = item[0];
 		if(!config.noGlobals){
-			this[item[0]] = item[1];
+			global[item[0]] = item[1];
 		}
 	}
 	dojo.scopeMap = scopeMap;
@@ -79,7 +79,7 @@ define("dojo/_base/kernel", ["../has", "./config", "require", "module"], functio
 	dojo.isAsync = ! 1  || require.async;
 	dojo.locale = config.locale;
 
-	var rev = "$Rev: d4c0bbf $".match(/[0-9a-f]{7,}/);
+	var rev = "$Rev:$".match(/[0-9a-f]{7,}/);
 	dojo.version = {
 		// summary:
 		//		Version number of the Dojo Toolkit
@@ -92,7 +92,7 @@ define("dojo/_base/kernel", ["../has", "./config", "require", "module"], functio
 		//		- flag: String: Descriptor flag. If total version is "1.2.0beta1", will be "beta1"
 		//		- revision: Number: The Git rev from which dojo was pulled
 
-		major: 1, minor: 8, patch: 6, flag: "",
+		major: 1, minor: 17, patch: 2, flag: "",
 		revision: rev ? rev[0] : NaN,
 		toString: function(){
 			var v = dojo.version;
@@ -106,8 +106,9 @@ define("dojo/_base/kernel", ["../has", "./config", "require", "module"], functio
 	// is migrated. Absent specific advice otherwise, set extend-dojo to truthy.
 	 1 || has.add("extend-dojo", 1);
 
-
-	(Function("d", "d.eval = function(){return d.global.eval ? d.global.eval(arguments[0]) : eval(arguments[0]);}"))(dojo);
+	if(!has("csp-restrictions")){
+		(Function("d", "d.eval = function(){return d.global.eval ? d.global.eval(arguments[0]) : eval(arguments[0]);}"))(dojo);
+	}
 	/*=====
 	dojo.eval = function(scriptText){
 		// summary:
@@ -145,12 +146,21 @@ define("dojo/_base/kernel", ["../has", "./config", "require", "module"], functio
 		};
 	}
 
-	 1 || has.add("dojo-guarantee-console",
-		// ensure that console.log, console.warn, etc. are defined
-		1
-	);
+	if(!has("host-webworker")){
+		// console is immutable in FF30+, https://bugs.dojotoolkit.org/ticket/18100
+		 1 || has.add("dojo-guarantee-console",
+			// ensure that console.log, console.warn, etc. are defined
+			1
+		);
+	}
+
 	if( 1 ){
-		typeof console != "undefined" || (console = {});
+		// IE 9 bug: https://bugs.dojotoolkit.org/ticket/18197
+		has.add("console-as-object", function () {
+			return Function.prototype.bind && console && typeof console.log === "object";
+		});
+
+		typeof console != "undefined" || (console = {});  // intentional assignment
 		//	Be careful to leave 'log' always at the end
 		var cn = [
 			"assert", "count", "debug", "dir", "dirxml", "error", "group",
@@ -164,12 +174,14 @@ define("dojo/_base/kernel", ["../has", "./config", "require", "module"], functio
 				(function(){
 					var tcn = tn + "";
 					console[tcn] = ('log' in console) ? function(){
-						var a = Array.apply({}, arguments);
+						var a = Array.prototype.slice.call(arguments);
 						a.unshift(tcn + ":");
 						console["log"](a.join(" "));
 					} : function(){};
 					console[tcn]._fake = true;
 				})();
+			}else if(has("console-as-object")){
+				console[tn] = Function.prototype.bind.call(console[tn], console);
 			}
 		}
 	}
@@ -263,7 +275,7 @@ define("dojo/_base/kernel", ["../has", "./config", "require", "module"], functio
 			//	|	dojo.body().appendChild(img);
 			// example:
 			//		you may de-reference as far as you like down the package
-			//		hierarchy.  This is sometimes handy to avoid lenghty relative
+			//		hierarchy.  This is sometimes handy to avoid lengthy relative
 			//		urls or for building portable sub-packages. In this example,
 			//		the `acme.widget` and `acme.util` directories may be located
 			//		under different roots (see `dojo.registerModulePath`) but the

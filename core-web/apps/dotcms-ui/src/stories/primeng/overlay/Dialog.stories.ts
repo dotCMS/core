@@ -48,6 +48,7 @@ type Args = {
 
 const Template: Story<Args> = (props: Args) => {
     const template = DialogTemplate;
+
     return {
         props,
         template

@@ -1,6 +1,6 @@
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
-import { ReactiveFormsModule, FormGroup, FormControl } from '@angular/forms';
+import { ReactiveFormsModule, UntypedFormGroup, UntypedFormControl } from '@angular/forms';
 import { DotLayoutSidebarModule } from './dot-layout-property-sidebar/dot-layout-property-sidebar.module';
 import { DotLayoutPropertiesItemModule } from './dot-layout-properties-item/dot-layout-properties-item.module';
 import { DotLayoutPropertiesComponent } from './dot-layout-properties.component';
@@ -16,10 +16,10 @@ import { ButtonModule } from 'primeng/button';
     </form>`
 })
 class TestHostComponent {
-    group: FormGroup;
+    group: UntypedFormGroup;
     constructor() {
-        this.group = new FormGroup({
-            layout: new FormControl({
+        this.group = new UntypedFormGroup({
+            layout: new UntypedFormControl({
                 header: true,
                 footer: true,
                 sidebar: 'left'

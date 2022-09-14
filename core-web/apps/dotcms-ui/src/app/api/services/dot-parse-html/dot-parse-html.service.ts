@@ -26,6 +26,7 @@ export class DotParseHtmlService {
         if (clear) {
             this.clearElement(element);
         }
+
         const placeholder = document.createElement('div');
         placeholder.innerHTML = code;
         Array.from(placeholder.childNodes).forEach((el: HTMLElement) => {

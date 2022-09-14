@@ -8,6 +8,10 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.util.FileUtil;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -15,13 +19,9 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 public class PushPublishFiltersInitializerTest {
 
-    private static PushPublishFiltersInitializer pushPublishFiltersInitializer;
     private static File path;
 
     @BeforeClass
@@ -33,7 +33,6 @@ public class PushPublishFiltersInitializerTest {
         if (!path.exists()) {
             path.mkdir();
         }
-        pushPublishFiltersInitializer = new PushPublishFiltersInitializer();
     }
 
     private void createFilterFile(final FilterDescriptor filterDescriptor){
@@ -43,7 +42,7 @@ public class PushPublishFiltersInitializerTest {
     }
 
     /**
-     * Method to test: {@link PushPublishFiltersInitializer#loadFilter(Path)}
+     * Method to test: {@link PublisherAPI#loadFilter(Path)}
      * Given Scenario: Given a yaml file that contains a FilterDescriptor, the initializer reads the file and loads the filter
      * ExpectedResult: filter is successfully added to the filterDescriptorMap
      *
@@ -58,7 +57,7 @@ public class PushPublishFiltersInitializerTest {
 
         Stream<Path> pathStream = Files.list(path.toPath());
 
-        pathStream.forEach(path1 -> pushPublishFiltersInitializer.loadFilter(path1));
+        pathStream.forEach(path1 -> APILocator.getPublisherAPI().loadFilter(path1));
 
         final List<FilterDescriptor> filterDescriptorList = APILocator.getPublisherAPI().getFiltersDescriptorsByRole(
                 TestUserUtils.getAdminUser());
@@ -67,7 +66,7 @@ public class PushPublishFiltersInitializerTest {
     }
 
     /**
-     * Method to test: {@link PushPublishFiltersInitializer#loadFilter(Path)}
+     * Method to test: {@link PublisherAPI#loadFilter(Path)}
      * Given Scenario: Given 2 yaml files, one without any error and one empty, the initializer reads both files and only loads the one without errors
      * ExpectedResult: filter without errors is successfully added to the filterDescriptorMap
      *
@@ -85,7 +84,7 @@ public class PushPublishFiltersInitializerTest {
         final File file = File.createTempFile("filterTestWithoutAnError", ".yml",path);
         FileUtil.write(file, "");
 
-        Files.list(path.toPath()).forEach(path1 -> pushPublishFiltersInitializer.loadFilter(path1));
+        Files.list(path.toPath()).forEach(path1 -> APILocator.getPublisherAPI().loadFilter(path1));
 
         final List<FilterDescriptor> filterDescriptorList = APILocator.getPublisherAPI().getFiltersDescriptorsByRole(
                 TestUserUtils.getAdminUser());
@@ -94,7 +93,7 @@ public class PushPublishFiltersInitializerTest {
     }
 
     /**
-     * Method to test: {@link PushPublishFiltersInitializer#loadFilter(Path)}
+     * Method to test: {@link PublisherAPI#loadFilter(Path)}
      * Given Scenario: YAML file that one of required property (in this case Title) is null
      * ExpectedResult: filter should not be added to map of filters
      *
@@ -107,14 +106,14 @@ public class PushPublishFiltersInitializerTest {
                 new FilterDescriptor("filterWithoutTitleProperty.yml",null,filtersMap,true,"Reviewer,dotcms.org.2789");
         createFilterFile(filterDescriptor);
 
-        Files.list(path.toPath()).forEach(path1 -> pushPublishFiltersInitializer.loadFilter(path1));
+        Files.list(path.toPath()).forEach(path1 -> APILocator.getPublisherAPI().loadFilter(path1));
         final List<FilterDescriptor> filterDescriptorList = APILocator.getPublisherAPI().getFiltersDescriptorsByRole(
                 TestUserUtils.getAdminUser());
         Assert.assertFalse(filterDescriptorList.stream().anyMatch(filter -> filter.getKey().equalsIgnoreCase(filterDescriptor.getKey())));
     }
 
     /**
-     * Method to test: {@link PushPublishFiltersInitializer#loadFilter(Path)}
+     * Method to test: {@link PublisherAPI#loadFilter(Path)}
      * Given Scenario: YAML file with a boolean property set to any other value than true | false
      * ExpectedResult: filter should not be added to map of filters
      *
@@ -127,14 +126,14 @@ public class PushPublishFiltersInitializerTest {
                 new FilterDescriptor("filterWithBooleanPropertySetToAnyOtherString.yml","Filter Boolean Not Valid",filtersMap,true,"Reviewer,dotcms.org.2789");
         createFilterFile(filterDescriptor);
 
-        Files.list(path.toPath()).forEach(path1 -> pushPublishFiltersInitializer.loadFilter(path1));
+        Files.list(path.toPath()).forEach(path1 -> APILocator.getPublisherAPI().loadFilter(path1));
         final List<FilterDescriptor> filterDescriptorList = APILocator.getPublisherAPI().getFiltersDescriptorsByRole(
                 TestUserUtils.getAdminUser());
         Assert.assertFalse(filterDescriptorList.stream().anyMatch(filter -> filter.getKey().equalsIgnoreCase(filterDescriptor.getKey())));
     }
 
     /**
-     * Method to test: {@link PushPublishFiltersInitializer#loadFilter(Path)}
+     * Method to test: {@link PublisherAPI#loadFilter(Path)}
      * Given Scenario: YAML file with a boolean property set to any other value than true | false
      * ExpectedResult: filter should not be added to map of filters
      *
@@ -147,14 +146,14 @@ public class PushPublishFiltersInitializerTest {
                 new FilterDescriptor("filterWithBooleanPropertySetToAnyOtherString.yml","Filter Boolean Not Valid",filtersMap,true,"Reviewer,dotcms.org.2789");
         createFilterFile(filterDescriptor);
 
-        Files.list(path.toPath()).forEach(path1 -> pushPublishFiltersInitializer.loadFilter(path1));
+        Files.list(path.toPath()).forEach(path1 -> APILocator.getPublisherAPI().loadFilter(path1));
         final List<FilterDescriptor> filterDescriptorList = APILocator.getPublisherAPI().getFiltersDescriptorsByRole(
                 TestUserUtils.getAdminUser());
         Assert.assertFalse(filterDescriptorList.stream().anyMatch(filter -> filter.getKey().equalsIgnoreCase(filterDescriptor.getKey())));
     }
 
     /**
-     * Method to test: {@link PushPublishFiltersInitializer#loadFilter(Path)}
+     * Method to test: {@link PublisherAPI#loadFilter(Path)}
      * Given Scenario: YAML file with a property not expected, added a new filter in the filtersMap
      * ExpectedResult: filter should not be added to map of filters
      *
@@ -167,7 +166,7 @@ public class PushPublishFiltersInitializerTest {
                 new FilterDescriptor("filterWithPropertyNotExpected.yml","Filter with added property",filtersMap,true,"Reviewer,dotcms.org.2789");
         createFilterFile(filterDescriptor);
 
-        Files.list(path.toPath()).forEach(path1 -> pushPublishFiltersInitializer.loadFilter(path1));
+        Files.list(path.toPath()).forEach(path1 -> APILocator.getPublisherAPI().loadFilter(path1));
         final List<FilterDescriptor> filterDescriptorList = APILocator.getPublisherAPI().getFiltersDescriptorsByRole(
                 TestUserUtils.getAdminUser());
         Assert.assertFalse(filterDescriptorList.stream().anyMatch(filter -> filter.getKey().equalsIgnoreCase(filterDescriptor.getKey())));

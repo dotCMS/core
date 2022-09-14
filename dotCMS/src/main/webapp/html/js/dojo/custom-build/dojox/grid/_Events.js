@@ -12,11 +12,11 @@ return declare("dojox.grid._Events", null, {
 	// description:
 	//		Default synthetic events dispatched for _Grid. dojo.connect to events to
 	//		retain default implementation or override them for custom handling.
-	
+
 	// cellOverClass: String
 	//		css class to apply to grid cells over which the cursor is placed.
 	cellOverClass: "dojoxGridCellOver",
-	
+
 	onKeyEvent: function(e){
 		// summary:
 		//		top level handler for Key Events
@@ -49,7 +49,7 @@ return declare("dojox.grid._Events", null, {
 		this.focus.styleRow(inRow);
 		this.edit.styleRow(inRow);
 	},
-	
+
 	onKeyDown: function(e){
 		// summary:
 		//		Grid key event handler. By default enter begins editing and applies edits, escape cancels an edit,
@@ -95,7 +95,9 @@ return declare("dojox.grid._Events", null, {
 						break;
 					}else {
 						this.selection.clickSelect(this.focus.rowIndex, dojo.isCopyKey(e), e.shiftKey);
-					}
+						// Set focus back on the cell they were on for keyboard accessibility
+						this.focus._focusifyCellNode(true);
+						this.focus.setFocusCell(this.focus.cell, this.focus.rowIndex);					}
 					event.stop(e);
 				}
 				break;
@@ -156,7 +158,7 @@ return declare("dojox.grid._Events", null, {
 				break;
 		}
 	},
-	
+
 	onMouseOver: function(e){
 		// summary:
 		//		Event fired when mouse is over the grid.
@@ -164,7 +166,7 @@ return declare("dojox.grid._Events", null, {
 		//		Decorated event object contains reference to grid, cell, and rowIndex
 		e.rowIndex == -1 ? this.onHeaderCellMouseOver(e) : this.onCellMouseOver(e);
 	},
-	
+
 	onMouseOut: function(e){
 		// summary:
 		//		Event fired when mouse moves out of the grid.
@@ -172,7 +174,7 @@ return declare("dojox.grid._Events", null, {
 		//		Decorated event object that contains reference to grid, cell, and rowIndex
 		e.rowIndex == -1 ? this.onHeaderCellMouseOut(e) : this.onCellMouseOut(e);
 	},
-	
+
 	onMouseDown: function(e){
 		// summary:
 		//		Event fired when mouse is down inside grid.
@@ -180,7 +182,7 @@ return declare("dojox.grid._Events", null, {
 		//		Decorated event object that contains reference to grid, cell, and rowIndex
 		e.rowIndex == -1 ? this.onHeaderCellMouseDown(e) : this.onCellMouseDown(e);
 	},
-	
+
 	onMouseOverRow: function(e){
 		// summary:
 		//		Event fired when mouse is over any row (data or header).
@@ -203,7 +205,7 @@ return declare("dojox.grid._Events", null, {
 			this.onRowMouseOut(e);
 		}
 	},
-	
+
 	onMouseDownRow: function(e){
 		// summary:
 		//		Event fired when mouse is down inside grid row
@@ -223,7 +225,7 @@ return declare("dojox.grid._Events", null, {
 			domClass.add(e.cellNode, this.cellOverClass);
 		}
 	},
-	
+
 	onCellMouseOut: function(e){
 		// summary:
 		//		Event fired when mouse moves out of a cell.
@@ -233,7 +235,7 @@ return declare("dojox.grid._Events", null, {
 			domClass.remove(e.cellNode, this.cellOverClass);
 		}
 	},
-	
+
 	onCellMouseDown: function(e){
 		// summary:
 		//		Event fired when mouse is down in a header cell.
@@ -324,7 +326,7 @@ return declare("dojox.grid._Events", null, {
 		// e: Event
 		//		Decorated event object contains reference to grid, cell, and rowIndex
 	},
-	
+
 	onRowMouseDown: function(e){
 		// summary:
 		//		Event fired when mouse is down in a row.
@@ -374,7 +376,7 @@ return declare("dojox.grid._Events", null, {
 			domClass.remove(e.cellNode, this.cellOverClass);
 		}
 	},
-	
+
 	onHeaderCellMouseDown: function(e) {
 		// summary:
 		//		Event fired when mouse is down in a header cell.

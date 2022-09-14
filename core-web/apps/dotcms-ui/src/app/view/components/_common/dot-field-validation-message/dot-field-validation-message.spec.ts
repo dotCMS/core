@@ -5,7 +5,7 @@ import { DebugElement, Pipe, PipeTransform } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { DotFieldValidationMessageComponent } from './dot-field-validation-message';
 import { By } from '@angular/platform-browser';
-import { FormControl, Validators } from '@angular/forms';
+import { UntypedFormControl, Validators } from '@angular/forms';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 
@@ -49,7 +49,7 @@ describe('FieldValidationComponent', () => {
     });
 
     it('should hide the message by default', () => {
-        const control = new FormControl('', Validators.required);
+        const control = new UntypedFormControl('', Validators.required);
         component.field = control;
         fixture.detectChanges();
         de = fixture.debugElement.query(By.css('[data-testId="dotErrorMsg"]'));
@@ -57,7 +57,7 @@ describe('FieldValidationComponent', () => {
     });
 
     it('should hide the message when field it is valid', () => {
-        const control = new FormControl('valid-content', Validators.required);
+        const control = new UntypedFormControl('valid-content', Validators.required);
         control.markAsDirty();
         control.markAsTouched();
 
@@ -70,7 +70,7 @@ describe('FieldValidationComponent', () => {
     });
 
     it('should show the default message when field it is dirty and invalid', () => {
-        const control = new FormControl('', Validators.required);
+        const control = new UntypedFormControl('', Validators.required);
         control.markAsDirty();
         control.markAsTouched();
         component.field = control;
@@ -84,7 +84,7 @@ describe('FieldValidationComponent', () => {
     });
 
     it('should show the message when field it is dirty and invalid', () => {
-        const control = new FormControl('', Validators.required);
+        const control = new UntypedFormControl('', Validators.required);
         component.defaultMessage = 'Required';
 
         control.markAsDirty();

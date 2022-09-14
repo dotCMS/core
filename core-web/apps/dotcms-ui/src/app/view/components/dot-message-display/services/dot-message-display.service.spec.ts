@@ -40,23 +40,21 @@ describe('DotMessageDisplayService', () => {
         dotMessageDisplayService = TestBed.inject(DotMessageDisplayService);
     });
 
-    xit('should emit a message', (done) => {
+    xit('should emit a message', () => {
         dotMessageDisplayService.messages().subscribe((message: DotMessage) => {
             expect(message).toEqual({
                 ...messageExpected,
                 severity: DotMessageSeverity.ERROR,
                 type: DotMessageType.SIMPLE_MESSAGE
             });
-            done();
         });
 
         mockDotcmsEventsService.triggerSubscribeTo('MESSAGE', messageExpected);
     });
 
-    it('should push a message', (done) => {
+    it('should push a message', () => {
         dotMessageDisplayService.messages().subscribe((message: DotMessage) => {
             expect(message).toEqual(messageExpected);
-            done();
         });
 
         dotMessageDisplayService.push(messageExpected);
@@ -77,7 +75,7 @@ describe('DotMessageDisplayService', () => {
     });
 
     describe('with portletIdList', () => {
-        it('should show message when currentPortlet is in portletIdList ', (done) => {
+        it('should show message when currentPortlet is in portletIdList ', () => {
             messageExpected.portletIdList = ['content-types-angular'];
 
             dotMessageDisplayService.messages().subscribe((message: DotMessage) => {
@@ -86,7 +84,6 @@ describe('DotMessageDisplayService', () => {
                     severity: DotMessageSeverity.ERROR,
                     type: DotMessageType.SIMPLE_MESSAGE
                 });
-                done();
             });
 
             mockDotcmsEventsService.triggerSubscribeTo('MESSAGE', messageExpected);

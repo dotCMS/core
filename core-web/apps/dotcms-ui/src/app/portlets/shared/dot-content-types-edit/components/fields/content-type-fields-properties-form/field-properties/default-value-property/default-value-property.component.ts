@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FieldProperty } from '../field-properties.model';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { FormGroup } from '@angular/forms';
+import { UntypedFormGroup } from '@angular/forms';
 
 @Component({
     selector: 'dot-default-value-property',
@@ -9,7 +9,7 @@ import { FormGroup } from '@angular/forms';
 })
 export class DefaultValuePropertyComponent implements OnInit {
     property: FieldProperty;
-    group: FormGroup;
+    group: UntypedFormGroup;
     errorLabel: string;
     private errorLabelsMap = new Map<string, string>();
 

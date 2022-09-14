@@ -21,22 +21,20 @@ describe('DotAppsConfigurationDetailResolver', () => {
     let dotAppsServices: DotAppsService;
     let dotAppsConfigurationDetailResolver: DotAppsConfigurationDetailResolver;
 
-    beforeEach(
-        waitForAsync(() => {
-            const testbed = TestBed.configureTestingModule({
-                providers: [
-                    DotAppsConfigurationDetailResolver,
-                    { provide: DotAppsService, useClass: AppsServicesMock },
-                    {
-                        provide: ActivatedRouteSnapshot,
-                        useValue: activatedRouteSnapshotMock
-                    }
-                ]
-            });
-            dotAppsServices = testbed.get(DotAppsService);
-            dotAppsConfigurationDetailResolver = testbed.get(DotAppsConfigurationDetailResolver);
-        })
-    );
+    beforeEach(waitForAsync(() => {
+        const testbed = TestBed.configureTestingModule({
+            providers: [
+                DotAppsConfigurationDetailResolver,
+                { provide: DotAppsService, useClass: AppsServicesMock },
+                {
+                    provide: ActivatedRouteSnapshot,
+                    useValue: activatedRouteSnapshotMock
+                }
+            ]
+        });
+        dotAppsServices = testbed.get(DotAppsService);
+        dotAppsConfigurationDetailResolver = testbed.get(DotAppsConfigurationDetailResolver);
+    }));
 
     it('should get and return app with configurations', () => {
         const response = {
@@ -62,6 +60,7 @@ describe('DotAppsConfigurationDetailResolver', () => {
         activatedRouteSnapshotMock.paramMap.get = (param: string) => {
             return param === 'appKey' ? queryParams.appKey : queryParams.id;
         };
+
         spyOn<any>(dotAppsServices, 'getConfiguration').and.returnValue(of(response));
 
         dotAppsConfigurationDetailResolver

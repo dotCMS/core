@@ -6,6 +6,7 @@ export function getDownloadLink(blob: Blob, fileName: string): HTMLAnchorElement
     const anchor = document.createElement('a');
     anchor.download = fileName;
     anchor.href = window.URL.createObjectURL(blob);
+
     return anchor;
 }
 

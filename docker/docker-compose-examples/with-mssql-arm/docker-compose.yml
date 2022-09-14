@@ -1,0 +1,62 @@
+version: "3.5"
+
+networks:
+  db_net:
+  es_net:
+
+volumes:
+  db-data-dev:
+  esdata:
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.1
+    environment:
+      - cluster.name=elastic-cluster
+      - discovery.type=single-node
+      - data
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xmx1G"
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    networks:
+      - es_net
+
+  dotcms-dev:
+    image: dotcms/dotcms:latest
+    environment:
+      "CATALINA_OPTS": " -Xms1g -Xmx1g "
+      "DB_BASE_URL": "jdbc:sqlserver://db-dev;databaseName=master"
+      "DB_USERNAME": "sa"
+      "DB_PASSWORD": "Test1234"
+      "DB_VALIDATION_QUERY": "SELECT 1"
+      "DOT_ES_AUTH_BASIC_PASSWORD": "admin"
+      "DOT_ES_ENDPOINTS": "http://elasticsearch:9200"
+      "DB_DRIVER": "com.microsoft.sqlserver.jdbc.SQLServerDriver"
+      "ES_ADMIN_PASSWORD": "admin"
+      "DOT_INITIAL_ADMIN_PASSWORD": "admin"
+    depends_on:
+      - elasticsearch
+      - db-dev
+    networks:
+      - db_net
+      - es_net
+    ports:
+      - "8080:8080"
+      - "8000:8000"
+
+  db-dev:
+    image: mcr.microsoft.com/azure-sql-edge:latest
+    cap_add: ["SYS_PTRACE"]
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+      MSSQL_DB_USER: "dotcms"
+      MSSQL_USER: "sa"
+      MSSQL_SA_PASSWORD: "Test1234"
+    ports:
+      - "1433:1433"
+    volumes:
+      - db-data-dev:/var/opt/mssql
+    networks:
+      - db_net

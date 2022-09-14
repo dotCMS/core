@@ -166,7 +166,7 @@ public class TagResource {
                         tag.label != null ? tag.label : "unknown"));
             }
         }
-        return Response.ok(new ResponseEntityView(saveFails.build(),
+        return Response.ok(new ResponseEntityView<>(saveFails.build(),
                 ImmutableMap.of(TAGS, toRestTagMap(savedTags.build())))).build();
     }
 
@@ -426,7 +426,7 @@ public class TagResource {
                 saveFails.add(new ErrorEntity("tag.save.error.default", e.getMessage(), tag.getTagName()));
             }
         }
-        return Response.ok(new ResponseEntityView(saveFails, tagInodes)).build();
+        return Response.ok(new ResponseEntityView<List<TagInode>>(saveFails, tagInodes)).build();
     }
 
     /**
@@ -461,7 +461,7 @@ public class TagResource {
             Logger.error(TagResource.class, String.format("No tags were found by the inode %s.",inode));
             return Response.status(Status.NOT_FOUND).build();
         }
-        return Response.ok(new ResponseEntityView(tagInodes)).build();
+        return Response.ok(new ResponseEntityView<List<TagInode>>(tagInodes)).build();
     }
 
     /**

@@ -178,6 +178,7 @@ export class DotContentTypesInfoService {
         if (type === 'htmlpage') {
             type = 'HTMLPAGE';
         }
+
         if (type === 'FILE' || type === 'file' || type === 'File') {
             type = 'FILEASSET';
         }

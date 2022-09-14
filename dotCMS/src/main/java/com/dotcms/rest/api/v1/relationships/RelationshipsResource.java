@@ -63,7 +63,7 @@ public class RelationshipsResource {
     public final Response getCardinality() throws Throwable {
         Logger.debug(this, "Getting relationships cardinality");
 
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityView<>(
                 Arrays.stream(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.values())
                       .map(cardinality -> {
                           String label;

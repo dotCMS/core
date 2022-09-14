@@ -16,6 +16,7 @@ class DotMessageMockPipe implements PipeTransform {
             save: 'Save',
             cancel: 'Cancel'
         };
+
         return map[val];
     }
 }
