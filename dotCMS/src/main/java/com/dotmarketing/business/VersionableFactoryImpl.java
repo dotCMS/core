@@ -6,6 +6,7 @@ import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.transform.TransformerLocator;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.VersionInfo;
@@ -51,9 +52,9 @@ public class VersionableFactoryImpl extends VersionableFactory {
 	ContainerAPI containerApi = null;
 	TemplateAPI templateApi = null;
 
-	private static final String CREATE_CONTENTLET_VERSION_INFO_SQL = "INSERT INTO contentlet_version_info (identifier, lang, working_inode, deleted, locked_by, locked_on, version_ts) VALUES (?,?,?,?,?,?,?)";
-	private static final String INSERT_CONTENTLET_VERSION_INFO_SQL = "INSERT INTO contentlet_version_info (identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts) VALUES (?,?,?,?,?,?,?,?)";
-	private static final String UPDATE_CONTENTLET_VERSION_INFO_SQL = "UPDATE contentlet_version_info SET working_inode=?, live_inode=?, deleted=?, locked_by=?, locked_on=?, version_ts=? WHERE identifier=? AND lang=?";
+	private static final String CREATE_CONTENTLET_VERSION_INFO_SQL = "INSERT INTO contentlet_version_info (identifier, lang, working_inode, deleted, locked_by, locked_on, version_ts, variant_id) VALUES (?,?,?,?,?,?,?, ?)";
+	private static final String INSERT_CONTENTLET_VERSION_INFO_SQL = "INSERT INTO contentlet_version_info (identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts, variant_id) VALUES (?,?,?,?,?,?,?,?,?)";
+	private static final String UPDATE_CONTENTLET_VERSION_INFO_SQL = "UPDATE contentlet_version_info SET working_inode=?, live_inode=?, deleted=?, locked_by=?, locked_on=?, version_ts=? WHERE identifier=? AND lang=? AND variant_id = ?";
 
 	/**
 	 * Default class constructor.
@@ -322,43 +323,59 @@ public class VersionableFactoryImpl extends VersionableFactory {
     }
 
     @Override
-    protected Optional<ContentletVersionInfo> getContentletVersionInfo(String identifier, long lang) throws DotDataException, DotStateException {
-        if (DbConnectionFactory.inTransaction()) {
-            return findContentletVersionInfoInDB(identifier, lang);
-        }
-        ContentletVersionInfo contentVersionInfo = this.icache.getContentVersionInfo(identifier, lang);
-        if(contentVersionInfo!=null && fourOhFour.equals(contentVersionInfo.getWorkingInode())) {
-        	return Optional.empty();
-        }else if(contentVersionInfo!=null ){
-        	return Optional.of(contentVersionInfo);
-        }
-
-    	final Optional<ContentletVersionInfo> optionalInfo = findContentletVersionInfoInDB(identifier, lang);
-        if(optionalInfo.isPresent()){
-        	this.icache.addContentletVersionInfoToCache(optionalInfo.get());
-        }else{
-        	contentVersionInfo = new ContentletVersionInfo();
-        	contentVersionInfo.setIdentifier(identifier);
-        	contentVersionInfo.setLang(lang);
-        	contentVersionInfo.setWorkingInode(fourOhFour);
-        	this.icache.addContentletVersionInfoToCache(contentVersionInfo);
-			return Optional.empty();
-        }
-
-        return optionalInfo;
+    protected Optional<ContentletVersionInfo> getContentletVersionInfo(final String identifier,
+			final long lang) throws DotDataException, DotStateException {
+        return getContentletVersionInfo(identifier, lang, VariantAPI.DEFAULT_VARIANT.identifier());
     }
 
-    @Override
-    protected Optional<ContentletVersionInfo> findContentletVersionInfoInDB(String identifier, long lang)throws DotDataException, DotStateException {
+	@Override
+	public Optional<ContentletVersionInfo> getContentletVersionInfo(
+			final String identifier, final long lang, final String variantId) throws DotDataException, DotStateException{
+
+		if (DbConnectionFactory.inTransaction()) {
+			return findContentletVersionInfoInDB(identifier, lang, variantId);
+		}
+
+		ContentletVersionInfo contentVersionInfo = this.icache.getContentVersionInfo(identifier, lang, variantId);
+		if(contentVersionInfo!=null && fourOhFour.equals(contentVersionInfo.getWorkingInode())) {
+			return Optional.empty();
+		}else if(contentVersionInfo!=null ){
+			return Optional.of(contentVersionInfo);
+		}
+
+		final Optional<ContentletVersionInfo> optionalInfo = findContentletVersionInfoInDB(identifier, lang, variantId);
+		if(optionalInfo.isPresent()){
+			this.icache.addContentletVersionInfoToCache(optionalInfo.get());
+		}else{
+			contentVersionInfo = new ContentletVersionInfo();
+			contentVersionInfo.setIdentifier(identifier);
+			contentVersionInfo.setLang(lang);
+			contentVersionInfo.setWorkingInode(fourOhFour);
+			this.icache.addContentletVersionInfoToCache(contentVersionInfo);
+			return Optional.empty();
+		}
+
+		return optionalInfo;
+	}
+
+	@Override
+	public Optional<ContentletVersionInfo> findContentletVersionInfoInDB(
+			String identifier, long lang, String variantId) throws DotDataException, DotStateException {
 		final DotConnect dotConnect = new DotConnect()
-				.setSQL("SELECT * FROM contentlet_version_info WHERE identifier=? AND lang=?")
+				.setSQL("SELECT * FROM contentlet_version_info WHERE identifier=? AND lang=? AND variant_id = ?")
 				.addParam(identifier)
-				.addParam(lang);
+				.addParam(lang)
+				.addParam(variantId);
 
 		final List<ContentletVersionInfo> versionInfos = TransformerLocator
 				.createContentletVersionInfoTransformer(dotConnect.loadObjectResults()).asList();
 
 		return !versionInfos.isEmpty() ? Optional.of(versionInfos.get(0)) : Optional.empty();
+	}
+
+    @Override
+    protected Optional<ContentletVersionInfo> findContentletVersionInfoInDB(String identifier, long lang)throws DotDataException, DotStateException {
+		return findContentletVersionInfoInDB(identifier, lang, VariantAPI.DEFAULT_VARIANT.identifier());
     }
 
 	@Override
@@ -425,6 +442,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 			dotConnect.addParam(cvInfo.getLockedBy());
 			dotConnect.addParam(cvInfo.getLockedOn());
 			dotConnect.addParam(cvInfo.getVersionTs());
+			dotConnect.addParam(cvInfo.getVariant());
 			dotConnect.loadResult();
         } else {
 			dotConnect.setSQL(UPDATE_CONTENTLET_VERSION_INFO_SQL);
@@ -436,6 +454,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 			dotConnect.addParam(cvInfo.getVersionTs());
 			dotConnect.addParam(cvInfo.getIdentifier());
 			dotConnect.addParam(cvInfo.getLang());
+			dotConnect.addParam(cvInfo.getVariant());
 			dotConnect.loadResult();
         }
     	this.icache.removeContentletVersionInfoToCache(cvInfo.getIdentifier(),cvInfo.getLang());
@@ -443,6 +462,14 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
     @Override
     protected ContentletVersionInfo createContentletVersionInfo(Identifier identifier, long lang, String workingInode) throws DotStateException, DotDataException {
+		return createContentletVersionInfo(identifier, lang, workingInode, VariantAPI.DEFAULT_VARIANT.identifier());
+    }
+
+	@Override
+	protected ContentletVersionInfo createContentletVersionInfo(final Identifier identifier,
+			final long lang, final String workingInode, final String variantId)
+			throws DotStateException, DotDataException {
+
 		DotConnect dotConnect = new DotConnect();
 		dotConnect.setSQL(CREATE_CONTENTLET_VERSION_INFO_SQL);
 		dotConnect.addParam(identifier.getId());
@@ -452,10 +479,11 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		dotConnect.addParam((String) null);
 		dotConnect.addParam(new Date());
 		dotConnect.addParam(new Date());
+		dotConnect.addParam(variantId);
 		dotConnect.loadResult();
 
-		return findContentletVersionInfoInDB(identifier.getId(), lang).get();
-    }
+		return findContentletVersionInfoInDB(identifier.getId(), lang, variantId).get();
+	}
 
     @Override
     protected VersionInfo createVersionInfo(Identifier identifier, String workingInode) throws DotStateException, DotDataException {

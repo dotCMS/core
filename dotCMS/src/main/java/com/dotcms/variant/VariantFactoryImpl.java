@@ -48,7 +48,7 @@ public class VariantFactoryImpl implements VariantFactory{
                 .name(variant.name())
                 .archived(variant.archived()).build();
 
-        CacheLocator.getVariantCache().put(variantWithID);
+        CacheLocator.getVariantCache().remove(variantWithID);
         return variantWithID;
     }
 
@@ -88,7 +88,7 @@ public class VariantFactoryImpl implements VariantFactory{
                 .addParam(variant.identifier())
                 .loadResult();
 
-        CacheLocator.getVariantCache().put(variant);
+        CacheLocator.getVariantCache().remove(variant);
     }
 
     @Override
@@ -107,12 +107,20 @@ public class VariantFactoryImpl implements VariantFactory{
     public Optional<Variant> get(final String identifier) throws DotDataException {
         Variant variant = CacheLocator.getVariantCache().getById(identifier);
 
-        return UtilMethods.isSet(variant) && !variant.equals(VARIANT_404) ?
-                Optional.of(variant) :
-                getFromDataBaseById(identifier).or(() -> {
-                    CacheLocator.getVariantCache().putById(identifier, VariantFactory.VARIANT_404);
-                    return Optional.empty();
-                });
+        if (UtilMethods.isSet(variant)) {
+            return variant.equals(VARIANT_404) ? Optional.empty() : Optional.of(variant);
+        } else {
+            final Optional<Variant> variantFromDataBase = getFromDataBaseById(identifier);
+
+            if (variantFromDataBase.isPresent()) {
+                CacheLocator.getVariantCache().put(variantFromDataBase.get());
+            } else {
+                CacheLocator.getVariantCache().putById(identifier, VariantFactory.VARIANT_404);
+            }
+
+            return variantFromDataBase;
+        }
+
     }
 
     private Optional<Variant> getFromDataBaseById(final String identifier) throws DotDataException {
@@ -137,11 +145,18 @@ public class VariantFactoryImpl implements VariantFactory{
 
         Variant variant = CacheLocator.getVariantCache().getByName(name);
 
-        return UtilMethods.isSet(variant) && !variant.equals(VARIANT_404) ?
-                Optional.of(variant) :
-                getFromDataBaseByName(name).or(() -> {
-                    CacheLocator.getVariantCache().putByName(name, VariantFactory.VARIANT_404);
-                    return Optional.empty();
-                });
+        if (UtilMethods.isSet(variant)) {
+            return variant.equals(VARIANT_404) ? Optional.empty() : Optional.of(variant);
+        } else {
+            final Optional<Variant> variantFromDataBase = getFromDataBaseByName(name);
+
+            if (variantFromDataBase.isPresent()) {
+                CacheLocator.getVariantCache().put(variantFromDataBase.get());
+            } else {
+                CacheLocator.getVariantCache().putByName(name, VariantFactory.VARIANT_404);
+            }
+
+            return variantFromDataBase;
+        }
     }
 }
