@@ -68,7 +68,7 @@ public interface ExperimentsAPI {
      * <li>Unable to start if provided {@link Scheduling#startDate()} is in the past
      * <li>Unable to start if provided {@link Scheduling#endDate()} is in the past
      * <li>Unable to start if provided {@link Scheduling#endDate()} is not after provided {@link Scheduling#startDate()}
-     * <li>Unable to start if difference {@link Scheduling#endDate()} is not after provided {@link Scheduling#startDate()}
+     * <li>Unable to start if difference between {@link Scheduling#endDate()} and {@link Scheduling#startDate()} is more than {@link ExperimentsAPI#EXPERIMENT_MAX_DURATION}
      *
      * @return
      */
@@ -81,5 +81,13 @@ public interface ExperimentsAPI {
      */
     Experiment end(String experimentId, User user) throws DotDataException, DotSecurityException;
 
+    /**
+     * Validates a {@link Scheduling} by the following:
+     *
+     * <li>Provided {@link Scheduling#startDate()} needs to be now or in the future
+     * <li>Provided {@link Scheduling#endDate()} needs to be in the future
+     * <li>Provided {@link Scheduling#endDate()} needs to be after provided {@link Scheduling#startDate()}
+     * <li>Difference between provided {@link Scheduling#endDate()} and {@link Scheduling#startDate()} needs to be less or equal than {@link ExperimentsAPI#EXPERIMENT_MAX_DURATION}
+     */
     Scheduling validateScheduling(final Scheduling scheduling);
 }
