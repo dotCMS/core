@@ -297,6 +297,12 @@ public class IdentifierCacheImpl extends IdentifierCache {
         cache.remove(getVersionInfoGroup()+key, getVersionInfoGroup());
     }
 
+	@Override
+	public void removeContentletVersionInfoToCache(String identifier, long lang, final String variantId) {
+		String key = getKey(identifier, lang, variantId);
+		cache.remove(getVersionInfoGroup() + key , getVersionInfoGroup());
+	}
+
     @Override
     protected void removeVersionInfoFromCache(String identifier) {
         cache.remove(getVersionInfoGroup()+identifier, getVersionInfoGroup());

@@ -1,6 +1,7 @@
 package com.dotcms.rendering.velocity.services;
 
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -26,7 +27,7 @@ public class VelocityResourceKey implements Serializable {
     private static final String HOST_INDICATOR = "///";
     private static final long serialVersionUID = 1L;
 
-    public final String path, language, id1, id2, cacheKey;
+    public final String path, language, id1, id2, cacheKey, variant;
     public final VelocityType type;
     public final PageMode mode;
 
@@ -54,7 +55,8 @@ public class VelocityResourceKey implements Serializable {
         this("/" + mode.name() + "/" + asset.getIdentifier() + "_" + language + "." + VelocityType.HTMLPAGE.fileExtension);
     }
     public VelocityResourceKey(final Contentlet asset, final PageMode mode, final long language) {
-        this("/" + mode.name() + "/" + asset.getIdentifier() + "_" + language + "." + VelocityType.CONTENT.fileExtension);
+        this("/" + mode.name() + "/" + asset.getIdentifier() + StringPool.UNDERLINE + language +
+                StringPool.UNDERLINE +  asset.getVariantId() + "." + VelocityType.CONTENT.fileExtension);
     }
     public VelocityResourceKey(final String filePath) {
 
@@ -65,10 +67,15 @@ public class VelocityResourceKey implements Serializable {
 
         this.mode = PageMode.get(pathArry[1]);
 
-        this.id1 = pathArry[2].indexOf("_") > -1 ? pathArry[2].substring(0, pathArry[2].indexOf("_")) : pathArry[2];
+        final String[] underlineSplit = pathArry[2].split(StringPool.UNDERLINE);
+        this.id1 = underlineSplit[0];
 
-        this.language = pathArry[2].indexOf("_") > -1 ? pathArry[2].substring(pathArry[2].indexOf("_") + 1, pathArry[2].length())
+        this.language = underlineSplit.length > 1 ? underlineSplit[1]
                 : String.valueOf(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+
+        this.variant = underlineSplit.length > 2 ? underlineSplit[2]
+                : VariantAPI.DEFAULT_VARIANT.identifier();
+
         this.type = VelocityType.resolveVelocityType(filePath);
         this.id2 = pathArry.length > 4 ? pathArry[3] : null;
         this.cacheKey = cacheKey();

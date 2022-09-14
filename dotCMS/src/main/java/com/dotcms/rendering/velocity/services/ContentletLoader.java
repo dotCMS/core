@@ -19,9 +19,11 @@ import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.JsonUtil;
+import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.comparators.ContentComparator;
 import com.dotmarketing.comparators.WebAssetSortOrderComparator;
 import com.dotmarketing.exception.DotDataException;
@@ -607,16 +609,11 @@ public class ContentletLoader implements DotLoader {
             throws DotStateException, DotDataException, DotSecurityException {
 
         long language = new Long(key.language);
-        Optional<ContentletVersionInfo> info = APILocator.getVersionableAPI().getContentletVersionInfo(key.id1, language);
+        final RenderContext renderContext = WebAPILocator.getVariantWebAPI()
+                .getRenderContext(language, key.id1, key.mode, APILocator.systemUser());
 
-        if ((!info.isPresent() || key.mode.showLive && !UtilMethods.isSet(info.get().getLiveInode()))
-                && shouldCheckForVersionInfoInDefaultLanguage(language)) {
-            info = APILocator.getVersionableAPI().getContentletVersionInfo(key.id1, defaultLang);
-        }
-
-        if (!info.isPresent() || key.mode.showLive && !UtilMethods.isSet(info.get().getLiveInode())) {
-            throw new ResourceNotFoundException("cannot find content for: " + key);
-        }
+        Optional<ContentletVersionInfo> info = APILocator.getVersionableAPI().getContentletVersionInfo(key.id1,
+                renderContext.getCurrentLanguageId(), renderContext.getCurrentVariantKey());
 
         Contentlet contentlet = (key.mode.showLive)
                 ? APILocator.getContentletAPI().find(info.get().getLiveInode(),
@@ -629,8 +626,6 @@ public class ContentletLoader implements DotLoader {
             throw new ResourceNotFoundException("cannot find content for: " + key);
         }
         return buildVelocity(contentlet, key.mode, key.path);
-
-
     }
 
     private boolean shouldCheckForVersionInfoInDefaultLanguage(long language) {

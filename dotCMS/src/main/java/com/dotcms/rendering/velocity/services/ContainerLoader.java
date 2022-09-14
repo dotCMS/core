@@ -272,6 +272,8 @@ public class ContainerLoader implements DotLoader {
             velocityCodeBuilder.append("#foreach ($contentletId in $CONTENTLETS )");
 
               velocityCodeBuilder.append("#set($dotContentMap=$dotcontent.load($contentletId))");
+            velocityCodeBuilder.append("<H1>$dotContentMap.get('title')</H1>");
+            velocityCodeBuilder.append("<H2>$title</H2>");
               velocityCodeBuilder.append("#set($_show_working_=false)");
 
             //Time-machine block begin
@@ -309,7 +311,9 @@ public class ContainerLoader implements DotLoader {
                 
                 // read in the content
                 velocityCodeBuilder.append("#if($contentletId != '')");
+            velocityCodeBuilder.append("<H2>Before $title</H2>");
                 velocityCodeBuilder.append("#contentDetail($contentletId)");
+            velocityCodeBuilder.append("<H2>After $title</H2>");
                 velocityCodeBuilder.append("#end");
 
                 velocityCodeBuilder.append("#set($HAVE_A_VERSION=($CONTENT_INODE != ''))");
@@ -345,6 +349,7 @@ public class ContainerLoader implements DotLoader {
                 
                     // ##Checking permission to see content
                     if (mode.showLive) {
+                        velocityCodeBuilder.append("$contents.doesUserHasPermission($CONTENT_INODE, 1, $user, true)");
                         velocityCodeBuilder.append("#if($_show_working_ || $contents.doesUserHasPermission($CONTENT_INODE, 1, $user, true))");
                     }
                     

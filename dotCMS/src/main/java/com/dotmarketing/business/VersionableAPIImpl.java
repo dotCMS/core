@@ -287,8 +287,8 @@ public class VersionableAPIImpl implements VersionableAPI {
         String liveInode;
         if(identifier.getAssetType().equals("contentlet")) {
             final Contentlet contentlet = (Contentlet)versionable;
-            final Optional<ContentletVersionInfo> info = getContentletVersionInfo(identifier,
-                    contentlet);
+            final Optional<ContentletVersionInfo> info = getContentletVersionInfo(contentlet.getIdentifier(),
+                    contentlet.getLanguageId(), contentlet.getVariantId());
 
             liveInode=info.get().getLiveInode();
         } else {
@@ -358,7 +358,8 @@ public class VersionableAPIImpl implements VersionableAPI {
         if(identifier.getAssetType().equals("contentlet")) {
 
             final Contentlet contentlet = (Contentlet)versionable;
-            final Optional<ContentletVersionInfo> info = getContentletVersionInfo(identifier, contentlet);
+            final Optional<ContentletVersionInfo> info = getContentletVersionInfo(
+                    contentlet.getIdentifier(), contentlet.getLanguageId(), contentlet.getVariantId());
 
             workingInode = info.get().getWorkingInode();
         } else {
@@ -473,7 +474,8 @@ public class VersionableAPIImpl implements VersionableAPI {
         if ( identifier.getAssetType().equals( "contentlet" ) ) {
 
             final Contentlet contentlet = (Contentlet) versionable;
-            final Optional<ContentletVersionInfo> info = getContentletVersionInfo(identifier, contentlet);
+            final Optional<ContentletVersionInfo> info = getContentletVersionInfo(
+                    contentlet.getIdentifier(), contentlet.getLanguageId(), contentlet.getVariantId());
 
             //Get the structure for this contentlet
             final Structure structure = CacheLocator.getContentTypeCache().getStructureByInode( contentlet.getStructureInode() );
