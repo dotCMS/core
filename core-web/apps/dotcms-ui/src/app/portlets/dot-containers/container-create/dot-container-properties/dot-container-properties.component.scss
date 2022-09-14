@@ -1,0 +1,21 @@
+@use "variables" as *;
+
+:host {
+    .dot-container-properties__title-container {
+        padding: $spacing-4 0;
+    }
+
+    .dot-container-properties__code-container-outer {
+        background: $white;
+    }
+
+    .dot-container-properties__pre-post-loop {
+        .dot-container-properties__pre-post-loop-inplace {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: $spacing-6;
+            background: #e9ebfc;
+        }
+    }
+}

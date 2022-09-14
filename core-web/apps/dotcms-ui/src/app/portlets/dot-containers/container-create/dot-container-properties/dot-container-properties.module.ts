@@ -4,10 +4,18 @@ import { CommonModule } from '@angular/common';
 import { InplaceModule } from 'primeng/inplace';
 import { SharedModule } from 'primeng/api';
 import { InputTextModule } from 'primeng/inputtext';
-
+import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
+import { CardModule } from 'primeng/card';
 @NgModule({
     declarations: [DotContainerPropertiesComponent],
     exports: [DotContainerPropertiesComponent],
-    imports: [CommonModule, InplaceModule, SharedModule, InputTextModule]
+    imports: [
+        CommonModule,
+        InplaceModule,
+        SharedModule,
+        InputTextModule,
+        DotPortletBaseModule,
+        CardModule
+    ]
 })
 export class DotContainerPropertiesModule {}

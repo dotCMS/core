@@ -1,5 +1,5 @@
 <ng-container>
-    <div>
+    <div class="dot-container-properties__title-container">
         <p-inplace #editText>
             <ng-template pTemplate="content">
                 <span class="p-input-icon-right">
@@ -12,5 +12,38 @@
                 <i class="pi pi-pencil"></i>
             </ng-template>
         </p-inplace>
+    </div>
+    <div class="field">
+        <label for="description" class="block">Description</label>
+        <input id="description" type="text" pInputText />
+    </div>
+    <div class="field">
+        <label for="max-contents" class="block">Max Contents</label>
+        <input id="max-contents" type="text" pInputText />
+        <button pButton class="p-button-secondary" type="button" label="Clear"></button>
+        <button pButton type="button" label="content type code"></button>
+    </div>
+
+    <div class="dot-container-properties__code-container-outer">
+        <div class="dot-container-properties__pre-post-loop">
+            <div class="dot-container-properties__pre-post-loop-inplace">
+                <button
+                    pButton
+                    class="p-button-outlined p-button-secondary"
+                    type="button"
+                    label="ADD PRE AND POST LOOP CODE"
+                ></button>
+            </div>
+        </div>
+        <div class="dot-container-properties__pre-post-loop">
+            <div class="dot-container-properties__pre-post-loop-inplace">
+                <button
+                    pButton
+                    class="p-button-outlined p-button-secondary"
+                    type="button"
+                    label="ADD PRE AND POST LOOP CODE"
+                ></button>
+            </div>
+        </div>
     </div>
 </ng-container>
