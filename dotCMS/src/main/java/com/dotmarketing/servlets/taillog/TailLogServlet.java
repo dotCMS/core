@@ -1,25 +1,24 @@
 package com.dotmarketing.servlets.taillog;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.util.regex.Pattern;
-
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.dotcms.repackage.org.apache.commons.io.input.TailerListenerAdapter;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringUtil;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.regex.Pattern;
+import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.lang.StringUtils;
 
 public class TailLogServlet extends HttpServlet {
 
@@ -27,6 +26,7 @@ public class TailLogServlet extends HttpServlet {
 	 *
 	 */
 	private static final long serialVersionUID = -1700686919872123657L;
+	public static final int LINES_PER_PAGE = 10;
 
 	public void init() {}
 
@@ -96,10 +96,10 @@ public class TailLogServlet extends HttpServlet {
 				+ "<head>"
 				+ "<title>dotCMS Log</title>"
 				+ "<style type='text/css'>@import '/html/css/dot_admin.css';</style>"
-				+ "<script>var working =false;"
-				+ "function doS(){"
-				+ "if(!working){working=true;if(parent.document.getElementById('scrollMe').checked){dh=document.body.scrollHeight;ch=document.body.clientHeight;if(dh>ch){moveme=dh-ch;window.scrollTo(0,moveme);}}working=false;}"
-				+ "}</script>" + "</head><body class='tailerBody'>");
+				+ "<script>"
+				+ "function doS(newContent, pageId){"
+				+ " let logEvent=new CustomEvent('logUpdated',{detail:{msg:'log updated', newContent: newContent, pageId: pageId},bubbles:true,cancelable:true});document.body.dispatchEvent(logEvent);"
+				+ "}</script></head><body class='tailerBody'>");
 
 		out.flush();
 
@@ -129,15 +129,37 @@ public class TailLogServlet extends HttpServlet {
 
 		thread.start();
 
+		int logNumber = 0;
+		int count = 1;
+        int pageNumber = 1;
+
 		try {
 			while (thread.isAlive()) {
-                String write = listener.getOut(true).toString();
-                response.getOutputStream().print(write);
-                response.getOutputStream().print("<script>doS();</script>");
-                response.getOutputStream().flush();
-                Thread.sleep(1000);
+				final String write = listener.getOut(true).toString();
+				if (StringUtils.isNotEmpty(write)) {
+					final String prepWrite = String.format("<p class=\"log page%d\" data-page=\"%d\" data-logNumber=\"%d\" style=\"margin:0\">%s</p>", pageNumber, pageNumber, logNumber, write);
+					response.getOutputStream().print(prepWrite);
+					final String dosWrite = String.format("<script>doS('%s','%d');</script>",prepWrite,pageNumber);
+					response.getOutputStream().print(dosWrite);
+					count++;
+					logNumber++;
+				} else {
+					//Keep Alive
+					//response.getOutputStream().print("<p class='keepAlive'></p>");
+					response.getOutputStream().print(" ");
+				}
+				response.getOutputStream().flush();
+				if (count % (LINES_PER_PAGE + 1) == 0) {
+					pageNumber++;
+					count = 1;
+				}
+				Thread.sleep(1000);
 			}
+
+			Logger.warn(this, "Tail Log Servlet Thread is not alive");
 		} catch (Exception e) {
+			Logger.warn(this, "Tail Log Servlet Thread stopped because " + e.getMessage());
+
 			if (thread != null) {
 				thread.stopTailer();
 			}
