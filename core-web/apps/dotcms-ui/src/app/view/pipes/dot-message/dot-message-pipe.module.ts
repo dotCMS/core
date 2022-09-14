@@ -4,7 +4,7 @@ import { DotMessagePipe } from './dot-message.pipe';
 
 @NgModule({
     imports: [CommonModule],
-    declarations: [DotMessagePipe],
-    exports: [DotMessagePipe]
+    declarations: [DotMessagePipe, DotMessagePipe],
+    exports: [DotMessagePipe, DotMessagePipe]
 })
 export class DotMessagePipeModule {}
