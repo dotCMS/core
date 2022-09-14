@@ -320,22 +320,20 @@ public class TaskLocatorUtil {
 		.add(Task220413IncreasePublishedPushedAssetIdCol.class)
 		.add(Task220512UpdateNoHTMLRegexValue.class)
 		.add(Task220606UpdatePushNowActionletName.class)
-    .add(Task220822CreateVariantTable.class)
+    	.add(Task220822CreateVariantTable.class)
 		.add(Task220829CreateExperimentsTable.class)
+		.add(Task220912UpdateCorrectShowOnMenuProperty.class)
 		.build();
         
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 
 	}
-
 	
     final static private Comparator<Class<?>> classNameComparator = new Comparator<Class<?>>() {
         public int compare(Class<?> o1, Class<?> o2) {
             return o1.getName().compareTo(o2.getName());
         }
     };
-    
-	
 	
 	/**
 	 * Returns list of tasks that are run <b>every time</b> that dotCMS starts
@@ -346,7 +344,7 @@ public class TaskLocatorUtil {
 	 * @return The list of Run-Always Tasks.
 	 */
 	public static List<Class<?>> getStartupRunAlwaysTaskClasses() {
-		final List<Class<?>> ret = new ArrayList<Class<?>>();
+		final List<Class<?>> ret = new ArrayList<>();
 		ret.add(Task00001LoadSchema.class);
 		ret.add(Task00003CreateSystemRoles.class);
 		ret.add(Task00004LoadStarter.class);
