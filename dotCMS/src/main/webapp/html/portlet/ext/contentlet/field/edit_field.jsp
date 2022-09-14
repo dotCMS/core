@@ -1273,7 +1273,7 @@
             function formatToJsonData(value) {
                 var removedBrackets = value.trim().substring(1, value.length-1);
                 var preformatted = removedBrackets.replaceAll(/:/g, '":"').replaceAll(/,/g, '","');
-                return `{"${preformatted}"}`;
+                return preformatted ? `{"${preformatted}"}` : '';
             }
 
             // Escape chars and set value to hidden input
