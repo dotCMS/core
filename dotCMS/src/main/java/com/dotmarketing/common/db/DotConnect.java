@@ -553,7 +553,7 @@ public class DotConnect {
             PGobject jsonObject = new PGobject();
             jsonObject.setType("json");
             Try.run(() -> jsonObject.setValue(jsonStr)).getOrElseThrow(
-                    () -> new IllegalArgumentException("Invalid Traffic Proportion"));
+                    () -> new IllegalArgumentException("Invalid JSON"));
             return addObject(jsonObject);
         } else {
             return addParam(jsonStr);
