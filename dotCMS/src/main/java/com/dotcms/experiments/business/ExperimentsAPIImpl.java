@@ -6,9 +6,7 @@ import static com.dotcms.experiments.model.AbstractExperiment.Status.ENDED;
 import com.dotcms.analytics.metrics.MetricsUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
-import com.dotcms.experiments.model.AbstractScheduling;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.util.DotPreconditions;
@@ -165,6 +163,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     @Override
+    @WrapInTransaction
     public Experiment start(String experimentId, User user)
             throws DotDataException, DotSecurityException {
         DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
@@ -210,6 +209,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     @Override
+    @WrapInTransaction
     public Experiment end(String experimentId, User user)
             throws DotDataException, DotSecurityException {
         DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
