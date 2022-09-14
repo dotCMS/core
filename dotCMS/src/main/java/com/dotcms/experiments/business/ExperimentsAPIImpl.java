@@ -6,13 +6,14 @@ import static com.dotcms.experiments.model.AbstractExperiment.Status.ENDED;
 import com.dotcms.analytics.metrics.MetricsUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
-import com.dotcms.experiments.model.AbstractScheduling;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
+import com.dotcms.experiments.model.TrafficProportion;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.LicenseValiditySupplier;
+import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -33,6 +34,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -41,6 +43,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     final ExperimentsFactory factory = FactoryLocator.getExperimentsFactory();
     final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+    final VariantAPI variantAPI = APILocator.getVariantAPI();
 
     private final LicenseValiditySupplier licenseValiditySupplierSupplier =
             new LicenseValiditySupplier() {};
@@ -248,10 +251,17 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     public Experiment addVariant(String experimentId, String variantName, User user)
             throws DotDataException, DotSecurityException {
 
-        final Experiment persistedExperimentOpt =  find(experimentId, user)
+        final Experiment persistedExperiment = find(experimentId, user)
                 .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
 
-        
+        DotPreconditions.isTrue(variantAPI.getByName(variantName).isEmpty(),
+                ()->"Variant already exists", IllegalArgumentException.class);
+
+        final Variant variant = Variant.builder().name(variantName).build();
+        variantAPI.save(variant);
+
+        final TrafficProportion trafficProportion = persistedExperiment.trafficProportion();
+        final Map<String, Float> variantsPercentages = trafficProportion.variantsPercentagesMap();
 
 
     }
