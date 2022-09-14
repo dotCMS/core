@@ -1,4 +1,3 @@
-import { addDecorator } from '@storybook/angular';
-import { withKnobs } from '@storybook/addon-knobs';
+import { defineCustomElements } from '@dotcms/dotcms-webcomponents/loader';
 
-addDecorator(withKnobs);
+defineCustomElements();

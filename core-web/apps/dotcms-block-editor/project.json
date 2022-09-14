@@ -57,7 +57,7 @@
                         {
                             "type": "anyComponentStyle",
                             "maximumWarning": "200kb",
-                            "maximumError": "200kb"
+                            "maximumError": "250kb"
                         }
                     ]
                 }
@@ -101,35 +101,6 @@
                 "styles": [],
                 "scripts": [],
                 "assets": []
-            }
-        },
-        "storybook": {
-            "executor": "@storybook/angular:start-storybook",
-            "options": {
-                "port": 6600,
-                "configDir": "apps/dotcms-block-editor/.storybook",
-                "browserTarget": "dotcms-block-editor:build",
-                "compodoc": false
-            },
-            "configurations": {
-                "ci": {
-                    "quiet": true
-                }
-            }
-        },
-        "build-storybook": {
-            "executor": "@storybook/angular:build-storybook",
-            "outputs": ["{options.outputPath}"],
-            "options": {
-                "outputDir": "dist-docs/sb/dotcms-block-editor",
-                "configDir": "apps/dotcms-block-editor/.storybook",
-                "browserTarget": "dotcms-block-editor:build",
-                "compodoc": false
-            },
-            "configurations": {
-                "ci": {
-                    "quiet": true
-                }
             }
         }
     },

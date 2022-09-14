@@ -8,7 +8,8 @@ import {
     OnChanges,
     OnDestroy,
     ViewChild,
-    ElementRef
+    ElementRef,
+    Renderer2
 } from '@angular/core';
 import { FieldDragDropService, DropFieldData } from '../service';
 import { FieldType } from '../models';
@@ -81,7 +82,8 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         private dotEventsService: DotEventsService,
         private dotLoadingIndicatorService: DotLoadingIndicatorService,
         private dragulaService: DragulaService,
-        private elRef: ElementRef
+        private elRef: ElementRef,
+        private rendered: Renderer2
     ) {}
 
     private static findColumnBreakIndex(fields: DotCMSContentTypeField[]): number {
@@ -228,6 +230,20 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     }
 
     /**
+     * Convert WYSIWYG field to Block Field
+     *
+     * @memberof ContentTypeFieldsDropZoneComponent
+     */
+    convertWysiwygToBlock() {
+        this.editField.emit({
+            ...this.currentField,
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
+            fieldType: 'Story-Block'
+        });
+        this.toggleDialog();
+    }
+
+    /**
      * Emit the saveField event
      * @param DotContentTypeField fieldToSave
      * @memberof ContentTypeFieldsDropZoneComponent
@@ -365,6 +381,21 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      */
     handleTabChange(index: number): void {
         this.hideButtons = index !== this.OVERVIEW_TAB_INDEX;
+    }
+
+    /**
+     * Scroll into convert to block section
+     *
+     * @memberof ContentTypeFieldsDropZoneComponent
+     */
+    scrollTo() {
+        const el = this.rendered.selectRootElement('dot-convert-wysiwyg-to-block', true);
+
+        el.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+            inline: 'nearest'
+        });
     }
 
     private setDroppedField(droppedField: DotCMSContentTypeField): void {
