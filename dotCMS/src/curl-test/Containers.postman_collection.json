@@ -9,7 +9,7 @@
 			"name": "Bulk Delete",
 			"item": [
 				{
-					"name": "Create New Container To Delete",
+					"name": "Create New Container 1 To Delete",
 					"event": [
 						{
 							"listen": "test",
@@ -24,7 +24,7 @@
 									"pm.test(\"Information Saved Correctly\", function () {",
 									"    ",
 									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.entity.title).to.eql(\"ToBeDeletedContainer\");",
+									"    pm.expect(jsonData.entity.title).to.eql(\"ToBeDeletedContainer1\");",
 									"    pm.expect(jsonData.entity.notes).to.eql(\"Notes\");",
 									"    ",
 									"    ",
@@ -33,7 +33,7 @@
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"identifier\", jsonData.entity.identifier);",
 									"pm.collectionVariables.set(\"inode\", jsonData.entity.inode);",
-									"pm.collectionVariables.set(\"containerToDeleteId\", jsonData.entity.identifier);"
+									"pm.collectionVariables.set(\"containerToDeleteId1\", jsonData.entity.identifier);"
 								],
 								"type": "text/javascript"
 							}
@@ -66,7 +66,87 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"title\":\"ToBeDeletedContainer\",\n    \"friendlyName\":\"ToBeDeletedContainer description\",\n    \"maxContentlets\":1,\n    \"notes\":\"Notes\",\n    \"preLoop\":\"preLoop xxxx\",\n    \"postLoop\":\"postLoop xxxx\",\n    \"containerStructures\":[\n        {\n            \"structureId\":\"webPageContent\",\n            \"code\":\" code xxxx\"\n        },\n        {\n            \"structureId\":\"DotAsset\",\n            \"code\":\" tags: $!{tags}\"\n        }\n    ]\n\n}",
+							"raw": "{\n    \"title\":\"ToBeDeletedContainer1\",\n    \"friendlyName\":\"ToBeDeletedContainer1 description\",\n    \"maxContentlets\":1,\n    \"notes\":\"Notes\",\n    \"preLoop\":\"preLoop xxxx\",\n    \"postLoop\":\"postLoop xxxx\",\n    \"containerStructures\":[\n        {\n            \"structureId\":\"webPageContent\",\n            \"code\":\" code xxxx\"\n        },\n        {\n            \"structureId\":\"DotAsset\",\n            \"code\":\" tags: $!{tags}\"\n        }\n    ]\n\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers"
+							]
+						},
+						"description": "Create a container"
+					},
+					"response": []
+				},
+				{
+					"name": "Create New Container 2 To Delete",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.title).to.eql(\"ToBeDeletedContainer2\");",
+									"    pm.expect(jsonData.entity.notes).to.eql(\"Notes\");",
+									"    ",
+									"    ",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"identifier\", jsonData.entity.identifier);",
+									"pm.collectionVariables.set(\"inode\", jsonData.entity.inode);",
+									"pm.collectionVariables.set(\"containerToDeleteId2\", jsonData.entity.identifier);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\":\"ToBeDeletedContainer2\",\n    \"friendlyName\":\"ToBeDeletedContainer2 description\",\n    \"maxContentlets\":1,\n    \"notes\":\"Notes\",\n    \"preLoop\":\"preLoop xxxx\",\n    \"postLoop\":\"postLoop xxxx\",\n    \"containerStructures\":[\n        {\n            \"structureId\":\"webPageContent\",\n            \"code\":\" code xxxx\"\n        },\n        {\n            \"structureId\":\"DotAsset\",\n            \"code\":\" tags: $!{tags}\"\n        }\n    ]\n\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -179,7 +259,7 @@
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"Delete Container Check\", function () {",
-									"    pm.expect(jsonData.entity.successCount).to.be.eql(1);",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(2);",
 									"});",
 									"",
 									"pm.test(\"Failed To Delete Container Check\", function () {",
@@ -196,7 +276,7 @@
 							"basic": [
 								{
 									"key": "password",
-									"value": "admin",
+									"value": "admin123",
 									"type": "string"
 								},
 								{
@@ -219,7 +299,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "[\"{{containerToDeleteId}}\"]",
+							"raw": "[\"{{containerToDeleteId1}}\",\"{{containerToDeleteId2}}\"]",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -3025,6 +3105,14 @@
 		},
 		{
 			"key": "containerToDeleteId",
+			"value": ""
+		},
+		{
+			"key": "containerToDeleteId1",
+			"value": ""
+		},
+		{
+			"key": "containerToDeleteId2",
 			"value": ""
 		}
 	]
