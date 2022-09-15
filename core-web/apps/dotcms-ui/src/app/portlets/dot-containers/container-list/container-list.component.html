@@ -1,10 +1,11 @@
-<dot-portlet-base>
+<dot-portlet-base *ngIf="vm$ | async as vm">
     <dot-portlet-toolbar title="Containers"></dot-portlet-toolbar>
 
     <dot-listing-data-table
+        *ngIf="vm.tableColumns && vm.actionHeaderOptions"
         #listing
-        [actionHeaderOptions]="actionHeaderOptions$ | async"
-        [columns]="tableColumns$ | async"
+        [actionHeaderOptions]="vm.actionHeaderOptions"
+        [columns]="vm.tableColumns"
         url="v1/containers"
         [actions]="[]"
         [checkbox]="true"
@@ -41,7 +42,7 @@
                 <p-menu
                     #actionsMenu
                     [popup]="true"
-                    [model]="containerBulkActions$ | async"
+                    [model]="vm.containerBulkActions"
                     appendTo="body"
                 ></p-menu>
             </div>
@@ -60,17 +61,13 @@
             <dot-base-type-selector></dot-base-type-selector>
         </ng-template>
 
-        <ng-template
-            #rowTemplate
-            let-rowData="rowData"
-            *ngIf="tableColumns$ | async as tableColumns"
-        >
+        <ng-template #rowTemplate let-rowData="rowData" *ngIf="vm.tableColumns as tableColumns">
             <td [ngStyle]="{ 'text-align': tableColumns[0].textAlign }">
                 {{ rowData.name }}
             </td>
             <td [ngStyle]="{ 'text-align': tableColumns[1].textAlign }">
                 <dot-state-icon
-                    [labels]="setStateLabels()"
+                    [labels]="vm.stateLabels"
                     [state]="getContainerState(rowData)"
                     size="14px"
                 >
@@ -84,9 +81,10 @@
             </td>
         </ng-template>
     </dot-listing-data-table>
+
+    <dot-add-to-bundle
+        *ngIf="vm.addToBundleIdentifier"
+        [assetIdentifier]="vm.addToBundleIdentifier"
+        (cancel)="resetBundleIdentifier()"
+    ></dot-add-to-bundle>
 </dot-portlet-base>
-<dot-add-to-bundle
-    *ngIf="addToBundleIdentifier$ | async"
-    [assetIdentifier]="addToBundleIdentifier$ | async"
-    (cancel)="updateBundleIdentifier(null)"
-></dot-add-to-bundle>
