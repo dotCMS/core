@@ -1,10 +1,10 @@
-<ng-template let-item="item" let-index="index" pTemplate="listItem" #defaultItemListTemplate>
+<ng-template let-item="item" pTemplate="listItem" #defaultItemListTemplate>
     <span
         class="searchable-dropdown__data-list-item"
         [class.selected]="item[labelPropertyName] === valueString"
         [class.highlight]="item.label === selectedOptionValue"
         (click)="handleClick(item)"
-        >{{ item.label }} {{ item.label.length }}{{ selectedOptionValue?.length }}</span
+        >{{ item.label }}</span
     >
 </ng-template>
 
@@ -63,7 +63,7 @@
             ></dot-icon-button>
         </div>
     </header>
-    ..
+
     <p-dataView
         #dataView
         (click)="$event.stopPropagation()"

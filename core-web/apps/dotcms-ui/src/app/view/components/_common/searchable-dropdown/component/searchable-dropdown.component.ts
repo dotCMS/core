@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { debounceTime } from 'rxjs/operators';
 import {
     Component,
@@ -188,7 +187,6 @@ export class SearchableDropdownComponent
                 )
                 .subscribe((keyboardEvent: KeyboardEvent) => {
                     if (!this.isModifierKey(keyboardEvent.key)) {
-                        console.log('**filteremit');
                         this.filterChange.emit(keyboardEvent.target['value']);
                     }
                 });
@@ -206,29 +204,6 @@ export class SearchableDropdownComponent
         });
     }
 
-    selectDropdownOption(actionKey: string) {
-        console.log(this.options);
-        if (actionKey === 'ArrowDown' && this.options.length - 1 > this.selectedOptionIndex) {
-            this.selectedOptionIndex++;
-            this.selectedOptionValue = this.getItemLabel(this.options[this.selectedOptionIndex]);
-            // this.options[this.selectedOptionIndex][`${this.labelPropertyName}`];
-            console.log('***selectedOptionIndex', this.selectedOptionIndex);
-        } else if (actionKey === 'ArrowUp' && 0 < this.selectedOptionIndex) {
-            this.selectedOptionIndex--;
-            console.log('***selectedOptionIndex', this.selectedOptionIndex);
-            this.selectedOptionValue = this.getItemLabel(this.options[this.selectedOptionIndex]);
-            // this.options[this.selectedOptionIndex][`${this.labelPropertyName}`];
-        } else if (actionKey === 'Enter' && this.selectedOptionIndex !== null) {
-            console.log('ENTER', this.selectedOptionIndex, this.options);
-            this.handleClick(this.options[this.selectedOptionIndex]);
-        }
-
-        console.log('***this.selectedOptionValue', this.selectedOptionValue);
-        console.log(
-            '***this.labelPropertyName',
-            this.getItemLabel(this.options[this.selectedOptionIndex])
-        );
-    }
 
     /**
      * Emits hide event and clears any value on filter's input
@@ -324,8 +299,7 @@ export class SearchableDropdownComponent
      */
     getItemLabel(dropDownItem: unknown): string {
         let resultProps;
-
-        if (Array.isArray(this.labelPropertyName)) {
+        if (dropDownItem && Array.isArray(this.labelPropertyName)) {
             resultProps = this.labelPropertyName.map((item) => {
                 if (item.indexOf('.') > -1) {
                     let propertyName;
@@ -340,8 +314,8 @@ export class SearchableDropdownComponent
             });
 
             return resultProps.join(' - ');
-        } else {
-            return dropDownItem[this.labelPropertyName];
+        } else if (dropDownItem) {
+            return dropDownItem[`${this.labelPropertyName}`];
         }
     }
 
@@ -392,6 +366,25 @@ export class SearchableDropdownComponent
         this.overlayPanelMinHeight = '';
     }
 
+    private selectDropdownOption(actionKey: string) {
+        const itemsCount = this.rows
+            ? this.rows <= this.options.length
+                ? this.rows
+                : this.options.length
+            : this.options.length;
+        if (actionKey === 'ArrowDown' && itemsCount - 1 > this.selectedOptionIndex) {
+            this.selectedOptionIndex++;
+            this.selectedOptionValue = this.getItemLabel(this.options[this.selectedOptionIndex]);
+        } else if (actionKey === 'ArrowUp' && 0 < this.selectedOptionIndex) {
+            this.selectedOptionIndex--;
+            this.selectedOptionValue = this.getItemLabel(this.options[this.selectedOptionIndex]);
+        } else if (actionKey === 'Enter' && this.selectedOptionIndex !== null) {
+            this.handleClick(this.options[this.selectedOptionIndex]);
+        }
+
+        this.cd.detectChanges();
+    }
+
     private setLabel(): void {
         this.valueString = this.value
             ? this.value[this.getValueLabelPropertyName()]
@@ -409,7 +402,6 @@ export class SearchableDropdownComponent
             });
             this.selectedOptionValue = this.getItemLabel(this.options[0]);
             this.selectedOptionIndex = 0;
-            console.log('=== setooptions this.selectedOptionValue', this.selectedOptionValue);
         }
     }
 

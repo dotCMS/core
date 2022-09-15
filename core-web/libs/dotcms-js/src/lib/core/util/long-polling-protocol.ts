@@ -41,7 +41,7 @@ export class LongPollingProtocol extends Protocol {
 
     private connectLongPooling(lastCallBack?: number): void {
         this.isClosed = false;
-        // this.loggerService.info('Starting long polling connection');
+        this.loggerService.info('Starting long polling connection');
 
         this.coreWebService
             .requestView({
