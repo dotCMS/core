@@ -22,7 +22,10 @@ public interface AbstractVariant extends Serializable {
     @JsonProperty("name")
     String name();
 
+    @Value.Default
     @JsonProperty("archived")
-    boolean archived();
+    default boolean archived() {
+        return false;
+    }
 
 }

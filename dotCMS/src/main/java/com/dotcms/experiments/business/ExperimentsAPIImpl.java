@@ -32,15 +32,17 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class ExperimentsAPIImpl implements ExperimentsAPI {
 
@@ -253,6 +255,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         return factory.save(ended);
     }
 
+    @WrapInTransaction
     @Override
     public Experiment addVariant(final String experimentId, final User user)
             throws DotDataException, DotSecurityException {
@@ -260,17 +263,20 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final Experiment persistedExperiment = find(experimentId, user)
                 .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
 
-        final int nextAvailableIndex = getNextAvailableIndex(experimentId);
+        final String variantNameBase = experimentId
+                + "-" + AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME;
 
-        final String variantName = experimentId
-                + AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME + nextAvailableIndex;
+        final int nextAvailableIndex = getNextAvailableIndex(variantNameBase);
+
+        final String variantName = variantNameBase + nextAvailableIndex;
+
         final String variantDescription = AbstractExperimentVariant.EXPERIMENT_VARIANT_DESCRIPTION
                 + nextAvailableIndex;
 
-        variantAPI.save(Variant.builder().identifier(variantName).name(variantDescription).build());
+        variantAPI.save(Variant.builder().identifier(variantName).name(variantName).build());
 
         final ExperimentVariant experimentVariant = ExperimentVariant.builder().id(variantName)
-                .description(variantDescription).build();
+                .description(variantDescription).weight(0).build();
 
         final TrafficProportion trafficProportion = persistedExperiment.trafficProportion();
 
@@ -279,7 +285,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 .build();
 
         // IF split evenly - re-distribute weights
-        // add new Experiment Variant and
 
         if(updatedTrafficProportion.type()== Type.SPLIT_EVENLY) {
             updatedTrafficProportion = redistributeWeights(updatedTrafficProportion);
@@ -291,20 +296,58 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         return save(updatedExperiment, user);
     }
 
-    private TrafficProportion redistributeWeights(final TrafficProportion trafficProportion) {
-        return trafficProportion;
+    @Override
+    @WrapInTransaction
+    public Experiment deleteVariant(String experimentId, String variantName, User user)
+            throws DotDataException, DotSecurityException {
+        final Experiment persistedExperiment = find(experimentId, user)
+                .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
+
+        DotPreconditions.isTrue(variantName!= null &&
+                variantName.contains(experimentId), ()->"Invalid Variant provided",
+                IllegalArgumentException.class);
+
+        final Variant toDelete = variantAPI.getByName(variantName)
+                .orElseThrow(()->new DoesNotExistException("Provided Variant not found"));
+
+        final Set<ExperimentVariant> updatedVariants = persistedExperiment.trafficProportion()
+                .variants().stream().filter((variant)->
+                        !Objects.equals(variant.id(), toDelete.name())).collect(
+                        Collectors.toSet());
+
+        final TrafficProportion updatedTrafficProportion = persistedExperiment
+                .trafficProportion().withVariants(updatedVariants);
+
+        final TrafficProportion weightedTraffic = redistributeWeights(updatedTrafficProportion);
+        final Experiment withUpdatedTraffic = persistedExperiment.withTrafficProportion(weightedTraffic);
+        final Experiment fromDB = save(withUpdatedTraffic, user);
+        variantAPI.archive(toDelete.identifier());
+        variantAPI.delete(toDelete.identifier());
+        return fromDB;
+
     }
 
-    private int getNextAvailableIndex(final String experimentId)
+    private TrafficProportion redistributeWeights(final TrafficProportion trafficProportion) {
+
+        final int count = trafficProportion.variants().size();
+
+        final float weightPerEach = 100f / count;
+
+        Set<ExperimentVariant> weightedVariants = trafficProportion.variants()
+                .stream().map((variant)-> variant.withWeight(weightPerEach))
+                .collect(Collectors.toSet());
+
+        return trafficProportion.withVariants(weightedVariants);
+    }
+
+    private int getNextAvailableIndex(final String variantNameBase)
             throws DotDataException {
         int variantIndex = 1;
-        String variantNameToTry = experimentId
-                + AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME
+        String variantNameToTry = variantNameBase
                 + variantIndex;
 
-        while(variantAPI.get(variantNameToTry).isPresent()) {
-            variantNameToTry = experimentId
-                    + AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME
+        while(variantAPI.getByName(variantNameToTry).isPresent()) {
+            variantNameToTry = variantNameBase
                     + (++variantIndex);
         }
 

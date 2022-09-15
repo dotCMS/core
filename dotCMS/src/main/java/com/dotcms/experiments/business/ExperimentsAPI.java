@@ -82,7 +82,8 @@ public interface ExperimentsAPI {
     Experiment end(String experimentId, User user) throws DotDataException, DotSecurityException;
 
     /**
-     * Adds a new {@link com.dotcms.variant.model.Variant} to the {@link Experiment} with the provided id
+     * Adds a new {@link com.dotcms.variant.model.Variant} to the {@link Experiment} with the provided Id
+     * @return the updated Experiment
      */
     Experiment addVariant(String experimentId, User user)
             throws DotDataException, DotSecurityException;
@@ -96,4 +97,11 @@ public interface ExperimentsAPI {
      * <li>Difference between provided {@link Scheduling#endDate()} and {@link Scheduling#startDate()} needs to be less or equal than {@link ExperimentsAPI#EXPERIMENT_MAX_DURATION}
      */
     Scheduling validateScheduling(final Scheduling scheduling);
+
+    /**
+     * Deletes a {@link com.dotcms.variant.model.Variant} from the {@link Experiment} with the given Id
+     * @return the updated Experiment
+     */
+    Experiment deleteVariant(String experimentId, String variantName, User user)
+            throws DotDataException, DotSecurityException;
 }

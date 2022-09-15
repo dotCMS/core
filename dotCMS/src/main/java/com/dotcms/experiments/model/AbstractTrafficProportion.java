@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.vavr.control.Try;
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.Set;
 import org.immutables.value.Value;
 
@@ -37,7 +36,9 @@ public interface AbstractTrafficProportion extends Serializable {
     @JsonProperty("variants")
     @Value.Default
     default Set<ExperimentVariant> variants() {
-        return Collections.emptySet();
+        return Set.of(ExperimentVariant.builder()
+                .id(APILocator.getVariantAPI().DEFAULT_VARIANT.identifier())
+                .description("Original").weight(100).build());
     }
 
     @Value.Check
@@ -45,7 +46,7 @@ public interface AbstractTrafficProportion extends Serializable {
         if(UtilMethods.isSet(variants())) {
             DotPreconditions.isTrue(variants().stream()
                     .allMatch((variant)-> Try.of(()-> APILocator.getVariantAPI()
-                            .get(variant.id()).isPresent()
+                            .getByName(variant.id()).isPresent()
                     ).getOrElse(false)), IllegalArgumentException.class,
                     ()->"Invalid Variants provided");
         }

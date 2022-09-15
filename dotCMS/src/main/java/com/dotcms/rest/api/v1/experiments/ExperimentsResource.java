@@ -292,6 +292,25 @@ public class ExperimentsResource {
         return new ResponseEntityExperimentView(Collections.singletonList(updatedExperiment));
     }
 
+    /**
+     * Deletes a new {@link com.dotcms.variant.model.Variant} from the {@link Experiment}
+     *
+     */
+    @DELETE
+    @Path("/{experimentId}/variants/{name}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityExperimentView deleteVariant(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("experimentId") final String experimentId,
+            @PathParam("name") final String variantName) throws DotDataException, DotSecurityException {
+        final InitDataObject initData = getInitData(request, response);
+        final User user = initData.getUser();
+        final Experiment updatedExperiment =  experimentsAPI.deleteVariant(experimentId, variantName, user);
+        return new ResponseEntityExperimentView(Collections.singletonList(updatedExperiment));
+    }
+
     private Experiment patchExperiment(final Experiment experimentToUpdate,
             final ExperimentForm experimentForm, final User user) {
 
