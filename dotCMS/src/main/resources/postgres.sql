@@ -560,8 +560,8 @@ create table contentlet_version_info (
    locked_by varchar(100),
    locked_on timestamptz,
    version_ts timestamptz not null,
-   variant_id varchar(255) default 'DEFAULT',
-   primary key (identifier, lang)
+   variant_id varchar(255) default 'DEFAULT' not null,
+   primary key (identifier, lang, variant_id)
 );
 create table fixes_audit (
    id varchar(36) not null,
@@ -2501,10 +2501,10 @@ create table experiment (
      traffic_allocation float4 not null,
      mod_date timestamptz not null,
      scheduling jsonb,
-     archived bool not null,
      creation_date timestamptz not null,
      created_by varchar(255) not null,
-     last_modified_by varchar(255) not null
+     last_modified_by varchar(255) not null,
+     goals jsonb
 );
 
 CREATE INDEX idx_exp_pageid ON experiment (page_id);

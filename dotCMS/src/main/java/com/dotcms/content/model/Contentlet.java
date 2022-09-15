@@ -1,6 +1,7 @@
 package com.dotcms.content.model;
 
 import com.dotcms.content.model.version.ToCurrentVersionConverter;
+import com.dotcms.variant.VariantAPI;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -53,5 +54,9 @@ public interface Contentlet {
     Map<String, FieldValue<?>> fields();
     @Nullable
     String friendlyName();
+    @Value.Default
+    default String variantId() {
+        return VariantAPI.DEFAULT_VARIANT.identifier();
+    }
 
 }

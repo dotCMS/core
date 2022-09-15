@@ -94,9 +94,12 @@ import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
 import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotcms.variant.VariantAPITest;
+import com.dotcms.variant.business.VariantCacheTest;
 import com.dotmarketing.beans.HostTest;
 import com.dotmarketing.business.DeterministicIdentifierAPITest;
+import com.dotmarketing.business.IdentifierCacheImplTest;
 import com.dotmarketing.business.PermissionBitFactoryImplTest;
+import com.dotmarketing.business.VersionableFactoryImplTest;
 import com.dotmarketing.business.helper.PermissionHelperTest;
 import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
 import com.dotmarketing.common.db.DBTimeZoneCheckTest;
@@ -575,7 +578,10 @@ import org.junit.runners.Suite.SuiteClasses;
         Task220824CreateDefaultVariantTest.class,
         Task220822CreateVariantTableTest.class,
         Task220829CreateExperimentsTableTest.class,
-        StoryBlockTest.class
+        StoryBlockTest.class,
+        IdentifierCacheImplTest.class,
+        VariantCacheTest.class,
+        VersionableFactoryImplTest.class
 })
 public class MainSuite {
 
