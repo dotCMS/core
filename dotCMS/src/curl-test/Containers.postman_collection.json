@@ -6,6 +6,700 @@
 	},
 	"item": [
 		{
+			"name": "Bulk Delete",
+			"item": [
+				{
+					"name": "Create New Container 1 To Delete",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.title).to.eql(\"ToBeDeletedContainer1\");",
+									"    pm.expect(jsonData.entity.notes).to.eql(\"Notes\");",
+									"    ",
+									"    ",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"identifier\", jsonData.entity.identifier);",
+									"pm.collectionVariables.set(\"inode\", jsonData.entity.inode);",
+									"pm.collectionVariables.set(\"containerToDeleteId1\", jsonData.entity.identifier);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\":\"ToBeDeletedContainer1\",\n    \"friendlyName\":\"ToBeDeletedContainer1 description\",\n    \"maxContentlets\":1,\n    \"notes\":\"Notes\",\n    \"preLoop\":\"preLoop xxxx\",\n    \"postLoop\":\"postLoop xxxx\",\n    \"containerStructures\":[\n        {\n            \"structureId\":\"webPageContent\",\n            \"code\":\" code xxxx\"\n        },\n        {\n            \"structureId\":\"DotAsset\",\n            \"code\":\" tags: $!{tags}\"\n        }\n    ]\n\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers"
+							]
+						},
+						"description": "Create a container"
+					},
+					"response": []
+				},
+				{
+					"name": "Create New Container 2 To Delete",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.title).to.eql(\"ToBeDeletedContainer2\");",
+									"    pm.expect(jsonData.entity.notes).to.eql(\"Notes\");",
+									"    ",
+									"    ",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"identifier\", jsonData.entity.identifier);",
+									"pm.collectionVariables.set(\"inode\", jsonData.entity.inode);",
+									"pm.collectionVariables.set(\"containerToDeleteId2\", jsonData.entity.identifier);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\":\"ToBeDeletedContainer2\",\n    \"friendlyName\":\"ToBeDeletedContainer2 description\",\n    \"maxContentlets\":1,\n    \"notes\":\"Notes\",\n    \"preLoop\":\"preLoop xxxx\",\n    \"postLoop\":\"postLoop xxxx\",\n    \"containerStructures\":[\n        {\n            \"structureId\":\"webPageContent\",\n            \"code\":\" code xxxx\"\n        },\n        {\n            \"structureId\":\"DotAsset\",\n            \"code\":\" tags: $!{tags}\"\n        }\n    ]\n\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers"
+							]
+						},
+						"description": "Create a container"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Container Failed To Delete Container Id Not Exist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Delete Container Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Failed To Delete Container Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(1);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"12345678-abcd-1234-abcd-123456789abc\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers/bulkdelete",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers",
+								"bulkdelete"
+							]
+						},
+						"description": "Tries to delete a template but the id passed does not belong to any template so it fails."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Container Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Delete Container Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(2);",
+									"});",
+									"",
+									"pm.test(\"Failed To Delete Container Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{containerToDeleteId1}}\",\"{{containerToDeleteId2}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers/bulkdelete",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers",
+								"bulkdelete"
+							]
+						},
+						"description": "Delete a template successfully"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Bulk publish",
+			"item": [
+				{
+					"name": "Create New Container 1 To Publish",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.title).to.eql(\"ToBePublishedContainer1\");",
+									"    pm.expect(jsonData.entity.notes).to.eql(\"Notes\");",
+									"    ",
+									"    ",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"identifier\", jsonData.entity.identifier);",
+									"pm.collectionVariables.set(\"inode\", jsonData.entity.inode);",
+									"pm.collectionVariables.set(\"containerToPublishId1\", jsonData.entity.identifier);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\":\"ToBePublishedContainer1\",\n    \"friendlyName\":\"ToBePublishedContainer1 description\",\n    \"maxContentlets\":1,\n    \"notes\":\"Notes\",\n    \"preLoop\":\"preLoop xxxx\",\n    \"postLoop\":\"postLoop xxxx\",\n    \"containerStructures\":[\n        {\n            \"structureId\":\"webPageContent\",\n            \"code\":\" code xxxx\"\n        },\n        {\n            \"structureId\":\"DotAsset\",\n            \"code\":\" tags: $!{tags}\"\n        }\n    ]\n\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers"
+							]
+						},
+						"description": "Create a container"
+					},
+					"response": []
+				},
+				{
+					"name": "Create New Container 2 To Publish",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.title).to.eql(\"ToBePublishedContainer2\");",
+									"    pm.expect(jsonData.entity.notes).to.eql(\"Notes\");",
+									"    ",
+									"    ",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"identifier\", jsonData.entity.identifier);",
+									"pm.collectionVariables.set(\"inode\", jsonData.entity.inode);",
+									"pm.collectionVariables.set(\"containerToPublishId2\", jsonData.entity.identifier);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\":\"ToBePublishedContainer2\",\n    \"friendlyName\":\"ToBePublishedContainer2 description\",\n    \"maxContentlets\":1,\n    \"notes\":\"Notes\",\n    \"preLoop\":\"preLoop xxxx\",\n    \"postLoop\":\"postLoop xxxx\",\n    \"containerStructures\":[\n        {\n            \"structureId\":\"webPageContent\",\n            \"code\":\" code xxxx\"\n        },\n        {\n            \"structureId\":\"DotAsset\",\n            \"code\":\" tags: $!{tags}\"\n        }\n    ]\n\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers"
+							]
+						},
+						"description": "Create a container"
+					},
+					"response": []
+				},
+				{
+					"name": "Publish Invalid ContainerId",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Publish Container Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Failed To Publish Container Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(2);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[\" \",\" \"]"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers/_bulkpublish",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers",
+								"_bulkpublish"
+							]
+						},
+						"description": "try to unpublish an invalid container"
+					},
+					"response": []
+				},
+				{
+					"name": "Publish Not Found ContainerId",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Publish Container Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Failed To Publish Container Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(2);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"NOTFOUNDCONTAINER\",\"12345678-abcd-1234-abcd-123456789abc\"]"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers/_bulkpublish",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers",
+								"_bulkpublish"
+							]
+						},
+						"description": "Try to unpublish a non existing container"
+					},
+					"response": []
+				},
+				{
+					"name": "Publish Container Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Publish Container Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(2);",
+									"});",
+									"",
+									"pm.test(\"Failed To Publish Container Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{containerToPublishId1}}\",\"{{containerToPublishId2}}\"]"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers/_bulkpublish",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers",
+								"_bulkpublish"
+							]
+						},
+						"description": "Publish a container"
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "pre_ImportBundleWithApplicationContainerFolder",
 			"event": [
 				{
@@ -2782,6 +3476,26 @@
 		},
 		{
 			"key": "containerToCopyId",
+			"value": ""
+		},
+		{
+			"key": "containerToDeleteId",
+			"value": ""
+		},
+		{
+			"key": "containerToDeleteId1",
+			"value": ""
+		},
+		{
+			"key": "containerToDeleteId2",
+			"value": ""
+		},
+		{
+			"key": "containerToPublishId1",
+			"value": ""
+		},
+		{
+			"key": "containerToPublishId2",
 			"value": ""
 		}
 	]
