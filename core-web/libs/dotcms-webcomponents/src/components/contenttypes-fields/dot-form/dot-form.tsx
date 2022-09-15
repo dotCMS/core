@@ -1,4 +1,15 @@
-import { Component, Element, Listen, Prop, State, Watch, h, Host, Event, EventEmitter} from '@stencil/core';
+import {
+    Component,
+    Element,
+    Listen,
+    Prop,
+    State,
+    Watch,
+    h,
+    Host,
+    Event,
+    EventEmitter
+} from '@stencil/core';
 
 import { DotFieldStatus } from '../../../models';
 import { fieldCustomProcess, getFieldsFromLayout, getErrorMessage } from './utils';
@@ -49,6 +60,8 @@ export class DotFormComponent {
     errorMessage = '';
     @State()
     uploadFileInProgress = false;
+    @State()
+    processingSubmit = false;
 
     /**Emit when submit the form */
     @Event()
@@ -123,7 +136,11 @@ export class DotFormComponent {
                         </button>
                         <button
                             type="submit"
-                            disabled={!this.status.dotValid || this.uploadFileInProgress}
+                            disabled={
+                                !this.status.dotValid ||
+                                this.uploadFileInProgress ||
+                                this.processingSubmit
+                            }
                         >
                             {this.submitLabel}
                         </button>
@@ -149,36 +166,41 @@ export class DotFormComponent {
     private handleSubmit(event: Event): void {
         event.preventDefault();
         event.stopPropagation();
-
-        fetch(SUBMIT_FORM_API_URL, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                contentlet: {
-                    contentType: this.variable,
-                    ...this.value
-                }
+        if (!this.processingSubmit) {
+            this.processingSubmit = true;
+            fetch(SUBMIT_FORM_API_URL, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    contentlet: {
+                        contentType: this.variable,
+                        ...this.value
+                    }
+                })
             })
-        })
-            .then(async (response: Response) => {
-                if (response.status !== 200) {
-                    const error: DotHttpErrorResponse = {
-                        message: await response.text(),
-                        status: response.status
-                    };
-                    throw error;
-                }
-                return response.json();
-            })
-            .then((jsonResponse) => {
-                const contentlet = jsonResponse.entity;
-                this.submit.emit(contentlet);
-            })
-            .catch(({ message, status }: DotHttpErrorResponse) => {
-                this.errorMessage = getErrorMessage(message) || fallbackErrorMessages[status];
-            });
+                .then(async (response: Response) => {
+                    if (response.status !== 200) {
+                        const error: DotHttpErrorResponse = {
+                            message: await response.text(),
+                            status: response.status
+                        };
+                        throw error;
+                    }
+                    return response.json();
+                })
+                .then((jsonResponse) => {
+                    const contentlet = jsonResponse.entity;
+                    this.submit.emit(contentlet);
+                })
+                .catch(({ message, status }: DotHttpErrorResponse) => {
+                    this.errorMessage = getErrorMessage(message) || fallbackErrorMessages[status];
+                })
+                .finally(() => {
+                    this.processingSubmit = false;
+                });
+        }
     }
 
     private resetForm(): void {
@@ -222,7 +244,7 @@ export class DotFormComponent {
         const uploadService = new DotUploadService();
         const file = event.detail.value;
         const maxSize = this.getMaxSize(event);
-        const binary: DotBinaryFileComponent = (event.target as unknown) as DotBinaryFileComponent;
+        const binary: DotBinaryFileComponent = event.target as unknown as DotBinaryFileComponent;
 
         if (!maxSize || file.size <= maxSize) {
             this.uploadFileInProgress = true;
