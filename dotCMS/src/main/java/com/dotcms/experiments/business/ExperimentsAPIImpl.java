@@ -7,7 +7,10 @@ import com.dotcms.analytics.metrics.MetricsUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
+import com.dotcms.experiments.model.AbstractExperimentVariant;
+import com.dotcms.experiments.model.AbstractTrafficProportion.Type;
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TrafficProportion;
 import com.dotcms.util.DotPreconditions;
@@ -29,12 +32,13 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -168,6 +172,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     @Override
+    @WrapInTransaction
     public Experiment start(String experimentId, User user)
             throws DotDataException, DotSecurityException {
         DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
@@ -213,6 +218,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     @Override
+    @WrapInTransaction
     public Experiment end(String experimentId, User user)
             throws DotDataException, DotSecurityException {
         DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
@@ -248,22 +254,61 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     @Override
-    public Experiment addVariant(String experimentId, String variantName, User user)
+    public Experiment addVariant(final String experimentId, final User user)
             throws DotDataException, DotSecurityException {
 
         final Experiment persistedExperiment = find(experimentId, user)
                 .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
 
-        DotPreconditions.isTrue(variantAPI.getByName(variantName).isEmpty(),
-                ()->"Variant already exists", IllegalArgumentException.class);
+        final int nextAvailableIndex = getNextAvailableIndex(experimentId);
 
-        final Variant variant = Variant.builder().name(variantName).build();
-        variantAPI.save(variant);
+        final String variantName = experimentId
+                + AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME + nextAvailableIndex;
+        final String variantDescription = AbstractExperimentVariant.EXPERIMENT_VARIANT_DESCRIPTION
+                + nextAvailableIndex;
+
+        variantAPI.save(Variant.builder().identifier(variantName).name(variantDescription).build());
+
+        final ExperimentVariant experimentVariant = ExperimentVariant.builder().id(variantName)
+                .description(variantDescription).build();
 
         final TrafficProportion trafficProportion = persistedExperiment.trafficProportion();
-        final Map<String, Float> variantsPercentages = trafficProportion.variantsPercentagesMap();
 
+        TrafficProportion updatedTrafficProportion = TrafficProportion.builder()
+                .from(trafficProportion).addAllVariants(Collections.singleton(experimentVariant))
+                .build();
 
+        // IF split evenly - re-distribute weights
+        // add new Experiment Variant and
+
+        if(updatedTrafficProportion.type()== Type.SPLIT_EVENLY) {
+            updatedTrafficProportion = redistributeWeights(updatedTrafficProportion);
+        }
+
+        final Experiment updatedExperiment = persistedExperiment
+                .withTrafficProportion(updatedTrafficProportion);
+
+        return save(updatedExperiment, user);
+    }
+
+    private TrafficProportion redistributeWeights(final TrafficProportion trafficProportion) {
+        return trafficProportion;
+    }
+
+    private int getNextAvailableIndex(final String experimentId)
+            throws DotDataException {
+        int variantIndex = 1;
+        String variantNameToTry = experimentId
+                + AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME
+                + variantIndex;
+
+        while(variantAPI.get(variantNameToTry).isPresent()) {
+            variantNameToTry = experimentId
+                    + AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME
+                    + (++variantIndex);
+        }
+
+        return variantIndex;
     }
 
     private Scheduling startNowScheduling(final Experiment experiment) {
@@ -275,7 +320,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     private boolean hasAtLeastOneVariant(final Experiment experiment) {
-        return !experiment.trafficProportion().variantsPercentagesMap().keySet().isEmpty();
+        return !experiment.trafficProportion().variants().isEmpty();
     }
 
     private void validatePermissions(final User user, final Experiment persistedExperiment,

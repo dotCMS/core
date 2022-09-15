@@ -9,7 +9,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.vavr.control.Try;
 import java.io.Serializable;
 import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
 import org.immutables.value.Value;
 
@@ -35,20 +34,20 @@ public interface AbstractTrafficProportion extends Serializable {
         return Type.SPLIT_EVENLY;
     }
 
-    @JsonProperty("variantsPercentages")
+    @JsonProperty("variants")
     @Value.Default
-    default Map<String, Float> variantsPercentagesMap() {
-        return Collections.emptyMap();
+    default Set<ExperimentVariant> variants() {
+        return Collections.emptySet();
     }
 
     @Value.Check
     default void check() {
-        if(UtilMethods.isSet(variantsPercentagesMap())) {
-            final Set<String> variants = variantsPercentagesMap().keySet();
-            DotPreconditions.isTrue(variants.stream()
+        if(UtilMethods.isSet(variants())) {
+            DotPreconditions.isTrue(variants().stream()
                     .allMatch((variant)-> Try.of(()-> APILocator.getVariantAPI()
-                            .getByName(variant).isPresent()
-                    ).getOrElse(false)), IllegalArgumentException.class, ()->"Invalid Variants provided");
+                            .get(variant.id()).isPresent()
+                    ).getOrElse(false)), IllegalArgumentException.class,
+                    ()->"Invalid Variants provided");
         }
     }
 

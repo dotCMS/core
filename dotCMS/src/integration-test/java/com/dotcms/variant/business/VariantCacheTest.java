@@ -75,7 +75,6 @@ public class VariantCacheTest {
         assertEquals(variant.archived(), variantById.archived());
     }
 
-
     /**
      * Method to test: {@link VariantCacheImpl#putByName(String, Variant)} (Variant)} and {@link VariantCacheImpl#getByName(String)} (String)}
      * When: Add a Variant by name
