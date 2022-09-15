@@ -3,3 +3,7 @@ export const enum LoadingState {
     LOADING = 'LOADING',
     LOADED = 'LOADED'
 }
+
+export const enum FeaturedFlags {
+    LOAD_FRONTEND_EXPERIMENTS = 'EXPERIMENTS_FEATURE_ENABLE'
+}

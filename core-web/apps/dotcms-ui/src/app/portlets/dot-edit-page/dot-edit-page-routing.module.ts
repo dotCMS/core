@@ -4,7 +4,8 @@ import { RouterModule, Routes } from '@angular/router';
 import { DotEditPageMainComponent } from './main/dot-edit-page-main/dot-edit-page-main.component';
 import { DotEditPageResolver } from './shared/services/dot-edit-page-resolver/dot-edit-page-resolver.service';
 import { LayoutEditorCanDeactivateGuardService } from '@services/guards/layout-editor-can-deactivate-guard.service';
-import { DotFeatureFlagResolver } from '@portlets/dot-experiments';
+import { DotFeatureFlagResolver } from '@portlets/shared/resolvers/dot-feature-flag-resolver.service';
+import { FeaturedFlags } from '@portlets/shared/models/shared-models';
 
 const dotEditPage: Routes = [
     {
@@ -12,8 +13,12 @@ const dotEditPage: Routes = [
         path: '',
         resolve: {
             content: DotEditPageResolver,
-            featuredFlagExperiment: DotFeatureFlagResolver
+            featuredFlag: DotFeatureFlagResolver
         },
+        data: {
+            featuredFlagToCheck: FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS
+        },
+
         runGuardsAndResolvers: 'always',
         children: [
             {
@@ -43,7 +48,7 @@ const dotEditPage: Routes = [
             },
 
             {
-                path: ':pageId/experiments',
+                path: 'experiments/:pageId',
                 loadChildren: async () =>
                     (
                         await import(

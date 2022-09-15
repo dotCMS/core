@@ -1,7 +1,7 @@
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { of as observableOf, Observable } from 'rxjs';
+import { Observable, of as observableOf } from 'rxjs';
 import { map } from 'rxjs/operators';
 import * as _ from 'lodash';
 
@@ -104,7 +104,7 @@ export class DotEditPageNavComponent implements OnChanges {
             }
         ];
 
-        if (this.route.snapshot.data?.featuredFlagExperiment) {
+        if (this.route.snapshot.data?.featuredFlag) {
             navItems.push(this.getExperimentsNavItem(dotRenderedPage, enterpriselicense));
         }
 
@@ -153,7 +153,7 @@ export class DotEditPageNavComponent implements OnChanges {
             disabled: !this.canGoToLayout(dotRenderedPage),
             icon: 'dataset',
             label: this.dotMessageService.get('editpage.toolbar.nav.experiments'),
-            link: `${dotRenderedPage.page.identifier}/experiments`
+            link: `experiments/${dotRenderedPage.page.identifier}`
         };
     }
 

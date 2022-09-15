@@ -8,7 +8,6 @@ import { DotExperimentsStore } from '../shared/stores/dot-experiments-store.serv
 import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
 
 const routes: Routes = [
-    { path: '', redirectTo: 'list', pathMatch: 'full' },
     {
         path: '',
         component: DotExperimentsShellComponent,
@@ -20,9 +19,7 @@ const routes: Routes = [
                         .DotExperimentsListModule
             }
         ]
-    },
-
-    { path: '**', pathMatch: 'full', redirectTo: 'list' }
+    }
 ];
 
 @NgModule({
