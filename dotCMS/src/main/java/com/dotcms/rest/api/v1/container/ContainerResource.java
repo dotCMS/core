@@ -10,6 +10,8 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.BulkResultView;
+import com.dotcms.rest.api.FailedResultView;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.DotPreconditions;
@@ -39,6 +41,7 @@ import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.HostUtil;
@@ -51,7 +54,9 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ResourceNotFoundException;
@@ -1120,5 +1125,123 @@ public class ContainerResource implements Serializable {
             Logger.error(this, "Container with Id: " + id + " does not exist");
             throw new DoesNotExistException("Container with Id: " + id + " does not exist");
         }
+    }
+
+    /**
+     * Publishes Container(s)
+     *
+     * This method receives a list of identifiers and publishes the containers.
+     * To publish a container successfully the user needs to have Publish Permissions
+     *
+     * @param request            {@link HttpServletRequest}
+     * @param response           {@link HttpServletResponse}
+     * @param containersToPublish {@link List} list of container ids to publish
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @PUT
+    @Path("/_bulkpublish")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response bulkPublish(@Context final HttpServletRequest  request,
+            @Context final HttpServletResponse response,
+            final List<String> containersToPublish){
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final PageMode pageMode = PageMode.get(request);
+        Long publishedContainersCount = 0L;
+        final List<FailedResultView> failedToPublish    = new ArrayList<>();
+
+        if (!UtilMethods.isSet(containersToPublish)) {
+
+            throw new IllegalArgumentException("The body must send a collection of container identifiers such as: " +
+                    "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
+        }
+
+        for (final String containerId : containersToPublish) {
+            try{
+                final Container container =  this.getContainerWorking(containerId, user,
+                        WebAPILocator.getHostWebAPI().getHost(request));
+                if (null != container && InodeUtils.isSet(container.getInode())){
+                    this.containerAPI.publish(container, user, pageMode.respectAnonPerms);
+                    ActivityLogger.logInfo(this.getClass(), "Publish Container Action", "User " +
+                            user.getPrimaryKey() + " published container: " + container.getIdentifier());
+                    publishedContainersCount++;
+                } else {
+                    Logger.error(this, "Container with Id: " + containerId + " does not exist");
+                    failedToPublish.add(new FailedResultView(containerId,"Container does not exist"));
+                }
+            } catch(Exception e) {
+                Logger.debug(this, e.getMessage(), e);
+                failedToPublish.add(new FailedResultView(containerId,e.getMessage()));
+            }
+        }
+
+        return Response.ok(new ResponseEntityView(
+                        new BulkResultView(publishedContainersCount,0L,failedToPublish)))
+                .build();
+    }
+
+    /**
+     * Unpublishes Container(s)
+     *
+     * This method receives a list of identifiers and unpublishes the containers.
+     * To publish a container successfully the user needs to have Publish Permissions.
+     *
+     * @param request            {@link HttpServletRequest}
+     * @param response           {@link HttpServletResponse}
+     * @param containersToUnpublish {@link List} list of container ids to unpublish
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @PUT
+    @Path("/_bulkunpublish")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response bulkUnpublish(@Context final HttpServletRequest  request,
+            @Context final HttpServletResponse response,
+            final List<String> containersToUnpublish) {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final PageMode pageMode = PageMode.get(request);
+        Long unpublishedContainersCount = 0L;
+        final List<FailedResultView> failedToUnpublish    = new ArrayList<>();
+
+        if (!UtilMethods.isSet(containersToUnpublish)) {
+
+            throw new IllegalArgumentException("The body must send a collection of container identifiers such as: " +
+                    "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
+        }
+
+        for (final String containerId : containersToUnpublish) {
+            try{
+                final Container container =  this.getContainerWorking(containerId, user,
+                        WebAPILocator.getHostWebAPI().getHost(request));
+                if (null != container && InodeUtils.isSet(container.getInode())){
+                    this.containerAPI.unpublish(container, user, pageMode.respectAnonPerms);
+                    ActivityLogger.logInfo(this.getClass(), "Unpublish Container Action", "User " +
+                            user.getPrimaryKey() + " unpublished container: " + container.getIdentifier());
+                    unpublishedContainersCount++;
+                } else {
+                    Logger.error(this, "Container with Id: " + containerId + " does not exist");
+                    failedToUnpublish.add(new FailedResultView(containerId,"Container does not exist"));
+                }
+            } catch(Exception e) {
+                Logger.debug(this, e.getMessage(), e);
+                failedToUnpublish.add(new FailedResultView(containerId,e.getMessage()));
+            }
+        }
+
+        return Response.ok(new ResponseEntityView(
+                        new BulkResultView(unpublishedContainersCount,0L,failedToUnpublish)))
+                .build();
     }
 }
