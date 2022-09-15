@@ -8,7 +8,9 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.vavr.control.Try;
 import java.io.Serializable;
-import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 import org.immutables.value.Value;
 
 /**
@@ -35,10 +37,12 @@ public interface AbstractTrafficProportion extends Serializable {
 
     @JsonProperty("variants")
     @Value.Default
-    default Set<ExperimentVariant> variants() {
-        return Set.of(ExperimentVariant.builder()
+    default SortedSet<ExperimentVariant> variants() {
+        final TreeSet<ExperimentVariant> treeSet = new TreeSet<>();
+        treeSet.add((ExperimentVariant.builder()
                 .id(APILocator.getVariantAPI().DEFAULT_VARIANT.identifier())
-                .description("Original").weight(100).build());
+                .description("Original").weight(100).build()));
+        return treeSet;
     }
 
     @Value.Check
@@ -49,6 +53,11 @@ public interface AbstractTrafficProportion extends Serializable {
                             .getByName(variant.id()).isPresent()
                     ).getOrElse(false)), IllegalArgumentException.class,
                     ()->"Invalid Variants provided");
+
+            DotPreconditions.isTrue(Math.round(variants().stream()
+                    .map(((ExperimentVariant::weight)))
+                    .collect(Collectors.toList()).stream().reduce(0f, Float::sum))==100,
+                    ()->"The sum of the Weights of the Variants needs to be equal to 100");
         }
     }
 

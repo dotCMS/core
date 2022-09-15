@@ -41,6 +41,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -280,18 +282,22 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         final TrafficProportion trafficProportion = persistedExperiment.trafficProportion();
 
-        TrafficProportion updatedTrafficProportion = TrafficProportion.builder()
-                .from(trafficProportion).addAllVariants(Collections.singleton(experimentVariant))
-                .build();
+        final TreeSet<ExperimentVariant> variants = new TreeSet<>();
+        variants.addAll(trafficProportion.variants());
+        variants.add(experimentVariant);
 
         // IF split evenly - re-distribute weights
+        TreeSet<ExperimentVariant> weightedVariants = variants;
 
-        if(updatedTrafficProportion.type()== Type.SPLIT_EVENLY) {
-            updatedTrafficProportion = redistributeWeights(updatedTrafficProportion);
+        if(trafficProportion.type()== Type.SPLIT_EVENLY) {
+            weightedVariants = redistributeWeights(variants);
         }
 
+        final TrafficProportion weightedTrafficProportion = trafficProportion
+                .withVariants(weightedVariants);
+
         final Experiment updatedExperiment = persistedExperiment
-                .withTrafficProportion(updatedTrafficProportion);
+                .withTrafficProportion(weightedTrafficProportion);
 
         return save(updatedExperiment, user);
     }
@@ -310,15 +316,15 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final Variant toDelete = variantAPI.getByName(variantName)
                 .orElseThrow(()->new DoesNotExistException("Provided Variant not found"));
 
-        final Set<ExperimentVariant> updatedVariants = persistedExperiment.trafficProportion()
+        final TreeSet<ExperimentVariant> updatedVariants =
+                new TreeSet<>(persistedExperiment.trafficProportion()
                 .variants().stream().filter((variant)->
                         !Objects.equals(variant.id(), toDelete.name())).collect(
-                        Collectors.toSet());
+                        Collectors.toSet()));
 
-        final TrafficProportion updatedTrafficProportion = persistedExperiment
-                .trafficProportion().withVariants(updatedVariants);
-
-        final TrafficProportion weightedTraffic = redistributeWeights(updatedTrafficProportion);
+        final SortedSet<ExperimentVariant> weightedVariants = redistributeWeights(updatedVariants);
+        final TrafficProportion weightedTraffic = persistedExperiment.trafficProportion()
+                .withVariants(weightedVariants);
         final Experiment withUpdatedTraffic = persistedExperiment.withTrafficProportion(weightedTraffic);
         final Experiment fromDB = save(withUpdatedTraffic, user);
         variantAPI.archive(toDelete.identifier());
@@ -327,17 +333,17 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     }
 
-    private TrafficProportion redistributeWeights(final TrafficProportion trafficProportion) {
+    private TreeSet<ExperimentVariant> redistributeWeights(final Set<ExperimentVariant> variants) {
 
-        final int count = trafficProportion.variants().size();
+        final int count = variants.size();
 
         final float weightPerEach = 100f / count;
 
-        Set<ExperimentVariant> weightedVariants = trafficProportion.variants()
-                .stream().map((variant)-> variant.withWeight(weightPerEach))
+        Set<ExperimentVariant> weightedVariants = variants.stream()
+                .map((variant)-> variant.withWeight(weightPerEach))
                 .collect(Collectors.toSet());
 
-        return trafficProportion.withVariants(weightedVariants);
+        return new TreeSet<>(weightedVariants);
     }
 
     private int getNextAvailableIndex(final String variantNameBase)
