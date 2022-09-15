@@ -17,27 +17,10 @@ public interface VariantCache extends Cachable {
     /**
      * Add a {@link Variant} into the cache.
      *
-     * @param id Id to use as key
-     * @param variant to be storage
-     */
-    void putById(final String id, final Variant variant);
-
-    /**
-     * Add a {@link Variant} into the cache.
-     *
      * @param name Name to use as key
      * @param variant to be storage
      */
-    void putByName(final String name, final Variant variant);
-
-
-    /**
-     * Get a {@link Variant} from cache by Id.
-     *
-     * @param id
-     * @return
-     */
-    Variant getById(final String id);
+    void put(final String name, final Variant variant);
 
     /**
      * Get a {@link Variant} from cache by name.
@@ -45,7 +28,7 @@ public interface VariantCache extends Cachable {
      * @param name
      * @return
      */
-    Variant getByName(final String name);
+    Variant get(final String name);
 
     /**
      * Remove a {@link Variant} from cache.

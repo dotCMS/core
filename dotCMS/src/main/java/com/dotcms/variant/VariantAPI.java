@@ -7,8 +7,8 @@ import java.util.Optional;
 public interface VariantAPI {
 
     Variant DEFAULT_VARIANT = Variant.builder()
-            .identifier("DEFAULT")
             .name("DEFAULT")
+            .description("Variant use by DEFAULT when a Contentlet is created")
             .archived(false)
             .build();
 
@@ -40,28 +40,21 @@ public interface VariantAPI {
     /**
      * Delete a {@link Variant}
      *
-     * @param id Variant's id to be deleted
+     * @param name Variant's id to be deleted
      */
-    void delete(final String id) throws DotDataException;
+    void delete(final String name) throws DotDataException;
 
     /**
      * Archive a {@link Variant}
      *
-     * @param id Variant's id to be archive
+     * @param name Variant's id to be archive
      */
-    void archive(final String id) throws DotDataException;
-
-    /**
-     * Return a {@link Variant} by Identifier
-     * @param identifier {@link Variant}'s identifier
-     * @return {@link Variant}
-     */
-    Optional<Variant> get(final String identifier) throws DotDataException;
+    void archive(final String name) throws DotDataException;
 
     /**
      * Return a {@link Variant} by Name
      * @param name {@link Variant}'s name
      * @return {@link Variant}
      */
-    Optional<Variant> getByName(final String name) throws DotDataException;
+    Optional<Variant> get(final String name) throws DotDataException;
 }

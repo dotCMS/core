@@ -34,7 +34,7 @@ public class IdentifierCacheImplTest {
         final ContentletVersionInfo contentletVersionInfo = new ContentletVersionInfo();
         contentletVersionInfo.setIdentifier(id);
         contentletVersionInfo.setLang(language.getId());
-        contentletVersionInfo.setVariant(VariantAPI.DEFAULT_VARIANT.identifier());
+        contentletVersionInfo.setVariant(VariantAPI.DEFAULT_VARIANT.name());
 
         CacheLocator.getIdentifierCache().addContentletVersionInfoToCache(contentletVersionInfo);
 
@@ -44,7 +44,7 @@ public class IdentifierCacheImplTest {
         assertEquals(contentletVersionInfo, contentletVersionInfoFromCache);
 
         final ContentletVersionInfo contentletVersionInfoFromCache2 = CacheLocator.getIdentifierCache()
-                .getContentVersionInfo(id, language.getId(), VariantAPI.DEFAULT_VARIANT.identifier());
+                .getContentVersionInfo(id, language.getId(), VariantAPI.DEFAULT_VARIANT.name());
         assertNotNull(contentletVersionInfoFromCache2);
         assertEquals(contentletVersionInfo, contentletVersionInfoFromCache2);
     }
@@ -63,12 +63,12 @@ public class IdentifierCacheImplTest {
         final ContentletVersionInfo contentletVersionInfo = new ContentletVersionInfo();
         contentletVersionInfo.setIdentifier(id);
         contentletVersionInfo.setLang(language.getId());
-        contentletVersionInfo.setVariant(variant.identifier());
+        contentletVersionInfo.setVariant(variant.name());
 
         CacheLocator.getIdentifierCache().addContentletVersionInfoToCache(contentletVersionInfo);
 
         final ContentletVersionInfo contentletVersionInfoFromCache = CacheLocator.getIdentifierCache()
-                .getContentVersionInfo(id, language.getId(), variant.identifier());
+                .getContentVersionInfo(id, language.getId(), variant.name());
         assertNotNull(contentletVersionInfoFromCache);
         assertEquals(contentletVersionInfo, contentletVersionInfoFromCache);
     }
