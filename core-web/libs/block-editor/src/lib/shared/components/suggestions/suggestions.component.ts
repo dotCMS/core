@@ -2,6 +2,7 @@ import {
     ChangeDetectorRef,
     Component,
     EventEmitter,
+    HostListener,
     Input,
     OnInit,
     Output,
@@ -58,6 +59,17 @@ export class SuggestionsComponent implements OnInit {
     private initialItems: DotMenuItem[];
 
     isFilterActive = false;
+
+    /**
+     * Avoid loosing the `focus` target.
+     *
+     * @param {MouseEvent} e
+     * @memberof SuggestionListComponent
+     */
+    @HostListener('mousedown', ['$event'])
+    onMouseDownHandler(e: MouseEvent) {
+        e.preventDefault();
+    }
 
     constructor(
         private suggestionsService: SuggestionsService,
