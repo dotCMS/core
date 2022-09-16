@@ -11,6 +11,7 @@ jobs:
     env:
       QA_PROJECT_ID: 6
       COLUMN_NAME: Backlog
+      MY_GITHUB_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
     steps:
       - name: Assign issues with `Passed Internal QA` label to QA project
         uses: srggrs/assign-one-project-github-action@1.3.1
