@@ -246,6 +246,7 @@ public class StartupTasksExecutor {
                 HibernateUtil.startTransaction();
                 name = c.getCanonicalName();
                 name = name.substring(name.lastIndexOf(".") + 1);
+		String id = getTaskId(name);
                 int taskId = Integer.parseInt(id); 
 		if (StartupTask.class.isAssignableFrom(c) && taskId > Config.DB_VERSION) {
                     StartupTask  task = (StartupTask) c.newInstance();
