@@ -139,7 +139,7 @@ public class TailLogServlet extends HttpServlet {
 				if (StringUtils.isNotEmpty(write)) {
 					final String prepWrite = String.format("<p class=\"log page%d\" data-page=\"%d\" data-logNumber=\"%d\" style=\"margin:0\">%s</p>", pageNumber, pageNumber, logNumber, write);
 					response.getOutputStream().print(prepWrite);
-					final String dosWrite = String.format("<script>doS('%s','%d');</script>",prepWrite,pageNumber);
+					final String dosWrite = String.format("<script>doS('%s','%d');</script>", prepWrite, pageNumber);
 					response.getOutputStream().print(dosWrite);
 					count++;
 					logNumber++;

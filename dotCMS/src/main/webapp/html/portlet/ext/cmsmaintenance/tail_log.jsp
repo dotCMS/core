@@ -64,7 +64,7 @@
         padding: 1rem;
         white-space: pre;
     }
-    .highlighKeywordtMatchLogViewer{
+    .highlightKeywordMatchLogViewer{
         background-color: yellow;
         color: #000;
     }
@@ -92,7 +92,7 @@
                 lastScrollTop = st <= 0 ? 0 : st; // For Mobile or negative scrolling
             }, false);
         }, 200)
-    };
+    }
 
 	function doPopup(){
 			var x = dijit.byId("fileName").getValue();
@@ -197,11 +197,11 @@
     var logViewerFiltering = false;
     var logViewerDirty = false;
 
-    const linesPerPage = <%=TailLogServlet.LINES_PER_PAGE%>;
-    const ON_SCREEN_PAGES = 5;
+    const ON_SCREEN_PAGES = 3;
+
     let numberOfPagesOnScreen = 0;
     let currentActivePageId = 1;
-
+    let cleaningEarlyPages = false;
     let fetchingPriorPage = false;
 
     function attachLogIframeEvents() {
@@ -211,9 +211,10 @@
         let iDoc = dataLogSourceElem.contentWindow || dataLogSourceElem.contentDocument;
 
         if (!attachedFilterLogEvents) {
-            var debounce = (callback, time = 300, interval) => (...args) => {
+
+            const debounce = (callback, time = 300, interval) => (...args) => {
                 clearTimeout(interval, interval = setTimeout(() => callback(...args), time));
-            }
+            };
 
             dataLogPrintedElem = document.querySelector('.logViewerPrinted');
 
@@ -228,15 +229,17 @@
             // Only triggering if "newContent" has a value, cuz there can be calls from BE with empty data
             // for the purpose of just to keep the connection alive
             if (e.detail.newContent.length > 0) {
-
-                currentActivePageId = updateLogViewerData(e, currentActivePageId, dataLogSourceElem, logger);
-
+                updateLogViewerData(e, dataLogSourceElem, logger);
             }
         });
 
         logger.addEventListener("scroll", (e)=>{
-            let div = e.target;
-            if(div.scrollTop === 0){
+            const div = e.target;
+            if(div.scrollTop === 0) {
+                //TODO should we disable following here?
+                if (!isFollowingOn()) {
+                    disableFollowOnScrollUp();
+                }
                 fetchPage(dataLogSourceElem, div);
             }
         });
@@ -246,7 +249,7 @@
     function filterLog(event) {
         const ignoredKeys = ["ArrowLeft", "ArrowUp", "ArrowDown", "ArrowRight"];
 
-        let logger = document.querySelector('.logViewerPrinted');
+        const logger = document.querySelector('.logViewerPrinted');
 
         // If keyword is greater than 2 characters, then filtering is applied
         logViewerFiltering = keywordLogInput.value.length > 2;
@@ -273,46 +276,63 @@
     }
 
     // Function that gets called on every new log update
-    function updateLogViewerData(e, currentActivePageId ,src, dest) {
+    function updateLogViewerData(e, src, dest) {
+        let following = isFollowingOn();
+        let newContent = logViewerFiltering ?  performLogViewerMark(e.detail.newContent) : e.detail.newContent ;
 
-        let newContent =  logViewerFiltering ?  performLogViewerMark(e.detail.newContent) : e.detail.newContent ;
-
-        let pageId =  parseInt(e.detail.pageId);
+        let pageId = parseInt(e.detail.pageId);
+        console.log(" incoming page id ::: "+ pageId + "  ::: currentActivePage ::: " + currentActivePageId );
         if(pageId > currentActivePageId ){
             //Time to change page
             //We only want to keep in the div 'onScreenPages' number of pages
-            onNewFullPage(dest);
+            onFullPageLoaded(dest, following);
             currentActivePageId = pageId;
         }
             dest.insertAdjacentHTML('beforeend', newContent );
 
-        if (document.querySelector('#scrollMe').checked) {
-            scrollLogToBottom();
+        if (following) {
+             scrollLogToBottom();
         }
-
-        return currentActivePageId;
     }
 
-    function onNewFullPage(dest){
+    function onFullPageLoaded(dest, following){
         numberOfPagesOnScreen++;
-        if(numberOfPagesOnScreen >= ON_SCREEN_PAGES ){
-            //drop the earliest page
-            numberOfPagesOnScreen = dropEarlyPagesOnScreen(numberOfPagesOnScreen, dest);
+        if(!following){
+
+           return;
+        }
+        if( !cleaningEarlyPages && (numberOfPagesOnScreen > ON_SCREEN_PAGES)){
+            try{
+               cleaningEarlyPages = true;
+               //drop the earliest page
+               dropEarlyPages(dest);
+           }finally {
+               cleaningEarlyPages = false;
+           }
         }
     }
 
-    function dropEarlyPagesOnScreen(numberOfPagesOnScreen, dest) {
+    function dropScrollUpFetchedPages(dest) {
+        let pagesToDrop = dest.querySelectorAll(`.scrollUp-fetched`);
+        console.log( "PageToDrop ::: " + pagesToDrop );
+        if (pagesToDrop.length > 0) {
+            //Remove all items loaded scrolling up
+            pagesToDrop.forEach((elem) => elem.remove());
+        }
+    }
+
+    function dropEarlyPages(dest) {
         console.log(" :::::: numberOfPagesOnScreen ::::: " + numberOfPagesOnScreen);
-        let numOfPagesToDrop = Math.round((numberOfPagesOnScreen * 30) * .01);
-        console.log("numOfPagesToDrop:: " + numOfPagesToDrop);
-        for(let i=1; i<= numOfPagesToDrop; i++){
-            let first = dest.querySelector(`.log:first-child`);
+        const pagesToDrop = Math.round((numberOfPagesOnScreen * 30) * .01);
+        console.log("numOfPagesToDrop:: " + pagesToDrop);
+        for(let i=1; i<= pagesToDrop; i++){
+            const first = dest.querySelector(`.log:first-child`);
             console.log( "First:: " + first);
             if(first){
-               let firstPageId = first.dataset.page;
+                const firstPageId = first.dataset.page;
                 console.log( "FirstPageID:: " + firstPageId);
-               let pageToDrop = dest.querySelectorAll(`.page${firstPageId}`);
-                console.log( pageToDrop );
+                let pageToDrop = dest.querySelectorAll(`.page${firstPageId}`);
+                console.log( "PageToDrop ::: " + pageToDrop );
                 if (pageToDrop.length > 0) {
                     //Remove all items on that page
                     pageToDrop.forEach((elem) => elem.remove());
@@ -323,23 +343,23 @@
             }
         }
         console.log(' We are done!' );
-        return numberOfPagesOnScreen - numOfPagesToDrop;
+        numberOfPagesOnScreen = numberOfPagesOnScreen - pagesToDrop;
     }
 
     // Function that adds to the log content SPAN Html Tags used for highlight
     function addLogViewerKeywordMatchHighlight(log) {
         let keyword = keywordLogInput.value;
         const regEx = new RegExp( keyword, "ig");
-        return log.replaceAll(regEx, '<span class="highlighKeywordtMatchLogViewer">$&</span>');
+        return log.replaceAll(regEx, '<span class="highlightKeywordMatchLogViewer">$&</span>');
     }
 
     function removeHighlight(logger) {
 
-        logger.querySelectorAll(".highlighKeywordtMatchLogViewer").forEach(el => el.replaceWith(...el.childNodes));
+        logger.querySelectorAll(".highlightKeywordMatchLogViewer").forEach(el => el.replaceWith(...el.childNodes));
 
     }
 
-    function fetchPage( src, dest) {
+    function fetchPage( src, dest ) {
         if(fetchingPriorPage === true){
             return;
         }
@@ -349,21 +369,28 @@
             if(first){
                 let firstPageId = first.dataset.page;
                 firstPageId--;
-                let list = src.contentDocument.body.querySelectorAll(`.page${firstPageId}`);
+                const list = src.contentDocument.body.querySelectorAll(`.page${firstPageId}`);
                 if (list.length > 0) {
                     if (logViewerFiltering) {
-                        list.forEach((elem) => {
-                            dest.insertAdjacentHTML('afterbegin',
-                                addLogViewerKeywordMatchHighlight(elem.outerHTML));
-                        });
+                        //iterate backwards to preserve the original order
+                        for (let i = list.length - 1; i >= 0; i--) {
+                            const elem = list[i];
+                            elem.classList.add('scrollUp-fetched');
+                            dest.insertAdjacentHTML('afterbegin', addLogViewerKeywordMatchHighlight(elem.outerHTML));
+                        }
+
                     } else {
-                        list.forEach((elem) => {
+                        //iterate backwards to preserve the original order
+                        for (let i = list.length - 1; i >= 0; i--) {
+                            const elem = list[i];
+                            elem.classList.add('scrollUp-fetched');
                             dest.insertAdjacentHTML('afterbegin', elem.outerHTML);
-                        });
+                        }
                     }
+                    numberOfPagesOnScreen++;
+                    //Move the scroll just a tiny bit, so we have room to fire the event again.
+                    dest.scrollTop = dest.scrollTop + 10;
                 }
-                //Move the scroll just a tiny bit so we have room to fire the event again
-                dest.scrollTop = dest.scrollTop + 10;
             }
         }finally {
             fetchingPriorPage = false;
@@ -394,6 +421,14 @@
         dataLogPrintedElem.scrollTop = dataLogPrintedElem.scrollHeight;
     }
 
+    function isFollowingOn(){
+        return  dijit.byId('scrollMe').checked;
+    }
+
+    function enableFollowing(enable){
+        dijit.byId('scrollMe').set('checked', enable);
+    }
+
     /* Log Viewer - END */
     /********************/
 
@@ -410,7 +445,7 @@
                 <%} %>
             </select>
             <div class="checkbox">
-                <input type="checkbox" id="scrollMe" dojoType="dijit.form.CheckBox" value=1 checked="true" />
+                <input type="checkbox" id="scrollMe" dojoType="dijit.form.CheckBox" value=1 checked />
                 <label for="scrollMe">
                     <%=com.liferay.portal.language.LanguageUtil.get(pageContext, "Follow") %>
                 </label>
