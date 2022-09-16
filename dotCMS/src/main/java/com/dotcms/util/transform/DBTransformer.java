@@ -17,4 +17,5 @@ public interface DBTransformer<T> {
     default T findFirst() {
         return this.asList().stream().findFirst().orElse(null);
     }
+
 }

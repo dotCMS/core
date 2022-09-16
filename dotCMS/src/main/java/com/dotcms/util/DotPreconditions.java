@@ -123,6 +123,22 @@ public final class DotPreconditions {
 	}
 
 	/**
+	 * If <code>expression</code> is true then throw a RuntimeExcpetion according to the <code>exceptionCOde</code>
+	 * parameter.
+	 * @param expression if it is truw the RuntimeException is thrown, otherwise the method do nothing
+	 * @param exceptionCLass Exception class to be thrown
+	 * @param messageTemplate Message template for the Exception
+	 * @param messageArgs message parameters
+	 */
+	public static void checkArgument(boolean expression, final Class<? extends RuntimeException> exceptionCLass,
+			@NotNull String messageTemplate, @NotNull Object... messageArgs) {
+
+		if (!expression) {
+			throw newException(messageTemplate, exceptionCLass, messageArgs);
+		}
+	}
+
+	/**
 	 * Ensures the truth of an expression involving one or more parameters to
 	 * the calling method.
 	 *

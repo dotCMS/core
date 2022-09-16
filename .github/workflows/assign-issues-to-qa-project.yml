@@ -8,11 +8,14 @@ jobs:
   assign_one_project:
     runs-on: ubuntu-latest
     name: Assign to QA Project
+    env:
+      QA_PROJECT_ID: 6
+      COLUMN_NAME: Backlog
     steps:
       - name: Assign issues with `Passed Internal QA` label to QA project
         uses: srggrs/assign-one-project-github-action@1.2.0
         if: |
           contains(github.event.issue.labels.*.name, 'Passed Internal QA')
         with:
-          project: 'https://github.com/dotCMS/core/projects/7'
-          column_name: 'Waiting for QA'
+          project: 'https://github.com/orgs/dotCMS/projects/${{ env.QA_PROJECT_ID }}'
+          column_name: ${{ env.COLUMN_NAME }}

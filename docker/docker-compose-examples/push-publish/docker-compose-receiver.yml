@@ -34,7 +34,7 @@ services:
         "DOT_ES_AUTH_BASIC_PASSWORD": 'admin'
         "DOT_ES_ENDPOINTS": 'http://elasticsearch-receiver:9200'
         "DOT_INITIAL_ADMIN_PASSWORD": 'admin'
-        #"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20211201/starter-20211201.zip'
+        #"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20220713/starter-20220713.zip'
     depends_on:
       - elasticsearch-receiver
       - db-receiver

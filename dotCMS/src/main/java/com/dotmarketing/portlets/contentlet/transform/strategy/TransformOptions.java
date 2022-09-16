@@ -28,7 +28,8 @@ public enum TransformOptions {
     STORY_BLOCK_VIEW,
 
     AVOID_MAP_SUFFIX_FOR_VIEWS,
-    RENDER_FIELDS; // will velocity-render the render-able fields
+    RENDER_FIELDS, // will velocity-render the render-able fields
+    JSON_VIEW;
 
     private boolean defaultProperty;
 
