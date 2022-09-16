@@ -18,7 +18,8 @@ import org.immutables.value.Value;
 @JsonSerialize(as = ExperimentVariant.class)
 @JsonDeserialize(as = ExperimentVariant.class)
 public interface AbstractExperimentVariant extends Serializable, Comparable<ExperimentVariant> {
-    String EXPERIMENT_VARIANT_NAME = "experiment-variant-";
+    String EXPERIMENT_VARIANT_NAME_PREFIX = "dotexperiment-";
+    String EXPERIMENT_VARIANT_NAME_SUFFIX = "-variant-";
     String EXPERIMENT_VARIANT_DESCRIPTION = "Variant ";
 
     @JsonProperty("id")

@@ -2,12 +2,14 @@ package com.dotcms.experiments.business;
 
 import static com.dotcms.experiments.model.AbstractExperiment.Status.DRAFT;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.ENDED;
+import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_VARIANT_DESCRIPTION;
+import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME_PREFIX;
+import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME_SUFFIX;
 
 import com.dotcms.analytics.metrics.MetricsUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
-import com.dotcms.experiments.model.AbstractExperimentVariant;
 import com.dotcms.experiments.model.AbstractTrafficProportion.Type;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
@@ -36,7 +38,6 @@ import com.liferay.portal.model.User;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -265,14 +266,14 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final Experiment persistedExperiment = find(experimentId, user)
                 .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
 
-        final String variantNameBase = experimentId
-                + "-" + AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME;
+        final String variantNameBase = EXPERIMENT_VARIANT_NAME_PREFIX + experimentId
+                + EXPERIMENT_VARIANT_NAME_SUFFIX;
 
         final int nextAvailableIndex = getNextAvailableIndex(variantNameBase);
 
         final String variantName = variantNameBase + nextAvailableIndex;
 
-        final String variantDescription = AbstractExperimentVariant.EXPERIMENT_VARIANT_DESCRIPTION
+        final String variantDescription = EXPERIMENT_VARIANT_DESCRIPTION
                 + nextAvailableIndex;
 
         variantAPI.save(Variant.builder().identifier(variantName).name(variantName).build());
@@ -369,7 +370,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     private boolean hasAtLeastOneVariant(final Experiment experiment) {
-        return !experiment.trafficProportion().variants().isEmpty();
+        return experiment.trafficProportion().variants().size()>1;
     }
 
     private void validatePermissions(final User user, final Experiment persistedExperiment,
