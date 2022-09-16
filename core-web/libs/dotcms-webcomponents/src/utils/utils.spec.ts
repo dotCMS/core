@@ -1,18 +1,18 @@
 import {
+    decodeChars,
+    encodeChars,
     getClassNames,
     getDotOptionsFromFieldValue,
     getErrorClass,
     getHintId,
     getId,
+    getJsonStringFromDotKeyArray,
     getLabelId,
     getOriginalStatus,
-    getJsonStringFromDotKeyArray,
     getTagError,
     getTagHint,
     isFileAllowed,
-    updateStatus,
-    decodeChars,
-    encodeChars
+    updateStatus
 } from './utils';
 
 describe('getClassNames', () => {
@@ -44,13 +44,19 @@ describe('getDotOptionsFromFieldValue', () => {
     it('should return label/value', () => {
         const items = getDotOptionsFromFieldValue('key1|A,key2|B');
         expect(items.length).toBe(2);
-        expect(items).toEqual([{ label: 'key1', value: 'A' }, { label: 'key2', value: 'B' }]);
+        expect(items).toEqual([
+            { label: 'key1', value: 'A' },
+            { label: 'key2', value: 'B' }
+        ]);
     });
 
     it('should support \r\n as option splitter', () => {
         const items = getDotOptionsFromFieldValue('key1|A\r\nkey2|B');
         expect(items.length).toBe(2);
-        expect(items).toEqual([{ label: 'key1', value: 'A' }, { label: 'key2', value: 'B' }]);
+        expect(items).toEqual([
+            { label: 'key1', value: 'A' },
+            { label: 'key2', value: 'B' }
+        ]);
     });
 
     it('should support \r\n and semicolon as option splitter', () => {
@@ -128,17 +134,13 @@ describe('getOriginalStatus', () => {
 
 describe('encodeChars', () => {
     it('should encode chars', () => {
-        expect(
-            encodeChars('a"b\\c|d:e,')
-        ).toBe('a&#34;b&#92;c&#124;d&#58;e&#44;');
+        expect(encodeChars('a"b\\c|d:e,')).toBe('a&#34;b&#92;c|d&#58;e&#44;');
     });
 });
 
 describe('decodeChars', () => {
     it('should decode chars', () => {
-        expect(
-            decodeChars('a&#34;b&#92;c&#124;d&#58;e&#44;')
-        ).toBe('a"b\\c|d:e,');
+        expect(decodeChars('a&#34;b&#92;c&#124;d&#58;e&#44;')).toBe('a"b\\c|d:e,');
     });
 });
 
@@ -213,7 +215,6 @@ describe('isFileAllowed', () => {
     it('should return true when types are the same', () => {
         expect(isFileAllowed('file.pdf', 'application/pdf', 'application/*')).toBe(true);
     });
-
 
     it('should return true when allowedExtensions are empty', () => {
         expect(isFileAllowed('file.pdf', 'application/pdf', '')).toBe(true);

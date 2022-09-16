@@ -323,6 +323,7 @@ public class TaskLocatorUtil {
     	.add(Task220822CreateVariantTable.class)
 		.add(Task220829CreateExperimentsTable.class)
 		.add(Task220912UpdateCorrectShowOnMenuProperty.class)
+		.add(Task220824CreateDefaultVariant.class)
 		.build();
         
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());

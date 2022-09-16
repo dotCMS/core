@@ -22,8 +22,8 @@ public class Task220824CreateDefaultVariant implements StartupTask  {
     public boolean forceRun() {
         try{
             final ArrayList results = new DotConnect()
-                    .setSQL("SELECT * FROM variant WHERE id = ?")
-                    .addParam(VariantAPI.DEFAULT_VARIANT.identifier())
+                    .setSQL("SELECT * FROM variant WHERE name = ?")
+                    .addParam(VariantAPI.DEFAULT_VARIANT.name())
                     .loadResults();
             return results.isEmpty();
         } catch (DotDataException e) {
@@ -42,8 +42,8 @@ public class Task220824CreateDefaultVariant implements StartupTask  {
 
     private void createDefaultVariant(DotConnect dotConnect) throws DotDataException {
         if (!defaultVariantExists(dotConnect)) {
-            dotConnect.setSQL("INSERT INTO variant (id, name, archived) VALUES (?, ?, ?)")
-                    .addParam(VariantAPI.DEFAULT_VARIANT.identifier())
+            dotConnect.setSQL("INSERT INTO variant (name, description, archived) VALUES (?, ?, ?)")
+                    .addParam(VariantAPI.DEFAULT_VARIANT.name())
                     .addParam(VariantAPI.DEFAULT_VARIANT.name())
                     .addParam(ConversionUtils.toBooleanFromDb(false))
                     .loadResult();
@@ -51,8 +51,8 @@ public class Task220824CreateDefaultVariant implements StartupTask  {
     }
 
     private boolean defaultVariantExists(DotConnect dotConnect) throws DotDataException {
-        return !dotConnect.setSQL("SELECT * FROM variant WHERE id = ?")
-                .addParam(VariantAPI.DEFAULT_VARIANT.identifier())
+        return !dotConnect.setSQL("SELECT * FROM variant WHERE name = ?")
+                .addParam(VariantAPI.DEFAULT_VARIANT.name())
                 .loadResults()
                 .isEmpty();
     }

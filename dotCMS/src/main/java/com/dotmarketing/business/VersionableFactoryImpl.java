@@ -2,9 +2,7 @@ package com.dotmarketing.business;
 
 import static com.dotcms.util.CollectionsUtils.set;
 
-import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Identifier;
@@ -325,7 +323,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
     @Override
     protected Optional<ContentletVersionInfo> getContentletVersionInfo(final String identifier,
 			final long lang) throws DotDataException, DotStateException {
-        return getContentletVersionInfo(identifier, lang, VariantAPI.DEFAULT_VARIANT.identifier());
+        return getContentletVersionInfo(identifier, lang, VariantAPI.DEFAULT_VARIANT.name());
     }
 
 	@Override
@@ -375,7 +373,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
     @Override
     protected Optional<ContentletVersionInfo> findContentletVersionInfoInDB(String identifier, long lang)throws DotDataException, DotStateException {
-		return findContentletVersionInfoInDB(identifier, lang, VariantAPI.DEFAULT_VARIANT.identifier());
+		return findContentletVersionInfoInDB(identifier, lang, VariantAPI.DEFAULT_VARIANT.name());
     }
 
 	@Override
@@ -462,7 +460,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
     @Override
     protected ContentletVersionInfo createContentletVersionInfo(Identifier identifier, long lang, String workingInode) throws DotStateException, DotDataException {
-		return createContentletVersionInfo(identifier, lang, workingInode, VariantAPI.DEFAULT_VARIANT.identifier());
+		return createContentletVersionInfo(identifier, lang, workingInode, VariantAPI.DEFAULT_VARIANT.name());
     }
 
 	@Override
