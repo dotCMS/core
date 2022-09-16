@@ -1,5 +1,5 @@
-import { of as observableOf, Observable } from 'rxjs';
-import { DebugElement } from '@angular/core';
+import { Observable, of as observableOf } from 'rxjs';
+import { Component, DebugElement, Injectable, Input } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { DotEditPageNavComponent } from './dot-edit-page-nav.component';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
@@ -8,10 +8,9 @@ import { DotContentletEditorService } from '@components/dot-contentlet-editor/se
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { TooltipModule } from 'primeng/tooltip';
-import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { mockDotRenderedPage } from '../../../../test/dot-page-render.mock';
 import { mockUser } from './../../../../test/login-service.mock';
-import { Injectable, Component, Input } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { DotIconModule } from '@dotcms/ui';
 import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
@@ -45,6 +44,7 @@ class MockDotLicenseService {
         return observableOf(false);
     }
 }
+
 @Injectable()
 class MockDotPropertiesService {
     getKey(): Observable<true> {
@@ -135,7 +135,7 @@ describe('DotEditPageNavComponent', () => {
         it('should have basic menu items', () => {
             fixture.detectChanges();
             const menuListItems = fixture.debugElement.queryAll(By.css('.edit-page-nav__item'));
-            expect(menuListItems.length).toEqual(5);
+            expect(menuListItems.length).toEqual(4);
 
             const labels = ['Content', 'Layout', 'Rules', 'Properties', 'Experiments'];
             const icons = ['insert_drive_file', 'view_quilt', 'tune', 'more_horiz', 'dataset'];
@@ -197,7 +197,7 @@ describe('DotEditPageNavComponent', () => {
             );
             const iconClass = menuListItems[0].query(By.css('i')).nativeElement.innerHTML.trim();
 
-            expect(menuListItems.length).toEqual(5);
+            expect(menuListItems.length).toEqual(4);
             expect(iconClass).toEqual('insert_drive_file');
             expect(menuListItems[0].nativeElement.textContent).toContain('Content');
             expect(menuListItems[1].nativeElement.textContent).toContain('Layout');
@@ -308,6 +308,17 @@ describe('DotEditPageNavComponent', () => {
 
     describe('experiments feature flag true', () => {
         it('should has Experiments item', () => {
+            // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+            spyOnProperty<any>(route, 'snapshot', 'get').and.returnValue({
+                firstChild: {
+                    url: [
+                        {
+                            path: 'content'
+                        }
+                    ]
+                },
+                data: { featuredFlag: true }
+            });
             fixture.detectChanges();
 
             const menuListItems = fixture.debugElement.queryAll(
@@ -334,7 +345,7 @@ describe('DotEditPageNavComponent', () => {
                         }
                     ]
                 },
-                data: { featuredFlagExperiment: false }
+                data: { featuredFlag: false }
             });
             fixture.detectChanges();
 
