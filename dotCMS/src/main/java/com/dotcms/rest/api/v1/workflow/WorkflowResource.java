@@ -1582,13 +1582,11 @@ public class WorkflowResource {
             formBuilder.relationships((ContentletRelationships) contentlet.getMap().get(Contentlet.RELATIONSHIP_KEY));
         }
 
-        final List<Category> categories = MapToContentletPopulator.
-                INSTANCE.getCategories(contentlet, user, pageMode.respectAnonPerms);
+        final Optional<List<Category>>categories = MapToContentletPopulator.
+                INSTANCE.fetchCategories(contentlet, user, pageMode.respectAnonPerms);
 
-        //Must be compared against null. Empty collection implies removal, therefore we must allow it
-        if (null != categories) {
-            formBuilder.categories(categories);
-        }
+        //Empty collection implies removal, so only when a value is present we must pass the collection
+        categories.ifPresent(formBuilder::categories);
 
         return Response.ok(
                 new ResponseEntityView(

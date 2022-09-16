@@ -61,6 +61,7 @@ import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.graphql.CustomFieldType;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -72,6 +73,8 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.google.common.collect.ImmutableList;
+import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -101,6 +104,26 @@ import org.mockito.Mockito;
 public class GraphqlAPITest extends IntegrationTestBase {
 
     private static CustomRandom random = new CustomRandom();
+
+    private static List<User> users;
+
+    List<User> loadUsers() {
+        if(null == users) {
+            try {
+                users = ImmutableList.of(
+                        TestUserUtils.getChrisPublisherUser(),
+                        TestUserUtils.getBillIntranetUser(),
+                        TestUserUtils.getJaneReviewerUser(),
+                        TestUserUtils.getAdminUser(),
+                        APILocator.systemUser(),
+                        APILocator.getUserAPI().getAnonymousUserNoThrow()
+                );
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return users;
+    }
 
     @BeforeClass
     public static void prepare() throws Exception{
@@ -497,13 +520,17 @@ public class GraphqlAPITest extends IntegrationTestBase {
         }
 
         final GraphqlAPI api = APILocator.getGraphqlAPI();
-        final GraphQLSchema schema = api.getSchema();
 
-        final TypeTestCase.AssertionParams assertionParams =
-                new TypeTestCase.AssertionParams(schema, testCase.getContentTypeName(), testCase.expectedGraphQLInterfaceToInherit);
+        for(User user:loadUsers()) {
 
-        testCase.assertions.forEach((assertion) -> assertion.accept(assertionParams));
+            final GraphQLSchema schema = api.getSchema(user);
 
+            final TypeTestCase.AssertionParams assertionParams =
+                    new TypeTestCase.AssertionParams(schema, testCase.getContentTypeName(),
+                            testCase.expectedGraphQLInterfaceToInherit);
+
+            testCase.assertions.forEach((assertion) -> assertion.accept(assertionParams));
+        }
     }
 
 
@@ -518,62 +545,65 @@ public class GraphqlAPITest extends IntegrationTestBase {
                 testCase.fieldType, testCase.fieldRequired);
 
         final GraphqlAPI api = APILocator.getGraphqlAPI();
-        final GraphQLSchema schema = api.getSchema();
 
-        final GraphQLFieldDefinition fieldDefinition =
-                schema.getObjectType(testCase.contentTypeName).getFieldDefinition(testCase.fieldVarName);
+        for(User user:loadUsers()) {
+            final GraphQLSchema schema = api.getSchema(user);
 
-        GraphQLOutputType expectedType = ContentAPIGraphQLTypesProvider.INSTANCE
-                .getGraphqlTypeForFieldClass(
-                (Class<? extends Field>) testCase.fieldType.getSuperclass(), field);
+            final GraphQLFieldDefinition fieldDefinition =
+                    schema.getObjectType(testCase.contentTypeName)
+                            .getFieldDefinition(testCase.fieldVarName);
 
-        final GraphQLOutputType graphQLFieldType = fieldDefinition.getType();
+            GraphQLOutputType expectedType = ContentAPIGraphQLTypesProvider.INSTANCE
+                    .getGraphqlTypeForFieldClass(
+                            (Class<? extends Field>) testCase.fieldType.getSuperclass(), field);
 
-        assertNotNull(expectedType);
-        assertNotNull(graphQLFieldType);
+            final GraphQLOutputType graphQLFieldType = fieldDefinition.getType();
 
-        if (testCase.fieldRequired) {
-            Assert.assertEquals("Type of GraphQL Field should match type expected",
-                    new GraphQLNonNull(expectedType)
-                    , graphQLFieldType);
-        } else {
-            Assert.assertEquals("Type of GraphQL Field should match type expected", expectedType
-                    , graphQLFieldType);
+            assertNotNull(expectedType);
+            assertNotNull(graphQLFieldType);
+
+            if (testCase.fieldRequired) {
+                Assert.assertEquals("Type of GraphQL Field should match type expected",
+                        new GraphQLNonNull(expectedType)
+                        , graphQLFieldType);
+            } else {
+                Assert.assertEquals("Type of GraphQL Field should match type expected", expectedType
+                        , graphQLFieldType);
+            }
         }
-
     }
 
     @Test
-    public void testGetSchema_WhenFieldDeleted_ShouldNotBeAvailableInSchema() throws DotDataException,
-            DotSecurityException {
+    public void testGetSchema_WhenFieldDeleted_ShouldNotBeAvailableInSchema() throws DotDataException {
 
-        // create type
-        final String contentTypeName = "testType" + random.nextPositive();
-        final String fieldVarName = "testFieldVar" + random.nextPositive();
-        ContentType contentType = createType(contentTypeName, BaseContentType.CONTENT);
-        final Field field = createField(contentType, fieldVarName,
-                ImmutableTextField.class, false);
+        for(final User user:loadUsers()) {
+            // create type
+            final String contentTypeName = "testType" + random.nextPositive();
+            final String fieldVarName = "testFieldVar" + random.nextPositive();
+            ContentType contentType = createType(contentTypeName, BaseContentType.CONTENT);
+            final Field field = createField(contentType, fieldVarName,
+                    ImmutableTextField.class, false);
 
-        final GraphqlAPI api = APILocator.getGraphqlAPI();
-        final GraphQLSchema schema = api.getSchema();
+            final GraphqlAPI api = APILocator.getGraphqlAPI();
+            final GraphQLSchema schema = api.getSchema(user);
 
-        final GraphQLFieldDefinition fieldDefinition =
-                schema.getObjectType(contentTypeName).getFieldDefinition(fieldVarName);
+            final GraphQLFieldDefinition fieldDefinition =
+                    schema.getObjectType(contentTypeName).getFieldDefinition(fieldVarName);
 
-        final GraphQLOutputType graphQLFieldType = fieldDefinition.getType();
-        assertNotNull(graphQLFieldType);
+            final GraphQLOutputType graphQLFieldType = fieldDefinition.getType();
+            assertNotNull(graphQLFieldType);
 
-        // let's now delete the field
-        APILocator.getContentTypeFieldAPI().delete(field);
+            // let's now delete the field
+            APILocator.getContentTypeFieldAPI().delete(field);
 
-        // after deletion the field should not be available in the schema
-        final GraphQLSchema schemaReloaded = api.getSchema();
+            // after deletion the field should not be available in the schema
+            final GraphQLSchema schemaReloaded = api.getSchema(user);
 
-        final GraphQLFieldDefinition reloadedFieldDefinition =
-                schemaReloaded.getObjectType(contentTypeName).getFieldDefinition(fieldVarName);
+            final GraphQLFieldDefinition reloadedFieldDefinition =
+                    schemaReloaded.getObjectType(contentTypeName).getFieldDefinition(fieldVarName);
 
-        assertNull(reloadedFieldDefinition);
-
+            assertNull(reloadedFieldDefinition);
+        }
     }
 
 
@@ -606,34 +636,41 @@ public class GraphqlAPITest extends IntegrationTestBase {
             final Field relFieldFromChildToParent = createAndSaveRelationshipField("otherSideNewRelGraphQL",
                     childContentType.id(), fullFieldVar, String.valueOf(cardinality.ordinal()));
 
-            final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema();
+            for (final User user : loadUsers()) {
 
-            final GraphQLFieldDefinition fieldDefinitionFromParentToChild =
-                    schema.getObjectType(parentContentType.variable())
-                            .getFieldDefinition(relFieldFromParentToChild.variable());
+                final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema(user);
 
-            final GraphQLOutputType outputTypeFromParentToChild = fieldDefinitionFromParentToChild.getType();
+                final GraphQLFieldDefinition fieldDefinitionFromParentToChild =
+                        schema.getObjectType(parentContentType.variable())
+                                .getFieldDefinition(relFieldFromParentToChild.variable());
 
-            if(isOneEndingCardinality(cardinality)) {
-                assertFalse(outputTypeFromParentToChild instanceof GraphQLList);
-                assertEquals(childContentType.variable(), outputTypeFromParentToChild.getName());
-            } else {
-                assertTrue(outputTypeFromParentToChild instanceof GraphQLList);
-                assertEquals(childContentType.variable(), ((GraphQLList)outputTypeFromParentToChild).getWrappedType().getName());
-            }
+                final GraphQLOutputType outputTypeFromParentToChild = fieldDefinitionFromParentToChild.getType();
 
-            final GraphQLFieldDefinition fieldDefinitionFromChildToParent =
-                    schema.getObjectType(childContentType.variable())
-                            .getFieldDefinition(relFieldFromChildToParent.variable());
+                if (isOneEndingCardinality(cardinality)) {
+                    assertFalse(outputTypeFromParentToChild instanceof GraphQLList);
+                    assertEquals(childContentType.variable(),
+                            outputTypeFromParentToChild.getName());
+                } else {
+                    assertTrue(outputTypeFromParentToChild instanceof GraphQLList);
+                    assertEquals(childContentType.variable(),
+                            ((GraphQLList) outputTypeFromParentToChild).getWrappedType().getName());
+                }
 
-            final GraphQLOutputType outputTypeFromChildToParent = fieldDefinitionFromChildToParent.getType();
+                final GraphQLFieldDefinition fieldDefinitionFromChildToParent =
+                        schema.getObjectType(childContentType.variable())
+                                .getFieldDefinition(relFieldFromChildToParent.variable());
 
-            if(isManyStartingCardinality(cardinality)) {
-                assertTrue(outputTypeFromChildToParent instanceof GraphQLList);
-                assertEquals(parentContentType.variable(), ((GraphQLList)outputTypeFromChildToParent).getWrappedType().getName());
-            } else {
-                assertFalse(outputTypeFromChildToParent instanceof GraphQLList);
-                assertEquals(parentContentType.variable(), outputTypeFromChildToParent.getName());
+                final GraphQLOutputType outputTypeFromChildToParent = fieldDefinitionFromChildToParent.getType();
+
+                if (isManyStartingCardinality(cardinality)) {
+                    assertTrue(outputTypeFromChildToParent instanceof GraphQLList);
+                    assertEquals(parentContentType.variable(),
+                            ((GraphQLList) outputTypeFromChildToParent).getWrappedType().getName());
+                } else {
+                    assertFalse(outputTypeFromChildToParent instanceof GraphQLList);
+                    assertEquals(parentContentType.variable(),
+                            outputTypeFromChildToParent.getName());
+                }
             }
 
 
@@ -667,11 +704,12 @@ public class GraphqlAPITest extends IntegrationTestBase {
                 // create custom persona type. 1=typeName, 2=BaseType
                 customType = createType(testCase._1,
                         testCase._2);
-
-                runNoLicense(() -> {
-                    final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema();
-                    assertNull(schema.getType(testCase._1));
-                });
+                for (final User user : loadUsers()) {
+                    runNoLicense(() -> {
+                        final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema(user);
+                        assertNull(schema.getType(testCase._1));
+                    });
+                }
             } finally {
                 if(customType!=null) {
                     APILocator.getContentTypeAPI(APILocator.systemUser()).delete(customType);
@@ -694,12 +732,15 @@ public class GraphqlAPITest extends IntegrationTestBase {
     public void testGetSchema_GivenNoEELicense_EnterpriseBaseTypeCollectionsShouldNOTBeAvailableInSchema(
             final BaseContentType baseType)
             throws Exception{
+
         APILocator.getGraphqlAPI().invalidateSchema();
-        runNoLicense(() -> {
-            final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema();
-            assertNull(schema.getQueryType().getFieldDefinition(baseType.name().toLowerCase()
-                    + "BaseTypeCollection"));
-        });
+        for (final User user : loadUsers()) {
+            runNoLicense(() -> {
+                final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema(user);
+                assertNull(schema.getQueryType().getFieldDefinition(baseType.name().toLowerCase()
+                        + "BaseTypeCollection"));
+            });
+        }
     }
 
     @Test
@@ -708,10 +749,13 @@ public class GraphqlAPITest extends IntegrationTestBase {
         final BaseContentType baseType)
             throws Exception{
         APILocator.getGraphqlAPI().invalidateSchema();
-        final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema();
-        assertNotNull("BaseType Collection exists: " + baseType.getAlternateName()
-                +"BaseTypeCollection", schema.getQueryType().getFieldDefinition(baseType.getAlternateName()
-                +"BaseTypeCollection"));
+        for (final User user : loadUsers()) {
+            final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema(user);
+            assertNotNull("BaseType Collection exists: " + baseType.getAlternateName()
+                            + "BaseTypeCollection",
+                    schema.getQueryType().getFieldDefinition(baseType.getAlternateName()
+                            + "BaseTypeCollection"));
+        }
     }
 
     /**
@@ -731,33 +775,35 @@ public class GraphqlAPITest extends IntegrationTestBase {
     public void testAvailableGraphQLFieldsOnImageAndFileFields()
             throws DotDataException, DotSecurityException {
         ContentType contentType = null;
-        try {
-            contentType = new ContentTypeDataGen().nextPersisted();
-            final Field fileField = new FieldDataGen().contentTypeId(contentType.id())
-                    .type(FileField.class).nextPersisted();
-            final Field imageField = new FieldDataGen().contentTypeId(contentType.id())
-                    .type(ImageField.class).nextPersisted();
+        for (final User user : loadUsers()) {
+            try {
+                contentType = new ContentTypeDataGen().nextPersisted();
+                final Field fileField = new FieldDataGen().contentTypeId(contentType.id())
+                        .type(FileField.class).nextPersisted();
+                final Field imageField = new FieldDataGen().contentTypeId(contentType.id())
+                        .type(ImageField.class).nextPersisted();
 
-            APILocator.getGraphqlAPI().invalidateSchema();
+                APILocator.getGraphqlAPI().invalidateSchema();
 
-            final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema();
+                final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema(user);
 
-            final GraphQLFieldDefinition fileFieldDefinition = schema
-                    .getObjectType(contentType.variable())
-                    .getFieldDefinition(fileField.variable());
+                final GraphQLFieldDefinition fileFieldDefinition = schema
+                        .getObjectType(contentType.variable())
+                        .getFieldDefinition(fileField.variable());
 
-            final GraphQLFieldDefinition imageFieldDefinition = schema
-                    .getObjectType(contentType.variable())
-                    .getFieldDefinition(imageField.variable());
+                final GraphQLFieldDefinition imageFieldDefinition = schema
+                        .getObjectType(contentType.variable())
+                        .getFieldDefinition(imageField.variable());
 
-            assertEquals(CustomFieldType.FILEASSET.getType(), fileFieldDefinition.getType());
+                assertEquals(CustomFieldType.FILEASSET.getType(), fileFieldDefinition.getType());
 
-            assertTrue(areFileassetFieldsPresent((GraphQLObjectType) fileFieldDefinition.getType()));
-            assertTrue(areFileassetFieldsPresent((GraphQLObjectType) imageFieldDefinition.getType()));
+                assertTrue(areFileassetFieldsPresent((GraphQLObjectType) fileFieldDefinition.getType()));
+                assertTrue(areFileassetFieldsPresent((GraphQLObjectType) imageFieldDefinition.getType()));
 
-            assertEquals(CustomFieldType.FILEASSET.getType(), imageFieldDefinition.getType());
-        } finally {
-            APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
+                assertEquals(CustomFieldType.FILEASSET.getType(), imageFieldDefinition.getType());
+            } finally {
+                APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
+            }
         }
     }
 
@@ -771,40 +817,42 @@ public class GraphqlAPITest extends IntegrationTestBase {
     public void testGetSchema_GivenFailuresInRelationshipField_SchemaShouldStillGenerate()
             throws DotDataException, DotSecurityException {
         ContentType contentType = null;
-        try {
-            contentType = new ContentTypeDataGen().nextPersisted();
+        for (final User user : loadUsers()) {
+            try {
+                contentType = new ContentTypeDataGen().nextPersisted();
 
-            Field relationshipField = FieldBuilder.builder(RelationshipField.class)
-                    .name("relationshipField")
-                    .contentTypeId(contentType.id())
-                    .values(String.valueOf(RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()))
-                    .relationType(contentType.variable()).build();
+                Field relationshipField = FieldBuilder.builder(RelationshipField.class)
+                        .name("relationshipField")
+                        .contentTypeId(contentType.id())
+                        .values(String.valueOf(RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()))
+                        .relationType(contentType.variable()).build();
 
-            final Field titleField = new FieldDataGen().contentTypeId(contentType.id())
-                    .type(TextField.class).nextPersisted();
+                final Field titleField = new FieldDataGen().contentTypeId(contentType.id())
+                        .type(TextField.class).nextPersisted();
 
-            APILocator.getGraphqlAPI().invalidateSchema();
+                APILocator.getGraphqlAPI().invalidateSchema();
 
-            // this mock relationship api will produce errors when generating the rel field
-            setMockRelationshipAPI(relationshipField);
+                // this mock relationship api will produce errors when generating the rel field
+                setMockRelationshipAPI(relationshipField);
 
-            GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema();
+                GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema(user);
 
-            final GraphQLFieldDefinition relationshipFieldDefinition = schema
-                    .getObjectType(contentType.variable())
-                    .getFieldDefinition(relationshipField.variable());
+                final GraphQLFieldDefinition relationshipFieldDefinition = schema
+                        .getObjectType(contentType.variable())
+                        .getFieldDefinition(relationshipField.variable());
 
-            final GraphQLFieldDefinition titleFieldDefinition = schema
-                    .getObjectType(contentType.variable())
-                    .getFieldDefinition(titleField.variable());
+                final GraphQLFieldDefinition titleFieldDefinition = schema
+                        .getObjectType(contentType.variable())
+                        .getFieldDefinition(titleField.variable());
 
-            assertNull(relationshipFieldDefinition);
-            assertNotNull(titleFieldDefinition);
-        } finally {
-            APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
-            // restore normal RelationshipAPI for ContentAPIGraphQLTypesProvider
-            ContentAPIGraphQLTypesProvider.INSTANCE.setFieldGeneratorFactory(
-                    new GraphQLFieldGeneratorFactory());
+                assertNull(relationshipFieldDefinition);
+                assertNotNull(titleFieldDefinition);
+            } finally {
+                APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
+                // restore normal RelationshipAPI for ContentAPIGraphQLTypesProvider
+                ContentAPIGraphQLTypesProvider.INSTANCE.setFieldGeneratorFactory(
+                        new GraphQLFieldGeneratorFactory());
+            }
         }
     }
 
@@ -821,7 +869,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
 
         api.invalidateSchema();
         api.getSchema();
-        verify(api, times(1)).generateSchema();
+        verify(api, times(1)).generateSchema(APILocator.systemUser());
     }
 
     /**
@@ -838,7 +886,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
         api.invalidateSchema();
         final GraphQLSchema nonCachedSchema = api.getSchema(); // generate schema is called
         final GraphQLSchema cachedSchema = api.getSchema(); // got from cache - generate schema is NOT called
-        verify(api, times(1)).generateSchema();
+        verify(api, times(1)).generateSchema(APILocator.systemUser());
         assertEquals(nonCachedSchema, cachedSchema);
     }
 
