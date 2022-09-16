@@ -17,6 +17,7 @@ import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TrafficProportion;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.LicenseValiditySupplier;
+import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.PermissionableProxy;
@@ -53,6 +54,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     final ContentletAPI contentletAPI = APILocator.getContentletAPI();
     final VariantAPI variantAPI = APILocator.getVariantAPI();
+    final ShortyIdAPI shortyIdAPI = APILocator.getShortyAPI();
 
     private final LicenseValiditySupplier licenseValiditySupplierSupplier =
             new LicenseValiditySupplier() {};
@@ -260,23 +262,22 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     @WrapInTransaction
     @Override
-    public Experiment addVariant(final String experimentId, final User user)
+    public Experiment addVariant(final String experimentId, final String variantDescription,
+            final User user)
             throws DotDataException, DotSecurityException {
 
         final Experiment persistedExperiment = find(experimentId, user)
                 .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
 
-        final String variantNameBase = EXPERIMENT_VARIANT_NAME_PREFIX + experimentId
+        final String variantNameBase = EXPERIMENT_VARIANT_NAME_PREFIX + shortyIdAPI.shortify(experimentId)
                 + EXPERIMENT_VARIANT_NAME_SUFFIX;
 
         final int nextAvailableIndex = getNextAvailableIndex(variantNameBase);
 
         final String variantName = variantNameBase + nextAvailableIndex;
 
-        final String variantDescription = EXPERIMENT_VARIANT_DESCRIPTION
-                + nextAvailableIndex;
-
-        variantAPI.save(Variant.builder().name(variantName).name(variantName).build());
+        variantAPI.save(Variant.builder().name(variantName)
+                .description(Optional.of(variantDescription)).build());
 
         final ExperimentVariant experimentVariant = ExperimentVariant.builder().id(variantName)
                 .description(variantDescription).weight(0).build();
@@ -287,12 +288,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         variants.addAll(trafficProportion.variants());
         variants.add(experimentVariant);
 
-        // IF split evenly - re-distribute weights
-        TreeSet<ExperimentVariant> weightedVariants = variants;
-
-        if(trafficProportion.type()== Type.SPLIT_EVENLY) {
-            weightedVariants = redistributeWeights(variants);
-        }
+        TreeSet<ExperimentVariant> weightedVariants = trafficProportion.type() == Type.SPLIT_EVENLY
+                ? redistributeWeights(variants)
+                : variants;
 
         final TrafficProportion weightedTrafficProportion = trafficProportion
                 .withVariants(weightedVariants);
@@ -311,7 +309,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
 
         DotPreconditions.isTrue(variantName!= null &&
-                variantName.contains(experimentId), ()->"Invalid Variant provided",
+                variantName.contains(shortyIdAPI.shortify(experimentId)), ()->"Invalid Variant provided",
                 IllegalArgumentException.class);
 
         final Variant toDelete = variantAPI.get(variantName)

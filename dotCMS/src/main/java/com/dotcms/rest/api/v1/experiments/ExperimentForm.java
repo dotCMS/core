@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.experiments;
 
-import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Goals;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TrafficProportion;

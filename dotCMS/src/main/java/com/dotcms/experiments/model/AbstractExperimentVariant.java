@@ -24,7 +24,7 @@ public interface AbstractExperimentVariant extends Serializable, Comparable<Expe
 
     @JsonProperty("id")
     String id();
-    @JsonProperty("description")
+    @JsonProperty("name")
     String description();
     float weight();
 

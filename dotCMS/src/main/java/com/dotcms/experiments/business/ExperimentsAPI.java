@@ -85,7 +85,7 @@ public interface ExperimentsAPI {
      * Adds a new {@link com.dotcms.variant.model.Variant} to the {@link Experiment} with the provided Id
      * @return the updated Experiment
      */
-    Experiment addVariant(String experimentId, User user)
+    Experiment addVariant(String experimentId, String variantName, User user)
             throws DotDataException, DotSecurityException;
 
     /**

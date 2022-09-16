@@ -43,9 +43,7 @@ public class VariantTransformer implements DBTransformer {
 
     private Variant transform(final Map<String, Object> variantMap) {
         return Variant.builder()
-                .description(variantMap.get("description")!=null
-                        ? Optional.of((String)variantMap.get("description"))
-                        : Optional.empty())
+                .description(Optional.ofNullable((String) variantMap.get("description")))
                 .name(variantMap.get("name").toString())
                 .archived(ConversionUtils.toBooleanFromDb(variantMap.get("archived")))
                 .build();
