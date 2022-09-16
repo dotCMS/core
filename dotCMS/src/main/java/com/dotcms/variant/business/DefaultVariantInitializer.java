@@ -18,7 +18,7 @@ public class DefaultVariantInitializer implements DotInitializer  {
     @Override
     public void init() {
         Optional<Variant> defaultVariant = Try.of(()->variantAPI
-                .get(VariantAPI.DEFAULT_VARIANT.identifier())).getOrElse(Optional.empty());
+                .get(VariantAPI.DEFAULT_VARIANT.name())).getOrElse(Optional.empty());
 
         if(defaultVariant.isEmpty()) {
             Try.of(()->variantAPI.save(VariantAPI.DEFAULT_VARIANT))

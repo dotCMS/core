@@ -40,7 +40,7 @@ public interface AbstractTrafficProportion extends Serializable {
     default SortedSet<ExperimentVariant> variants() {
         final TreeSet<ExperimentVariant> treeSet = new TreeSet<>();
         treeSet.add((ExperimentVariant.builder()
-                .id(APILocator.getVariantAPI().DEFAULT_VARIANT.identifier())
+                .id(APILocator.getVariantAPI().DEFAULT_VARIANT.name())
                 .description("Original").weight(100).build()));
         return treeSet;
     }
@@ -50,7 +50,7 @@ public interface AbstractTrafficProportion extends Serializable {
         if(UtilMethods.isSet(variants())) {
             DotPreconditions.isTrue(variants().stream()
                     .allMatch((variant)-> Try.of(()-> APILocator.getVariantAPI()
-                            .getByName(variant.id()).isPresent()
+                            .get(variant.id()).isPresent()
                     ).getOrElse(false)), IllegalArgumentException.class,
                     ()->"Invalid Variants provided");
 

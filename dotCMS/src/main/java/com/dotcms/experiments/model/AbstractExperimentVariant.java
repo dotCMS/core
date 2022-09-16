@@ -29,11 +29,11 @@ public interface AbstractExperimentVariant extends Serializable, Comparable<Expe
     float weight();
 
     default int compareTo(final ExperimentVariant o) {
-        if(id().equals(VariantAPI.DEFAULT_VARIANT.identifier())) {
+        if(id().equals(VariantAPI.DEFAULT_VARIANT.name())) {
             return -1;
         }
 
-        if(o.id().equals(VariantAPI.DEFAULT_VARIANT.identifier())) {
+        if(o.id().equals(VariantAPI.DEFAULT_VARIANT.name())) {
             return 1;
         }
 

@@ -276,7 +276,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final String variantDescription = EXPERIMENT_VARIANT_DESCRIPTION
                 + nextAvailableIndex;
 
-        variantAPI.save(Variant.builder().identifier(variantName).name(variantName).build());
+        variantAPI.save(Variant.builder().name(variantName).name(variantName).build());
 
         final ExperimentVariant experimentVariant = ExperimentVariant.builder().id(variantName)
                 .description(variantDescription).weight(0).build();
@@ -314,7 +314,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 variantName.contains(experimentId), ()->"Invalid Variant provided",
                 IllegalArgumentException.class);
 
-        final Variant toDelete = variantAPI.getByName(variantName)
+        final Variant toDelete = variantAPI.get(variantName)
                 .orElseThrow(()->new DoesNotExistException("Provided Variant not found"));
 
         final TreeSet<ExperimentVariant> updatedVariants =
@@ -328,8 +328,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 .withVariants(weightedVariants);
         final Experiment withUpdatedTraffic = persistedExperiment.withTrafficProportion(weightedTraffic);
         final Experiment fromDB = save(withUpdatedTraffic, user);
-        variantAPI.archive(toDelete.identifier());
-        variantAPI.delete(toDelete.identifier());
+        variantAPI.archive(toDelete.name());
+        variantAPI.delete(toDelete.name());
         return fromDB;
 
     }
@@ -353,7 +353,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         String variantNameToTry = variantNameBase
                 + variantIndex;
 
-        while(variantAPI.getByName(variantNameToTry).isPresent()) {
+        while(variantAPI.get(variantNameToTry).isPresent()) {
             variantNameToTry = variantNameBase
                     + (++variantIndex);
         }
