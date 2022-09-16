@@ -36,8 +36,11 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
         this.route.data
             .pipe(pluck('dotContainerListResolverData'), take(1))
             .subscribe(([isEnterprise, hasEnvironments]: [boolean, boolean]) => {
-                this.updateResolvedProperties([isEnterprise, hasEnvironments]);
-                this.setContainerBulkActions();
+                this.updateResolvedProperties([
+                    isEnterprise,
+                    hasEnvironments,
+                    this.getContainerBulkActions(hasEnvironments, isEnterprise)
+                ]);
             });
     }
 
@@ -59,12 +62,13 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
         }
     );
 
-    readonly updateResolvedProperties = this.updater<[boolean, boolean]>(
-        (state: DotContainerListState, [isEnterprise, hasEnvironments]) => {
+    readonly updateResolvedProperties = this.updater<[boolean, boolean, MenuItem[]]>(
+        (state: DotContainerListState, [isEnterprise, hasEnvironments, containerBulkActions]) => {
             return {
                 ...state,
                 isEnterprise,
-                hasEnvironments
+                hasEnvironments,
+                containerBulkActions
             };
         }
     );
@@ -89,44 +93,39 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
 
     private init() {
         this.setState({
-            containerBulkActions: [],
-            tableColumns: this.setContainerColumns(),
-            stateLabels: this.setStateLabels(),
+            containerBulkActions: this.getContainerBulkActions(),
+            tableColumns: this.getContainerColumns(),
+            stateLabels: this.getStateLabels(),
             isEnterprise: false,
             hasEnvironments: false,
             addToBundleIdentifier: '',
             selectedContainers: [],
-            actionHeaderOptions: this.setActionHeaderOptions()
+            actionHeaderOptions: this.getActionHeaderOptions()
         });
     }
 
-    private setContainerBulkActions() {
-        this.setState((state: DotContainerListState): DotContainerListState => {
-            return {
-                ...state,
-                containerBulkActions: [
-                    {
-                        label: this.dotMessageService.get('Publish')
-                    },
-                    ...this.setLicenseAndRemotePublishContainerBulkOptions(state),
-                    {
-                        label: this.dotMessageService.get('Unpublish')
-                    },
-                    {
-                        label: this.dotMessageService.get('Archive')
-                    },
-                    {
-                        label: this.dotMessageService.get('Unarchive')
-                    },
-                    {
-                        label: this.dotMessageService.get('Delete')
-                    }
-                ]
-            };
-        });
+    private getContainerBulkActions(hasEnvironments = false, isEnterprise = false) {
+        return [
+            {
+                label: this.dotMessageService.get('Publish')
+            },
+            ...this.getLicenseAndRemotePublishContainerBulkOptions(hasEnvironments, isEnterprise),
+            {
+                label: this.dotMessageService.get('Unpublish')
+            },
+            {
+                label: this.dotMessageService.get('Archive')
+            },
+            {
+                label: this.dotMessageService.get('Unarchive')
+            },
+            {
+                label: this.dotMessageService.get('Delete')
+            }
+        ];
     }
 
-    private setContainerColumns(): DataTableColumn[] {
+    private getContainerColumns(): DataTableColumn[] {
         return [
             {
                 fieldName: 'title',
@@ -151,7 +150,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
         ];
     }
 
-    private setActionHeaderOptions(): ActionHeaderOptions {
+    private getActionHeaderOptions(): ActionHeaderOptions {
         return {
             primary: {
                 command: () => {
@@ -166,7 +165,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
      * @returns { [key: string]: string }
      * @memberof DotContainerListStore
      */
-    private setStateLabels = () => {
+    private getStateLabels = () => {
         return {
             archived: this.dotMessageService.get('Archived'),
             published: this.dotMessageService.get('Published'),
@@ -175,18 +174,18 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
         };
     };
 
-    private setLicenseAndRemotePublishContainerBulkOptions({
-        hasEnvironments,
-        isEnterprise
-    }: DotContainerListState): MenuItem[] {
+    private getLicenseAndRemotePublishContainerBulkOptions(
+        hasEnvironments: boolean,
+        isEnterprise: boolean
+    ): MenuItem[] {
         const bulkOptions: MenuItem[] = [];
         if (hasEnvironments) {
             bulkOptions.push({
                 label: this.dotMessageService.get('Remote-Publish'),
                 command: () => {
-                    const state = this.get();
+                    const { selectedContainers } = this.get();
                     this.dotPushPublishDialogService.open({
-                        assetIdentifier: state.selectedContainers
+                        assetIdentifier: selectedContainers
                             .map((container) => container.identifier)
                             .toString(),
                         title: this.dotMessageService.get('contenttypes.content.push_publish')
@@ -199,9 +198,9 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
             bulkOptions.push({
                 label: this.dotMessageService.get('Add-To-Bundle'),
                 command: () => {
-                    const state = this.get();
+                    const { selectedContainers } = this.get();
                     this.updateBundleIdentifier(
-                        state.selectedContainers.map((container) => container.identifier).toString()
+                        selectedContainers.map((container) => container.identifier).toString()
                     );
                 }
             });
