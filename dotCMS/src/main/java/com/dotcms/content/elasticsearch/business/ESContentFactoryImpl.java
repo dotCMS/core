@@ -147,6 +147,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public class ESContentFactoryImpl extends ContentletFactory {
 
+    private static final boolean REFRESH_BLOCK_EDITOR_REFERENCES = Config.getBooleanProperty("REFRESH_BLOCK_EDITOR_REFERENCES", true);
     private static final String[] ES_FIELDS = {"inode", "identifier"};
     public static final int ES_TRACK_TOTAL_HITS_DEFAULT = 10000000;
     public static final String ES_TRACK_TOTAL_HITS = "ES_TRACK_TOTAL_HITS";
@@ -880,15 +881,18 @@ public class ESContentFactoryImpl extends ContentletFactory {
      */
     private Contentlet processContentletCache (final Contentlet contentletCached) {
 
-        final StoryBlockReferenceResult storyBlockRefreshedResult =
-                APILocator.getStoryBlockAPI().refreshReferences(contentletCached);
+        if (REFRESH_BLOCK_EDITOR_REFERENCES) {
 
-        if (storyBlockRefreshedResult.isRefreshed()) {
+            final StoryBlockReferenceResult storyBlockRefreshedResult =
+                    APILocator.getStoryBlockAPI().refreshReferences(contentletCached);
 
-            Logger.debug(this, ()-> "Refreshed story block dependencies for the contentlet: " + contentletCached.getIdentifier());
-            final Contentlet refreshedContentlet  = (Contentlet) storyBlockRefreshedResult.getValue();
-            contentletCache.add(refreshedContentlet.getInode(), refreshedContentlet);
-            return refreshedContentlet;
+            if (storyBlockRefreshedResult.isRefreshed()) {
+
+                Logger.debug(this, () -> "Refreshed story block dependencies for the contentlet: " + contentletCached.getIdentifier());
+                final Contentlet refreshedContentlet = (Contentlet) storyBlockRefreshedResult.getValue();
+                contentletCache.add(refreshedContentlet.getInode(), refreshedContentlet);
+                return refreshedContentlet;
+            }
         }
 
         return contentletCached;

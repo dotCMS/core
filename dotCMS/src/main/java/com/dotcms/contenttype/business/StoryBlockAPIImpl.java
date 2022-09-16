@@ -41,7 +41,9 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         final MutableBoolean refreshed = new MutableBoolean(false);
         if (null != contentlet) {
 
-            contentlet.getContentType().fields(StoryBlockField.class).forEach(field -> {
+            // todo: may be we can store a flag such as has story block to avoid the hit to the fields when there is not any block editor
+            contentlet.getContentType().fields(StoryBlockField.class) // todo, this method filters but creates a new list in memory
+                    .forEach(field -> {
 
                 final Object storyBlockValue = contentlet.get(field.variable());
                 if (null != storyBlockValue) {
