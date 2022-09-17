@@ -186,7 +186,7 @@
 									"});",
 									"",
 									"pm.test(\"Failed To Delete Container Check\", function () {",
-									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(1);",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(2);",
 									"});"
 								],
 								"type": "text/javascript"
