@@ -13,6 +13,10 @@ import { MenuModule } from 'primeng/menu';
 import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
 import { DotContainerListResolver } from '@portlets/dot-containers/container-list/dot-container-list-resolver.service';
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
+import { DotSiteBrowserService } from '@services/dot-site-browser/dot-site-browser.service';
+import { DotContainersService } from '@services/dot-containers/dot-containers.service';
+import { DialogService } from 'primeng/dynamicdialog';
+import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
 
 @NgModule({
     declarations: [ContainerListComponent],
@@ -27,7 +31,8 @@ import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
         CheckboxModule,
         MenuModule,
         DotEmptyStateModule,
-        DotAddToBundleModule
+        DotAddToBundleModule,
+        DotActionMenuButtonModule
     ],
     providers: [
         DotContainerListResolver,

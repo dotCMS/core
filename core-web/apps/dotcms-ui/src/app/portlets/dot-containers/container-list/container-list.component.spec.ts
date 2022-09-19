@@ -41,6 +41,8 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { CONTAINER_SOURCE, DotContainer } from '@models/container/dot-container.model';
+import { DotContainersService } from '@services/dot-containers/dot-containers.service';
+import { mockSites } from '@tests/site-service.mock';
 
 const containersMock: DotContainer[] = [
     {
@@ -116,10 +118,10 @@ const messages = {
     'message.container.undelete': 'Container unarchived',
     'message.container.unpublished': 'Container unpublished',
     'message.container_list.published': 'Containers published',
-    'containers.fieldName.description': 'Description',
-    'containers.fieldName.lastEdit': 'Last Edit',
-    'containers.fieldName.name': 'Name',
-    'containers.fieldName.status': 'Status',
+    'message.containers.fieldName.description': 'Description',
+    'message.containers.fieldName.lastEdit': 'Last Edit',
+    'message.containers.fieldName.name': 'Name',
+    'message.containers.fieldName.status': 'Status',
     'Delete-Container': 'Delete Container',
     Archive: 'Archive',
     Archived: 'Archived',
@@ -152,6 +154,7 @@ describe('ContainerListComponent', () => {
     let dotPushPublishDialogService: DotPushPublishDialogService;
     let dialogService: DialogService;
     let coreWebService: CoreWebService;
+    let dotRouterService: DotRouterService;
 
     const messageServiceMock = new MockDotMessageService(messages);
 
@@ -200,6 +203,7 @@ describe('ContainerListComponent', () => {
                 DotMessageDisplayService,
                 DialogService,
                 DotSiteBrowserService,
+                DotContainersService,
                 { provide: DotFormatDateService, useClass: DotFormatDateServiceMock }
             ],
             imports: [
@@ -223,16 +227,14 @@ describe('ContainerListComponent', () => {
         dotPushPublishDialogService = TestBed.inject(DotPushPublishDialogService);
         dialogService = TestBed.inject(DialogService);
         coreWebService = TestBed.inject(CoreWebService);
+        dotRouterService = TestBed.inject(DotRouterService);
     });
 
     it('should reload portlet only when the site change', () => {
-        const checkbox = fixture.debugElement.query(
-            By.css('[data-testId="archiveCheckbox"]')
-        ).componentInstance;
-
-        fixture.detectChanges();
-
-        expect(checkbox.binary).toBeTruthy();
+        switchSiteSubject.next(mockSites[0]); // setting the site
+        switchSiteSubject.next(mockSites[1]); // switching the site
+        expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('templates');
+        expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
     });
 
     describe('with data', () => {

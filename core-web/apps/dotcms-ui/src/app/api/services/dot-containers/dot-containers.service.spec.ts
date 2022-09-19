@@ -8,10 +8,9 @@ import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotContainersService, CONTAINER_API_URL } from './dot-containers.service';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { DotTemplate } from '@models/dot-edit-layout-designer';
 import { DotActionBulkResult } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
 import { of } from 'rxjs';
-import { DotContainer } from '@models/container/dot-container.model';
+import { CONTAINER_SOURCE, DotContainer } from '@models/container/dot-container.model';
 
 const mockBulkResponseSuccess: DotActionBulkResult = {
     skippedCount: 0,
@@ -19,25 +18,25 @@ const mockBulkResponseSuccess: DotActionBulkResult = {
     fails: []
 };
 
-const mockTemplate: DotTemplate = {
-    anonymous: false,
-    friendlyName: 'Copy template',
-    identifier: '123',
-    inode: '1AreSD',
-    name: 'Copy template',
-    type: 'type',
-    versionType: 'type',
+const mockContainer: DotContainer = {
+    archived: false,
+    categoryId: '6e07301c-e6d2-4c1f-9e8e-fcc4a31947d3',
     deleted: false,
+    friendlyName: '',
+    identifier: '1234',
     live: true,
-    layout: null,
-    canEdit: true,
-    canWrite: true,
-    canPublish: true,
-    hasLiveVersion: true,
+    name: 'movie',
+    parentPermissionable: {
+        hostname: 'default'
+    },
+    path: null,
+    source: CONTAINER_SOURCE.DB,
+    title: 'movie',
+    type: 'containers',
     working: true
 };
 
-describe('DotTemplatesService', () => {
+describe('DotContainersService', () => {
     let service: DotContainersService;
     let httpMock: HttpTestingController;
 
@@ -65,12 +64,12 @@ describe('DotTemplatesService', () => {
         httpMock = TestBed.inject(HttpTestingController);
     });
 
-    it('should get a list of templates', () => {
-        service.get().subscribe((template) => {
-            expect(template as any).toEqual([
+    it('should get a list of containers', () => {
+        service.get().subscribe((container) => {
+            expect(container as any).toEqual([
                 {
                     identifier: '1234',
-                    name: 'Theme name'
+                    name: 'movie'
                 }
             ]);
         });
@@ -83,17 +82,17 @@ describe('DotTemplatesService', () => {
             entity: [
                 {
                     identifier: '1234',
-                    name: 'Theme name'
+                    name: 'movie'
                 }
             ]
         });
     });
 
-    it('should get a template by id', () => {
-        service.getById('123').subscribe((template) => {
-            expect(template as any).toEqual({
+    it('should get a container by id', () => {
+        service.getById('123').subscribe((container) => {
+            expect(container as any).toEqual({
                 identifier: '1234',
-                name: 'Theme name'
+                name: 'movie'
             });
         });
 
@@ -104,17 +103,17 @@ describe('DotTemplatesService', () => {
         req.flush({
             entity: {
                 identifier: '1234',
-                name: 'Theme name'
+                name: 'movie'
             }
         });
     });
 
-    it('should get a templates by filter', () => {
-        service.getFiltered('123').subscribe((template) => {
-            expect(template as any).toEqual([
+    it('should get a containers by filter', () => {
+        service.getFiltered('123').subscribe((container) => {
+            expect(container as any).toEqual([
                 {
                     identifier: '123',
-                    name: 'Theme name'
+                    name: 'movie'
                 }
             ]);
         });
@@ -127,22 +126,22 @@ describe('DotTemplatesService', () => {
             entity: [
                 {
                     identifier: '123',
-                    name: 'Theme name'
+                    name: 'movie'
                 }
             ]
         });
     });
 
-    it('should post to create a template', () => {
+    it('should post to create a container', () => {
         service
             .create({
                 name: '',
                 friendlyName: ''
             } as DotContainer)
-            .subscribe((template) => {
-                expect(template as any).toEqual({
+            .subscribe((container) => {
+                expect(container as any).toEqual({
                     identifier: '1234',
-                    name: 'Theme name'
+                    name: 'movie'
                 });
             });
 
@@ -154,21 +153,21 @@ describe('DotTemplatesService', () => {
         req.flush({
             entity: {
                 identifier: '1234',
-                name: 'Theme name'
+                name: 'movie'
             }
         });
     });
 
-    it('should put to update a template', () => {
+    it('should put to update a container', () => {
         service
             .update({
                 name: '',
                 friendlyName: ''
             } as DotContainer)
-            .subscribe((template) => {
-                expect(template as any).toEqual({
+            .subscribe((container) => {
+                expect(container as any).toEqual({
                     identifier: '1234',
-                    name: 'Theme name'
+                    name: 'movie'
                 });
             });
 
@@ -180,20 +179,20 @@ describe('DotTemplatesService', () => {
         req.flush({
             entity: {
                 identifier: '1234',
-                name: 'Theme name'
+                name: 'movie'
             }
         });
     });
-    it('should put to save and publish a template', () => {
+    it('should put to save and publish a container', () => {
         service
             .saveAndPublish({
                 name: '',
                 friendlyName: ''
             } as DotContainer)
-            .subscribe((template) => {
-                expect(template as any).toEqual({
+            .subscribe((container) => {
+                expect(container as any).toEqual({
                     identifier: '1234',
-                    name: 'Theme name'
+                    name: 'movie'
                 });
             });
 
@@ -205,11 +204,11 @@ describe('DotTemplatesService', () => {
         req.flush({
             entity: {
                 identifier: '1234',
-                name: 'Theme name'
+                name: 'movie'
             }
         });
     });
-    it('should delete a template', () => {
+    it('should delete a container', () => {
         service.delete(['testId01']).subscribe();
         const req = httpMock.expectOne(CONTAINER_API_URL);
 
@@ -217,7 +216,7 @@ describe('DotTemplatesService', () => {
         expect(req.request.body).toEqual(['testId01']);
         req.flush(mockBulkResponseSuccess);
     });
-    it('should unArchive a template', () => {
+    it('should unArchive a container', () => {
         service.unArchive(['testId01']).subscribe();
         const req = httpMock.expectOne(`${CONTAINER_API_URL}_unarchive`);
 
@@ -225,7 +224,7 @@ describe('DotTemplatesService', () => {
         expect(req.request.body).toEqual(['testId01']);
         req.flush(mockBulkResponseSuccess);
     });
-    it('should archive a template', () => {
+    it('should archive a container', () => {
         service.archive(['testId01']).subscribe();
         const req = httpMock.expectOne(`${CONTAINER_API_URL}_archive`);
 
@@ -233,7 +232,7 @@ describe('DotTemplatesService', () => {
         expect(req.request.body).toEqual(['testId01']);
         req.flush(mockBulkResponseSuccess);
     });
-    it('should unPublish a template', () => {
+    it('should unPublish a container', () => {
         service.unPublish(['testId01']).subscribe();
         const req = httpMock.expectOne(`${CONTAINER_API_URL}_unpublish`);
 
@@ -241,7 +240,7 @@ describe('DotTemplatesService', () => {
         expect(req.request.body).toEqual(['testId01']);
         req.flush(mockBulkResponseSuccess);
     });
-    it('should publish a template', () => {
+    it('should publish a container', () => {
         service.publish('testId01').subscribe();
         const req = httpMock.expectOne(`${CONTAINER_API_URL}_publish`);
 
@@ -249,11 +248,11 @@ describe('DotTemplatesService', () => {
         expect(req.request.body).toEqual(['testId01']);
         req.flush(mockBulkResponseSuccess);
     });
-    it('should copy a template', () => {
+    it('should copy a container', () => {
         service.copy('testId01').subscribe();
         const req = httpMock.expectOne(`${CONTAINER_API_URL}testId01/_copy`);
 
         expect(req.request.method).toBe('PUT');
-        req.flush(mockTemplate);
+        req.flush(mockContainer);
     });
 });
