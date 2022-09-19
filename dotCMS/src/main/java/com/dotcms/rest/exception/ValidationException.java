@@ -6,6 +6,7 @@ import com.dotcms.rest.api.Validated;
 
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.ws.rs.core.Response.Status;
 
 import static com.dotcms.util.CollectionsUtils.map;
 public class ValidationException extends BadRequestException {
@@ -16,7 +17,7 @@ public class ValidationException extends BadRequestException {
 
     public ValidationException(final Validated builder, final Set<ConstraintViolation<Validated>> violations) {
         super(null, violations.stream()
-                .map(constraint -> new ErrorEntity(constraint.getPropertyPath().toString(), constraint.getMessage())).collect(Collectors.toList()),
+                .map(constraint -> new ErrorEntity(null, constraint.getMessage(), constraint.getPropertyPath().toString())).collect(Collectors.toList()),
                 createMessage(violations));
 
         this.builder = builder;

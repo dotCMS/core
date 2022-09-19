@@ -7,6 +7,7 @@
 package com.dotmarketing.business;
 
 import com.dotcms.uuid.shorty.ShortyIdCache;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
@@ -236,28 +237,46 @@ public class IdentifierCacheImpl extends IdentifierCache {
 	}
 
     @Override
-    protected void addContentletVersionInfoToCache(ContentletVersionInfo contV) {
-        String key=contV.getIdentifier()+"-lang:"+contV.getLang();
+    protected void addContentletVersionInfoToCache(final ContentletVersionInfo contV) {
+        final String key = getKey(contV);
         cache.put(getVersionInfoGroup()+key, contV, getVersionInfoGroup());
     }
 
-    @Override
+	private String getKey(final ContentletVersionInfo contV) {
+		return getKey(contV.getIdentifier(), contV.getLang(), contV.getVariant());
+	}
+
+	private String getKey(final String identifier, final long lang, final String variantId) {
+		return String.format("%s-lang:%s-variant:%s", identifier, lang, variantId);
+	}
+
+	private String getKey(final String identifier, final long lang) {
+		return getKey(identifier, lang, VariantAPI.DEFAULT_VARIANT.identifier());
+	}
+
+	@Override
     protected void addVersionInfoToCache(VersionInfo versionInfo) {
         String key=versionInfo.getIdentifier();
         cache.put(getVersionInfoGroup()+key, versionInfo, getVersionInfoGroup());
     }
 
-    @Override
-    protected ContentletVersionInfo getContentVersionInfo(String identifier, long lang) {
-        ContentletVersionInfo contV = null;
-        try {
-            String key=identifier+"-lang:"+lang;
-            contV = (ContentletVersionInfo)cache.get(getVersionInfoGroup()+key, getVersionInfoGroup());
-        }
-        catch(Exception ex) {
-            Logger.debug(this, identifier +" contentVersionInfo not found in cache");
-        }
-        return contV;
+	@Override
+	protected ContentletVersionInfo getContentVersionInfo(final String identifier,
+			final long lang, final String variantId){
+		ContentletVersionInfo contV = null;
+		try {
+			String key= getKey(identifier, lang, variantId);
+			contV = (ContentletVersionInfo)cache.get(getVersionInfoGroup()+key, getVersionInfoGroup());
+		}
+		catch(Exception ex) {
+			Logger.debug(this, identifier +" contentVersionInfo not found in cache");
+		}
+		return contV;
+	}
+
+	@Override
+    protected ContentletVersionInfo getContentVersionInfo(final String identifier, final long lang) {
+		return getContentVersionInfo(identifier, lang, VariantAPI.DEFAULT_VARIANT.identifier());
     }
 
     @Override
@@ -274,7 +293,7 @@ public class IdentifierCacheImpl extends IdentifierCache {
 
     @Override
     public void removeContentletVersionInfoToCache(String identifier, long lang) {
-        String key=identifier+"-lang:"+lang;
+        String key = getKey(identifier, lang);
         cache.remove(getVersionInfoGroup()+key, getVersionInfoGroup());
     }
 

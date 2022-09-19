@@ -776,7 +776,6 @@
                  var srcNode = document.getElementById("<%=relationJsName%>Table");
                  var row = document.createElement("tr");
                  row.id="<%=relationJsName%>TableMessage"
-				row.className = 'dataRow<%=relationJsName%>';
                  var cell = row.insertCell (0);
                  cell.setAttribute("colspan", "100");
                  cell.setAttribute("style","text-align:center");

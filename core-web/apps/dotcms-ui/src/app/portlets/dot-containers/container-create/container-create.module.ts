@@ -16,7 +16,8 @@ import { DotContainerPropertiesModule } from '@portlets/dot-containers/container
         DotPortletBaseModule,
         TabViewModule,
         DotMessagePipeModule,
-        DotContainerPropertiesModule
+        DotContainerPropertiesModule,
+        DotMessagePipeModule
     ]
 })
 export class ContainerCreateModule {}

@@ -6,11 +6,13 @@ import {
     getId,
     getLabelId,
     getOriginalStatus,
-    getStringFromDotKeyArray,
+    getJsonStringFromDotKeyArray,
     getTagError,
     getTagHint,
     isFileAllowed,
-    updateStatus
+    updateStatus,
+    decodeChars,
+    encodeChars
 } from './utils';
 
 describe('getClassNames', () => {
@@ -124,10 +126,26 @@ describe('getOriginalStatus', () => {
     });
 });
 
-describe('getStringFromDotKeyArray', () => {
+describe('encodeChars', () => {
+    it('should encode chars', () => {
+        expect(
+            encodeChars('a"b\\c|d:e,')
+        ).toBe('a&#34;b&#92;c&#124;d&#58;e&#44;');
+    });
+});
+
+describe('decodeChars', () => {
+    it('should decode chars', () => {
+        expect(
+            decodeChars('a&#34;b&#92;c&#124;d&#58;e&#44;')
+        ).toBe('a"b\\c|d:e,');
+    });
+});
+
+describe('getJsonStringFromDotKeyArray', () => {
     it('should transform to string', () => {
         expect(
-            getStringFromDotKeyArray([
+            getJsonStringFromDotKeyArray([
                 {
                     key: 'some1',
                     value: 'val1'
@@ -137,7 +155,7 @@ describe('getStringFromDotKeyArray', () => {
                     value: 'val99'
                 }
             ])
-        ).toBe('some1|val1,some45|val99');
+        ).toBe('{"some1":"val1","some45":"val99"}');
     });
 });
 

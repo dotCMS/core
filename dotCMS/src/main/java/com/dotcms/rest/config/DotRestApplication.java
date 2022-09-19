@@ -24,6 +24,7 @@ import com.dotcms.rest.api.v1.contenttype.ContentTypeResource;
 import com.dotcms.rest.api.v1.contenttype.FieldResource;
 import com.dotcms.rest.api.v1.contenttype.FieldVariableResource;
 import com.dotcms.rest.api.v1.event.EventsResource;
+import com.dotcms.rest.api.v1.experiments.ExperimentsResource;
 import com.dotcms.rest.api.v1.fileasset.FileAssetsResource;
 import com.dotcms.rest.api.v1.folder.FolderResource;
 import com.dotcms.rest.api.v1.form.FormResource;
@@ -109,7 +110,8 @@ import java.util.concurrent.ConcurrentHashMap;
 				@Tag(name = "Content Type"),
 				@Tag(name = "Content Delivery"),
 				@Tag(name = "Bundle"),
-				@Tag(name = "Navigation")
+				@Tag(name = "Navigation"),
+				@Tag(name = "Experiment")
 		}
 )
 
@@ -209,6 +211,7 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 			.add(FormResource.class)
 			.add(OpenApiResource.class)
 			.add(AcceptHeaderOpenApiResource.class)
+			.add(ExperimentsResource.class)
 			.build();
 
 
