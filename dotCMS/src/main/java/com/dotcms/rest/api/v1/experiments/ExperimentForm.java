@@ -1,10 +1,11 @@
 package com.dotcms.rest.api.v1.experiments;
 
-import com.dotcms.experiments.model.AbstractExperiment.Status;
+import com.dotcms.experiments.model.Goals;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TrafficProportion;
 import com.dotcms.repackage.javax.validation.constraints.Size;
 import com.dotcms.rest.api.Validated;
+import com.dotmarketing.business.APILocator;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
@@ -17,21 +18,26 @@ public class ExperimentForm extends Validated {
     private final String name;
     @Size(max = 255)
     private final String description;
-    private final Status status;
     private final String pageId;
     private final float trafficAllocation;
     private final TrafficProportion trafficProportion;
     private final Scheduling scheduling;
+    private final Goals goals;
 
     private ExperimentForm(final Builder builder) {
         this.name = builder.name;
         this.description = builder.description;
-        this.status = builder.status;
         this.pageId = builder.pageId;
         this.trafficAllocation = builder.trafficAllocation;
         this.trafficProportion = builder.trafficProportion;
         this.scheduling = builder.scheduling;
+        this.goals = builder.goals;
         checkValid();
+    }
+
+    public void checkValid() {
+        super.checkValid();
+        validateScheduling(scheduling);
     }
 
     public String getName() {
@@ -46,10 +52,6 @@ public class ExperimentForm extends Validated {
         return pageId;
     }
 
-    public Status getStatus() {
-        return status;
-    }
-
     public float getTrafficAllocation() {
         return trafficAllocation;
     }
@@ -62,14 +64,18 @@ public class ExperimentForm extends Validated {
         return scheduling;
     }
 
+    public Goals getGoals() {
+        return goals;
+    }
+
     public static final class Builder {
         private String name;
         private String description;
-        private Status status;
         private String pageId;
         private float trafficAllocation=-1;
         private TrafficProportion trafficProportion;
         private Scheduling scheduling;
+        private Goals goals;
 
         private Builder() {
         }
@@ -85,11 +91,6 @@ public class ExperimentForm extends Validated {
 
         public Builder withDescription(String description) {
             this.description = description;
-            return this;
-        }
-
-        public Builder withStatus(Status status) {
-            this.status = status;
             return this;
         }
 
@@ -113,8 +114,19 @@ public class ExperimentForm extends Validated {
             return this;
         }
 
+        public Builder withGoals(Goals goals) {
+            this.goals = goals;
+            return this;
+        }
+
         public ExperimentForm build() {
             return new ExperimentForm(this);
         }
+    }
+
+    private void validateScheduling(final Scheduling scheduling) {
+        if(scheduling==null) return;
+
+        APILocator.getExperimentsAPI().validateScheduling(scheduling);
     }
 }

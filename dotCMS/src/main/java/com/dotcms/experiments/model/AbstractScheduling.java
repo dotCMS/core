@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.Optional;
 import org.immutables.value.Value;
 
 /**
@@ -18,8 +19,8 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = Scheduling.class)
 public interface AbstractScheduling extends Serializable {
     @JsonProperty("startDate")
-    Instant startDate();
+    Optional<Instant> startDate();
 
     @JsonProperty("endDate")
-    Instant endDate();
+    Optional<Instant> endDate();
 }

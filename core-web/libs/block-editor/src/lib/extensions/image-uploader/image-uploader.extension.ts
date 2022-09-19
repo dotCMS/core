@@ -10,9 +10,13 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { LoaderComponent, MessageType } from '@dotcms/block-editor';
 
 import { DotImageService } from './services/dot-image/dot-image.service';
-import { IMAGE_BLOCK_NAME } from './nodes/image-block/image-block.node';
 
 import { PlaceholderPlugin } from './plugins/placeholder.plugin';
+import { ImageNode } from '@dotcms/block-editor';
+
+function checkImageURL(url) {
+    return url.match(/\.(jpeg|jpg|gif|png)$/) != null;
+}
 
 export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerRef) => {
     return Extension.create({
@@ -44,7 +48,7 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
             function isImageBlockAllowed(): boolean {
                 const allowedBlocks: string[] = editor.storage.dotConfig.allowedBlocks;
 
-                return allowedBlocks.length > 1 ? allowedBlocks.includes(IMAGE_BLOCK_NAME) : true;
+                return allowedBlocks.length > 1 ? allowedBlocks.includes('image') : true;
             }
 
             function setPlaceHolder(view: EditorView, position: number, id: string) {
@@ -59,7 +63,7 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
 
                 tr.setMeta(PlaceholderPlugin, {
                     add: {
-                        id: id,
+                        id,
                         pos: position,
                         element: loadingBlock.location.nativeElement
                     }
@@ -77,11 +81,15 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                     .subscribe(
                         (dotAssets: DotCMSContentlet[]) => {
                             const data = dotAssets[0][Object.keys(dotAssets[0])[0]];
+                            const { asset, name } = data;
                             const node = {
                                 attrs: {
-                                    data
+                                    data,
+                                    src: asset,
+                                    title: name,
+                                    alt: name
                                 },
-                                type: 'dotImage'
+                                type: ImageNode.name
                             };
                             editor.commands.insertContentAt(position, node);
                         },
@@ -122,22 +130,51 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                     key: new PluginKey('imageUpload'),
                     props: {
                         handleDOMEvents: {
+                            // Avoid opening a image link on `click` in `dev` mode.
+                            click(view, event) {
+                                const { doc, selection } = view.state;
+                                const { ranges } = selection;
+                                const from = Math.min(...ranges.map((range) => range.$from.pos));
+                                const node = doc.nodeAt(from);
+                                const link = (event.target as HTMLElement)?.closest('a');
+
+                                if (link && node.type.name === ImageNode.name) {
+                                    event.preventDefault();
+
+                                    return true;
+                                }
+
+                                return true;
+                            },
                             paste(view, event: ClipboardEvent) {
-                                if (isImageBlockAllowed() && areImageFiles(event)) {
+                                if (!isImageBlockAllowed()) {
+                                    return true;
+                                }
+
+                                const url = event.clipboardData.getData('Text');
+                                const { from } = getPositionFromCursor(view);
+
+                                if (areImageFiles(event)) {
+                                    // Avoid tiptap image extension default behavior on paste.
+                                    event.preventDefault();
                                     if (event.clipboardData.files.length !== 1) {
                                         alert('Can paste just one image at a time');
 
-                                        return false;
+                                        return true;
                                     }
 
-                                    const { from } = getPositionFromCursor(view);
                                     const files = Array.from(event.clipboardData.files);
                                     uploadImages(view, files, from);
+                                } else if (checkImageURL(url)) {
+                                    const node = {
+                                        attrs: {
+                                            src: url
+                                        },
+                                        type: ImageNode.name
+                                    };
+                                    editor.commands.insertContentAt(from, node);
                                 }
-
-                                return false;
                             },
-
                             drop(view, event: DragEvent) {
                                 if (isImageBlockAllowed() && areImageFiles(event)) {
                                     event.preventDefault();

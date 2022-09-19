@@ -2687,8 +2687,8 @@ CREATE TABLE shedlock(name VARCHAR(64) NOT NULL, lock_until datetime NOT NULL,
                       locked_at datetime NOT NULL, locked_by VARCHAR(255) NOT NULL, PRIMARY KEY (name));
 
 create table variant (
-     id NVARCHAR(255) primary key,
-     name NVARCHAR(255) not null UNIQUE,
+     name NVARCHAR(255) primary key,
+     description NVARCHAR(255) not null,
      archived tinyint not null default 0,
 );
 
@@ -2702,11 +2702,10 @@ create table experiment (
     traffic_allocation float not null,
     mod_date datetimeoffset(3) not null,
     scheduling NVARCHAR(MAX),
-    archived tinyint not null,
     creation_date datetimeoffset(3) not null,
     created_by NVARCHAR(255) not null,
-    last_modified_by NVARCHAR(255) not null
-
+    last_modified_by NVARCHAR(255) not null,
+    goals NVARCHAR(MAX)
 );
 
 CREATE INDEX idx_exp_pageid ON experiment (page_id);

@@ -251,7 +251,7 @@ public class IdentifierCacheImpl extends IdentifierCache {
 	}
 
 	private String getKey(final String identifier, final long lang) {
-		return getKey(identifier, lang, VariantAPI.DEFAULT_VARIANT.identifier());
+		return getKey(identifier, lang, VariantAPI.DEFAULT_VARIANT.name());
 	}
 
 	@Override
@@ -276,7 +276,7 @@ public class IdentifierCacheImpl extends IdentifierCache {
 
 	@Override
     protected ContentletVersionInfo getContentVersionInfo(final String identifier, final long lang) {
-		return getContentVersionInfo(identifier, lang, VariantAPI.DEFAULT_VARIANT.identifier());
+		return getContentVersionInfo(identifier, lang, VariantAPI.DEFAULT_VARIANT.name());
     }
 
     @Override
