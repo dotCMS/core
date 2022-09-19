@@ -151,13 +151,12 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                                     return true;
                                 }
 
-                                event.stopPropagation();
-                                event.preventDefault();
-
                                 const url = event.clipboardData.getData('Text');
                                 const { from } = getPositionFromCursor(view);
 
                                 if (areImageFiles(event)) {
+                                    // Avoid tiptap image extension default behavior on paste.
+                                    event.preventDefault();
                                     if (event.clipboardData.files.length !== 1) {
                                         alert('Can paste just one image at a time');
 
