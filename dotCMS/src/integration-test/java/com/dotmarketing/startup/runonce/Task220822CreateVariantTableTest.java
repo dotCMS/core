@@ -11,6 +11,7 @@ import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UUIDGenerator;
+import graphql.Assert;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -21,14 +22,14 @@ import org.junit.Test;
 public class Task220822CreateVariantTableTest {
 
     private final Map<String, String> POSTGRES_EXPECTED = map(
-            "id", "varchar",
             "name", "varchar",
+            "description", "varchar",
             "archived", "bool"
     );
 
     private final Map<String, String> MSSQL_EXPECTED = map(
-            "id", "nvarchar",
             "name", "nvarchar",
+            "description", "nvarchar",
             "archived", "tinyint"
     );
 
@@ -108,8 +109,8 @@ public class Task220822CreateVariantTableTest {
 
     /**
      * Method to test: {@link Task220822CreateVariantTable#executeUpgrade()}
-     * When: try to insert to variant with the same name after running the executeUpgrade
-     * Should: throw
+     * When: try to insert two variant with the same name after running the executeUpgrade
+     * Should: throw {@link DotDataException}
      *
      * @throws DotDataException
      * @throws SQLException
@@ -123,22 +124,57 @@ public class Task220822CreateVariantTableTest {
         checkNotAllowDuplicatedName();
     }
 
+    /**
+     * Method to test: {@link Task220822CreateVariantTable#executeUpgrade()}
+     * When: try to insert two variant with the same description after running the executeUpgrade
+     * Should: no throw Exception
+     *
+     * @throws DotDataException
+     * @throws SQLException
+     */
+    @Test
+    public void descriptionDuplicated() throws DotDataException {
+        clean();
+
+        final Task220822CreateVariantTable task222208CreateVariantTable = new Task220822CreateVariantTable();
+        task222208CreateVariantTable.executeUpgrade();
+        checkAllowDuplicatedDescription();
+    }
+
     private static void checkNotAllowDuplicatedName() throws DotDataException {
-        new DotConnect().setSQL("INSERT INTO variant (id, name, archived) VALUES (?, ?, ?)")
-                .addParam(UUIDGenerator.generateUuid())
+        new DotConnect().setSQL("INSERT INTO variant (name, description, archived) VALUES (?, ?, ?)")
                 .addParam("Same Name")
+                .addParam(UUIDGenerator.generateUuid())
                 .addParam(false)
                 .loadResult();
 
         try {
-            new DotConnect().setSQL("INSERT INTO variant (id, name, archived) VALUES (?, ?, ?)")
-                    .addParam(UUIDGenerator.generateUuid())
+            new DotConnect().setSQL("INSERT INTO variant (name, description, archived) VALUES (?, ?, ?)")
                     .addParam("Same Name")
+                    .addParam(UUIDGenerator.generateUuid())
                     .addParam(false)
                     .loadResult();
             throw new AssertionError("Exceeption expected because the same name is duplicated");
         } catch (DotDataException e) {
             //expected
+        }
+    }
+
+    private static void checkAllowDuplicatedDescription() throws DotDataException {
+        new DotConnect().setSQL("INSERT INTO variant (name, description, archived) VALUES (?, ?, ?)")
+                .addParam(UUIDGenerator.generateUuid())
+                .addParam("Same description")
+                .addParam(false)
+                .loadResult();
+
+        try {
+            new DotConnect().setSQL("INSERT INTO variant (name, description, archived) VALUES (?, ?, ?)")
+                    .addParam(UUIDGenerator.generateUuid())
+                    .addParam("Same description")
+                    .addParam(false)
+                    .loadResult();
+        } catch (DotDataException e) {
+            throw new AssertionError(e);
         }
     }
 }

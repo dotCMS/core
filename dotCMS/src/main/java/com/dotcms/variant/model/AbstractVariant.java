@@ -15,12 +15,12 @@ import org.immutables.value.Value;
  */
 @Value.Style(typeImmutable="*", typeAbstract="Abstract*")
 @Value.Immutable
-public interface AbstractVariant {
-    @JsonProperty("identifier")
-    String identifier();
-
+public interface AbstractVariant extends Serializable {
     @JsonProperty("name")
     String name();
+
+    @JsonProperty("description")
+    String description();
 
     @JsonProperty("archived")
     boolean archived();

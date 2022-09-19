@@ -5,7 +5,8 @@ import {
     ElementRef,
     EventEmitter,
     Output,
-    Input
+    Input,
+    HostListener
 } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { debounceTime, take } from 'rxjs/operators';
@@ -21,7 +22,7 @@ import { SuggestionPageComponent } from './components/suggestion-page/suggestion
 
 export interface NodeProps {
     link: string;
-    blank: boolean;
+    blank?: boolean;
 }
 
 @Component({
@@ -50,6 +51,23 @@ export class BubbleLinkFormComponent implements OnInit {
     loading = false;
     form: FormGroup;
     items = [];
+
+    /**
+     * Avoid loosing the `focus` target
+     *
+     * @param {MouseEvent} e
+     * @memberof SuggestionListComponent
+     */
+    @HostListener('mousedown', ['$event'])
+    onMouseDownHandler(e: MouseEvent) {
+        const { target } = e;
+
+        if (target === this.input.nativeElement) {
+            return;
+        }
+
+        e.preventDefault();
+    }
 
     // Getters
     get noResultsTitle() {
@@ -128,7 +146,7 @@ export class BubbleLinkFormComponent implements OnInit {
      * @param {NodeProps} { link, blank }
      * @memberof BubbleLinkFormComponent
      */
-    setFormValue({ link, blank }: NodeProps) {
+    setFormValue({ link = '', blank = true }: NodeProps) {
         this.form.setValue({ link, blank }, { emitEvent: false });
     }
 
@@ -150,6 +168,7 @@ export class BubbleLinkFormComponent implements OnInit {
      */
     onKeyDownEvent(e: KeyboardEvent) {
         const items = this.suggestionsComponent?.items;
+        e.stopImmediatePropagation();
 
         if (e.key === 'Escape') {
             this.hide.emit(true);

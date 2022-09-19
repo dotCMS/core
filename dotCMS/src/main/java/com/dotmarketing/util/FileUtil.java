@@ -7,14 +7,8 @@ import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileFilter;
-import java.io.FileWriter;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+
+import java.io.*;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,6 +18,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 public class FileUtil {
@@ -331,6 +326,38 @@ public class FileUtil {
 
 		return sha256Builder.buildUnixHash();
 	} // sha256toUnixHash.
+
+	/**
+	 * Reads the contents of the specified file, using the {@code Files.newInputStream} approach.
+	 *
+	 * @param file The {@link File} that will be read.
+	 *
+	 * @return The String contents of the File in the form of an {@link Optional}.
+	 *
+	 * @throws IOException An error occurred when reading the file.
+	 */
+	public static Optional<String> read(final File file) throws IOException {
+		if (file == null || !file.exists()) {
+			return Optional.empty();
+		}
+		final byte[] buffer = new byte[8192];
+		try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(16384);
+			 final InputStream inputStream = Files.newInputStream(file.toPath())) {
+			int bytesRead = inputStream.read(buffer);
+			if (bytesRead < buffer.length) {
+				byteArrayOutputStream.write(buffer, 0, bytesRead);
+				return Optional.of(byteArrayOutputStream.toString());
+			}
+			while (bytesRead != -1) {
+				byteArrayOutputStream.write(buffer, 0, bytesRead);
+				bytesRead = inputStream.read(buffer);
+			}
+			return Optional.of(byteArrayOutputStream.toString());
+		} catch (final IOException e) {
+			throw e;
+		}
+	}
+
 }
 
 final class PNGFileNameFilter implements FilenameFilter {
@@ -339,6 +366,3 @@ final class PNGFileNameFilter implements FilenameFilter {
 	}
 
 }
-
-
-

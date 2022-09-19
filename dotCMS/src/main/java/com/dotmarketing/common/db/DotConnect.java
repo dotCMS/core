@@ -542,6 +542,10 @@ public class DotConnect {
      */
 
     public DotConnect addJSONParam(Object json) {
+        if(json==null) {
+            return addObject(json);
+        }
+
         final String jsonStr = Try.of(()->
                         mapper.writeValueAsString(json))
                 .getOrNull();
@@ -549,7 +553,7 @@ public class DotConnect {
             PGobject jsonObject = new PGobject();
             jsonObject.setType("json");
             Try.run(() -> jsonObject.setValue(jsonStr)).getOrElseThrow(
-                    () -> new IllegalArgumentException("Invalid Traffic Proportion"));
+                    () -> new IllegalArgumentException("Invalid JSON"));
             return addObject(jsonObject);
         } else {
             return addParam(jsonStr);

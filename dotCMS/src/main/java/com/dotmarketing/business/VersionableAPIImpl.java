@@ -574,12 +574,13 @@ public class VersionableAPIImpl implements VersionableAPI {
 
             final Contentlet contentlet = (Contentlet)versionable;
             Optional<ContentletVersionInfo> info = versionableFactory
-                    .getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
+                    .getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId(),
+                            contentlet.getVariantId());
 
             if(!info.isPresent()) {
                 // Not yet created
                 info = Optional.of(versionableFactory.createContentletVersionInfo(identifier,
-                        contentlet.getLanguageId(), versionable.getInode()));
+                        contentlet.getLanguageId(), versionable.getInode(), contentlet.getVariantId()));
             }
             else {
                 final ContentletVersionInfo oldInfo = info.get();
@@ -685,6 +686,13 @@ public class VersionableAPIImpl implements VersionableAPI {
 	    return Try.of(()->versionableFactory.getContentletVersionInfo(identifier, lang))
                 .getOrElse(Optional.empty());
 	}
+
+    @CloseDBIfOpened
+    public Optional<ContentletVersionInfo> getContentletVersionInfo(final String identifier,
+            final long lang, final String variantId) {
+        return Try.of(()->versionableFactory.getContentletVersionInfo(identifier, lang, variantId))
+                .getOrElse(Optional.empty());
+    }
 	
 	@Override
 	@CloseDBIfOpened

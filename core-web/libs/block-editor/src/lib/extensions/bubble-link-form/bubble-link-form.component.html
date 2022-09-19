@@ -61,6 +61,7 @@
 
     <!-- Form Actions -->
     <dot-form-actions
+        *ngIf="!showSuggestions && currentLink"
         [link]="currentLink"
         (hide)="hide.emit($event)"
         (remove)="removeLink.emit($event)"

@@ -353,7 +353,17 @@ public interface VersionableAPI {
 	 * @throws DotStateException
 	 */
 	Optional<ContentletVersionInfo> getContentletVersionInfo(String identifier, long lang);
-	
+
+	/**
+	 * Will return the @ContentletLangVersionInfo holder for the given identifier
+	 *
+	 * @param identifier
+	 * @param lang
+	 * @param variantId
+	 * @return
+	 */
+	Optional<ContentletVersionInfo> getContentletVersionInfo(String identifier, long lang, String variantId);
+
 	/**
 	 * Will save the VersionInfo Record. For normal operations you should use the setLive, setWorking etc... but there are cases like
 	 * PushPublishing where you want to say the entire record. 
