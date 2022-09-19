@@ -5,6 +5,7 @@ import com.dotcms.publishing.manifest.ManifestItem;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import org.immutables.value.Value;
 
@@ -74,6 +75,9 @@ public interface AbstractExperiment extends Serializable, ManifestItem {
 
     @JsonProperty("goals")
     Optional<Goals> goals();
+
+    @JsonProperty("targetingConditions")
+    Optional<List<TargetingCondition>> targetingConditions();
 
     @Value.Derived
     @Override

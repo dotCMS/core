@@ -2,13 +2,13 @@ package com.dotcms.experiments.business;
 
 import static com.dotcms.experiments.model.AbstractExperiment.Status.DRAFT;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.ENDED;
-import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_VARIANT_DESCRIPTION;
 import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME_PREFIX;
 import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME_SUFFIX;
 
 import com.dotcms.analytics.metrics.MetricsUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.AbstractTrafficProportion.Type;
 import com.dotcms.experiments.model.Experiment;
@@ -55,6 +55,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     final ContentletAPI contentletAPI = APILocator.getContentletAPI();
     final VariantAPI variantAPI = APILocator.getVariantAPI();
     final ShortyIdAPI shortyIdAPI = APILocator.getShortyAPI();
+    final RulesAPI rulesAPI = APILocator.getRulesAPI();
 
     private final LicenseValiditySupplier licenseValiditySupplierSupplier =
             new LicenseValiditySupplier() {};
@@ -95,9 +96,19 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             MetricsUtil.INSTANCE.validateGoals(experiment.goals().get());
         }
 
+        if(experiment.targetingConditions().isPresent()) {
+            saveTargetingConditions(experiment);
+        }
+
         final Experiment experimentToSave = builder.build();
 
         return factory.save(experimentToSave);
+    }
+
+    private void saveTargetingConditions(final Experiment experiment) {
+        if(experiment.targetingConditions().isPresent()) {
+            rulesAPI.getAllRulesByParent(experiment)
+        }
     }
 
     @CloseDBIfOpened

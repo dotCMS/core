@@ -322,6 +322,31 @@ public class ExperimentsResource {
         return new ResponseEntityExperimentView(Collections.singletonList(updatedExperiment));
     }
 
+    /**
+     * Adds a new {@link com.dotcms.experiments.model.TargetingCondition} to the {@link Experiment}
+     *
+     */
+    @POST
+    @Path("/{experimentId}/targetingCondition")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityExperimentView addTargetingCondition(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("experimentId") final String experimentId,
+            AddVariantForm addVariantForm) throws DotDataException, DotSecurityException {
+
+        DotPreconditions.isTrue(addVariantForm!=null, ()->"Missing Variant name",
+                IllegalArgumentException.class);
+
+        final InitDataObject initData = getInitData(request, response);
+        final User user = initData.getUser();
+        final Experiment updatedExperiment =  experimentsAPI.addVariant(experimentId,
+                addVariantForm.getName(), user);
+        return new ResponseEntityExperimentView(Collections.singletonList(updatedExperiment));
+    }
+
     private Experiment patchExperiment(final Experiment experimentToUpdate,
             final ExperimentForm experimentForm, final User user) {
 
@@ -349,6 +374,10 @@ public class ExperimentsResource {
 
         if(experimentForm.getGoals()!=null) {
             builder.goals(experimentForm.getGoals());
+        }
+
+        if(experimentForm.getTargetingConditions()!=null) {
+            builder.targetingConditions(experimentForm.getTargetingConditions());
         }
 
         return builder.build();
