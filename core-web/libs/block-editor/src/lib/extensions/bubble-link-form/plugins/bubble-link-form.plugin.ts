@@ -225,10 +225,9 @@ export class BubbleLinkFormView {
     }
 
     getLinkProps(): NodeProps {
-        const { href = '', target } = this.editor.isActive('link')
+        const { href: link = '', target } = this.editor.isActive('link')
             ? this.editor.getAttributes('link')
             : this.editor.getAttributes(ImageNode.name);
-        const link = href || this.getLinkSelect();
         const blank = target ? target === '_blank' : true;
 
         return { link, blank };
