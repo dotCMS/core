@@ -197,6 +197,20 @@ export class DotRouterService {
         ]);
     }
 
+    /**
+     * Redirect to edit the template.
+     * If the inode is paased, load a specific version of the template
+     *
+     * @param {string} id
+     * @param {string} inode
+     * @memberof DotRouterService
+     */
+    goToEditContainer(id: string, inode?: string): void {
+        this.router.navigate([
+            inode ? `/container-new/edit/${id}/inode/${inode}` : `/container-new/edit/${id}`
+        ]);
+    }
+
     goToURL(url: string): void {
         this.router.navigate([url]);
     }

@@ -29,6 +29,11 @@ import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
         DotEmptyStateModule,
         DotAddToBundleModule
     ],
-    providers: [DotContainerListResolver]
+    providers: [
+        DotContainerListResolver,
+        DotSiteBrowserService,
+        DotContainersService,
+        DialogService
+    ]
 })
 export class ContainerListModule {}
