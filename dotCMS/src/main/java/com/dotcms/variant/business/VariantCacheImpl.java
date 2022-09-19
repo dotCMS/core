@@ -15,28 +15,14 @@ public class VariantCacheImpl implements VariantCache{
     public void put(final Variant variant) {
 
         DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-        cache.put(VARIANT_BY_ID + variant.identifier(), variant, getPrimaryGroup());
+        cache.put(VARIANT_BY_ID + variant.name(), variant, getPrimaryGroup());
         cache.put(VARIANT_BY_NAME + variant.name(), variant, getPrimaryGroup());
 
-        putById(variant);
         putByName(variant);
     }
 
-
     @Override
-    public Variant getById(final String id) {
-        DotPreconditions.checkNotNull(id);
-
-        try{
-            DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-            return  (Variant) cache.get(getKeyById(id), getPrimaryGroup());
-        } catch (DotCacheException e) {
-            return null;
-        }
-    }
-
-    @Override
-    public Variant getByName(final String name) {
+    public Variant get(final String name) {
         DotPreconditions.checkNotNull(name);
 
         DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
@@ -55,7 +41,7 @@ public class VariantCacheImpl implements VariantCache{
     @Override
     public void remove(final Variant variant){
         DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-        cache.remove(getKeyById(variant.identifier()), getPrimaryGroup());
+        cache.remove(getKeyById(variant.name()), getPrimaryGroup());
         cache.remove(getKeyByName(variant.name()), getPrimaryGroup());
     }
 
@@ -79,24 +65,12 @@ public class VariantCacheImpl implements VariantCache{
         return VARIANT_BY_ID + id;
     }
 
-    private void putById(final Variant variant) {
-        putById(variant.identifier(), variant);
-    }
-
-    @Override
-    public void putById(final String id, final Variant variant) {
-        DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-        cache.put(getKeyById(id), variant, getPrimaryGroup());
-
-        cache.put(getKeyById(variant.identifier()), variant, getPrimaryGroup());
-    }
-
     private void putByName(final Variant variant) {
-        putByName(variant.name(), variant);
+        put(variant.name(), variant);
     }
 
     @Override
-    public void putByName(final String name, final Variant variant) {
+    public void put(final String name, final Variant variant) {
         DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
         cache.put(getKeyByName(name), variant, getPrimaryGroup());
 

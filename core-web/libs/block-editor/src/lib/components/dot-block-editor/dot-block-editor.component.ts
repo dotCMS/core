@@ -73,7 +73,7 @@ export class DotBlockEditorComponent implements OnInit {
             Underline,
             TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'dotImage'] }),
             Highlight.configure({ HTMLAttributes: { style: 'background: #accef7;' } }),
-            Link.configure({ openOnClick: false }),
+            Link.configure({ autolink: false, openOnClick: false }),
             Placeholder.configure({
                 placeholder: ({ node }) => {
                     if (node.type.name === 'heading') {

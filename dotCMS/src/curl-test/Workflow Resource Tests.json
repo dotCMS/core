@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "13a54d9b-56e5-4639-95d1-b3221db1df36",
+		"_postman_id": "bab9b51b-731a-448a-ab05-c4511e518799",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -14583,7 +14583,7 @@
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);        ",
 									"    let jsonData = pm.response.json();",
-									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"issue-22756-categories-01GB39KX4SBA4VREWFMX9T3WGF.tar.gz\");",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"issue-22756-categories-01GCAK78NPY1JH8TRGX8SWCVN3.tar.gz\");",
 									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
 									"});",
 									"",
@@ -14626,7 +14626,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "resources/issue-22756-categories-01GB39KX4SBA4VREWFMX9T3WGF.tar.gz"
+									"src": "resources/issue-22756-categories-01GCAK78NPY1JH8TRGX8SWCVN3.tar.gz"
 								}
 							]
 						},
@@ -14640,7 +14640,8 @@
 								"bundle",
 								"sync"
 							]
-						}
+						},
+						"description": "This endpoint imports a bundle that contains an instance of a Content Type that contains 2 category fields."
 					},
 					"response": []
 				},
@@ -14653,9 +14654,9 @@
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200); ",
-									"    let jsonData = pm.response.json();",
-									"    let entiry = (jsonData.entity);",
-									"    let identifier = entiry.jsonObjectView.contentlets[0].identifier;       ",
+									"    const jsonData = pm.response.json();",
+									"    const entity = (jsonData.entity);",
+									"    const identifier = entity.jsonObjectView.contentlets[0].identifier;       ",
 									"    pm.collectionVariables.set(\"identifier22756\", identifier);",
 									"});"
 								],
@@ -14709,7 +14710,8 @@
 								"content",
 								"_search"
 							]
-						}
+						},
+						"description": "Once the Content type that contains the category fields has been imported this request finds it and gets the identifier from it."
 					},
 					"response": []
 				},
@@ -14723,8 +14725,9 @@
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);    ",
 									"    let jsonData = pm.response.json();",
-									"    let entiry = (jsonData.entity);",
-									"    pm.expect(entiry.bikeType).to.eql([{\"MTB\":\"MTB\"},{\"Road\":\"Road\"}]);    ",
+									"    let entity = (jsonData.entity);",
+									"    pm.expect(entity.bikeType).to.eql([{\"MTB\":\"MTB\"},{\"Road\":\"Road\"}]);    ",
+									"    pm.expect(entity.make).to.eql([{\"Norco\":\"Norco\"}]);    ",
 									"});"
 								],
 								"type": "text/javascript"
@@ -14760,7 +14763,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"actionName\": \"publish\",\n    \"comments\": \"Updated Norco Revolver\",\n    \"contentlet\":{\n       \"title\": \"Update Norco Revolver\",\n       \"contentHost\": \"demo.dotcms.com\",\n       \"identifier\": \"{{identifier22756}}\",              \n       \"contentType\":\"BikeNameAndCategory\",\n       \"bikeType\":[\"MTB\",\"Road\"]\n   }\n}",
+							"raw": "{\n    \"actionName\": \"publish\",\n    \"comments\": \"Updated Norco Revolver\",\n    \"contentlet\":{\n       \"title\": \"Update Norco Revolver\",\n       \"contentHost\": \"demo.dotcms.com\",\n       \"identifier\": \"{{identifier22756}}\",              \n       \"contentType\":\"BikeNameAndCategory\",\n       \"bikeType\":[\"MTB\",\"Road\"],\n       \"make\":[\"Norco\"]\n   }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -14779,7 +14782,158 @@
 								"actions",
 								"fire"
 							]
+						},
+						"description": "This is basically the happy path test. We validate that the content-type can be updated passing arrays of valid categories. Then verify the response to check the categories are the expected."
+					},
+					"response": []
+				},
+				{
+					"name": "update-contentlet-add-category-ignore-fields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);    ",
+									"    const jsonData = pm.response.json();",
+									"    const entity = (jsonData.entity);",
+									"    pm.expect(entity.bikeType).to.eql([{\"MTB\":\"MTB\"},{\"Road\":\"Road\"}]);    ",
+									"    pm.expect(entity.make).to.eql([{\"Norco\":\"Norco\"}]);    ",
+									"});"
+								],
+								"type": "text/javascript"
+							}
 						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"actionName\": \"publish\",\n    \"comments\": \"Updated Norco Revolver\",\n    \"contentlet\":{\n       \"title\": \"Update Norco Revolver\",\n       \"contentHost\": \"demo.dotcms.com\",\n       \"identifier\": \"{{identifier22756}}\",              \n       \"contentType\":\"BikeNameAndCategory\"      \n   }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/fire",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"fire"
+							]
+						},
+						"description": "This test is meant to send a request without including any of the category fields. The categories on the target content should remain the same."
+					},
+					"response": []
+				},
+				{
+					"name": "get-contentlet-identifier-by-contnet-type-verify-ignored-fields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200); ",
+									"    let jsonData = pm.response.json();",
+									"    let entiry = (jsonData.entity);",
+									"    let contentlets = entiry.jsonObjectView.contentlets;       ",
+									"",
+									"    let identifier = pm.collectionVariables.get(\"identifier22756\");",
+									"",
+									"    const result = contentlets.filter(con => con.identifier === identifier); ",
+									"    const entity = result[0];",
+									"    console.log(entity.bikeType);",
+									"    pm.expect(entity.bikeType).to.eql([{\"MTB\":\"MTB\"},{\"Road\":\"Road\"}]);    ",
+									"    pm.expect(entity.make).to.eql([{\"Norco\":\"Norco\"}]);    ",
+									"",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"query\":\"+contentType:BikeNameAndCategory +languageId:1 +deleted:false +working:true\",\"sort\":\"modDate desc\",\"offset\":0}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/content/_search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"content",
+								"_search"
+							]
+						},
+						"description": "This request is intended to fetch the instance of our content with categories and verify it remains unmodified after the last request that had excluded the category fields."
 					},
 					"response": []
 				},
@@ -14792,9 +14946,10 @@
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);    ",
-									"    let jsonData = pm.response.json();",
-									"    let entiry = (jsonData.entity);",
-									"    pm.expect(entiry.bikeType).to.eql(undefined);    ",
+									"    const jsonData = pm.response.json();",
+									"    const entity = (jsonData.entity);",
+									"    pm.expect(entity.bikeType).to.eql(undefined);    ",
+									"    pm.expect(entity.make).to.eql([{\"Norco\":\"Norco\"}]);    ",
 									"});"
 								],
 								"type": "text/javascript"
@@ -14849,7 +15004,8 @@
 								"actions",
 								"fire"
 							]
-						}
+						},
+						"description": "Now we're gonna try removing the contents from one of the category fields and at the same time we're gonna ignore the second field.\n\nThe expected outcome is: Content withe the \"bikeType\" field cleared and the while \"make\" should still keep their values."
 					},
 					"response": []
 				},
@@ -14863,7 +15019,7 @@
 									"pm.test(\"Status code is 400\", function () {",
 									"    pm.response.to.have.status(400);    ",
 									"    let jsonData = pm.response.json();    ",
-									"    pm.expect(jsonData.message).to.eql(\"I wasn't able to resolve the value [lol] as a valid cat-id,cat-key, nor as a cat-var.\");    ",
+									"    pm.expect(jsonData.message).to.eql(\"Unable to resolve the string value [lol] as a valid form of category name/var/key or identifier.\");    ",
 									"});"
 								],
 								"type": "text/javascript"
@@ -14918,7 +15074,8 @@
 								"actions",
 								"fire"
 							]
-						}
+						},
+						"description": "In this request we want to test that when sending an invalid category name we can expect an invalid request response."
 					},
 					"response": []
 				},
@@ -14931,9 +15088,9 @@
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);    ",
-									"    let jsonData = pm.response.json();",
-									"    let entiry = (jsonData.entity);",
-									"    pm.expect(entiry.bikeType).to.eql([{\"MTB\":\"MTB\"},{\"Road\":\"Road\"}]);    ",
+									"    const jsonData = pm.response.json();",
+									"    const entity = (jsonData.entity);",
+									"    pm.expect(entity.bikeType).to.eql([{\"MTB\":\"MTB\"},{\"Road\":\"Road\"}]);    ",
 									"});"
 								],
 								"type": "text/javascript"
@@ -14988,7 +15145,79 @@
 								"actions",
 								"fire"
 							]
+						},
+						"description": "This request is intended to test that we can also update categories sending them on the request as a comma separated string."
+					},
+					"response": []
+				},
+				{
+					"name": "update-contentlet-add-category-pass-null",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);    ",
+									"    let jsonData = pm.response.json();",
+									"    let entity = (jsonData.entity);",
+									"    pm.expect(entity.bikeType).to.eql([{\"MTB\":\"MTB\"},{\"Road\":\"Road\"}]);    ",
+									"});"
+								],
+								"type": "text/javascript"
+							}
 						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"actionName\": \"publish\",\n    \"comments\": \"Updated Norco Revolver\",\n    \"contentlet\":{\n       \"title\": \"Update Norco Revolver\",\n       \"contentHost\": \"demo.dotcms.com\",\n       \"identifier\": \"{{identifier22756}}\",              \n       \"contentType\":\"BikeNameAndCategory\",\n       \"bikeType\":null,\n       \"make\":null\n   }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/fire",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"fire"
+							]
+						},
+						"description": "And finally we want to test that sending null as the value on the category field has the same effect as ignoring the field."
 					},
 					"response": []
 				}

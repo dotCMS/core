@@ -42,12 +42,12 @@ public class VariantAPITest {
         final Variant variantSaved = APILocator.getVariantAPI().save(variant);
 
         assertNotNull(variantSaved);
-        assertNotNull(variantSaved.identifier());
+        assertNotNull(variantSaved.name());
 
         final Variant variantFromDataBase = getVariantFromDataBase(variantSaved);
 
         assertEquals(variantSaved.name(), variantFromDataBase.name());
-        assertEquals(variantSaved.identifier(), variantFromDataBase.identifier());
+        assertEquals(variantSaved.name(), variantFromDataBase.name());
         assertFalse(variantFromDataBase.archived());
     }
 
@@ -76,20 +76,20 @@ public class VariantAPITest {
         final Variant variant = new VariantDataGen().nextPersisted();
 
         assertNotNull(variant);
-        assertNotNull(variant.identifier());
+        assertNotNull(variant.name());
 
-        final Variant variantUpdated = new VariantDataGen()
-                .id(variant.identifier())
-                .name(variant.name() + "_updated")
-                .archived(false)
-                .next();
+        final Variant variantUpdated = Variant.builder()
+                .name(variant.name())
+                .description(variant.description() + "_updated")
+                .archived(variant.archived())
+                .build();
 
         APILocator.getVariantAPI().update(variantUpdated);
 
         final Variant variantFromDataBase = getVariantFromDataBase(variant);
 
         assertEquals(variantUpdated.name(), variantFromDataBase.name());
-        assertEquals(variantUpdated.identifier(), variantFromDataBase.identifier());
+        assertEquals(variantUpdated.description(), variantFromDataBase.description());
         assertFalse(variantFromDataBase.archived());
     }
 
@@ -103,7 +103,7 @@ public class VariantAPITest {
     @Test(expected = DoesNotExistException.class)
     public void updateNotExists() throws DotDataException {
         final Variant variantToUpdated = new VariantDataGen()
-                .id("Not_Exists").next();
+                .name("Not_Exists").next();
 
         APILocator.getVariantAPI().update(variantToUpdated);
     }
@@ -120,11 +120,11 @@ public class VariantAPITest {
         final Variant variant = new VariantDataGen().nextPersisted();
 
         assertNotNull(variant);
-        assertNotNull(variant.identifier());
+        assertNotNull(variant.name());
         assertFalse(variant.archived());
 
         final Variant variantUpdated = new VariantDataGen()
-                .id(variant.identifier())
+                .name(variant.name())
                 .name(variant.name())
                 .archived(true)
                 .next();
@@ -134,7 +134,7 @@ public class VariantAPITest {
         final Variant variantFromDataBase = getVariantFromDataBase(variant);
 
         assertEquals(variantUpdated.name(), variantFromDataBase.name());
-        assertEquals(variantUpdated.identifier(), variantFromDataBase.identifier());
+        assertEquals(variantUpdated.name(), variantFromDataBase.name());
         assertTrue(variantFromDataBase.archived());
     }
 
@@ -152,11 +152,11 @@ public class VariantAPITest {
         ArrayList results = getResults(variant);
         assertFalse(results.isEmpty());
 
-        APILocator.getVariantAPI().archive(variant.identifier());
+        APILocator.getVariantAPI().archive(variant.name());
 
         final Variant variantFromDataBase = getVariantFromDataBase(variant);
         assertEquals(variantFromDataBase.name(), variantFromDataBase.name());
-        assertEquals(variantFromDataBase.identifier(), variantFromDataBase.identifier());
+        assertEquals(variantFromDataBase.name(), variantFromDataBase.name());
         assertTrue(variantFromDataBase.archived());
     }
 
@@ -186,7 +186,7 @@ public class VariantAPITest {
         ArrayList results = getResults(variant);
         assertFalse(results.isEmpty());
 
-        APILocator.getVariantAPI().delete(variant.identifier());
+        APILocator.getVariantAPI().delete(variant.name());
 
         results = getResults(variant);
         assertTrue(results.isEmpty());
@@ -201,9 +201,9 @@ public class VariantAPITest {
      */
     @Test(expected = DoesNotExistException.class)
     public void deleteNotExists() throws DotDataException {
-        final Variant variant = new VariantDataGen().id("Not Exists").archived(true).next();
+        final Variant variant = new VariantDataGen().name("Not Exists").archived(true).next();
 
-        APILocator.getVariantAPI().delete(variant.identifier());
+        APILocator.getVariantAPI().delete(variant.name());
     }
 
     /**
@@ -220,7 +220,7 @@ public class VariantAPITest {
         ArrayList results = getResults(variant);
         assertFalse(results.isEmpty());
 
-        APILocator.getVariantAPI().delete(variant.identifier());
+        APILocator.getVariantAPI().delete(variant.name());
     }
 
     /**
@@ -237,10 +237,10 @@ public class VariantAPITest {
         ArrayList results = getResults(variant);
         assertFalse(results.isEmpty());
 
-        final Optional<Variant> variantFromDataBase = APILocator.getVariantAPI().get(variant.identifier());
+        final Optional<Variant> variantFromDataBase = APILocator.getVariantAPI().get(variant.name());
 
         assertTrue(variantFromDataBase.isPresent());
-        assertEquals(variant.identifier(), variantFromDataBase.get().identifier());
+        assertEquals(variant.name(), variantFromDataBase.get().name());
     }
 
     /**
@@ -257,10 +257,10 @@ public class VariantAPITest {
         ArrayList results = getResults(variant);
         assertFalse(results.isEmpty());
 
-        final Optional<Variant> variantFromDataBase = APILocator.getVariantAPI().getByName(variant.name());
+        final Optional<Variant> variantFromDataBase = APILocator.getVariantAPI().get(variant.name());
 
         assertTrue(variantFromDataBase.isPresent());
-        assertEquals(variant.identifier(), variantFromDataBase.get().identifier());
+        assertEquals(variant.name(), variantFromDataBase.get().name());
     }
 
     /**
@@ -302,7 +302,7 @@ public class VariantAPITest {
     public void getByNameNotExists() throws DotDataException {
 
         final Optional<Variant> variantFromDataBase = APILocator.getVariantAPI()
-                .getByName("Not_Exists");
+                .get("Not_Exists");
 
         assertFalse(variantFromDataBase.isPresent());
     }
@@ -316,13 +316,13 @@ public class VariantAPITest {
      */
     @Test(expected = NullPointerException.class)
     public void getByNameWithNull() throws DotDataException {
-        APILocator.getVariantAPI().getByName(null);
+        APILocator.getVariantAPI().get(null);
     }
 
     private ArrayList getResults(Variant variant) throws DotDataException {
         return new DotConnect().setSQL(
-                        "SELECT * FROM variant where id = ?")
-                .addParam(variant.identifier())
+                        "SELECT * FROM variant where name = ?")
+                .addParam(variant.name())
                 .loadResults();
     }
 
@@ -332,7 +332,7 @@ public class VariantAPITest {
         assertEquals(1, results.size());
         final Map resultMap = (Map) results.get(0);
         return Variant.builder()
-                .identifier(resultMap.get("id").toString())
+                .description(resultMap.get("description").toString())
                 .name(resultMap.get("name").toString())
                 .archived(ConversionUtils.toBooleanFromDb(resultMap.get("archived")))
                 .build();

@@ -9,17 +9,17 @@ import org.apache.commons.lang.RandomStringUtils;
 
 public class VariantDataGen extends AbstractDataGen<Variant> {
 
-    private String id;
     private String name;
+    private String description;
     private boolean archived = false;
-
-    public VariantDataGen id(final String id) {
-        this.id = id;
-        return this;
-    }
 
     public VariantDataGen name(final String name) {
         this.name = name;
+        return this;
+    }
+
+    public VariantDataGen description(final String description) {
+        this.description = description;
         return this;
     }
 
@@ -31,12 +31,11 @@ public class VariantDataGen extends AbstractDataGen<Variant> {
     @Override
     public Variant next() {
 
-        final String innerId = id == null ? UUIDGenerator.generateUuid() : id;
-
-        final String randomAlphanumeric = RandomStringUtils.randomAlphanumeric(20);
-        final String innerName = name == null ? "Variant_" +  randomAlphanumeric : name;
+        final String innerName = name == null ? "VariantTest_" + RandomStringUtils.randomAlphanumeric(10) : name;
+        final String innerDescription = description
+                == null ? "Description for: " + innerName : description;
         return Variant.builder()
-                .identifier(innerId)
+                .description(innerDescription)
                 .name(innerName)
                 .archived(archived)
                 .build();

@@ -2344,5 +2344,69 @@ public class TestDataUtils {
         return contentType;
     }
 
+    public static ContentType newContentTypeWithMultipleCategoryFields(final String contentTypeName,
+            final Set<String> workflowIds) {
+        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+        final List<Category> categories = Try.of(
+                        () -> categoryAPI.findTopLevelCategories(APILocator.systemUser(), false))
+                .getOrElseThrow(DotRuntimeException::new);
+        return newContentTypeWithMultipleCategoryFields(contentTypeName, workflowIds, categories);
+    }
+
+    @WrapInTransaction
+    public static ContentType newContentTypeWithMultipleCategoryFields(final String contentTypeName, Set<String> workflowIds, final List<Category> parents) {
+
+        ContentType contentType;
+        try {
+
+            contentType = Try.of(()->APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentTypeName)).getOrNull();
+
+            if (contentType == null) {
+
+                final WorkflowScheme systemWorkflow = TestWorkflowUtils.getSystemWorkflow();
+                final Set<String> collectedWorkflowIds = new HashSet<>();
+                collectedWorkflowIds.add(systemWorkflow.getId());
+                if(null != workflowIds){
+                    collectedWorkflowIds.addAll(workflowIds);
+                }
+
+                List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("title")
+                                .velocityVarName("title")
+                                .type(TextField.class)
+                                .dataType(DataTypes.TEXT)
+                                .next()
+                );
+
+                //Category field
+                int i = 0;
+                for(Category parent:parents){
+                    final String name = "categoryField"+i;
+                    fields.add(new FieldDataGen()
+                          .name(name)
+                          .velocityVarName(name)
+                          .type(CategoryField.class)
+                          .values(parent.getInode()).next());
+                    i++;
+                }
+
+                contentType = new ContentTypeDataGen()
+                        .baseContentType(BaseContentType.CONTENT)
+                        .name(contentTypeName)
+                        .velocityVarName(contentTypeName)
+                        .fields(fields)
+                        .workflowId(collectedWorkflowIds)
+                        .nextPersisted();
+            }
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+
+        return contentType;
+    }
+
 
 }

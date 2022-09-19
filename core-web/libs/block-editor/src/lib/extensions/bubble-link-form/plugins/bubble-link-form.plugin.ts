@@ -185,9 +185,10 @@ export class BubbleLinkFormView {
 
     setLinkValues({ link, blank = false }) {
         if (link.length > 0) {
+            const href = this.formatLink(link);
             this.isDotImageNode()
-                ? this.editor.commands.setImageLink({ href: link })
-                : this.editor.commands.setLink({ href: link, target: blank ? '_blank' : '_top' });
+                ? this.editor.commands.setImageLink({ href })
+                : this.editor.commands.setLink({ href, target: blank ? '_blank' : '_top' });
         }
     }
 
@@ -198,10 +199,21 @@ export class BubbleLinkFormView {
         this.hide();
     }
 
+    formatLink(link: string) {
+        if (!isValidURL(link)) {
+            return link;
+        }
+
+        const pattern = new RegExp('^(http|https)', 'i');
+        const startWithProtocol = pattern.test(link);
+
+        return startWithProtocol ? link : `http://${link}`;
+    }
+
     setInputValues() {
         const values = this.getLinkProps();
         this.component.instance.initialValues = values;
-        this.component.instance.setFormValue(values);
+        this.component.instance.setFormValue(values.link ? values : { link: this.getLinkSelect() });
     }
 
     setComponentEvents() {
@@ -224,10 +236,9 @@ export class BubbleLinkFormView {
     }
 
     getLinkProps(): NodeProps {
-        const { href = '', target } = this.editor.isActive('link')
+        const { href: link = '', target } = this.editor.isActive('link')
             ? this.editor.getAttributes('link')
             : this.editor.getAttributes('dotImage');
-        const link = href || this.getLinkSelect();
         const blank = target ? target === '_blank' : true;
 
         return { link, blank };

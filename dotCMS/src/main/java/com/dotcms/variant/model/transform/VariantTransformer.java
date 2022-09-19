@@ -42,7 +42,7 @@ public class VariantTransformer implements DBTransformer {
 
     private Variant transform(final Map<String, Object> variantMap) {
         return Variant.builder()
-                .identifier(variantMap.get("id").toString())
+                .description(variantMap.get("description").toString())
                 .name(variantMap.get("name").toString())
                 .archived(ConversionUtils.toBooleanFromDb(variantMap.get("archived")))
                 .build();
