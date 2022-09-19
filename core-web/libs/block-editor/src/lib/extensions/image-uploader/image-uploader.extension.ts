@@ -148,8 +148,11 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                             },
                             paste(view, event: ClipboardEvent) {
                                 if (!isImageBlockAllowed()) {
-                                    return;
+                                    return true;
                                 }
+
+                                event.stopPropagation();
+                                event.preventDefault();
 
                                 const url = event.clipboardData.getData('Text');
                                 const { from } = getPositionFromCursor(view);
