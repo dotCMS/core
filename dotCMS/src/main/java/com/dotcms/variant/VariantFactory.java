@@ -10,7 +10,7 @@ import java.util.Optional;
 public interface VariantFactory {
 
     Variant VARIANT_404 = Variant.builder()
-            .description("Not found variant")
+            .description(Optional.of("Not found variant"))
             .name("VARIANT_404")
             .archived(false)
             .build();

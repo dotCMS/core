@@ -8,7 +8,7 @@ public interface VariantAPI {
 
     Variant DEFAULT_VARIANT = Variant.builder()
             .name("DEFAULT")
-            .description("Variant use by DEFAULT when a Contentlet is created")
+            .description(Optional.of("Variant use by DEFAULT when a Contentlet is created"))
             .archived(false)
             .build();
 

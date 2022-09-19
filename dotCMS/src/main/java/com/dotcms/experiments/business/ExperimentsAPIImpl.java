@@ -2,15 +2,24 @@ package com.dotcms.experiments.business;
 
 import static com.dotcms.experiments.model.AbstractExperiment.Status.DRAFT;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.ENDED;
+import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_VARIANT_DESCRIPTION;
+import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME_PREFIX;
+import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME_SUFFIX;
 
 import com.dotcms.analytics.metrics.MetricsUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
+import com.dotcms.experiments.model.AbstractTrafficProportion.Type;
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.Scheduling;
+import com.dotcms.experiments.model.TrafficProportion;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.LicenseValiditySupplier;
+import com.dotcms.uuid.shorty.ShortyIdAPI;
+import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -31,14 +40,21 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     final ExperimentsFactory factory = FactoryLocator.getExperimentsFactory();
     final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+    final VariantAPI variantAPI = APILocator.getVariantAPI();
+    final ShortyIdAPI shortyIdAPI = APILocator.getShortyAPI();
 
     private final LicenseValiditySupplier licenseValiditySupplierSupplier =
             new LicenseValiditySupplier() {};
@@ -244,6 +260,105 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         return factory.save(ended);
     }
 
+    @WrapInTransaction
+    @Override
+    public Experiment addVariant(final String experimentId, final String variantDescription,
+            final User user)
+            throws DotDataException, DotSecurityException {
+
+        final Experiment persistedExperiment = find(experimentId, user)
+                .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
+
+        final String variantNameBase = EXPERIMENT_VARIANT_NAME_PREFIX + shortyIdAPI.shortify(experimentId)
+                + EXPERIMENT_VARIANT_NAME_SUFFIX;
+
+        final int nextAvailableIndex = getNextAvailableIndex(variantNameBase);
+
+        final String variantName = variantNameBase + nextAvailableIndex;
+
+        variantAPI.save(Variant.builder().name(variantName)
+                .description(Optional.of(variantDescription)).build());
+
+        final ExperimentVariant experimentVariant = ExperimentVariant.builder().id(variantName)
+                .description(variantDescription).weight(0).build();
+
+        final TrafficProportion trafficProportion = persistedExperiment.trafficProportion();
+
+        final TreeSet<ExperimentVariant> variants = new TreeSet<>();
+        variants.addAll(trafficProportion.variants());
+        variants.add(experimentVariant);
+
+        TreeSet<ExperimentVariant> weightedVariants = trafficProportion.type() == Type.SPLIT_EVENLY
+                ? redistributeWeights(variants)
+                : variants;
+
+        final TrafficProportion weightedTrafficProportion = trafficProportion
+                .withVariants(weightedVariants);
+
+        final Experiment updatedExperiment = persistedExperiment
+                .withTrafficProportion(weightedTrafficProportion);
+
+        return save(updatedExperiment, user);
+    }
+
+    @Override
+    @WrapInTransaction
+    public Experiment deleteVariant(String experimentId, String variantName, User user)
+            throws DotDataException, DotSecurityException {
+        final Experiment persistedExperiment = find(experimentId, user)
+                .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
+
+        DotPreconditions.isTrue(variantName!= null &&
+                variantName.contains(shortyIdAPI.shortify(experimentId)), ()->"Invalid Variant provided",
+                IllegalArgumentException.class);
+
+        final Variant toDelete = variantAPI.get(variantName)
+                .orElseThrow(()->new DoesNotExistException("Provided Variant not found"));
+
+        final TreeSet<ExperimentVariant> updatedVariants =
+                new TreeSet<>(persistedExperiment.trafficProportion()
+                .variants().stream().filter((variant)->
+                        !Objects.equals(variant.id(), toDelete.name())).collect(
+                        Collectors.toSet()));
+
+        final SortedSet<ExperimentVariant> weightedVariants = redistributeWeights(updatedVariants);
+        final TrafficProportion weightedTraffic = persistedExperiment.trafficProportion()
+                .withVariants(weightedVariants);
+        final Experiment withUpdatedTraffic = persistedExperiment.withTrafficProportion(weightedTraffic);
+        final Experiment fromDB = save(withUpdatedTraffic, user);
+        variantAPI.archive(toDelete.name());
+        variantAPI.delete(toDelete.name());
+        return fromDB;
+
+    }
+
+    private TreeSet<ExperimentVariant> redistributeWeights(final Set<ExperimentVariant> variants) {
+
+        final int count = variants.size();
+
+        final float weightPerEach = 100f / count;
+
+        Set<ExperimentVariant> weightedVariants = variants.stream()
+                .map((variant)-> variant.withWeight(weightPerEach))
+                .collect(Collectors.toSet());
+
+        return new TreeSet<>(weightedVariants);
+    }
+
+    private int getNextAvailableIndex(final String variantNameBase)
+            throws DotDataException {
+        int variantIndex = 1;
+        String variantNameToTry = variantNameBase
+                + variantIndex;
+
+        while(variantAPI.get(variantNameToTry).isPresent()) {
+            variantNameToTry = variantNameBase
+                    + (++variantIndex);
+        }
+
+        return variantIndex;
+    }
+
     private Scheduling startNowScheduling(final Experiment experiment) {
         // Setting "now" with an additional minute to avoid failing validation
         final Instant now = Instant.now().plus(1, ChronoUnit.MINUTES);
@@ -253,7 +368,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     private boolean hasAtLeastOneVariant(final Experiment experiment) {
-        return !experiment.trafficProportion().variantsPercentagesMap().keySet().isEmpty();
+        return experiment.trafficProportion().variants().size()>1;
     }
 
     private void validatePermissions(final User user, final Experiment persistedExperiment,

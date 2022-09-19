@@ -1,11 +1,16 @@
 package com.dotcms.experiments.model;
 
+import com.dotcms.util.DotPreconditions;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import io.vavr.control.Try;
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 import org.immutables.value.Value;
 
 /**
@@ -30,10 +35,30 @@ public interface AbstractTrafficProportion extends Serializable {
         return Type.SPLIT_EVENLY;
     }
 
-    @JsonProperty("variantsPercentages")
+    @JsonProperty("variants")
     @Value.Default
-    default Map<String, Float> variantsPercentagesMap() {
-        return Collections.emptyMap();
+    default SortedSet<ExperimentVariant> variants() {
+        final TreeSet<ExperimentVariant> treeSet = new TreeSet<>();
+        treeSet.add((ExperimentVariant.builder()
+                .id(APILocator.getVariantAPI().DEFAULT_VARIANT.name())
+                .description("Original").weight(100).build()));
+        return treeSet;
+    }
+
+    @Value.Check
+    default void check() {
+        if(UtilMethods.isSet(variants())) {
+            DotPreconditions.isTrue(variants().stream()
+                    .allMatch((variant)-> Try.of(()-> APILocator.getVariantAPI()
+                            .get(variant.id()).isPresent()
+                    ).getOrElse(false)), IllegalArgumentException.class,
+                    ()->"Invalid Variants provided");
+
+            DotPreconditions.isTrue(Math.round(variants().stream()
+                    .map(((ExperimentVariant::weight)))
+                    .collect(Collectors.toList()).stream().reduce(0f, Float::sum))==100,
+                    ()->"The sum of the Weights of the Variants needs to be equal to 100");
+        }
     }
 
     enum Type {
