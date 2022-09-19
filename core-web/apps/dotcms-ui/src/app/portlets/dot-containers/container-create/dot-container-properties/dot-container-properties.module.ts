@@ -6,6 +6,8 @@ import { SharedModule } from 'primeng/api';
 import { InputTextModule } from 'primeng/inputtext';
 import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
 import { CardModule } from 'primeng/card';
+import { DotTextareaContentModule } from '@components/_common/dot-textarea-content/dot-textarea-content.module';
+import { ReactiveFormsModule } from '@angular/forms';
 @NgModule({
     declarations: [DotContainerPropertiesComponent],
     exports: [DotContainerPropertiesComponent],
@@ -15,7 +17,9 @@ import { CardModule } from 'primeng/card';
         SharedModule,
         InputTextModule,
         DotPortletBaseModule,
-        CardModule
+        CardModule,
+        DotTextareaContentModule,
+        ReactiveFormsModule
     ]
 })
 export class DotContainerPropertiesModule {}

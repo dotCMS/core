@@ -5,6 +5,7 @@
         display: flex;
         flex: 1;
         flex-direction: column;
+        overflow: auto;
 
         .container-create__tabs {
             .p-tabview-nav {

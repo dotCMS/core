@@ -35,6 +35,19 @@
                 ></button>
             </div>
         </div>
+        <div>
+            <form [formGroup]="form">
+                <dot-textarea-content
+                    formControlName="body"
+                    #value
+                    height="100%"
+                    formControlName="body"
+                    [show]="['code']"
+                    language="html"
+                    (monacoInit)="initEditor($event)"
+                ></dot-textarea-content>
+            </form>
+        </div>
         <div class="dot-container-properties__pre-post-loop">
             <div class="dot-container-properties__pre-post-loop-inplace">
                 <button
