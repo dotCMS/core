@@ -12,6 +12,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -215,7 +216,7 @@ public class URLMapAPIImplTest {
     /**
      * methodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
      * Given Scenario: Process a URL Map url when both the Content Type and Content exists
-     * ExpectedResult: Should return a {@link URLMapInfo} with the right content ans detail page
+     * ExpectedResult: Should return a {@link URLMapInfo} with the right content and detail page
      */
     @Test
     public void shouldReturnContentletWhenTheContentExists()
@@ -223,6 +224,37 @@ public class URLMapAPIImplTest {
         final String newsPatternPrefix =
                 TEST_PATTERN + System.currentTimeMillis() + "/";
         final Contentlet newsTestContent = createURLMapperContentType(newsPatternPrefix);
+        final UrlMapContext context = getUrlMapContext(systemUser, host,
+                newsPatternPrefix + newsTestContent.getStringProperty("urlTitle"));
+
+        final Optional<URLMapInfo> urlMapInfoOptional = urlMapAPI.processURLMap(context);
+
+        final URLMapInfo urlMapInfo = urlMapInfoOptional.get();
+        assertEquals(newsTestContent.getStringProperty("title"),
+                urlMapInfo.getContentlet().getName());
+        assertEquals(newsPatternPrefix + newsTestContent.getStringProperty("urlTitle"),
+                urlMapInfo.getContentlet().getStringProperty("urlMap"));
+        assertEquals("/news-events/news/news-detail", urlMapInfo.getIdentifier().getURI());
+    }
+
+    /**
+     * methodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
+     * Given Scenario: Process a URL Map url when both the Content Type and Content exists
+     * ExpectedResult: Should return a {@link URLMapInfo} with the right content and detail page
+     */
+    @Test
+    public void shouldReturnContentletWhenTheContentExists2()
+            throws DotDataException, DotSecurityException {
+
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final String newsPatternPrefix =
+                TEST_PATTERN + System.currentTimeMillis() + "/";
+        final Contentlet newsTestContent = createURLMapperContentType(newsPatternPrefix);
+
+        final Contentlet checkout = ContentletDataGen.checkout(newsTestContent);
+        checkout.setVariantId(variant.identifier());
+        ContentletDataGen.checkin(checkout);
+
         final UrlMapContext context = getUrlMapContext(systemUser, host,
                 newsPatternPrefix + newsTestContent.getStringProperty("urlTitle"));
 

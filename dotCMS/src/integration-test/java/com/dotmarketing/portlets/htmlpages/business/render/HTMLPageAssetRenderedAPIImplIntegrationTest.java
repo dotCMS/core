@@ -53,6 +53,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys;
@@ -634,6 +635,55 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
      * When: Try to render a page with a specific {@link Variant}} and a specific {@link Language}
      * and the page had a contentlet that:
+     * - had version in another language and that variant.
+     * - had version in another language and DEFAULT variant.
+     * - had version in that language and another variant.
+     * - The page just have version in that specific language.
+     * Should: render an empty page
+     *
+     * @throws WebAssetException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void emptyPageWitlMultiContentletVersion() throws WebAssetException, DotDataException, DotSecurityException {
+        final Language language_1 = new LanguageDataGen().nextPersisted();
+        final Language language_2 = new LanguageDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Variant variant_1 = new VariantDataGen().nextPersisted();
+        final Variant variant_2 = new VariantDataGen().nextPersisted();
+
+        final ContentType contentType = createContentType();
+        final Container container = createAndPublishContainer(host, contentType);
+        final HTMLPageAsset page = createHtmlPageAsset(language_2, host, container);
+        final Contentlet contentlet = createContentlet(language_1, host, contentType);
+
+        createNewVersion(contentlet, language_2, variant_2);
+        createNewVersion(contentlet, language_1, variant_1);
+
+        addToPage(container, page, contentlet);
+
+        final HttpServletRequest mockRequest = createHttpServletRequest(language_2, host,
+                variant_1, page);
+
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        final HttpSession session = createHttpSession(mockRequest);
+        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(APILocator.systemUser())
+                        .setPageUri(page.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+        Assert.assertEquals("<div></div>", html);
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: Try to render a page with a specific {@link Variant}} and a specific {@link Language}
+     * and the page had a contentlet that:
      * - had version in that language and that variant.
      * - had version in that language and DEFAULT variant.
      * - The page just have version in that specific language.
@@ -688,7 +738,37 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Test
+    public void fallbackToDefaultVariantSameLanguage() throws WebAssetException, DotDataException, DotSecurityException {
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Variant variant = new VariantDataGen().nextPersisted();
 
+        final ContentType contentType = createContentType();
+        final Container container = createAndPublishContainer(host, contentType);
+        final HTMLPageAsset page = createHtmlPageAsset(language, host, container);
+        final Contentlet contentlet = createContentlet(language, host, contentType);
+
+        createNewVersion(contentlet, APILocator.getLanguageAPI().getDefaultLanguage(), variant);
+
+        addToPage(container, page, contentlet);
+
+        final HttpServletRequest mockRequest = createHttpServletRequest(language, host,
+                variant, page);
+
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        final HttpSession session = createHttpSession(mockRequest);
+        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(APILocator.systemUser())
+                        .setPageUri(page.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+        Assert.assertEquals("<div>DEFAULT content-default-" + language.getId() + "</div>", html);
+    }
 
     /**
      * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
@@ -697,12 +777,110 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * - had version in default language and that variant.
      * - had version in default language and DEFAULT variant.
      * - The page just have version in that specific language.
+     * - and the language fallback is on
      * Should: render the page for the specific {@link Variant} version
      *
      * @throws WebAssetException
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Test
+    public void fallbackToDefaultVariantDefaultLanguage() throws WebAssetException, DotDataException, DotSecurityException {
+        final boolean defaultContentToDefaultLanguage = Config.getBooleanProperty(
+                "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", true);
+
+        try {
+            final Language language = new LanguageDataGen().nextPersisted();
+            final Host host = new SiteDataGen().nextPersisted();
+            final Variant variant = new VariantDataGen().nextPersisted();
+            final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+
+            final ContentType contentType = createContentType();
+            final Container container = createAndPublishContainer(host, contentType);
+            final HTMLPageAsset page = createHtmlPageAsset(language, host, container);
+            final Contentlet contentlet = createContentlet(defaultLanguage, host, contentType);
+
+            createNewVersion(contentlet, defaultLanguage, variant);
+
+            addToPage(container, page, contentlet);
+
+            final HttpServletRequest mockRequest = createHttpServletRequest(language, host,
+                    variant, page);
+
+            final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+            final HttpSession session = createHttpSession(mockRequest);
+            when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
+            String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                    PageContextBuilder.builder()
+                            .setUser(APILocator.systemUser())
+                            .setPageUri(page.getURI())
+                            .setPageMode(PageMode.LIVE)
+                            .build(),
+                    mockRequest, mockResponse);
+            Assert.assertEquals(
+                    "<div>" + variant.name() + " content-default-" + defaultLanguage.getId()
+                            + "</div>", html);
+        }finally {
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", defaultContentToDefaultLanguage);
+        }
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: Try to render a page with a specific {@link Variant}} and a specific {@link Language}
+     * and the page had a contentlet that had:
+     * - had version in default language and that variant.
+     * - had version in default language and DEFAULT variant.
+     * - The page just have version in that specific language.
+     * - and the language fallback is off
+     * Should: render the page for the specific {@link Variant} version
+     *
+     * @throws WebAssetException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void fallbackOff() throws WebAssetException, DotDataException, DotSecurityException {
+        final boolean defaultContentToDefaultLanguage = Config.getBooleanProperty(
+                "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+
+        try {
+            final Language language = new LanguageDataGen().nextPersisted();
+            final Host host = new SiteDataGen().nextPersisted();
+            final Variant variant = new VariantDataGen().nextPersisted();
+            final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+
+            final ContentType contentType = createContentType();
+            final Container container = createAndPublishContainer(host, contentType);
+            final HTMLPageAsset page = createHtmlPageAsset(language, host, container);
+            final Contentlet contentlet = createContentlet(defaultLanguage, host, contentType);
+
+            createNewVersion(contentlet, defaultLanguage, variant);
+
+            addToPage(container, page, contentlet);
+
+            final HttpServletRequest mockRequest = createHttpServletRequest(language, host,
+                    variant, page);
+
+            final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+            final HttpSession session = createHttpSession(mockRequest);
+            when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
+            String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                    PageContextBuilder.builder()
+                            .setUser(APILocator.systemUser())
+                            .setPageUri(page.getURI())
+                            .setPageMode(PageMode.LIVE)
+                            .build(),
+                    mockRequest, mockResponse);
+            Assert.assertEquals("<div></div>", html);
+        }finally {
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", defaultContentToDefaultLanguage);
+        }
+    }
 
     /**
      * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
@@ -717,25 +895,189 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Test
+    public void fallbackToDefaultVariantDefaultLanguageWitoutSpecificVariantVersion() throws WebAssetException, DotDataException, DotSecurityException {
+        final boolean defaultContentToDefaultLanguage = Config.getBooleanProperty(
+                "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", true);
+
+        try {
+            final Language language = new LanguageDataGen().nextPersisted();
+            final Host host = new SiteDataGen().nextPersisted();
+            final Variant variant = new VariantDataGen().nextPersisted();
+            final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+
+            final ContentType contentType = createContentType();
+            final Container container = createAndPublishContainer(host, contentType);
+            final HTMLPageAsset page = createHtmlPageAsset(language, host, container);
+            final Contentlet contentlet = createContentlet(defaultLanguage, host, contentType);
+
+            addToPage(container, page, contentlet);
+
+            final HttpServletRequest mockRequest = createHttpServletRequest(language, host,
+                    variant, page);
+
+            final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+            final HttpSession session = createHttpSession(mockRequest);
+            when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
+            String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                    PageContextBuilder.builder()
+                            .setUser(APILocator.systemUser())
+                            .setPageUri(page.getURI())
+                            .setPageMode(PageMode.LIVE)
+                            .build(),
+                    mockRequest, mockResponse);
+            Assert.assertEquals(
+                    "<div>DEFAULT content-default-" + defaultLanguage.getId()
+                            + "</div>", html);
+        }finally {
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", defaultContentToDefaultLanguage);
+        }
+    }
 
     /**
      * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
-     * When: Try to render a page with a specific {@link Variant}} and a specific {@link Language}
-     * and the page had a contentlet that had:
-     * - had version in default language and DEFAULT variant.
-     * - The page just have version in that specific language.
-     * - and the language fallback is off
-     * Should: render an empty page
+     * When: Try to render a page with {@link VariantAPI#DEFAULT_VARIANT} and a specific {@link Language}
+     * and the page had a contentlet that:
+     * - had version in that language and that variant.
+     * - The page has version in that specific language and variant.
+     * Should: render the page for the  {@link VariantAPI#DEFAULT_VARIANT} and  {@link Language} {@link Contentlet} version
      *
      * @throws WebAssetException
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Test
+    public void renderPageWithDifferentVariantsVersion() throws WebAssetException, DotDataException, DotSecurityException {
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
 
-    //Test with the page with different variant versions
-    //Variant que no existe
+        final ContentType contentType = createContentType();
+        final Container container = createAndPublishContainer(host, contentType);
+        final HTMLPageAsset page = createHtmlPageAsset(language, host, container, variant);
+        final Contentlet contentlet = createContentlet(language, host, contentType);
+        createNewVersion(contentlet, language, variant);
+
+        addToPage(container, page, contentlet);
+
+        final HttpServletRequest mockRequest = createHttpServletRequest(language, host,
+                variant, page);
+
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        final HttpSession session = createHttpSession(mockRequest);
+        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(APILocator.systemUser())
+                        .setPageUri(page.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+        Assert.assertEquals(
+                "<div>" + variant.name() + " content-default-" + language.getId()
+                        + "</div>", html);
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: Try to render a page with a specific {@link Variant}} and a specific {@link Language}
+     * and the page had a widget that:
+     * - had version in that language and that variant.
+     * - had version in that language and DEFAULT variant.
+     * - The page just have version in that specific language.
+     * Should: render the page for the specific {@link Variant}} and  {@link Language} {@link Contentlet} version
+     *
+     * @throws WebAssetException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void renderWidgetWithSpecificVariantAndLanguage() throws WebAssetException, DotDataException, DotSecurityException {
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        ContentType contentType = ContentTypeDataGen.createWidgetContentType("$widgetTitle")
+                .host(host)
+                .nextPersisted();
+
+        final Container container = createAndPublishContainer(host, contentType);
+        final HTMLPageAsset page = createHtmlPageAsset(language, host, container);
+        final Contentlet contentlet = createContentlet(language, host, contentType, "widgetTitle");
+
+        createNewVersion(contentlet, language, variant, "widgetTitle");
+
+        addToPage(container, page, contentlet);
+
+        final HttpServletRequest mockRequest = createHttpServletRequest(language, host,
+                variant, page);
+
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        final HttpSession session = createHttpSession(mockRequest);
+        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(APILocator.systemUser())
+                        .setPageUri(page.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+        Assert.assertEquals("<div>" + variant.name() + " content-default-" + language.getId() + "</div>", html);
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: Try to render a page with a specific {@link Variant}} and a specific {@link Language}
+     * and the page had a widget that:
+     * - had version in that language and DEFAULT variant.
+     * - The page just have version in that specific language.
+     * Should: render the page for the specific {@link Variant}} and  {@link Language} {@link Contentlet} version
+     *
+     * @throws WebAssetException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void renderWidgetWithDefaultVariantAndLanguage() throws WebAssetException, DotDataException, DotSecurityException {
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        ContentType contentType = ContentTypeDataGen.createWidgetContentType("$widgetTitle")
+                .host(host)
+                .nextPersisted();
+
+        final Container container = createAndPublishContainer(host, contentType);
+        final HTMLPageAsset page = createHtmlPageAsset(language, host, container);
+        final Contentlet contentlet = createContentlet(language, host, contentType, "widgetTitle");
+
+        addToPage(container, page, contentlet);
+
+        final HttpServletRequest mockRequest = createHttpServletRequest(language, host,
+                variant, page);
+
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        final HttpSession session = createHttpSession(mockRequest);
+        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(APILocator.systemUser())
+                        .setPageUri(page.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+        Assert.assertEquals("<div>DEFAULT content-default-" + language.getId() + "</div>", html);
+    }
+
     //WIDGET y FORM con variant
-    //probar tema de la cache del resource
+    //Variant que no existe
+
+    // URL Map
 
     private HttpServletRequest createHttpServletRequest(Language language, Host host, Variant variant,
             HTMLPageAsset page) throws DotDataException {
@@ -755,10 +1097,16 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     private HTMLPageAsset createHtmlPageAsset(final Language language, final Host host, final Container container)
             throws WebAssetException, DotSecurityException, DotDataException {
 
+        return createHtmlPageAsset(language, host, container, VariantAPI.DEFAULT_VARIANT);
+    }
+
+    private HTMLPageAsset createHtmlPageAsset(final Language language, final Host host, final Container container, final Variant variant)
+            throws WebAssetException, DotSecurityException, DotDataException {
+
         final Folder folder = new FolderDataGen().site(host).nextPersisted();
         final Template template = createTemplate(host, container);
 
-        return createHtmlPageAsset(language, folder, template);
+        return createHtmlPageAsset(language, folder, template, variant);
     }
 
     private void addToPage(Container container, HTMLPageAsset page, Contentlet contentlet)
@@ -771,11 +1119,16 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
     private Contentlet createContentlet(final Language language, final Host host, final ContentType contentType)
             throws DotDataException, DotSecurityException {
+        return createContentlet(language, host, contentType, "title");
+    }
+
+    private Contentlet createContentlet(final Language language, final Host host, final ContentType contentType, final String fieldName)
+            throws DotDataException, DotSecurityException {
 
         final Contentlet contentlet = new ContentletDataGen(contentType)
                 .languageId(language.getId())
                 .host(host)
-                .setProperty("title", "DEFAULT content-default-" + language.getId())
+                .setProperty(fieldName, "DEFAULT content-default-" + language.getId())
                 .nextPersisted();
 
         APILocator.getContentletAPI().publish(contentlet, APILocator.systemUser(), false);
@@ -783,11 +1136,17 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     }
 
     private Contentlet createNewVersion(final Contentlet contentlet, final Language language,
-        final Variant variant) {
+            final Variant variant) {
+        return createNewVersion(contentlet, language, variant, "title");
+    }
+
+    private Contentlet createNewVersion(final Contentlet contentlet, final Language language,
+        final Variant variant, final String fieldName) {
 
         final Contentlet checkout = ContentletDataGen.checkout(contentlet);
         checkout.setVariantId(variant.identifier());
-        checkout.setProperty("title", variant.name() + " content-default-" + language.getId());
+        checkout.setProperty(fieldName, variant.name() + " content-default-" + language.getId());
+        checkout.setLanguageId(language.getId());
 
         final Contentlet checkin = ContentletDataGen.checkin(checkout);
         ContentletDataGen.publish(checkin);
@@ -801,7 +1160,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         return checkin;
     }
 
-    private HTMLPageAsset createHtmlPageAsset(Language language, Folder folder, Template template)
+    private HTMLPageAsset createHtmlPageAsset(Language language, Folder folder, Template template, Variant variant)
             throws DotSecurityException, DotDataException {
         final String pageName = "variant-render-test-" + System.currentTimeMillis();
         final HTMLPageAsset page = new HTMLPageDataGen(folder, template)
@@ -809,7 +1168,10 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 .pageURL(pageName)
                 .title(pageName)
                 .cacheTTL(0)
-                .nextPersisted();
+                .next();
+
+        page.setVariantId(variant.identifier());
+        APILocator.getContentletAPI().checkin(page, APILocator.systemUser(), false);
         APILocator.getContentletAPI().publish(page, APILocator.systemUser(), false);
         return page;
     }
@@ -835,7 +1197,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
         final ContainerStructure containerStructure = new ContainerStructure();
         containerStructure.setStructureId(contentType.id());
-        containerStructure.setCode("Title: $!{title}");
+        containerStructure.setCode("$!{title}");
 
         container = APILocator.getContainerAPI().save(container,
                 list(containerStructure), host, APILocator.systemUser(), false);
@@ -847,10 +1209,9 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     private ContentType createContentType() {
         final Field title = new FieldDataGen().velocityVarName("title").next();
 
-        final ContentType contentType = new ContentTypeDataGen()
+        return new ContentTypeDataGen()
                 .field(title)
                 .nextPersisted();
-        return contentType;
     }
 
     private HttpSession createHttpSession(final HttpServletRequest mockRequest) {

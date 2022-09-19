@@ -8,8 +8,10 @@ import com.dotcms.variant.model.Variant;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
@@ -50,49 +52,67 @@ public class VariantWebAPIImpl implements VariantWebAPI{
     public RenderContext getRenderContext(final long tryingLang, final String identifier,
             final PageMode pageMode, final User user) {
 
-        //final long languageId = getLanguageId(tryingLang, identifier, pageMode, user);
-        return new RenderContext(currentVariantId(), tryingLang);
-    }
-
-    private long getLanguageId(final long tryingLang, final String identifier, final PageMode pageMode, final User user){
-        long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-
-        if(tryingLang == defaultLang) {
-            return tryingLang;
-        }
-
-        final Optional<ContentletVersionInfo> contentletVersionInfo = APILocator.getVersionableAPI()
-                .getContentletVersionInfo(identifier, tryingLang);
+        final String currentVarintId = currentVariantId();
+        Optional<ContentletVersionInfo> contentletVersionInfo = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(identifier, tryingLang, currentVarintId);
 
         if (contentletVersionInfo.isPresent()) {
-            return tryingLang;
+            return new RenderContext(currentVarintId, tryingLang);
         }
+
+        contentletVersionInfo = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(identifier, tryingLang, VariantAPI.DEFAULT_VARIANT.identifier());
+
+
+        if (contentletVersionInfo.isPresent()) {
+            return new RenderContext(VariantAPI.DEFAULT_VARIANT.identifier(), tryingLang);
+        }
+
         try {
-            ContentletVersionInfo defaultLangVersionInfo = APILocator.getVersionableAPI()
-                    .getContentletVersionInfo(identifier, defaultLang)
-                    .orElseThrow(() -> new ResourceNotFoundException("cannnot find contentlet id " + identifier + " lang:" + defaultLang));
+            final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+            contentletVersionInfo = APILocator.getVersionableAPI()
+                    .getContentletVersionInfo(identifier, defaultLanguage.getId(), currentVarintId);
 
-            final String inode = pageMode.showLive ? defaultLangVersionInfo.getLiveInode() :
-                    defaultLangVersionInfo.getWorkingInode();
+            if (contentletVersionInfo.isPresent() && shouldFallbackByLang(
+                    contentletVersionInfo.get(), pageMode, user)) {
+                return new RenderContext(currentVarintId, defaultLanguage.getId());
+            }
 
-            final Contentlet contentlet = APILocator.getContentletAPI().find(inode, user, pageMode.respectAnonPerms);
-            final ContentType type = contentlet.getContentType();
+            contentletVersionInfo = APILocator.getVersionableAPI()
+                    .getContentletVersionInfo(identifier, defaultLanguage.getId(),
+                            VariantAPI.DEFAULT_VARIANT.identifier());
 
-            if (type.baseType() == BaseContentType.FORM || type.baseType() == BaseContentType.PERSONA
-                    || "Host".equalsIgnoreCase(type.variable())) {
-                return defaultLang;
-            } else if (type.baseType() == BaseContentType.CONTENT
-                    && APILocator.getLanguageAPI().canDefaultContentToDefaultLanguage()) {
-                return defaultLang;
-            } else if (type.baseType() == BaseContentType.WIDGET
-                    && APILocator.getLanguageAPI().canDefaultWidgetToDefaultLanguage()) {
-                return defaultLang;
+            if (contentletVersionInfo.isPresent() && shouldFallbackByLang(
+                    contentletVersionInfo.get(), pageMode, user)) {
+                return new RenderContext(VariantAPI.DEFAULT_VARIANT.identifier(),
+                        defaultLanguage.getId());
             }
 
             throw new ResourceNotFoundException("cannnot find contentlet id " + identifier + " lang:" + tryingLang);
-        } catch (Exception e) {
-
+        } catch (DotDataException | DotSecurityException e) {
             throw new ResourceNotFoundException("cannnot find contentlet id " + identifier + " lang:" + tryingLang, e);
         }
+    }
+
+    private boolean shouldFallbackByLang(final ContentletVersionInfo contentletVersionInfo, PageMode pageMode, User user)
+            throws DotDataException, DotSecurityException {
+        final String inode = pageMode.showLive ? contentletVersionInfo.getLiveInode() :
+                contentletVersionInfo.getWorkingInode();
+
+        final Contentlet contentlet = APILocator.getContentletAPI().find(inode, user, pageMode.respectAnonPerms);
+        final ContentType type = contentlet.getContentType();
+
+        if (type.baseType() == BaseContentType.FORM || type.baseType() == BaseContentType.PERSONA
+                || "Host".equalsIgnoreCase(type.variable())) {
+            return true;
+        } else if (type.baseType() == BaseContentType.CONTENT
+                && APILocator.getLanguageAPI().canDefaultContentToDefaultLanguage()) {
+            return true;
+        } else if (type.baseType() == BaseContentType.WIDGET
+                && APILocator.getLanguageAPI().canDefaultWidgetToDefaultLanguage()) {
+            return true;
+        }
+
+        return false;
     }
 }

@@ -201,9 +201,9 @@ public class PageLoader implements DotLoader {
     public InputStream writeObject(final VelocityResourceKey key) throws DotDataException, DotSecurityException {
 
         HTMLPageAsset page = APILocator.getHTMLPageAssetAPI()
-            .fromContentlet(APILocator.getContentletAPI()
-                .findContentletByIdentifier(key.id1, key.mode.showLive, Long.parseLong(key.language), sysUser(), true));
-
+                .fromContentlet(APILocator.getContentletAPI()
+                .findContentletByIdentifier(key.id1, key.mode.showLive, Long.parseLong(key.language),
+                        key.variant, sysUser(), true));
 
         return buildStream(page, key.mode, key.path);
 

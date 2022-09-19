@@ -351,6 +351,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 			contentVersionInfo.setIdentifier(identifier);
 			contentVersionInfo.setLang(lang);
 			contentVersionInfo.setWorkingInode(fourOhFour);
+			contentVersionInfo.setVariant(variantId);
 			this.icache.addContentletVersionInfoToCache(contentVersionInfo);
 			return Optional.empty();
 		}

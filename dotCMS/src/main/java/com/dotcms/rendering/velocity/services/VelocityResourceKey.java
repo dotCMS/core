@@ -19,8 +19,6 @@ import java.io.Serializable;
 import java.io.StringWriter;
 import java.util.Optional;
 
-
-
 public class VelocityResourceKey implements Serializable {
 
     private static final char RESOURCE_TEMPLATE = ResourceManager.RESOURCE_TEMPLATE + '0';
@@ -52,8 +50,18 @@ public class VelocityResourceKey implements Serializable {
 
 
     public VelocityResourceKey(final HTMLPageAsset asset, final PageMode mode, final long language) {
-        this("/" + mode.name() + "/" + asset.getIdentifier() + "_" + language + "." + VelocityType.HTMLPAGE.fileExtension);
+        this(getHTMLPageFilePath(asset, mode, language));
     }
+
+    public static String getHTMLPageFilePath(HTMLPageAsset asset, PageMode mode, long language) {
+        return getHTMLPageFilePath(asset.getIdentifier(), mode, language, asset.getVariantId());
+    }
+
+    public static String getHTMLPageFilePath(String id, PageMode mode, long language, String variantId) {
+        return "/" + mode.name() + "/" + id + StringPool.UNDERLINE + language +
+                StringPool.UNDERLINE +  variantId + "." + VelocityType.HTMLPAGE.fileExtension;
+    }
+
     public VelocityResourceKey(final Contentlet asset, final PageMode mode, final long language) {
         this("/" + mode.name() + "/" + asset.getIdentifier() + StringPool.UNDERLINE + language +
                 StringPool.UNDERLINE +  asset.getVariantId() + "." + VelocityType.CONTENT.fileExtension);
