@@ -45,7 +45,7 @@ public class VariantFactoryImpl implements VariantFactory{
 
         CacheLocator.getVariantCache().remove(variant);
 
-        return get(variant.name()).orElseThrow(
+        return getFromDataBaseByName(variant.name()).orElseThrow(
                 () -> new DotRuntimeException("Error Saving variant " + variant));
     }
 
