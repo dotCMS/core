@@ -1,5 +1,5 @@
 import { Component, Injector, Input, OnInit, ViewContainerRef } from '@angular/core';
-import { AnyExtension, Editor } from '@tiptap/core';
+import { AnyExtension, Content, Editor } from '@tiptap/core';
 import { HeadingOptions, Level } from '@tiptap/extension-heading';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -11,9 +11,11 @@ import {
     DEFAULT_LANG_ID,
     DotBubbleMenuExtension,
     DragHandler,
-    ImageBlock,
     ImageUpload,
-    DotConfigExtension
+    DotConfigExtension,
+    BubbleFormExtension,
+    ImageNode,
+    formatHTML
 } from '@dotcms/block-editor';
 
 // Marks Extensions
@@ -46,6 +48,12 @@ export class DotBlockEditorComponent implements OnInit {
         ];
     }
 
+    @Input() set setValue(content: Content) {
+        this.editor.commands.setContent(
+            typeof content === 'string' ? formatHTML(content) : content
+        );
+    }
+
     _allowedBlocks = ['paragraph']; //paragraph should be always.
     editor: Editor;
 
@@ -69,6 +77,7 @@ export class DotBlockEditorComponent implements OnInit {
             ImageUpload(this.injector, this.viewContainerRef),
             BubbleLinkFormExtension(this.viewContainerRef),
             DotBubbleMenuExtension(this.viewContainerRef),
+            BubbleFormExtension(this.viewContainerRef),
             // Marks Extensions
             Underline,
             TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'dotImage'] }),
@@ -86,7 +95,7 @@ export class DotBlockEditorComponent implements OnInit {
         ];
         const customExtensions: Map<string, AnyExtension> = new Map([
             ['contentlets', ContentletBlock(this.injector)],
-            ['dotImage', ImageBlock(this.injector)]
+            ['image', ImageNode]
         ]);
 
         return [

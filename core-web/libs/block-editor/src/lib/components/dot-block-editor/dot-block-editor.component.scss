@@ -47,6 +47,10 @@
             padding: $dot-editor-size (4 * $dot-editor-size);
             font: $dot-editor-size;
 
+            img {
+                max-width: 100%;
+            }
+
             ul,
             ol {
                 margin: 0;
