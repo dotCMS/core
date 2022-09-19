@@ -31,16 +31,22 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
     ) {
         super(null);
 
-        this.init();
-
         this.route.data
             .pipe(pluck('dotContainerListResolverData'), take(1))
             .subscribe(([isEnterprise, hasEnvironments]: [boolean, boolean]) => {
-                this.updateResolvedProperties([
-                    isEnterprise,
-                    hasEnvironments,
-                    this.getContainerBulkActions(hasEnvironments, isEnterprise)
-                ]);
+                this.setState({
+                    containerBulkActions: this.getContainerBulkActions(
+                        hasEnvironments,
+                        isEnterprise
+                    ),
+                    tableColumns: this.getContainerColumns(),
+                    stateLabels: this.getStateLabels(),
+                    isEnterprise: isEnterprise,
+                    hasEnvironments: hasEnvironments,
+                    addToBundleIdentifier: '',
+                    selectedContainers: [],
+                    actionHeaderOptions: this.getActionHeaderOptions()
+                });
             });
     }
 
@@ -62,17 +68,6 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
         }
     );
 
-    readonly updateResolvedProperties = this.updater<[boolean, boolean, MenuItem[]]>(
-        (state: DotContainerListState, [isEnterprise, hasEnvironments, containerBulkActions]) => {
-            return {
-                ...state,
-                isEnterprise,
-                hasEnvironments,
-                containerBulkActions
-            };
-        }
-    );
-
     readonly updateBundleIdentifier = this.updater<string>(
         (state: DotContainerListState, addToBundleIdentifier: string) => {
             return {
@@ -90,19 +85,6 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
             };
         }
     );
-
-    private init() {
-        this.setState({
-            containerBulkActions: this.getContainerBulkActions(),
-            tableColumns: this.getContainerColumns(),
-            stateLabels: this.getStateLabels(),
-            isEnterprise: false,
-            hasEnvironments: false,
-            addToBundleIdentifier: '',
-            selectedContainers: [],
-            actionHeaderOptions: this.getActionHeaderOptions()
-        });
-    }
 
     private getContainerBulkActions(hasEnvironments = false, isEnterprise = false) {
         return [
