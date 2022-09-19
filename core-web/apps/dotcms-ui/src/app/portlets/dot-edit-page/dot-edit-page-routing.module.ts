@@ -4,14 +4,21 @@ import { RouterModule, Routes } from '@angular/router';
 import { DotEditPageMainComponent } from './main/dot-edit-page-main/dot-edit-page-main.component';
 import { DotEditPageResolver } from './shared/services/dot-edit-page-resolver/dot-edit-page-resolver.service';
 import { LayoutEditorCanDeactivateGuardService } from '@services/guards/layout-editor-can-deactivate-guard.service';
+import { DotFeatureFlagResolver } from '@portlets/shared/resolvers/dot-feature-flag-resolver.service';
+import { FeaturedFlags } from '@portlets/shared/models/shared-models';
 
 const dotEditPage: Routes = [
     {
         component: DotEditPageMainComponent,
         path: '',
         resolve: {
-            content: DotEditPageResolver
+            content: DotEditPageResolver,
+            featuredFlag: DotFeatureFlagResolver
         },
+        data: {
+            featuredFlagToCheck: FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS
+        },
+
         runGuardsAndResolvers: 'always',
         children: [
             {
@@ -20,33 +27,43 @@ const dotEditPage: Routes = [
                 pathMatch: 'full'
             },
             {
+                path: 'content',
                 loadChildren: () =>
                     import('@portlets/dot-edit-page/content/dot-edit-content.module').then(
                         (m) => m.DotEditContentModule
-                    ),
-                path: 'content'
+                    )
             },
             {
+                path: 'layout',
                 loadChildren: () =>
                     import('@portlets/dot-edit-page/layout/dot-edit-layout.module').then(
                         (m) => m.DotEditLayoutModule
                     ),
-                canDeactivate: [LayoutEditorCanDeactivateGuardService],
-                path: 'layout'
+                canDeactivate: [LayoutEditorCanDeactivateGuardService]
             },
             {
+                path: 'rules/:pageId',
                 loadChildren: () =>
-                    import('@portlets/dot-rules/dot-rules.module').then((m) => m.DotRulesModule),
-                path: 'rules/:pageId'
+                    import('@portlets/dot-rules/dot-rules.module').then((m) => m.DotRulesModule)
+            },
+
+            {
+                path: 'experiments/:pageId',
+                loadChildren: async () =>
+                    (
+                        await import(
+                            '../dot-experiments/dot-experiments-shell/dot-experiments-shell.module'
+                        )
+                    ).DotExperimentsShellModule
             }
         ]
     },
     {
+        path: 'layout/template/:id/:tabName',
         loadChildren: () =>
             import(
                 '@portlets/dot-edit-page/layout/components/dot-template-additional-actions/dot-template-additional-actions.module'
-            ).then((m) => m.DotTemplateAdditionalActionsModule),
-        path: 'layout/template/:id/:tabName'
+            ).then((m) => m.DotTemplateAdditionalActionsModule)
     }
 ];
 

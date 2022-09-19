@@ -37,10 +37,10 @@ public class Task220829CreateExperimentsTable extends AbstractJDBCStartupTask {
                 + "     traffic_allocation float4 not null,\n"
                 + "     mod_date timestamptz not null,\n"
                 + "     scheduling jsonb,\n"
-                + "     archived bool not null,\n"
                 + "     creation_date timestamptz not null,\n"
                 + "     created_by varchar(255) not null,\n"
-                + "     last_modified_by varchar(255) not null "
+                + "     last_modified_by varchar(255) not null,\n "
+                + "     goals jsonb"
                 + ")";
     }
 
@@ -56,10 +56,10 @@ public class Task220829CreateExperimentsTable extends AbstractJDBCStartupTask {
                 + "    traffic_allocation float not null,\n"
                 + "    mod_date datetimeoffset(3) not null,\n"
                 + "    scheduling NVARCHAR(MAX),\n"
-                + "    archived tinyint not null,\n"
                 + "    creation_date datetimeoffset(3) not null,\n"
                 + "    created_by NVARCHAR(255) not null,\n"
-                + "    last_modified_by NVARCHAR(255) not null\n"
+                + "    last_modified_by NVARCHAR(255) not null\n, "
+                + "    goals NVARCHAR(MAX)"
                 + "\n"
                 + ");";
     }

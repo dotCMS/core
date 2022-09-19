@@ -881,7 +881,7 @@ public class SiteResource implements Serializable {
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ResponseHostVariableEntityView.class))),
                     @ApiResponse(responseCode = "400", description = "When a required value is not sent")})
-    public Response saveHostVariable(@Context final HttpServletRequest httpServletRequest,
+    public Response saveSiteVariable(@Context final HttpServletRequest httpServletRequest,
                                @Context final HttpServletResponse httpServletResponse,
                               final SiteVariableForm siteVariableForm)
             throws DotDataException, DotSecurityException, LanguageException {
@@ -1002,7 +1002,7 @@ public class SiteResource implements Serializable {
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ResponseSiteVariablesEntityView.class))),
                     @ApiResponse(responseCode = "404", description = "When the site id does not exists")})
-    public Response getHostVariables(@Context final HttpServletRequest httpServletRequest,
+    public Response getSiteVariables(@Context final HttpServletRequest httpServletRequest,
                                      @Context final HttpServletResponse httpServletResponse,
                                      @PathParam("siteId")  final String siteId)
             throws DotDataException, DotSecurityException, LanguageException {

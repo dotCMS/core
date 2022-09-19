@@ -13,7 +13,6 @@ import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.RelationshipField;
-import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -36,18 +35,18 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import javax.validation.constraints.AssertTrue;
-import org.immutables.value.Value.Immutable;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -382,41 +381,53 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
                 .setProperty("url", "new-youtube-content").nextPersisted();
     }
 
-    private Category parentCategory;
     private ContentType contentTypeWithCategoryField;
-
-    Category createCategories(){
-
-        if(null != parentCategory){
-           return parentCategory;
-        }
-        final String parentCategoryName = "ParentCategory-" + System.currentTimeMillis();
-        parentCategory = new CategoryDataGen()
-                .setCategoryName(parentCategoryName)
-                .setKey(parentCategoryName + "Key")
-                .setCategoryVelocityVarName(parentCategoryName)
-                .setSortOrder(1)
-                .nextPersisted();
-
-        final String childCategoryName1 = "Child-Category-1" + System.currentTimeMillis();
-
-        new CategoryDataGen()
-                .setCategoryName(childCategoryName1)
-                .setKey(childCategoryName1 + "Key")
-                .setCategoryVelocityVarName(childCategoryName1)
-                .setSortOrder(1)
-                .parent(parentCategory).nextPersisted();
-
-       return parentCategory;
-    }
 
     ContentType contentTypeWithCategoryField(){
         if(null != contentTypeWithCategoryField){
             return contentTypeWithCategoryField;
         }
-        final Category categories = createCategories();
+        final Category categories = createParentCategories().get(0);
         contentTypeWithCategoryField= TestDataUtils.newContentTypeFieldTypesGalore(categories);
         return contentTypeWithCategoryField;
+    }
+
+    private List<Category> parentCategories;
+
+    List<Category> createParentCategories(){
+
+        if(null != parentCategories){
+            return parentCategories;
+        }
+
+        final int num = 5;
+
+        parentCategories = new ArrayList<>(num);
+
+        for(int i=0; i<=num; i++) {
+
+            final String parentCategoryName = String.format("Parent-Category-[%d]-[%d]", i, System.currentTimeMillis());
+            Category parentCategory = new CategoryDataGen()
+                    .setCategoryName(parentCategoryName)
+                    .setKey(parentCategoryName + "Key")
+                    .setCategoryVelocityVarName(parentCategoryName)
+                    .setSortOrder(1)
+                    .nextPersisted();
+
+            final String childCategoryName = String.format("Child-Category-[%d]-[%d]", i, System.currentTimeMillis());
+
+            new CategoryDataGen()
+                    .setCategoryName(childCategoryName)
+                    .setKey(childCategoryName + "Key")
+                    .setCategoryVelocityVarName(childCategoryName)
+                    .setSortOrder(1)
+                    .parent(parentCategory).nextPersisted();
+
+            parentCategories.add(parentCategory);
+
+        }
+
+        return parentCategories;
     }
 
     /**
@@ -428,10 +439,10 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
     @Test
     public void Test_Pass_Categoryless_Contentlet() throws DotDataException, DotSecurityException {
         final ContentType contentType = contentTypeWithCategoryField();
-        final Contentlet categoryless =  new Contentlet();
+        final Contentlet categoryless = new Contentlet();
         categoryless.setContentTypeId(contentType.id());
         final MapToContentletPopulator populator = new MapToContentletPopulator();
-        final List<Category> categories = populator.getCategories(categoryless, APILocator.systemUser(), false);
+        final Optional<List<Category>> categories = populator.fetchCategories(categoryless, APILocator.systemUser(), false);
         assertTrue(categories.isEmpty());
     }
 
@@ -443,7 +454,7 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
      */
     @Test
     public void Test_Pass_Null_As_Category() throws DotDataException, DotSecurityException {
-        final Category category = createCategories();
+        final Category category = createParentCategories().get(0);
         final ContentType contentType = contentTypeWithCategoryField();
         //Make sure we have a field of type Category
         final Optional<Field> first = contentType.fields(CategoryField.class).stream().findFirst();
@@ -455,7 +466,7 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
         final Contentlet withCategoryField = new Contentlet();
         withCategoryField.setContentTypeId(contentType.id());
         withCategoryField.setProperty(varName, null);
-        final List<Category> recovered = populator.getCategories(withCategoryField, APILocator.systemUser(), false);
+        final Optional<List<Category>> recovered = populator.fetchCategories(withCategoryField, APILocator.systemUser(), false);
         assertTrue("Sending null should be ignored.", recovered.isEmpty());
     }
 
@@ -477,19 +488,19 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
         withCategoryField.setContentTypeId(contentType.id());
         withCategoryField.setProperty(first.get().variable(),"any-invalid-category-id");
         final MapToContentletPopulator populator = new MapToContentletPopulator();
-        populator.getCategories(withCategoryField,
+        populator.fetchCategories(withCategoryField,
                 APILocator.systemUser(), false);
     }
 
     /**
-     * Scenario: This time we pass a a set of valid category values
+     * Scenario: This time we pass a set of valid category values
      * Expectation: everytime we must recover a category
      * @throws DotDataException
      * @throws DotSecurityException
      */
     @Test
     public void Test_Pass_Valid_Category() throws DotDataException, DotSecurityException {
-        final Category category = createCategories();
+        final Category category = createParentCategories().get(0);
         final ContentType contentType = contentTypeWithCategoryField();
         //Make sure we have a field of type Category
         final Optional<Field> first = contentType.fields(CategoryField.class).stream().findFirst();
@@ -506,8 +517,9 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
             final Contentlet withCategoryField = new Contentlet();
             withCategoryField.setContentTypeId(contentType.id());
             withCategoryField.setProperty(varName, object);
-            final List<Category> recovered = populator.getCategories(withCategoryField, APILocator.systemUser(), false);
+            final Optional<List<Category>> recovered = populator.fetchCategories(withCategoryField, APILocator.systemUser(), false);
             assertFalse(" I couldn't find categories using object "+object, recovered.isEmpty());
+            assertEquals(recovered.get().get(0).getCategoryName(),category.getCategoryName());
         }
     }
 
@@ -518,7 +530,7 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
      */
     @Test
     public void Test_Pass_List_Of_Categories() throws DotDataException, DotSecurityException {
-        final Category category = createCategories();
+        final Category category = createParentCategories().get(0);
         final ContentType contentType = contentTypeWithCategoryField();
         //Make sure we have a field of type Category
         final Optional<Field> first = contentType.fields(CategoryField.class).stream().findFirst();
@@ -534,10 +546,10 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
         final Contentlet withCategoryField = new Contentlet();
         withCategoryField.setContentTypeId(contentType.id());
         withCategoryField.setProperty(varName, list);
-        final List<Category> recovered = populator.getCategories(withCategoryField,
+        final Optional<List<Category>> recovered = populator.fetchCategories(withCategoryField,
                 APILocator.systemUser(), false);
         assertFalse(" I couldn't find categories using object " + list, recovered.isEmpty());
-
+        assertEquals(recovered.get().get(0).getCategoryName(),category.getCategoryName());
     }
 
     /**
@@ -560,11 +572,159 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
         final Contentlet withCategoryField = new Contentlet();
         withCategoryField.setContentTypeId(contentType.id());
         withCategoryField.setProperty(varName, list);
-        final List<Category> recovered = populator.getCategories(withCategoryField,
+        final Optional<List<Category>> recovered = populator.fetchCategories(withCategoryField,
                 APILocator.systemUser(), false);
-        assertTrue(" Recovered categories should be empty " + list, recovered.isEmpty());
+        assertFalse(" Recovered Optional categories should be empty " + list, recovered.isEmpty());
 
     }
 
+    /**
+     * Scenario: We have a content with more than one category then we test that the values are preserved on other fields when we pass an empty list to wipe out the values from a specific field
+     * Expectation: Only the field with the categories we wanted to eliminate must be gone. Any other field should preserve their categories
+     */
+    @Test
+    public void Test_Pass_Empty_List_Multiple_Category_Fields_Pass_Empty_List()
+            throws DotDataException, DotSecurityException {
+
+        //Will only use two categories
+        final List<Category> categories = createParentCategories().subList(0, 2);
+
+        final ContentType contentType = TestDataUtils.newContentTypeWithMultipleCategoryFields(
+                "WithMultipleCategoryFields" + System.currentTimeMillis(), null, categories);
+
+        //Make sure we have a field of type Category
+        final List<Field> fields = contentType.fields(CategoryField.class);
+        final long count = fields.size();
+        assertEquals(count, categories.size());
+
+        final ContentletDataGen dataGen = new ContentletDataGen(contentType)
+                .languageId(1)
+                .setProperty("title", "lol");
+
+        for (final Category category : categories) {
+            dataGen.addCategory(category);
+        }
+
+        final MapToContentletPopulator populator = new MapToContentletPopulator();
+
+        final Contentlet persisted = dataGen.nextPersisted();
+
+        final Contentlet contentlet = new Contentlet(persisted);
+        contentlet.setProperty(fields.get(0).variable(), ImmutableList.of());
+
+        final Optional<List<Category>> optionalCategories = populator.fetchCategories(contentlet,
+                APILocator.systemUser(), false);
+
+        assertFalse(optionalCategories.isEmpty());
+        final List<Category> present = optionalCategories.get();
+
+        //Must have the categories from the second field
+        assertTrue("Must contain the categories on the field that was not modified",
+                present.contains(categories.get(1)));
+        assertFalse("Must not contain the categories that were removed",
+                present.contains(categories.get(0)));
+    }
+
+    /**
+     * Nulls must be ignored
+     * Scenario: We have a content with multiple category fields here we test that no form of null affects the returned values.
+     * Expectation: Every category field must come back populated with the respective category fields they originally had in the db.
+     */
+    @UseDataProvider("formsOfNull")
+    @Test
+    public void Test_Pass_Empty_List_Multiple_Category_Fields_Pass_Null(final Object formOfNull)
+            throws DotDataException, DotSecurityException {
+
+        //Will only use two categories
+        final List<Category> categories = createParentCategories().subList(0, 2);
+
+        final ContentType contentType = TestDataUtils.newContentTypeWithMultipleCategoryFields(
+                "WithMultipleCategoryFields" + System.currentTimeMillis(), null, categories);
+
+        //Make sure we have a field of type Category
+        final List<Field> fields = contentType.fields(CategoryField.class);
+        final long count = fields.size();
+        assertEquals(count, categories.size());
+
+        final ContentletDataGen dataGen = new ContentletDataGen(contentType)
+                .languageId(1)
+                .setProperty("title", "lol");
+
+        for (final Category category : categories) {
+            dataGen.addCategory(category);
+        }
+
+        final MapToContentletPopulator populator = new MapToContentletPopulator();
+
+        final Contentlet persisted = dataGen.nextPersisted();
+
+        final Contentlet contentlet = new Contentlet(persisted);
+        contentlet.setProperty(fields.get(0).variable(), formOfNull);
+
+        final Optional<List<Category>> optionalCategories = populator.fetchCategories(contentlet,
+                APILocator.systemUser(), false);
+
+        assertFalse(optionalCategories.isEmpty());
+
+        final List<Category> present = optionalCategories.get();
+
+        //Must have the categories from both fields
+        assertTrue("Must contain category on field 1.", present.contains(categories.get(0)));
+        assertTrue("Must contain category on field 2.", present.contains(categories.get(1)));
+    }
+
+    @DataProvider
+    public static Object[] formsOfNull() {
+       return new Object[]{
+               null, JSONObject.NULL, "null"
+       };
+    }
+
+
+    /**
+     * Scenario: We have a content with multiple category fields. The situation is a bit different here we test we deal with List of actual categories
+     * Expectation: Every category field must come back populated with the exact category value we're setting
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_Pass_Empty_List_Multiple_Category_Fields_Pass_List_Of_Category() throws DotDataException, DotSecurityException {
+
+        //Will only use two categories
+        final List<Category> categories = createParentCategories().subList(0,4);
+
+        final ContentType contentType = TestDataUtils.newContentTypeWithMultipleCategoryFields(
+                "WithMultipleCategoryFields" + System.currentTimeMillis(), null, categories);
+
+        //Make sure we have a field of type Category
+        final List<Field> fields = contentType.fields(CategoryField.class);
+        final long count = fields.size();
+        assertEquals(count, categories.size());
+
+        final ContentletDataGen dataGen = new ContentletDataGen(contentType)
+                .languageId(1)
+                .setProperty("title", "lol");
+
+        for(final Category category:categories.subList(0,2)){
+            dataGen.addCategory(category);
+        }
+        final Contentlet persisted = dataGen.nextPersisted();
+        final Contentlet contentlet = new Contentlet(persisted);
+        contentlet.setProperty(fields.get(0).variable(), ImmutableList.of(categories.get(0).getCategoryVelocityVarName().toLowerCase()));
+        contentlet.setProperty(fields.get(1).variable(), ImmutableList.of(categories.get(1).getCategoryId()));
+
+        final MapToContentletPopulator populator = new MapToContentletPopulator();
+        final Optional<List<Category>> optionalCategories = populator.fetchCategories(contentlet,
+                APILocator.systemUser(), false);
+
+        assertFalse(optionalCategories.isEmpty());
+
+        final List<Category> present = optionalCategories.get();
+        assertEquals("We're expecting exactly 2 categories.",present.size(),2);
+
+        //Must have the categories from both fields
+        assertTrue("Must contain category on field 1.", present.contains(categories.get(0)));
+        assertTrue("Must contain category on field 2.", present.contains(categories.get(1)));
+    }
 
 }

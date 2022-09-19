@@ -32,7 +32,7 @@ export class SuggestionListComponent implements AfterViewInit, OnDestroy {
     private destroy$ = new Subject<boolean>();
     private mouseMove = true;
 
-    @HostListener('mouseover', ['$event'])
+    @HostListener('mousemove', ['$event'])
     onMouseMove() {
         this.mouseMove = true;
     }

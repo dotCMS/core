@@ -22,6 +22,7 @@ import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.RelationshipUtil;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -52,7 +53,6 @@ import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.annotations.VisibleForTesting;
@@ -95,6 +95,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   public static final String HAS_TITLE_IMAGE_KEY = "hasTitleImage";
   public static final String INODE_KEY = "inode";
   public static final String LANGUAGEID_KEY = "languageId";
+  public static final String VARIANT_ID = "variantId";
   public static final String STRUCTURE_INODE_KEY = "stInode";
   public static final String STRUCTURE_NAME_KEY = "stName";
   public static final String CONTENT_TYPE_KEY = "contentType";
@@ -1618,8 +1619,14 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 	}
 
+    public void setVariantId(final String variantId) {
+		map.put(VARIANT_ID, variantId);
+    }
+	public String getVariantId() {
+		return map.getOrDefault(VARIANT_ID, VariantAPI.DEFAULT_VARIANT.name()).toString();
+	}
 
-	private class ContentletHashMap extends ConcurrentHashMap<String, Object> {
+    private class ContentletHashMap extends ConcurrentHashMap<String, Object> {
 		 /**
 		 *
 		 */
