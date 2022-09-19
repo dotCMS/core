@@ -11,19 +11,24 @@ import com.dotcms.concurrent.Debouncer;
 import com.dotcms.graphql.InterfaceType;
 import com.dotcms.graphql.datafetcher.ContentletDataFetcher;
 import com.dotcms.util.LogTime;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.model.User;
 import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLObjectType.Builder;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.idl.SchemaPrinter;
+import graphql.schema.visibility.DefaultGraphqlFieldVisibility;
+import graphql.schema.visibility.NoIntrospectionGraphqlFieldVisibility;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -83,11 +88,28 @@ public class GraphqlAPIImpl implements GraphqlAPI {
             if(schema.isPresent()) {
                 return schema.get();
             }
-            final GraphQLSchema generatedSchema = generateSchema();
+            final GraphQLSchema generatedSchema = generateSchema(APILocator.systemUser());
             schemaCache.putSchema(generatedSchema);
             return generatedSchema;
         }
 
+    }
+
+    public GraphQLSchema getSchema(final User user) throws DotDataException {
+
+        Optional<GraphQLSchema> schema = schemaCache.getSchema(user.isAnonymousUser());
+        if(schema.isPresent()) {
+            return schema.get();
+        }
+        synchronized (this) {
+            schema = schemaCache.getSchema(user.isAnonymousUser());
+            if(schema.isPresent()) {
+                return schema.get();
+            }
+            final GraphQLSchema generatedSchema = generateSchema(user);
+            schemaCache.putSchema(user.isAnonymousUser(), generatedSchema);
+            return generatedSchema;
+        }
     }
 
     final Debouncer debouncer = new Debouncer();
@@ -136,6 +158,12 @@ public class GraphqlAPIImpl implements GraphqlAPI {
     @LogTime(loggingLevel = "INFO")
     @VisibleForTesting
     protected GraphQLSchema generateSchema() {
+        return generateSchema(APILocator.systemUser());
+    }
+
+    @LogTime(loggingLevel = "INFO")
+    @VisibleForTesting
+    protected GraphQLSchema generateSchema(final User user) {
         final Set<GraphQLType> graphQLTypes = new HashSet<>();
 
         for (GraphQLTypesProvider typesProvider : typesProviders) {
@@ -163,7 +191,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         final Set<GraphQLType> finalTypesSet = new HashSet<>(localTypesMap.values());
 
 
-        List<GraphQLFieldDefinition> fieldDefinitions = new ArrayList<>();
+        final List<GraphQLFieldDefinition> fieldDefinitions = new ArrayList<>();
 
         for (GraphQLFieldsProvider fieldsProvider : fieldsProviders) {
             try {
@@ -174,9 +202,22 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         }
 
         // Root Type
-        GraphQLObjectType.Builder rootTypeBuilder = createRootTypeBuilder().fields(fieldDefinitions);
+        final GraphQLObjectType.Builder rootTypeBuilder = createRootTypeBuilder().fields(fieldDefinitions);
 
-        return new GraphQLSchema.Builder().query(rootTypeBuilder.build()).additionalTypes(finalTypesSet).build();
+        final GraphQLCodeRegistry.Builder codeRegistryBuilder = GraphQLCodeRegistry.newCodeRegistry();
+
+        if(user.isAnonymousUser()) {
+            codeRegistryBuilder.fieldVisibility(
+                    NoIntrospectionGraphqlFieldVisibility.NO_INTROSPECTION_FIELD_VISIBILITY).build();
+        } else {
+            codeRegistryBuilder.fieldVisibility(
+                    DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY).build();
+        }
+
+        return new GraphQLSchema.Builder()
+                .codeRegistry(codeRegistryBuilder.build())
+                .query(rootTypeBuilder.build())
+                .additionalTypes(finalTypesSet).build();
     }
 
     private Builder createRootTypeBuilder() {

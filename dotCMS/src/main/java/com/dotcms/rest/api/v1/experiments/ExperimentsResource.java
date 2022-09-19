@@ -4,6 +4,7 @@ import com.dotcms.experiments.business.ExperimentFilter;
 import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.PATCH;
 import com.dotcms.rest.ResponseEntityView;
@@ -74,13 +75,28 @@ public class ExperimentsResource {
 
     private Experiment createExperimentFromForm(final ExperimentForm experimentForm,
             final User user) {
-        return Experiment.builder().pageId(experimentForm.getPageId()).name(experimentForm.getName())
+        final Experiment.Builder builder = Experiment.builder();
+
+        builder.pageId(experimentForm.getPageId()).name(experimentForm.getName())
                 .description(experimentForm.getDescription()).createdBy(user.getUserId())
                 .lastModifiedBy(user.getUserId())
                 .trafficAllocation(experimentForm.getTrafficAllocation()>-1
                         ? experimentForm.getTrafficAllocation()
-                        : 100)
-                .build();
+                        : 100);
+
+        if(experimentForm.getTrafficProportion()!=null) {
+            builder.trafficProportion(experimentForm.getTrafficProportion());
+        }
+
+        if(experimentForm.getGoals()!=null) {
+            builder.goals(experimentForm.getGoals());
+        }
+
+        if(experimentForm.getScheduling()!=null) {
+            builder.scheduling(experimentForm.getScheduling());
+        }
+
+        return builder.build();
     }
 
     /**
@@ -184,6 +200,80 @@ public class ExperimentsResource {
         return new ResponseEntityExperimentView(experiments);
     }
 
+    /**
+     * Deletes the primary Goal.
+     */
+    @DELETE
+    @Path("/{experimentId}/goals/primary")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityExperimentView deleteGoal(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("experimentId") final String experimentId) throws DotDataException, DotSecurityException {
+        final InitDataObject initData = getInitData(request, response);
+        final User user = initData.getUser();
+        final Optional<Experiment> existingExperiment =  experimentsAPI.find(experimentId, user);
+
+        if(existingExperiment.isEmpty()) {
+            throw new NotFoundException("Experiment with id: " + experimentId + " not found.");
+        }
+
+        final Experiment experimentNoGoal = existingExperiment.get().withGoals(Optional.empty());
+
+        final Experiment savedExperiment = experimentsAPI.save(experimentNoGoal, user);
+        return new ResponseEntityExperimentView(Collections.singletonList(savedExperiment));
+    }
+
+    /**
+     * Starts an {@link Experiment}. In order to start an Experiment it needs to:
+     * <li>Have a {@link Status#DRAFT} status
+     * <li>Have at least one Variant
+     * <li>Have a primary goal set
+     * <p>
+     * The following considerations regarding {@link Experiment#scheduling()} are also taking place
+     * when starting an Experiment:
+     * <li>If no {@link Scheduling#startDate()} is provided, set it to now()
+     * <li>If no {@link Scheduling#endDate()} is provided, set it to four weeks
+     * <li>Unable to start if provided {@link Scheduling#startDate()} is in the past
+     * <li>Unable to start if provided {@link Scheduling#endDate()} is in the past
+     * <li>Unable to start if provided {@link Scheduling#endDate()} is not after provided {@link Scheduling#startDate()}
+     * <li>Unable to start if difference {@link Scheduling#endDate()} is not after provided {@link Scheduling#startDate()}
+     *
+     */
+    @POST
+    @Path("/{experimentId}/_start")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityExperimentView start(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("experimentId") final String experimentId) throws DotDataException, DotSecurityException {
+        final InitDataObject initData = getInitData(request, response);
+        final User user = initData.getUser();
+        final Experiment startedExperiment = experimentsAPI.start(experimentId, user);
+        return new ResponseEntityExperimentView(Collections.singletonList(startedExperiment));
+    }
+
+    /**
+     * Ends an already started {@link Experiment}. The Experiment needs to be in
+     * {@link Status#RUNNING} status to be able to end it.
+     */
+
+    @POST
+    @Path("/{experimentId}/_end")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityExperimentView end(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("experimentId") final String experimentId) throws DotDataException, DotSecurityException {
+        final InitDataObject initData = getInitData(request, response);
+        final User user = initData.getUser();
+        final Experiment endedExperiment = experimentsAPI.end(experimentId, user);
+        return new ResponseEntityExperimentView(Collections.singletonList(endedExperiment));
+    }
+
     private Experiment patchExperiment(final Experiment experimentToUpdate,
             final ExperimentForm experimentForm, final User user) {
 
@@ -205,12 +295,12 @@ public class ExperimentsResource {
             builder.trafficProportion(experimentForm.getTrafficProportion());
         }
 
-        if(experimentForm.getStatus()!=null) {
-            builder.status(experimentForm.getStatus());
-        }
-
         if(experimentForm.getScheduling()!=null) {
             builder.scheduling(experimentForm.getScheduling());
+        }
+
+        if(experimentForm.getGoals()!=null) {
+            builder.goals(experimentForm.getGoals());
         }
 
         return builder.build();

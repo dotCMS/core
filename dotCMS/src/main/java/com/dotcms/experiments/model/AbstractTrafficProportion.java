@@ -30,9 +30,9 @@ public interface AbstractTrafficProportion extends Serializable {
         return Type.SPLIT_EVENLY;
     }
 
-    @JsonProperty("percentages")
+    @JsonProperty("variantsPercentages")
     @Value.Default
-    default Map<String, Float> percentages() {
+    default Map<String, Float> variantsPercentagesMap() {
         return Collections.emptyMap();
     }
 

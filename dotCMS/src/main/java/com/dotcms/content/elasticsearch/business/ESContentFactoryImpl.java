@@ -16,9 +16,7 @@ import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
-import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.notifications.bean.NotificationLevel;
@@ -31,6 +29,7 @@ import com.dotcms.system.SimpleMapAppContext;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.I18NMessage;
 import com.dotcms.util.transform.TransformerLocator;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -72,7 +71,6 @@ import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.NumberUtil;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
@@ -1037,7 +1035,16 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	@Override
 	protected Contentlet findContentletByIdentifier(String identifier, Boolean live, Long languageId) throws DotDataException {
-        final Optional<ContentletVersionInfo> cvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, languageId);
+        return findContentletByIdentifier(identifier, live, languageId, VariantAPI.DEFAULT_VARIANT.name());
+    }
+
+    @Override
+    protected Contentlet findContentletByIdentifier(final String identifier, final Boolean live,
+            final Long languageId, final String variantId) throws DotDataException {
+
+        final Optional<ContentletVersionInfo> cvi = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(identifier, languageId, variantId);
+
         if(!cvi.isPresent() || UtilMethods.isEmpty(cvi.get().getIdentifier())
                 || (live && UtilMethods.isEmpty(cvi.get().getLiveInode()))) {
             return null;
