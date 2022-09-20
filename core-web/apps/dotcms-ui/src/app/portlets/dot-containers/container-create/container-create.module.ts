@@ -7,6 +7,8 @@ import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-b
 import { TabViewModule } from 'primeng/tabview';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotContainerPropertiesModule } from '@portlets/dot-containers/container-create/dot-container-properties/dot-container-properties.module';
+import { ContainerPermissionsModule } from '@dotcms/app/portlets/dot-containers/container-create/container-permissions/container-permissions.module';
+import { ContainerHistoryModule } from '@dotcms/app/portlets/dot-containers/container-create/container-history/container-history.module';
 
 @NgModule({
     declarations: [ContainerCreateComponent],
@@ -17,7 +19,9 @@ import { DotContainerPropertiesModule } from '@portlets/dot-containers/container
         TabViewModule,
         DotMessagePipeModule,
         DotContainerPropertiesModule,
-        DotMessagePipeModule
+        DotMessagePipeModule,
+        ContainerPermissionsModule,
+        ContainerHistoryModule
     ]
 })
 export class ContainerCreateModule {}
