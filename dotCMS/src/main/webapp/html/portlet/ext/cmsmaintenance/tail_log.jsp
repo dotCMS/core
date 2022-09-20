@@ -178,7 +178,7 @@
 
             if (contentLoaded) {
                 clearInterval(iframeContentInterval);
-                attachLogIframeEvents()
+                attachLogIframeEvents();
             }
         }, 200);
 
@@ -187,6 +187,166 @@
 
     /**********************/
     /* Log Viewer - BEGIN */
+
+    const ON_SCREEN_PAGES = 3;
+
+    const LogViewManager = ({src, dest}) => {
+
+        let pagesOnScreen = 0;
+
+        let currentPageIndex = 0;
+
+        let following = true;
+
+        function _dropOldestPages(){
+            if (pagesOnScreen >= ON_SCREEN_PAGES) {
+
+                const pagesToDrop = Math.round((pagesOnScreen * 30) * .01);
+                for (let i = 1; i <= pagesToDrop; i++) {
+                    const first = dest.querySelector(`.log:first-child`);
+                    console.log("First:: " + first);
+                    if (!first) {
+                        break;
+                    }
+                        const firstPageId = first.dataset.page;
+                        console.log("FirstPageID:: " + firstPageId);
+                        let pageToDrop = dest.querySelectorAll(`.page${firstPageId}`);
+                        console.log("PageToDrop ::: " + pageToDrop);
+                        if (pageToDrop.length > 0) {
+                            //Remove all items on that page
+                            pageToDrop.forEach((elem) => elem.remove());
+                            pagesOnScreen--;
+                        }
+                        console.log(' page  : ' + firstPageId + ' dropped!');
+                }
+            }
+        }
+
+        function _fetchPriorPage(){
+            //if following back to load prior pages we should stop feeding the log (adding new stuff to it)
+            const first = dest.querySelector(`.log:first-child`);
+            if(first){
+                let firstPageId = first.dataset.page;
+                firstPageId--;
+                const list = src.document.body.querySelectorAll(`.page${firstPageId}`);
+                if (list.length > 0) {
+                    //iterate backwards to preserve the original order
+                    for (let i = list.length - 1; i >= 0; i--) {
+                        const elem = list[i];
+                        dest.insertAdjacentHTML('afterbegin', elem.outerHTML);
+                    }
+                    pagesOnScreen++;
+                    //Move the scroll just a tiny bit, so we have room to fire the event again.
+                    dest.scrollTop = dest.scrollTop + 10;
+                }
+            }
+        }
+
+        function _dropNewestPages() {
+            if (pagesOnScreen >= ON_SCREEN_PAGES) {
+
+                const pagesToDrop = Math.round((pagesOnScreen * 30) * .01);
+
+                for (let i = 1; i <= pagesToDrop; i++) {
+                    const last = Array.from(
+                        dest.querySelectorAll(`.log`)
+                    ).pop();
+
+                    if (!last) {
+                        break;
+                    }
+                        let lastPageId = last.dataset.page;
+                        console.log("LastPageID:: " + lastPageId);
+                        const pageToDrop = dest.querySelectorAll(`.page${lastPageId}`);
+                        console.log("PageToDrop ::: " + pageToDrop);
+                        if (pageToDrop.length > 0) {
+                            //Remove all items on that page
+                            pageToDrop.forEach((elem) => elem.remove());
+                            pagesOnScreen--;
+                        }
+                        console.log(' page  : ' + lastPageId + ' dropped!');
+                }
+            }
+        }
+
+        function _fetchNextPage(){
+
+            const last = Array.from(
+                dest.querySelectorAll(`.log`)
+            ).pop();
+
+            if(last){
+                let lastPageId = last.dataset.page;
+                console.log(" Last page id is  ::: " + lastPageId);
+                lastPageId++;
+                const list = src.document.body.querySelectorAll(`.page${lastPageId}`);
+                if (list.length > 0) {
+                    list.forEach((elem)=>{
+                        dest.insertAdjacentHTML('beforeend', elem.outerHTML);
+                    });
+                    pagesOnScreen++;
+                }
+            }
+        }
+
+        function _updateView(e){
+
+            const pageId = parseInt(e.detail.pageId);
+            //initialize var so we know what page we're on
+
+            if(currentPageIndex === 0){
+                currentPageIndex = pageId;
+                pagesOnScreen = 0;
+            } else {
+                if (pageId > currentPageIndex) {
+                    currentPageIndex = pageId;
+                    pagesOnScreen++;
+                }
+            }
+            const newContent = e.detail.newContent;
+            dest.insertAdjacentHTML('beforeend', newContent);
+
+        }
+
+        function _scrollDownToBottom() {
+            dest.scrollTop = dest.scrollHeight;
+        }
+
+        return ({
+
+            setFollowing : (value) => {
+                following = value;
+            },
+
+            fetchPriorPage : () => {
+                if(following){
+                    return;
+                }
+                _fetchPriorPage();
+                _dropNewestPages();
+            },
+
+            fetchNextPage : () => {
+                if(following){
+                    return;
+                }
+                _fetchNextPage();
+                _dropOldestPages();
+            },
+
+            updateView : (e) => {
+                if(!following){
+                    return;
+                }
+                _updateView(e);
+                _scrollDownToBottom();
+                _dropOldestPages();
+            }
+
+        });
+    }
+
+    let logViewManager = null;
 
 
     var attachedFilterLogEvents = false;
@@ -197,7 +357,6 @@
     var logViewerFiltering = false;
     var logViewerDirty = false;
 
-    const ON_SCREEN_PAGES = 3;
 
     let numberOfPagesOnScreen = 0;
     let currentActivePageId = 1;
@@ -206,42 +365,75 @@
 
     function attachLogIframeEvents() {
 
-        let dataLogSourceElem = document.getElementById('tailingFrame');
-        let logger = document.querySelector('.logViewerPrinted');
-        let iDoc = dataLogSourceElem.contentWindow || dataLogSourceElem.contentDocument;
-
-        if (!attachedFilterLogEvents) {
-
-            const debounce = (callback, time = 300, interval) => (...args) => {
-                clearTimeout(interval, interval = setTimeout(() => callback(...args), time));
-            };
-
-            dataLogPrintedElem = document.querySelector('.logViewerPrinted');
-
-            keywordLogInput = document.querySelector('#keywordLogFilterInput');
-            keywordLogInput.addEventListener("keyup", debounce(filterLog, 300));
-
-            // Flag to avoid binding multiple debounce events on filter input
-            attachedFilterLogEvents = true;
+        if(logViewManager){
+            console.warn("logView is already initialized.");
+            return;
         }
 
-        iDoc.document.addEventListener("logUpdated", (e) => {
-            // Only triggering if "newContent" has a value, cuz there can be calls from BE with empty data
-            // for the purpose of just to keep the connection alive
-            if (e.detail.newContent.length > 0) {
-                updateLogViewerData(e, dataLogSourceElem, logger);
-            }
+        const followCheck = document.getElementById('scrollMe');
+        const dataLogSourceElem = document.getElementById('tailingFrame');
+        const logView = document.querySelector('.logViewerPrinted');
+        const iDoc = dataLogSourceElem.contentWindow || dataLogSourceElem.contentDocument;
+
+        // if (!attachedFilterLogEvents) {
+        //
+        //     const debounce = (callback, time = 300, interval) => (...args) => {
+        //         clearTimeout(interval, interval = setTimeout(() => callback(...args), time));
+        //     };
+        //
+        //     dataLogPrintedElem = document.querySelector('.logViewerPrinted');
+        //
+        //     keywordLogInput = document.querySelector('#keywordLogFilterInput');
+        //     keywordLogInput.addEventListener("keyup", debounce(filterLog, 300));
+        //
+        //     // Flag to avoid binding multiple debounce events on filter input
+        //     attachedFilterLogEvents = true;
+        // }
+
+        logViewManager = LogViewManager({src:iDoc,dest:logView});
+
+        followCheck.addEventListener("change",(e)=>{
+            console.log('checked!!! changed !!');
+            logViewManager.setFollowing(e.currentTarget.checked);
         });
 
-        logger.addEventListener("scroll", (e)=>{
+        iDoc.document.addEventListener("logUpdated", (e) => {
+
+            logViewManager.updateView(e);
+
+        });
+
+        let lastScrollTop = 0;
+
+        logView.addEventListener("scroll", (e)=>{
+
             const div = e.target;
-            if(div.scrollTop === 0) {
-                //TODO should we disable following here?
-                if (!isFollowingOn()) {
-                    disableFollowOnScrollUp();
+
+            const scrollTop = div.scrollTop;
+            if (scrollTop > lastScrollTop){
+                // down-scroll code
+            } else {
+                // up-scroll code
+                if(scrollTop <= (div.scrollHeight - div.offsetHeight / 2)){
+                    if(isFollowingOn()){
+                        enableFollowing(false);
+                    }
                 }
-                fetchPage(dataLogSourceElem, div);
+
             }
+            lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+
+            if(scrollTop === 0) {
+                //We're at the top of the container.
+                logViewManager.fetchPriorPage();
+                return;
+            }
+
+            if( scrollTop > (div.scrollHeight - div.offsetHeight - 50)){
+                //we're at the bottom of the scroll
+                logViewManager.fetchNextPage();
+            }
+
         });
     }
 
@@ -285,7 +477,7 @@
         if(pageId > currentActivePageId ){
             //Time to change page
             //We only want to keep in the div 'onScreenPages' number of pages
-            onFullPageLoaded(dest, following);
+
             currentActivePageId = pageId;
         }
             dest.insertAdjacentHTML('beforeend', newContent );
@@ -293,57 +485,6 @@
         if (following) {
              scrollLogToBottom();
         }
-    }
-
-    function onFullPageLoaded(dest, following){
-        numberOfPagesOnScreen++;
-        if(!following){
-
-           return;
-        }
-        if( !cleaningEarlyPages && (numberOfPagesOnScreen > ON_SCREEN_PAGES)){
-            try{
-               cleaningEarlyPages = true;
-               //drop the earliest page
-               dropEarlyPages(dest);
-           }finally {
-               cleaningEarlyPages = false;
-           }
-        }
-    }
-
-    function dropScrollUpFetchedPages(dest) {
-        let pagesToDrop = dest.querySelectorAll(`.scrollUp-fetched`);
-        console.log( "PageToDrop ::: " + pagesToDrop );
-        if (pagesToDrop.length > 0) {
-            //Remove all items loaded scrolling up
-            pagesToDrop.forEach((elem) => elem.remove());
-        }
-    }
-
-    function dropEarlyPages(dest) {
-        console.log(" :::::: numberOfPagesOnScreen ::::: " + numberOfPagesOnScreen);
-        const pagesToDrop = Math.round((numberOfPagesOnScreen * 30) * .01);
-        console.log("numOfPagesToDrop:: " + pagesToDrop);
-        for(let i=1; i<= pagesToDrop; i++){
-            const first = dest.querySelector(`.log:first-child`);
-            console.log( "First:: " + first);
-            if(first){
-                const firstPageId = first.dataset.page;
-                console.log( "FirstPageID:: " + firstPageId);
-                let pageToDrop = dest.querySelectorAll(`.page${firstPageId}`);
-                console.log( "PageToDrop ::: " + pageToDrop );
-                if (pageToDrop.length > 0) {
-                    //Remove all items on that page
-                    pageToDrop.forEach((elem) => elem.remove());
-                }
-                console.log(' page  : ' + firstPageId  + ' dropped!' );
-            } else {
-                break;
-            }
-        }
-        console.log(' We are done!' );
-        numberOfPagesOnScreen = numberOfPagesOnScreen - pagesToDrop;
     }
 
     // Function that adds to the log content SPAN Html Tags used for highlight
@@ -445,7 +586,7 @@
                 <%} %>
             </select>
             <div class="checkbox">
-                <input type="checkbox" id="scrollMe" dojoType="dijit.form.CheckBox" value=1 checked />
+                <input type="checkbox" id="scrollMe" dojoType="dijit.form.CheckBox" value=1 checked  />
                 <label for="scrollMe">
                     <%=com.liferay.portal.language.LanguageUtil.get(pageContext, "Follow") %>
                 </label>
