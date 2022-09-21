@@ -16,8 +16,9 @@ export class ContainerListComponent {
 
     @ViewChild('listing', { static: false })
     listing: DotListingDataTableComponent;
+    constructor(private store: DotContainerListStore) {}
 
-    constructor(private store: DotContainerListStore) {
+    ngAfterViewInit(): void {
         this.store.updateListing(this.listing);
     }
 
