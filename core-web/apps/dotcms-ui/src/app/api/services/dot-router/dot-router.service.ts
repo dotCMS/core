@@ -199,7 +199,7 @@ export class DotRouterService {
 
     /**
      * Redirect to edit the template.
-     * If the inode is paased, load a specific version of the template
+     * If the inode is passed, load a specific version of the template
      *
      * @param {string} id
      * @param {string} inode
