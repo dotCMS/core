@@ -17,7 +17,6 @@ import { ActivatedRoute } from '@angular/router';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { DotEventsSocketURL } from '@dotcms/dotcms-js';
 import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
-import { SiteService } from '@dotcms/dotcms-js';
 import { StringUtils } from '@dotcms/dotcms-js';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { ConfirmationService, SharedModule } from 'primeng/api';
@@ -42,7 +41,6 @@ import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { CONTAINER_SOURCE, DotContainer } from '@models/container/dot-container.model';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
-import { mockSites } from '@tests/site-service.mock';
 
 const containersMock: DotContainer[] = [
     {
@@ -154,12 +152,10 @@ describe('ContainerListComponent', () => {
     let dotPushPublishDialogService: DotPushPublishDialogService;
     let dialogService: DialogService;
     let coreWebService: CoreWebService;
-    let dotRouterService: DotRouterService;
 
     const messageServiceMock = new MockDotMessageService(messages);
 
     const dialogRefClose = new Subject();
-    const switchSiteSubject = new Subject();
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -178,18 +174,6 @@ describe('ContainerListComponent', () => {
                         gotoPortlet: jasmine.createSpy(),
                         goToEditContainer: jasmine.createSpy(),
                         goToSiteBrowser: jasmine.createSpy()
-                    }
-                },
-                {
-                    provide: SiteService,
-                    useValue: {
-                        get currentSite() {
-                            return undefined;
-                        },
-
-                        get switchSite$() {
-                            return switchSiteSubject.asObservable();
-                        }
                     }
                 },
                 StringUtils,
@@ -227,14 +211,6 @@ describe('ContainerListComponent', () => {
         dotPushPublishDialogService = TestBed.inject(DotPushPublishDialogService);
         dialogService = TestBed.inject(DialogService);
         coreWebService = TestBed.inject(CoreWebService);
-        dotRouterService = TestBed.inject(DotRouterService);
-    });
-
-    it('should reload portlet only when the site change', () => {
-        switchSiteSubject.next(mockSites[0]); // setting the site
-        switchSiteSubject.next(mockSites[1]); // switching the site
-        expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('templates');
-        expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
     });
 
     describe('with data', () => {

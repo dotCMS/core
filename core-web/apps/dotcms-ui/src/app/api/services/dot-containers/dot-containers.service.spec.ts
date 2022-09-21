@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 
@@ -65,13 +63,8 @@ describe('DotContainersService', () => {
     });
 
     it('should get a list of containers', () => {
-        service.get().subscribe((container) => {
-            expect(container as any).toEqual([
-                {
-                    identifier: '1234',
-                    name: 'movie'
-                }
-            ]);
+        service.get().subscribe((container: DotContainer[]) => {
+            expect(container).toEqual([mockContainer]);
         });
 
         const req = httpMock.expectOne(CONTAINER_API_URL);
@@ -79,21 +72,13 @@ describe('DotContainersService', () => {
         expect(req.request.method).toBe('GET');
 
         req.flush({
-            entity: [
-                {
-                    identifier: '1234',
-                    name: 'movie'
-                }
-            ]
+            entity: [mockContainer]
         });
     });
 
     it('should get a container by id', () => {
-        service.getById('123').subscribe((container) => {
-            expect(container as any).toEqual({
-                identifier: '1234',
-                name: 'movie'
-            });
+        service.getById('123').subscribe((container: DotContainer) => {
+            expect(container).toEqual(mockContainer);
         });
 
         const req = httpMock.expectOne(`${CONTAINER_API_URL}123/working`);
@@ -101,21 +86,13 @@ describe('DotContainersService', () => {
         expect(req.request.method).toBe('GET');
 
         req.flush({
-            entity: {
-                identifier: '1234',
-                name: 'movie'
-            }
+            entity: mockContainer
         });
     });
 
     it('should get a containers by filter', () => {
-        service.getFiltered('123').subscribe((container) => {
-            expect(container as any).toEqual([
-                {
-                    identifier: '123',
-                    name: 'movie'
-                }
-            ]);
+        service.getFiltered('123').subscribe((container: DotContainer[]) => {
+            expect(container).toEqual([mockContainer]);
         });
 
         const req = httpMock.expectOne(`${CONTAINER_API_URL}?filter=123`);
@@ -123,12 +100,7 @@ describe('DotContainersService', () => {
         expect(req.request.method).toBe('GET');
 
         req.flush({
-            entity: [
-                {
-                    identifier: '123',
-                    name: 'movie'
-                }
-            ]
+            entity: [mockContainer]
         });
     });
 
@@ -138,23 +110,18 @@ describe('DotContainersService', () => {
                 name: '',
                 friendlyName: ''
             } as DotContainer)
-            .subscribe((container) => {
-                expect(container as any).toEqual({
-                    identifier: '1234',
-                    name: 'movie'
-                });
+            .subscribe((container: DotContainer) => {
+                expect(container).toEqual(mockContainer);
             });
 
         const req = httpMock.expectOne(CONTAINER_API_URL);
 
         expect(req.request.method).toBe('POST');
-        expect(req.request.body).toEqual({ name: '', anonymous: true, friendlyName: '' });
+        expect(req.request.body.name).toEqual('');
+        expect(req.request.body.friendlyName).toEqual('');
 
         req.flush({
-            entity: {
-                identifier: '1234',
-                name: 'movie'
-            }
+            entity: mockContainer
         });
     });
 
@@ -165,22 +132,17 @@ describe('DotContainersService', () => {
                 friendlyName: ''
             } as DotContainer)
             .subscribe((container) => {
-                expect(container as any).toEqual({
-                    identifier: '1234',
-                    name: 'movie'
-                });
+                expect(container).toEqual(mockContainer);
             });
 
         const req = httpMock.expectOne(CONTAINER_API_URL);
 
         expect(req.request.method).toBe('PUT');
-        expect(req.request.body).toEqual({ name: '', anonymous: true, friendlyName: '' });
+        expect(req.request.body.name).toEqual('');
+        expect(req.request.body.friendlyName).toEqual('');
 
         req.flush({
-            entity: {
-                identifier: '1234',
-                name: 'movie'
-            }
+            entity: mockContainer
         });
     });
     it('should put to save and publish a container', () => {
@@ -189,23 +151,18 @@ describe('DotContainersService', () => {
                 name: '',
                 friendlyName: ''
             } as DotContainer)
-            .subscribe((container) => {
-                expect(container as any).toEqual({
-                    identifier: '1234',
-                    name: 'movie'
-                });
+            .subscribe((container: DotContainer) => {
+                expect(container).toEqual(mockContainer);
             });
 
         const req = httpMock.expectOne(`${CONTAINER_API_URL}_savepublish`);
 
         expect(req.request.method).toBe('PUT');
-        expect(req.request.body).toEqual({ name: '', anonymous: true, friendlyName: '' });
+        expect(req.request.body.name).toEqual('');
+        expect(req.request.body.friendlyName).toEqual('');
 
         req.flush({
-            entity: {
-                identifier: '1234',
-                name: 'movie'
-            }
+            entity: mockContainer
         });
     });
     it('should delete a container', () => {
@@ -241,11 +198,12 @@ describe('DotContainersService', () => {
         req.flush(mockBulkResponseSuccess);
     });
     it('should publish a container', () => {
-        service.publish('testId01').subscribe();
-        const req = httpMock.expectOne(`${CONTAINER_API_URL}_publish`);
+        const identifier = 'testId01';
+        service.publish(identifier).subscribe();
+        const req = httpMock.expectOne(`${CONTAINER_API_URL}_publish?containerId=${identifier}`);
 
         expect(req.request.method).toBe('PUT');
-        expect(req.request.body).toEqual(['testId01']);
+        expect(req.request.body).toEqual(null);
         req.flush(mockBulkResponseSuccess);
     });
     it('should copy a container', () => {
