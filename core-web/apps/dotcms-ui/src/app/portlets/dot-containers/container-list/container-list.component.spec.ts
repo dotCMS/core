@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
-import { of, Subject } from 'rxjs';
+import { of } from 'rxjs';
 import { ContainerListComponent } from './container-list.component';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
@@ -150,12 +149,9 @@ describe('ContainerListComponent', () => {
     let fixture: ComponentFixture<ContainerListComponent>;
     let dotListingDataTable: DotListingDataTableComponent;
     let dotPushPublishDialogService: DotPushPublishDialogService;
-    let dialogService: DialogService;
     let coreWebService: CoreWebService;
 
     const messageServiceMock = new MockDotMessageService(messages);
-
-    const dialogRefClose = new Subject();
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -209,7 +205,6 @@ describe('ContainerListComponent', () => {
         }).compileComponents();
         fixture = TestBed.createComponent(ContainerListComponent);
         dotPushPublishDialogService = TestBed.inject(DotPushPublishDialogService);
-        dialogService = TestBed.inject(DialogService);
         coreWebService = TestBed.inject(CoreWebService);
     });
 
@@ -228,10 +223,6 @@ describe('ContainerListComponent', () => {
                 By.css('dot-listing-data-table')
             ).componentInstance;
             spyOn(dotPushPublishDialogService, 'open');
-
-            spyOn<any>(dialogService, 'open').and.returnValue({
-                onClose: dialogRefClose
-            });
         }));
 
         it('should set attributes of dotListingDataTable', () => {
