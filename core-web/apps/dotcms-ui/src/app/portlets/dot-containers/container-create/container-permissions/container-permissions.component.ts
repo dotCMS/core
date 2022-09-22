@@ -9,6 +9,6 @@ export class ContainerPermissionsComponent implements OnInit {
     permissionsUrl = '';
 
     ngOnInit() {
-        this.permissionsUrl = `/html/templates/permissions.jsp?templateId=7acdb856-4bbc-41c5-8695-a39c2e4a913f&popup=true&in_frame=true&frame=detailFrame&container=true&angularCurrentPortlet=templates`;
+        this.permissionsUrl = `/html/containers/permissions.jsp`;
     }
 }

@@ -8,11 +8,10 @@ import { IframeComponent } from '@components/_common/iframe/iframe-component';
 })
 export class ContainerHistoryComponent implements OnInit, OnChanges {
     @ViewChild('historyIframe') historyIframe: IframeComponent;
-
     historyUrl = '';
 
     ngOnInit() {
-        this.historyUrl = `/html/templates/permissions.jsp?templateId=7acdb856-4bbc-41c5-8695-a39c2e4a913f&popup=true&in_frame=true&frame=detailFrame&container=true&angularCurrentPortlet=templates`;
+        this.historyUrl = `/html/containers/push_history.jsp`;
     }
 
     ngOnChanges(): void {
