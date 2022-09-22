@@ -21,7 +21,6 @@
 							"pm.test(\"Information Saved Correctly\", function () {",
 							"    ",
 							"    pm.expect(jsonData.entity.categoryName).to.eql(\"Test Category\");",
-							"    pm.expect(jsonData.entity.key).to.eql(\"Test key\"); ",
 							"});",
 							"",
 							"pm.collectionVariables.set(\"inode\", jsonData.entity.inode);",
