@@ -124,6 +124,10 @@ public class Tailer extends com.dotcms.repackage.org.apache.commons.io.input.Tai
      */
     private final boolean end;
 
+    public TailerListener getListener() {
+        return listener;
+    }
+
     /**
      * The listener to notify of events when tailing.
      */
@@ -155,7 +159,7 @@ public class Tailer extends com.dotcms.repackage.org.apache.commons.io.input.Tai
      * @param delay the delay between checks of the file for new content in milliseconds.
      */
     public Tailer(File file, TailerListener listener, long delay) {
-        this(file, listener, 1000, false);
+        this(file, listener, delay, false);
     }
 
     /**
@@ -240,6 +244,10 @@ public class Tailer extends com.dotcms.repackage.org.apache.commons.io.input.Tai
      * Follows changes in the file, calling the TailerListener's handle method for each new line.
      */
     public void run() {
+        processFile();
+    }
+
+    public void processFile(){
         RandomAccessFile reader = null;
         try {
             long last = 0; // The last time the file was checked for changes
@@ -261,7 +269,7 @@ public class Tailer extends com.dotcms.repackage.org.apache.commons.io.input.Tai
                     // The current position in the file
                     position = end ? file.length() : startPosition;
                     last = System.currentTimeMillis();
-                    reader.seek(position);                    
+                    reader.seek(position);
                     readLine(reader);
                     position = reader.getFilePointer();
                 }
@@ -327,14 +335,14 @@ public class Tailer extends com.dotcms.repackage.org.apache.commons.io.input.Tai
             listener.handle(e);
 
         } finally {
-			try{
-				reader.close();
-			}
-			catch(Exception e){
-				Logger.error(this.getClass(), "Unable to close: " + e.getMessage());
-			}
-        	
-         
+            try{
+                reader.close();
+            }
+            catch(Exception e){
+                Logger.error(this.getClass(), "Unable to close: " + e.getMessage());
+            }
+
+
         }
     }
 
