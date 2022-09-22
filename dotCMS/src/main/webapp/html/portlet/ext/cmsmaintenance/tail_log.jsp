@@ -1,4 +1,5 @@
 <%@page import="java.io.File"%>
+<script type="text/javascript" src="/html/js/sse.js"></script>
 <%
 
 	String regex = com.dotmarketing.util.Config.getStringProperty("TAIL_LOG_FILE_REGEX");
@@ -50,11 +51,26 @@
 <script type="text/javascript">
 
 	function reloadTail(){
-		var x = dijit.byId("fileName").getValue();
-        if(x) {
-		    dojo.byId("tailingFrame").src='/dotTailLogServlet/?fileName='+x;
+		var fileName = dijit.byId("fileName").getValue();
+        if(fileName) {
+            var url = '/api/v1/tailLog/' + fileName;
+
+            var source = new SSE(url, null);
+            var iFrameDoc = dojo.byId("tailingFrame").contentWindow.document;
+            iFrameDoc.open();
+            source.addEventListener('success', function(e) {
+                // Assuming we receive JSON-encoded data payloads:
+                var data = JSON.parse(e.data);
+                iFrameDoc.write(data.lines);
+            });
+            iFrameDoc.close();
+            source.addEventListener('failure', function(e) {
+                // process error
+            });
+
             disableFollowOnScrollUp();
             dijit.byId("downloadLog").attr("disabled", false);
+            source.stream();
         } else {
             dijit.byId("downloadLog").attr("disabled", true);
         }
