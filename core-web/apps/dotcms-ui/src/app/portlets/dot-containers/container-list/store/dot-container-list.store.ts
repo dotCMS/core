@@ -76,14 +76,16 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
             addToBundleIdentifier,
             actionHeaderOptions,
             tableColumns,
-            stateLabels
+            stateLabels,
+            selectedContainers
         }: DotContainerListState) => {
             return {
                 containerBulkActions,
                 addToBundleIdentifier,
                 actionHeaderOptions,
                 tableColumns,
-                stateLabels
+                stateLabels,
+                selectedContainers
             };
         }
     );
@@ -118,20 +120,50 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
     private getContainerBulkActions(hasEnvironments = false, isEnterprise = false) {
         return [
             {
-                label: this.dotMessageService.get('Publish')
+                label: this.dotMessageService.get('Publish'),
+                command: () => {
+                    const { selectedContainers } = this.get();
+                    this.publishContainer(
+                        selectedContainers.map((container) => container.identifier)
+                    );
+                }
             },
             ...this.getLicenseAndRemotePublishContainerBulkOptions(hasEnvironments, isEnterprise),
             {
-                label: this.dotMessageService.get('Unpublish')
+                label: this.dotMessageService.get('Unpublish'),
+                command: () => {
+                    const { selectedContainers } = this.get();
+                    this.unPublishContainer(
+                        selectedContainers.map((container) => container.identifier)
+                    );
+                }
             },
             {
-                label: this.dotMessageService.get('Archive')
+                label: this.dotMessageService.get('Archive'),
+                command: () => {
+                    const { selectedContainers } = this.get();
+                    this.archiveContainers(
+                        selectedContainers.map((container) => container.identifier)
+                    );
+                }
             },
             {
-                label: this.dotMessageService.get('Unarchive')
+                label: this.dotMessageService.get('Unarchive'),
+                command: () => {
+                    const { selectedContainers } = this.get();
+                    this.unArchiveContainer(
+                        selectedContainers.map((container) => container.identifier)
+                    );
+                }
             },
             {
-                label: this.dotMessageService.get('Delete')
+                label: this.dotMessageService.get('Delete'),
+                command: () => {
+                    const { selectedContainers } = this.get();
+                    this.deleteContainer(
+                        selectedContainers.map((container) => container.identifier)
+                    );
+                }
             }
         ];
     }
@@ -311,7 +343,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
                       menuItem: {
                           label: this.dotMessageService.get('Duplicate'),
                           command: () => {
-                              //
+                              this.copyContainer(container.identifier);
                           }
                       }
                   }
@@ -338,7 +370,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
                 menuItem: {
                     label: this.dotMessageService.get('publish'),
                     command: () => {
-                        this.publishContainer(container.identifier);
+                        this.publishContainer([container.identifier]);
                     }
                 }
             });
@@ -416,11 +448,20 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
         });
     }
 
-    private publishContainer(identifier: string): void {
+    private publishContainer(identifiers: string[]): void {
         this.dotContainersService
-            .publish(identifier)
+            .publish(identifiers)
             .pipe(take(1))
             .subscribe((response: DotActionBulkResult) => {
+                this.notifyResult(response, 'message.container_list.published');
+            });
+    }
+
+    private copyContainer(identifier: string): void {
+        this.dotContainersService
+            .copy(identifier)
+            .pipe(take(1))
+            .subscribe((response: DotContainer) => {
                 this.notifyResult(response, 'message.container_list.published');
             });
     }
@@ -452,9 +493,9 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
             });
     }
 
-    private notifyResult(response: DotActionBulkResult, messageKey: string): void {
+    private notifyResult(response: DotActionBulkResult | DotContainer, messageKey: string): void {
         const { listing } = this.get();
-        if (response.fails.length) {
+        if ('fails' in response && response.fails.length) {
             this.showErrorDialog({
                 ...response,
                 fails: this.getFailsInfo(response.fails),

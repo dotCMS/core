@@ -12,7 +12,7 @@ import { DotContainer } from '@dotcms/app/shared/models/container/dot-container.
 export const CONTAINER_API_URL = '/api/v1/containers/';
 
 /**
- * Provide util methods to handle templates in the system.
+ * Provide util methods to handle containers in the system.
  * @export
  * @class DotContainersService
  */
@@ -24,7 +24,7 @@ export class DotContainersService {
     ) {}
 
     /**
-     * Return a list of templates.
+     * Return a list of containers.
      * @returns Observable<DotContainer[]>
      * @memberof DotContainersService
      */
@@ -33,7 +33,7 @@ export class DotContainersService {
     }
 
     /**
-     * Get the template, pass the version default working
+     * Get the container, pass the version default working
      *
      * @param {string} id
      * @param {string} [version='working']
@@ -49,7 +49,7 @@ export class DotContainersService {
     }
 
     /**
-     * Get the template filtered by tittle or inode .
+     * Get the container filtered by tittle or inode .
      *
      * @param {string} filter
      * @returns {Observable<DotContainer>}
@@ -64,7 +64,7 @@ export class DotContainersService {
     }
 
     /**
-     * Creates a template
+     * Creates a container
      *
      * @param {DotContainer} values
      * @return Observable<DotContainer>
@@ -75,7 +75,7 @@ export class DotContainersService {
     }
 
     /**
-     * Updates a template
+     * Updates a container
      * @returns Observable<DotContainer>
      * @memberof DotContainersService
      */
@@ -84,7 +84,7 @@ export class DotContainersService {
     }
 
     /**
-     * Save and Publish a template
+     * Save and Publish a container
      * @param {DotContainer} values
      * @returns Observable<DotContainer>
      * @memberof DotContainersService
@@ -98,7 +98,7 @@ export class DotContainersService {
     }
 
     /**
-     * Delete a template
+     * Delete a container
      * @param {string[]} identifiers
      * @returns Observable<DotActionBulkResult>
      * @memberof DotContainersService
@@ -106,61 +106,61 @@ export class DotContainersService {
     delete(identifiers: string[]): Observable<DotActionBulkResult> {
         return this.request<DotActionBulkResult>({
             method: 'DELETE',
-            url: CONTAINER_API_URL,
+            url: `${CONTAINER_API_URL}bulkdelete`,
             body: identifiers
         });
     }
 
     /**
-     * Unarchive a template
+     * Unarchive a container
      * @param {string[]} identifiers
      * @returns Observable<DotActionBulkResult>
      * @memberof DotContainersService
      */
     unArchive(identifiers: string[]): Observable<DotActionBulkResult> {
-        const url = `${CONTAINER_API_URL}_unarchive`;
+        const url = `${CONTAINER_API_URL}_bulkunarchive`;
 
         return this.request<DotActionBulkResult>({ method: 'PUT', url, body: identifiers });
     }
 
     /**
-     * Archive a template
+     * Archive a container
      * @param {string[]} identifiers
      * @returns Observable<DotActionBulkResult>
      * @memberof DotContainersService
      */
     archive(identifiers: string[]): Observable<DotActionBulkResult> {
-        const url = `${CONTAINER_API_URL}_archive`;
+        const url = `${CONTAINER_API_URL}_bulkarchive`;
 
         return this.request<DotActionBulkResult>({ method: 'PUT', url, body: identifiers });
     }
 
     /**
-     * Unpublish a template00
+     * Unpublish a container00
      * @param {string[]} identifiers
      * @returns Observable<DotActionBulkResult>
      * @memberof DotContainersService
      */
     unPublish(identifiers: string[]): Observable<DotActionBulkResult> {
-        const url = `${CONTAINER_API_URL}_unpublish`;
+        const url = `${CONTAINER_API_URL}_bulkunpublish`;
 
         return this.request<DotActionBulkResult>({ method: 'PUT', url, body: identifiers });
     }
 
     /**
-     * Publish a template
-     * @param {string} identifier
-     * @returns Observable<DotContainer>
+     * Publish a container
+     * @param {string[]} identifiers
+     * @returns Observable<DotActionBulkResult>
      * @memberof DotContainersService
      */
-    publish(identifier: string): Observable<DotActionBulkResult> {
-        const url = `${CONTAINER_API_URL}_publish?containerId=${identifier}`;
+    publish(identifiers: string[]): Observable<DotActionBulkResult> {
+        const url = `${CONTAINER_API_URL}_bulkpublish`;
 
-        return this.request<DotActionBulkResult>({ method: 'PUT', url });
+        return this.request<DotActionBulkResult>({ method: 'PUT', url, body: identifiers });
     }
 
     /**
-     * Copy a template
+     * Copy a container
      * @param {string} identifier
      * @returns Observable<DotContainer>
      * @memberof DotContainersService

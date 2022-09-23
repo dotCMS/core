@@ -167,7 +167,7 @@ describe('DotContainersService', () => {
     });
     it('should delete a container', () => {
         service.delete(['testId01']).subscribe();
-        const req = httpMock.expectOne(CONTAINER_API_URL);
+        const req = httpMock.expectOne(`${CONTAINER_API_URL}bulkdelete`);
 
         expect(req.request.method).toBe('DELETE');
         expect(req.request.body).toEqual(['testId01']);
@@ -175,7 +175,7 @@ describe('DotContainersService', () => {
     });
     it('should unArchive a container', () => {
         service.unArchive(['testId01']).subscribe();
-        const req = httpMock.expectOne(`${CONTAINER_API_URL}_unarchive`);
+        const req = httpMock.expectOne(`${CONTAINER_API_URL}_bulkunarchive`);
 
         expect(req.request.method).toBe('PUT');
         expect(req.request.body).toEqual(['testId01']);
@@ -183,7 +183,7 @@ describe('DotContainersService', () => {
     });
     it('should archive a container', () => {
         service.archive(['testId01']).subscribe();
-        const req = httpMock.expectOne(`${CONTAINER_API_URL}_archive`);
+        const req = httpMock.expectOne(`${CONTAINER_API_URL}_bulkarchive`);
 
         expect(req.request.method).toBe('PUT');
         expect(req.request.body).toEqual(['testId01']);
@@ -191,7 +191,7 @@ describe('DotContainersService', () => {
     });
     it('should unPublish a container', () => {
         service.unPublish(['testId01']).subscribe();
-        const req = httpMock.expectOne(`${CONTAINER_API_URL}_unpublish`);
+        const req = httpMock.expectOne(`${CONTAINER_API_URL}_bulkunpublish`);
 
         expect(req.request.method).toBe('PUT');
         expect(req.request.body).toEqual(['testId01']);
@@ -199,11 +199,11 @@ describe('DotContainersService', () => {
     });
     it('should publish a container', () => {
         const identifier = 'testId01';
-        service.publish(identifier).subscribe();
-        const req = httpMock.expectOne(`${CONTAINER_API_URL}_publish?containerId=${identifier}`);
+        service.publish([identifier]).subscribe();
+        const req = httpMock.expectOne(`${CONTAINER_API_URL}_bulkpublish`);
 
         expect(req.request.method).toBe('PUT');
-        expect(req.request.body).toEqual(null);
+        expect(req.request.body).toEqual([identifier]);
         req.flush(mockBulkResponseSuccess);
     });
     it('should copy a container', () => {
