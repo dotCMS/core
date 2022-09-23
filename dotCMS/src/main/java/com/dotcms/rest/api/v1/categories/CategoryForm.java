@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 /**
  * Category Input Form
  *
- * @author jsanca
+ * @author Hassan Mustafa Baig
  */
 @JsonDeserialize(builder = CategoryForm.Builder.class)
 public class CategoryForm extends Validated {

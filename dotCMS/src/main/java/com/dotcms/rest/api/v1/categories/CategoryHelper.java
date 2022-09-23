@@ -11,9 +11,9 @@ import io.vavr.control.Try;
 import java.util.function.Supplier;
 
 /**
- * Helper for templates
+ * Helper for categories
  *
- * @author jsanca
+ * @author Hassan Mustafa Baig
  */
 public class CategoryHelper {
 

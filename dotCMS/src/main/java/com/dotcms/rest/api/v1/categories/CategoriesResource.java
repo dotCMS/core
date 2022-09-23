@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.categories;
 
-import com.dotcms.business.WrapInTransaction;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
@@ -21,6 +20,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
+import com.dotmarketing.portlets.categories.business.PaginatedCategories;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.Logger;
@@ -28,8 +28,10 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.util.Date;
+import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -111,6 +113,59 @@ public class CategoriesResource {
     }
 
     /**
+     * Return a list of {@link com.dotmarketing.portlets.categories.model.Category}, entity response
+     * syntax:.
+     *
+     * <code> { contentTypes: array of Category total: total number of Categories } <code/>
+     * <p>
+     * Url syntax:
+     * api/v1/categories/children?filter=filter-string&page=page-number&per_page=per-page&ordeby=order-field-name&direction=order-direction&inode=parentId
+     * <p>
+     * where:
+     *
+     * <ul>
+     * <li>filter-string: just return Category whose content this pattern into its name</li>
+     * <li>page: page to return</li>
+     * <li>per_page: limit of items to return</li>
+     * <li>ordeby: field to order by</li>
+     * <li>direction: asc for upward order and desc for downward order</li>
+     * </ul>
+     * <p>
+     * Url example: v1/categories/children?filter=test&page=2&orderby=categoryName
+     *
+     * @param httpRequest
+     * @return
+     */
+    @GET
+    @Path(("/children"))
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response getChildren(@Context final HttpServletRequest httpRequest,
+            @Context final HttpServletResponse httpResponse,
+            @QueryParam(PaginationUtil.FILTER) final String filter,
+            @QueryParam(PaginationUtil.PAGE) final int page,
+            @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+            @DefaultValue("categoryName") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
+            @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
+            @QueryParam("inode") final String inode) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true,
+                null);
+
+        Response response = null;
+        final User user = initData.getUser();
+
+        DotPreconditions.checkArgument(UtilMethods.isSet(inode),
+                "The inode is required");
+
+        PaginatedCategories list = this.categoryAPI.findChildren(user, inode, true, page, perPage,
+                filter, direction);
+
+        return getPage(list.getCategories(), list.getTotalCount(), page, perPage);
+    }
+
+    /**
      * Saves a new working version of a category.
      *
      * @param request
@@ -143,7 +198,6 @@ public class CategoriesResource {
                 .build();
     }
 
-    @WrapInTransaction
     private Category fillAndSave(final CategoryForm categoryForm,
             final User user,
             final Host host,
@@ -173,5 +227,16 @@ public class CategoriesResource {
                 host.getTitle() != null ? host.getTitle() : "default");
 
         return category;
+    }
+
+    private Response getPage(final List<Category> list, final int totalCount, final int page,
+            final int perPage) {
+
+        return Response.
+                ok(new ResponseEntityView((Object) list))
+                .header("X-Pagination-Per-Page", perPage)
+                .header("X-Pagination-Current-Page", page)
+                .header("X-Pagination-Total-Entries", totalCount)
+                .build();
     }
 }
