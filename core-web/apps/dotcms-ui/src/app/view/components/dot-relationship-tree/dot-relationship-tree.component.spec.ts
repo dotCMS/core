@@ -1,4 +1,4 @@
-import { DebugElement } from '@angular/core';
+import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
@@ -23,15 +23,26 @@ const fakeContentType: DotCMSContentType = {
     baseType: 'testBaseType'
 };
 
-describe('DotRelationshipTreeComponent', () => {
-    describe('with dot', () => {
-        let component: DotRelationshipTreeComponent;
-        let fixture: ComponentFixture<DotRelationshipTreeComponent>;
-        let de: DebugElement;
+@Component({
+    selector: 'dot-test-host-component',
+    template: ` <dot-relationship-tree [velocityVar]="velocityVar"
+    [contentType]="contentType" [isParentField]="isParentField"></dot-relationship-tree>`
+})
+class TestHostComponent {
+    velocityVar = 'Parent.Children';
+    contentType = fakeContentType;
+    isParentField = false;
+}
 
+describe('DotRelationshipTreeComponent', () => {
+    describe('with dot - is Child Field', () => {
+        let fixture: ComponentFixture<TestHostComponent>;
+        let deHost: DebugElement;
+        let de: DebugElement;
+        
         beforeEach(async () => {
             await TestBed.configureTestingModule({
-                declarations: [DotRelationshipTreeComponent],
+                declarations: [TestHostComponent, DotRelationshipTreeComponent],
                 imports: [DotIconModule, DotPipesModule, DotCopyButtonModule],
                 providers: [
                     {
@@ -43,11 +54,9 @@ describe('DotRelationshipTreeComponent', () => {
         });
 
         beforeEach(() => {
-            fixture = TestBed.createComponent(DotRelationshipTreeComponent);
-            component = fixture.componentInstance;
-            de = fixture.debugElement;
-            component.velocityVar = 'Parent.Children';
-            component.contentType = fakeContentType;
+            fixture = TestBed.createComponent(TestHostComponent);
+            deHost = fixture.debugElement;
+            de = deHost.query(By.css('dot-relationship-tree'));
             fixture.detectChanges();
         });
 
@@ -71,14 +80,14 @@ describe('DotRelationshipTreeComponent', () => {
         });
     });
 
-    describe('without dot', () => {
-        let component: DotRelationshipTreeComponent;
-        let fixture: ComponentFixture<DotRelationshipTreeComponent>;
+    describe('without dot - is Parent Field', () => {
+        let fixture: ComponentFixture<TestHostComponent>;
+        let deHost: DebugElement;
         let de: DebugElement;
-
+        
         beforeEach(async () => {
             await TestBed.configureTestingModule({
-                declarations: [DotRelationshipTreeComponent],
+                declarations: [TestHostComponent, DotRelationshipTreeComponent],
                 imports: [DotIconModule, DotPipesModule, DotCopyButtonModule],
                 providers: [
                     {
@@ -90,11 +99,11 @@ describe('DotRelationshipTreeComponent', () => {
         });
 
         beforeEach(() => {
-            fixture = TestBed.createComponent(DotRelationshipTreeComponent);
-            component = fixture.componentInstance;
-            de = fixture.debugElement;
-            component.velocityVar = 'Parent';
-            component.contentType = fakeContentType;
+            fixture = TestBed.createComponent(TestHostComponent);
+            deHost = fixture.debugElement;
+            de = deHost.query(By.css('dot-relationship-tree'));
+            deHost.componentInstance.velocityVar = 'Parent';
+            deHost.componentInstance.isParentField = true;
             fixture.detectChanges();
         });
 

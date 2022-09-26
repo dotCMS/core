@@ -10,11 +10,23 @@ interface ModuleConf {
   module: string
   folder?: string
   main?: boolean
+  parent?: string
 }
+
+/**
+ * Resolves which field to use
+ *
+ * @param module {@link ModuleConf} module to get info from
+ * @returns value in resolved field
+ */
+const location = (module: ModuleConf): string => module.folder || module.module
 
 const buildId = core.getInput('build_id')
 const current = core.getInput('current')
 const modulesConf: ModuleConf[] = JSON.parse(core.getInput('modules'))
+const childModules = modulesConf
+  .filter(m => m.module !== current && m.parent === current)
+  .map(m => location(m))
 const pullRequest = core.getInput('pull_request')
 const commit = core.getInput('commit')
 
@@ -26,7 +38,7 @@ const commit = core.getInput('commit')
 export const moduleMatches = async (): Promise<boolean> => {
   validateConf()
 
-  core.info(`Provided current momdule: ${current}`)
+  core.info(`Provided current module: ${current}`)
   core.info(
     `Provided modules configuration: ${JSON.stringify(modulesConf, null, 2)}`
   )
@@ -92,7 +104,6 @@ const searchInCommits = (module: ModuleConf, commits: string[]): boolean => {
     core.info(`Searching in commit ${sha} by running:\n${cmd}`)
 
     const output = shelljs.exec(cmd)?.stdout || ''
-    core.info(`Returned these changes:\n${output}`)
     const changed = output.split('\n')
     if (searchInChanges(module, changed)) {
       return true
@@ -159,7 +170,6 @@ const resolveCommits = async (): Promise<string[]> => {
 /**
  * Uses fetch function to send GET http request to Github API to get pull request commits data.
  *
- * @param pullRequest pull request
  * @returns {@link Response} object
  */
 const getPullRequestCommits = async (): Promise<Response> => {
@@ -171,14 +181,6 @@ const getPullRequestCommits = async (): Promise<Response> => {
 }
 
 /**
- * Resolves which field to use
- *
- * @param module {@link ModuleConf} module to get info from
- * @returns value in resolved field
- */
-const location = (module: ModuleConf): string => module.folder || module.module
-
-/**
  * Evaluates if module is included in change for the cases when the module is configured as main and when is a "child" module.
  *
  * @param module {@link ModuleConf} module instance
@@ -187,9 +189,11 @@ const location = (module: ModuleConf): string => module.folder || module.module
  */
 const doesCurrentMatch = (module: ModuleConf, change: string): boolean => {
   if (!!module.main) {
-    return !!shelljs
-      .ls('-A', module.folder || '.')
-      .find(file => change.startsWith(file))
+    const folder = module.folder || '.'
+    const list = shelljs
+      .ls('-A', folder)
+      .filter(file => !childModules.find(cm => file.startsWith(cm)))
+    return !!list.find(file => change.startsWith(file))
   }
 
   return change.startsWith(location(module))

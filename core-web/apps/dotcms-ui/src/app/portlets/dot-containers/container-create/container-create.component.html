@@ -1,4 +1,15 @@
-<dot-portlet-base>
-    <dot-portlet-toolbar title="Container Create"></dot-portlet-toolbar>
-    <p>container-create works!</p>
+<dot-portlet-base [boxed]="false">
+    <div class="container-create__tab-container">
+        <p-tabView class="container-create__tabs">
+            <p-tabPanel [header]="'message.containers.tab.properties' | dm">
+                <ng-template pTemplate="content"> Complex Content to Lazy Load 1 </ng-template>
+            </p-tabPanel>
+            <p-tabPanel [header]="'message.containers.tab.permissions' | dm">
+                <ng-template pTemplate="content"> Complex Content to Lazy Load 2 </ng-template>
+            </p-tabPanel>
+            <p-tabPanel [header]="'message.containers.tab.history' | dm">
+                <ng-template pTemplate="content"> Complex Content to Lazy Load 3 </ng-template>
+            </p-tabPanel>
+        </p-tabView>
+    </div>
 </dot-portlet-base>

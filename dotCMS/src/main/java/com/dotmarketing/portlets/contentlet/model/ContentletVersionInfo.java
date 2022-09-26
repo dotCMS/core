@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.model;
 
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.util.UtilMethods;
 import java.io.Serializable;
@@ -8,6 +9,18 @@ public class ContentletVersionInfo extends VersionInfo implements Serializable {
     private static final long serialVersionUID = 8952464908349482530L;
 
     private long lang;
+
+    private String variant;
+
+    public String getVariant() {
+        return UtilMethods.isSet(variant) ? variant : VariantAPI.DEFAULT_VARIANT.identifier();
+    }
+
+    public void setVariant(final String variant) {
+        this.variant = variant;
+    }
+
+
     public long getLang() {
         return lang;
     }

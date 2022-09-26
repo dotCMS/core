@@ -116,6 +116,7 @@ describe('SiteSelectorComponent', () => {
         expect(paginatorService.extraParams.get('archive')).toBe('false');
         expect(paginatorService.extraParams.get('live')).toBe('false');
         expect(paginatorService.extraParams.get('system')).toBe('false');
+        expect(paginatorService.paginationPerPage).toBe(15);
     });
 
     it('should set extra params to paginator service to true', () => {

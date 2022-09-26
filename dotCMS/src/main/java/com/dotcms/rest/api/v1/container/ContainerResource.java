@@ -10,8 +10,11 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.BulkResultView;
+import com.dotcms.rest.api.FailedResultView;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.ContainerPaginator;
 import com.dotcms.util.pagination.OrderDirection;
@@ -50,6 +53,9 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ResourceNotFoundException;
@@ -1068,4 +1074,343 @@ public class ContainerResource implements Serializable {
         }
     }
 
+    /**
+     * Copies container to the specified host
+     *
+     * @param request
+     * @param response
+     * @param id       id identifier to copy.
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @POST
+    @Path("/{id}/_copy")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityContainerView copy(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("id") final String id) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).requiredBackendUser(true)
+                .rejectWhenNoUser(true).init();
+        final User user = initData.getUser();
+        final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+        final PageMode pageMode = PageMode.get(request);
+
+        DotPreconditions.checkArgument(UtilMethods.isSet(id),
+                    "The container id is required");
+
+        final Container sourceContainer = this.getContainerWorking(id, user,
+                WebAPILocator.getHostWebAPI().getHost(request));
+
+        if (null != sourceContainer && InodeUtils.isSet(sourceContainer.getInode())) {
+
+            ActivityLogger.logInfo(this.getClass(), "Copy Container",
+                    "User " + user.getPrimaryKey() + " saved " + sourceContainer.getTitle(),
+                    host.getHostname());
+
+            Container copiedContainer = this.containerAPI.copy(sourceContainer, host, user,
+                    pageMode.respectAnonPerms);
+
+            Logger.debug(this,
+                    () -> "The container: " + sourceContainer.getIdentifier() + " has been copied");
+
+            return new ResponseEntityContainerView(Collections.singletonList(copiedContainer));
+        } else {
+
+            Logger.error(this, "Container with Id: " + id + " does not exist");
+            throw new DoesNotExistException("Container with Id: " + id + " does not exist");
+        }
+    }
+
+    /**
+     * Deletes Container(s).
+     *
+     * This method receives a list of identifiers and deletes the containers.
+     * To delete a container successfully the user needs to have Edit Permissions over it.
+     * @param request            {@link HttpServletRequest}
+     * @param response           {@link HttpServletResponse}
+     * @param containersToDelete {@link String} container identifier to look for and then delete it
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @DELETE
+    @Path("bulkdelete")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response bulkDelete(@Context final HttpServletRequest  request,
+            @Context final HttpServletResponse response,
+            final List<String> containersToDelete) {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final PageMode pageMode = PageMode.get(request);
+        Long deletedContainersCount  = 0L;
+        final List<FailedResultView> failedToDelete  = new ArrayList<>();
+
+        DotPreconditions.checkArgument(UtilMethods.isSet(containersToDelete),
+                "The body must send a collection of container identifier such as: " +
+                        "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
+
+        for(final String containerId : containersToDelete){
+            try{
+                final Container container = this.getContainerWorking(containerId, user,
+                        WebAPILocator.getHostWebAPI().getHost(request));
+
+                if (null != container && InodeUtils.isSet(container.getInode())){
+                    this.containerAPI.delete(container, user, pageMode.respectAnonPerms);
+                    ActivityLogger.logInfo(this.getClass(), "Delete Container Action", "User " +
+                            user.getPrimaryKey() + " deleted template: " + container.getIdentifier());
+                    deletedContainersCount++;
+                } else {
+                    Logger.error(this, "Container with Id: " + containerId + " does not exist");
+                    failedToDelete.add(new FailedResultView(containerId,"Container does not exist"));
+                }
+            } catch(Exception e){
+                Logger.debug(this,e.getMessage(),e);
+                failedToDelete.add(new FailedResultView(containerId,e.getMessage()));
+            }
+        }
+
+        return Response.ok(new ResponseEntityView(
+                        new BulkResultView(deletedContainersCount,0L,failedToDelete)))
+                .build();
+    }
+
+
+    /**
+     * Publishes Container(s)
+     *
+     * This method receives a list of identifiers and publishes the containers.
+     * To publish a container successfully the user needs to have Publish Permissions
+     *
+     * @param request            {@link HttpServletRequest}
+     * @param response           {@link HttpServletResponse}
+     * @param containersToPublish {@link List} list of container ids to publish
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @PUT
+    @Path("/_bulkpublish")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response bulkPublish(@Context final HttpServletRequest  request,
+            @Context final HttpServletResponse response,
+            final List<String> containersToPublish){
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final PageMode pageMode = PageMode.get(request);
+        Long publishedContainersCount = 0L;
+        final List<FailedResultView> failedToPublish    = new ArrayList<>();
+
+        DotPreconditions.checkArgument(UtilMethods.isSet(containersToPublish),
+                "The body must send a collection of container identifier such as: " +
+                        "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
+
+        for (final String containerId : containersToPublish) {
+            try{
+                final Container container =  this.getContainerWorking(containerId, user,
+                        WebAPILocator.getHostWebAPI().getHost(request));
+                if (null != container && InodeUtils.isSet(container.getInode())){
+                    this.containerAPI.publish(container, user, pageMode.respectAnonPerms);
+                    ActivityLogger.logInfo(this.getClass(), "Publish Container Action", "User " +
+                            user.getPrimaryKey() + " published container: " + container.getIdentifier());
+                    publishedContainersCount++;
+                } else {
+                    Logger.error(this, "Container with Id: " + containerId + " does not exist");
+                    failedToPublish.add(new FailedResultView(containerId,"Container does not exist"));
+                }
+            } catch(Exception e) {
+                Logger.debug(this, e.getMessage(), e);
+                failedToPublish.add(new FailedResultView(containerId,e.getMessage()));
+            }
+        }
+
+        return Response.ok(new ResponseEntityView(
+                        new BulkResultView(publishedContainersCount,0L,failedToPublish)))
+                .build();
+    }
+
+    /**
+     * Unpublishes Container(s)
+     *
+     * This method receives a list of identifiers and unpublishes the containers.
+     * To publish a container successfully the user needs to have Publish Permissions.
+     *
+     * @param request            {@link HttpServletRequest}
+     * @param response           {@link HttpServletResponse}
+     * @param containersToUnpublish {@link List} list of container ids to unpublish
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @PUT
+    @Path("/_bulkunpublish")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response bulkUnpublish(@Context final HttpServletRequest  request,
+            @Context final HttpServletResponse response,
+            final List<String> containersToUnpublish) {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final PageMode pageMode = PageMode.get(request);
+        Long unpublishedContainersCount = 0L;
+        final List<FailedResultView> failedToUnpublish    = new ArrayList<>();
+
+        DotPreconditions.checkArgument(UtilMethods.isSet(containersToUnpublish),
+                "The body must send a collection of container identifier such as: " +
+                        "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
+
+        for (final String containerId : containersToUnpublish) {
+            try{
+                final Container container =  this.getContainerWorking(containerId, user,
+                        WebAPILocator.getHostWebAPI().getHost(request));
+                if (null != container && InodeUtils.isSet(container.getInode())){
+                    this.containerAPI.unpublish(container, user, pageMode.respectAnonPerms);
+                    ActivityLogger.logInfo(this.getClass(), "Unpublish Container Action", "User " +
+                            user.getPrimaryKey() + " unpublished container: " + container.getIdentifier());
+                    unpublishedContainersCount++;
+                } else {
+                    Logger.error(this, "Container with Id: " + containerId + " does not exist");
+                    failedToUnpublish.add(new FailedResultView(containerId,"Container does not exist"));
+                }
+            } catch(Exception e) {
+                Logger.debug(this, e.getMessage(), e);
+                failedToUnpublish.add(new FailedResultView(containerId,e.getMessage()));
+            }
+        }
+
+        return Response.ok(new ResponseEntityView(
+                        new BulkResultView(unpublishedContainersCount,0L,failedToUnpublish)))
+                .build();
+    }
+
+    /**
+     * Archives container(s).
+     *
+     * This method receives a list of identifiers and archives the containers.
+     * To archive a container successfully the user needs to have Edit Permissions.
+     *
+     * @param request            {@link HttpServletRequest}
+     * @param response           {@link HttpServletResponse}
+     * @param containersToArchive {@link List} containers identifier to archive.
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @PUT
+    @Path("/_bulkarchive")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response bulkArchive(@Context final HttpServletRequest  request,
+            @Context final HttpServletResponse response,
+            final List<String> containersToArchive) {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final PageMode pageMode = PageMode.get(request);
+        Long archivedContainersCount = 0L;
+        final List<FailedResultView> failedToArchive    = new ArrayList<>();
+
+        DotPreconditions.checkArgument(UtilMethods.isSet(containersToArchive),
+                "The body must send a collection of container identifier such as: " +
+                        "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
+
+
+        for(final String containerId : containersToArchive){
+            try{
+                final Container container =  this.getContainerWorking(containerId, user,
+                        WebAPILocator.getHostWebAPI().getHost(request));
+                if (null != container && InodeUtils.isSet(container.getInode())){
+                    this.containerAPI.archive(container, user, pageMode.respectAnonPerms);
+                    ActivityLogger.logInfo(this.getClass(), "Archive Container Action", "User " +
+                            user.getPrimaryKey() + " archived container: " + container.getIdentifier());
+                    archivedContainersCount++;
+                } else {
+                    Logger.error(this, "Container with Id: " + containerId + " does not exist");
+                    failedToArchive.add(new FailedResultView(containerId,"Container does not exist"));
+                }
+            } catch(Exception e) {
+                Logger.debug(this,e.getMessage(),e);
+                failedToArchive.add(new FailedResultView(containerId,e.getMessage()));
+            }
+        }
+
+        return Response.ok(new ResponseEntityView(
+                        new BulkResultView(archivedContainersCount,0L,failedToArchive)))
+                .build();
+    }
+
+    /**
+     * Unarchives container(s).
+     *
+     * This method receives a list of identifiers and unarchives the containers.
+     * To unarchive a container successfully the user needs to have Edit Permissions and the container
+     * needs to be archived.
+     *
+     * @param request            {@link HttpServletRequest}
+     * @param response           {@link HttpServletResponse}
+     * @param containersToUnarchive {@link List} containers identifier to unarchive.
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @PUT
+    @Path("/_bulkunarchive")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response bulkUnarchive(@Context final HttpServletRequest  request,
+            @Context final HttpServletResponse response,
+            final List<String> containersToUnarchive){
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final PageMode pageMode = PageMode.get(request);
+        Long unarchivedContainersCount = 0L;
+        final List<FailedResultView> failedToUnarchive    = new ArrayList<>();
+
+        DotPreconditions.checkArgument(UtilMethods.isSet(containersToUnarchive),
+                "The body must send a collection of container identifier such as: " +
+                        "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
+
+        for(final String containerId : containersToUnarchive){
+            try{
+                final Container container =  this.getContainerWorking(containerId, user,
+                        WebAPILocator.getHostWebAPI().getHost(request));
+                if (null != container && InodeUtils.isSet(container.getInode())){
+                    this.containerAPI.unarchive(container, user, pageMode.respectAnonPerms);
+                    ActivityLogger.logInfo(this.getClass(), "Unarchive Container Action", "User " +
+                            user.getPrimaryKey() + " unarchived container: " + container.getIdentifier());
+                    unarchivedContainersCount++;
+                } else {
+                    Logger.error(this, "Container with Id: " + containerId + " does not exist");
+                    failedToUnarchive.add(new FailedResultView(containerId,"Container does not exist"));
+                }
+            } catch(Exception e) {
+                Logger.debug(this, e.getMessage(), e);
+                failedToUnarchive.add(new FailedResultView(containerId,e.getMessage()));
+            }
+        }
+
+        return Response.ok(new ResponseEntityView(
+                        new BulkResultView(unarchivedContainersCount,0L,failedToUnarchive)))
+                .build();
+    }
 }

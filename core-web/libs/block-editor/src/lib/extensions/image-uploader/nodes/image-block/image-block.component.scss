@@ -1,0 +1,10 @@
+@use "variables" as *;
+
+:host {
+    display: block;
+    margin-bottom: $dot-editor-size;
+
+    img {
+        max-width: 100%;
+    }
+}
