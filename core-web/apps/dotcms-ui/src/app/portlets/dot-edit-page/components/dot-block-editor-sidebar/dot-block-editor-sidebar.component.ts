@@ -77,6 +77,7 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
                         detail: { name: 'in-iframe' }
                     });
                     window.top.document.dispatchEvent(customEvent);
+                    this.closeSidebar();
                 },
                 (e: HttpErrorResponse) => {
                     this.saving = false;
