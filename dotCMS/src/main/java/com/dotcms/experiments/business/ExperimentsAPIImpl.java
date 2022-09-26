@@ -14,6 +14,7 @@ import com.dotcms.experiments.model.AbstractTrafficProportion.Type;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.Scheduling;
+import com.dotcms.experiments.model.TargetingCondition;
 import com.dotcms.experiments.model.TrafficProportion;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.LicenseValiditySupplier;
@@ -32,13 +33,21 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.rules.model.Condition;
+import com.dotmarketing.portlets.rules.model.ConditionGroup;
+import com.dotmarketing.portlets.rules.model.LogicalOperator;
+import com.dotmarketing.portlets.rules.model.Rule;
+import com.dotmarketing.portlets.rules.model.Rule.FireOn;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -47,6 +56,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 
 public class ExperimentsAPIImpl implements ExperimentsAPI {
 
@@ -97,18 +107,81 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         }
 
         if(experiment.targetingConditions().isPresent()) {
-            saveTargetingConditions(experiment);
+            saveTargetingConditions(experiment, user);
         }
 
         final Experiment experimentToSave = builder.build();
 
-        return factory.save(experimentToSave);
+        factory.save(experimentToSave);
+
+        DotPreconditions.isTrue(experimentToSave.id().isPresent(), "Experiment doesn't have Id");
+
+        final Optional<Experiment> savedExperiment = find(experimentToSave.id().get(), user);
+
+        DotPreconditions.isTrue(savedExperiment.isPresent(), "Saved Experiment not found");
+
+        return savedExperiment.get();
     }
 
-    private void saveTargetingConditions(final Experiment experiment) {
-        if(experiment.targetingConditions().isPresent()) {
-            rulesAPI.getAllRulesByParent(experiment)
+    private void saveTargetingConditions(final Experiment experiment, final User user)
+            throws DotDataException, DotSecurityException {
+        if(experiment.targetingConditions().isEmpty()) {
+            return;
         }
+
+        List<Rule> rules = Try.of(()->rulesAPI
+                .getAllRulesByParent(experiment, user, false))
+                .getOrElse(Collections::emptyList);
+
+        Rule experimentRule;
+
+        if(UtilMethods.isSet(rules)) {
+            experimentRule = rules.get(0);
+        } else {
+            experimentRule = createRuleAndConditionGroup(experiment, user);
+        }
+
+        // transform TargetingConditions into conditions
+        experiment.targetingConditions().get().forEach((targetingCondition -> {
+            createAndSaveCondition(user, experimentRule, targetingCondition);
+        }));
+
+    }
+
+    private void createAndSaveCondition(User user, Rule experimentRule, TargetingCondition targetingCondition) {
+        final Condition condition = new Condition();
+        condition.setConditionGroup(experimentRule.getGroups().get(0).getId());
+        condition.setOperator(targetingCondition.operator());
+        condition.setConditionletId(targetingCondition.conditionKey());
+
+        // add all values using condition.addValue
+        targetingCondition.values().forEach(condition::addValue);
+
+        condition.checkValid();
+
+        Try.run(()->rulesAPI.saveCondition(condition, user, false))
+                .getOrElseThrow(()->new DotStateException("Error saving Condition: "
+                        + condition.getConditionletId()));
+    }
+
+    @NotNull
+    private Rule createRuleAndConditionGroup(Experiment experiment, User user)
+            throws DotDataException, DotSecurityException {
+        DotPreconditions.isTrue(experiment.id().isPresent(), ()->"Error saving Experiment Targeting");
+
+        Rule experimentRule;
+        experimentRule = new Rule();
+        experimentRule.setParent(experiment.id().get());
+        experimentRule.setName(experiment.name());
+        experimentRule.setFireOn(FireOn.EVERY_PAGE);
+        experimentRule.setEnabled(true);
+        rulesAPI.saveRuleNoParentCheck(experimentRule, user, false);
+
+        final ConditionGroup conditionGroup = new ConditionGroup();
+        conditionGroup.setRuleId(experimentRule.getId());
+        conditionGroup.setOperator(LogicalOperator.AND);
+        rulesAPI.saveConditionGroup(conditionGroup, user, false);
+        return experimentRule;
     }
 
     @CloseDBIfOpened
@@ -126,6 +199,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     "You don't have permission to get the Experiment. "
                             + "Experiment Id: " + experiment.get().id());
         }
+
+//        addTargetingConditions
 
         return experiment;
     }
@@ -152,8 +227,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 DotStateException.class);
 
         final Experiment archived = persistedExperiment.get().withStatus(Status.ARCHIVED);
-        return factory.save(archived);
-
+        return save(archived, user);
     }
 
     @Override
@@ -231,7 +305,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         }
 
         final Experiment running = experimentToStart.withStatus(Status.RUNNING);
-        return factory.save(running);
+        return save(running, user);
 
     }
 
@@ -268,7 +342,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         final Experiment ended = persistedExperimentOpt.get().withStatus(ENDED)
                 .withScheduling(endedScheduling);
-        return factory.save(ended);
+        return save(ended, user);
     }
 
     @WrapInTransaction

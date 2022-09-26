@@ -5,6 +5,7 @@ import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
+import com.dotcms.experiments.model.TargetingCondition;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.PATCH;
 import com.dotcms.rest.ResponseEntityView;
@@ -319,31 +320,6 @@ public class ExperimentsResource {
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
         final Experiment updatedExperiment =  experimentsAPI.deleteVariant(experimentId, variantName, user);
-        return new ResponseEntityExperimentView(Collections.singletonList(updatedExperiment));
-    }
-
-    /**
-     * Adds a new {@link com.dotcms.experiments.model.TargetingCondition} to the {@link Experiment}
-     *
-     */
-    @POST
-    @Path("/{experimentId}/targetingCondition")
-    @JSONP
-    @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityExperimentView addTargetingCondition(@Context final HttpServletRequest request,
-            @Context final HttpServletResponse response,
-            @PathParam("experimentId") final String experimentId,
-            AddVariantForm addVariantForm) throws DotDataException, DotSecurityException {
-
-        DotPreconditions.isTrue(addVariantForm!=null, ()->"Missing Variant name",
-                IllegalArgumentException.class);
-
-        final InitDataObject initData = getInitData(request, response);
-        final User user = initData.getUser();
-        final Experiment updatedExperiment =  experimentsAPI.addVariant(experimentId,
-                addVariantForm.getName(), user);
         return new ResponseEntityExperimentView(Collections.singletonList(updatedExperiment));
     }
 

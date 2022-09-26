@@ -50,8 +50,7 @@ public class ExperimentsFactoryImpl implements
         if(saved.isEmpty()) {
             throw new DotDataException("Unable to retrieve saved/updated Experiment");
         }
-
-        return saved.get();
+        return experiment;
     }
 
     @Override

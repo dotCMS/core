@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.io.Serializable;
+import java.util.Map;
 import org.immutables.value.Value;
 
 @Value.Style(typeImmutable="*", typeAbstract="Abstract*")
@@ -15,11 +16,8 @@ public interface AbstractTargetingCondition extends Serializable {
     @JsonProperty("conditionKey")
     String conditionKey();
 
-    @JsonProperty("comparison")
-    String comparison();
-
-    @JsonProperty("value")
-    String value();
+    @JsonProperty("values")
+    Map<String, String> values();
 
     @JsonProperty("operator")
     @Value.Default
