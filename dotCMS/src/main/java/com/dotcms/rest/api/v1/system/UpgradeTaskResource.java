@@ -6,6 +6,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
 import javax.servlet.http.HttpServletRequest;
@@ -71,7 +72,7 @@ public class UpgradeTaskResource {
                 if (startupTask.forceRun()) {
 
                     startupTask.executeUpgrade();
-
+                    HibernateUtil.closeAndCommitTransaction();
                     Logger.info(this, "Ran the upgrade task: " + upgradeTaskClassName);
                     return Response.ok(new ResponseEntityView(
                             "Ran the upgrade task: " + upgradeTaskClassName)).build(); // 200
