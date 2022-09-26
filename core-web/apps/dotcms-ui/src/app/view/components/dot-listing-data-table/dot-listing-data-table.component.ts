@@ -48,7 +48,7 @@ export class DotListingDataTableComponent implements OnInit {
     @Input() multipleSelection = false;
     @Input() paginationPerPage = 40;
     @Input() paginatorExtraParams: { [key: string]: string } = {};
-    @Input() actions: DotActionMenuItem[];
+    @Input() actions: DotActionMenuItem[] = [];
     @Input() dataKey = '';
     @Input() checkbox = false;
     @Input() mapItems: <T = Record<string, unknown>[]>(item: T) => T;
@@ -65,6 +65,7 @@ export class DotListingDataTableComponent implements OnInit {
     @ContentChildren(PrimeTemplate) templates: QueryList<ElementRef>;
 
     @ContentChild('rowTemplate') rowTemplate: TemplateRef<unknown>;
+    @ContentChild('beforeSearchTemplate') beforeSearchTemplate: TemplateRef<unknown>;
     @ContentChild('headerTemplate') headerTemplate: TemplateRef<unknown>;
 
     readonly DATE_FORMAT = 'date';

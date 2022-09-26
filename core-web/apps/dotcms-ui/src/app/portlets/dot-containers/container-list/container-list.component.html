@@ -1,4 +1,90 @@
-<dot-portlet-base>
+<dot-portlet-base *ngIf="vm$ | async as vm">
     <dot-portlet-toolbar title="Containers"></dot-portlet-toolbar>
-    <p>container-list works!</p>
+
+    <dot-listing-data-table
+        *ngIf="vm.tableColumns && vm.actionHeaderOptions"
+        #listing
+        [actionHeaderOptions]="vm.actionHeaderOptions"
+        [columns]="vm.tableColumns"
+        url="v1/containers"
+        [actions]="[]"
+        [checkbox]="true"
+        (selectedItems)="updateSelectedContainers($event)"
+        dataKey="inode"
+    >
+        <div class="container-listing__header-options">
+            <div class="container-listing__filter-controls">
+                <button
+                    type="button"
+                    class="p-button-secondary p-button"
+                    pButton
+                    [label]="'Search' | dm"
+                ></button>
+                <p-checkbox
+                    data-testid="archiveCheckbox"
+                    [label]="'Show-Archived' | dm"
+                    [binary]="true"
+                    (onChange)="handleArchivedFilter($event.checked)"
+                ></p-checkbox>
+            </div>
+
+            <div>
+                <button
+                    type="button"
+                    pButton
+                    class="p-button-secondary p-button"
+                    icon="pi pi-ellipsis-v"
+                    [label]="'Actions' | dm"
+                    (click)="actionsMenu.toggle($event)"
+                    attr.data-testid="bulkActions"
+                ></button>
+
+                <p-menu
+                    #actionsMenu
+                    [popup]="true"
+                    [model]="vm.containerBulkActions"
+                    appendTo="body"
+                ></p-menu>
+            </div>
+        </div>
+        <dot-empty-state
+            [rows]="10"
+            [colsTextWidth]="[60, 50, 60, 80]"
+            icon="web"
+            [title]="'message.template.empty.title' | dm"
+            [content]="'message.template.empty.content' | dm"
+            [buttonLabel]="'message.template.empty.button.label' | dm"
+        >
+        </dot-empty-state>
+
+        <ng-template #beforeSearchTemplate>
+            <dot-base-type-selector></dot-base-type-selector>
+        </ng-template>
+
+        <ng-template #rowTemplate let-rowData="rowData" *ngIf="vm.tableColumns as tableColumns">
+            <td [ngStyle]="{ 'text-align': tableColumns[0].textAlign }">
+                {{ rowData.name }}
+            </td>
+            <td [ngStyle]="{ 'text-align': tableColumns[1].textAlign }">
+                <dot-state-icon
+                    [labels]="vm.stateLabels"
+                    [state]="getContainerState(rowData)"
+                    size="14px"
+                >
+                </dot-state-icon>
+            </td>
+            <td [ngStyle]="{ 'text-align': tableColumns[2].textAlign }">
+                {{ rowData.friendlyName }}
+            </td>
+            <td [ngStyle]="{ 'text-align': tableColumns[3].textAlign }">
+                {{ rowData.modDate }}
+            </td>
+        </ng-template>
+    </dot-listing-data-table>
+
+    <dot-add-to-bundle
+        *ngIf="vm.addToBundleIdentifier"
+        [assetIdentifier]="vm.addToBundleIdentifier"
+        (cancel)="resetBundleIdentifier()"
+    ></dot-add-to-bundle>
 </dot-portlet-base>
