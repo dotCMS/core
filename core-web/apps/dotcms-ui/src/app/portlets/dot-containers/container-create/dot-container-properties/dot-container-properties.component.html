@@ -1,4 +1,4 @@
-<ng-container>
+<ng-container *ngIf="vm$ | async as vm">
     <div class="dot-container-properties__title-container">
         <p-inplace #editText>
             <ng-template pTemplate="content">
@@ -25,38 +25,92 @@
     </div>
 
     <div class="dot-container-properties__code-container-outer">
-        <div class="dot-container-properties__pre-post-loop">
-            <div class="dot-container-properties__pre-post-loop-inplace">
-                <button
-                    pButton
-                    class="p-button-outlined p-button-secondary"
-                    type="button"
-                    label="ADD PRE AND POST LOOP CODE"
-                ></button>
+        <form [formGroup]="form">
+            <div class="dot-container-properties__pre-post-loop">
+                <div
+                    class="dot-container-properties__pre-post-loop-inplace"
+                    *ngIf="!vm.showPrePostLoopInput"
+                >
+                    <button
+                        pButton
+                        class="p-button-outlined p-button-secondary"
+                        type="button"
+                        label="ADD PRE AND POST LOOP CODE"
+                        (click)="showLoopInput()"
+                    ></button>
+                </div>
+                <div *ngIf="vm.showPrePostLoopInput">
+                    <label>Pre-loop</label>
+                    <dot-textarea-content
+                        formControlName="body"
+                        #value
+                        height="100%"
+                        formControlName="body"
+                        [show]="['code']"
+                        language="html"
+                        (monacoInit)="initEditor($event)"
+                    ></dot-textarea-content>
+                </div>
             </div>
-        </div>
-        <div>
-            <form [formGroup]="form">
-                <dot-textarea-content
-                    formControlName="body"
-                    #value
-                    height="100%"
-                    formControlName="body"
-                    [show]="['code']"
-                    language="html"
-                    (monacoInit)="initEditor($event)"
-                ></dot-textarea-content>
-            </form>
-        </div>
-        <div class="dot-container-properties__pre-post-loop">
-            <div class="dot-container-properties__pre-post-loop-inplace">
-                <button
-                    pButton
-                    class="p-button-outlined p-button-secondary"
-                    type="button"
-                    label="ADD PRE AND POST LOOP CODE"
-                ></button>
+            <div class="dot-container-properties__content-tab-container">
+                <label>Content Type and Code</label>
+                <p-tabView
+                    [scrollable]="true"
+                    (onChange)="handleChange($event)"
+                    [activeIndex]="vm.activeTabIndex"
+                >
+                    <p-tabPanel headerStyleClass="tab-panel-btn">
+                        <ng-template pTemplate="header">
+                            <i
+                                class="pi pi-plus"
+                                (click)="handleChange($event); actionsMenu.toggle($event)"
+                            ></i>
+                            <p-menu
+                                #actionsMenu
+                                [popup]="true"
+                                [model]="vm.contentTypes"
+                                appendTo="body"
+                            ></p-menu>
+                        </ng-template>
+                    </p-tabPanel>
+                    <p-tabPanel closable="true" header="Content (Generic)">
+                        <dot-textarea-content
+                            formControlName="body"
+                            #value
+                            height="100%"
+                            formControlName="body"
+                            [show]="['code']"
+                            language="html"
+                            (monacoInit)="initEditor($event)"
+                        ></dot-textarea-content>
+                    </p-tabPanel>
+                </p-tabView>
             </div>
-        </div>
+            <div class="dot-container-properties__pre-post-loop">
+                <div
+                    class="dot-container-properties__pre-post-loop-inplace"
+                    *ngIf="!vm.showPrePostLoopInput"
+                >
+                    <button
+                        pButton
+                        class="p-button-outlined p-button-secondary"
+                        type="button"
+                        label="ADD PRE AND POST LOOP CODE"
+                    ></button>
+                </div>
+                <div *ngIf="vm.showPrePostLoopInput">
+                    <label>Post-loop</label>
+                    <dot-textarea-content
+                        formControlName="body"
+                        #value
+                        height="100%"
+                        formControlName="body"
+                        [show]="['code']"
+                        language="html"
+                        (monacoInit)="initEditor($event)"
+                    ></dot-textarea-content>
+                </div>
+            </div>
+        </form>
     </div>
 </ng-container>

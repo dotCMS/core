@@ -1,5 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import { DotContainerPropertiesStore } from '@portlets/dot-containers/container-create/dot-container-properties/store/dot-container-properties.store';
 
 interface MonacoEditorOperation {
     range: number;
@@ -15,15 +16,17 @@ interface MonacoEditor {
 @Component({
     selector: 'dot-container-properties',
     templateUrl: './dot-container-properties.component.html',
-    styleUrls: ['./dot-container-properties.component.scss']
+    styleUrls: ['./dot-container-properties.component.scss'],
+    providers: [DotContainerPropertiesStore]
 })
 export class DotContainerPropertiesComponent implements OnInit {
+    vm$ = this.store.vm$;
     editor: MonacoEditor;
     form: UntypedFormGroup;
 
     @Input() body: string;
 
-    constructor(private fb: UntypedFormBuilder) {
+    constructor(private store: DotContainerPropertiesStore, private fb: UntypedFormBuilder) {
         //
     }
 
@@ -39,5 +42,18 @@ export class DotContainerPropertiesComponent implements OnInit {
      */
     initEditor(editor: MonacoEditor): void {
         this.editor = editor;
+    }
+
+    showLoopInput(): void {
+        this.store.updatePrePostLoopInputVisibility(true);
+    }
+
+    handleChange(e): boolean {
+        if (typeof e.index === 'undefined') {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        return false;
     }
 }

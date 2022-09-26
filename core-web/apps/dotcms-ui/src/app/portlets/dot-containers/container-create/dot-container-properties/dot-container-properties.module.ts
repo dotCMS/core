@@ -8,6 +8,8 @@ import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-b
 import { CardModule } from 'primeng/card';
 import { DotTextareaContentModule } from '@components/_common/dot-textarea-content/dot-textarea-content.module';
 import { ReactiveFormsModule } from '@angular/forms';
+import { TabViewModule } from 'primeng/tabview';
+import { MenuModule } from 'primeng/menu';
 @NgModule({
     declarations: [DotContainerPropertiesComponent],
     exports: [DotContainerPropertiesComponent],
@@ -19,7 +21,9 @@ import { ReactiveFormsModule } from '@angular/forms';
         DotPortletBaseModule,
         CardModule,
         DotTextareaContentModule,
-        ReactiveFormsModule
+        ReactiveFormsModule,
+        TabViewModule,
+        MenuModule
     ]
 })
 export class DotContainerPropertiesModule {}

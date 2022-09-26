@@ -4,7 +4,7 @@
     .container-create__tab-container {
         display: flex;
         flex-direction: column;
-        overflow: hidden;
+        overflow: auto;
 
         .container-create__tabs {
             .p-tabview-panels {
