@@ -111,6 +111,12 @@ export class DotListingDataTableComponent implements OnInit {
         this.handleRowCheck();
     }
 
+    clearGlobalSearch(): void {
+        this.filter = '';
+        this.paginatorService.filter = '';
+        this.loadCurrentPage();
+    }
+
     /**
      * Emit selected row
      * @param {any} rowData

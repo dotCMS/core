@@ -1,15 +1,15 @@
 <dot-portlet-base [boxed]="false">
     <div class="categories-create__tab-container">
-        <p-tabView class="container-create__tabs">
-            <p-tabPanel [header]="'message.containers.tab.childrens' | dm">
+        <p-tabView class="categories-create__tabs">
+            <p-tabPanel [header]="'message.categories.tab.childrens' | dm">
                 <ng-template pTemplate="content">
                     <dot-categories-list></dot-categories-list>
                 </ng-template>
             </p-tabPanel>
-            <p-tabPanel [header]="'message.containers.tab.permissions' | dm">
+            <p-tabPanel [header]="'message.categories.tab.permissions' | dm">
                 <ng-template pTemplate="content"> permission works </ng-template>
             </p-tabPanel>
-            <p-tabPanel [header]="'message.containers.tab.history' | dm">
+            <p-tabPanel [header]="'message.categories.tab.history' | dm">
                 history works
             </p-tabPanel>
         </p-tabView>

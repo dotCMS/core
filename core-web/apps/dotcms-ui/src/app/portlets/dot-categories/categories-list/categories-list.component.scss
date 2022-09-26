@@ -1,0 +1,20 @@
+@use "variables" as *;
+
+:host {
+    dot-portlet-base {
+        overflow: scroll;
+    }
+    ::ng-deep {
+        .action-header__global-search {
+            flex-wrap: wrap;
+        }
+        .container-listing__header-options,
+        .line-break {
+            width: 100%;
+        }
+    }
+}
+
+dot-base-type-selector {
+    margin-right: $spacing-3;
+}
