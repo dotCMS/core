@@ -1,4 +1,5 @@
 <dot-action-header [options]="actionHeaderOptions">
+    <ng-container [ngTemplateOutlet]="beforeSearchTemplate"></ng-container>
     <input
         #gf
         (input)="dataTable.filterGlobal($event.target.value, 'contains')"
@@ -123,6 +124,7 @@
     </td>
     <td class="listing-datatable__action-column" style="width: 5%">
         <dot-action-menu-button
+            *ngIf="actions"
             [actions]="actions"
             [item]="rowData"
             class="listing-datatable__action-button"
