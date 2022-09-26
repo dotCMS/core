@@ -12,13 +12,8 @@ import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
 import { DotSiteBrowserService } from '@services/dot-site-browser/dot-site-browser.service';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import {
-    DotActionBulkResult,
-    DotBulkFailItem
-} from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
+import { DotActionBulkResult } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
-import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
-import { DotBulkInformationComponent } from '@components/_common/dot-bulk-information/dot-bulk-information.component';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DialogService } from 'primeng/dynamicdialog';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
@@ -33,6 +28,12 @@ export interface DotContainerListState {
     hasEnvironments: boolean;
     stateLabels: { [key: string]: string };
     listing: DotListingDataTableComponent;
+    notifyMessages: DotNotifyMessages;
+}
+
+export interface DotNotifyMessages {
+    payload: DotActionBulkResult | DotContainer;
+    messageKey: string;
 }
 
 @Injectable()
@@ -65,7 +66,8 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
                     addToBundleIdentifier: '',
                     selectedContainers: [],
                     actionHeaderOptions: this.getActionHeaderOptions(),
-                    listing: {} as DotListingDataTableComponent
+                    listing: {} as DotListingDataTableComponent,
+                    notifyMessages: {} as DotNotifyMessages
                 });
             });
     }
@@ -89,6 +91,10 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
             };
         }
     );
+
+    readonly notify$ = this.select(({ notifyMessages }: DotContainerListState) => {
+        return notifyMessages;
+    });
 
     readonly updateBundleIdentifier = this.updater<string>(
         (state: DotContainerListState, addToBundleIdentifier: string) => {
@@ -116,6 +122,41 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
             };
         }
     );
+
+    readonly updateNotifyMessages = this.updater<DotNotifyMessages>(
+        (state: DotContainerListState, notifyMessages: DotNotifyMessages) => {
+            return {
+                ...state,
+                notifyMessages
+            };
+        }
+    );
+
+    /**
+     * Set the actions of each template based o current state.
+     * @param {DotContainer} container
+     ** @returns DotActionMenuItem[]
+     * @memberof DotContainerListComponent
+     */
+    getContainerActions(container: DotContainer): DotActionMenuItem[] {
+        let options: DotActionMenuItem[];
+        if (container.deleted) {
+            options = this.setArchiveContainerActions(container);
+        } else {
+            options = this.setBaseContainerOptions(container);
+            options = [...options, ...this.setCopyContainerOptions(container)];
+
+            if (!container.live) {
+                options = [
+                    ...options,
+                    ...this.getLicenseAndRemotePublishContainerOptions(container),
+                    ...this.getUnPublishAndArchiveContainerOptions(container)
+                ];
+            }
+        }
+
+        return options;
+    }
 
     private getContainerBulkActions(hasEnvironments = false, isEnterprise = false) {
         return [
@@ -208,14 +249,14 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
      * @returns { [key: string]: string }
      * @memberof DotContainerListStore
      */
-    private getStateLabels = () => {
+    private getStateLabels(): { [key: string]: string } {
         return {
             archived: this.dotMessageService.get('Archived'),
             published: this.dotMessageService.get('Published'),
             revision: this.dotMessageService.get('Revision'),
             draft: this.dotMessageService.get('Draft')
         };
-    };
+    }
 
     private getLicenseAndRemotePublishContainerBulkOptions(
         hasEnvironments: boolean,
@@ -252,33 +293,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
         return bulkOptions;
     }
 
-    /**
-     * Set the actions of each template based o current state.
-     * @param {DotContainer} container
-     ** @returns DotActionMenuItem[]
-     * @memberof DotContainerListComponent
-     */
-    setContainerActions(container: DotContainer): DotActionMenuItem[] {
-        let options: DotActionMenuItem[];
-        if (container.deleted) {
-            options = this.setArchiveContainerActions(container);
-        } else {
-            options = this.setBaseContainerOptions(container);
-            options = [...options, ...this.setCopyContainerOptions(container)];
-
-            if (!container.live) {
-                options = [
-                    ...options,
-                    ...this.setLicenseAndRemotePublishContainerOptions(container),
-                    ...this.setUnPublishAndArchiveContainerOptions(container)
-                ];
-            }
-        }
-
-        return options;
-    }
-
-    private setUnPublishAndArchiveContainerOptions(template: DotContainer): DotActionMenuItem[] {
+    private getUnPublishAndArchiveContainerOptions(template: DotContainer): DotActionMenuItem[] {
         const options: DotActionMenuItem[] = [];
         if (template.live) {
             options.push({
@@ -303,7 +318,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
         return options;
     }
 
-    private setLicenseAndRemotePublishContainerOptions(
+    private getLicenseAndRemotePublishContainerOptions(
         container: DotContainer
     ): DotActionMenuItem[] {
         const options: DotActionMenuItem[] = [];
@@ -412,7 +427,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
      * @returns boolean
      * @memberof DotContainerListComponent
      */
-    isContainerAsFile({ identifier }: DotContainer): boolean {
+    private isContainerAsFile({ identifier }: DotContainer): boolean {
         return identifier.includes('/');
     }
 
@@ -422,11 +437,14 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
      * @param {DotContainer} {container}
      * @memberof DotContainerListComponent
      */
-    editContainer(container: DotContainer): void {
+    private editContainer(container: DotContainer): void {
         this.isContainerAsFile(container)
-            ? this.dotSiteBrowserService.setSelectedFolder(container.identifier).subscribe(() => {
-                  this.dotRouterService.goToSiteBrowser();
-              })
+            ? this.dotSiteBrowserService
+                  .setSelectedFolder(container.identifier)
+                  .pipe(take(1))
+                  .subscribe(() => {
+                      this.dotRouterService.goToSiteBrowser();
+                  })
             : this.dotRouterService.goToEditContainer(container.identifier);
     }
 
@@ -436,8 +454,11 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
                 this.dotContainersService
                     .delete(identifiers)
                     .pipe(take(1))
-                    .subscribe((response: DotActionBulkResult) => {
-                        this.notifyResult(response, 'message.template.full_delete');
+                    .subscribe((payload: DotActionBulkResult) => {
+                        this.updateNotifyMessages({
+                            payload,
+                            messageKey: 'message.template.full_delete'
+                        });
                     });
             },
             reject: () => {
@@ -452,8 +473,11 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
         this.dotContainersService
             .publish(identifiers)
             .pipe(take(1))
-            .subscribe((response: DotActionBulkResult) => {
-                this.notifyResult(response, 'message.container_list.published');
+            .subscribe((payload: DotActionBulkResult) => {
+                this.updateNotifyMessages({
+                    payload,
+                    messageKey: 'message.container_list.published'
+                });
             });
     }
 
@@ -461,8 +485,11 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
         this.dotContainersService
             .copy(identifier)
             .pipe(take(1))
-            .subscribe((response: DotContainer) => {
-                this.notifyResult(response, 'message.container_list.published');
+            .subscribe((payload: DotContainer) => {
+                this.updateNotifyMessages({
+                    payload,
+                    messageKey: 'message.container_list.published'
+                });
             });
     }
 
@@ -470,8 +497,8 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
         this.dotContainersService
             .unPublish(identifiers)
             .pipe(take(1))
-            .subscribe((response: DotActionBulkResult) => {
-                this.notifyResult(response, 'message.container.unpublished');
+            .subscribe((payload: DotActionBulkResult) => {
+                this.updateNotifyMessages({ payload, messageKey: 'message.container.unpublished' });
             });
     }
 
@@ -479,8 +506,8 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
         this.dotContainersService
             .unArchive(identifiers)
             .pipe(take(1))
-            .subscribe((response: DotActionBulkResult) => {
-                this.notifyResult(response, 'message.container.undelete');
+            .subscribe((payload: DotActionBulkResult) => {
+                this.updateNotifyMessages({ payload, messageKey: 'message.container.undelete' });
             });
     }
 
@@ -488,57 +515,8 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
         this.dotContainersService
             .archive(identifiers)
             .pipe(take(1))
-            .subscribe((response: DotActionBulkResult) => {
-                this.notifyResult(response, 'message.container.delete');
+            .subscribe((payload: DotActionBulkResult) => {
+                this.updateNotifyMessages({ payload, messageKey: 'message.container.delete' });
             });
-    }
-
-    private notifyResult(response: DotActionBulkResult | DotContainer, messageKey: string): void {
-        const { listing } = this.get();
-        if ('fails' in response && response.fails.length) {
-            this.showErrorDialog({
-                ...response,
-                fails: this.getFailsInfo(response.fails),
-                action: this.dotMessageService.get(messageKey)
-            });
-        } else {
-            this.showToastNotification(this.dotMessageService.get(messageKey));
-        }
-
-        listing.clearSelection();
-        listing.loadCurrentPage();
-    }
-
-    private showToastNotification(message: string): void {
-        this.dotMessageDisplayService.push({
-            life: 3000,
-            message: message,
-            severity: DotMessageSeverity.SUCCESS,
-            type: DotMessageType.SIMPLE_MESSAGE
-        });
-    }
-
-    private showErrorDialog(result: DotActionBulkResult): void {
-        this.dialogService.open(DotBulkInformationComponent, {
-            header: this.dotMessageService.get('Results'),
-            width: '40rem',
-            contentStyle: { 'max-height': '500px', overflow: 'auto' },
-            baseZIndex: 10000,
-            data: result
-        });
-    }
-
-    private getFailsInfo(items: DotBulkFailItem[]): DotBulkFailItem[] {
-        return items.map((item: DotBulkFailItem) => {
-            return { ...item, description: this.getContainerName(item.element) };
-        });
-    }
-
-    private getContainerName(identifier: string): string {
-        const { listing } = this.get();
-
-        return (listing.items as DotContainer[]).find((template: DotContainer) => {
-            return template.identifier === identifier;
-        }).name;
     }
 }

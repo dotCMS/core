@@ -4,12 +4,12 @@ export enum CONTAINER_SOURCE {
 }
 
 export interface DotContainer {
-    archived?: boolean;
+    archived: boolean;
     categoryId?: string;
     deleted?: boolean;
-    live?: boolean;
-    working?: boolean;
-    locked?: boolean;
+    live: boolean;
+    working: boolean;
+    locked: boolean;
     friendlyName?: string;
     path?: string;
     identifier: string;
