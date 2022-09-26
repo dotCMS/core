@@ -1213,11 +1213,9 @@ public class ContainerResource implements Serializable {
         Long publishedContainersCount = 0L;
         final List<FailedResultView> failedToPublish    = new ArrayList<>();
 
-        if (!UtilMethods.isSet(containersToPublish)) {
-
-            throw new IllegalArgumentException("The body must send a collection of container identifiers such as: " +
-                    "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
-        }
+        DotPreconditions.checkArgument(UtilMethods.isSet(containersToPublish),
+                "The body must send a collection of container identifier such as: " +
+                        "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
 
         for (final String containerId : containersToPublish) {
             try{
@@ -1272,11 +1270,9 @@ public class ContainerResource implements Serializable {
         Long unpublishedContainersCount = 0L;
         final List<FailedResultView> failedToUnpublish    = new ArrayList<>();
 
-        if (!UtilMethods.isSet(containersToUnpublish)) {
-
-            throw new IllegalArgumentException("The body must send a collection of container identifiers such as: " +
-                    "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
-        }
+        DotPreconditions.checkArgument(UtilMethods.isSet(containersToUnpublish),
+                "The body must send a collection of container identifier such as: " +
+                        "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
 
         for (final String containerId : containersToUnpublish) {
             try{
@@ -1331,11 +1327,10 @@ public class ContainerResource implements Serializable {
         Long archivedContainersCount = 0L;
         final List<FailedResultView> failedToArchive    = new ArrayList<>();
 
-        if (!UtilMethods.isSet(containersToArchive)) {
+        DotPreconditions.checkArgument(UtilMethods.isSet(containersToArchive),
+                "The body must send a collection of container identifier such as: " +
+                        "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
 
-            throw new IllegalArgumentException("The body must send a collection of container identifier such as: " +
-                    "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
-        }
 
         for(final String containerId : containersToArchive){
             try{
@@ -1391,11 +1386,9 @@ public class ContainerResource implements Serializable {
         Long unarchivedContainersCount = 0L;
         final List<FailedResultView> failedToUnarchive    = new ArrayList<>();
 
-        if (!UtilMethods.isSet(containersToUnarchive)) {
-
-            throw new IllegalArgumentException("The body must send a collection of container identifier such as: " +
-                    "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
-        }
+        DotPreconditions.checkArgument(UtilMethods.isSet(containersToUnarchive),
+                "The body must send a collection of container identifier such as: " +
+                        "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
 
         for(final String containerId : containersToUnarchive){
             try{
