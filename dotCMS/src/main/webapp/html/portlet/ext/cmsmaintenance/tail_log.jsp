@@ -198,6 +198,8 @@
 
         let following = true;
 
+        let keyword = null;
+
         function _dropOldestPages(){
             if (pagesOnScreen >= ON_SCREEN_PAGES) {
 
@@ -233,7 +235,7 @@
                     //iterate backwards to preserve the original order
                     for (let i = list.length - 1; i >= 0; i--) {
                         const elem = list[i];
-                        dest.insertAdjacentHTML('afterbegin', elem.outerHTML);
+                        dest.insertAdjacentHTML('afterbegin', _applyHighlight(elem.outerHTML));
                     }
                     pagesOnScreen++;
                     //Move the scroll just a tiny bit, so we have room to fire the event again.
@@ -282,7 +284,7 @@
                 const list = src.document.body.querySelectorAll(`.page${lastPageId}`);
                 if (list.length > 0) {
                     list.forEach((elem)=>{
-                        dest.insertAdjacentHTML('beforeend', elem.outerHTML);
+                        dest.insertAdjacentHTML('beforeend', _applyHighlight(elem.outerHTML));
                     });
                     pagesOnScreen++;
                 }
@@ -304,8 +306,71 @@
                 }
             }
             const newContent = e.detail.newContent;
-            dest.insertAdjacentHTML('beforeend', newContent);
 
+            dest.insertAdjacentHTML('beforeend', _applyHighlight(newContent));
+
+        }
+
+        function _applyFilter() {
+            if (_isFiltering()) {
+                const list = dest.querySelectorAll(`.log`);
+                if (list.length > 0) {
+                    list.forEach((elem)=>{
+                        elem.outerHTML = _applyHighlight(elem.outerHTML);
+                    });
+                }
+            } else {
+                //here we want to rebuild the currently loaded view with just the exact pages.
+
+                const list = dest.querySelectorAll(`.highlightKeywordMatchLogViewer`);
+                if(null != list){
+                    list.forEach((elem) => {
+                        console.log(elem);
+                        const logElement = elem.parentElement;
+                        if(null != logElement){
+                            console.log("logElement :: " + logElement);
+                            const ln = logElement.dataset.logNumber;
+                            //now that we now the exact log number we can re-build this line as it was using the original src elem
+                        }
+                    });
+                }
+
+                /*const logs = Array.from(
+                    dest.querySelectorAll(`.log`)
+                );
+
+                const first = logs.shift();
+                const last = logs.pop();
+
+                const firstPageId = first.dataset.page;
+                const lastPageId = last.dataset.page;
+
+                for(let i = firstPageId; i <= lastPageId; i++){
+                    //Here we could use the highlightKeywordMatchLogViewer class and get the parent from there and only replace the elements with the highlight be more precise
+                    const list = src.document.body.querySelectorAll(`.page${i}`);
+                    if (list.length > 0) {
+                        list.forEach((elem) => {
+                            const id = elem.dataset.page;
+                            //Element we want to replace
+                            const log = dest.querySelector('[data-page="${id}"]');
+                            log.outerHTML = elem.outerHTML;
+                        });
+                    }
+                }*/
+
+            }
+        }
+
+        function _applyHighlight(log) {
+            if(_isFiltering()){
+                const regEx = new RegExp( keyword, "ig");
+                log.replaceAll(regEx, '<span class="highlightKeywordMatchLogViewer">$&</span>');
+            }
+            return log;
+        }
+
+        function _isFiltering(){
+            return keyword != null && keyword.length >= 3;
         }
 
         function _scrollDownToBottom() {
@@ -316,6 +381,11 @@
 
             setFollowing : (value) => {
                 following = value;
+            },
+
+            setKeyword : (value) => {
+                keyword = value;
+                _applyFilter();
             },
 
             fetchPriorPage : () => {
@@ -371,6 +441,7 @@
         }
 
         const followCheck = document.getElementById('scrollMe');
+        const keywordInput = document.querySelector('#keywordLogFilterInput');
         const dataLogSourceElem = document.getElementById('tailingFrame');
         const logView = document.querySelector('.logViewerPrinted');
         const iDoc = dataLogSourceElem.contentWindow || dataLogSourceElem.contentDocument;
@@ -393,14 +464,11 @@
         logViewManager = LogViewManager({src:iDoc,dest:logView});
 
         followCheck.addEventListener("change",(e)=>{
-            console.log('checked!!! changed !!');
             logViewManager.setFollowing(e.currentTarget.checked);
         });
 
         iDoc.document.addEventListener("logUpdated", (e) => {
-
             logViewManager.updateView(e);
-
         });
 
         let lastScrollTop = 0;
@@ -408,33 +476,60 @@
         logView.addEventListener("scroll", (e)=>{
 
             const div = e.target;
-
             const scrollTop = div.scrollTop;
-            if (scrollTop > lastScrollTop){
-                // down-scroll code
-            } else {
-                // up-scroll code
-                if(scrollTop <= (div.scrollHeight - div.offsetHeight / 2)){
-                    if(isFollowingOn()){
-                        enableFollowing(false);
+            const scrollPercentage = computeScrollPercentage(div.scrollHeight, scrollTop);
+
+            console.log(" scroll % :: " + scrollPercentage);
+
+            if (scrollTop < lastScrollTop) {
+                //We're scrolling up
+                const followCheck = dijit.byId('scrollMe');
+                if (followCheck.checked) {
+                    const SCROLL_UP_THRESHOLD = 91;
+                    //This does guarantee that we need to scroll back up at least till the scroll top is at the 94% of the div height
+                    //This is makes the check-box stay checked until we have scrolled back a bit more
+
+                    if (scrollPercentage <= SCROLL_UP_THRESHOLD) {
+                        //This does not fire the change event
+                        followCheck.setValue(false);
+                        //Therefore, we need to explicitly indicate we want to stop following the events
+                        logViewManager.setFollowing(false);
                     }
                 }
-
             }
             lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
 
-            if(scrollTop === 0) {
+            if(scrollPercentage === 0) {
                 //We're at the top of the container.
                 logViewManager.fetchPriorPage();
                 return;
             }
 
-            if( scrollTop > (div.scrollHeight - div.offsetHeight - 50)){
+            if( scrollPercentage === 95 ){
                 //we're at the bottom of the scroll
                 logViewManager.fetchNextPage();
             }
 
         });
+
+        keywordInput.addEventListener("keyup", (e)=>{
+            const input = e.target;
+            if(input.value.length > 2){
+               logViewManager.setKeyword(input.value);
+            } else {
+                logViewManager.setKeyword(null);
+            }
+        });
+    }
+
+    /**
+     * Simple Rule of 3 to compute how much (Percent wise) of the total scroll height we have covered with the scroll bar
+     * @param scrollHeight
+     * @param scrollTop
+     * @returns {number}
+     */
+    function computeScrollPercentage(scrollHeight, scrollTop){
+        return Math.round(scrollTop * 100 / scrollHeight);
     }
 
     // Function called on every fiter keydown event
