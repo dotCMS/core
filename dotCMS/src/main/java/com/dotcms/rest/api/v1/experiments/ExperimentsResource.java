@@ -323,6 +323,26 @@ public class ExperimentsResource {
         return new ResponseEntityExperimentView(Collections.singletonList(updatedExperiment));
     }
 
+    /**
+     * Deletes the {@link TargetingCondition} with the given id from the {@link Experiment} with the given experimentId
+     *
+     */
+    @DELETE
+    @Path("/{experimentId}/targetingConditions/{id}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityExperimentView deleteTargetingCondition(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("experimentId") final String experimentId,
+            @PathParam("id") final String conditionId) throws DotDataException, DotSecurityException {
+        final InitDataObject initData = getInitData(request, response);
+        final User user = initData.getUser();
+        final Experiment updatedExperiment =  experimentsAPI
+                .deleteTargetingCondition(experimentId, conditionId, user);
+        return new ResponseEntityExperimentView(Collections.singletonList(updatedExperiment));
+    }
+
     private Experiment patchExperiment(final Experiment experimentToUpdate,
             final ExperimentForm experimentForm, final User user) {
 

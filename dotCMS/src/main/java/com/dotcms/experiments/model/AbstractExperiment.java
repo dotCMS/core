@@ -8,6 +8,7 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.exception.DotDataException;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.vavr.control.Try;
 import java.io.Serializable;
@@ -89,14 +90,17 @@ public interface AbstractExperiment extends Serializable, ManifestItem, Ruleable
 
     // Beginning Permissionable methods
 
+    @Value.Derived
     default String getIdentifier() {
         return id().orElse("");
     }
 
+    @Value.Derived
     default String getPermissionId() {
         return id().orElse("");
     }
 
+    @Value.Derived
     default String getOwner() {
         return createdBy();
     }
@@ -105,7 +109,6 @@ public interface AbstractExperiment extends Serializable, ManifestItem, Ruleable
     default void setOwner(String owner){
 
     }
-
     @Value.Derived
     default List<PermissionSummary> acceptedPermissions () {
         return Collections.emptyList();

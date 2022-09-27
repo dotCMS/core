@@ -36,6 +36,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.LogicalOperator;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.Rule.FireOn;
 import com.dotmarketing.util.Logger;
@@ -46,9 +47,10 @@ import io.vavr.control.Try;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -56,6 +58,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import javax.persistence.ParameterMode;
 import org.jetbrains.annotations.NotNull;
 
 public class ExperimentsAPIImpl implements ExperimentsAPI {
@@ -141,20 +144,23 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             experimentRule = createRuleAndConditionGroup(experiment, user);
         }
 
-        // transform TargetingConditions into conditions
+        // transform and save TargetingConditions into conditions
         experiment.targetingConditions().get().forEach((targetingCondition -> {
             createAndSaveCondition(user, experimentRule, targetingCondition);
         }));
 
     }
 
-    private void createAndSaveCondition(User user, Rule experimentRule, TargetingCondition targetingCondition) {
-        final Condition condition = new Condition();
-        condition.setConditionGroup(experimentRule.getGroups().get(0).getId());
+    private void createAndSaveCondition(User user, Rule experimentRule,
+            TargetingCondition targetingCondition) {
+        Condition condition = targetingCondition.id().isPresent()
+            ? Try.of(()->rulesAPI.getConditionById(targetingCondition.id().get(), user, false))
+                .getOrElseThrow(()->new IllegalArgumentException("Invalid targeting Condition Id provided. Id: " + targetingCondition.id().get()))
+            : createCondition(experimentRule, targetingCondition);
+
         condition.setOperator(targetingCondition.operator());
         condition.setConditionletId(targetingCondition.conditionKey());
-
-        // add all values using condition.addValue
+        condition.setValues(new ArrayList<>());
         targetingCondition.values().forEach(condition::addValue);
 
         condition.checkValid();
@@ -162,6 +168,13 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         Try.run(()->rulesAPI.saveCondition(condition, user, false))
                 .getOrElseThrow(()->new DotStateException("Error saving Condition: "
                         + condition.getConditionletId()));
+    }
+
+    private Condition createCondition(final Rule experimentRule,
+            final TargetingCondition targetingCondition) {
+        final Condition condition = new Condition();
+        condition.setConditionGroup(experimentRule.getGroups().get(0).getId());
+        return condition;
     }
 
     @NotNull
@@ -192,17 +205,40 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 invalidLicenseMessageSupplier);
         DotPreconditions.checkArgument(UtilMethods.isSet(id), "Experiment Id is required");
 
-        final Optional<Experiment> experiment =  factory.find(id);
+        Optional<Experiment> experiment =  factory.find(id);
 
         if(experiment.isPresent()) {
             validatePermissions(user, experiment.get(),
                     "You don't have permission to get the Experiment. "
                             + "Experiment Id: " + experiment.get().id());
+
+            experiment = Optional.of(addTargetingConditions(experiment.get(), user));
         }
 
-//        addTargetingConditions
-
         return experiment;
+    }
+
+    private Experiment addTargetingConditions(final Experiment experiment, final User user) {
+        List<Rule> rules = Try.of(()->rulesAPI
+                        .getAllRulesByParent(experiment, user, false))
+                .getOrElse(Collections::emptyList);
+
+        if(!UtilMethods.isSet(rules)) {
+            return experiment;
+        }
+
+        final Rule experimentRule = rules.get(0);
+        final List<TargetingCondition> targetingConditions = new ArrayList<>();
+        experimentRule.getGroups().get(0).getConditions().forEach((condition -> {
+            targetingConditions.add(TargetingCondition.builder()
+                    .id(condition.getId())
+                    .conditionKey(condition.getConditionletId())
+                    .putAllValues(condition.getValues().stream().collect(Collectors.toMap(
+                            ParameterModel::getKey, ParameterModel::getValue)))
+                    .build());
+        }));
+
+        return experiment.withTargetingConditions(targetingConditions);
     }
 
     @Override
@@ -414,6 +450,27 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         variantAPI.archive(toDelete.name());
         variantAPI.delete(toDelete.name());
         return fromDB;
+
+    }
+
+    @Override
+    public Experiment deleteTargetingCondition(String experimentId, String conditionId, User user)
+            throws DotDataException, DotSecurityException {
+        final Experiment persistedExperiment = find(experimentId, user)
+                .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
+
+        DotPreconditions.isTrue(persistedExperiment.id().isPresent(), "Invalid Experiment");
+
+        DotPreconditions.isTrue(UtilMethods.isSet(conditionId), ()->"Invalid Variant provided",
+                IllegalArgumentException.class);
+
+        final Condition conditionToDelete = rulesAPI.getConditionById(conditionId, user, false);
+        rulesAPI.deleteCondition(conditionToDelete, user, false);
+
+        final Optional<Experiment> toReturn = find(persistedExperiment.id().get(), user);
+        DotPreconditions.isTrue(toReturn.isPresent(), "Experiment not found");
+
+        return toReturn.get();
 
     }
 
