@@ -6,6 +6,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.container.ResponseEntityContainerView;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.DotPreconditions;
@@ -26,7 +27,14 @@ import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -35,11 +43,13 @@ import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.apache.velocity.runtime.parser.ParseException;
 import org.glassfish.jersey.server.JSONP;
 
 /**
@@ -99,6 +109,9 @@ public class CategoriesResource {
         Response response = null;
         final User user = initData.getUser();
 
+       String requestData = String.format("Request query parameters are : {filter : %s, page : %s, perPage : %s}", filter, page, perPage);
+       Logger.debug(this, ()-> "Getting the List of categories. " + requestData);
+
         try {
             response = this.paginationUtil.getPage(httpRequest, user, filter, page, perPage);
         } catch (Exception e) {
@@ -119,7 +132,7 @@ public class CategoriesResource {
      * <code> { contentTypes: array of Category total: total number of Categories } <code/>
      * <p>
      * Url syntax:
-     * api/v1/categories/children?filter=filter-string&page=page-number&per_page=per-page&ordeby=order-field-name&direction=order-direction&inode=parentId
+     * api/v1/categories/_children?filter=filter-string&page=page-number&per_page=per-page&orderby=order-field-name&direction=order-direction&inode=parentId
      * <p>
      * where:
      *
@@ -131,13 +144,13 @@ public class CategoriesResource {
      * <li>direction: asc for upward order and desc for downward order</li>
      * </ul>
      * <p>
-     * Url example: v1/categories/children?filter=test&page=2&orderby=categoryName
+     * Url example: v1/categories/_children?filter=test&page=2&orderby=categoryName
      *
      * @param httpRequest
      * @return
      */
     @GET
-    @Path(("/children"))
+    @Path(("/_children"))
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -156,6 +169,9 @@ public class CategoriesResource {
         Response response = null;
         final User user = initData.getUser();
 
+        String requestData = String.format("Request query parameters are : {filter : %s, page : %s, perPage : %s, orderBy : %s, direction : %s, inode : %s}", filter, page, perPage, orderBy, direction, inode);
+        Logger.debug(this, ()-> "Getting the List of children categories. " + requestData);
+
         DotPreconditions.checkArgument(UtilMethods.isSet(inode),
                 "The inode is required");
 
@@ -165,23 +181,14 @@ public class CategoriesResource {
         return getPage(list.getCategories(), list.getTotalCount(), page, perPage);
     }
 
-    /**
-     * Saves a new working version of a category.
-     *
-     * @param request
-     * @param response
-     * @param categoryForm
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
     @POST
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response saveNew(@Context final HttpServletRequest request,
+    public final CategoryView saveNew(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            final CategoryForm categoryForm) throws DotDataException, DotSecurityException {
+            final CategoryForm categoryForm)
+            throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response).rejectWhenNoUser(true).init();
@@ -190,12 +197,14 @@ public class CategoriesResource {
                 () -> this.hostWebAPI.getCurrentHostNoThrow(request));
         final PageMode pageMode = PageMode.get(request);
 
+        String requestData = "Request payload is : " + getObjectToJsonString(categoryForm);
+        Logger.debug(this, () -> "Getting the List of children categories. " + requestData);
+
         DotPreconditions.checkArgument(UtilMethods.isSet(categoryForm.getCategoryName()),
                 "The category name is required");
 
-        return Response.ok(new ResponseEntityView(this.categoryHelper.toCategoryView(
-                        this.fillAndSave(categoryForm, user, host, pageMode, new Category()), user)))
-                .build();
+        return this.categoryHelper.toCategoryView(
+                this.fillAndSave(categoryForm, user, host, pageMode, new Category()), user);
     }
 
     private Category fillAndSave(final CategoryForm categoryForm,
@@ -205,6 +214,8 @@ public class CategoriesResource {
             final Category category) throws DotSecurityException, DotDataException {
 
         Category parentCategory = null;
+
+        Logger.debug(this, ()-> "Filling category entity");
 
         if (UtilMethods.isSet(categoryForm.getParent())) {
             parentCategory = categoryAPI.find(categoryForm.getParent(), user, true);
@@ -220,7 +231,9 @@ public class CategoriesResource {
         category.setCategoryVelocityVarName(categoryForm.getCategoryVelocityVarName());
         category.setModDate(new Date());
 
+        Logger.debug(this, ()-> "Saving category entity : " + getObjectToJsonString(category));
         this.categoryAPI.save(parentCategory, category, user, pageMode.respectAnonPerms);
+        Logger.debug(this, ()-> "Saved category entity : " + getObjectToJsonString(category));
 
         ActivityLogger.logInfo(this.getClass(), "Saved Category", "User " + user.getPrimaryKey()
                         + "Category: " + category.getCategoryName(),
@@ -238,5 +251,17 @@ public class CategoriesResource {
                 .header("X-Pagination-Current-Page", page)
                 .header("X-Pagination-Total-Entries", totalCount)
                 .build();
+    }
+
+    private String getObjectToJsonString(Object object){
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            String json = mapper.writeValueAsString(object);
+            return json;
+        }
+        catch (JsonProcessingException e){
+            Logger.error(this, e.getMessage(), e);
+        }
+        return "";
     }
 }
