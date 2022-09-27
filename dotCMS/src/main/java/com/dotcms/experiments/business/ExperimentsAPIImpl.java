@@ -182,8 +182,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             throws DotDataException, DotSecurityException {
         DotPreconditions.isTrue(experiment.id().isPresent(), ()->"Error saving Experiment Targeting");
 
-        Rule experimentRule;
-        experimentRule = new Rule();
+        final Rule experimentRule = new Rule();
         experimentRule.setParent(experiment.id().get());
         experimentRule.setName(experiment.name());
         experimentRule.setFireOn(FireOn.EVERY_PAGE);
