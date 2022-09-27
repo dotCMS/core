@@ -3,10 +3,10 @@ import { IframeComponent } from '@components/_common/iframe/iframe-component';
 
 @Component({
     selector: 'dot-container-history',
-    templateUrl: './container-history.component.html',
-    styleUrls: ['./container-history.component.scss']
+    templateUrl: './dot-container-history.component.html',
+    styleUrls: ['./dot-container-history.component.scss']
 })
-export class ContainerHistoryComponent implements OnInit, OnChanges {
+export class DotContainerHistoryComponent implements OnInit, OnChanges {
     @ViewChild('historyIframe') historyIframe: IframeComponent;
     historyUrl = '';
 

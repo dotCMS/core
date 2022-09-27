@@ -1,7 +1,7 @@
 import { Component, DebugElement, ElementRef, Input, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { ContainerHistoryComponent } from './container-history.component';
+import { DotContainerHistoryComponent } from './container-history.component';
 import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 
 @Component({
@@ -14,17 +14,17 @@ export class IframeMockComponent {
 }
 
 describe('ContainerHistoryComponent', () => {
-    let component: ContainerHistoryComponent;
-    let fixture: ComponentFixture<ContainerHistoryComponent>;
+    let component: DotContainerHistoryComponent;
+    let fixture: ComponentFixture<DotContainerHistoryComponent>;
     let de: DebugElement;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [ContainerHistoryComponent, IframeMockComponent],
+            declarations: [DotContainerHistoryComponent, IframeMockComponent],
             imports: [DotPortletBoxModule]
         }).compileComponents();
 
-        fixture = TestBed.createComponent(ContainerHistoryComponent);
+        fixture = TestBed.createComponent(DotContainerHistoryComponent);
         de = fixture.debugElement;
         component = fixture.componentInstance;
         fixture.detectChanges();

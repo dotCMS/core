@@ -1,7 +1,7 @@
 import { Component, DebugElement, ElementRef, Input, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { ContainerPermissionsComponent } from './container-permissions.component';
+import { DotContainerPermissionsComponent } from './dot-container-permissions.component';
 import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 
 @Component({
@@ -14,17 +14,17 @@ export class IframeMockComponent {
 }
 
 describe('ContainerPermissionsComponent', () => {
-    let component: ContainerPermissionsComponent;
-    let fixture: ComponentFixture<ContainerPermissionsComponent>;
+    let component: DotContainerPermissionsComponent;
+    let fixture: ComponentFixture<DotContainerPermissionsComponent>;
     let de: DebugElement;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [ContainerPermissionsComponent, IframeMockComponent],
+            declarations: [DotContainerPermissionsComponent, IframeMockComponent],
             imports: [DotPortletBoxModule]
         }).compileComponents();
 
-        fixture = TestBed.createComponent(ContainerPermissionsComponent);
+        fixture = TestBed.createComponent(DotContainerPermissionsComponent);
         de = fixture.debugElement;
         component = fixture.componentInstance;
         fixture.detectChanges();
