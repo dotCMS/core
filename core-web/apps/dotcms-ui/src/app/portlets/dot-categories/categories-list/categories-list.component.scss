@@ -8,6 +8,18 @@
         .action-header__global-search {
             flex-wrap: wrap;
         }
+        .link-button {
+            color: var(--color-sec);
+            :hover {
+                color: var(--color-sec);
+            }
+            :enabled {
+                color: var(--color-sec);
+            }
+        }
+        .link-button:enabled:hover {
+            color: var(--color-sec);
+        }
         .container-listing__header-options,
         .line-break {
             width: 100%;

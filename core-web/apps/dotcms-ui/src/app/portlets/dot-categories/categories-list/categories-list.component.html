@@ -4,7 +4,7 @@
         #listing
         [columns]="vm.tableColumns"
         [paginationPerPage]="vm.paginationPerPage"
-        url="v1/categories"
+        [url]="vm.getCategoryEndPoint"
         [actions]="[]"
         [checkbox]="true"
         (selectedItems)="updateSelectedCategories($event)"
@@ -41,6 +41,7 @@
         <div class="line-break"></div>
         <div class="p-2 pt-4">
             <p-breadcrumb
+                (onItemClick)="updateBreadCrumb($event)"
                 [home]="vm.breadCrumbStarterIcon"
                 [model]="vm.categoryBreadCrumb"
             ></p-breadcrumb>
@@ -66,7 +67,13 @@
                     width: tableColumns[0].width
                 }"
             >
-                {{ rowData.categoryName }}
+                <button
+                    pButton
+                    type="button"
+                    (click)="addBreadCrumb(rowData)"
+                    [label]="rowData.categoryName"
+                    class="link-button p-button-link"
+                ></button>
             </td>
             <td
                 [ngStyle]="{

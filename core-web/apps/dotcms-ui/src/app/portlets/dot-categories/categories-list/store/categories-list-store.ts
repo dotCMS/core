@@ -5,6 +5,7 @@ import { DataTableColumn } from '@models/data-table';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
 import { DotCategory } from '@dotcms/app/shared/models/categories/dot-categories.model';
+import { PaginatorService } from '@dotcms/app/api/services/paginator';
 
 export interface DotCategoriesListState {
     getCategoryEndPoint: string;
@@ -19,11 +20,14 @@ export interface DotCategoriesListState {
 
 @Injectable()
 export class DotCategoriesListStore extends ComponentStore<DotCategoriesListState> {
-    constructor(private dotMessageService: DotMessageService) {
+    constructor(
+        private dotMessageService: DotMessageService,
+        private paginationService: PaginatorService
+    ) {
         super(null);
         this.breadCrumbStarterIcon = { icon: 'pi pi-home' };
         this.setState({
-            getCategoryEndPoint: '',
+            getCategoryEndPoint: 'v1/categories',
             categoriesBulkActions: this.getCategoriesActions(),
             tableColumns: this.getCategoriesColumns(),
             addToBundleIdentifier: '',
@@ -58,11 +62,58 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
         }
     );
 
+    readonly categoryBreadCrumbSelector$ = this.select(
+        ({ categoryBreadCrumb }: DotCategoriesListState) => {
+            return {
+                categoryBreadCrumb
+            };
+        }
+    );
+
+    readonly updateListing = this.updater<DotListingDataTableComponent>(
+        (state: DotCategoriesListState, listing: DotListingDataTableComponent) => {
+            return {
+                ...state,
+                listing
+            };
+        }
+    );
+
+    readonly addCategoriesBreadCrumb = this.updater<MenuItem>(
+        (state: DotCategoriesListState, categoryBreadCrumb: MenuItem) => {
+            return {
+                ...state,
+                categoryBreadCrumb: [
+                    ...state.categoryBreadCrumb,
+                    { ...categoryBreadCrumb, tabindex: state.categoryBreadCrumb.length.toString() }
+                ]
+            };
+        }
+    );
+
+    readonly updateCategoriesBreadCrumb = this.updater<MenuItem[]>(
+        (state: DotCategoriesListState, categoryBreadCrumb: MenuItem[]) => {
+            return {
+                ...state,
+                categoryBreadCrumb
+            };
+        }
+    );
+
     readonly updateSelectedCategories = this.updater<DotCategory[]>(
         (state: DotCategoriesListState, selectedCategories: DotCategory[]) => {
             return {
                 ...state,
                 selectedCategories: selectedCategories
+            };
+        }
+    );
+
+    readonly updateCategoryEndPoint = this.updater<string>(
+        (state: DotCategoriesListState, getCategoryEndPoint: string) => {
+            return {
+                ...state,
+                getCategoryEndPoint
             };
         }
     );
@@ -87,7 +138,8 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
     private getCategoryBreadCrumbs() {
         return [
             {
-                label: 'Top'
+                label: 'Top',
+                tabindex: '0'
             }
         ];
     }
@@ -120,22 +172,4 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
             }
         ];
     }
-
-    readonly updateListing = this.updater<DotListingDataTableComponent>(
-        (state: DotCategoriesListState, listing: DotListingDataTableComponent) => {
-            return {
-                ...state,
-                listing
-            };
-        }
-    );
-
-    readonly updateBreadCrumb = this.updater<DotListingDataTableComponent>(
-        (state: DotCategoriesListState, categoryBreadCrumb: MenuItem) => {
-            return {
-                ...state,
-                categoryBreadCrumb: [...state.categoryBreadCrumb, categoryBreadCrumb]
-            };
-        }
-    );
 }
