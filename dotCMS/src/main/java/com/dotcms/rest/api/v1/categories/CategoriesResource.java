@@ -150,7 +150,7 @@ public class CategoriesResource {
      * @return
      */
     @GET
-    @Path(("/_children"))
+    @Path(("/children"))
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
