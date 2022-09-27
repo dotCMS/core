@@ -132,7 +132,7 @@ public class CategoriesResource {
      * <code> { contentTypes: array of Category total: total number of Categories } <code/>
      * <p>
      * Url syntax:
-     * api/v1/categories/_children?filter=filter-string&page=page-number&per_page=per-page&orderby=order-field-name&direction=order-direction&inode=parentId
+     * api/v1/categories/children?filter=filter-string&page=page-number&per_page=per-page&orderby=order-field-name&direction=order-direction&inode=parentId
      * <p>
      * where:
      *
@@ -144,7 +144,7 @@ public class CategoriesResource {
      * <li>direction: asc for upward order and desc for downward order</li>
      * </ul>
      * <p>
-     * Url example: v1/categories/_children?filter=test&page=2&orderby=categoryName
+     * Url example: v1/categories/children?filter=test&page=2&orderby=categoryName
      *
      * @param httpRequest
      * @return
