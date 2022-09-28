@@ -118,12 +118,12 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
      * @throws ExecutionException
      */
     public void waitUntilResolveAllDependencies() throws ExecutionException {
-        final String submitterName = "DependencyManagerSubmitter" ;
+        final String submitterName = "DependencyManagerSubmitter" + Thread.currentThread().getName();
         int emptyDependencies=0;
         submitter = DotConcurrentFactory.getInstance().getSubmitter(submitterName,
                 new DotConcurrentFactory.SubmitterConfigBuilder()
                         .poolSize(
-                                Config.getIntProperty("MIN_NUMBER_THREAD_TO_EXECUTE_BUNDLER", 10))
+                                Config.getIntProperty("MIN_NUMBER_THREAD_TO_EXECUTE_BUNDLER", 1))
                         .maxPoolSize(Config.getIntProperty("MAX_NUMBER_THREAD_TO_EXECUTE_BUNDLER", 40))
                         .queueCapacity(Config.getIntProperty("QUEUE_CAPACITY_TO_EXECUTE_BUNDLER", Integer.MAX_VALUE))
                         .build()
