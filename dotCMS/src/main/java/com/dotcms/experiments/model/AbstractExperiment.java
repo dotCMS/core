@@ -88,6 +88,12 @@ public interface AbstractExperiment extends Serializable, ManifestItem, Ruleable
     @JsonProperty("targetingConditions")
     Optional<List<TargetingCondition>> targetingConditions();
 
+    @JsonProperty("loopbackWindow")
+    @Value.Default
+    default int loopbackWindow() {
+        return 10;
+    }
+
     // Beginning Permissionable methods
 
     @Value.Derived
@@ -120,6 +126,7 @@ public interface AbstractExperiment extends Serializable, ManifestItem, Ruleable
     }
 
     @Value.Derived
+    @JsonIgnore
     default Permissionable getParentPermissionable() {
         return Try.of(()->APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(pageId()))
                 .getOrNull();

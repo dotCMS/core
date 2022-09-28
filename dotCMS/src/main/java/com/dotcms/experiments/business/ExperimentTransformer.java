@@ -9,18 +9,13 @@ import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.transform.DBColumnToJSONConverter;
 import com.dotcms.util.transform.DBTransformer;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.portlets.htmlpageasset.business.render.page.JsonMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
 import io.vavr.control.Try;
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.postgresql.util.PGobject;
 
 /**
  * DBTransformer that converts DB objects into {@link Experiment} instances
@@ -67,6 +62,7 @@ public class ExperimentTransformer implements DBTransformer<Experiment> {
                 .lastModifiedBy((String) map.get("last_modified_by"))
                 .goals(Optional.ofNullable(DBColumnToJSONConverter
                         .getObjectFromDBJson(map.get("goals"), Goals.class)))
+                .loopbackWindow(ConversionUtils.toInt(map.get("loopback_window"), 10))
                 .build();
     }
 }
