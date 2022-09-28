@@ -198,8 +198,8 @@ export class DotRouterService {
     }
 
     /**
-     * Redirect to edit the template.
-     * If the inode is passed, load a specific version of the template
+     * Redirect to edit the container.
+     * If the inode is passed, load a specific version of the container
      *
      * @param {string} id
      * @param {string} inode
@@ -207,7 +207,7 @@ export class DotRouterService {
      */
     goToEditContainer(id: string, inode?: string): void {
         this.router.navigate([
-            inode ? `/container-new/edit/${id}/inode/${inode}` : `/container-new/edit/${id}`
+            inode ? `/containers/edit/${id}/inode/${inode}` : `/containers/edit/${id}`
         ]);
     }
 

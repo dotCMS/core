@@ -1,4 +1,4 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component, OnDestroy, ViewChild } from '@angular/core';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
 import { DotContainer } from '@models/container/dot-container.model';
 import { DotContentState } from '@dotcms/dotcms-models';
@@ -13,6 +13,8 @@ import { DotBulkInformationComponent } from '@components/_common/dot-bulk-inform
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DialogService } from 'primeng/dynamicdialog';
+import { takeUntil } from 'rxjs/operators';
+import { Subject } from 'rxjs';
 
 @Component({
     selector: 'dot-container-list',
@@ -20,12 +22,14 @@ import { DialogService } from 'primeng/dynamicdialog';
     styleUrls: ['./container-list.component.scss'],
     providers: [DotContainerListStore]
 })
-export class ContainerListComponent {
+export class ContainerListComponent implements OnDestroy {
     vm$ = this.store.vm$;
     notify$ = this.store.notify$;
 
     @ViewChild('listing', { static: false })
     listing: DotListingDataTableComponent;
+
+    private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         private store: DotContainerListStore,
@@ -33,9 +37,14 @@ export class ContainerListComponent {
         private dotMessageDisplayService: DotMessageDisplayService,
         private dialogService: DialogService
     ) {
-        this.notify$.subscribe(({ payload, messageKey }) => {
-            this.notifyResult(payload, messageKey);
+        this.notify$.pipe(takeUntil(this.destroy$)).subscribe(({ payload, message, failsInfo }) => {
+            this.notifyResult(payload, failsInfo, message);
         });
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
     }
 
     /**
@@ -84,19 +93,23 @@ export class ContainerListComponent {
         return this.store.getContainerActions(container);
     }
 
-    private notifyResult(response: DotActionBulkResult | DotContainer, messageKey: string): void {
-        if ('fails' in response && response.fails.length) {
+    private notifyResult(
+        response: DotActionBulkResult | DotContainer,
+        failsInfo: DotBulkFailItem[],
+        message: string
+    ): void {
+        if ('fails' in response && failsInfo.length) {
             this.showErrorDialog({
                 ...response,
-                fails: this.getFailsInfo(response.fails),
-                action: this.dotMessageService.get(messageKey)
+                fails: failsInfo,
+                action: message
             });
         } else {
-            this.showToastNotification(this.dotMessageService.get(messageKey));
+            this.showToastNotification(message);
         }
 
-        this.listing.clearSelection();
-        this.listing.loadCurrentPage();
+        this.listing?.clearSelection();
+        this.listing?.loadCurrentPage();
     }
 
     private showToastNotification(message: string): void {
@@ -116,17 +129,5 @@ export class ContainerListComponent {
             baseZIndex: 10000,
             data: result
         });
-    }
-
-    private getFailsInfo(items: DotBulkFailItem[]): DotBulkFailItem[] {
-        return items.map((item: DotBulkFailItem) => {
-            return { ...item, description: this.getContainerName(item.element) };
-        });
-    }
-
-    private getContainerName(identifier: string): string {
-        return (this.listing.items as DotContainer[]).find((template: DotContainer) => {
-            return template.identifier === identifier;
-        }).name;
     }
 }
