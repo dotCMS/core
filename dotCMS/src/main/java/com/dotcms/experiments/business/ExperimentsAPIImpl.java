@@ -57,7 +57,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import org.jetbrains.annotations.NotNull;
 
 public class ExperimentsAPIImpl implements ExperimentsAPI {
 
@@ -143,9 +142,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         }
 
         // transform and save TargetingConditions into conditions
-        experiment.targetingConditions().get().forEach((targetingCondition -> {
+        experiment.targetingConditions().get().forEach(targetingCondition -> {
             createAndSaveCondition(user, experimentRule, targetingCondition);
-        }));
+        });
 
     }
 
@@ -175,7 +174,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         return condition;
     }
 
-    @NotNull
     private Rule createRuleAndConditionGroup(Experiment experiment, User user)
             throws DotDataException, DotSecurityException {
         DotPreconditions.isTrue(experiment.id().isPresent(), ()->"Error saving Experiment Targeting");
@@ -451,6 +449,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     @Override
+    @WrapInTransaction
     public Experiment deleteTargetingCondition(String experimentId, String conditionId, User user)
             throws DotDataException, DotSecurityException {
         final Experiment persistedExperiment = find(experimentId, user)
