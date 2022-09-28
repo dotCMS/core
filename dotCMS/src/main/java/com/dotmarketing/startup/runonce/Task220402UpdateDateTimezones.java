@@ -29,7 +29,7 @@ public class Task220402UpdateDateTimezones extends Task210901UpdateDateTimezones
     /**
      * MSSQL uses these prefixes to name any generated index or constraint
      */
-    private final Set<String> idxPrefixes = ImmutableSet.of("uq", "pk", "df");
+    private final Set<String> constraintPrefixes = ImmutableSet.of("uq", "pk", "df");
     /**
      * ALTER TABLE Main statement
      */
@@ -103,7 +103,7 @@ public class Task220402UpdateDateTimezones extends Task210901UpdateDateTimezones
     private final DotDatabaseMetaData dotDatabaseMetaData = new DotDatabaseMetaData();
 
     /**
-     * Update table entry point a bool flag is returned depending on wether or not the table had
+     * Update table entry point a bool flag is returned depending on weather or not the table had
      * fields of type datetime
      */
     @Override
@@ -113,10 +113,8 @@ public class Task220402UpdateDateTimezones extends Task210901UpdateDateTimezones
         final Connection conn = DbConnectionFactory.getConnection();
         final List<String> columNames = getColumnNamesRequiredToMigrate(conn, tableName);
         if (!columNames.isEmpty()) {
-            Logger.info(Task220402UpdateDateTimezones.class,
-                    String.format("Updating table %s. ", tableName));
-            final List<String> droppedConstraints = dropConstraintsOrIndicesIfRequired(conn,
-                    tableName);
+            Logger.info(Task220402UpdateDateTimezones.class, String.format("Updating table %s. ", tableName));
+            dropConstraintsOrIndicesIfRequired(conn, tableName);
             for (final String columnName : columNames) {
                 Logger.info(Task220402UpdateDateTimezones.class,
                         "updating " + tableName + "." + columnName + " to " + DATE_TIME_OFFSET);
@@ -126,13 +124,11 @@ public class Task220402UpdateDateTimezones extends Task210901UpdateDateTimezones
                 tableUpdated = true;
             }
 
-                final int count = droppedConstraints.isEmpty() ? 0
-                        : restoreDroppedObjectsIfAny(conn, tableName);
-                Logger.info(Task220402UpdateDateTimezones.class,
-                        String.format("Table %s successfully updated. %d restore scripts applied.",
-                                tableName, count));
-            }
-
+            final int count = restoreDroppedObjectsIfAny(conn, tableName);
+            Logger.info(Task220402UpdateDateTimezones.class,
+                    String.format("Table %s successfully updated. %d restore scripts applied.", tableName, count)
+            );
+        }
         return tableUpdated;
     }
 
@@ -163,60 +159,65 @@ public class Task220402UpdateDateTimezones extends Task210901UpdateDateTimezones
      * @param tableName
      * @return
      */
-    private List<String> dropConstraintsOrIndicesIfRequired(final Connection conn,
+    private void dropConstraintsOrIndicesIfRequired(final Connection conn,
             final String tableName) {
 
-        final List<String> constraintsOrIndices = new ArrayList<>();
-
-        final List<String> indices = (Try.of(
-                        () -> dotDatabaseMetaData.getIndices(tableName))
-                .getOrElse(ImmutableList.of())).stream().map(String::toLowerCase).collect(
-                Collectors.toList());
-
-        final List<String> generatedIndices = indices.stream()
-                .filter(idx -> Try.of(() -> idxPrefixes.contains(idx.substring(0, 2)))
-                        .getOrElse(false)).collect(Collectors.toList());
-
-        indices.removeAll(generatedIndices);
-
-        final List<String> constraints = (Try.of(
-                        () -> dotDatabaseMetaData.getConstraints(tableName))
-                .getOrElse(ImmutableList.of())).stream().map(String::toLowerCase).collect(
-                Collectors.toList());
-
-        constraints.addAll(generatedIndices);
-
         //These are the objects we know present a conflict when doing the alter table
-        final Map<String, List<String>> restoreScriptsByObjectName = tableIndexConstraintRestoreScripts.get(
-                tableName);
+        final Map<String, List<String>> restoreScriptsByObjectName = tableIndexConstraintRestoreScripts.get(tableName);
 
         if (null != restoreScriptsByObjectName) {
-            dropConstraints(conn, tableName, constraintsOrIndices, restoreScriptsByObjectName,
-                    constraints);
-            dropIndices(conn, tableName, constraintsOrIndices, restoreScriptsByObjectName, indices);
+
+            Logger.info(Task220402UpdateDateTimezones.class,()->String.format("There are scripts associated with table [%s]. ",tableName));
+
+            final List<String> indices = (Try.of(
+                            () -> dotDatabaseMetaData.getIndices(tableName))
+                    .getOrElse(ImmutableList.of())).stream().map(String::toLowerCase).collect(
+                    Collectors.toList());
+
+            Logger.info(Task220402UpdateDateTimezones.class,()-> String.format("Indices found [%s]",String.join(",", indices)));
+
+            final List<String> generatedIndices = indices.stream()
+                    .filter(idx -> Try.of(() -> constraintPrefixes.contains(idx.substring(0, 2)))
+                            .getOrElse(false)).collect(Collectors.toList());
+
+            //These are indices that start with the following prefixes "uq", "pk", "df" They're usually reported as indices but in reality they are constraints
+            //So we remove them from this list which we expect will only contain punctual index names. Meaning indices manually created
+
+            final List <String> userGeneratedIndices = new ArrayList<>(indices);
+            userGeneratedIndices.removeAll(generatedIndices);
+
+            final List<String> constraints = (Try.of(
+                            () -> dotDatabaseMetaData.getConstraints(tableName))
+                    .getOrElse(ImmutableList.of())).stream().map(String::toLowerCase).collect(
+                    Collectors.toList());
+
+            Logger.info(Task220402UpdateDateTimezones.class,()-> String.format("Constraints found [%s]",String.join(",", constraints)));
+
+
+            final List <String> userConstraints = new ArrayList<>(constraints);
+            userConstraints.addAll(generatedIndices);
+
+            dropConstraints(conn, tableName, restoreScriptsByObjectName, userConstraints);
+            dropIndices(conn, tableName, restoreScriptsByObjectName, userGeneratedIndices);
+
         }
 
-        return constraintsOrIndices;
     }
 
     /**
      * Drop constraint method
      * @param conn
      * @param tableName
-     * @param constraintsOrIndices
      * @param restoreScriptsByObjectName
      * @param constraints
      */
     private void dropConstraints(Connection conn, String tableName,
-            List<String> constraintsOrIndices,
             Map<String, List<String>> restoreScriptsByObjectName, List<String> constraints) {
         for (final String constraintName : constraints) {
             //so if we're looking at one of the conflicting objects we need to drop it
             if (hasMatchingScript(restoreScriptsByObjectName, constraintName)) {
 
-                Logger.info(Task220402UpdateDateTimezones.class,
-                        () -> String.format("Attempting to drop constraint `%s`. ",
-                                constraintName));
+                Logger.info(Task220402UpdateDateTimezones.class, () -> String.format("Attempting to drop constraint [%s]. ", constraintName));
 
                 final boolean dropped = Try.of(() -> {
                     dotDatabaseMetaData.executeDropConstraint(conn, tableName, constraintName);
@@ -224,12 +225,25 @@ public class Task220402UpdateDateTimezones extends Task210901UpdateDateTimezones
                 }).getOrElse(false);
 
                 if (!dropped) {
-                    Logger.info(Task220402UpdateDateTimezones.class,
-                            () -> String.format("Unable to drop constraint `%s`. ",
-                                    constraintName));
-                    continue;
+                    Logger.info(Task220402UpdateDateTimezones.class, () -> String.format("Unable to drop [%s] constraint. ", constraintName));
+                    if(constraintName.startsWith("uq")){
+                        // If it failed to drop, and it starts with a `uq` prefix
+                        // it is very likely that we're looking at a unique constraint that was built using an index
+                        // here more info
+                        // https://dba.stackexchange.com/questions/144/when-should-i-use-a-unique-constraint-instead-of-a-unique-index
+                        // Then Our best bet is try to remove it as if ws an index
+                        // and if we fail again then the alter table will fail for sure.
+
+                        Logger.info(Task220402UpdateDateTimezones.class, () -> String.format("Attempting to drop [%s] as index. ", constraintName));
+                        final boolean droppedAsIdx = Try.of(()-> {
+                              dotDatabaseMetaData.dropIndex(conn, tableName, constraintName);
+                              return true;
+                          } ).getOrElse(false);
+                        if(!droppedAsIdx) {
+                            Logger.info(Task220402UpdateDateTimezones.class, () -> String.format("Unable to drop [%s] as index. ", constraintName));
+                        }
+                    }
                 }
-                constraintsOrIndices.add(constraintName);
             }
         }
     }
@@ -238,18 +252,16 @@ public class Task220402UpdateDateTimezones extends Task210901UpdateDateTimezones
      * Drop indices method
      * @param conn
      * @param tableName
-     * @param constraintsOrIndices
      * @param restoreScriptsByObjectName
      * @param indices
      */
-    private void dropIndices(Connection conn, String tableName, List<String> constraintsOrIndices,
+    private void dropIndices(Connection conn, String tableName,
             Map<String, List<String>> restoreScriptsByObjectName, List<String> indices) {
         for (final String indexName : indices) {
             //so if we're looking at one of the conflicting objects we need to drop it
             if (hasMatchingScript(restoreScriptsByObjectName, indexName)) {
 
-                Logger.info(Task220402UpdateDateTimezones.class,
-                        () -> String.format("Attempting to drop index `%s`. ", indexName));
+                Logger.info(Task220402UpdateDateTimezones.class, () -> String.format("Attempting to drop index `%s`. ", indexName));
 
                 final boolean dropped = Try.of(() -> {
                     dotDatabaseMetaData.dropIndex(conn, tableName, indexName);
@@ -257,11 +269,8 @@ public class Task220402UpdateDateTimezones extends Task210901UpdateDateTimezones
                 }).getOrElse(false);
 
                 if (!dropped) {
-                    Logger.info(Task220402UpdateDateTimezones.class,
-                            () -> String.format("Unable to drop index `%s`. ", indexName));
-                    continue;
+                    Logger.info(Task220402UpdateDateTimezones.class, () -> String.format("Unable to drop index `%s`. ", indexName));
                 }
-                constraintsOrIndices.add(indexName);
             }
         }
     }
@@ -327,8 +336,8 @@ public class Task220402UpdateDateTimezones extends Task210901UpdateDateTimezones
                                             "alter table sitesearch_audit add primary key (job_id, fire_date) ")
                             )
                     )
-                    .put("analytic_summary_period", ImmutableMap.of("uq",
-                                    ImmutableList.of(
+                    .put("analytic_summary_period", ImmutableMap.of(
+                                    "uq", ImmutableList.of(
                                             "alter table analytic_summary_period ADD CONSTRAINT uq_analytic_summary_period_full_date UNIQUE  (full_date)")
                             )
                     )
@@ -368,12 +377,17 @@ public class Task220402UpdateDateTimezones extends Task210901UpdateDateTimezones
                     )
                     .put("container_version_info", ImmutableMap.of(
                                     "idx_container_vi_version_ts", ImmutableList.of(
-                                            "create index idx_container_vi_version_ts on container_version_info(version_ts)")
+                                            "create index idx_container_vi_version_ts on container_version_info(version_ts)"),
+                                    "df", ImmutableList.of(
+                                            "alter table container_version_info add constraint df_container_version_info_version_ts DEFAULT getDate() FOR version_ts")
                             )
                     )
-                    .put("contentlet_version_info", ImmutableMap.of("idx_contentlet_vi_version_ts",
-                                    ImmutableList.of(
-                                            "create index idx_contentlet_vi_version_ts on contentlet_version_info(version_ts)")
+                    .put("contentlet_version_info", ImmutableMap.of(
+                                    "idx_contentlet_vi_version_ts", ImmutableList.of(
+                                            "create index idx_contentlet_vi_version_ts on contentlet_version_info(version_ts)"),
+                                    "df", ImmutableList.of(
+                                            "alter table contentlet_version_info add constraint df_contentlet_version_info_version_ts DEFAULT getDate() FOR version_ts"
+                                    )
                             )
                     )
                     .put("dist_reindex_journal",
@@ -400,7 +414,10 @@ public class Task220402UpdateDateTimezones extends Task210901UpdateDateTimezones
                     .put("link_version_info",
                             ImmutableMap.of("idx_link_vi_version_ts",
                                     ImmutableList.of(
-                                            "create index idx_link_vi_version_ts on link_version_info(version_ts)")
+                                            "create index idx_link_vi_version_ts on link_version_info(version_ts)"),
+                                    "df", ImmutableList.of(
+                                            "alter table link_version_info add constraint df_link_version_info_version_ts DEFAULT getDate() FOR version_ts"
+                                    )
                             )
                     )
                     .put("recipient",
@@ -436,7 +453,10 @@ public class Task220402UpdateDateTimezones extends Task210901UpdateDateTimezones
                     .put("template_version_info",
                             ImmutableMap.of("idx_template_vi_version_ts",
                                     ImmutableList.of(
-                                            "create index idx_template_vi_version_ts on template_version_info(version_ts)")
+                                            "create index idx_template_vi_version_ts on template_version_info(version_ts)"),
+                                    "df", ImmutableList.of(
+                                            "alter table template_version_info add constraint df_template_version_info_version_ts DEFAULT getDate() FOR version_ts"
+                                    )
                             )
                     )
                     .build();

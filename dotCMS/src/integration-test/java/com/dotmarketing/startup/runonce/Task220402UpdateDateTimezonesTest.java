@@ -28,18 +28,22 @@ public class Task220402UpdateDateTimezonesTest {
             + "   country_code NVARCHAR(255) NULL,\n"
             + "   language NVARCHAR(255) NULL,\n"
             + "   country NVARCHAR(255) NULL,\n"
+            + "   random_unique_date datetime,\n"
             + "   add_date datetime,\n"
             + "   mod_date datetime NOT NULL DEFAULT GETDATE(),\n"
             + "   PRIMARY KEY (id), \n"
+            + "   UNIQUE (random_unique_date), \n"
             + "   UNIQUE (language_code,country_code) \n"
             + ")\n";
 
 
     final String CREATE_INDEX = "create index idx_lol on %s (add_date,country_code)";
 
+    final String CREATE_UNIQUE_INDEX = "create unique index uq_lol on %s (country_code)";
+
     final String INSERT = "INSERT %s\n"
-            + "(id, language_code, country_code, [language], country, add_date)\n"
-            + "VALUES(%d, 'ES', 'CR', 'Spanish', 'Costa Rica', GetDate())";
+            + "(id, language_code, country_code, [language], country, random_unique_date, add_date)\n"
+            + "VALUES(%d, 'ES', 'CR', 'Spanish', 'Costa Rica', GetDate(), GetDate())";
 
     final String DROP_TABLE = "drop table %s";
 
@@ -58,9 +62,13 @@ public class Task220402UpdateDateTimezonesTest {
            ImmutableMap.of(tableName,
                 ImmutableMap.of(
                         "idx_lol", ImmutableList.of(String.format(CREATE_INDEX,tableName)),
-                        "uq",ImmutableList.of(String.format("ALTER TABLE %s ADD CONSTRAINT %s UNIQUE (language_code,country_code) ", tableName, "UQ_"+tableName+"_"+System.currentTimeMillis())),
-                        "pk",ImmutableList.of(String.format("ALTER TABLE %s ADD CONSTRAINT %s PRIMARY KEY CLUSTERED (id)",tableName, "PK_"+tableName+"_"+System.currentTimeMillis())),
-                        "df",ImmutableList.of(String.format("ALTER TABLE %s ADD CONSTRAINT DF_%s_%d DEFAULT getDate() FOR mod_date ", tableName, tableName, System.currentTimeMillis()))
+                        "uq",ImmutableList.of(
+                                  String.format("ALTER TABLE %s ADD CONSTRAINT %s UNIQUE (language_code,country_code) ", tableName, "UQ_"+tableName+"_"+System.nanoTime()),
+                                  String.format("ALTER TABLE %s ADD CONSTRAINT %s UNIQUE (random_unique_date) ", tableName, "UQ_"+tableName+"_"+System.nanoTime()),
+                                  String.format("create unique index uq_lol on %s (country_code) ", tableName)
+                        ),
+                        "pk",ImmutableList.of(String.format("ALTER TABLE %s ADD CONSTRAINT %s PRIMARY KEY CLUSTERED (id)",tableName, "PK_"+tableName+"_"+System.nanoTime())),
+                        "df",ImmutableList.of(String.format("ALTER TABLE %s ADD CONSTRAINT DF_%s_%d DEFAULT getDate() FOR mod_date ", tableName, tableName, System.nanoTime()))
                 )
            )
         );
@@ -78,6 +86,7 @@ public class Task220402UpdateDateTimezonesTest {
               //Create the table and index
               dotConnect.executeStatement(String.format(CREATE_TABLE_TEMPLATE, tableName));
               dotConnect.executeStatement(String.format(CREATE_INDEX, tableName));
+              dotConnect.executeStatement(String.format(CREATE_UNIQUE_INDEX, tableName));
               //Now Lets try a regular insert
               Assert.assertTrue(
                       Try.of(() -> {
