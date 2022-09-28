@@ -19,6 +19,7 @@ import {
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { fromEvent } from 'rxjs';
+import { tap } from 'rxjs/operators';
 import * as _ from 'lodash';
 import { OverlayPanel } from 'primeng/overlaypanel';
 import { DataView } from 'primeng/dataview';
@@ -140,6 +141,9 @@ export class SearchableDropdownComponent
     label: string;
     externalSelectTemplate: TemplateRef<unknown>;
 
+    selectedOptionIndex = 0;
+    selectedOptionValue = '';
+
     keyMap: string[] = [
         'Shift',
         'Alt',
@@ -169,7 +173,18 @@ export class SearchableDropdownComponent
     ngAfterViewInit(): void {
         if (this.searchInput) {
             fromEvent(this.searchInput.nativeElement, 'keyup')
-                .pipe(debounceTime(500))
+                .pipe(
+                    tap((keyboardEvent: KeyboardEvent) => {
+                        if (
+                            keyboardEvent.key === 'ArrowUp' ||
+                            keyboardEvent.key === 'ArrowDown' ||
+                            keyboardEvent.key === 'Enter'
+                        ) {
+                            this.selectDropdownOption(keyboardEvent.key);
+                        }
+                    }),
+                    debounceTime(500)
+                )
                 .subscribe((keyboardEvent: KeyboardEvent) => {
                     if (!this.isModifierKey(keyboardEvent.key)) {
                         this.filterChange.emit(keyboardEvent.target['value']);
@@ -189,6 +204,7 @@ export class SearchableDropdownComponent
         });
     }
 
+
     /**
      * Emits hide event and clears any value on filter's input
      *
@@ -201,6 +217,7 @@ export class SearchableDropdownComponent
         }
 
         this.hide.emit();
+        this.selectedOptionIndex = null;
     }
 
     /**
@@ -282,8 +299,7 @@ export class SearchableDropdownComponent
      */
     getItemLabel(dropDownItem: unknown): string {
         let resultProps;
-
-        if (Array.isArray(this.labelPropertyName)) {
+        if (dropDownItem && Array.isArray(this.labelPropertyName)) {
             resultProps = this.labelPropertyName.map((item) => {
                 if (item.indexOf('.') > -1) {
                     let propertyName;
@@ -298,8 +314,8 @@ export class SearchableDropdownComponent
             });
 
             return resultProps.join(' - ');
-        } else {
-            return dropDownItem[this.labelPropertyName];
+        } else if (dropDownItem) {
+            return dropDownItem[`${this.labelPropertyName}`];
         }
     }
 
@@ -350,6 +366,25 @@ export class SearchableDropdownComponent
         this.overlayPanelMinHeight = '';
     }
 
+    private selectDropdownOption(actionKey: string) {
+        const itemsCount = this.rows
+            ? this.rows <= this.options.length
+                ? this.rows
+                : this.options.length
+            : this.options.length;
+        if (actionKey === 'ArrowDown' && itemsCount - 1 > this.selectedOptionIndex) {
+            this.selectedOptionIndex++;
+            this.selectedOptionValue = this.getItemLabel(this.options[this.selectedOptionIndex]);
+        } else if (actionKey === 'ArrowUp' && 0 < this.selectedOptionIndex) {
+            this.selectedOptionIndex--;
+            this.selectedOptionValue = this.getItemLabel(this.options[this.selectedOptionIndex]);
+        } else if (actionKey === 'Enter' && this.selectedOptionIndex !== null) {
+            this.handleClick(this.options[this.selectedOptionIndex]);
+        }
+
+        this.cd.detectChanges();
+    }
+
     private setLabel(): void {
         this.valueString = this.value
             ? this.value[this.getValueLabelPropertyName()]
@@ -365,6 +400,8 @@ export class SearchableDropdownComponent
 
                 return item;
             });
+            this.selectedOptionValue = this.getItemLabel(this.options[0]);
+            this.selectedOptionIndex = 0;
         }
     }
 

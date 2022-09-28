@@ -1,4 +1,4 @@
-@use "variables"as *;
+@use "variables" as *;
 
 :host {
     display: flex;
@@ -15,8 +15,11 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     &:hover,
-    &.selected {
+    &.highlight {
         background: $bg-highlight;
+    }
+    &.selected {
+        font-weight: bold;
     }
 
     .dot-theme-item__image,
@@ -45,7 +48,6 @@
         justify-content: center;
         margin-left: $spacing-2;
         .dot-theme-item__label {
-            font-weight: bold;
             display: inline-block;
             margin-bottom: $spacing-1;
         }

@@ -24,6 +24,7 @@ export interface DotFavoritePageFormData {
 @Component({
     selector: 'dot-favorite-page',
     templateUrl: 'dot-favorite-page.component.html',
+    styleUrls: ['./dot-favorite-page.component.scss'],
     providers: [DotFavoritePageStore]
 })
 export class DotFavoritePageComponent implements OnInit, AfterViewInit, OnDestroy {

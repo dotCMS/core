@@ -376,10 +376,6 @@ public class ExperimentsResource {
             builder.targetingConditions(experimentForm.getTargetingConditions());
         }
 
-        if(experimentForm.getTargetingConditions()!=null) {
-            builder.targetingConditions(experimentForm.getTargetingConditions());
-        }
-
         if(experimentForm.getLoopbackWindow()>-1) {
             builder.loopbackWindow(experimentForm.getLoopbackWindow());
         }
