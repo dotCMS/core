@@ -5,12 +5,14 @@ const routes: Routes = [
     {
         path: '',
         loadChildren: () =>
-            import('./container-list/container-list.module').then((m) => m.ContainerListModule)
+            import('./dot-container-list/dot-container-list.module').then(
+                (m) => m.DotContainerListModule
+            )
     },
     {
         path: 'create',
         loadChildren: () =>
-            import('./container-create/container-create.module').then(
+            import('./dot-container-create/dot-container-create.module').then(
                 (m) => m.ContainerCreateModule
             )
     }
