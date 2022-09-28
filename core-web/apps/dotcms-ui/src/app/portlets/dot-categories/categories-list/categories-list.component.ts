@@ -32,7 +32,7 @@ export class CategoriesListComponent implements AfterViewInit {
     }
 
     addBreadCrumb(category: DotCategory) {
-        const getSubCategoryEndPoint = 'v1/categories/_children';
+        const getSubCategoryEndPoint = 'v1/categories/children';
         this.store.updateCategoryEndPoint(getSubCategoryEndPoint);
         this.store.addCategoriesBreadCrumb({ label: category.categoryName, id: category.inode });
         this.listing.paginatorService.url = getSubCategoryEndPoint;
@@ -42,7 +42,7 @@ export class CategoriesListComponent implements AfterViewInit {
 
     async updateBreadCrumb(event) {
         const getCategoryEndPoint = 'v1/categories';
-        const getSubCategoryEndPoint = 'v1/categories/_children';
+        const getSubCategoryEndPoint = 'v1/categories/children';
         const { item } = event;
         let { categoryBreadCrumb } = await this.store.categoryBreadCrumbSelector$
             .pipe(take(1))

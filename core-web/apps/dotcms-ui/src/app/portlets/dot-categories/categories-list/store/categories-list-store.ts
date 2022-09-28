@@ -159,8 +159,10 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
                 sortable: true
             },
             {
-                fieldName: 'variable',
-                header: this.dotMessageService.get('message.categories.fieldName.Variable'),
+                fieldName: 'categoryVelocityVarName',
+                header: this.dotMessageService.get(
+                    'message.categories.fieldName.categoryVelocityVarName'
+                ),
                 width: '20%',
                 sortable: true
             },
