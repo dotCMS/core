@@ -1,13 +1,19 @@
-<dot-portlet-base [boxed]="false">
+<dot-portlet-base *ngIf="vm$ | async as vm" [boxed]="false">
     <div class="categories-create__tab-container">
         <p-tabView class="categories-create__tabs">
             <p-tabPanel [header]="'message.categories.tab.childrens' | dm">
                 <ng-template pTemplate="content">
-                    <dot-categories-list></dot-categories-list>
+                    <dot-categories-list
+                        (updateCategory)="updateCategory($event)"
+                    ></dot-categories-list>
                 </ng-template>
             </p-tabPanel>
             <p-tabPanel [header]="'message.categories.tab.permissions' | dm">
-                <ng-template pTemplate="content"> permission works </ng-template>
+                <ng-template pTemplate="content">
+                    <dot-categories-permissions
+                        [categoryId]="vm.category.id || ''"
+                    ></dot-categories-permissions>
+                </ng-template>
             </p-tabPanel>
             <p-tabPanel [header]="'message.categories.tab.history' | dm">
                 history works

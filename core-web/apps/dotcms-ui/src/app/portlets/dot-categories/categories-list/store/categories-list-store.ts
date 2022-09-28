@@ -5,7 +5,6 @@ import { DataTableColumn } from '@models/data-table';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
 import { DotCategory } from '@dotcms/app/shared/models/categories/dot-categories.model';
-import { PaginatorService } from '@dotcms/app/api/services/paginator';
 
 export interface DotCategoriesListState {
     getCategoryEndPoint: string;
@@ -20,10 +19,7 @@ export interface DotCategoriesListState {
 
 @Injectable()
 export class DotCategoriesListStore extends ComponentStore<DotCategoriesListState> {
-    constructor(
-        private dotMessageService: DotMessageService,
-        private paginationService: PaginatorService
-    ) {
+    constructor(private dotMessageService: DotMessageService) {
         super(null);
         this.breadCrumbStarterIcon = { icon: 'pi pi-home' };
         this.setState({

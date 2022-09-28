@@ -6,6 +6,7 @@ import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-b
 import { CategoriesCreateEditRoutingModule } from './categories-create-edit-routing.module';
 import { CategoriesCreateEditComponent } from './categories-create-edit.component';
 import { CategoriesListModule } from '../categories-list/categories-list.module';
+import { CategoriesPermissionsModule } from '../categories-permissions/categories-permissions.module';
 import { TabViewModule } from 'primeng/tabview';
 
 @NgModule({
@@ -17,7 +18,8 @@ import { TabViewModule } from 'primeng/tabview';
         TabViewModule,
         CategoriesListModule,
         CategoriesCreateEditRoutingModule,
-        DotPortletBaseModule
+        DotPortletBaseModule,
+        CategoriesPermissionsModule
     ]
 })
 export class CategoriesCreateEditModule {}

@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, EventEmitter, Output, ViewChild } from '@angular/core';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
 import { Observable } from 'rxjs';
 import { DotCategoriesListStore, DotCategoriesListState } from './store/categories-list-store';
@@ -14,7 +14,7 @@ import { MenuItem } from 'primeng/api/menuitem';
 })
 export class CategoriesListComponent implements AfterViewInit {
     vm$: Observable<DotCategoriesListState> = this.store.vm$;
-
+    @Output() updateCategory: EventEmitter<MenuItem> = new EventEmitter();
     @ViewChild('listing', { static: false })
     listing: DotListingDataTableComponent;
 
@@ -35,6 +35,7 @@ export class CategoriesListComponent implements AfterViewInit {
         const getSubCategoryEndPoint = 'v1/categories/children';
         this.store.updateCategoryEndPoint(getSubCategoryEndPoint);
         this.store.addCategoriesBreadCrumb({ label: category.categoryName, id: category.inode });
+        this.updateCategory.emit({ label: category.categoryName, id: category.inode });
         this.listing.paginatorService.url = getSubCategoryEndPoint;
         this.listing.paginatorService.setExtraParams('inode', category.inode);
         this.listing.loadFirstPage();
@@ -51,6 +52,7 @@ export class CategoriesListComponent implements AfterViewInit {
             ({ tabindex }: MenuItem) => Number(tabindex) <= Number(item.tabindex)
         );
         this.store.updateCategoriesBreadCrumb(categoryBreadCrumb);
+        this.updateCategory.emit(item);
         if (item.label === 'Top') {
             this.store.updateCategoryEndPoint(getCategoryEndPoint);
             this.listing.paginatorService.url = getCategoryEndPoint;
