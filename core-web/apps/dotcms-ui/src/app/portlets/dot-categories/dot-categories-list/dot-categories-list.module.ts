@@ -2,7 +2,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
-import { CategoriesListComponent } from './categories-list.component';
+import { DotCategoriesListComponent } from './dot-categories-list.component';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotListingDataTableModule } from '@components/dot-listing-data-table';
 import { DotBaseTypeSelectorModule } from '@components/dot-base-type-selector';
@@ -16,8 +16,8 @@ import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { FormsModule } from '@angular/forms';
 
 @NgModule({
-    declarations: [CategoriesListComponent],
-    exports: [CategoriesListComponent],
+    declarations: [DotCategoriesListComponent],
+    exports: [DotCategoriesListComponent],
     imports: [
         CommonModule,
         FormsModule,
@@ -34,4 +34,4 @@ import { FormsModule } from '@angular/forms';
         DotActionMenuButtonModule
     ]
 })
-export class CategoriesListModule {}
+export class DotCategoriesListModule {}

@@ -1,10 +1,10 @@
 import { OnInit, OnChanges, Component, Input, SimpleChanges } from '@angular/core';
 @Component({
     selector: 'dot-categories-permissions',
-    templateUrl: './categories-permissions.component.html',
-    styleUrls: ['./categories-permissions.component.scss']
+    templateUrl: './dot-categories-permissions.component.html',
+    styleUrls: ['./dot-categories-permissions.component.scss']
 })
-export class CategoriesPermissionsComponent implements OnInit, OnChanges {
+export class DotCategoriesPermissionsComponent implements OnInit, OnChanges {
     @Input() categoryId: string;
     permissionsUrl = '';
 

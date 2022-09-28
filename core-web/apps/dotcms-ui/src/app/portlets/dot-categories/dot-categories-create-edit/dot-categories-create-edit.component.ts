@@ -1,13 +1,13 @@
 import { Component } from '@angular/core';
 import { MenuItem } from 'primeng/api';
-import { DotCategoriesCreateEditStore } from './store/categories-create-edit.store';
+import { DotCategoriesCreateEditStore } from './store/dot-categories-create-edit.store';
 @Component({
     selector: 'dot-categories-create-edit-list',
-    templateUrl: './categories-create-edit.component.html',
-    styleUrls: ['./categories-create-edit.component.scss'],
+    templateUrl: './dot-categories-create-edit.component.html',
+    styleUrls: ['./dot-categories-create-edit.component.scss'],
     providers: [DotCategoriesCreateEditStore]
 })
-export class CategoriesCreateEditComponent {
+export class DotCategoriesCreateEditComponent {
     vm$ = this.store.vm$;
     constructor(private store: DotCategoriesCreateEditStore) {}
 

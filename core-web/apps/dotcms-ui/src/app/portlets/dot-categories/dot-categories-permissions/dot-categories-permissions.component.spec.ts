@@ -1,17 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { CategoriesPermissionsComponent } from './categories-permissions.component';
+import { DotCategoriesPermissionsComponent } from './dot-categories-permissions.component';
 
 describe('CategoriesPermissionsComponent', () => {
-    let component: CategoriesPermissionsComponent;
-    let fixture: ComponentFixture<CategoriesPermissionsComponent>;
+    let component: DotCategoriesPermissionsComponent;
+    let fixture: ComponentFixture<DotCategoriesPermissionsComponent>;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [CategoriesPermissionsComponent]
+            declarations: [DotCategoriesPermissionsComponent]
         }).compileComponents();
 
-        fixture = TestBed.createComponent(CategoriesPermissionsComponent);
+        fixture = TestBed.createComponent(DotCategoriesPermissionsComponent);
         component = fixture.componentInstance;
         fixture.detectChanges();
     });

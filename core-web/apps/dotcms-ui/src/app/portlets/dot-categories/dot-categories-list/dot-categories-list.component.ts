@@ -1,18 +1,18 @@
 import { AfterViewInit, Component, EventEmitter, Output, ViewChild } from '@angular/core';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
 import { Observable } from 'rxjs';
-import { DotCategoriesListStore, DotCategoriesListState } from './store/categories-list-store';
+import { DotCategoriesListStore, DotCategoriesListState } from './store/dot-categories-list-store';
 import { DotContentState } from '@dotcms/dotcms-models';
 import { DotCategory } from '@dotcms/app/shared/models/categories/dot-categories.model';
 import { take } from 'rxjs/operators';
 import { MenuItem } from 'primeng/api/menuitem';
 @Component({
     selector: 'dot-categories-list',
-    templateUrl: './categories-list.component.html',
-    styleUrls: ['./categories-list.component.scss'],
+    templateUrl: './dot-categories-list.component.html',
+    styleUrls: ['./dot-categories-list.component.scss'],
     providers: [DotCategoriesListStore]
 })
-export class CategoriesListComponent implements AfterViewInit {
+export class DotCategoriesListComponent implements AfterViewInit {
     vm$: Observable<DotCategoriesListState> = this.store.vm$;
     @Output() updateCategory: EventEmitter<MenuItem> = new EventEmitter();
     @ViewChild('listing', { static: false })

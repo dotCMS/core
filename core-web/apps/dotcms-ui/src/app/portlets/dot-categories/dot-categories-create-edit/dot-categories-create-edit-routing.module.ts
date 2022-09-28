@@ -1,11 +1,11 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { CategoriesCreateEditComponent } from './categories-create-edit.component';
+import { DotCategoriesCreateEditComponent } from './dot-categories-create-edit.component';
 
 const routes: Routes = [
     {
         path: '',
-        component: CategoriesCreateEditComponent
+        component: DotCategoriesCreateEditComponent
     }
 ];
 
@@ -13,4 +13,4 @@ const routes: Routes = [
     imports: [RouterModule.forChild(routes)],
     exports: [RouterModule]
 })
-export class CategoriesCreateEditRoutingModule {}
+export class DotCategoriesCreateEditRoutingModule {}

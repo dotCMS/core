@@ -5,8 +5,8 @@ const routes: Routes = [
     {
         path: '',
         loadChildren: () =>
-            import('./categories-create-edit/categories-create-edit.module').then(
-                (m) => m.CategoriesCreateEditModule
+            import('./dot-categories-create-edit/dot-categories-create-edit.module').then(
+                (m) => m.DotCategoriesCreateEditModule
             )
     }
 ];
