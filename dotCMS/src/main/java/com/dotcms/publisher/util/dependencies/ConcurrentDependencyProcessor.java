@@ -4,6 +4,7 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -117,7 +118,8 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
      * @throws ExecutionException
      */
     public void waitUntilResolveAllDependencies() throws ExecutionException {
-        final String submitterName = "DependencyManagerSubmitter" + Thread.currentThread().getName();
+        final String submitterName = "DependencyManagerSubmitter" ;
+        int emptyDependencies=0;
         submitter = DotConcurrentFactory.getInstance().getSubmitter(submitterName,
                 new DotConcurrentFactory.SubmitterConfigBuilder()
                         .poolSize(
@@ -127,11 +129,23 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
                         .build()
         );
 
+        
         try {
             while (!isFinish()) {
                 try {
                     Logger.debug(ConcurrentDependencyProcessor.class, () -> "Waiting for more assets");
-                    final DependencyProcessorItem dependencyProcessorItem = queue.take();
+                    final DependencyProcessorItem dependencyProcessorItem = queue.poll();
+                    if(dependencyProcessorItem == null) {
+                        Thread.sleep(1000);
+                        if(++emptyDependencies > 60) {
+                            break;
+                        }
+                        
+                        continue;
+                    }
+                    emptyDependencies=0;
+                    
+                    
                     Logger.debug(ConcurrentDependencyProcessor.class,
                             () -> "Taking one " + dependencyProcessorItem.asset);
                     if (!dependencyProcessorItem
@@ -140,8 +154,8 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
                     } else {
                         finishReceived.incrementAndGet();
                     }
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                } catch (Exception e) {
+                    throw new DotRuntimeException(e);
                 }
             }
 
