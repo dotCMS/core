@@ -18,6 +18,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
@@ -31,6 +32,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -38,12 +40,14 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.apache.commons.beanutils.BeanUtils;
 import org.glassfish.jersey.server.JSONP;
 
 /**
@@ -174,6 +178,16 @@ public class CategoriesResource {
         return getPage(list.getCategories(), list.getTotalCount(), page, perPage);
     }
 
+    /**
+     * Saves a new working version of a category.
+     *
+     * @param httpRequest
+     * @param httpResponse
+     * @param categoryForm
+     * @return CategoryView
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @POST
     @JSONP
     @NoCache
@@ -190,20 +204,71 @@ public class CategoriesResource {
                 () -> this.hostWebAPI.getCurrentHostNoThrow(httpRequest));
         final PageMode pageMode = PageMode.get(httpRequest);
 
-        Logger.debug(this, () -> "Getting the List of children categories. Request payload is : " + getObjectToJsonString(categoryForm));
+        Logger.debug(this, () -> "Saving category. Request payload is : " + getObjectToJsonString(categoryForm));
 
         DotPreconditions.checkArgument(UtilMethods.isSet(categoryForm.getCategoryName()),
                 "The category name is required");
 
-        return this.categoryHelper.toCategoryView(
-                this.fillAndSave(categoryForm, user, host, pageMode, new Category()), user);
+        try {
+            return this.categoryHelper.toCategoryView(
+                    this.fillAndSave(categoryForm, user, host, pageMode, new Category()), user);
+        } catch (InvocationTargetException | IllegalAccessException e) {
+            Logger.error(this, e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Update a working version of an existing category. The categoryForm must contain the inode of the category.
+     *
+     * @param httpRequest       {@link HttpServletRequest}
+     * @param httpResponse      {@link HttpServletResponse}
+     * @param categoryForm  {@link CategoryForm}
+     * @return CategoryView
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @PUT
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final CategoryView save(@Context final HttpServletRequest  httpRequest,
+            @Context final HttpServletResponse httpResponse,
+            final CategoryForm categoryForm) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final Host host = this.categoryHelper.getHost(categoryForm.getSiteId(),
+                () -> this.hostWebAPI.getCurrentHostNoThrow(httpRequest));
+        final PageMode pageMode = PageMode.get(httpRequest);
+
+        Logger.debug(this, () -> "Saving category. Request payload is : " + getObjectToJsonString(categoryForm));
+
+        DotPreconditions.checkArgument(UtilMethods.isSet(categoryForm.getInode()),
+                "The inode is required");
+
+        final Category oldCategory = this.categoryAPI.find(categoryForm.getInode(), user, pageMode.respectAnonPerms);
+
+        if (null == oldCategory) {
+            throw new DoesNotExistException("Category with inode: " + categoryForm.getInode() + " does not exist");
+        }
+
+        try {
+           return this.categoryHelper.toCategoryView(
+                    this.fillAndSave(categoryForm, user, host, pageMode, oldCategory, new Category()), user);
+        } catch (InvocationTargetException | IllegalAccessException e) {
+            Logger.error(this, e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
     }
 
     private Category fillAndSave(final CategoryForm categoryForm,
             final User user,
             final Host host,
             final PageMode pageMode,
-            final Category category) throws DotSecurityException, DotDataException {
+            final Category category)
+            throws DotSecurityException, DotDataException, InvocationTargetException, IllegalAccessException {
 
         Category parentCategory = null;
 
@@ -213,14 +278,8 @@ public class CategoriesResource {
             parentCategory = categoryAPI.find(categoryForm.getParent(), user, pageMode.respectAnonPerms);
         }
 
-        category.setInode(categoryForm.getInode());
-        category.setDescription(categoryForm.getDescription());
-        category.setKeywords(categoryForm.getKeywords());
-        category.setKey(categoryForm.getKey());
-        category.setCategoryName(categoryForm.getCategoryName());
-        category.setActive(categoryForm.isActive());
-        category.setSortOrder(categoryForm.getSortOrder());
-        category.setCategoryVelocityVarName(categoryForm.getCategoryVelocityVarName());
+        BeanUtils.copyProperties(category, categoryForm);
+
         category.setModDate(new Date());
 
         Logger.debug(this, ()-> "Saving category entity : " + getObjectToJsonString(category));
@@ -232,6 +291,40 @@ public class CategoriesResource {
                 host.getTitle() != null ? host.getTitle() : "default");
 
         return category;
+    }
+
+    private Category fillAndSave(final CategoryForm categoryForm,
+            final User user,
+            final Host host,
+            final PageMode pageMode,
+            final Category oldCategory,
+            final Category updatedCategory)
+            throws DotSecurityException, DotDataException, InvocationTargetException, IllegalAccessException {
+
+        Category parentCategory = null;
+
+        Logger.debug(this, ()-> "Filling category entity");
+
+        if (UtilMethods.isSet(categoryForm.getParent())) {
+            parentCategory = categoryAPI.find(categoryForm.getParent(), user, pageMode.respectAnonPerms);
+        }
+
+        BeanUtils.copyProperties(updatedCategory, oldCategory);
+
+        updatedCategory.setCategoryName(categoryForm.getCategoryName());
+        updatedCategory.setKey(categoryForm.getKey());
+        updatedCategory.setKeywords(categoryForm.getKeywords());
+        updatedCategory.setModDate(new Date());
+
+        Logger.debug(this, ()-> "Saving category entity : " + getObjectToJsonString(updatedCategory));
+        this.categoryAPI.save(parentCategory, updatedCategory, user, pageMode.respectAnonPerms);
+        Logger.debug(this, ()-> "Saved category entity : " + getObjectToJsonString(updatedCategory));
+
+        ActivityLogger.logInfo(this.getClass(), "Saved Category", "User " + user.getPrimaryKey()
+                        + "Category: " + updatedCategory.getCategoryName(),
+                host.getTitle() != null ? host.getTitle() : "default");
+
+        return updatedCategory;
     }
 
     private Response getPage(final List<Category> list, final int totalCount, final int page,

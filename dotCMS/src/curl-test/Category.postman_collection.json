@@ -20,11 +20,12 @@
 							"",
 							"pm.test(\"Information Saved Correctly\", function () {",
 							"    ",
-							"    pm.expect(jsonData.entity.categoryName).to.eql(\"Test Category\");",
+							"    pm.expect(jsonData.categoryName).to.eql(\"Test Category\");",
 							"});",
 							"",
-							"pm.collectionVariables.set(\"inode\", jsonData.entity.inode);",
-							"pm.collectionVariables.set(\"categoryINodeId\", jsonData.entity.inode);",
+							"pm.collectionVariables.set(\"inode\", jsonData.inode);",
+							"pm.collectionVariables.set(\"categoryINodeId\", jsonData.inode);",
+							"pm.collectionVariables.set(\"categoryINodeIdToUpdate\", jsonData.inode);",
 							""
 						],
 						"type": "text/javascript"
@@ -96,7 +97,7 @@
 							"",
 							"pm.test(\"Information Saved Correctly\", function () {",
 							"    ",
-							"    pm.expect(jsonData.entity.categoryName).to.eql(\"Child Test Category\");",
+							"    pm.expect(jsonData.categoryName).to.eql(\"Child Test Category\");",
 							"});",
 							""
 						],
@@ -274,7 +275,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/categories/children?filter=&page=0&per_page=5&ordeby=&direction=&inode={{categoryINodeId}}",
+					"raw": "{{serverURL}}/api/v1/categories/_children?filter=&page=0&per_page=5&ordeby=&direction=&inode={{categoryINodeId}}",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -282,7 +283,7 @@
 						"api",
 						"v1",
 						"categories",
-						"children"
+						"_children"
 					],
 					"query": [
 						{
@@ -402,6 +403,220 @@
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "Update Category without parent",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Information Saved Correctly\", function () {",
+							"    ",
+							"    pm.expect(jsonData.categoryName).to.eql(\"Updated name\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"inode\" : \"{{categoryINodeIdToUpdate}}\",\n    \"key\":\"Updated key\",\n    \"categoryName\" : \"Updated name\",\n    \"keywords\":\"Updated keywords\",\n    \"categoryVelocityVarName\" : \"TestKey\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update Category without inode",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							"pm.test(\"Category inode required message\", function () {",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.message).to.eq(\"The inode is required\");  ",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"key\":\"Updated key\",\n    \"categoryName\" : \"Updated name\",\n    \"keywords\":\"Updated keywords\",\n    \"categoryVelocityVarName\" : \"TestKey\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update Category invalid inode - NotFound",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 404\", function () {",
+							"    pm.response.to.have.status(404);",
+							"});",
+							"",
+							"pm.test(\"Category inode required message\", function () {",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.message).to.eq(\"Category with inode: 12345678-abcd-1234-abcd-123456789abc does not exist\");  ",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"inode\" : \"12345678-abcd-1234-abcd-123456789abc\",\n    \"key\":\"Updated key\",\n    \"categoryName\" : \"Updated name\",\n    \"keywords\":\"Updated keywords\",\n    \"categoryVelocityVarName\" : \"TestKey\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/categories",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories"
+					]
+				}
+			},
+			"response": []
 		}
 	],
 	"variable": [
@@ -415,6 +630,10 @@
 		},
 		{
 			"key": "categoryINodeId",
+			"value": ""
+		},
+		{
+			"key": "categoryINodeIdToUpdate",
 			"value": ""
 		}
 	]
