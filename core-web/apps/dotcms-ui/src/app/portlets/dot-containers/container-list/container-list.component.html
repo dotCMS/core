@@ -35,6 +35,7 @@
                     class="p-button-secondary p-button"
                     icon="pi pi-ellipsis-v"
                     [label]="'Actions' | dm"
+                    [disabled]="!vm.selectedContainers.length"
                     (click)="actionsMenu.toggle($event)"
                     attr.data-testid="bulkActions"
                 ></button>
@@ -78,6 +79,16 @@
             </td>
             <td [ngStyle]="{ 'text-align': tableColumns[3].textAlign }">
                 {{ rowData.modDate }}
+            </td>
+            <td style="width: 5%; height: 3.85rem">
+                <dot-action-menu-button
+                    *ngIf="!rowData.disableInteraction"
+                    [attr.data-testid]="rowData.identifier"
+                    class="listing-datatable__action-button"
+                    [actions]="setContainerActions(rowData)"
+                    [item]="rowData"
+                >
+                </dot-action-menu-button>
             </td>
         </ng-template>
     </dot-listing-data-table>

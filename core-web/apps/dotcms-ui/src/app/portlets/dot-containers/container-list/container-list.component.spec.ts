@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
-import { of, Subject } from 'rxjs';
+import { of } from 'rxjs';
 import { ContainerListComponent } from './container-list.component';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
@@ -17,7 +16,6 @@ import { ActivatedRoute } from '@angular/router';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { DotEventsSocketURL } from '@dotcms/dotcms-js';
 import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
-import { SiteService } from '@dotcms/dotcms-js';
 import { StringUtils } from '@dotcms/dotcms-js';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { ConfirmationService, SharedModule } from 'primeng/api';
@@ -41,6 +39,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { CONTAINER_SOURCE, DotContainer } from '@models/container/dot-container.model';
+import { DotContainersService } from '@services/dot-containers/dot-containers.service';
 
 const containersMock: DotContainer[] = [
     {
@@ -116,10 +115,10 @@ const messages = {
     'message.container.undelete': 'Container unarchived',
     'message.container.unpublished': 'Container unpublished',
     'message.container_list.published': 'Containers published',
-    'containers.fieldName.description': 'Description',
-    'containers.fieldName.lastEdit': 'Last Edit',
-    'containers.fieldName.name': 'Name',
-    'containers.fieldName.status': 'Status',
+    'message.containers.fieldName.description': 'Description',
+    'message.containers.fieldName.lastEdit': 'Last Edit',
+    'message.containers.fieldName.name': 'Name',
+    'message.containers.fieldName.status': 'Status',
     'Delete-Container': 'Delete Container',
     Archive: 'Archive',
     Archived: 'Archived',
@@ -150,13 +149,9 @@ describe('ContainerListComponent', () => {
     let fixture: ComponentFixture<ContainerListComponent>;
     let dotListingDataTable: DotListingDataTableComponent;
     let dotPushPublishDialogService: DotPushPublishDialogService;
-    let dialogService: DialogService;
     let coreWebService: CoreWebService;
 
     const messageServiceMock = new MockDotMessageService(messages);
-
-    const dialogRefClose = new Subject();
-    const switchSiteSubject = new Subject();
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -177,18 +172,6 @@ describe('ContainerListComponent', () => {
                         goToSiteBrowser: jasmine.createSpy()
                     }
                 },
-                {
-                    provide: SiteService,
-                    useValue: {
-                        get currentSite() {
-                            return undefined;
-                        },
-
-                        get switchSite$() {
-                            return switchSiteSubject.asObservable();
-                        }
-                    }
-                },
                 StringUtils,
                 DotHttpErrorManagerService,
                 DotAlertConfirmService,
@@ -200,6 +183,7 @@ describe('ContainerListComponent', () => {
                 DotMessageDisplayService,
                 DialogService,
                 DotSiteBrowserService,
+                DotContainersService,
                 { provide: DotFormatDateService, useClass: DotFormatDateServiceMock }
             ],
             imports: [
@@ -221,18 +205,7 @@ describe('ContainerListComponent', () => {
         }).compileComponents();
         fixture = TestBed.createComponent(ContainerListComponent);
         dotPushPublishDialogService = TestBed.inject(DotPushPublishDialogService);
-        dialogService = TestBed.inject(DialogService);
         coreWebService = TestBed.inject(CoreWebService);
-    });
-
-    it('should reload portlet only when the site change', () => {
-        const checkbox = fixture.debugElement.query(
-            By.css('[data-testId="archiveCheckbox"]')
-        ).componentInstance;
-
-        fixture.detectChanges();
-
-        expect(checkbox.binary).toBeTruthy();
     });
 
     describe('with data', () => {
@@ -250,10 +223,6 @@ describe('ContainerListComponent', () => {
                 By.css('dot-listing-data-table')
             ).componentInstance;
             spyOn(dotPushPublishDialogService, 'open');
-
-            spyOn<any>(dialogService, 'open').and.returnValue({
-                onClose: dialogRefClose
-            });
         }));
 
         it('should set attributes of dotListingDataTable', () => {
