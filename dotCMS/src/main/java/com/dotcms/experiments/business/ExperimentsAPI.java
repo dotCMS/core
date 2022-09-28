@@ -104,4 +104,12 @@ public interface ExperimentsAPI {
      */
     Experiment deleteVariant(String experimentId, String variantName, User user)
             throws DotDataException, DotSecurityException;
+
+    /**
+     * Deletes the {@link com.dotcms.experiments.model.TargetingCondition} with the given id from
+     * the {@link Experiment} with the given id
+     */
+
+    Experiment deleteTargetingCondition(String experimentId, String conditionId, User user)
+            throws DotDataException, DotSecurityException;
 }
