@@ -50,7 +50,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -58,7 +57,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import javax.persistence.ParameterMode;
 import org.jetbrains.annotations.NotNull;
 
 public class ExperimentsAPIImpl implements ExperimentsAPI {
@@ -187,7 +185,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         experimentRule.setName(experiment.name());
         experimentRule.setFireOn(FireOn.EVERY_PAGE);
         experimentRule.setEnabled(true);
-        rulesAPI.saveRuleNoParentCheck(experimentRule, user, false);
+        rulesAPI.saveRule(experimentRule, user, false);
 
         final ConditionGroup conditionGroup = new ConditionGroup();
         conditionGroup.setRuleId(experimentRule.getId());
