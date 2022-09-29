@@ -10,7 +10,7 @@ import java.sql.Connection;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class Task220928AddLoopbackWindowColumnToExperimentTest {
+public class Task220928AddLookbackWindowColumnToExperimentTest {
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -27,14 +27,14 @@ public class Task220928AddLoopbackWindowColumnToExperimentTest {
     @Test
     public void testExecuteUpgrade() throws Exception {
         try (Connection connection = DbConnectionFactory.getDataSource().getConnection()) {
-            if(new DotDatabaseMetaData().hasColumn("experiment", "loopback_window")) {
-                new DotDatabaseMetaData().dropColumn(connection, "experiment", "loopback_window");
+            if(new DotDatabaseMetaData().hasColumn("experiment", "lookback_window")) {
+                new DotDatabaseMetaData().dropColumn(connection, "experiment", "lookback_window");
                 DbConnectionFactory.commit();
             }
         }
 
         //Test upgrade
-        final Task220928AddLoopbackWindowColumnToExperiment upgradeTask = new Task220928AddLoopbackWindowColumnToExperiment();
+        final Task220928AddLookbackWindowColumnToExperiment upgradeTask = new Task220928AddLookbackWindowColumnToExperiment();
         assertTrue(upgradeTask.forceRun());
         upgradeTask.executeUpgrade();
         assertFalse(upgradeTask.forceRun());

@@ -10,12 +10,12 @@ import java.sql.SQLException;
 /**
  * Upgrade Task to add the loopback_window column to {@link com.dotcms.experiments.model.Experiment}s table
  */
-public class Task220928AddLoopbackWindowColumnToExperiment extends AbstractJDBCStartupTask {
+public class Task220928AddLookbackWindowColumnToExperiment extends AbstractJDBCStartupTask {
 
     @Override
     public boolean forceRun() {
         try {
-            return !new DotDatabaseMetaData().hasColumn("experiment", "loopback_window");
+            return !new DotDatabaseMetaData().hasColumn("experiment", "lookback_window");
         } catch (SQLException e) {
             Logger.error(this, e.getMessage(),e);
             return false;
@@ -24,11 +24,11 @@ public class Task220928AddLoopbackWindowColumnToExperiment extends AbstractJDBCS
 
     @Override
     public String getPostgresScript() {
-        return "ALTER TABLE experiment ADD loopback_window integer not null";
+        return "ALTER TABLE experiment ADD lookback_window integer not null";
     }
 
     @Override
     public String getMSSQLScript() {
-        return "ALTER TABLE experiment ADD loopback_window numeric(19,0) not null";
+        return "ALTER TABLE experiment ADD lookback_window numeric(19,0) not null";
     }
 }

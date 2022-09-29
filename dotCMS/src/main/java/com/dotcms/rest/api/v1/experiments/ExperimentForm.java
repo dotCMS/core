@@ -27,7 +27,7 @@ public class ExperimentForm extends Validated {
     private final Scheduling scheduling;
     private final Goals goals;
     private final List<TargetingCondition> targetingConditions;
-    private final int loopbackWindow;
+    private final int lookbackWindow;
 
     private ExperimentForm(final Builder builder) {
         this.name = builder.name;
@@ -38,7 +38,7 @@ public class ExperimentForm extends Validated {
         this.scheduling = builder.scheduling;
         this.goals = builder.goals;
         this.targetingConditions = builder.targetingConditions;
-        this.loopbackWindow = builder.loopbackWindow;
+        this.lookbackWindow = builder.lookbackWindow;
         checkValid();
     }
 
@@ -79,8 +79,8 @@ public class ExperimentForm extends Validated {
         return targetingConditions;
     }
 
-    public int getLoopbackWindow() {
-        return loopbackWindow;
+    public int getLookbackWindow() {
+        return lookbackWindow;
     }
 
     public static final class Builder {
@@ -92,7 +92,7 @@ public class ExperimentForm extends Validated {
         private Scheduling scheduling;
         private Goals goals;
         private List<TargetingCondition> targetingConditions = new ArrayList<>();
-        private int loopbackWindow=-1;
+        private int lookbackWindow =-1;
 
         private Builder() {
         }
@@ -131,8 +131,8 @@ public class ExperimentForm extends Validated {
             return this;
         }
 
-        public Builder withLoopbackWindow(int loopbackWindow) {
-            this.loopbackWindow = loopbackWindow;
+        public Builder withLookbackWindow(int lookbackWindow) {
+            this.lookbackWindow = lookbackWindow;
             return this;
         }
 

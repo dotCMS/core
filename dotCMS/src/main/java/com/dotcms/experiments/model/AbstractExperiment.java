@@ -88,9 +88,9 @@ public interface AbstractExperiment extends Serializable, ManifestItem, Ruleable
     @JsonProperty("targetingConditions")
     Optional<List<TargetingCondition>> targetingConditions();
 
-    @JsonProperty("loopbackWindow")
+    @JsonProperty("lookbackWindow")
     @Value.Default
-    default int loopbackWindow() {
+    default int lookbackWindow() {
         return 10;
     }
 

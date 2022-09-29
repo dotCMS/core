@@ -62,7 +62,7 @@ public class ExperimentTransformer implements DBTransformer<Experiment> {
                 .lastModifiedBy((String) map.get("last_modified_by"))
                 .goals(Optional.ofNullable(DBColumnToJSONConverter
                         .getObjectFromDBJson(map.get("goals"), Goals.class)))
-                .loopbackWindow(ConversionUtils.toInt(map.get("loopback_window"), 10))
+                .lookbackWindow(ConversionUtils.toInt(map.get("loopback_window"), 10))
                 .build();
     }
 }
