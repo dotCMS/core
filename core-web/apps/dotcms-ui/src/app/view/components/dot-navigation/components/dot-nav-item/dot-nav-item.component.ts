@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { DotMenu, DotMenuItem } from '@models/navigation';
 import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
+import { LABEL_IMPORTANT_ICON } from '@pipes/dot-radom-icon/dot-random-icon.pipe';
 
 @Component({
     selector: 'dot-nav-item',
@@ -35,6 +36,7 @@ export class DotNavItemComponent {
     mainHeaderHeight = 60;
 
     private windowHeight = window.innerHeight;
+    labelImportantIcon = LABEL_IMPORTANT_ICON;
 
     constructor(private hostElRef: ElementRef) {}
 
