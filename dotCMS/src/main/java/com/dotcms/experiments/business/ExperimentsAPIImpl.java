@@ -183,7 +183,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         experimentRule.setName(experiment.name());
         experimentRule.setFireOn(FireOn.EVERY_PAGE);
         experimentRule.setEnabled(true);
-        rulesAPI.saveRule(experimentRule, user, false);
+        rulesAPI.saveRuleNoParentCheck(experimentRule, user, false);
 
         final ConditionGroup conditionGroup = new ConditionGroup();
         conditionGroup.setRuleId(experimentRule.getId());
