@@ -190,6 +190,15 @@
 
     const ON_SCREEN_PAGES = 3;
 
+    const MIN_KEYWORD_LENGHT = 2;
+
+    /**
+     *
+     * @param src
+     * @param dest
+     * @returns {{fetchNextPage: fetchNextPage, filterByKeyword: filterByKeyword, updateView: updateView, setFollowing: setFollowing, fetchPriorPage: fetchPriorPage}}
+     * @constructor
+     */
     const LogViewManager = ({src, dest}) => {
 
         let pagesOnScreen = 0;
@@ -307,70 +316,35 @@
             }
             const newContent = e.detail.newContent;
 
-            dest.insertAdjacentHTML('beforeend', _applyHighlight(newContent));
+            if (_isFiltering()) {
+                dest.insertAdjacentHTML('beforeend', _applyHighlight(newContent));
+            } else {
+                dest.insertAdjacentHTML('beforeend', newContent);
+            }
 
         }
 
         function _applyFilter() {
+            _removeHighlight();
             if (_isFiltering()) {
-                const list = dest.querySelectorAll(`.log`);
-                if (list.length > 0) {
-                    list.forEach((elem)=>{
-                        elem.outerHTML = _applyHighlight(elem.outerHTML);
-                    });
-                }
-            } else {
-                //here we want to rebuild the currently loaded view with just the exact pages.
-
-                const list = dest.querySelectorAll(`.highlightKeywordMatchLogViewer`);
-                if(null != list){
-                    list.forEach((elem) => {
-                        console.log(elem);
-                        const logElement = elem.parentElement;
-                        if(null != logElement){
-                            console.log("logElement :: " + logElement);
-                            const ln = logElement.dataset.logNumber;
-                            //now that we now the exact log number we can re-build this line as it was using the original src elem
-                        }
-                    });
-                }
-
-                /*const logs = Array.from(
-                    dest.querySelectorAll(`.log`)
-                );
-
-                const first = logs.shift();
-                const last = logs.pop();
-
-                const firstPageId = first.dataset.page;
-                const lastPageId = last.dataset.page;
-
-                for(let i = firstPageId; i <= lastPageId; i++){
-                    //Here we could use the highlightKeywordMatchLogViewer class and get the parent from there and only replace the elements with the highlight be more precise
-                    const list = src.document.body.querySelectorAll(`.page${i}`);
-                    if (list.length > 0) {
-                        list.forEach((elem) => {
-                            const id = elem.dataset.page;
-                            //Element we want to replace
-                            const log = dest.querySelector('[data-page="${id}"]');
-                            log.outerHTML = elem.outerHTML;
-                        });
-                    }
-                }*/
-
+                dest.innerHTML = _applyHighlight(dest.innerHTML);
             }
         }
 
-        function _applyHighlight(log) {
-            if(_isFiltering()){
-                const regEx = new RegExp( keyword, "ig");
-                log.replaceAll(regEx, '<span class="highlightKeywordMatchLogViewer">$&</span>');
-            }
-            return log;
+
+        function _applyHighlight(newContent) {
+            const regEx = new RegExp(keyword, "ig");
+            return newContent.replaceAll(regEx,
+                '<span class="highlightKeywordMatchLogViewer">$&</span>');
+        }
+
+        function _removeHighlight() {
+            dest.querySelectorAll(".highlightKeywordMatchLogViewer").forEach(
+                el => el.replaceWith(...el.childNodes));
         }
 
         function _isFiltering(){
-            return keyword != null && keyword.length >= 3;
+            return keyword != null && keyword.length > MIN_KEYWORD_LENGHT;
         }
 
         function _scrollDownToBottom() {
@@ -383,7 +357,7 @@
                 following = value;
             },
 
-            setKeyword : (value) => {
+            filterByKeyword : (value, dropNonMatching) => {
                 keyword = value;
                 _applyFilter();
             },
@@ -485,11 +459,9 @@
                 //We're scrolling up
                 const followCheck = dijit.byId('scrollMe');
                 if (followCheck.checked) {
-                    const SCROLL_UP_THRESHOLD = 91;
                     //This does guarantee that we need to scroll back up at least till the scroll top is at the 94% of the div height
                     //This is makes the check-box stay checked until we have scrolled back a bit more
-
-                    if (scrollPercentage <= SCROLL_UP_THRESHOLD) {
+                    if (scrollPercentage <= 91) {
                         //This does not fire the change event
                         followCheck.setValue(false);
                         //Therefore, we need to explicitly indicate we want to stop following the events
@@ -497,6 +469,7 @@
                     }
                 }
             }
+
             lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
 
             if(scrollPercentage === 0) {
@@ -512,14 +485,28 @@
 
         });
 
-        keywordInput.addEventListener("keyup", (e)=>{
+        const debounce = (callback, time = 300, interval) => (...args) => {
+            clearTimeout(interval, interval = setTimeout(() => callback(...args), time));
+        };
+
+        const ignoredKeys = ["ArrowLeft", "ArrowUp", "ArrowDown", "ArrowRight"];
+
+        function processKeyEvent(e){
+
+            if(ignoredKeys.includes(e.key)){
+               return;
+            }
+
             const input = e.target;
             if(input.value.length > 2){
-               logViewManager.setKeyword(input.value);
+                logViewManager.filterByKeyword(input.value, e.key === 'Enter');
             } else {
-                logViewManager.setKeyword(null);
+                logViewManager.filterByKeyword(null);
             }
-        });
+        }
+
+        keywordInput.addEventListener("keyup", debounce(processKeyEvent, 300));
+
     }
 
     /**
