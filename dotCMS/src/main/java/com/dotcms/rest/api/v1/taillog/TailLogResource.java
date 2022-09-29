@@ -2,13 +2,13 @@ package com.dotcms.rest.api.v1.taillog;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
-import com.dotcms.repackage.org.apache.commons.io.input.TailerListenerAdapter;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.servlets.taillog.Tailer;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.ThreadUtils;
@@ -26,6 +26,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import org.apache.commons.io.input.TailerListenerAdapter;
 import org.glassfish.jersey.media.sse.EventOutput;
 import org.glassfish.jersey.media.sse.OutboundEvent;
 import org.glassfish.jersey.media.sse.SseFeature;
@@ -54,13 +55,13 @@ public class TailLogResource {
         }
 
 
-        String tailLogLofFolder = com.dotmarketing.util.Config.getStringProperty("TAIL_LOG_LOG_FOLDER", "./dotsecure/logs/");
-        if (!tailLogLofFolder.endsWith(java.io.File.separator)) {
-            tailLogLofFolder = tailLogLofFolder + java.io.File.separator;
+        String tailLogLofFolder = Config.getStringProperty("TAIL_LOG_LOG_FOLDER", "./dotsecure/logs/");
+        if (!tailLogLofFolder.endsWith(File.separator)) {
+            tailLogLofFolder = tailLogLofFolder + File.separator;
         }
 
-        final File logFolder 	= new File(com.dotmarketing.util.FileUtil.getAbsolutlePath(tailLogLofFolder));
-        final File logFile 	= new File(com.dotmarketing.util.FileUtil.getAbsolutlePath(tailLogLofFolder + fileName));
+        final File logFolder 	= new File(FileUtil.getAbsolutlePath(tailLogLofFolder));
+        final File logFile 	= new File(FileUtil.getAbsolutlePath(tailLogLofFolder + fileName));
 
 
         // if the logFile is outside of the logFolder, die
@@ -184,7 +185,7 @@ public class TailLogResource {
             }
         }
 
-        public MyTailerThread(File logFile) {
+        public MyTailerThread(final File logFile) {
             long startPosition = ((logFile.length() - 5000) < 0) ? 0 : logFile.length() - 5000;
             fileName = logFile.getName();
             listener = new MyTailerListener();

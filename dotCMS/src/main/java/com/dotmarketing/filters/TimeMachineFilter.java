@@ -1,19 +1,16 @@
 package com.dotmarketing.filters;
 
-import java.util.Locale;
+
 import javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import org.apache.commons.io.IOUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.filters.CMSFilter.IAm;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.WebKeys;
 
-import eu.bitwalker.useragentutils.Browser;
-import eu.bitwalker.useragentutils.UserAgent;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import java.io.File;
