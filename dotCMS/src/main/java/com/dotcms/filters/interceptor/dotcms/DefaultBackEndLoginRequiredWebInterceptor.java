@@ -36,7 +36,7 @@ public class DefaultBackEndLoginRequiredWebInterceptor implements WebInterceptor
     // \A -> The beginning of the input
     // All paths needs to be in lower case as the URI is lowercase before to be evaluated
     private static final String DEFAULT_REQUIRED_URLS = "\\A/html/,\\A/c/,\\A/servlets/," +
-            "\\A/dottaillogservlet,\\A/categoriesservlet/,\\A/dwr/,\\A/dotajaxdirector," +
+            "\\A/categoriesservlet/,\\A/dwr/,\\A/dotajaxdirector," +
             "\\A/dotscheduledjobs,\\A/dotadmin/#/c/,\\A/jsontags/,\\A/edit/," +
             "\\A/dotadmin/c/,\\A/servlet/";
 
