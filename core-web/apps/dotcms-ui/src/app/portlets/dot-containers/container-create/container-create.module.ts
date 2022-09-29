@@ -19,7 +19,6 @@ import { DotContainerHistoryModule } from '@dotcms/app/portlets/dot-containers/c
         TabViewModule,
         DotMessagePipeModule,
         DotContainerPropertiesModule,
-        DotMessagePipeModule,
         DotContainerPermissionsModule,
         DotContainerHistoryModule
     ]

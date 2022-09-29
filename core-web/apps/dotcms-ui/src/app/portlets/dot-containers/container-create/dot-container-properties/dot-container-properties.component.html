@@ -8,20 +8,33 @@
                 </span>
             </ng-template>
             <ng-template pTemplate="display">
-                Click to Edit
+                {{ 'message.containers.create.click_to_edit' | dm }}
                 <i class="pi pi-pencil"></i>
             </ng-template>
         </p-inplace>
     </div>
     <div class="field">
-        <label for="description" class="block">Description</label>
+        <label for="description" class="block">{{
+            'message.containers.create.description' | dm
+        }}</label>
         <input id="description" type="text" pInputText />
     </div>
     <div class="field">
-        <label for="max-contents" class="block">Max Contents</label>
+        <label for="max-contents" class="block">{{
+            'message.containers.create.max_contents' | dm
+        }}</label>
         <input id="max-contents" type="text" pInputText />
-        <button pButton class="p-button-secondary" type="button" label="Clear"></button>
-        <button pButton type="button" label="content type code"></button>
+        <button
+            pButton
+            class="p-button-secondary"
+            type="button"
+            [label]="'message.containers.create.clear' | dm"
+        ></button>
+        <button
+            pButton
+            type="button"
+            [label]="'message.containers.create.content_type_code' | dm"
+        ></button>
     </div>
 
     <div class="dot-container-properties__code-container-outer">
@@ -35,12 +48,12 @@
                         pButton
                         class="p-button-outlined p-button-secondary"
                         type="button"
-                        label="ADD PRE AND POST LOOP CODE"
+                        [label]="'message.containers.create.add_pre_post' | dm"
                         (click)="showLoopInput()"
                     ></button>
                 </div>
                 <div *ngIf="vm.showPrePostLoopInput">
-                    <label>Pre-loop</label>
+                    <label>{{ 'message.containers.create.pre_loop' | dm }}</label>
                     <dot-textarea-content
                         formControlName="body"
                         #value
@@ -53,10 +66,10 @@
                 </div>
             </div>
             <div class="dot-container-properties__content-tab-container">
-                <label>Content Type and Code</label>
+                <label>{{ 'message.containers.create.content_type_code' | dm }}</label>
                 <p-tabView
                     [scrollable]="true"
-                    (onChange)="handleChange($event)"
+                    (onChange)="handleChange($event, $event.index)"
                     [activeIndex]="vm.activeTabIndex"
                 >
                     <p-tabPanel headerStyleClass="tab-panel-btn">
@@ -95,7 +108,7 @@
                         pButton
                         class="p-button-outlined p-button-secondary"
                         type="button"
-                        label="ADD PRE AND POST LOOP CODE"
+                        [label]="'message.containers.create.add_pre_post' | dm"
                     ></button>
                 </div>
                 <div *ngIf="vm.showPrePostLoopInput">

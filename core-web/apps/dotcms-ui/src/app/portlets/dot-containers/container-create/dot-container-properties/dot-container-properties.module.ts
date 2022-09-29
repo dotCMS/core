@@ -10,6 +10,7 @@ import { DotTextareaContentModule } from '@components/_common/dot-textarea-conte
 import { ReactiveFormsModule } from '@angular/forms';
 import { TabViewModule } from 'primeng/tabview';
 import { MenuModule } from 'primeng/menu';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 @NgModule({
     declarations: [DotContainerPropertiesComponent],
     exports: [DotContainerPropertiesComponent],
@@ -23,7 +24,8 @@ import { MenuModule } from 'primeng/menu';
         DotTextareaContentModule,
         ReactiveFormsModule,
         TabViewModule,
-        MenuModule
+        MenuModule,
+        DotMessagePipeModule
     ]
 })
 export class DotContainerPropertiesModule {}
