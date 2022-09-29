@@ -2,6 +2,8 @@ import { Pipe, PipeTransform } from '@angular/core';
 
 export const LABEL_IMPORTANT_ICON = 'label_important';
 
+// the 'label_important' icon is not supported as a valid icon, instead the system will randomly assign a new icon
+// The reference id the icon comes from this file: Task210316UpdateLayoutIcons.java
 @Pipe({
     name: 'dotRandomIcon'
 })
@@ -29,7 +31,7 @@ export class DotRandomIconPipe implements PipeTransform {
         'poll'
     ];
 
-    hasCode(value: string): number {
+    private hasCode(value: string): number {
         let hash = 0;
         [...value].forEach((char) => {
             hash = (hash << 5) - hash + char.charCodeAt(0);
