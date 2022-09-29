@@ -35,6 +35,7 @@ export class DotRandomIconPipe implements PipeTransform {
             hash = (hash << 5) - hash + char.charCodeAt(0);
             hash |= 0;
         });
+
         return Math.abs(hash) % 19;
     }
 

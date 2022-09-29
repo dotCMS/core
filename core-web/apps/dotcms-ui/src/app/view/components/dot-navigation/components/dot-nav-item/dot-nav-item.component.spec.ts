@@ -83,7 +83,7 @@ describe('DotNavItemComponent', () => {
         fixtureHost.detectChanges();
         const icon: DebugElement = de.query(By.css('dot-nav-icon'));
 
-        expect(icon.componentInstance.icon).not.toBe('icon');
+        expect(icon.componentInstance.icon).not.toBe(LABEL_IMPORTANT_ICON);
     });
 
     it('should emit menuClick when nav__item is clicked', () => {
