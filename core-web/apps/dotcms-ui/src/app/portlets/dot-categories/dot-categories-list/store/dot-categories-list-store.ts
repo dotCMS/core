@@ -20,7 +20,7 @@ export interface DotCategoriesListState {
 export class DotCategoriesListStore extends ComponentStore<DotCategoriesListState> {
     constructor(private dotMessageService: DotMessageService) {
         super(null);
-        this.breadCrumbStarterIcon = { icon: 'pi pi-home' };
+        this.breadCrumbStarterIcon = { icon: 'pi pi-home', disabled: true };
         this.setState({
             getCategoryEndPoint: 'v1/categories',
             categoriesBulkActions: this.getCategoriesActions(),
