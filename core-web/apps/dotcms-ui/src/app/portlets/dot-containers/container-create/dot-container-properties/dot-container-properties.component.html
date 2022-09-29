@@ -112,7 +112,7 @@
                     ></button>
                 </div>
                 <div *ngIf="vm.showPrePostLoopInput">
-                    <label>Post-loop</label>
+                    <label>{{ 'message.containers.create.post_loop' | dm }}</label>
                     <dot-textarea-content
                         formControlName="body"
                         #value
