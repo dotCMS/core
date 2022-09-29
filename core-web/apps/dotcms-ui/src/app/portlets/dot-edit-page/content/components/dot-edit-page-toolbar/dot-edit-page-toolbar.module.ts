@@ -15,6 +15,7 @@ import { DotGlobalMessageModule } from '@dotcms/app/view/components/_common/dot-
 import { DotFavoritePageModule } from '../../../components/dot-favorite-page/dot-favorite-page.module';
 import { DialogService } from 'primeng/dynamicdialog';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { TooltipModule } from 'primeng/tooltip';
 
 @NgModule({
     imports: [
@@ -28,6 +29,7 @@ import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-i
         DotSecondaryToolbarModule,
         FormsModule,
         ToolbarModule,
+        TooltipModule,
         DotPipesModule,
         DotGlobalMessageModule,
         DotFavoritePageModule,
