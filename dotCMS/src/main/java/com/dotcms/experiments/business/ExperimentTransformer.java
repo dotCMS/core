@@ -1,5 +1,7 @@
 package com.dotcms.experiments.business;
 
+import static com.dotcms.experiments.business.ExperimentsAPI.EXPERIMENT_LOOKBACK_WINDOW;
+
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Goals;
@@ -62,7 +64,7 @@ public class ExperimentTransformer implements DBTransformer<Experiment> {
                 .lastModifiedBy((String) map.get("last_modified_by"))
                 .goals(Optional.ofNullable(DBColumnToJSONConverter
                         .getObjectFromDBJson(map.get("goals"), Goals.class)))
-                .lookbackWindow(ConversionUtils.toInt(map.get("loopback_window"), 10))
+                .lookbackWindow(ConversionUtils.toInt(map.get("lookback_window"), EXPERIMENT_LOOKBACK_WINDOW))
                 .build();
     }
 }
