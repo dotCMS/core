@@ -78,15 +78,16 @@ public class SaveContentAsDraftActionlet extends WorkFlowActionlet {
 
 			final Contentlet contentlet             = processor.getContentlet();
 			final User user                         = processor.getUser();
-			List<Category > categories        = null;
-			final List< Permission > permissions    =
-					this.permissionAPI.getPermissions(contentlet, false, true);
+			List<Category > categories              = null;
 
 			Logger.debug(this,
 					"Saving the content as draft of the contentlet: " + contentlet.getIdentifier());
 
 			contentlet.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
 			final ContentletDependencies contentletDependencies = processor.getContentletDependencies();
+			final List< Permission > permissions    = null != contentletDependencies && UtilMethods.isSet(contentletDependencies.getPermissions())?
+					contentletDependencies.getPermissions():
+					this.permissionAPI.getPermissions(contentlet, false, true);
 
 			if (null != contentletDependencies) {
 
@@ -111,8 +112,6 @@ public class SaveContentAsDraftActionlet extends WorkFlowActionlet {
 					contentletDependencies.isRespectAnonymousPermissions() : user.isFrontendUser();
 
 			//Keeps existing relationships
-
-
 			if (categories == null) {
 				categories = this.categoryAPI.getParents(contentlet, user, respectFrontendPermission);
 				categories = UtilMethods.isSet(categories) ? categories : null;
