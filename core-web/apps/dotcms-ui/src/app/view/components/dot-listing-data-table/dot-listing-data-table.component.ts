@@ -111,6 +111,10 @@ export class DotListingDataTableComponent implements OnInit {
         this.handleRowCheck();
     }
 
+    /**
+     * It clears the global search filter and reloads the current page
+     * @memberof DotListingDataTableComponent
+     */
     clearGlobalSearch(): void {
         this.filter = '';
         this.paginatorService.filter = '';
