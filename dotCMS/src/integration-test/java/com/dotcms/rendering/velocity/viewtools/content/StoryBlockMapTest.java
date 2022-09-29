@@ -8,7 +8,7 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.response.BaseResponse;
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FileUtils;
 import com.dotmarketing.util.json.JSONException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
