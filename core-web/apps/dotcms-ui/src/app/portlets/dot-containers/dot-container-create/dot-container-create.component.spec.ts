@@ -1,17 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { ContainerCreateComponent } from './container-create.component';
+import { DotContainerCreateComponent } from './dot-container-create.component';
 
 describe('ContainerCreateComponent', () => {
-    let component: ContainerCreateComponent;
-    let fixture: ComponentFixture<ContainerCreateComponent>;
+    let component: DotContainerCreateComponent;
+    let fixture: ComponentFixture<DotContainerCreateComponent>;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [ContainerCreateComponent]
+            declarations: [DotContainerCreateComponent]
         }).compileComponents();
 
-        fixture = TestBed.createComponent(ContainerCreateComponent);
+        fixture = TestBed.createComponent(DotContainerCreateComponent);
         component = fixture.componentInstance;
         fixture.detectChanges();
     });

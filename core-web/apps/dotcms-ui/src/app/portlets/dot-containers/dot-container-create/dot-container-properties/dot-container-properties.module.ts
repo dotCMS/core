@@ -1,5 +1,5 @@
 import { NgModule } from '@angular/core';
-import { DotContainerPropertiesComponent } from '@portlets/dot-containers/container-create/dot-container-properties/dot-container-properties.component';
+import { DotContainerPropertiesComponent } from '@portlets/dot-containers/dot-container-create/dot-container-properties/dot-container-properties.component';
 import { CommonModule } from '@angular/common';
 import { InplaceModule } from 'primeng/inplace';
 import { SharedModule } from 'primeng/api';
