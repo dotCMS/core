@@ -1,9 +1,6 @@
 @use "variables" as *;
 
 :host {
-    dot-portlet-base {
-        overflow: scroll;
-    }
     ::ng-deep {
         .action-header__global-search {
             flex-wrap: wrap;

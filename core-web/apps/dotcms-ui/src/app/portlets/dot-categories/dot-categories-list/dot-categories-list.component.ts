@@ -1,8 +1,7 @@
-import { AfterViewInit, Component, EventEmitter, Output, ViewChild } from '@angular/core';
+import { Component, EventEmitter, Output, ViewChild } from '@angular/core';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
 import { Observable } from 'rxjs';
 import { DotCategoriesListStore, DotCategoriesListState } from './store/dot-categories-list-store';
-import { DotContentState } from '@dotcms/dotcms-models';
 import { DotCategory } from '@dotcms/app/shared/models/categories/dot-categories.model';
 import { take } from 'rxjs/operators';
 import { MenuItem } from 'primeng/api/menuitem';
@@ -12,7 +11,7 @@ import { MenuItem } from 'primeng/api/menuitem';
     styleUrls: ['./dot-categories-list.component.scss'],
     providers: [DotCategoriesListStore]
 })
-export class DotCategoriesListComponent implements AfterViewInit {
+export class DotCategoriesListComponent {
     vm$: Observable<DotCategoriesListState> = this.store.vm$;
     @Output() updateCategory: EventEmitter<MenuItem> = new EventEmitter();
     @ViewChild('listing', { static: false })
@@ -20,17 +19,20 @@ export class DotCategoriesListComponent implements AfterViewInit {
 
     constructor(private store: DotCategoriesListStore) {}
 
-    ngAfterViewInit(): void {
-        this.store.updateListing(this.listing);
-    }
-
+    /**
+     * The function clears the global search of listing-data-table by calling the clearGlobalSearch() function on the listing
+     * object
+     */
     clearState() {
         this.listing.clearGlobalSearch();
     }
-    getCategoryState({ live, working, deleted }: DotCategory): DotContentState {
-        return { live, working, deleted, hasLiveVersion: live };
-    }
 
+    /**
+     * It set a selected category to the parent component, updates the endpoint for the listing component,
+     * and then loads the first page of the listing component
+     * @param {DotCategory} category - DotCategory - The category object that is being passed to the
+     * function.
+     */
     addBreadCrumb(category: DotCategory) {
         const getSubCategoryEndPoint = 'v1/categories/children';
         this.store.updateCategoryEndPoint(getSubCategoryEndPoint);
@@ -41,6 +43,10 @@ export class DotCategoriesListComponent implements AfterViewInit {
         this.listing.loadFirstPage();
     }
 
+    /**
+     * It updates the breadcrumb, category listing and parent component based on the selected category
+     * @param event - The event that triggered the function.
+     */
     async updateBreadCrumb(event) {
         const getCategoryEndPoint = 'v1/categories';
         const getSubCategoryEndPoint = 'v1/categories/children';
@@ -66,6 +72,10 @@ export class DotCategoriesListComponent implements AfterViewInit {
         this.listing.loadFirstPage();
     }
 
+    /**
+     * It takes an array of categories and updates the store with the new array
+     * @param {DotCategory[]} categories - DotCategory[] - An array of DotCategory objects.
+     */
     updateSelectedCategories(categories: DotCategory[]): void {
         this.store.updateSelectedCategories(categories);
     }

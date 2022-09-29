@@ -8,15 +8,15 @@
                     ></dot-categories-list>
                 </ng-template>
             </p-tabPanel>
+            <p-tabPanel [header]="'message.categories.tab.properties' | dm">
+                Properties works
+            </p-tabPanel>
             <p-tabPanel [header]="'message.categories.tab.permissions' | dm">
                 <ng-template pTemplate="content">
                     <dot-categories-permissions
                         [categoryId]="vm.category.id || ''"
                     ></dot-categories-permissions>
                 </ng-template>
-            </p-tabPanel>
-            <p-tabPanel [header]="'message.categories.tab.history' | dm">
-                history works
             </p-tabPanel>
         </p-tabView>
     </div>

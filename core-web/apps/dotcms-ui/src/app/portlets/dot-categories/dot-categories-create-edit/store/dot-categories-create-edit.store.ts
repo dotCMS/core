@@ -10,7 +10,7 @@ export interface DotCategoriesCreateEditState {
 export class DotCategoriesCreateEditStore extends ComponentStore<DotCategoriesCreateEditState> {
     constructor() {
         super(null);
-        this.setState({ category: { label: 'Top', id: '' } });
+        this.setState({ category: { label: 'Top', id: '', tabindex: '0' } });
     }
 
     readonly vm$ = this.select(({ category }: DotCategoriesCreateEditState) => {

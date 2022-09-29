@@ -3,7 +3,6 @@ import { ComponentStore } from '@ngrx/component-store';
 import { MenuItem } from 'primeng/api';
 import { DataTableColumn } from '@models/data-table';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
 import { DotCategory } from '@dotcms/app/shared/models/categories/dot-categories.model';
 
 export interface DotCategoriesListState {
@@ -30,7 +29,7 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
             selectedCategories: [],
             categoryBreadCrumb: this.getCategoryBreadCrumbs(),
             breadCrumbStarterIcon: this.breadCrumbStarterIcon,
-            paginationPerPage: 10
+            paginationPerPage: 25
         });
     }
     breadCrumbStarterIcon: MenuItem;
@@ -58,6 +57,7 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
         }
     );
 
+    /* A selector that returns the categoryBreadCrumb property of the state. */
     readonly categoryBreadCrumbSelector$ = this.select(
         ({ categoryBreadCrumb }: DotCategoriesListState) => {
             return {
@@ -66,15 +66,11 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
         }
     );
 
-    readonly updateListing = this.updater<DotListingDataTableComponent>(
-        (state: DotCategoriesListState, listing: DotListingDataTableComponent) => {
-            return {
-                ...state,
-                listing
-            };
-        }
-    );
-
+    /**
+     * A function that updates the state of the store.
+     * @param state DotCategoryListState
+     * @param categoryBreadCrumb MenuItem
+     */
     readonly addCategoriesBreadCrumb = this.updater<MenuItem>(
         (state: DotCategoriesListState, categoryBreadCrumb: MenuItem) => {
             return {
@@ -87,6 +83,11 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
         }
     );
 
+    /**
+     * A function that updates the state of the store.
+     * @param state DotCategoryListState
+     * @param categoryBreadCrumb MenuItem[]
+     */
     readonly updateCategoriesBreadCrumb = this.updater<MenuItem[]>(
         (state: DotCategoriesListState, categoryBreadCrumb: MenuItem[]) => {
             return {
@@ -96,15 +97,25 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
         }
     );
 
+    /**
+     * A function that updates the state of the store.
+     * @param state DotCategoryListState
+     * @param selectedCategories DotCategory[]
+     */
     readonly updateSelectedCategories = this.updater<DotCategory[]>(
         (state: DotCategoriesListState, selectedCategories: DotCategory[]) => {
             return {
                 ...state,
-                selectedCategories: selectedCategories
+                selectedCategories
             };
         }
     );
 
+    /**
+     * A function that updates the state of the store.
+     * @param state DotCategoryListState
+     * @param getCategoryEndPoint string
+     */
     readonly updateCategoryEndPoint = this.updater<string>(
         (state: DotCategoriesListState, getCategoryEndPoint: string) => {
             return {
@@ -114,7 +125,11 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
         }
     );
 
-    private getCategoriesActions() {
+    /**
+     * It returns an array of objects with a label property
+     * @returns An array of objects with a label property.
+     */
+    private getCategoriesActions(): { label: string }[] {
         return [
             {
                 label: this.dotMessageService.get('Add')
@@ -131,7 +146,11 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
         ];
     }
 
-    private getCategoryBreadCrumbs() {
+    /**
+     * It returns an array of MenuItem objects
+     * @returns An array of MenuItem objects.
+     */
+    private getCategoryBreadCrumbs(): MenuItem[] {
         return [
             {
                 label: 'Top',
@@ -140,6 +159,10 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
         ];
     }
 
+    /**
+     * It returns an array of objects that describe the columns of the table
+     * @returns An array of DataTableColumn objects.
+     */
     private getCategoriesColumns(): DataTableColumn[] {
         return [
             {
