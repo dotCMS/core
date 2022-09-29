@@ -11,25 +11,25 @@
         height: 100%;
         flex-direction: column;
 
-        .dot-container-properties__pre-post-loop {
-            .dot-container-properties__pre-post-loop-inplace {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                padding: $spacing-6;
-                background: #e9ebfc;
-            }
-
-            dot-textarea-content {
-                height: 20vh !important;
-            }
-        }
-
         form {
             margin: $spacing-3;
         }
         dot-textarea-content {
             height: 40vh !important;
+        }
+    }
+
+    .dot-container-properties__pre-post-loop {
+        .dot-container-properties__pre-post-loop-inplace {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: $spacing-6;
+            background: #e9ebfc;
+        }
+
+        dot-textarea-content {
+            height: 20vh !important;
         }
     }
 
