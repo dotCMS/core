@@ -1,5 +1,32 @@
 <%@page import="java.io.File"%>
 <script type="text/javascript" src="/html/js/sse.js"></script>
+
+<style>
+    #Logging #tailContainer {
+        height: 100%;
+    }
+    span[data-hr]{
+        background-color: yellow;
+        color: #000;
+    }
+    .logViewerPrinted {
+        background-color: #000;
+        color: #d6d6d6;
+        font-family: Andale Mono, monospace;
+        font-size: 12px;
+        overflow: scroll;
+        padding: 1rem;
+        white-space: pre;
+    }
+    .highlightKeywordMatchLogViewer{
+        background-color: yellow;
+        color: #000;
+    }
+    .keepAlive{
+        display: none;
+    }
+</style>
+
 <%
 
 	String regex = com.dotmarketing.util.Config.getStringProperty("TAIL_LOG_FILE_REGEX");
@@ -50,32 +77,6 @@
 
 <script type="text/javascript">
 
-	function reloadTail(){
-		var fileName = dijit.byId("fileName").getValue();
-        if(fileName) {
-            var url = '/api/v1/tailLog/' + fileName;
-
-            var source = new SSE(url, null);
-            var iFrameDoc = dojo.byId("tailingFrame").contentWindow.document;
-            iFrameDoc.open();
-            source.addEventListener('success', function(e) {
-                // Assuming we receive JSON-encoded data payloads:
-                var data = JSON.parse(e.data);
-                iFrameDoc.write(data.lines);
-            });
-            iFrameDoc.close();
-            source.addEventListener('failure', function(e) {
-                // process error
-            });
-
-            disableFollowOnScrollUp();
-            dijit.byId("downloadLog").attr("disabled", false);
-            source.stream();
-        } else {
-            dijit.byId("downloadLog").attr("disabled", true);
-        }
-	}
-
     function disableFollowOnScrollUp() {
         var iframe = dojo.byId('tailingFrame');
         var logWindow = iframe.contentWindow;
@@ -92,21 +93,16 @@
                 lastScrollTop = st <= 0 ? 0 : st; // For Mobile or negative scrolling
             }, false);
         }, 200)
-    };
+    }
 
 	function doPopup(){
 			var x = dijit.byId("fileName").getValue();
 			dijit.byId("fileName").setValue("");
-			var newwin = window.open("/html/portlet/ext/cmsmaintenance/tail_log_popup.jsp?fileName=" + x, "tailwin", "status=1,toolbars=1,resizable=1,scrollbars=1,height=600,width=800");
+			var newwin = window.open("/html/portlet/ext/cmsmaintenance/tail_log_popup.jsp?fileName=" + x, "tailwin", "status=1,toolbars=1,resizable=1,scrollbars=1,height=800,width=1000");
 			newwin.focus();
 	}
 
 	dojo.ready(function(){
-
-		if(self != top){
-			dojo.style(dojo.byId("popMeUp"), "display", "block");
-		}
-
 
 		<%if(request.getParameter("fileName")!= null){
 			String selectedFileNameStr = com.dotmarketing.util.UtilMethods.xmlEscape(request.getParameter("fileName")).replace(logPath + File.separator, "");
@@ -117,73 +113,6 @@
 
 	});
 
-	function doManageLogs() {
-
-		dijit.byId('logman_dia').show();
-
-	}
-
-    function checkUncheck () {
-        var x = dijit.byId( "checkAllCkBx" ).checked;
-        dojo.query( ".taskCheckBox" ).forEach( function ( node ) {
-            dijit.getEnclosingWidget(node).set("checked", x);
-        } );
-    }
-
-
-    /**
-     * Will search for all the current logs and it will populate the table with those logs details
-     */
-    function getCurrentLogs () {
-        var xhrArgs = {
-
-            url:"/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.LogConsoleAjaxAction/cmd/getLogs/",
-
-            handleAs:"json",
-            handle:function ( data, ioArgs ) {
-
-                if ( data.response == "error" ) {
-                    showDotCMSSystemMessage( data.message, true );
-                } else {
-                    //If everything its ok lets populate the table with the returned logs details
-                    populateTable( data.logs );
-                }
-            }
-        };
-        dojo.xhrPost( xhrArgs );
-        dijit.byId( "checkAllCkBx" ).set('checked',false);
-    }
-
-    /**
-     * Will enable/disable the selected logs
-     */
-    function enableDisableLogs () {
-        //Find the list of checked logs details
-        var selectedLogs = "";
-        dojo.query( ".taskCheckBox input" ).forEach( function ( node ) {
-            if ( node.checked ) {
-                selectedLogs += node.value + ",";
-            }
-        } );
-
-        var xhrArgs = {
-
-            url:"/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.LogConsoleAjaxAction/cmd/enabledDisabledLogs/selection/" + selectedLogs,
-
-            handleAs:"json",
-            handle:function ( data, ioArgs ) {
-
-                if ( data.response == "error" ) {
-                    showDotCMSSystemMessage( data.message, true );
-                } else {
-                    //If everything its ok lets populate the table with the returned logs details
-                    populateTable( data.logs );
-                }
-            }
-        };
-        dojo.xhrPost( xhrArgs );
-        dijit.byId( "checkAllCkBx" ).set('checked',false);
-    }
 
     /**
      * Populate the logs table with a given logs details array
@@ -233,23 +162,363 @@
 
     };
 
-    function destroyCheckboxNodes() {
-        dojo.query(".taskCheckBox").forEach(function (node) {
-            console.log(dijit.getEnclosingWidget(node));
-            dijit.getEnclosingWidget(node).destroy();
+    function reloadTail(){
+    		var fileName = dijit.byId("fileName").getValue();
+
+            if(fileName) {
+                var url = '/api/v1/tailLog/' + fileName;
+                var source = new SSE(url, null);
+
+                attachLogIframeEvents(source);
+
+                disableFollowOnScrollUp();
+                dijit.byId("downloadLog").attr("disabled", false);
+                source.stream();
+            } else {
+                dijit.byId("downloadLog").attr("disabled", true);
+            }
+
+            // Reset values from Log Viewer container and input filter value
+            document.querySelector('.logViewerPrinted').innerHTML = '';
+            document.querySelector('#keywordLogFilterInput').value = '';
+    	}
+
+    /**********************/
+    /* Log Viewer - BEGIN */
+    const ON_SCREEN_PAGES = 3;
+    const DROP_PAGES_PERCENT = 30;
+    const MIN_KEYWORD_LENGTH = 2;
+    /**
+     *
+     * @param src expects the iframe
+     * @param dest expects the div where we want to render the log/highlight etc..
+     * @returns {{fetchNextPage: fetchNextPage, filterByKeyword: filterByKeyword, updateView: updateView, setFollowing: setFollowing, fetchPriorPage: fetchPriorPage}}
+     * @constructor
+     */
+    const LogViewManager = ({src, dest}) => {
+        let pagesOnScreen = 0;
+        let currentPageIndex = 0;
+        let following = true;
+        let keyword = null;
+        let matchLinesOnlyView = false;
+        function _dropOldestPages(){
+            if (pagesOnScreen >= ON_SCREEN_PAGES) {
+                const pagesToDrop = Math.round((pagesOnScreen * DROP_PAGES_PERCENT) * .01);
+                for (let i = 1; i <= pagesToDrop; i++) {
+                    const first = dest.querySelector(`.log:first-child`);
+                    console.log("First:: " + first);
+                    if (!first) {
+                        break;
+                    }
+                        const firstPageId = first.dataset.page;
+                        //console.log("FirstPageID:: " + firstPageId);
+                        let pageToDrop = dest.querySelectorAll(`.page${firstPageId}`);
+                        //console.log("PageToDrop ::: " + pageToDrop);
+                        if (pageToDrop.length > 0) {
+                            //Remove all items on that page
+                            pageToDrop.forEach((elem) => elem.remove());
+                            pagesOnScreen--;
+                        }
+                        console.log(' page  : ' + firstPageId + ' dropped!');
+                }
+            }
+        }
+        function _fetchPriorPage(){
+            //if following back to load prior pages we should stop feeding the log (adding new stuff to it)
+            const first = dest.querySelector(`.log:first-child`);
+            if(first){
+                let firstPageId = first.dataset.page;
+                firstPageId--;
+                const list = src.document.body.querySelectorAll(`.page${firstPageId}`);
+                if (list.length > 0) {
+                    //iterate backwards to preserve the original order
+                    for (let i = list.length - 1; i >= 0; i--) {
+                        const elem = list[i];
+                        dest.insertAdjacentHTML('afterbegin', _applyHighlight(elem.outerHTML));
+                    }
+                    pagesOnScreen++;
+                    //Move the scroll just a tiny bit, so we have room to fire the event again.
+                    dest.scrollTop = dest.scrollTop + 10;
+                }
+            }
+        }
+        function _dropNewestPages() {
+            if (pagesOnScreen >= ON_SCREEN_PAGES) {
+                const pagesToDrop = Math.round((pagesOnScreen * DROP_PAGES_PERCENT) * .01);
+                for (let i = 1; i <= pagesToDrop; i++) {
+                    const last = dest.querySelector(`.log:last-child`)
+                    if (!last) {
+                        break;
+                    }
+                        let lastPageId = last.dataset.page;
+                        //console.log("LastPageID:: " + lastPageId);
+                        const pageToDrop = dest.querySelectorAll(`.page${lastPageId}`);
+                        //console.log("PageToDrop ::: " + pageToDrop);
+                        if (pageToDrop.length > 0) {
+                            //Remove all items on that page
+                            pageToDrop.forEach((elem) => elem.remove());
+                            pagesOnScreen--;
+                        }
+                        console.log(' page  : ' + lastPageId + ' dropped!');
+                }
+            }
+        }
+        function _fetchNextPage(){
+            const last = dest.querySelector(`.log:last-child`);
+            if(last){
+                let lastPageId = last.dataset.page;
+                //console.log(" Last page id is  ::: " + lastPageId);
+                lastPageId++;
+                const list = src.document.body.querySelectorAll(`.page${lastPageId}`);
+                if (list.length > 0) {
+                    list.forEach((elem)=>{
+                        dest.insertAdjacentHTML('beforeend', _applyHighlight(elem.outerHTML));
+                    });
+                    pagesOnScreen++;
+                }
+            }
+        }
+        function _updateView(data){
+
+            const pageId = parseInt(data.pageId);
+            //initialize var so we know what page we're on
+            if(currentPageIndex === 0){
+                currentPageIndex = pageId;
+                pagesOnScreen = 0;
+            } else {
+                if (pageId > currentPageIndex) {
+                    currentPageIndex = pageId;
+                    pagesOnScreen++;
+                }
+            }
+            const newContent = data.lines;
+            if (_isFiltering()) {
+                dest.insertAdjacentHTML('beforeend', _applyHighlight(newContent));
+            } else {
+                dest.insertAdjacentHTML('beforeend', newContent);
+            }
+        }
+        function _applyFilter() {
+            _removeHighlight();
+            if (_isFiltering()) {
+                dest.innerHTML = _applyHighlight(dest.innerHTML);
+            }
+        }
+        function _applyHighlight(newContent) {
+            const regEx = new RegExp(keyword, "ig");
+            return newContent.replaceAll(regEx,
+                '<span class="highlightKeywordMatchLogViewer">$&</span>');
+        }
+        function _removeHighlight() {
+            dest.querySelectorAll(".highlightKeywordMatchLogViewer").forEach(
+                el => el.replaceWith(...el.childNodes));
+        }
+        function _isFiltering(){
+            return keyword != null && keyword.length > MIN_KEYWORD_LENGTH;
+        }
+        function _scrollDownToBottom() {
+            dest.scrollTop = dest.scrollHeight;
+        }
+        function _matchingLinesOnlyView(){
+            //this function must be called once the following has been disconnected
+            if (_isFiltering()) {
+                const first = dest.querySelector(`.log:first-child`);
+                const last = dest.querySelector(`.log:last-child`);
+                if(!first || !last){
+                    console.warn('no items are loaded in the view.');
+                    return;
+                }
+                //first and last on-screen items
+                const firstPageId = first.dataset.page;
+                const lastPageId = last.dataset.page;
+                let buffer = [];
+                for(let i = firstPageId; i <= lastPageId; i++){
+                    const list = src.document.body.querySelectorAll(`.page${i}`);
+                    const matches = _matchingLines(list);
+                    if(matches && matches.length > 1){
+                        buffer = buffer.concat(matches);
+                    }
+                }
+                const maxVisitPages = 100;
+                dest.replaceChildren();
+                buffer.forEach(value => {
+                    dest.insertAdjacentHTML('afterbegin',value);
+                });
+                dest.innerHTML = _applyHighlight(dest.innerHTML);
+            }
+        }
+        function _fetchPriorLinesOnly(startFromPageId, numPages){
+             let buffer = [];
+             const stopAtPageId = (startFromPageId - numPages);
+             for(let i = startFromPageId; i >= stopAtPageId; i--){
+                 const list = src.document.body.querySelectorAll(`.page${i}`);
+                 if(!list){
+                     break;
+                 }
+                     const matches = _matchingLines(list);
+                     if(matches && matches.length > 1){
+                         buffer = buffer.concat(matches);
+                     }
+             }
+             return buffer;
+        }
+        function _fetchNextLinesOnly(startFromPageId, numPages, buffer){
+            const stopAtPageId = (startFromPageId + numPages);
+            for(let i = startFromPageId; i <= stopAtPageId; i++){
+                const list = src.document.body.querySelectorAll(`.page${i}`);
+                if(!list){
+                    return false;
+                }
+                const matches = _matchingLines(list);
+                if(matches && matches.length > 1){
+                    buffer = buffer.concat(matches);
+                }
+            }
+            return true;
+        }
+        function _matchingLines(nodes){
+            const regEx = new RegExp( keyword, "i");
+            let matches = [];
+            if(nodes && nodes.length > 0){
+                nodes.forEach(el => {
+                    const html = el.outerHTML;
+                    const lines = html.split('<br>').filter((row)=> regEx.test(row)).join('<br>') + '<br>';
+                    if(lines){
+                        const classes = el.classList.value;
+                        const page = el.dataset['page'];
+                        const logNum = el.dataset['lognumber'];
+                        const p = `<p class="${classes}" data-page="${page}" data-lognumber="${logNum}" style="margin:0"> ${lines} </p>  `;
+                        matches.push(p);
+                    }
+                });
+            }
+            return matches;
+        }
+        return ({
+            setFollowing : (value) => {
+                following = value;
+            },
+            filterByKeyword : (value, showMatchingLinesOnly) => {
+                keyword = value;
+                if(showMatchingLinesOnly){
+                    _matchingLinesOnlyView();
+                } else {
+                    _applyFilter();
+                }
+            },
+            fetchPriorPage : () => {
+                if(following){
+                    return;
+                }
+                _fetchPriorPage();
+                _dropNewestPages();
+            },
+            fetchNextPage : () => {
+                if(following){
+                    return;
+                }
+                _fetchNextPage();
+                _dropOldestPages();
+            },
+            updateView : (data) => {
+                if(!following){
+                    return;
+                }
+                _updateView(data);
+                _scrollDownToBottom();
+                _dropOldestPages();
+            }
         });
     }
+    let logViewManager = null;
+    function attachLogIframeEvents(sseSource) {
+        if(logViewManager){
+            console.warn("logView is already initialized.");
+            return;
+        }
+        const followCheck = document.getElementById('scrollMe');
+        const keywordInput = document.querySelector('#keywordLogFilterInput');
+        const dataLogSourceElem = document.getElementById('tailingFrame');
+        const logView = document.querySelector('.logViewerPrinted');
+        const iDoc = dataLogSourceElem.contentWindow || dataLogSourceElem.contentDocument;
+        logViewManager = LogViewManager({src:iDoc,dest:logView});
+        followCheck.addEventListener("change",(e)=>{
+            logViewManager.setFollowing(e.currentTarget.checked);
+        });
 
+        sseSource.addEventListener('success', function(e) {
+            // Assuming we receive JSON-encoded data payloads:
+            const data = JSON.parse(e.data);
+            iDoc.document.open();
+            iDoc.document.write(data.lines);
+            iDoc.document.close();
 
-    dojo.ready(function() {
-        var dialog = dijit.byId("logman_dia");
-    	dojo.connect(dialog, "onShow", null, getCurrentLogs);
-    	dojo.connect(dialog, "onCancel", null, destroyCheckboxNodes);
+            logViewManager.updateView(data);
+        });
 
+        sseSource.addEventListener('failure', function(e) {
+            // process error
+        });
 
-
-
-    });
+        let lastScrollTop = 0;
+        logView.addEventListener("scroll", (e)=>{
+            const div = e.target;
+            const scrollTop = div.scrollTop;
+            const scrollPercentage = computeScrollPercentage(div.scrollHeight, scrollTop);
+            console.log(" scroll % :: " + scrollPercentage);
+            if (scrollTop < lastScrollTop) {
+                //We're scrolling up
+                const followCheck = dijit.byId('scrollMe');
+                if (followCheck.checked) {
+                    //This does guarantee that we need to scroll back up at least till the scroll top is at the 94% of the div height
+                    //This is makes the check-box stay checked until we have scrolled back a bit more
+                    if (scrollPercentage <= 91) {
+                        //This does not fire the change event
+                        followCheck.setValue(false);
+                        //Therefore, we need to explicitly indicate we want to stop following the events
+                        logViewManager.setFollowing(false);
+                    }
+                }
+            }
+            lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+            if(scrollPercentage === 0) {
+                //We're at the top of the container.
+                logViewManager.fetchPriorPage();
+                return;
+            }
+            if( scrollPercentage === 95 ){
+                //we're at the bottom of the scroll
+                logViewManager.fetchNextPage();
+            }
+        });
+        const debounce = (callback, time = 300, interval) => (...args) => {
+            clearTimeout(interval, interval = setTimeout(() => callback(...args), time));
+        };
+        const ignoredKeys = ["ArrowLeft", "ArrowUp", "ArrowDown", "ArrowRight"];
+        function processKeyEvent(e){
+            if(ignoredKeys.includes(e.key)){
+               return;
+            }
+            const input = e.target;
+            if(input.value.length > 2){
+                logViewManager.filterByKeyword(input.value, e.key === 'Enter');
+            } else {
+                logViewManager.filterByKeyword(null);
+            }
+        }
+        keywordInput.addEventListener("keyup", debounce(processKeyEvent, 300));
+    }
+    /**
+     * Simple Rule of 3 to compute how much (Percent wise) of the total scroll height we have covered with the scroll bar
+     * @param scrollHeight
+     * @param scrollTop
+     * @returns {number}
+     */
+    function computeScrollPercentage(scrollHeight, scrollTop){
+        return Math.round(scrollTop * 100 / scrollHeight);
+    }
+    /* Log Viewer - END */
+    /********************/
 
 </script>
 
@@ -264,47 +533,26 @@
                 <%} %>
             </select>
             <div class="checkbox">
-                <input type="checkbox" id="scrollMe" dojoType="dijit.form.CheckBox" value=1 checked="true" />
+                <input type="checkbox" id="scrollMe" dojoType="dijit.form.CheckBox" value=1 checked />
                 <label for="scrollMe">
                     <%=com.liferay.portal.language.LanguageUtil.get(pageContext, "Follow") %>
                 </label>
             </div>
-            <button dojoType="dijit.form.Button" onClick="doPopup()" value="popup" name="popup">
-                <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"popup") %>
-            </button>
-            <button dojoType="dijit.form.Button" onclick="location.href='/api/v1/maintenance/_downloadLog/' + document.getElementById('fileName').value"  id="downloadLog" value="download" name="download" disabled>
-                <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"Download") %>
-            </button>
+            <input dojoType="dijit.form.TextBox" id="keywordLogFilterInput" placeholder="<%=com.liferay.portal.language.LanguageUtil.get(pageContext, "Filter")%>" type="text" style="width: 200px">
         </div>
     </div>
     <div class="portlet-toolbar__actions-secondary">
-        <div id="popMeUp">
-            <button dojoType="dijit.form.Button" onClick="doManageLogs()"  value="popup" name="popup" >
-                <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"LOG_Manager") %>
-            </button>
-        </div>
+        <button dojoType="dijit.form.Button" onClick="doPopup()" value="popup" name="popup">
+            <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"popup") %>
+        </button>
+        <button dojoType="dijit.form.Button" onclick="location.href='/api/v1/maintenance/_downloadLog/' + document.getElementById('fileName').value"  id="downloadLog" value="download" name="download" disabled>
+            <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"Download") %>
+        </button>
     </div>
 </div>
 
-<div id="tailContainer" class="log-files__container">
-    <iframe id="tailingFrame" src="/html/blank.jsp" class="log-files__iframe"></iframe>
-</div>
-
-<div id="logman_dia" dojoType="dijit.Dialog">
-    <div id="search" title="<%= com.liferay.portal.language.LanguageUtil.get(pageContext, "LOG_activity") %>" ></div>
-    <div style="width:620px">
-        <table class="listingTable" id="logsTable" align="center">
-            <tr id="logsTableHeader">
-                <th width="5%"><input type="checkbox" dojotype="dijit.form.CheckBox" id="checkAllCkBx" onclick="checkUncheck()" /></th>
-                <th nowrap="nowrap" width="5%" style="text-align:center;">Status</th>
-                <th nowrap="nowrap" width="32%" style="text-align:center;">Log Name</th>
-                <th nowrap="nowrap" width="58%" style="text-align:center;">Log Description</th>
-            </tr>
-        </table>
-    </div>
-    <div class="buttonRow">
-        <button dojoType="dijit.form.Button" name="filterButton" onClick="enableDisableLogs()"><%= com.liferay.portal.language.LanguageUtil.get(pageContext, "LOG_button") %></button>
-        <button dojoType="dijit.form.Button" name="refreshButton" onClick="getCurrentLogs ()">Refresh</button>
-    </div>
+<div id="tailContainer" class="log-files__container" style="display: flex; flex-direction: column;">
+    <iframe id="tailingFrame" src="/html/blank.jsp" style="display: none;" class="log-files__iframe" ></iframe>
+    <div class="logViewerPrinted" style="flex-grow: 1;"></div>
 </div>
 

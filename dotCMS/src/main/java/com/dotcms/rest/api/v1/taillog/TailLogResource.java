@@ -40,6 +40,9 @@ import org.glassfish.jersey.server.JSONP;
 @Tag(name = "TailLog")
 public class TailLogResource {
 
+    private static final int LINES_PER_PAGE = 10;
+
+
     @GET
     @Path("/{fileName}")
     @JSONP
@@ -134,9 +137,8 @@ public class TailLogResource {
 
         StringBuffer out = new StringBuffer();
 
-
         public void handle(String line) {
-            getOut().append(UtilMethods.xmlEscape(line) + "<br />");
+            getOut().append(UtilMethods.xmlEscape(line) + "<br/>");
         }
 
         StringBuffer getOut() {
@@ -168,20 +170,34 @@ public class TailLogResource {
 
             final OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
             try {
+                int logNumber = 0;
+                int count = 1;
+                int pageNumber = 1;
                 while (!eventOutput.isClosed()) {
                     final String write = listener.getOut(true).toString();
                     if (write != null && write.length() > 0) {
+                        final String prepWrite = String.format(
+                                "<p class=\"log page%d\" data-page=\"%d\" data-logNumber=\"%d\" style=\"margin:0\">%s</p>",
+                                pageNumber, pageNumber, logNumber, write);
+
                         eventBuilder.name("success");
                         eventBuilder.data(Map.class,
-                                map("lines", write));
+                                map("lines", prepWrite, "pageId", pageNumber));
                         eventBuilder.mediaType(MediaType.APPLICATION_JSON_TYPE);
                         final OutboundEvent event = eventBuilder.build();
                         eventOutput.write(event);
+
+                        count++;
+                        logNumber++;
+                        if (count % (LINES_PER_PAGE + 1) == 0) {
+                            pageNumber++;
+                            count = 1;
+                        }
                     }
                     Thread.sleep(1000);
                 }
             } catch (Exception ex) {
-                Logger.warn(this.getClass(), "Stopping listening log events for " + fileName + "Reason: " + ex.getMessage());
+                Logger.warn(this.getClass(), "Stopping listening log events for " + fileName + ". Reason: " + ex.getMessage());
             } finally {
                 stopTailer();
                 CloseUtils.closeQuietly(eventOutput);
@@ -193,7 +209,7 @@ public class TailLogResource {
             final long startPosition = ((logFile.length() - linesNumber) < 0) ? 0 : logFile.length() - linesNumber;
             fileName = logFile.getName();
             listener = myTailerListener;
-            listener.handle("Tailing " + linesNumber + " lines from file " + fileName);
+            listener.handle("Tailing info from file " + fileName);
             listener.handle("----------------------------- ");
             tailer = Tailer.create(logFile, listener, 1000);
             tailer.setStartPosition(startPosition);
