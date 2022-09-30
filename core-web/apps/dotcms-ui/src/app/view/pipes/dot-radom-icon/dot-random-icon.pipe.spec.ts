@@ -1,6 +1,6 @@
 import { DotRandomIconPipe } from './dot-random-icon.pipe';
 
-fdescribe('DotRandomIconPipe', () => {
+describe('DotRandomIconPipe', () => {
     it('should return a random icon', () => {
         const randomText = 'Content';
         const pipe = new DotRandomIconPipe();
