@@ -71,10 +71,10 @@ public class BulkProcessorListener implements BulkProcessor.Listener {
             String id;
             if (bulkItemResponse.isFailed() || itemResponse == null) {
                 id = bulkItemResponse.getFailure().getId().substring(0,
-                        bulkItemResponse.getFailure().getId().lastIndexOf(StringPool.UNDERLINE));
+                        bulkItemResponse.getFailure().getId().indexOf(StringPool.UNDERLINE));
             } else {
                 id = itemResponse.getId()
-                        .substring(0, itemResponse.getId().lastIndexOf(StringPool.UNDERLINE));
+                        .substring(0, itemResponse.getId().indexOf(StringPool.UNDERLINE));
             }
 
             ReindexEntry idx = workingRecords.get(id);

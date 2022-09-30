@@ -389,6 +389,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			contentletMap.put(ESMappingConstants.DELETED + TEXT, Boolean.toString(contentlet.isArchived()));
 			contentletMap.put(ESMappingConstants.LANGUAGE_ID, contentlet.getLanguageId());
 			contentletMap.put(ESMappingConstants.LANGUAGE_ID + TEXT, Long.toString(contentlet.getLanguageId()));
+			contentletMap.put(ESMappingConstants.VARIANT, contentlet.getVariantId());
 			contentletMap.put(ESMappingConstants.IDENTIFIER, contentIdentifier.getId());
 			contentletMap.put(ESMappingConstants.CONTENTLET_HOST, contentIdentifier.getHostId());
 			contentletMap.put(ESMappingConstants.CONTENTLET_HOSTNAME, contentSite.getHostname());
