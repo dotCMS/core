@@ -8850,11 +8850,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     Logger.debug(this, ()-> "Removing the permissions for: "  + contentlet.getTitle() +
                             ", id: " + contentlet.getIdentifier());
                     this.permissionAPI.removePermissions(contentlet);
+
                     Logger.debug(this, ()-> "Saving the permissions for: "  + contentlet.getTitle() +
                             ", id: " + contentlet.getIdentifier());
-                    this.permissionAPI.save(selectedPermissions.stream()
-                        .map(permission -> new Permission(contentlet.getPermissionId(), permission.getRoleId(), permission.getPermission()))
-                        .collect(Collectors.toList()), contentlet, user, respectFrontendRoles);
+
+                    selectedPermissions.stream()
+                            .map(permission -> new Permission(contentlet.getPermissionId(), permission.getRoleId(), permission.getPermission()))
+                            .forEach(permission -> {
+                                try {
+                                    Logger.debug(this, ()-> "Adding permission: " + permission);
+                                    this.permissionAPI.save(permission, contentlet, user, respectFrontendRoles);
+                                } catch (Exception e) {
+                                    Logger.error(this, e.getMessage());
+                                }
+                            });
+
                 } catch (Exception e) {
 
                     Logger.error(this, "Could not save the permissions for: " + contentlet.getTitle() +

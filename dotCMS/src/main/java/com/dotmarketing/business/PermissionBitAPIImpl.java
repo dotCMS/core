@@ -548,7 +548,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	@Override
     // todo: should be this a transaction (all of nothing on save several permissions)???
-    public void save(Collection<Permission> permissions, Permissionable permissionable, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+    public void  save(Collection<Permission> permissions, Permissionable permissionable, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         
     	for (Permission permission: permissions ) {
             save(permission, permissionable, user, respectFrontendRoles, false);
