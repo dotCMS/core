@@ -639,7 +639,7 @@
 			"response": []
 		},
 		{
-			"name": "updateExperimentLoopbackWindow_shoudSucceed",
+			"name": "updateExperimentLookbackWindow_shoudSucceed",
 			"event": [
 				{
 					"listen": "test",
@@ -660,7 +660,7 @@
 							"    pm.expect(jsonData.entity[0].status).equal(\"DRAFT\");",
 							"    pm.expect(jsonData.entity[0].trafficAllocation).equal(20.0);",
 							"    pm.expect(jsonData.entity[0].trafficProportion.type).equal(\"SPLIT_EVENLY\");",
-							"    pm.expect(jsonData.entity[0].loopbackWindow).equal(\"20\");",
+							"    pm.expect(jsonData.entity[0].lookbackWindow).equal(20);",
 							"",
 							"});",
 							"",
@@ -690,7 +690,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"loopbackWindow\": 20  \n}",
+					"raw": "{\n    \"lookbackWindow\": 20  \n}",
 					"options": {
 						"raw": {
 							"language": "json"
