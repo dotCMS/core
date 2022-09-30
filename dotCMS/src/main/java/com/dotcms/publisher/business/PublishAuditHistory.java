@@ -21,7 +21,7 @@ public class PublishAuditHistory implements Serializable {
 	private Date publishStart;
 	private Date publishEnd;
 	private int numTries = 0;
-	private Map<String, String> assets;
+	private final Map<String, String> assets;
 	
 	public PublishAuditHistory() {
 		assets = new HashMap<String, String>();
@@ -81,7 +81,9 @@ public class PublishAuditHistory implements Serializable {
 		return assets;
 	}
 	public void setAssets(Map<String, String> assets) {
-		this.assets = assets;
+	    if(assets ==null)return;
+		this.assets.clear();
+		this.assets.putAll(assets);
 	}
 	
 	public int getNumTries() {

@@ -122,7 +122,8 @@ public class PublishAuditStatus implements Serializable {
 	}
 
 	public PublishAuditHistory getStatusPojo() {
-		return statusPojo;
+	    return (statusPojo == null ) ? new PublishAuditHistory() : statusPojo;
+
 	}
 	public void setStatusPojo(PublishAuditHistory statusPojo) {
 		this.statusPojo = statusPojo;
