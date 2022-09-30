@@ -744,7 +744,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
         for (final Contentlet contentlet : contentToIndexSet) {
 
-            final String id = contentlet.getIdentifier() + "_" + contentlet.getLanguageId();
+            final String id = contentlet.getIdentifier() + "_" + contentlet.getLanguageId()
+                    + "_" + contentlet.getVariantId();
             Logger.debug(this,
                     () -> "\n*********----------- Indexing : " + Thread.currentThread().getName()
                             + ", id: "
