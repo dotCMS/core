@@ -81,6 +81,7 @@ import com.dotcms.rest.api.v1.folder.FolderResourceTest;
 import com.dotcms.rest.api.v1.menu.MenuResourceTest;
 import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
 import com.dotcms.rest.api.v1.system.ConfigurationHelperTest;
+import com.dotcms.rest.api.v1.taillog.TailLogResourceTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
 import com.dotcms.saml.SamlConfigurationServiceTest;
@@ -582,7 +583,8 @@ import org.junit.runners.Suite.SuiteClasses;
         StoryBlockTest.class,
         IdentifierCacheImplTest.class,
         VariantCacheTest.class,
-        VersionableFactoryImplTest.class
+        VersionableFactoryImplTest.class,
+        TailLogResourceTest.class
 })
 public class MainSuite {
 
