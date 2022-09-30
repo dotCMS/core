@@ -77,7 +77,7 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
     addFavoritePage(): void {
         this.dialogService.open(DotFavoritePageComponent, {
             header: this.dotMessageService.get('favoritePage.dialog.header.add.page'),
-            width: '40rem',
+            width: '80rem',
             data: {
                 page: {
                     pageState: this.pageState,

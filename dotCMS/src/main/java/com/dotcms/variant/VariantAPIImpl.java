@@ -53,10 +53,10 @@ public class VariantAPIImpl implements VariantAPI {
     public void update(final Variant variant) throws DotDataException {
         Preconditions.checkNotNull(variant.name(), IllegalArgumentException.class,
                 "Variant name should not be null");
-        Preconditions.checkNotNull(variant.identifier(), IllegalArgumentException.class ,
+        Preconditions.checkNotNull(variant.name(), IllegalArgumentException.class ,
                 "Variant ID should not be null");
 
-        get(variant.identifier())
+        get(variant.name())
                 .orElseThrow(() -> new DoesNotExistException("The variant does not exists"));
 
         Logger.debug(this, () -> "Updating Variant: " + variant);
@@ -83,51 +83,35 @@ public class VariantAPIImpl implements VariantAPI {
 
     /**
      * Implementation for {@link VariantAPI#archive(String)}
-     * @param id Variant's id to be archive
+     * @param name Variant's id to be archive
      */
     @Override
     @WrapInTransaction
-    public void archive(final String id) throws DotDataException {
-        final Variant variant = get(id)
+    public void archive(final String name) throws DotDataException {
+        final Variant variant = get(name)
                 .orElseThrow(() -> new DoesNotExistException("The Variant does not exists"));
 
-        final Variant variantArchived = Variant.builder()
-                .identifier(variant.identifier())
+        final Variant variantArchived = variant.builder()
                 .name(variant.name())
-                .archived(true)
-                .build();
+                .description(variant.description())
+                .archived(true).build();
 
         Logger.debug(this, () -> "Archiving Variant: " + variant);
         update(variantArchived);
     }
 
     /**
-     * Implementation for {@link VariantAPI#get(String)}
-     *
-     * @param identifier {@link Variant}'s identifier
-     * @return
-     */
-    @Override
-    @CloseDBIfOpened
-    public Optional<Variant> get(final String identifier) throws DotDataException {
-        Preconditions.checkNotNull(identifier, "Variant ID should not be null");
-        Logger.debug(this, ()-> "Getting Variant by ID: " + identifier);
-
-        return variantFactory.get(identifier);
-    }
-
-    /**
-     * Implementation for {@link VariantAPI#getByName(String)} (String)}
+     * Implementation for {@link VariantAPI#get(String)} (String)}
      *
      * @param name {@link Variant}'s identifier
      * @return
      */
     @Override
     @CloseDBIfOpened
-    public Optional<Variant> getByName(final String name) throws DotDataException {
+    public Optional<Variant> get(final String name) throws DotDataException {
         Preconditions.checkNotNull(name, "Variant Name should not be null");
         Logger.debug(this, ()-> "Getting Variant by Name: " + name);
 
-        return variantFactory.getByName(name);
+        return variantFactory.get(name);
     }
 }

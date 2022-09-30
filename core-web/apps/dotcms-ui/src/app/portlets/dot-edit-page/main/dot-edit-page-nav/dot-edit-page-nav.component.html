@@ -1,10 +1,9 @@
 <ul class="edit-page-nav">
-    <li *ngFor="let item of model | async">
+    <li *ngFor="let item of model | async" data-testId="menuListItems">
         <div *ngIf="!item.needsEntepriseLicense; then basic; else enterprise"></div>
         <ng-template #basic>
             <a
                 class="edit-page-nav__item"
-                pTooltip="{{ item.tooltip }}"
                 [ngClass]="{
                     'edit-page-nav__item--disabled': item.disabled,
                     'edit-page-nav__item--active': item.link
@@ -12,23 +11,27 @@
                         : null
                 }"
                 [routerLink]="!item.disabled && item.link ? ['./' + item.link] : null"
-                (click)="item.action ? item.action(pageState.page.inode) : ''"
                 [queryParams]="route.queryParams | async"
+                (click)="item.action ? item.action(pageState.page.inode) : ''"
+                pTooltip="{{ item.tooltip }}"
             >
-                <dot-icon size='32' [name]="item.icon"></dot-icon>
-                <span class="edit-page-nav__item-text">{{ item.label }}</span>
+                <dot-icon [name]="item.icon" size="32"></dot-icon>
+                <span class="edit-page-nav__item-text" data-testId="menuListItemText">{{
+                    item.label
+                }}</span>
             </a>
         </ng-template>
         <ng-template #enterprise>
             <span
+                class="edit-page-nav__item edit-page-nav__item--disabled"
                 [pTooltip]="'editpage.toolbar.nav.license.enterprise.only' | dm"
                 tooltipPosition="left"
-                class="edit-page-nav__item edit-page-nav__item--disabled"
             >
-                <dot-icon size='32' [name]="item.icon"></dot-icon>
-                <span class="edit-page-nav__item-text">{{ item.label }}</span>
+                <dot-icon [name]="item.icon" size="32"></dot-icon>
+                <span class="edit-page-nav__item-text" data-testId="menuListItemText">{{
+                    item.label
+                }}</span>
             </span>
         </ng-template>
     </li>
 </ul>
-

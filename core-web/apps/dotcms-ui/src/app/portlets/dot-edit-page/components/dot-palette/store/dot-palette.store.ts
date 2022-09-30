@@ -8,6 +8,7 @@ import { LazyLoadEvent } from 'primeng/api';
 import { forkJoin, Observable } from 'rxjs';
 import { map, take, debounceTime } from 'rxjs/operators';
 import { DotContentTypeService } from '@services/dot-content-type';
+import { LoadingState } from '@dotcms/app/portlets/shared/models/shared-models';
 
 export interface DotPaletteState {
     contentlets: DotCMSContentlet[] | DotCMSContentType[];
@@ -18,12 +19,6 @@ export interface DotPaletteState {
     totalRecords: number;
     viewContentlet: string;
     loading: boolean;
-}
-
-export const enum LoadingState {
-    INIT = 'INIT',
-    LOADING = 'LOADING',
-    LOADED = 'LOADED'
 }
 
 @Injectable()

@@ -11,9 +11,9 @@
             <div class="dot-apps__header-actions">
                 <div class="dot-apps__header-info">
                     <dot-icon name="help" size="18"></dot-icon>
-                    <a href="https://dotcms.com/docs/latest/apps-integrations" target="_blank"
-                        >{{ 'apps.link.info' | dm }}</a
-                    >
+                    <a href="https://dotcms.com/docs/latest/apps-integrations" target="_blank">{{
+                        'apps.link.info' | dm
+                    }}</a>
                 </div>
                 <button
                     pButton
@@ -49,5 +49,5 @@
     [action]="importExportDialogAction"
     [show]="showDialog"
     (resolved)="reloadAppsData()"
-    (onClose)="onClosedDialog()"
+    (shutdown)="onClosedDialog()"
 ></dot-apps-import-export-dialog>

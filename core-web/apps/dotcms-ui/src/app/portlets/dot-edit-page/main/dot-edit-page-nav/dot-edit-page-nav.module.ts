@@ -9,7 +9,6 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 @NgModule({
     imports: [CommonModule, RouterModule, TooltipModule, DotIconModule, DotPipesModule],
     declarations: [DotEditPageNavComponent],
-    exports: [DotEditPageNavComponent],
-    providers: []
+    exports: [DotEditPageNavComponent]
 })
 export class DotEditPageNavModule {}

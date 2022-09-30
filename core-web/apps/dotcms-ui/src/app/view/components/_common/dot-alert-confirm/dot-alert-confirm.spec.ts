@@ -15,27 +15,25 @@ describe('DotAlertConfirmComponent', () => {
     let fixture: ComponentFixture<DotAlertConfirmComponent>;
     let de: DebugElement;
 
-    beforeEach(
-        waitForAsync(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [DotAlertConfirmComponent],
-                providers: [
-                    {
-                        provide: LoginService,
-                        useClass: LoginServiceMock
-                    },
-                    DotAlertConfirmService
-                ],
-                imports: [BrowserAnimationsModule]
-            });
+    beforeEach(waitForAsync(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [DotAlertConfirmComponent],
+            providers: [
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                },
+                DotAlertConfirmService
+            ],
+            imports: [BrowserAnimationsModule]
+        });
 
-            fixture = DOTTestBed.createComponent(DotAlertConfirmComponent);
-            component = fixture.componentInstance;
-            de = fixture.debugElement;
-            dialogService = de.injector.get(DotAlertConfirmService);
-            fixture.detectChanges();
-        })
-    );
+        fixture = DOTTestBed.createComponent(DotAlertConfirmComponent);
+        component = fixture.componentInstance;
+        de = fixture.debugElement;
+        dialogService = de.injector.get(DotAlertConfirmService);
+        fixture.detectChanges();
+    }));
 
     it('should have confirm and dialog null by default', () => {
         const confirm = de.query(By.css('p-confirmDialog'));
@@ -137,15 +135,20 @@ describe('DotAlertConfirmComponent', () => {
     });
 
     describe('alert dialog', () => {
-        it('should show', () => {
+        it('should show', (done) => {
             dialogService.alert({
                 header: '',
                 message: ''
             });
 
             fixture.detectChanges();
+            spyOn(component.acceptBtn.nativeElement, 'focus');
             const confirm = de.query(By.css('p-dialog'));
             expect(confirm === null).toBe(false);
+            setTimeout(() => {
+                expect(component.acceptBtn.nativeElement.focus).toHaveBeenCalledTimes(1);
+                done();
+            }, 100);
         });
 
         it('should have right attrs', () => {

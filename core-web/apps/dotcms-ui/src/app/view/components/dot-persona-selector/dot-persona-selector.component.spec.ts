@@ -79,32 +79,30 @@ describe('DotPersonaSelectorComponent', () => {
 
     const siteServiceMock = new SiteServiceMock();
 
-    beforeEach(
-        waitForAsync(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [DotPersonaSelectorComponent, HostTestComponent],
-                imports: [
-                    BrowserAnimationsModule,
-                    SearchableDropDownModule,
-                    DotPersonaSelectedItemModule,
-                    DotPersonaSelectorOptionModule,
-                    DotAddPersonaDialogModule,
-                    TooltipModule,
-                    DotPipesModule
-                ],
-                providers: [
-                    IframeOverlayService,
-                    {
-                        provide: DotMessageService,
-                        useValue: messageServiceMock
-                    },
-                    { provide: PaginatorService, useClass: TestPaginatorService },
-                    { provide: LoginService, useClass: LoginServiceMock },
-                    { provide: SiteService, useValue: siteServiceMock }
-                ]
-            });
-        })
-    );
+    beforeEach(waitForAsync(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [DotPersonaSelectorComponent, HostTestComponent],
+            imports: [
+                BrowserAnimationsModule,
+                SearchableDropDownModule,
+                DotPersonaSelectedItemModule,
+                DotPersonaSelectorOptionModule,
+                DotAddPersonaDialogModule,
+                TooltipModule,
+                DotPipesModule
+            ],
+            providers: [
+                IframeOverlayService,
+                {
+                    provide: DotMessageService,
+                    useValue: messageServiceMock
+                },
+                { provide: PaginatorService, useClass: TestPaginatorService },
+                { provide: LoginService, useClass: LoginServiceMock },
+                { provide: SiteService, useValue: siteServiceMock }
+            ]
+        });
+    }));
 
     beforeEach(() => {
         hostFixture = DOTTestBed.createComponent(HostTestComponent);
@@ -154,6 +152,14 @@ describe('DotPersonaSelectorComponent', () => {
         const selectedItem = hostFixture.debugElement.query(By.css('dot-persona-selected-item'));
         selectedItem.triggerEventHandler('click', {});
         expect(dropdown.componentInstance.toggleOverlayPanel).toHaveBeenCalled();
+    });
+
+    it('should have highlighted persona option once the dropdown in loaded', async () => {
+        await hostFixture.whenStable();
+
+        openOverlay();
+        const personaOption = hostFixture.debugElement.query(By.css('dot-persona-selector-option'));
+        expect(personaOption.classes['highlight']).toEqual(true);
     });
 
     // TODO: this test fails ramdomly when all tests are ran, a fix needs to be done
@@ -226,7 +232,7 @@ describe('DotPersonaSelectorComponent', () => {
         });
     });
 
-    describe('Ifram Overlay Service', () => {
+    describe('Iframe Overlay Service', () => {
         let iframeOverlayService: IframeOverlayService;
 
         beforeEach(() => {

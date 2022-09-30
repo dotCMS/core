@@ -1896,7 +1896,7 @@ public class ContentResource {
             HibernateUtil.startTransaction();
 
             // preparing categories
-            List<Category> categories = MapToContentletPopulator.INSTANCE.getCategories
+            final Optional<List<Category>> categories = MapToContentletPopulator.INSTANCE.fetchCategories
                     (contentlet, init.getUser(), mode.respectAnonPerms);
             // running a workflow action?
             final ContentWorkflowResult contentWorkflowResult = processWorkflowAction(contentlet, init, live);
@@ -1904,14 +1904,12 @@ public class ContentResource {
                     .get(RELATIONSHIP_KEY);
             live = contentWorkflowResult.publish;
 
-            categories = UtilMethods.isSet(categories)?categories:null;
-
             // if one of the actions does not have save, so call the checkin
             if (!contentWorkflowResult.save) {
 
                 contentlet.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
                 contentlet = APILocator.getContentletAPI()
-                        .checkin(contentlet, relationships, categories, null, init.getUser(), mode.respectAnonPerms);
+                        .checkin(contentlet, relationships, categories.orElse(null), null, init.getUser(), mode.respectAnonPerms);
                 if (live) {
                     APILocator.getContentletAPI()
                             .publish(contentlet, init.getUser(), mode.respectAnonPerms);
@@ -1921,7 +1919,7 @@ public class ContentResource {
                 contentlet = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet,
                         new ContentletDependencies.Builder()
                         .respectAnonymousPermissions(mode.respectAnonPerms)
-                        .modUser(init.getUser()).categories(categories)
+                        .modUser(init.getUser()).categories(categories.orElse(null))
                         .relationships(relationships)
                         .indexPolicy(IndexPolicyProvider.getInstance().forSingleContent())
                         .build());
