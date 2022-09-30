@@ -35,7 +35,6 @@ export class DotCategoriesListComponent {
      */
     addBreadCrumb(category: DotCategory) {
         const getSubCategoryEndPoint = 'v1/categories/children';
-        this.store.updateCategoryEndPoint(getSubCategoryEndPoint);
         this.store.addCategoriesBreadCrumb({ label: category.categoryName, id: category.inode });
         this.updateCategory.emit({ label: category.categoryName, id: category.inode });
         this.listing.paginatorService.url = getSubCategoryEndPoint;
@@ -60,7 +59,6 @@ export class DotCategoriesListComponent {
         this.store.updateCategoriesBreadCrumb(categoryBreadCrumb);
         this.updateCategory.emit(item);
         if (item.label === 'Top') {
-            this.store.updateCategoryEndPoint(getCategoryEndPoint);
             this.listing.paginatorService.url = getCategoryEndPoint;
             this.listing.paginatorService.deleteExtraParams('inode');
         } else {

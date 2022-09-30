@@ -13,10 +13,10 @@ export interface DotCategory {
     inode: string;
     name: string;
     type: string;
-    source: CATEGORY_SOURCE;
-    live: boolean;
-    working: boolean;
-    parentPermissionable: {
+    source?: CATEGORY_SOURCE;
+    live?: boolean;
+    working?: boolean;
+    parentPermissionable?: {
         hostname: string;
     };
 }

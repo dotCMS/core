@@ -5,16 +5,16 @@
         .action-header__global-search {
             flex-wrap: wrap;
         }
-        .dot-category-link-button,
-        .dot-category-link-button:hover,
-        .dot-category-link-button:enabled,
-        .dot-category-link-button:enabled:hover {
-            color: var(--color-sec);
-        }
-        .container-listing__header-options,
-        .dot-category-line-break {
-            width: 100%;
-        }
+    }
+    .dot-category-link-button,
+    .dot-category-link-button:hover,
+    .dot-category-link-button:enabled,
+    .dot-category-link-button:enabled:hover {
+        color: var(--color-sec);
+    }
+    .container-listing__header-options,
+    .dot-category-line-break {
+        width: 100%;
     }
 }
 

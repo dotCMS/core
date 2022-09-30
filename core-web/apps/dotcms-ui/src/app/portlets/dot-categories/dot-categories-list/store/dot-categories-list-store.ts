@@ -33,29 +33,7 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
         });
     }
     breadCrumbStarterIcon: MenuItem;
-    readonly vm$ = this.select(
-        ({
-            getCategoryEndPoint,
-            categoriesBulkActions,
-            addToBundleIdentifier,
-            tableColumns,
-            selectedCategories,
-            categoryBreadCrumb,
-            breadCrumbStarterIcon,
-            paginationPerPage
-        }: DotCategoriesListState) => {
-            return {
-                getCategoryEndPoint,
-                categoriesBulkActions,
-                addToBundleIdentifier,
-                tableColumns,
-                selectedCategories,
-                categoryBreadCrumb,
-                breadCrumbStarterIcon,
-                paginationPerPage
-            };
-        }
-    );
+    readonly vm$ = this.select((state: DotCategoriesListState) => state);
 
     /* A selector that returns the categoryBreadCrumb property of the state. */
     readonly categoryBreadCrumbSelector$ = this.select(
@@ -180,7 +158,7 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
             {
                 fieldName: 'categoryVelocityVarName',
                 header: this.dotMessageService.get(
-                    'message.categories.fieldName.categoryVelocityVarName'
+                    'message.categories.fieldName.CategoryVelocityVarName'
                 ),
                 width: '20%',
                 sortable: true
