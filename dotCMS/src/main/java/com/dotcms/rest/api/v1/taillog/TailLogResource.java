@@ -5,6 +5,7 @@ import static com.dotcms.util.CollectionsUtils.map;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.servlets.taillog.Tailer;
 import com.dotmarketing.util.Config;
@@ -46,26 +47,27 @@ public class TailLogResource {
     @NoCache
     @Produces(SseFeature.SERVER_SENT_EVENTS)
     public final EventOutput getLogs(@Context final HttpServletRequest request,
-            @PathParam("fileName") final String fileName) throws IOException {
+            @PathParam("fileName") final String fileName, @PathParam("linesBack") final int linesBack) throws IOException {
 
         new WebResource().init(null, request, new EmptyHttpResponse(), true, null);
+
 
         if(fileName.trim().isEmpty()) {
             return sendError("File should not be empty");
         }
 
-
+        final String sanitizedFileName = FileUtil.sanitizeFileName(fileName);
         String tailLogLofFolder = Config.getStringProperty("TAIL_LOG_LOG_FOLDER", "./dotsecure/logs/");
         if (!tailLogLofFolder.endsWith(File.separator)) {
             tailLogLofFolder = tailLogLofFolder + File.separator;
         }
 
         final File logFolder 	= new File(FileUtil.getAbsolutlePath(tailLogLofFolder));
-        final File logFile 	= new File(FileUtil.getAbsolutlePath(tailLogLofFolder + fileName));
+        final File logFile 	= new File(FileUtil.getAbsolutlePath(tailLogLofFolder + sanitizedFileName));
 
 
         // if the logFile is outside of the logFolder, die
-        if ( !logFolder.exists()
+        if ( !logFolder.exists() || !logFolder.canRead()
                 ||   !logFile.getCanonicalPath().startsWith(logFolder.getCanonicalPath())) {
 
             final String errorMessage = "Invalid File request:" + logFile.getCanonicalPath() + " from:" +request.getRemoteHost();
@@ -79,15 +81,20 @@ public class TailLogResource {
         final String regex = Config.getStringProperty("TAIL_LOG_FILE_REGEX", ".*\\.log$|.*\\.out$");
 
 
-        if(!Pattern.compile(regex).matcher(fileName).matches()){
+        if(!Pattern.compile(regex).matcher(sanitizedFileName).matches()){
             sendError("Error ");
         }
 
-        final MyTailerThread thread = new MyTailerThread(logFile);
+        final MyTailerListener listener = new MyTailerListener();
+
+
+        final MyTailerThread thread = new MyTailerThread(logFile, listener, new EventOutput(), linesBack);
 
         String name = null;
+
+        //Finds a new thread to read the log
         for (int i = 0; i < 1000; i++) {
-            name = "LogTailer" + i + ":" + fileName;
+            name = "LogTailer" + i + ":" + sanitizedFileName;
             Thread t = ThreadUtils.getThread(name);
             if (t == null) {
                 break;
@@ -123,24 +130,24 @@ public class TailLogResource {
     }
 
 
-    private class MyTailerListener extends TailerListenerAdapter {
+    class MyTailerListener extends TailerListenerAdapter {
 
-        StringWriter out = new StringWriter();
+        StringBuffer out = new StringBuffer();
 
 
         public void handle(String line) {
             getOut().append(UtilMethods.xmlEscape(line) + "<br />");
         }
 
-        StringWriter getOut() {
+        StringBuffer getOut() {
             return getOut(false);
         }
 
-        StringWriter getOut(boolean refresh) {
+        StringBuffer getOut(boolean refresh) {
             synchronized (this) {
                 if (refresh) {
-                    StringWriter s = new StringWriter().append(out.toString());
-                    this.out = new StringWriter();
+                    StringBuffer s = new StringBuffer().append(out.toString());
+                    this.out = new StringBuffer();
                     return s;
                 }
                 return out;
@@ -177,23 +184,20 @@ public class TailLogResource {
                 Logger.warn(this.getClass(), "Stopping listening log events for " + fileName + "Reason: " + ex.getMessage());
             } finally {
                 stopTailer();
-                try {
-                    eventOutput.close();
-                } catch (Exception ex) {
-
-                }
+                CloseUtils.closeQuietly(eventOutput);
             }
         }
 
-        public MyTailerThread(final File logFile) {
-            long startPosition = ((logFile.length() - 5000) < 0) ? 0 : logFile.length() - 5000;
+        public MyTailerThread(final File logFile, final MyTailerListener myTailerListener, final EventOutput myEventOutput, final int linesBack) {
+            final int linesNumber = linesBack <= 0? 5000: linesBack;
+            final long startPosition = ((logFile.length() - linesNumber) < 0) ? 0 : logFile.length() - linesNumber;
             fileName = logFile.getName();
-            listener = new MyTailerListener();
-            listener.handle("Tailing " + fileName);
+            listener = myTailerListener;
+            listener.handle("Tailing " + linesNumber + " lines from file " + fileName);
             listener.handle("----------------------------- ");
             tailer = Tailer.create(logFile, listener, 1000);
             tailer.setStartPosition(startPosition);
-            eventOutput = new EventOutput();
+            eventOutput = myEventOutput;
         }
 
 
