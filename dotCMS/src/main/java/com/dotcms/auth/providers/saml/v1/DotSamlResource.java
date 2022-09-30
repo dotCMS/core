@@ -168,6 +168,8 @@ public class DotSamlResource implements Serializable {
 						throw new DotSamlException("No session has been created.");
 					}
 
+					Logger.debug(this, ()-> "SAML: Http Session Id: " + session.getId());
+
 					// Extracts data from the assertion - if it can't process a DotSamlException is thrown
 					final Attributes attributes = this.samlAuthenticationService.resolveAttributes(httpServletRequest,
 							httpServletResponse, identityProviderConfiguration);
