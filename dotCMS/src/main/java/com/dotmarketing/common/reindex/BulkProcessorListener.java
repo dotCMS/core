@@ -1,6 +1,7 @@
 package com.dotmarketing.common.reindex;
 
 
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.google.common.collect.ImmutableList;
@@ -31,6 +32,8 @@ import org.elasticsearch.action.bulk.BulkResponse;
 public class BulkProcessorListener implements BulkProcessor.Listener {
 
     final Map<String, ReindexEntry> workingRecords;
+
+    final static List<String> RESERVED_IDS = List.of(Host.SYSTEM_HOST);
 
     private long contentletsIndexed;
 
@@ -70,10 +73,15 @@ public class BulkProcessorListener implements BulkProcessor.Listener {
             totalResponses++;
             String id;
             if (bulkItemResponse.isFailed() || itemResponse == null) {
-                id = bulkItemResponse.getFailure().getId().substring(0,
+
+                final String reservedId = getMatchingReservedIdIfAny(bulkItemResponse.getFailure().getId());
+
+                id = reservedId!=null ? reservedId: bulkItemResponse.getFailure().getId().substring(0,
                         bulkItemResponse.getFailure().getId().indexOf(StringPool.UNDERLINE));
             } else {
-                id = itemResponse.getId()
+                final String reservedId = getMatchingReservedIdIfAny(itemResponse.getId());
+
+                id = reservedId!=null ? reservedId: itemResponse.getId()
                         .substring(0, itemResponse.getId().indexOf(StringPool.UNDERLINE));
             }
 
@@ -93,6 +101,18 @@ public class BulkProcessorListener implements BulkProcessor.Listener {
         if(totalResponses==0 || (successful.size() / totalResponses < .5)) {
           ReindexThread.rebuildBulkIndexer();
         }
+    }
+
+    static String getMatchingReservedIdIfAny(String id) {
+        String matchingReservedId = null;
+
+        for (String reservedId : RESERVED_IDS) {
+            if(id.contains(reservedId)) {
+                matchingReservedId = reservedId;
+            }
+        }
+
+        return matchingReservedId;
     }
 
     @Override
