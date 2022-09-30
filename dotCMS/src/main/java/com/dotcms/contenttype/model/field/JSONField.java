@@ -67,8 +67,5 @@ public abstract class JSONField extends Field {
 		return Optional.empty();
 	}
 
-	@JsonIgnore
-	public String getContentTypeFieldLabelKey(){
-		return "JSON-Field";
-	}
+
 }
