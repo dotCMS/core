@@ -81,7 +81,9 @@ public class PublishAuditHistory implements Serializable {
 		return assets;
 	}
 	public void setAssets(Map<String, String> assets) {
-	    if(assets ==null)return;
+	    if(assets ==null) {
+	        return;
+	    }
 		this.assets.clear();
 		this.assets.putAll(assets);
 	}
