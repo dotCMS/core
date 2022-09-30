@@ -6,6 +6,8 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.BulkResultView;
+import com.dotcms.rest.api.FailedResultView;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
@@ -24,7 +26,9 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.business.PaginatedCategories;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
@@ -33,10 +37,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -275,7 +281,7 @@ public class CategoriesResource {
         Logger.debug(this, ()-> "Filling category entity");
 
         if (UtilMethods.isSet(categoryForm.getParent())) {
-            parentCategory = categoryAPI.find(categoryForm.getParent(), user, pageMode.respectAnonPerms);
+            parentCategory = this.categoryAPI.find(categoryForm.getParent(), user, pageMode.respectAnonPerms);
         }
 
         BeanUtils.copyProperties(category, categoryForm);
@@ -306,7 +312,7 @@ public class CategoriesResource {
         Logger.debug(this, ()-> "Filling category entity");
 
         if (UtilMethods.isSet(categoryForm.getParent())) {
-            parentCategory = categoryAPI.find(categoryForm.getParent(), user, pageMode.respectAnonPerms);
+            parentCategory = this.categoryAPI.find(categoryForm.getParent(), user, pageMode.respectAnonPerms);
         }
 
         BeanUtils.copyProperties(updatedCategory, oldCategory);
