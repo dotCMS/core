@@ -194,8 +194,8 @@
 
     /**
      *
-     * @param src
-     * @param dest
+     * @param src expects the iframe
+     * @param dest expects the div where we want to render the log/highlight etc..
      * @returns {{fetchNextPage: fetchNextPage, filterByKeyword: filterByKeyword, updateView: updateView, setFollowing: setFollowing, fetchPriorPage: fetchPriorPage}}
      * @constructor
      */
@@ -351,15 +351,71 @@
             dest.scrollTop = dest.scrollHeight;
         }
 
+        function _matchingLinesOnlyView(){
+            //this function must be called once the following has been disconnected
+            if (_isFiltering()) {
+
+                const logs = Array.from(
+                    dest.querySelectorAll(`.log`)
+                );
+
+
+                const first = logs.shift();
+                const last = logs.pop();
+
+                const firstPageId = first.dataset.page;
+                const lastPageId = last.dataset.page;
+
+                let buffer = [];
+
+                for(let i = firstPageId; i <= lastPageId; i++){
+                    const list = src.document.body.querySelectorAll(`.page${i}`);
+                    const matches = _matchingLines(list);
+                    if(matches && matches.length > 1){
+                        buffer = buffer.concat(matches);
+                    }
+                }
+
+                dest.replaceChildren();
+                buffer.forEach(value => {
+                    dest.insertAdjacentHTML('afterbegin',value);
+                });
+                dest.innerHTML = _applyHighlight(dest.innerHTML);
+            }
+        }
+
+        function _matchingLines(nodes){
+            const regEx = new RegExp( keyword, "i");
+            let matches = [];
+            if(nodes && nodes.length > 0){
+                nodes.forEach(el => {
+                    const html = el.outerHTML;
+                    const lines = html.split('<br>').filter((row)=> regEx.test(row)).join('<br>') + '<br>';
+                    if(lines){
+                        const classes = el.classList.value;
+                        const page = el.dataset['page'];
+                        const logNum = el.dataset['lognumber'];
+                        const p = `<p class="${classes}" data-page="${page}" data-lognumber="${logNum}" style="margin:0"> ${lines} </p>  `;
+                        matches.push(p);
+                    }
+                });
+            }
+            return matches;
+        }
+
         return ({
 
             setFollowing : (value) => {
                 following = value;
             },
 
-            filterByKeyword : (value, dropNonMatching) => {
+            filterByKeyword : (value, showMatchingLinesOnly) => {
                 keyword = value;
-                _applyFilter();
+                if(showMatchingLinesOnly){
+                    _matchingLinesOnlyView();
+                } else {
+                    _applyFilter();
+                }
             },
 
             fetchPriorPage : () => {
