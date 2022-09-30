@@ -382,7 +382,7 @@ public class VariantFactoryTest {
         assertEquals(1, results.size());
         final Map resultMap = (Map) results.get(0);
         return Variant.builder()
-                .description(resultMap.get("description").toString())
+                .description(Optional.ofNullable((String) resultMap.get("description")))
                 .name(resultMap.get("name").toString())
                 .archived(ConversionUtils.toBooleanFromDb(resultMap.get("archived")))
                 .build();

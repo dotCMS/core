@@ -14,7 +14,7 @@ import { BubbleLinkFormComponent, NodeProps } from '../bubble-link-form.componen
 import { LINK_FORM_PLUGIN_KEY } from '../bubble-link-form.extension';
 
 // Utils
-import { getPosAtDocCoords, isValidURL } from '@dotcms/block-editor';
+import { getPosAtDocCoords, isValidURL, ImageNode } from '@dotcms/block-editor';
 import { openFormLinkOnclik } from '../utils';
 
 interface PluginState {
@@ -177,7 +177,7 @@ export class BubbleLinkFormView {
 
         // Check if the node is a dotImage
         const node = doc?.nodeAt(from);
-        const isNodeImage = node?.type.name === 'dotImage';
+        const isNodeImage = node?.type.name === ImageNode.name;
 
         // If there is an overflow, use bubble menu position as a reference.
         return isOverflow || isNodeImage ? domRect : nodeClientRect;
@@ -186,14 +186,14 @@ export class BubbleLinkFormView {
     setLinkValues({ link, blank = false }) {
         if (link.length > 0) {
             const href = this.formatLink(link);
-            this.isDotImageNode()
+            this.isImageNode()
                 ? this.editor.commands.setImageLink({ href })
                 : this.editor.commands.setLink({ href, target: blank ? '_blank' : '_top' });
         }
     }
 
     removeLink() {
-        this.isDotImageNode()
+        this.isImageNode()
             ? this.editor.commands.unsetImageLink()
             : this.editor.commands.unsetLink();
         this.hide();
@@ -233,12 +233,13 @@ export class BubbleLinkFormView {
 
     detectLinkFormChanges() {
         this.component.changeDetectorRef.detectChanges();
+        requestAnimationFrame(() => this.tippy?.popperInstance?.forceUpdate());
     }
 
     getLinkProps(): NodeProps {
         const { href: link = '', target } = this.editor.isActive('link')
             ? this.editor.getAttributes('link')
-            : this.editor.getAttributes('dotImage');
+            : this.editor.getAttributes(ImageNode.name);
         const blank = target ? target === '_blank' : true;
 
         return { link, blank };
@@ -252,10 +253,10 @@ export class BubbleLinkFormView {
         return isValidURL(text) ? text : '';
     }
 
-    isDotImageNode() {
+    isImageNode() {
         const { type } = this.editor.state.doc.nodeAt(this.editor.state.selection.from) || {};
 
-        return type?.name === 'dotImage';
+        return type?.name === ImageNode.name;
     }
 
     destroy() {
@@ -266,6 +267,10 @@ export class BubbleLinkFormView {
     }
 
     private hanlderScroll(e: Event) {
+        if (!this.tippy?.state.isMounted) {
+            return;
+        }
+
         const element = e.target as HTMLElement;
         const parentElement = element?.parentElement?.parentElement;
         // If text is too long, the input fires the `scroll` event.

@@ -8,6 +8,7 @@ import com.dotmarketing.business.DotStateException;
 import io.vavr.Lazy;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -42,7 +43,7 @@ public class VariantTransformer implements DBTransformer {
 
     private Variant transform(final Map<String, Object> variantMap) {
         return Variant.builder()
-                .description(variantMap.get("description").toString())
+                .description(Optional.ofNullable((String) variantMap.get("description")))
                 .name(variantMap.get("name").toString())
                 .archived(ConversionUtils.toBooleanFromDb(variantMap.get("archived")))
                 .build();

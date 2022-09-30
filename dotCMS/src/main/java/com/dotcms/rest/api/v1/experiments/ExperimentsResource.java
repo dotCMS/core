@@ -5,12 +5,14 @@ import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
+import com.dotcms.experiments.model.TargetingCondition;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.PATCH;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.NotFoundException;
+import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -23,7 +25,10 @@ import java.util.Optional;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.constraints.Size;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -274,6 +279,70 @@ public class ExperimentsResource {
         return new ResponseEntityExperimentView(Collections.singletonList(endedExperiment));
     }
 
+    /**
+     * Adds a new {@link com.dotcms.variant.model.Variant} to the {@link Experiment}
+     *
+     */
+    @POST
+    @Path("/{experimentId}/variants")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityExperimentView addVariant(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("experimentId") final String experimentId,
+            AddVariantForm addVariantForm) throws DotDataException, DotSecurityException {
+
+        DotPreconditions.isTrue(addVariantForm!=null, ()->"Missing Variant name",
+                IllegalArgumentException.class);
+
+        final InitDataObject initData = getInitData(request, response);
+        final User user = initData.getUser();
+        final Experiment updatedExperiment =  experimentsAPI.addVariant(experimentId,
+                addVariantForm.getName(), user);
+        return new ResponseEntityExperimentView(Collections.singletonList(updatedExperiment));
+    }
+
+    /**
+     * Deletes a new {@link com.dotcms.variant.model.Variant} from the {@link Experiment}
+     *
+     */
+    @DELETE
+    @Path("/{experimentId}/variants/{name}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityExperimentView deleteVariant(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("experimentId") final String experimentId,
+            @PathParam("name") final String variantName) throws DotDataException, DotSecurityException {
+        final InitDataObject initData = getInitData(request, response);
+        final User user = initData.getUser();
+        final Experiment updatedExperiment =  experimentsAPI.deleteVariant(experimentId, variantName, user);
+        return new ResponseEntityExperimentView(Collections.singletonList(updatedExperiment));
+    }
+
+    /**
+     * Deletes the {@link TargetingCondition} with the given id from the {@link Experiment} with the given experimentId
+     *
+     */
+    @DELETE
+    @Path("/{experimentId}/targetingConditions/{id}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityExperimentView deleteTargetingCondition(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("experimentId") final String experimentId,
+            @PathParam("id") final String conditionId) throws DotDataException, DotSecurityException {
+        final InitDataObject initData = getInitData(request, response);
+        final User user = initData.getUser();
+        final Experiment updatedExperiment =  experimentsAPI
+                .deleteTargetingCondition(experimentId, conditionId, user);
+        return new ResponseEntityExperimentView(Collections.singletonList(updatedExperiment));
+    }
+
     private Experiment patchExperiment(final Experiment experimentToUpdate,
             final ExperimentForm experimentForm, final User user) {
 
@@ -301,6 +370,10 @@ public class ExperimentsResource {
 
         if(experimentForm.getGoals()!=null) {
             builder.goals(experimentForm.getGoals());
+        }
+
+        if(experimentForm.getTargetingConditions()!=null) {
+            builder.targetingConditions(experimentForm.getTargetingConditions());
         }
 
         return builder.build();

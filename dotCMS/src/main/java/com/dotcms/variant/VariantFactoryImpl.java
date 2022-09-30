@@ -11,6 +11,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.Optional;
 import org.apache.commons.codec.digest.DigestUtils;
 
@@ -38,20 +39,18 @@ public class VariantFactoryImpl implements VariantFactory{
 
         new DotConnect().setSQL(VARIANT_INSERT_QUERY)
                 .addParam(variant.name())
-                .addParam(variant.description())
+                .addParam(variant.description().orElse(null))
                 .addParam(variant.archived())
                 .loadResult();
 
-        final Variant variantFromDataBase = get(variant.name()).orElseThrow(
-                () -> new DotRuntimeException("Error Saving variant " + variant));
-
         CacheLocator.getVariantCache().remove(variant);
 
-        return variantFromDataBase;
+        return getFromDataBaseByName(variant.name()).orElseThrow(
+                () -> new DotRuntimeException("Error Saving variant " + variant));
     }
 
     private boolean validateName(final String name) {
-        return name.matches("^[a-zA-Z]([_a-zA-Z0-9]+/?)*$");
+        return name.matches("^[a-zA-Z]([-_a-zA-Z0-9]+/?)*$");
     }
 
     /**
@@ -67,7 +66,7 @@ public class VariantFactoryImpl implements VariantFactory{
                 "The ID should not bee null");
 
         new DotConnect().setSQL(VARIANT_UPDATE_QUERY)
-                .addParam(variant.description())
+                .addParam(variant.description().orElse(null))
                 .addParam(variant.archived())
                 .addParam(variant.name())
                 .loadResult();

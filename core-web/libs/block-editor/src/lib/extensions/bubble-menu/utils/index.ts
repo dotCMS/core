@@ -1,5 +1,10 @@
 import { isTextSelection } from '@tiptap/core';
-import { BubbleMenuItem, ShouldShowProps, LINK_FORM_PLUGIN_KEY } from '@dotcms/block-editor';
+import {
+    BubbleMenuItem,
+    ShouldShowProps,
+    LINK_FORM_PLUGIN_KEY,
+    ImageNode
+} from '@dotcms/block-editor';
 
 const hideBubbleMenuOn = {
     dotContent: true
@@ -62,10 +67,11 @@ export const isValidURL = (nodeText: string) => {
 };
 
 export const getNodePosition = (node: HTMLElement, type: string): DOMRect => {
-    const img = node.getElementsByTagName('img')[0];
-    // If is a dotImage Node, get the image position
-    if (type === 'dotImage' && img) {
-        return img.getBoundingClientRect();
+    if (type === ImageNode.name) {
+        const img = node.getElementsByTagName('img')[0];
+
+        // If is a image Node, get the image position
+        return img?.getBoundingClientRect() || node.getBoundingClientRect();
     }
 
     return node.getBoundingClientRect();
@@ -177,12 +183,10 @@ export const bubbleMenuImageItems: Array<BubbleMenuItem> = [
         active: false,
         divider: true
     },
-
     {
-        icon: 'delete',
-        markAction: 'deleteNode',
-        active: false,
-        divider: false
+        text: 'Properties',
+        markAction: 'properties',
+        active: false
     }
 ];
 

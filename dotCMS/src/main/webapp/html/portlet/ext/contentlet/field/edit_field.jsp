@@ -215,11 +215,12 @@
                     content = <%=textValue%>;
                 }
 
+                const blockEditor = document.querySelector('dotcms-block-editor');
                 const block = document.querySelector('dotcms-block-editor .ProseMirror');
                 const field = document.querySelector('#<%=field.getVelocityVarName()%>');
 
                 if (content) {
-                    block.editor.commands.setContent(content);
+                    blockEditor.setValue = content;
                     field.value = JSON.stringify(block.editor.getJSON());
                 }
 

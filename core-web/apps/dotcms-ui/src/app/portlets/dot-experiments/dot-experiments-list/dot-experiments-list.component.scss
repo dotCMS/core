@@ -1,0 +1,9 @@
+@use "variables" as *;
+
+:host {
+    background: $gray-bg;
+    display: flex;
+    height: 100%;
+    overflow: auto;
+    padding: $spacing-4 $spacing-4 0;
+}

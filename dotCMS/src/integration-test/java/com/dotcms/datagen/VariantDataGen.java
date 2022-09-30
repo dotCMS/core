@@ -4,6 +4,7 @@ import com.dotcms.variant.model.Variant;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UUIDGenerator;
+import java.util.Optional;
 import org.apache.commons.lang.RandomStringUtils;
 
 
@@ -35,7 +36,7 @@ public class VariantDataGen extends AbstractDataGen<Variant> {
         final String innerDescription = description
                 == null ? "Description for: " + innerName : description;
         return Variant.builder()
-                .description(innerDescription)
+                .description(Optional.of(innerDescription))
                 .name(innerName)
                 .archived(archived)
                 .build();

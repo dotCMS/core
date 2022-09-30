@@ -80,7 +80,7 @@ public class VariantAPITest {
 
         final Variant variantUpdated = Variant.builder()
                 .name(variant.name())
-                .description(variant.description() + "_updated")
+                .description(Optional.of(variant.description().get() + "_updated"))
                 .archived(variant.archived())
                 .build();
 
@@ -332,7 +332,7 @@ public class VariantAPITest {
         assertEquals(1, results.size());
         final Map resultMap = (Map) results.get(0);
         return Variant.builder()
-                .description(resultMap.get("description").toString())
+                .description(Optional.ofNullable((String)resultMap.get("description")))
                 .name(resultMap.get("name").toString())
                 .archived(ConversionUtils.toBooleanFromDb(resultMap.get("archived")))
                 .build();
