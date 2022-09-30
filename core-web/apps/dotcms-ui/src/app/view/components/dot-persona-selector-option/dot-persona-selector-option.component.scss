@@ -11,6 +11,10 @@
         background-color: $bg-hover;
     }
 
+    &.highlight {
+        background-color: $bg-highlight;
+    }
+
     dot-avatar {
         margin: 0 $spacing-3;
     }
