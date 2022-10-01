@@ -259,9 +259,8 @@
                 const pagesToDrop = Math.round((pagesOnScreen * 30) * .01);
 
                 for (let i = 1; i <= pagesToDrop; i++) {
-                    const last = Array.from(
-                        dest.querySelectorAll(`.log`)
-                    ).pop();
+
+                    const last = dest.querySelector(`.log:last-child`)
 
                     if (!last) {
                         break;
@@ -282,10 +281,7 @@
 
         function _fetchNextPage(){
 
-            const last = Array.from(
-                dest.querySelectorAll(`.log`)
-            ).pop();
-
+            const last = dest.querySelector(`.log:last-child`);
             if(last){
                 let lastPageId = last.dataset.page;
                 console.log(" Last page id is  ::: " + lastPageId);
@@ -355,14 +351,14 @@
             //this function must be called once the following has been disconnected
             if (_isFiltering()) {
 
-                const logs = Array.from(
-                    dest.querySelectorAll(`.log`)
-                );
+                const first = dest.querySelector(`.log:first-child`);
+                const last = dest.querySelector(`.log:last-child`);
 
-
-                const first = logs.shift();
-                const last = logs.pop();
-
+                if(!first || !last){
+                    console.warn('no items are loaded in the view.');
+                    return;
+                }
+                //first and last on-screen items
                 const firstPageId = first.dataset.page;
                 const lastPageId = last.dataset.page;
 
