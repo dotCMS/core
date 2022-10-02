@@ -3,7 +3,6 @@ import { ComponentStore } from '@ngrx/component-store';
 import { take } from 'rxjs/operators';
 import { StructureTypeView } from '@models/contentlet';
 import { DotContentTypeService } from '@services/dot-content-type';
-import { zip } from 'rxjs';
 
 export interface DotContainerPropertiesState {
     activeTabIndex: number;
@@ -14,13 +13,16 @@ export interface DotContainerPropertiesState {
 @Injectable()
 export class DotContainerPropertiesStore extends ComponentStore<DotContainerPropertiesState> {
     constructor(private dotContentTypeService: DotContentTypeService) {
-        super();
+        super({
+            activeTabIndex: 1,
+            contentTypes: [],
+            showPrePostLoopInput: false
+        });
 
-        const contentTypes$ = this.dotContentTypeService.getAllContentTypes();
-
-        zip(contentTypes$)
+        this.dotContentTypeService
+            .getAllContentTypes()
             .pipe(take(1))
-            .subscribe(([contentTypes]) => {
+            .subscribe((contentTypes) => {
                 this.setState({
                     activeTabIndex: 1,
                     contentTypes: contentTypes,

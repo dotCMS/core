@@ -55,10 +55,8 @@
                 <div *ngIf="vm.showPrePostLoopInput">
                     <label>{{ 'message.containers.create.pre_loop' | dm }}</label>
                     <dot-textarea-content
-                        formControlName="body"
-                        #value
-                        height="100%"
-                        formControlName="body"
+                        formControlName="preLoop"
+                        #preLoop
                         [show]="['code']"
                         language="html"
                         (monacoInit)="initEditor($event)"
@@ -88,9 +86,7 @@
                     </p-tabPanel>
                     <p-tabPanel closable="true" header="Content (Generic)">
                         <dot-textarea-content
-                            formControlName="body"
-                            #value
-                            height="100%"
+                            #body
                             formControlName="body"
                             [show]="['code']"
                             language="html"
@@ -114,10 +110,8 @@
                 <div *ngIf="vm.showPrePostLoopInput">
                     <label>{{ 'message.containers.create.post_loop' | dm }}</label>
                     <dot-textarea-content
-                        formControlName="body"
-                        #value
-                        height="100%"
-                        formControlName="body"
+                        formControlName="postLoop"
+                        #postLoop
                         [show]="['code']"
                         language="html"
                         (monacoInit)="initEditor($event)"

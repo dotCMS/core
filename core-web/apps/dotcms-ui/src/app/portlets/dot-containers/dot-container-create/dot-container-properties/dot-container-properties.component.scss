@@ -1,6 +1,6 @@
 @use "variables" as *;
 
-:host ::ng-deep {
+:host {
     .dot-container-properties__title-container {
         padding: $spacing-4 0;
     }
@@ -15,7 +15,7 @@
             margin: $spacing-3;
         }
         dot-textarea-content {
-            height: 40vh !important;
+            height: 40vh;
         }
     }
 
@@ -29,26 +29,28 @@
         }
 
         dot-textarea-content {
-            height: 20vh !important;
+            height: 20vh;
         }
     }
 
-    .tab-panel-btn {
-        background: #1b3359;
+    & ::ng-deep {
+        .tab-panel-btn {
+            background: #1b3359;
 
-        a {
+            a.p-tabview-nav-link {
+                padding: 0;
+            }
+
+            i {
+                color: $white;
+                padding: 1.2rem 2.5rem 1.35rem;
+            }
+        }
+
+        .p-tabview-panel {
             padding: 0 !important;
+            padding-top: 1.5rem !important;
         }
-
-        i {
-            color: $white;
-            padding: 1.2rem 2.5rem 1.35rem;
-        }
-    }
-
-    .p-tabview-panel {
-        padding: 0 !important;
-        padding-top: 1.5rem !important;
     }
 
     .dot-container-properties__content-tab-container {
