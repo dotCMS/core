@@ -11,7 +11,6 @@ import {
 } from '@stencil/core';
 import { MaterialIconClasses } from './material-icon-classes';
 import '@material/mwc-icon';
-import { LABEL_IMPORTANT_ICON } from '@pipes/dot-radom-icon/dot-random-icon.pipe';
 
 @Component({
     tag: 'dot-material-icon-picker',
@@ -179,6 +178,9 @@ export class DotMaterialIcon {
     };
 
     render() {
+        // reason: https://github.com/dotCMS/core/issues/22861
+        const LABEL_IMPORTANT_ICON = 'label_important';
+
         return (
             <Host
                 class={{
