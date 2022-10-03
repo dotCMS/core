@@ -8,11 +8,7 @@ import { IframeComponent } from '@components/_common/iframe/iframe-component';
 })
 export class DotContainerHistoryComponent implements OnInit, OnChanges {
     @ViewChild('historyIframe') historyIframe: IframeComponent;
-    historyUrl = '';
-
-    ngOnInit() {
-        this.historyUrl = `/html/containers/push_history.jsp`;
-    }
+    historyUrl = '/html/containers/push_history.jsp';
 
     ngOnChanges(): void {
         if (this.historyIframe) {
