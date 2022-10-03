@@ -309,7 +309,8 @@ public class VersionableAPIImpl implements VersionableAPI {
             info = versionableFactory.findAnyContentletVersionInfo(contentlet.getIdentifier());
         } else{
             info = versionableFactory
-                    .getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
+                    .getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId()
+                            , contentlet.getVariantId());
         }
 
         if(!info.isPresent())
