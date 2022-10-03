@@ -6,9 +6,5 @@ import { Component, OnInit } from '@angular/core';
     styleUrls: ['./dot-container-permissions.component.scss']
 })
 export class DotContainerPermissionsComponent implements OnInit {
-    permissionsUrl = '';
-
-    ngOnInit() {
-        this.permissionsUrl = `/html/containers/permissions.jsp`;
-    }
+    permissionsUrl =  '/html/containers/permissions.jsp';
 }
