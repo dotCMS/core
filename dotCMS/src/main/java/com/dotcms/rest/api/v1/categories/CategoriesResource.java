@@ -269,6 +269,61 @@ public class CategoriesResource {
         }
     }
 
+    /**
+     * Deletes Categories.
+     *
+     * This method receives a list of inodes and deletes all the children and the parent categories.
+     * To delete a category successfully the user needs to have Edit Permissions over it.
+     * @param httpRequest            {@link HttpServletRequest}
+     * @param httpResponse           {@link HttpServletResponse}
+     * @param categoriesToDelete     {@link String} category inode to look for and then delete it
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @DELETE
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response delete(@Context final HttpServletRequest  httpRequest,
+            @Context final HttpServletResponse httpResponse,
+            final List<String> categoriesToDelete) {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final PageMode pageMode = PageMode.get(httpRequest);
+        Long deletedCategoriesCount  = 0L;
+        final List<FailedResultView> failedToDelete  = new ArrayList<>();
+
+        DotPreconditions.checkArgument(UtilMethods.isSet(categoriesToDelete),
+                "The body must send a collection of category inode such as: " +
+                        "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
+
+        for(final String categoryInode : categoriesToDelete){
+            try{
+                final Category category = this.categoryAPI.find(categoryInode, user, pageMode.respectAnonPerms);
+                if (null != category && InodeUtils.isSet(category.getInode())){
+                    List<Category> unableToDeleteChildren = this.categoryAPI.removeAllChildren(category, user, pageMode.respectAnonPerms);
+                    this.categoryAPI.delete(category, user, pageMode.respectAnonPerms);
+                    ActivityLogger.logInfo(this.getClass(), "Delete Category Action", "User " +
+                            user.getPrimaryKey() + " deleted category: " + category.getInode());
+                    deletedCategoriesCount++;
+                } else {
+                    Logger.error(this, "Category with Id: " + categoryInode + " does not exist");
+                    failedToDelete.add(new FailedResultView(categoryInode,"Category does not exist"));
+                }
+            } catch(Exception e){
+                Logger.debug(this,e.getMessage(),e);
+                failedToDelete.add(new FailedResultView(categoryInode,e.getMessage()));
+            }
+        }
+
+        return Response.ok(new ResponseEntityView(
+                        new BulkResultView(deletedCategoriesCount,0L,failedToDelete)))
+                .build();
+    }
+
     private Category fillAndSave(final CategoryForm categoryForm,
             final User user,
             final Host host,
