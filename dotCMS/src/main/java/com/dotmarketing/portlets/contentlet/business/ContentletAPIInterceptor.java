@@ -826,7 +826,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
 	@Override
 	public Contentlet findContentletByIdentifier(String identifier, boolean live, long languageId, User user, boolean respectFrontendRoles)	throws DotDataException, DotSecurityException,	DotContentletStateException {
-		return findContentletByIdentifier(identifier, live, languageId, VariantAPI.DEFAULT_VARIANT.identifier(), user, respectFrontendRoles);
+		return findContentletByIdentifier(identifier, live, languageId, VariantAPI.DEFAULT_VARIANT.name(), user, respectFrontendRoles);
 	}
 
 	@Override

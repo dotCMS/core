@@ -27,7 +27,7 @@ public class VariantWebAPIImpl implements VariantWebAPI{
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 
         if (!UtilMethods.isSet(request)) {
-            return VariantAPI.DEFAULT_VARIANT.identifier();
+            return VariantAPI.DEFAULT_VARIANT.name();
         }
 
         final String requestParameter = request.getParameter(VariantAPI.VARIANT_KEY);
@@ -35,16 +35,16 @@ public class VariantWebAPIImpl implements VariantWebAPI{
         if (UtilMethods.isSet(requestParameter)) {
             try {
                 final Optional<Variant> byName = APILocator.getVariantAPI()
-                        .getByName(requestParameter);
-                return byName.isPresent() ? byName.get().identifier() : VariantAPI.DEFAULT_VARIANT.identifier();
+                        .get(requestParameter);
+                return byName.isPresent() ? byName.get().name() : VariantAPI.DEFAULT_VARIANT.name();
             } catch (DotDataException e) {
                 Logger.error(VariantWebAPIImpl.class,
                         String.format("It is not possible get variant y name %s: %s",
                                 requestParameter, e.getMessage()));
-                return VariantAPI.DEFAULT_VARIANT.identifier();
+                return VariantAPI.DEFAULT_VARIANT.name();
             }
         } else {
-            return VariantAPI.DEFAULT_VARIANT.identifier();
+            return VariantAPI.DEFAULT_VARIANT.name();
         }
     }
 
@@ -61,11 +61,11 @@ public class VariantWebAPIImpl implements VariantWebAPI{
         }
 
         contentletVersionInfo = APILocator.getVersionableAPI()
-                .getContentletVersionInfo(identifier, tryingLang, VariantAPI.DEFAULT_VARIANT.identifier());
+                .getContentletVersionInfo(identifier, tryingLang, VariantAPI.DEFAULT_VARIANT.name());
 
 
         if (contentletVersionInfo.isPresent()) {
-            return new RenderContext(VariantAPI.DEFAULT_VARIANT.identifier(), tryingLang);
+            return new RenderContext(VariantAPI.DEFAULT_VARIANT.name(), tryingLang);
         }
 
         try {
@@ -80,11 +80,11 @@ public class VariantWebAPIImpl implements VariantWebAPI{
 
             contentletVersionInfo = APILocator.getVersionableAPI()
                     .getContentletVersionInfo(identifier, defaultLanguage.getId(),
-                            VariantAPI.DEFAULT_VARIANT.identifier());
+                            VariantAPI.DEFAULT_VARIANT.name());
 
             if (contentletVersionInfo.isPresent() && shouldFallbackByLang(
                     contentletVersionInfo.get(), pageMode, user)) {
-                return new RenderContext(VariantAPI.DEFAULT_VARIANT.identifier(),
+                return new RenderContext(VariantAPI.DEFAULT_VARIANT.name(),
                         defaultLanguage.getId());
             }
 

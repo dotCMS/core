@@ -462,11 +462,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
     @Override
     protected ContentletVersionInfo createContentletVersionInfo(Identifier identifier, long lang, String workingInode) throws DotStateException, DotDataException {
-<<<<<<< HEAD
-		return createContentletVersionInfo(identifier, lang, workingInode, VariantAPI.DEFAULT_VARIANT.identifier());
-=======
 		return createContentletVersionInfo(identifier, lang, workingInode, VariantAPI.DEFAULT_VARIANT.name());
->>>>>>> origin/master
     }
 
 	@Override

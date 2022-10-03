@@ -230,7 +230,7 @@ public class EmailFactory {
 			String message = "";
 			try {
 				Template t = UtilMethods.getVelocityTemplate(VelocityResourceKey.getHTMLPageFilePath(
-						idInode, PageMode.LIVE, Long.parseLong(languageStr), VariantAPI.DEFAULT_VARIANT.identifier()));
+						idInode, PageMode.LIVE, Long.parseLong(languageStr), VariantAPI.DEFAULT_VARIANT.name()));
 				t.merge(context, writer);
 				Logger
 				.debug(EmailFactory.class, "writer:"
@@ -584,7 +584,7 @@ public class EmailFactory {
 			try {
 				if(InodeUtils.isSet(idInode)) {
 					t = UtilMethods.getVelocityTemplate(VelocityResourceKey.getHTMLPageFilePath(
-							idInode, PageMode.LIVE, Long.parseLong(languageStr), VariantAPI.DEFAULT_VARIANT.identifier()));
+							idInode, PageMode.LIVE, Long.parseLong(languageStr), VariantAPI.DEFAULT_VARIANT.name()));
 				} else {
 					t = UtilMethods.getVelocityTemplate(templatePath); 
 				}

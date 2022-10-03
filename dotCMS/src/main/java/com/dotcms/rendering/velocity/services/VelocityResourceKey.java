@@ -70,7 +70,6 @@ public class VelocityResourceKey implements Serializable {
 
         path = cleanKey(filePath);
 
-
         final String[] pathArry = path.split("[/\\.]", 0);
 
         this.mode = PageMode.get(pathArry[1]);
@@ -82,7 +81,7 @@ public class VelocityResourceKey implements Serializable {
                 : String.valueOf(APILocator.getLanguageAPI().getDefaultLanguage().getId());
 
         this.variant = underlineSplit.length > 2 ? underlineSplit[2]
-                : VariantAPI.DEFAULT_VARIANT.identifier();
+                : VariantAPI.DEFAULT_VARIANT.name();
 
         this.type = VelocityType.resolveVelocityType(filePath);
         this.id2 = pathArry.length > 4 ? pathArry[3] : null;
