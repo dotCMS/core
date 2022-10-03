@@ -190,7 +190,9 @@
 
     const ON_SCREEN_PAGES = 3;
 
-    const MIN_KEYWORD_LENGHT = 2;
+    const DROP_PAGES_PERCENT = 30;
+
+    const MIN_KEYWORD_LENGTH = 2;
 
     /**
      *
@@ -209,10 +211,12 @@
 
         let keyword = null;
 
+        let matchLinesOnlyView = false;
+
         function _dropOldestPages(){
             if (pagesOnScreen >= ON_SCREEN_PAGES) {
 
-                const pagesToDrop = Math.round((pagesOnScreen * 30) * .01);
+                const pagesToDrop = Math.round((pagesOnScreen * DROP_PAGES_PERCENT) * .01);
                 for (let i = 1; i <= pagesToDrop; i++) {
                     const first = dest.querySelector(`.log:first-child`);
                     console.log("First:: " + first);
@@ -220,9 +224,9 @@
                         break;
                     }
                         const firstPageId = first.dataset.page;
-                        console.log("FirstPageID:: " + firstPageId);
+                        //console.log("FirstPageID:: " + firstPageId);
                         let pageToDrop = dest.querySelectorAll(`.page${firstPageId}`);
-                        console.log("PageToDrop ::: " + pageToDrop);
+                        //console.log("PageToDrop ::: " + pageToDrop);
                         if (pageToDrop.length > 0) {
                             //Remove all items on that page
                             pageToDrop.forEach((elem) => elem.remove());
@@ -256,19 +260,18 @@
         function _dropNewestPages() {
             if (pagesOnScreen >= ON_SCREEN_PAGES) {
 
-                const pagesToDrop = Math.round((pagesOnScreen * 30) * .01);
+                const pagesToDrop = Math.round((pagesOnScreen * DROP_PAGES_PERCENT) * .01);
 
                 for (let i = 1; i <= pagesToDrop; i++) {
 
                     const last = dest.querySelector(`.log:last-child`)
-
                     if (!last) {
                         break;
                     }
                         let lastPageId = last.dataset.page;
-                        console.log("LastPageID:: " + lastPageId);
+                        //console.log("LastPageID:: " + lastPageId);
                         const pageToDrop = dest.querySelectorAll(`.page${lastPageId}`);
-                        console.log("PageToDrop ::: " + pageToDrop);
+                        //console.log("PageToDrop ::: " + pageToDrop);
                         if (pageToDrop.length > 0) {
                             //Remove all items on that page
                             pageToDrop.forEach((elem) => elem.remove());
@@ -284,7 +287,7 @@
             const last = dest.querySelector(`.log:last-child`);
             if(last){
                 let lastPageId = last.dataset.page;
-                console.log(" Last page id is  ::: " + lastPageId);
+                //console.log(" Last page id is  ::: " + lastPageId);
                 lastPageId++;
                 const list = src.document.body.querySelectorAll(`.page${lastPageId}`);
                 if (list.length > 0) {
@@ -327,7 +330,6 @@
             }
         }
 
-
         function _applyHighlight(newContent) {
             const regEx = new RegExp(keyword, "ig");
             return newContent.replaceAll(regEx,
@@ -340,7 +342,7 @@
         }
 
         function _isFiltering(){
-            return keyword != null && keyword.length > MIN_KEYWORD_LENGHT;
+            return keyword != null && keyword.length > MIN_KEYWORD_LENGTH;
         }
 
         function _scrollDownToBottom() {
@@ -372,12 +374,48 @@
                     }
                 }
 
+                const maxVisitPages = 100;
+
+
+
+
                 dest.replaceChildren();
                 buffer.forEach(value => {
                     dest.insertAdjacentHTML('afterbegin',value);
                 });
                 dest.innerHTML = _applyHighlight(dest.innerHTML);
             }
+        }
+
+        function _fetchPriorLinesOnly(startFromPageId, numPages){
+             let buffer = [];
+             const stopAtPageId = (startFromPageId - numPages);
+             for(let i = startFromPageId; i >= stopAtPageId; i--){
+                 const list = src.document.body.querySelectorAll(`.page${i}`);
+                 if(!list){
+                     break;
+                 }
+                     const matches = _matchingLines(list);
+                     if(matches && matches.length > 1){
+                         buffer = buffer.concat(matches);
+                     }
+             }
+             return buffer;
+        }
+
+        function _fetchNextLinesOnly(startFromPageId, numPages, buffer){
+            const stopAtPageId = (startFromPageId + numPages);
+            for(let i = startFromPageId; i <= stopAtPageId; i++){
+                const list = src.document.body.querySelectorAll(`.page${i}`);
+                if(!list){
+                    return false;
+                }
+                const matches = _matchingLines(list);
+                if(matches && matches.length > 1){
+                    buffer = buffer.concat(matches);
+                }
+            }
+            return true;
         }
 
         function _matchingLines(nodes){
