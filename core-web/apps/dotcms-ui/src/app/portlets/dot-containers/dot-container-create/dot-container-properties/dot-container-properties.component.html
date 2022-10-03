@@ -39,30 +39,10 @@
 
     <div class="dot-container-properties__code-container-outer">
         <form [formGroup]="form">
-            <div class="dot-container-properties__pre-post-loop">
-                <div
-                    class="dot-container-properties__pre-post-loop-inplace"
-                    *ngIf="!vm.showPrePostLoopInput"
-                >
-                    <button
-                        pButton
-                        class="p-button-outlined p-button-secondary"
-                        type="button"
-                        [label]="'message.containers.create.add_pre_post' | dm"
-                        (click)="showLoopInput()"
-                    ></button>
-                </div>
-                <div *ngIf="vm.showPrePostLoopInput">
-                    <label>{{ 'message.containers.create.pre_loop' | dm }}</label>
-                    <dot-textarea-content
-                        formControlName="preLoop"
-                        #preLoop
-                        [show]="['code']"
-                        language="html"
-                        (monacoInit)="initEditor($event)"
-                    ></dot-textarea-content>
-                </div>
-            </div>
+            <dot-loop-editor
+                (addButtonClicked)="showLoopInput()"
+                [isEditorVisible]="vm.showPrePostLoopInput"
+            ></dot-loop-editor>
             <div class="dot-container-properties__content-tab-container">
                 <label>{{ 'message.containers.create.content_type_code' | dm }}</label>
                 <p-tabView
@@ -95,29 +75,10 @@
                     </p-tabPanel>
                 </p-tabView>
             </div>
-            <div class="dot-container-properties__pre-post-loop">
-                <div
-                    class="dot-container-properties__pre-post-loop-inplace"
-                    *ngIf="!vm.showPrePostLoopInput"
-                >
-                    <button
-                        pButton
-                        class="p-button-outlined p-button-secondary"
-                        type="button"
-                        [label]="'message.containers.create.add_pre_post' | dm"
-                    ></button>
-                </div>
-                <div *ngIf="vm.showPrePostLoopInput">
-                    <label>{{ 'message.containers.create.post_loop' | dm }}</label>
-                    <dot-textarea-content
-                        formControlName="postLoop"
-                        #postLoop
-                        [show]="['code']"
-                        language="html"
-                        (monacoInit)="initEditor($event)"
-                    ></dot-textarea-content>
-                </div>
-            </div>
+            <dot-loop-editor
+                (addButtonClicked)="showLoopInput()"
+                [isEditorVisible]="vm.showPrePostLoopInput"
+            ></dot-loop-editor>
         </form>
     </div>
 </ng-container>

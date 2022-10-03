@@ -11,6 +11,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { TabViewModule } from 'primeng/tabview';
 import { MenuModule } from 'primeng/menu';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotLoopEditorModule } from '@portlets/dot-containers/dot-container-create/dot-loop-editor/dot-loop-editor.module';
 @NgModule({
     declarations: [DotContainerPropertiesComponent],
     exports: [DotContainerPropertiesComponent],
@@ -25,7 +26,8 @@ import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module
         ReactiveFormsModule,
         TabViewModule,
         MenuModule,
-        DotMessagePipeModule
+        DotMessagePipeModule,
+        DotLoopEditorModule
     ]
 })
 export class DotContainerPropertiesModule {}
