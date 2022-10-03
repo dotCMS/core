@@ -126,6 +126,18 @@ public class ExceptionUtil {
         return false;
     }
 
+    public static Throwable getCauseBy (final Throwable e, final Set<Class<? extends Throwable>> exceptionClasses) {
+
+        Throwable t = e;
+        while (t != null) {
+            if (exceptionClasses.contains(t.getClass())) {
+                return t;
+            }
+            t = t.getCause();
+        }
+        return e;
+    }
+
     /**
      *
      * @param e

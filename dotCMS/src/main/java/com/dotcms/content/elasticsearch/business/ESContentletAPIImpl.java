@@ -5095,7 +5095,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             identifier = identifierAPI.find(contentlet);
 
             if (null == identifier || !UtilMethods.isSet(identifier.getId())){
-                throw new DotDataException(String.format("Contentlet with ID '%s' has not been found.", contentlet.getIdentifier()));
+                throw new DotDataException(new DoesNotExistException(String.format("Contentlet with ID '%s' has not been found.", contentlet.getIdentifier())));
             }
 
             final String oldURI = identifier.getURI();
@@ -8841,7 +8841,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                           final boolean respectFrontendRoles,
                                           final Contentlet contentlet) {
 
-        if (InodeUtils.isSet(contentlet.getInode()) && UtilMethods.isSet(selectedPermissions)) {
+        if (InodeUtils.isSet(contentlet.getInode()) && null != selectedPermissions) {
 
             final Runnable savePermissions = () -> {
 

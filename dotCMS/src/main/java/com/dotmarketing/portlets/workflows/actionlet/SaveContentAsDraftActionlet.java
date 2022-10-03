@@ -85,7 +85,7 @@ public class SaveContentAsDraftActionlet extends WorkFlowActionlet {
 
 			contentlet.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
 			final ContentletDependencies contentletDependencies = processor.getContentletDependencies();
-			final List< Permission > permissions    = null != contentletDependencies && UtilMethods.isSet(contentletDependencies.getPermissions())?
+			final List< Permission > permissions    = null != contentletDependencies && null != contentletDependencies.getPermissions()?
 					contentletDependencies.getPermissions():
 					this.permissionAPI.getPermissions(contentlet, false, true);
 
