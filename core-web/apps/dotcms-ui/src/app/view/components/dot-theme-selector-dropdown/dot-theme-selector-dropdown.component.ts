@@ -16,7 +16,7 @@ import { PaginatorService } from '@services/paginator';
 import { Site, SiteService } from '@dotcms/dotcms-js';
 import { LazyLoadEvent } from 'primeng/api';
 import { fromEvent, Subject } from 'rxjs';
-import { debounceTime, filter, take, takeUntil } from 'rxjs/operators';
+import { debounceTime, filter, take, takeUntil, tap } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-theme-selector-dropdown',
@@ -38,6 +38,20 @@ export class DotThemeSelectorDropdownComponent
     totalRecords = 0;
     currentOffset: number;
     currentSiteIdentifier: string;
+
+    selectedOptionIndex = 0;
+    selectedOptionValue = '';
+
+    keyMap: string[] = [
+        'Shift',
+        'Alt',
+        'Control',
+        'Meta',
+        'ArrowUp',
+        'ArrowDown',
+        'ArrowLeft',
+        'ArrowRight'
+    ];
 
     @ViewChild('searchableDropdown', { static: true })
     searchableDropdown: SearchableDropdownComponent;
@@ -71,9 +85,23 @@ export class DotThemeSelectorDropdownComponent
     ngAfterViewInit(): void {
         if (this.searchInput) {
             fromEvent(this.searchInput.nativeElement, 'keyup')
-                .pipe(debounceTime(500), takeUntil(this.destroy$))
-                .subscribe(() => {
-                    this.getFilteredThemes();
+                .pipe(
+                    tap((keyboardEvent: KeyboardEvent) => {
+                        if (
+                            keyboardEvent.key === 'ArrowUp' ||
+                            keyboardEvent.key === 'ArrowDown' ||
+                            keyboardEvent.key === 'Enter'
+                        ) {
+                            this.selectDropdownOption(keyboardEvent.key);
+                        }
+                    }),
+                    debounceTime(500),
+                    takeUntil(this.destroy$)
+                )
+                .subscribe((keyboardEvent: KeyboardEvent) => {
+                    if (!this.isModifierKey(keyboardEvent.key)) {
+                        this.getFilteredThemes();
+                    }
                 });
         }
     }
@@ -85,6 +113,7 @@ export class DotThemeSelectorDropdownComponent
 
     onHide(): void {
         if (this.value) {
+            this.selectedOptionIndex = null;
             this.siteService
                 .getSiteById(this.value.hostId)
                 .pipe(take(1))
@@ -157,6 +186,9 @@ export class DotThemeSelectorDropdownComponent
 
         this.searchInput.nativeElement.value = '';
         this.setHostThemes(this.currentSiteIdentifier);
+        setTimeout(() => {
+            this.searchInput.nativeElement.focus();
+        }, 0);
     }
 
     /**
@@ -197,6 +229,18 @@ export class DotThemeSelectorDropdownComponent
         }
     }
 
+    private selectDropdownOption(actionKey: string) {
+        if (actionKey === 'ArrowDown' && this.themes.length - 1 > this.selectedOptionIndex) {
+            this.selectedOptionIndex++;
+            this.selectedOptionValue = this.themes[this.selectedOptionIndex][`name`];
+        } else if (actionKey === 'ArrowUp' && 0 < this.selectedOptionIndex) {
+            this.selectedOptionIndex--;
+            this.selectedOptionValue = this.themes[this.selectedOptionIndex][`name`];
+        } else if (actionKey === 'Enter' && this.selectedOptionIndex !== null) {
+            this.onChange(this.themes[this.selectedOptionIndex]);
+        }
+    }
+
     private getFilteredThemes(offset = 0): void {
         this.setHostThemes(this.currentSiteIdentifier, this.currentOffset || offset);
     }
@@ -218,10 +262,17 @@ export class DotThemeSelectorDropdownComponent
                 if (themes.length || !this.initialLoad) {
                     this.themes = themes;
                     this.setTotalRecords();
+
+                    this.selectedOptionValue = this.themes[0]['name'];
+                    this.selectedOptionIndex = 0;
                 }
 
                 this.initialLoad = false;
             });
+    }
+
+    private isModifierKey(key: string): boolean {
+        return this.keyMap.includes(key);
     }
 
     private setTotalRecords() {
