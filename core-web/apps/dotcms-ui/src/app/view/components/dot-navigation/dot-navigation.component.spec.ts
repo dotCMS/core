@@ -22,6 +22,7 @@ import { skip } from 'rxjs/operators';
 import { dotMenuMock, dotMenuMock1 } from './services/dot-navigation.service.spec';
 import { TooltipModule } from 'primeng/tooltip';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
+import { DotRandomIconPipeModule } from '@pipes/dot-radom-icon/dot-random-icon.pipe.module';
 
 class FakeNavigationService {
     _routeEvents: BehaviorSubject<NavigationEnd> = new BehaviorSubject(
@@ -96,7 +97,8 @@ describe('DotNavigationComponent', () => {
                 DotIconModule,
                 RouterTestingModule,
                 BrowserAnimationsModule,
-                TooltipModule
+                TooltipModule,
+                DotRandomIconPipeModule
             ],
             providers: [
                 DotMenuService,
