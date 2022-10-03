@@ -16,8 +16,9 @@ import { of, throwError } from 'rxjs';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { mockResponseView } from '@tests/response-view.mock';
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotContentTypeService } from '@services/dot-content-type';
+import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { ConfirmationService } from 'primeng/api';
 
 @Component({
     selector: 'dot-block-editor',
@@ -60,7 +61,8 @@ class MockDotContentTypeService {
 }
 
 const messageServiceMock = new MockDotMessageService({
-    'editpage.inline.error': 'An error occurred'
+    'editpage.inline.error': 'An error occurred',
+    error: 'Error'
 });
 
 const clickEvent = {
@@ -78,7 +80,7 @@ describe('DotBlockEditorSidebarComponent', () => {
     let fixture: ComponentFixture<DotBlockEditorSidebarComponent>;
     let dotEventsService: DotEventsService;
     let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
-    let dotGlobalMessageService: DotGlobalMessageService;
+    let dotAlertConfirmService: DotAlertConfirmService;
     let dotContentTypeService: DotContentTypeService;
     let de: DebugElement;
 
@@ -98,12 +100,13 @@ describe('DotBlockEditorSidebarComponent', () => {
                 { provide: DotContentTypeService, useClass: MockDotContentTypeService },
                 DotWorkflowActionsFireService,
                 DotEventsService,
-                DotGlobalMessageService
+                DotAlertConfirmService,
+                ConfirmationService
             ]
         }).compileComponents();
         dotEventsService = TestBed.inject(DotEventsService);
         dotWorkflowActionsFireService = TestBed.inject(DotWorkflowActionsFireService);
-        dotGlobalMessageService = TestBed.inject(DotGlobalMessageService);
+        dotAlertConfirmService = TestBed.inject(DotAlertConfirmService);
         dotContentTypeService = TestBed.inject(DotContentTypeService);
     });
 
@@ -150,7 +153,6 @@ describe('DotBlockEditorSidebarComponent', () => {
 
         const updateBtn = de.query(By.css('[data-testId="updateBtn"]'));
         updateBtn.triggerEventHandler('click');
-
         expect(dotWorkflowActionsFireService.saveContentlet).toHaveBeenCalledWith({
             testName: JSON.stringify({ data: 'test value ' }),
             inode: clickEvent.dataset.inode,
@@ -160,11 +162,11 @@ describe('DotBlockEditorSidebarComponent', () => {
 
     it('should display a toast on saving error', () => {
         const error404 = mockResponseView(404, '', null, {
-            errors: [{ message: 'An error occurred' }]
+            error: { message: 'An error occurred' }
         });
 
         dotEventsService.notify('edit-block-editor', clickEvent);
-        spyOn(dotGlobalMessageService, 'error').and.callThrough();
+        spyOn(dotAlertConfirmService, 'alert').and.callThrough();
         spyOn(dotWorkflowActionsFireService, 'saveContentlet').and.returnValue(
             throwError(error404)
         );
@@ -173,7 +175,7 @@ describe('DotBlockEditorSidebarComponent', () => {
         const updateBtn = de.query(By.css('[data-testId="updateBtn"]'));
         updateBtn.triggerEventHandler('click');
 
-        expect(dotGlobalMessageService.error).toHaveBeenCalledWith('An error occurred');
+        expect(dotAlertConfirmService.alert).toHaveBeenCalledTimes(1);
     });
 
     it('should close the sidebar', () => {
