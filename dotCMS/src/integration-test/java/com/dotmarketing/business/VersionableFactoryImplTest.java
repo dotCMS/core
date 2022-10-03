@@ -21,9 +21,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import java.util.ArrayList;
-
-import java.util.List;
-
 import java.util.Map;
 import java.util.Optional;
 import org.junit.BeforeClass;

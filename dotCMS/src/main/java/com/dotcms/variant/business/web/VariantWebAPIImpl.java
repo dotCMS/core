@@ -20,8 +20,23 @@ import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
+/**
+ * Default implementation for {@link VariantWebAPI}
+ */
 public class VariantWebAPIImpl implements VariantWebAPI{
 
+    /**
+     * Return the current version following this steps:
+     *
+     * - Get the current {@link HttpServletRequest} from {@link HttpServletRequestThreadLocal#getRequest()},
+     * If the method {@link HttpServletRequestThreadLocal#getRequest()} return null then return {@link VariantAPI#DEFAULT_VARIANT}..
+     * - if the request exists get the parameter name <code>variantName</code>, if the parameter not exists
+     * return {@link VariantAPI#DEFAULT_VARIANT}.
+     * - If the <code>variantName</code> parameter exists but it not a existing variant then return
+     * {@link VariantAPI#DEFAULT_VARIANT}.
+     *
+     * @return
+     */
     @Override
     public String currentVariantId() {
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
@@ -48,44 +63,72 @@ public class VariantWebAPIImpl implements VariantWebAPI{
         }
     }
 
+    /**
+     * Return the specific {@link Variant} and {@link Language} with a {@link Contentlet} should be render.
+     * this method follow this rules:
+     *
+     * - First look for a version of the {@link Contentlet} in the current variant and <code>tryingLang</code>
+     * if exists then return the Current Variant and <code>tryingLang</code> .
+     * - If it does not exist and the current variant is different that the {@link VariantAPI#DEFAULT_VARIANT}
+     * then look for a version of the {@link Contentlet} in the {@link VariantAPI#DEFAULT_VARIANT}
+     * and <code>tryingLang</code> if it exists then return the {@link VariantAPI#DEFAULT_VARIANT}  and <code>tryingLang</code>.
+     * - If it does not exist then look for a version of the {@link Contentlet} in the Current Variant
+     * and the Default Language if it exists then return the Current Variant and Default Language.
+     * - If it does not exist then look for a version of the {@link Contentlet} in the {@link VariantAPI#DEFAULT_VARIANT}
+     * and the Default Language if it exists then return the {@link VariantAPI#DEFAULT_VARIANT}  and Default Language.
+     *
+     * @param tryingLang Language to try if not exists any version for this lang try with default
+     * @param identifier {@link com.dotcms.content.model.Contentlet}'s identifier
+     * @param pageMode page mode to render
+     * @param user to check {@link com.dotmarketing.beans.Permission}
+     * @return
+     */
     @Override
     public RenderContext getRenderContext(final long tryingLang, final String identifier,
             final PageMode pageMode, final User user) {
 
-        final String currentVarintId = currentVariantId();
+        final String currentVariantName = currentVariantId();
         Optional<ContentletVersionInfo> contentletVersionInfo = APILocator.getVersionableAPI()
-                .getContentletVersionInfo(identifier, tryingLang, currentVarintId);
+                .getContentletVersionInfo(identifier, tryingLang, currentVariantName);
 
         if (contentletVersionInfo.isPresent()) {
-            return new RenderContext(currentVarintId, tryingLang);
+            return new RenderContext(currentVariantName, tryingLang);
         }
 
-        contentletVersionInfo = APILocator.getVersionableAPI()
-                .getContentletVersionInfo(identifier, tryingLang, VariantAPI.DEFAULT_VARIANT.name());
+        if (!VariantAPI.DEFAULT_VARIANT.equals(currentVariantName)) {
+            contentletVersionInfo = APILocator.getVersionableAPI()
+                    .getContentletVersionInfo(identifier, tryingLang,
+                            VariantAPI.DEFAULT_VARIANT.name());
 
-
-        if (contentletVersionInfo.isPresent()) {
-            return new RenderContext(VariantAPI.DEFAULT_VARIANT.name(), tryingLang);
+            if (contentletVersionInfo.isPresent()) {
+                return new RenderContext(VariantAPI.DEFAULT_VARIANT.name(), tryingLang);
+            }
         }
 
         try {
             final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
-            contentletVersionInfo = APILocator.getVersionableAPI()
-                    .getContentletVersionInfo(identifier, defaultLanguage.getId(), currentVarintId);
 
-            if (contentletVersionInfo.isPresent() && shouldFallbackByLang(
-                    contentletVersionInfo.get(), pageMode, user)) {
-                return new RenderContext(currentVarintId, defaultLanguage.getId());
-            }
+            if (defaultLanguage.getId() != tryingLang) {
+                contentletVersionInfo = APILocator.getVersionableAPI()
+                        .getContentletVersionInfo(identifier, defaultLanguage.getId(),
+                                currentVariantName);
 
-            contentletVersionInfo = APILocator.getVersionableAPI()
-                    .getContentletVersionInfo(identifier, defaultLanguage.getId(),
-                            VariantAPI.DEFAULT_VARIANT.name());
+                if (contentletVersionInfo.isPresent() && shouldFallbackByLang(
+                        contentletVersionInfo.get(), pageMode, user)) {
+                    return new RenderContext(currentVariantName, defaultLanguage.getId());
+                }
 
-            if (contentletVersionInfo.isPresent() && shouldFallbackByLang(
-                    contentletVersionInfo.get(), pageMode, user)) {
-                return new RenderContext(VariantAPI.DEFAULT_VARIANT.name(),
-                        defaultLanguage.getId());
+                if (!VariantAPI.DEFAULT_VARIANT.equals(currentVariantName)) {
+                    contentletVersionInfo = APILocator.getVersionableAPI()
+                            .getContentletVersionInfo(identifier, defaultLanguage.getId(),
+                                    VariantAPI.DEFAULT_VARIANT.name());
+
+                    if (contentletVersionInfo.isPresent() && shouldFallbackByLang(
+                            contentletVersionInfo.get(), pageMode, user)) {
+                        return new RenderContext(VariantAPI.DEFAULT_VARIANT.name(),
+                                defaultLanguage.getId());
+                    }
+                }
             }
 
             throw new ResourceNotFoundException("cannnot find contentlet id " + identifier + " lang:" + tryingLang);

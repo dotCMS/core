@@ -162,7 +162,6 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			} catch (Exception ce) {
 				if (!isAutoSave)
 					SessionMessages.add(req, "message.contentlet.save.error");
-				ce.printStackTrace();
 				throw ce;
 			}
 
