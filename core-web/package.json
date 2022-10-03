@@ -1,6 +1,6 @@
 {
   "name": "dotcms-ui",
-  "version": "22.11.0-next.256",
+  "version": "22.10.0-rc.257",
   "license": "MIT",
   "engines": {
     "node": ">=16.13.2"
@@ -84,7 +84,6 @@
     "@webcomponents/webcomponentsjs": "^2.6.0",
     "chart.js": "^3.3.2",
     "core-js": "^3.9.1",
-    "cross-fetch": "^3.1.4",
     "date-fns": "^2.25.0",
     "date-fns-tz": "^1.1.6",
     "document-register-element": "^1.7.2",
