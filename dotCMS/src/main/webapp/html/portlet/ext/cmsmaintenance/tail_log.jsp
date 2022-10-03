@@ -483,19 +483,6 @@
     let logViewManager = null;
 
 
-    var attachedFilterLogEvents = false;
-    var excludeLogRowsActive = false;
-
-    var dataLogPrintedElem = null;
-    var keywordLogInput = null;
-    var logViewerFiltering = false;
-    var logViewerDirty = false;
-
-
-    let numberOfPagesOnScreen = 0;
-    let currentActivePageId = 1;
-    let cleaningEarlyPages = false;
-    let fetchingPriorPage = false;
 
     function attachLogIframeEvents() {
 
@@ -510,20 +497,6 @@
         const logView = document.querySelector('.logViewerPrinted');
         const iDoc = dataLogSourceElem.contentWindow || dataLogSourceElem.contentDocument;
 
-        // if (!attachedFilterLogEvents) {
-        //
-        //     const debounce = (callback, time = 300, interval) => (...args) => {
-        //         clearTimeout(interval, interval = setTimeout(() => callback(...args), time));
-        //     };
-        //
-        //     dataLogPrintedElem = document.querySelector('.logViewerPrinted');
-        //
-        //     keywordLogInput = document.querySelector('#keywordLogFilterInput');
-        //     keywordLogInput.addEventListener("keyup", debounce(filterLog, 300));
-        //
-        //     // Flag to avoid binding multiple debounce events on filter input
-        //     attachedFilterLogEvents = true;
-        // }
 
         logViewManager = LogViewManager({src:iDoc,dest:logView});
 
@@ -607,139 +580,6 @@
      */
     function computeScrollPercentage(scrollHeight, scrollTop){
         return Math.round(scrollTop * 100 / scrollHeight);
-    }
-
-    // Function called on every fiter keydown event
-    function filterLog(event) {
-        const ignoredKeys = ["ArrowLeft", "ArrowUp", "ArrowDown", "ArrowRight"];
-
-        const logger = document.querySelector('.logViewerPrinted');
-
-        // If keyword is greater than 2 characters, then filtering is applied
-        logViewerFiltering = keywordLogInput.value.length > 2;
-
-        if (event.key === 'Enter' && logViewerFiltering) {
-            excludeLogRowsActive = true;
-            //logger = performLogViewerMark(logger, excludeNoMatchingRows);
-        } else if (!ignoredKeys.includes(event.key) && logViewerFiltering) {
-            excludeLogRowsActive = false;
-            logger.innerHTML = performLogViewerMark(logger.innerHTML);
-        }
-
-        if(!logViewerFiltering){
-            removeHighlight(logger);
-        }
-
-        // If previously the logviewer has any highlight or shown excluded any rows, then content is set
-        /*
-        if (logViewerDirty) {
-            dataLogPrintedElem.innerHTML = null;
-            dataLogPrintedElem.insertAdjacentHTML('beforeend', log);
-        }*/
-
-    }
-
-    // Function that gets called on every new log update
-    function updateLogViewerData(e, src, dest) {
-        let following = isFollowingOn();
-        let newContent = logViewerFiltering ?  performLogViewerMark(e.detail.newContent) : e.detail.newContent ;
-
-        let pageId = parseInt(e.detail.pageId);
-        console.log(" incoming page id ::: "+ pageId + "  ::: currentActivePage ::: " + currentActivePageId );
-        if(pageId > currentActivePageId ){
-            //Time to change page
-            //We only want to keep in the div 'onScreenPages' number of pages
-
-            currentActivePageId = pageId;
-        }
-            dest.insertAdjacentHTML('beforeend', newContent );
-
-        if (following) {
-             scrollLogToBottom();
-        }
-    }
-
-    // Function that adds to the log content SPAN Html Tags used for highlight
-    function addLogViewerKeywordMatchHighlight(log) {
-        let keyword = keywordLogInput.value;
-        const regEx = new RegExp( keyword, "ig");
-        return log.replaceAll(regEx, '<span class="highlightKeywordMatchLogViewer">$&</span>');
-    }
-
-    function removeHighlight(logger) {
-
-        logger.querySelectorAll(".highlightKeywordMatchLogViewer").forEach(el => el.replaceWith(...el.childNodes));
-
-    }
-
-    function fetchPage( src, dest ) {
-        if(fetchingPriorPage === true){
-            return;
-        }
-        fetchingPriorPage = true;
-        try{
-            let first = dest.querySelector(`.log:first-child`);
-            if(first){
-                let firstPageId = first.dataset.page;
-                firstPageId--;
-                const list = src.contentDocument.body.querySelectorAll(`.page${firstPageId}`);
-                if (list.length > 0) {
-                    if (logViewerFiltering) {
-                        //iterate backwards to preserve the original order
-                        for (let i = list.length - 1; i >= 0; i--) {
-                            const elem = list[i];
-                            elem.classList.add('scrollUp-fetched');
-                            dest.insertAdjacentHTML('afterbegin', addLogViewerKeywordMatchHighlight(elem.outerHTML));
-                        }
-
-                    } else {
-                        //iterate backwards to preserve the original order
-                        for (let i = list.length - 1; i >= 0; i--) {
-                            const elem = list[i];
-                            elem.classList.add('scrollUp-fetched');
-                            dest.insertAdjacentHTML('afterbegin', elem.outerHTML);
-                        }
-                    }
-                    numberOfPagesOnScreen++;
-                    //Move the scroll just a tiny bit, so we have room to fire the event again.
-                    dest.scrollTop = dest.scrollTop + 10;
-                }
-            }
-        }finally {
-            fetchingPriorPage = false;
-        }
-    }
-
-    function performLogViewerMark(newContent, callback) {
-        var log;
-        log = addLogViewerKeywordMatchHighlight(newContent);
-
-        if (callback) {
-            log = callback(log);
-        }
-
-        logViewerDirty = true;
-
-        return log;
-    }
-
-    // Function that gets called when pressed "Enter" key to exclude no matching rows
-    function excludeNoMatchingRows(log) {
-
-        var splitParam = '<br>';
-        return log.split(splitParam).filter((row) => row.indexOf('highlighKeywordtMatchLogViewer') !== -1).join(splitParam) + splitParam;
-    }
-
-    function scrollLogToBottom() {
-        dataLogPrintedElem.scrollTop = dataLogPrintedElem.scrollHeight;
-    }
-
-    function isFollowingOn(){
-        return  dijit.byId('scrollMe').checked;
-    }
-
-    function enableFollowing(enable){
-        dijit.byId('scrollMe').set('checked', enable);
     }
 
     /* Log Viewer - END */
