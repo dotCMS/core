@@ -39,7 +39,9 @@ import com.liferay.util.StringPool;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
@@ -267,6 +269,61 @@ public class CategoriesResource {
             Logger.error(this, e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Deletes Categories.
+     *
+     * This method receives a list of inodes and deletes all the children and the parent categories.
+     * To delete a category successfully the user needs to have Edit Permissions over it.
+     * @param httpRequest            {@link HttpServletRequest}
+     * @param httpResponse           {@link HttpServletResponse}
+     * @param categoriesToDelete     {@link String} category inode to look for and then delete it
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @DELETE
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response delete(@Context final HttpServletRequest  httpRequest,
+            @Context final HttpServletResponse httpResponse,
+            final List<String> categoriesToDelete) {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final PageMode pageMode = PageMode.get(httpRequest);
+        final List<FailedResultView> failedToDelete  = new ArrayList<>();
+        List<String> deletedIds = new ArrayList();
+
+        DotPreconditions.checkArgument(UtilMethods.isSet(categoriesToDelete),
+                "The body must send a collection of category inode such as: " +
+                        "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
+
+        try{
+            HashMap<String, Category> undeletedCategoryList = this.categoryAPI.deleteCategoryAndChildren(categoriesToDelete, user, pageMode.respectAnonPerms);
+            List<String> undeletedIds = undeletedCategoryList.entrySet().stream().map(k -> k.getKey()).collect(
+                    Collectors.toUnmodifiableList());
+            deletedIds = new ArrayList<>(categoriesToDelete);
+            deletedIds.removeAll(undeletedIds);
+
+            ActivityLogger.logInfo(this.getClass(), "Delete Category Action", "User " +
+                    user.getPrimaryKey() + " deleted category list: [" + String.join(",", deletedIds) + "]");
+
+            if(!undeletedCategoryList.isEmpty()) {
+                for (final String categoryInode : undeletedIds) {
+                    failedToDelete.add(new FailedResultView(categoryInode, "Category does not exist or failed to remove child category"));
+                }
+            }
+        }catch (Exception e){
+            Logger.debug(this,e.getMessage(),e);
+        }
+
+        return Response.ok(new ResponseEntityView(
+                        new BulkResultView(Long.valueOf(deletedIds.size()),0L,failedToDelete)))
+                .build();
     }
 
     private Category fillAndSave(final CategoryForm categoryForm,
