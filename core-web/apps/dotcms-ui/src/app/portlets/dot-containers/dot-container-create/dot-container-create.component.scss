@@ -1,26 +1,24 @@
 @use "variables" as *;
 
 :host ::ng-deep {
-    .container-create__tab-container {
-        display: flex;
-        flex-direction: column;
-        overflow: auto;
+    .p-tabview-panels {
+        overflow: hidden;
+        flex-grow: 1;
+        flex-basis: 0;
+    }
+    .p-tabview-nav {
+        padding: 0 $spacing-4;
+        background: $white;
     }
 
-    .container-create__tabs {
-        .p-tabview-panels {
-            overflow: hidden;
-            flex-grow: 1;
-            flex-basis: 0;
-        }
-        .p-tabview-nav {
-            padding: 0 $spacing-4;
-            background: $white;
-        }
-
-        .p-tabview-panel {
-            padding: 0 $spacing-4;
-            padding-top: $spacing-4;
-        }
+    .p-tabview-panel {
+        padding: 0 $spacing-4;
+        padding-top: $spacing-4;
     }
+}
+
+.container-create__tab-container {
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
 }
