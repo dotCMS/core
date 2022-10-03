@@ -56,7 +56,7 @@ public interface Contentlet {
     String friendlyName();
     @Value.Default
     default String variantId() {
-        return VariantAPI.DEFAULT_VARIANT.identifier();
+        return VariantAPI.DEFAULT_VARIANT.name();
     }
 
 }

@@ -1,7 +1,7 @@
 import { ComponentRef } from '@angular/core';
 import { EditorView } from 'prosemirror-view';
-import { isNodeSelection, posToDOMRect } from '@tiptap/core';
-import { EditorState, Plugin, PluginKey } from 'prosemirror-state';
+import { posToDOMRect } from '@tiptap/core';
+import { EditorState, Plugin, PluginKey, NodeSelection } from 'prosemirror-state';
 import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
 import tippy, { Instance } from 'tippy.js';
 
@@ -20,7 +20,7 @@ import {
     deleteByNode
 } from '@dotcms/block-editor';
 
-import { LINK_FORM_PLUGIN_KEY } from '@dotcms/block-editor';
+import { LINK_FORM_PLUGIN_KEY, BUBBLE_FORM_PLUGIN_KEY, ImageNode } from '@dotcms/block-editor';
 
 import { bubbleMenuImageItems, bubbleMenuItems, isListNode, popperModifiers } from '../utils';
 
@@ -166,7 +166,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
         this.tippy?.setProps({
             getReferenceClientRect: () => {
-                if (isNodeSelection(selection)) {
+                if (selection instanceof NodeSelection) {
                     const node = view.nodeDOM(from) as HTMLElement;
 
                     if (node) {
@@ -260,11 +260,11 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
     setMenuItems(doc, from) {
         const node = doc.nodeAt(from);
-        const isDotImage = node?.type.name == 'dotImage';
+        const isImage = node?.type.name == ImageNode.name;
 
         this.selectionNode = node;
 
-        this.component.instance.items = isDotImage ? bubbleMenuImageItems : bubbleMenuItems;
+        this.component.instance.items = isImage ? bubbleMenuImageItems : bubbleMenuItems;
     }
 
     /* Run commands */
@@ -327,6 +327,12 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                 isOpen
                     ? this.editor.view.focus()
                     : this.editor.commands.openLinkForm({ openOnClick: false });
+                break;
+
+            case 'properties':
+                // eslint-disable-next-line
+                const { open } = BUBBLE_FORM_PLUGIN_KEY.getState(this.editor.state);
+                open ? this.editor.commands.closeForm() : this.editor.commands.openForm();
                 break;
 
             case 'deleteNode':

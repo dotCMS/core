@@ -134,7 +134,7 @@ public class JSONObject implements Serializable, Map {
      */
     public JSONObject() {
 
-        this.map= new HashMap();
+        this.map= new LinkedHashMap<>();
 
     }
 

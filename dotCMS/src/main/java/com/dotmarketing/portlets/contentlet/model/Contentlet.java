@@ -53,7 +53,6 @@ import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.annotations.VisibleForTesting;
@@ -1624,7 +1623,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		map.put(VARIANT_ID, variantId);
     }
 	public String getVariantId() {
-		return map.getOrDefault(VARIANT_ID, VariantAPI.DEFAULT_VARIANT.identifier()).toString();
+		return map.getOrDefault(VARIANT_ID, VariantAPI.DEFAULT_VARIANT.name()).toString();
 	}
 
     private class ContentletHashMap extends ConcurrentHashMap<String, Object> {

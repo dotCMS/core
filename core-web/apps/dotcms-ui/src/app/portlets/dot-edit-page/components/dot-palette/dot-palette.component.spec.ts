@@ -11,8 +11,9 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { Observable, of } from 'rxjs';
 import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
 import { PaginatorService } from '@dotcms/app/api/services/paginator';
-import { DotPaletteStore, LoadingState } from './store/dot-palette.store';
+import { DotPaletteStore } from './store/dot-palette.store';
 import { contentletProductDataMock } from './dot-palette-contentlets/dot-palette-contentlets.component.spec';
+import { LoadingState } from '@portlets/shared/models/shared-models';
 
 @Component({
     selector: 'dot-palette-content-type',

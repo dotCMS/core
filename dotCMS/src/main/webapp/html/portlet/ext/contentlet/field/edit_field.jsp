@@ -215,11 +215,12 @@
                     content = <%=textValue%>;
                 }
 
+                const blockEditor = document.querySelector('dotcms-block-editor');
                 const block = document.querySelector('dotcms-block-editor .ProseMirror');
                 const field = document.querySelector('#<%=field.getVelocityVarName()%>');
 
                 if (content) {
-                    block.editor.commands.setContent(content);
+                    blockEditor.setValue = content;
                     field.value = JSON.stringify(block.editor.getJSON());
                 }
 
@@ -1186,8 +1187,8 @@
             final String key = iterator.next();
             final Object object = keyValueMap.get(key);
             if(null != object) {
-                keyValueDataRaw.append(key).append(":").append(object.toString());
-                dotKeyValueDataRaw.append("&#x22;" + key.replaceAll(":", "&#58;").replaceAll(",", "&#44;") + "&#x22;").append(":").append("&#x22;" + object.toString().replaceAll(":", "&#58;").replaceAll(",", "&#44;") + "&#x22;");
+                keyValueDataRaw.append(key.replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;")).append(":").append(object.toString().replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;"));
+                dotKeyValueDataRaw.append("&#x22;" + key.replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;") + "&#x22;").append(":").append("&#x22;" + object.toString().replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;") + "&#x22;");
                 if (iterator.hasNext()) {
                     keyValueDataRaw.append(',');
                     dotKeyValueDataRaw.append(',');
@@ -1273,7 +1274,7 @@
             function formatToJsonData(value) {
                 var removedBrackets = value.trim().substring(1, value.length-1);
                 var preformatted = removedBrackets.replaceAll(/:/g, '":"').replaceAll(/,/g, '","');
-                return `{"${preformatted}"}`;
+                return preformatted ? `{"${preformatted}"}` : '';
             }
 
             // Escape chars and set value to hidden input

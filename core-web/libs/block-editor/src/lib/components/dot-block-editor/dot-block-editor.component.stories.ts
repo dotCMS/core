@@ -16,7 +16,6 @@ import {
     BlockEditorModule,
     SuggestionsComponent,
     SuggestionsService,
-    ImageBlockComponent,
     DragHandlerComponent,
     LoaderComponent,
     DotImageService,
@@ -299,7 +298,6 @@ export const primary = () => ({
             ContentletBlockComponent,
             ActionButtonComponent,
             DragHandlerComponent,
-            ImageBlockComponent,
             LoaderComponent,
             BubbleLinkFormComponent
         ]

@@ -2,6 +2,10 @@
 export * from './action-button/actions-menu.extension';
 export * from './action-button/action-button.component';
 
+// Bubble Form
+export * from './bubble-form/bubble-form.extension';
+export * from './bubble-form/bubble-form.component';
+
 // Bubble Link
 export * from './bubble-link-form/bubble-link-form.extension';
 export * from './bubble-link-form/bubble-link-form.component';
@@ -25,6 +29,4 @@ export * from './drag-handler/drag-handler.component';
 // Image Uploader
 export * from './image-uploader/image-uploader.extension';
 export * from './image-uploader/components/loader/loader.component';
-export * from './image-uploader/nodes/image-block/image-block.component';
-export * from './image-uploader/nodes/image-block/image-block.node';
 export * from './image-uploader/services/dot-image/dot-image.service';

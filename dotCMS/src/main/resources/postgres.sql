@@ -2486,8 +2486,8 @@ CREATE TABLE shedlock(name VARCHAR(64) NOT NULL, lock_until timestamptz NOT NULL
 
 
 create table variant (
-     id varchar(255) primary key,
-     name varchar(255) not null UNIQUE,
+     name varchar(255) primary key,
+     description varchar(255) not null,
      archived boolean NOT NULL default false
 );
 

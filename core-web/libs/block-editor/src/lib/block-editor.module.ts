@@ -30,13 +30,13 @@ import {
     DragHandlerComponent,
     FormActionsComponent,
     LoaderComponent,
-    ImageBlockComponent,
     DotImageService,
     SuggestionPageComponent
 } from './extensions';
 
 // Shared
 import { SharedModule } from './shared/shared.module';
+import { BubbleFormComponent } from './extensions/bubble-form/bubble-form.component';
 
 //Editor
 import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
@@ -60,12 +60,12 @@ import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block
         ContentletBlockComponent,
         ActionButtonComponent,
         DragHandlerComponent,
-        ImageBlockComponent,
         LoaderComponent,
         BubbleMenuComponent,
         BubbleMenuButtonComponent,
         BubbleLinkFormComponent,
         FormActionsComponent,
+        BubbleFormComponent,
         SuggestionPageComponent,
         DotBlockEditorComponent
     ],
@@ -80,6 +80,7 @@ import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block
         ButtonModule,
         InputTextModule,
         SharedModule,
+        BubbleFormComponent,
         DotBlockEditorComponent
     ]
 })

@@ -1,4 +1,16 @@
 <div style="text-align: $!item.attrs.textAlign">
-    <img src="$!item.attrs.data.asset" />
+
+    #if ($!item.attrs.href != "null")
+    <a href="$!item.attrs.href">
+    #end
+        <img
+            src="#if($!item.attrs.src)$!item.attrs.src#{else}$!item.attrs.data.asset#end"
+            alt="$!item.attrs.alt"
+            title="$!item.attrs.title"
+        />
+    #if ($!item.attrs.href != "null")
+    </a>
+    #end
+
 </div>
 

@@ -40,18 +40,12 @@ public class ExperimentsFactoryImpl implements
     public static final String STATUS_FILTER = "SELECT * from experiment WHERE status = ?";
 
     @Override
-    public Experiment save(Experiment experiment) throws DotDataException {
-        String experimentId = experiment.id().isEmpty() || find(experiment.id().get()).isEmpty()
-            ? insertInDB(experiment)
-            : updateInDB(experiment);
-
-        final Optional<Experiment> saved = find(experimentId);
-
-        if(saved.isEmpty()) {
-            throw new DotDataException("Unable to retrieve saved/updated Experiment");
+    public void save(Experiment experiment) throws DotDataException {
+        if(experiment.id().isEmpty() || find(experiment.id().get()).isEmpty()) {
+             insertInDB(experiment);
+        } else {
+            updateInDB(experiment);
         }
-
-        return saved.get();
     }
 
     @Override
@@ -143,11 +137,11 @@ public class ExperimentsFactoryImpl implements
         dc.addJSONParam(experiment.trafficProportion());
         dc.addParam(experiment.trafficAllocation());
         dc.addParam(Timestamp.from(experiment.modDate()));
-        dc.addJSONParam(experiment.scheduling());
+        dc.addJSONParam(experiment.scheduling().isPresent()?experiment.scheduling().get():null);
         dc.addParam(Timestamp.from(experiment.creationDate()));
         dc.addParam(experiment.createdBy());
         dc.addParam(experiment.lastModifiedBy());
-        dc.addJSONParam(experiment.goals());
+        dc.addJSONParam(experiment.goals().isPresent()?experiment.goals().get():null);
         dc.loadResult();
 
         return experiment.id().get();
@@ -165,11 +159,11 @@ public class ExperimentsFactoryImpl implements
         dc.addJSONParam(experiment.trafficProportion());
         dc.addParam(experiment.trafficAllocation());
         dc.addParam(Timestamp.from(experiment.modDate()));
-        dc.addJSONParam(experiment.scheduling());
+        dc.addJSONParam(experiment.scheduling().isPresent()?experiment.scheduling().get():null);
         dc.addParam(Timestamp.from(experiment.creationDate()));
         dc.addParam(experiment.createdBy());
         dc.addParam(experiment.lastModifiedBy());
-        dc.addJSONParam(experiment.goals());
+        dc.addJSONParam(experiment.goals().isPresent()?experiment.goals().get():null);
         dc.addParam(experiment.id().get());
         dc.loadResult();
 
