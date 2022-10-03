@@ -11,6 +11,7 @@ import {
 } from '@stencil/core';
 import { MaterialIconClasses } from './material-icon-classes';
 import '@material/mwc-icon';
+import { LABEL_IMPORTANT_ICON } from '@pipes/dot-radom-icon/dot-random-icon.pipe';
 
 @Component({
     tag: 'dot-material-icon-picker',
@@ -193,7 +194,7 @@ export class DotMaterialIcon {
                             class="dot-material-icon__preview"
                             style={{ color: this.colorValue }}
                         >
-                            {this.value}
+                            {this.value === LABEL_IMPORTANT_ICON ? '' : this.value}
                         </mwc-icon>
                         <input
                             class="dot-material-icon__input"
