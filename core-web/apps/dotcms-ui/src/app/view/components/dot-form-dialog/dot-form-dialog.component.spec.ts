@@ -7,6 +7,16 @@ import { DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotFormDialogComponent } from './dot-form-dialog.component';
 
+const dispatchKeydownEvent = (comp: HTMLBaseElement, key: string, meta = false, alt = false) => {
+    const event = new KeyboardEvent('keydown', {
+        key: key,
+        code: key,
+        metaKey: meta,
+        altKey: alt
+    });
+    comp.dispatchEvent(event);
+};
+
 @Pipe({
     name: 'dm'
 })
@@ -22,7 +32,9 @@ class DotMessageMockPipe implements PipeTransform {
 }
 
 @Component({
-    template: `<dot-form-dialog><div>Hello World</div></dot-form-dialog>`
+    template: `<dot-form-dialog
+        ><form>Hello World<input id="testInput" type="text" /></form
+    ></dot-form-dialog>`
 })
 class TestHostComponent {}
 
@@ -91,6 +103,14 @@ describe('DotFormDialogComponent', () => {
             const event = new MouseEvent('click');
             saveButton.triggerEventHandler('click', event);
             expect(component.save.emit).toHaveBeenCalledWith(event);
+        });
+
+        // TODO: find a way to dispatch the event and that it gets caught by the listener
+        xit('should have emit save event on CMD + ENTER keys', () => {
+            const saveButton = de.query(By.css('#testInput'));
+            dispatchKeydownEvent(saveButton.nativeElement, 'enter', true);
+            fixture.detectChanges();
+            expect(component.save.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should have cancel button', () => {

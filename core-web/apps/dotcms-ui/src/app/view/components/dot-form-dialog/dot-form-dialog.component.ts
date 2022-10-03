@@ -34,8 +34,11 @@ export class DotFormDialogComponent implements OnInit, OnDestroy {
     @HostListener('document:keydown.enter', ['$event'])
     onEnter($event: KeyboardEvent) {
         const nodeName = ($event.target as Element).nodeName;
-
-        if (!this.saveButtonDisabled && nodeName !== 'TEXTAREA') {
+        if (
+            !this.saveButtonDisabled &&
+            nodeName !== 'TEXTAREA' &&
+            ($event.metaKey || $event.altKey)
+        ) {
             this.save.emit($event);
         }
     }
