@@ -25,16 +25,6 @@ export class DotContainerPropertiesComponent implements OnInit {
     }
 
     /**
-     * This method initializes the monaco editor
-     *
-     * @param {MonacoEditor} editor
-     * @memberof DotContainerPropertiesComponent
-     */
-    initEditor(editor: MonacoEditor): void {
-        this.editor = editor;
-    }
-
-    /**
      * This method shows the Pre- and Post-Loop Inputs
      *
      * @return void
@@ -42,22 +32,5 @@ export class DotContainerPropertiesComponent implements OnInit {
      */
     showLoopInput(): void {
         this.store.updatePrePostLoopInputVisibility(true);
-    }
-
-    /**
-     * Method to stop propogation of Tab click event
-     *
-     * @param e {MouseEvent}
-     * @param index {number}
-     * @return boolean
-     * @memberof DotContainerPropertiesComponent
-     */
-    handleChange(e: MouseEvent, index: number = null): boolean {
-        if (index === null) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-
-        return false;
     }
 }

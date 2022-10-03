@@ -40,43 +40,12 @@
     <div class="dot-container-properties__code-container-outer">
         <form [formGroup]="form">
             <dot-loop-editor
-                (addButtonClicked)="showLoopInput()"
+                (buttonClick)="showLoopInput()"
                 [isEditorVisible]="vm.showPrePostLoopInput"
             ></dot-loop-editor>
-            <div class="dot-container-properties__content-tab-container">
-                <label>{{ 'message.containers.create.content_type_code' | dm }}</label>
-                <p-tabView
-                    [scrollable]="true"
-                    (onChange)="handleChange($event, $event.index)"
-                    [activeIndex]="vm.activeTabIndex"
-                >
-                    <p-tabPanel headerStyleClass="tab-panel-btn">
-                        <ng-template pTemplate="header">
-                            <i
-                                class="pi pi-plus"
-                                (click)="handleChange($event); actionsMenu.toggle($event)"
-                            ></i>
-                            <p-menu
-                                #actionsMenu
-                                [popup]="true"
-                                [model]="vm.contentTypes"
-                                appendTo="body"
-                            ></p-menu>
-                        </ng-template>
-                    </p-tabPanel>
-                    <p-tabPanel closable="true" header="Content (Generic)">
-                        <dot-textarea-content
-                            #body
-                            formControlName="body"
-                            [show]="['code']"
-                            language="html"
-                            (monacoInit)="initEditor($event)"
-                        ></dot-textarea-content>
-                    </p-tabPanel>
-                </p-tabView>
-            </div>
+            <dot-content-editor></dot-content-editor>
             <dot-loop-editor
-                (addButtonClicked)="showLoopInput()"
+                (buttonClick)="showLoopInput()"
                 [isEditorVisible]="vm.showPrePostLoopInput"
             ></dot-loop-editor>
         </form>

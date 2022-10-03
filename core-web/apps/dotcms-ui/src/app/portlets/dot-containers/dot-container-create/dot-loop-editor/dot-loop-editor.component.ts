@@ -10,7 +10,7 @@ export class DotLoopEditorComponent {
     editor: MonacoEditor;
 
     @Input() isEditorVisible = false;
-    @Output() addButtonClicked = new EventEmitter();
+    @Output() buttonClick = new EventEmitter();
 
     constructor() {
         //
@@ -33,6 +33,6 @@ export class DotLoopEditorComponent {
      * @memberof DotLoopEditorComponent
      */
     handleClick(): void {
-        this.addButtonClicked.emit();
+        this.buttonClick.emit();
     }
 }

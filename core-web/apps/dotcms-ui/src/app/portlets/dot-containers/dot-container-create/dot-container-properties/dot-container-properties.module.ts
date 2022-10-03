@@ -12,6 +12,7 @@ import { TabViewModule } from 'primeng/tabview';
 import { MenuModule } from 'primeng/menu';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotLoopEditorModule } from '@portlets/dot-containers/dot-container-create/dot-loop-editor/dot-loop-editor.module';
+import { DotContentEditorModule } from '@portlets/dot-containers/dot-container-create/dot-content-editor/dot-content-editor.module';
 @NgModule({
     declarations: [DotContainerPropertiesComponent],
     exports: [DotContainerPropertiesComponent],
@@ -27,7 +28,8 @@ import { DotLoopEditorModule } from '@portlets/dot-containers/dot-container-crea
         TabViewModule,
         MenuModule,
         DotMessagePipeModule,
-        DotLoopEditorModule
+        DotLoopEditorModule,
+        DotContentEditorModule
     ]
 })
 export class DotContainerPropertiesModule {}

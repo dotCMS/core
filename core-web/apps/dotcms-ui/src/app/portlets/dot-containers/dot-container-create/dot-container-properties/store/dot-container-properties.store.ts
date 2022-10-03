@@ -1,45 +1,23 @@
 import { Injectable } from '@angular/core';
 import { ComponentStore } from '@ngrx/component-store';
-import { take } from 'rxjs/operators';
-import { StructureTypeView } from '@models/contentlet';
-import { DotContentTypeService } from '@services/dot-content-type';
 
 export interface DotContainerPropertiesState {
-    activeTabIndex: number;
-    contentTypes: StructureTypeView[];
     showPrePostLoopInput: boolean;
 }
 
 @Injectable()
 export class DotContainerPropertiesStore extends ComponentStore<DotContainerPropertiesState> {
-    constructor(private dotContentTypeService: DotContentTypeService) {
+    constructor() {
         super({
-            activeTabIndex: 1,
-            contentTypes: [],
             showPrePostLoopInput: false
         });
-
-        this.dotContentTypeService
-            .getAllContentTypes()
-            .pipe(take(1))
-            .subscribe((contentTypes) => {
-                this.setState({
-                    activeTabIndex: 1,
-                    contentTypes: contentTypes,
-                    showPrePostLoopInput: false
-                });
-            });
     }
 
-    readonly vm$ = this.select(
-        ({ activeTabIndex, contentTypes, showPrePostLoopInput }: DotContainerPropertiesState) => {
-            return {
-                activeTabIndex,
-                contentTypes,
-                showPrePostLoopInput
-            };
-        }
-    );
+    readonly vm$ = this.select(({ showPrePostLoopInput }: DotContainerPropertiesState) => {
+        return {
+            showPrePostLoopInput
+        };
+    });
 
     readonly updatePrePostLoopInputVisibility = this.updater<boolean>(
         (state: DotContainerPropertiesState, showPrePostLoopInput: boolean) => {
