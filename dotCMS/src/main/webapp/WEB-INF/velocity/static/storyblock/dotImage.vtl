@@ -4,7 +4,7 @@
     <a href="$!item.attrs.href">
     #end
         <img
-            src="#if($!item.attrs.src)$!item.attrs.src#{else}$!item.attrs.data.asset#end"
+            src="#if($!item.attrs.src && $!item.attrs.src != "null")$!item.attrs.src#{else}$!item.attrs.data.asset#end"
             alt="$!item.attrs.alt"
             title="$!item.attrs.title"
         />
