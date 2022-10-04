@@ -20,6 +20,7 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.JsonUtil;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -873,15 +874,19 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     public void appendBulkRemoveRequest(final BulkIndexWrapper bulk, final ReindexEntry entry)
             throws DotDataException {
         final List<Language> languages = APILocator.getLanguageAPI().getLanguages();
+        final List<Variant> variants = APILocator.getVariantAPI().getVariants();
         final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
 
         // delete for every language and in every index
         for (Language language : languages) {
             for (final String index : info.asMap().values()) {
-                final String id = entry.getIdentToIndex() + "_" + language.getId();
+                for(final Variant variant: variants) {
+                    final String id = entry.getIdentToIndex() + "_" + language.getId()
+                            + "_" + variant.name();
 
-                System.err.println("deleting:" + id);
-                bulk.add(new DeleteRequest(index, "_doc", id));
+                    System.err.println("deleting:" + id);
+                    bulk.add(new DeleteRequest(index, "_doc", id));
+                }
             }
         }
     }
@@ -961,7 +966,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             final boolean onlyLive, final IndexPolicy indexPolicy, final IndexPolicy indexPolicyDependencies)
             throws DotDataException, DotSecurityException, DotMappingException {
 
-        final String id = builder(contentlet.getIdentifier(), StringPool.UNDERLINE, contentlet.getLanguageId()).toString();
+        final String id = builder(contentlet.getIdentifier(), StringPool.UNDERLINE,
+                contentlet.getLanguageId(), StringPool.UNDERLINE, contentlet.getVariantId())
+                .toString();
         final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
         final BulkRequest bulkRequest = new BulkRequest();
 
