@@ -1144,7 +1144,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         final Variant variant, final String fieldName) {
 
         final Contentlet checkout = ContentletDataGen.checkout(contentlet);
-        checkout.setVariantId(variant.identifier());
+        checkout.setVariantId(variant.name());
         checkout.setProperty(fieldName, variant.name() + " content-default-" + language.getId());
         checkout.setLanguageId(language.getId());
 
@@ -1170,7 +1170,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 .cacheTTL(0)
                 .next();
 
-        page.setVariantId(variant.identifier());
+        page.setVariantId(variant.name());
         APILocator.getContentletAPI().checkin(page, APILocator.systemUser(), false);
         APILocator.getContentletAPI().publish(page, APILocator.systemUser(), false);
         return page;

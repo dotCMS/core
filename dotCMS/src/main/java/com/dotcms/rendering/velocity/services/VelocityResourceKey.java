@@ -12,6 +12,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.runtime.resource.ResourceManager;
 
@@ -80,8 +82,10 @@ public class VelocityResourceKey implements Serializable {
         this.language = underlineSplit.length > 1 ? underlineSplit[1]
                 : String.valueOf(APILocator.getLanguageAPI().getDefaultLanguage().getId());
 
-        this.variant = underlineSplit.length > 2 ? underlineSplit[2]
-                : VariantAPI.DEFAULT_VARIANT.name();
+        this.variant = underlineSplit.length > 2 ?
+                Arrays.stream(Arrays.copyOfRange(underlineSplit, 2, underlineSplit.length))
+                        .collect(Collectors.joining(StringPool.UNDERLINE)) :
+                VariantAPI.DEFAULT_VARIANT.name();
 
         this.type = VelocityType.resolveVelocityType(filePath);
         this.id2 = pathArry.length > 4 ? pathArry[3] : null;

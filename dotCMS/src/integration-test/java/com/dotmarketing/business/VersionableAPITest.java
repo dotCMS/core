@@ -348,7 +348,7 @@ public class VersionableAPITest {
 
 		final Variant variant = new VariantDataGen().nextPersisted();
 		final Contentlet contentletCheckout_2 = ContentletDataGen.checkout(checkin);
-		contentletCheckout_2.setVariantId(variant.identifier());
+		contentletCheckout_2.setVariantId(variant.name());
 		final Contentlet checkinWithVariant = ContentletDataGen.checkin(contentletCheckout_2);
 
 		assertTrue(checkinWithVariant.isWorking());
