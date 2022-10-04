@@ -194,6 +194,10 @@
 
     const MIN_KEYWORD_LENGTH = 2;
 
+    const MAX_VISITED_PAGES = 100;
+
+    const BATCH_SIZE = 10;
+
     /**
      *
      * @param src expects the iframe
@@ -350,8 +354,10 @@
         }
 
         function _matchingLinesOnlyView(){
-            //this function must be called once the following has been disconnected
+
             if (_isFiltering()) {
+
+                let ms1 = Date.now();
 
                 const first = dest.querySelector(`.log:first-child`);
                 const last = dest.querySelector(`.log:last-child`);
@@ -365,53 +371,95 @@
                 const lastPageId = last.dataset.page;
 
                 let buffer = [];
-
+                //Filter lines matching the keyword using the pages currently on screen
                 for(let i = firstPageId; i <= lastPageId; i++){
                     const list = src.document.body.querySelectorAll(`.page${i}`);
                     const matches = _matchingLines(list);
-                    if(matches && matches.length > 1){
+                    if(matches && matches.length > 0){
                         buffer = buffer.concat(matches);
                     }
                 }
 
-                const maxVisitPages = 100;
-
-
-
-
                 dest.replaceChildren();
+
                 buffer.forEach(value => {
-                    dest.insertAdjacentHTML('afterbegin',value);
+                    dest.insertAdjacentHTML('beforeend',value);
                 });
+
+                buffer.length = 0;
+
                 dest.innerHTML = _applyHighlight(dest.innerHTML);
+
+                //Grab Pages before the current first line
+                //These must go before the ones we just loaded
+
+                let priorLinesBuffer = [];
+                let pageId = firstPageId;
+                for(let i=BATCH_SIZE; i < MAX_VISITED_PAGES; i+= BATCH_SIZE) {
+                    let morePagesAvailable = _fetchPriorLinesOnly(pageId, BATCH_SIZE, priorLinesBuffer);
+                    if(morePagesAvailable === false){
+                        break;
+                    }
+                    pageId -= BATCH_SIZE;
+                }
+
+                priorLinesBuffer.reverse().forEach(value => {
+                    dest.insertAdjacentHTML('afterbegin', value );
+                });
+
+                priorLinesBuffer.length = 0;
+
+                //Grab Pages after the current last line
+
+                pageId = lastPageId;
+                let nextLinesBuffer = [];
+                for(let i=BATCH_SIZE; i < MAX_VISITED_PAGES; i += BATCH_SIZE) {
+                    let morePagesAvailable = _fetchNextLinesOnly(pageId, BATCH_SIZE, nextLinesBuffer);
+                    if(morePagesAvailable === false){
+                        break;
+                    }
+                    pageId += BATCH_SIZE;
+                }
+
+                nextLinesBuffer.forEach(value => {
+                    dest.insertAdjacentHTML('beforeend',value);
+                });
+
+                nextLinesBuffer.length = 0;
+
+
+                matchLinesOnlyView = true;
+
+                let ms2 = Date.now();
+
+                console.log( "duration in ms is ::: " +  (ms2 - ms1));
             }
         }
 
-        function _fetchPriorLinesOnly(startFromPageId, numPages){
-             let buffer = [];
+        function _fetchPriorLinesOnly(startFromPageId, numPages, buffer){
              const stopAtPageId = (startFromPageId - numPages);
              for(let i = startFromPageId; i >= stopAtPageId; i--){
                  const list = src.document.body.querySelectorAll(`.page${i}`);
-                 if(!list){
-                     break;
+                 if(!list || list.length === 0){
+                     return false;
                  }
-                     const matches = _matchingLines(list);
-                     if(matches && matches.length > 1){
-                         buffer = buffer.concat(matches);
-                     }
+                 const matches = _matchingLines(list);
+                 if(matches && matches.length > 0){
+                     buffer = buffer.concat(matches);
+                 }
              }
-             return buffer;
+             return true;
         }
 
         function _fetchNextLinesOnly(startFromPageId, numPages, buffer){
             const stopAtPageId = (startFromPageId + numPages);
             for(let i = startFromPageId; i <= stopAtPageId; i++){
                 const list = src.document.body.querySelectorAll(`.page${i}`);
-                if(!list){
+                if(!list || list.length === 0){
                     return false;
                 }
                 const matches = _matchingLines(list);
-                if(matches && matches.length > 1){
+                if(matches && matches.length > 0){
                     buffer = buffer.concat(matches);
                 }
             }
@@ -423,13 +471,13 @@
             let matches = [];
             if(nodes && nodes.length > 0){
                 nodes.forEach(el => {
-                    const html = el.outerHTML;
-                    const lines = html.split('<br>').filter((row)=> regEx.test(row)).join('<br>') + '<br>';
+                    const html = el.innerHTML;
+                    const lines = html.split('<br>').filter((row)=> regEx.test(row)).join('<br>');
                     if(lines){
                         const classes = el.classList.value;
                         const page = el.dataset['page'];
                         const logNum = el.dataset['lognumber'];
-                        const p = `<p class="${classes}" data-page="${page}" data-lognumber="${logNum}" style="margin:0"> ${lines} </p>  `;
+                        const p = `<p class="${classes}" data-page="${page}" data-lognumber="${logNum}" style="margin:0"> ${lines} </p>`;
                         matches.push(p);
                     }
                 });
@@ -516,7 +564,7 @@
             const scrollTop = div.scrollTop;
             const scrollPercentage = computeScrollPercentage(div.scrollHeight, scrollTop);
 
-            console.log(" scroll % :: " + scrollPercentage);
+           // console.log(" scroll % :: " + scrollPercentage);
 
             if (scrollTop < lastScrollTop) {
                 //We're scrolling up
