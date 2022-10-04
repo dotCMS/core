@@ -169,7 +169,7 @@ describe('DotFavoritePageStore', () => {
         expect(dotTempFileUploadService.upload).toHaveBeenCalledWith(file);
 
         expect(dotWorkflowActionsFireService.publishContentletAndWaitForIndex).toHaveBeenCalledWith(
-            'favoritePage',
+            'dotFavoritePage',
             {
                 screenshot: 'temp-file_123',
                 title: 'A title',
@@ -204,7 +204,7 @@ describe('DotFavoritePageStore', () => {
         });
 
         expect(dotWorkflowActionsFireService.publishContentletAndWaitForIndex).toHaveBeenCalledWith(
-            'favoritePage',
+            'dotFavoritePage',
             {
                 screenshot: 'temp-file_123',
                 title: 'A title',

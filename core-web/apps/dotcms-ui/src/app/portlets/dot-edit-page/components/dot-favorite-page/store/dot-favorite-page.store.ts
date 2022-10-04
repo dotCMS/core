@@ -77,7 +77,7 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
                         }
 
                         return this.dotWorkflowActionsFireService.publishContentletAndWaitForIndex<DotCMSContentlet>(
-                            'favoritePage',
+                            'dotFavoritePage',
                             {
                                 screenshot: id,
                                 title: formData.title,
