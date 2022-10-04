@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-import { MonacoEditor } from '@models/monaco-editor';
 import { DotContentEditorStore } from '@portlets/dot-containers/dot-container-create/dot-content-editor/store/dot-content-editor.store';
 
 @Component({
@@ -10,20 +9,9 @@ import { DotContentEditorStore } from '@portlets/dot-containers/dot-container-cr
 })
 export class DotContentEditorComponent {
     vm$ = this.store.vm$;
-    editor: MonacoEditor;
 
     constructor(private store: DotContentEditorStore) {
         //
-    }
-
-    /**
-     * This method initializes the monaco editor
-     *
-     * @param {MonacoEditor} editor
-     * @memberof DotContentEditorComponent
-     */
-    initEditor(editor: MonacoEditor): void {
-        this.editor = editor;
     }
 
     /**

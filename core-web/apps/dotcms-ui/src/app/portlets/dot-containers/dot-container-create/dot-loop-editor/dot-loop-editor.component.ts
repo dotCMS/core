@@ -1,5 +1,4 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { MonacoEditor } from '@models/monaco-editor';
 
 @Component({
     selector: 'dot-loop-editor',
@@ -7,23 +6,11 @@ import { MonacoEditor } from '@models/monaco-editor';
     styleUrls: ['./dot-loop-editor.component.scss']
 })
 export class DotLoopEditorComponent {
-    editor: MonacoEditor;
-
     @Input() isEditorVisible = false;
     @Output() buttonClick = new EventEmitter();
 
     constructor() {
         //
-    }
-
-    /**
-     * This method initializes the monaco editor
-     *
-     * @param {MonacoEditor} editor
-     * @memberof DotLoopEditorComponent
-     */
-    initEditor(editor: MonacoEditor): void {
-        this.editor = editor;
     }
 
     /**
