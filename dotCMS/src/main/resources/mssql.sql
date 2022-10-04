@@ -2705,7 +2705,8 @@ create table experiment (
     creation_date datetimeoffset(3) not null,
     created_by NVARCHAR(255) not null,
     last_modified_by NVARCHAR(255) not null,
-    goals NVARCHAR(MAX)
+    goals NVARCHAR(MAX),
+    lookback_window numeric(19,0) not null
 );
 
 CREATE INDEX idx_exp_pageid ON experiment (page_id);

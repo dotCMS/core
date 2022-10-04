@@ -2504,7 +2504,8 @@ create table experiment (
      creation_date timestamptz not null,
      created_by varchar(255) not null,
      last_modified_by varchar(255) not null,
-     goals jsonb
+     goals jsonb,
+     lookback_window integer not null
 );
 
 CREATE INDEX idx_exp_pageid ON experiment (page_id);
