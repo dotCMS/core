@@ -28,10 +28,5 @@ export class DotContentEditorStore extends ComponentStore<DotContentEditorState>
             });
     }
 
-    readonly vm$ = this.select(({ activeTabIndex, contentTypes }: DotContentEditorState) => {
-        return {
-            activeTabIndex,
-            contentTypes
-        };
-    });
+    readonly vm$ = this.select((state: DotContentEditorState) => state);
 }
