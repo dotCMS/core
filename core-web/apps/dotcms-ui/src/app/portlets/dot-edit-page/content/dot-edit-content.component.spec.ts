@@ -30,7 +30,6 @@ import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/index';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
 import { DotEditPageService } from '@services/dot-edit-page/dot-edit-page.service';
-import { DotEditPageToolbarModule } from './components/dot-edit-page-toolbar/dot-edit-page-toolbar.module';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
@@ -84,6 +83,8 @@ import { DotPropertiesService } from '@services/dot-properties/dot-properties.se
 import { PageModelChangeEventType } from './services/dot-edit-content-html/models';
 import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
 import { mockDotLanguage } from '@dotcms/app/test/dot-language.mock';
+import { mockDotRenderedPageState } from '@dotcms/app/test/dot-rendered-page-state.mock';
+import { DotWorkflowActionsFireService } from '@dotcms/app/api/services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 
 @Component({
     selector: 'dot-global-message',
@@ -125,6 +126,17 @@ export class MockDotFormSelectorComponent {
 }
 
 @Component({
+    selector: 'dot-edit-page-toolbar',
+    template: ''
+})
+export class MockDotEditPageToolbarComponent {
+    @Input() pageState = mockDotRenderedPageState;
+    @Output() cancel = new EventEmitter<boolean>();
+    @Output() actionFired = new EventEmitter<DotCMSContentlet>();
+    @Output() whatschange = new EventEmitter<boolean>();
+}
+
+@Component({
     selector: 'dot-palette',
     template: ''
 })
@@ -138,7 +150,7 @@ const mockRenderedPageState = new DotPageRenderState(
     new DotPageRender(mockDotRenderedPage())
 );
 
-describe('DotEditContentComponent', () => {
+fdescribe('DotEditContentComponent', () => {
     const siteServiceMock = new SiteServiceMock();
     let component: DotEditContentComponent;
     let de: DebugElement;
@@ -189,6 +201,7 @@ describe('DotEditContentComponent', () => {
                 DotEditContentComponent,
                 MockDotWhatsChangedComponent,
                 MockDotFormSelectorComponent,
+                MockDotEditPageToolbarComponent,
                 MockDotIconComponent,
                 MockDotPaletteComponent,
                 HostTestComponent,
@@ -200,7 +213,6 @@ describe('DotEditContentComponent', () => {
                 ButtonModule,
                 DialogModule,
                 DotContentletEditorModule,
-                DotEditPageToolbarModule,
                 DotEditPageInfoModule,
                 DotLoadingIndicatorModule,
                 DotEditPageWorkflowsActionsModule,
@@ -225,6 +237,7 @@ describe('DotEditContentComponent', () => {
                 DotEditPageService,
                 DotGlobalMessageService,
                 DotPageStateService,
+                DotWorkflowActionsFireService,
                 DotGenerateSecurePasswordService,
                 DotCustomEventHandlerService,
                 DotPropertiesService,
