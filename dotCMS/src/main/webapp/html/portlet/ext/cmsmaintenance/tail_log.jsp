@@ -194,9 +194,9 @@
 
     const MIN_KEYWORD_LENGTH = 2;
 
-    const MAX_VISITED_PAGES = 100;
+    const PAGE_SIZE = 10;
 
-    const BATCH_SIZE = 10;
+    const MAX_VISITED_PAGES = PAGE_SIZE * 10;
 
     /**
      *
@@ -223,7 +223,7 @@
                 const pagesToDrop = Math.round((pagesOnScreen * DROP_PAGES_PERCENT) * .01);
                 for (let i = 1; i <= pagesToDrop; i++) {
                     const first = dest.querySelector(`.log:first-child`);
-                    console.log("First:: " + first);
+                    //console.log("First:: " + first);
                     if (!first) {
                         break;
                     }
@@ -252,7 +252,11 @@
                     //iterate backwards to preserve the original order
                     for (let i = list.length - 1; i >= 0; i--) {
                         const elem = list[i];
-                        dest.insertAdjacentHTML('afterbegin', _applyHighlight(elem.outerHTML));
+                        if(true === _isFiltering()){
+                            dest.insertAdjacentHTML('afterbegin', _applyHighlight(elem.outerHTML));
+                        } else {
+                            dest.insertAdjacentHTML('afterbegin', elem.outerHTML);
+                        }
                     }
                     pagesOnScreen++;
                     //Move the scroll just a tiny bit, so we have room to fire the event again.
@@ -296,7 +300,11 @@
                 const list = src.document.body.querySelectorAll(`.page${lastPageId}`);
                 if (list.length > 0) {
                     list.forEach((elem)=>{
-                        dest.insertAdjacentHTML('beforeend', _applyHighlight(elem.outerHTML));
+                         if(true === _isFiltering()){
+                             dest.insertAdjacentHTML('beforeend', _applyHighlight(elem.outerHTML));
+                         } else {
+                             dest.insertAdjacentHTML('beforeend', elem.outerHTML);
+                         }
                     });
                     pagesOnScreen++;
                 }
@@ -319,7 +327,7 @@
             }
             const newContent = e.detail.newContent;
 
-            if (_isFiltering()) {
+            if (true === _isFiltering()) {
                 dest.insertAdjacentHTML('beforeend', _applyHighlight(newContent));
             } else {
                 dest.insertAdjacentHTML('beforeend', newContent);
@@ -355,7 +363,7 @@
 
         function _matchingLinesOnlyView(){
 
-            if (_isFiltering()) {
+            if (true === _isFiltering()) {
 
                 let ms1 = Date.now();
 
@@ -388,19 +396,21 @@
 
                 buffer.length = 0;
 
-                dest.innerHTML = _applyHighlight(dest.innerHTML);
-
                 //Grab Pages before the current first line
                 //These must go before the ones we just loaded
 
                 let priorLinesBuffer = [];
-                let pageId = firstPageId;
-                for(let i=BATCH_SIZE; i < MAX_VISITED_PAGES; i+= BATCH_SIZE) {
-                    let morePagesAvailable = _fetchPriorLinesOnly(pageId, BATCH_SIZE, priorLinesBuffer);
-                    if(morePagesAvailable === false){
+                let pageId = firstPageId - 1;
+                for(let i=PAGE_SIZE; i < MAX_VISITED_PAGES; i+= PAGE_SIZE) {
+                    let lines = _fetchPriorLinesOnly(pageId, PAGE_SIZE);
+                    if(lines.buffer && lines.buffer.length > 0) {
+                        priorLinesBuffer = priorLinesBuffer.concat(lines.buffer);
+                    }
+                    if(lines.hasMorePages === false){
                         break;
                     }
-                    pageId -= BATCH_SIZE;
+
+                    pageId -= PAGE_SIZE;
                 }
 
                 priorLinesBuffer.reverse().forEach(value => {
@@ -410,15 +420,18 @@
                 priorLinesBuffer.length = 0;
 
                 //Grab Pages after the current last line
-
-                pageId = lastPageId;
+                pageId = lastPageId + 1;
                 let nextLinesBuffer = [];
-                for(let i=BATCH_SIZE; i < MAX_VISITED_PAGES; i += BATCH_SIZE) {
-                    let morePagesAvailable = _fetchNextLinesOnly(pageId, BATCH_SIZE, nextLinesBuffer);
-                    if(morePagesAvailable === false){
+                for(let i=PAGE_SIZE; i < MAX_VISITED_PAGES; i += PAGE_SIZE) {
+                    let lines = _fetchNextLinesOnly(pageId, PAGE_SIZE);
+                    if(lines.buffer && lines.buffer.length > 0) {
+                        nextLinesBuffer = nextLinesBuffer.concat(lines.buffer);
+                    }
+                    if(lines.hasMorePages === false){
                         break;
                     }
-                    pageId += BATCH_SIZE;
+
+                    pageId += PAGE_SIZE;
                 }
 
                 nextLinesBuffer.forEach(value => {
@@ -427,6 +440,7 @@
 
                 nextLinesBuffer.length = 0;
 
+                dest.innerHTML = _applyHighlight(dest.innerHTML);
 
                 matchLinesOnlyView = true;
 
@@ -436,34 +450,48 @@
             }
         }
 
-        function _fetchPriorLinesOnly(startFromPageId, numPages, buffer){
+        function _fetchPriorLinesOnly(startFromPageId, numPages){
+
+            const lines = {
+                buffer:[],
+                hasMorePages: true
+            };
+
              const stopAtPageId = (startFromPageId - numPages);
              for(let i = startFromPageId; i >= stopAtPageId; i--){
                  const list = src.document.body.querySelectorAll(`.page${i}`);
                  if(!list || list.length === 0){
-                     return false;
+                     lines.hasMorePages = false;
+                     break;
                  }
                  const matches = _matchingLines(list);
                  if(matches && matches.length > 0){
-                     buffer = buffer.concat(matches);
+                     lines.buffer = lines.buffer.concat(matches);
                  }
              }
-             return true;
+             return lines;
         }
 
-        function _fetchNextLinesOnly(startFromPageId, numPages, buffer){
+        function _fetchNextLinesOnly(startFromPageId, numPages){
+
+            const lines = {
+                buffer:[],
+                hasMorePages: true
+            };
+
             const stopAtPageId = (startFromPageId + numPages);
             for(let i = startFromPageId; i <= stopAtPageId; i++){
                 const list = src.document.body.querySelectorAll(`.page${i}`);
                 if(!list || list.length === 0){
-                    return false;
+                    lines.hasMorePages = false;
+                    break;
                 }
                 const matches = _matchingLines(list);
                 if(matches && matches.length > 0){
-                    buffer = buffer.concat(matches);
+                    lines.buffer = lines.buffer.concat(matches);
                 }
             }
-            return true;
+            return lines;
         }
 
         function _matchingLines(nodes){
@@ -485,6 +513,32 @@
             return matches;
         }
 
+        function _loadDefaultView() {
+            dest.replaceChildren();
+            //this should give me the last paragraph
+            const last = src.document.body.lastElementChild.previousSibling;
+            if (!last) {
+                console.log("I can not recreate view at the moment.");
+                return
+            }
+
+            pagesOnScreen = 0;
+            const pagesToLoad = ON_SCREEN_PAGES;
+            const lastPageId = last.dataset.page;
+            const stopAtPage = lastPageId - pagesToLoad;
+            for (let pageId = lastPageId; pageId >= stopAtPage; pageId--) {
+                const list = src.document.body.querySelectorAll(`.page${pageId}`);
+                if (list && list.length > 0) {
+                    for (let i = list.length - 1; i >= 0; i--) {
+                        const elem = list[i];
+                        dest.insertAdjacentHTML('afterbegin', elem.outerHTML);
+                    }
+                    pagesOnScreen++;
+                }
+            }
+            matchLinesOnlyView = false;
+        }
+
         return ({
 
             setFollowing : (value) => {
@@ -496,6 +550,9 @@
                 if(showMatchingLinesOnly){
                     _matchingLinesOnlyView();
                 } else {
+                    if(true === matchLinesOnlyView && null == keyword ){
+                        _loadDefaultView();
+                    }
                     _applyFilter();
                 }
             },
