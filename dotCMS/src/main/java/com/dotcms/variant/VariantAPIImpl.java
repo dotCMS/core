@@ -117,6 +117,7 @@ public class VariantAPIImpl implements VariantAPI {
     }
 
     @Override
+    @CloseDBIfOpened
     public List<Variant> getVariants() throws DotDataException {
         return variantFactory.getVariants();
     }
