@@ -6,6 +6,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.SystemEnvironmentProperties;
 import javax.sql.DataSource;
+import java.util.TimeZone;
 
 /**
  * Class used to obtain a valid DataSource strategy provider
@@ -60,7 +61,7 @@ public class DataSourceStrategyProvider {
         final String providerClassName = getCustomDataSourceProvider();
 
         try {
-
+            TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
             if (!UtilMethods.isSet(providerClassName)) {
                 if (getDBPropertiesInstance()
                         .existsDBPropertiesFile()) {
