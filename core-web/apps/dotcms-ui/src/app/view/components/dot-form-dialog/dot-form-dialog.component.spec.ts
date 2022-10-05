@@ -33,7 +33,7 @@ class DotMessageMockPipe implements PipeTransform {
 
 @Component({
     template: `<dot-form-dialog
-        ><form>Hello World<input id="testInput" type="text" /></form
+        ><form>Hello World</form
     ></dot-form-dialog>`
 })
 class TestHostComponent {}
@@ -105,10 +105,9 @@ describe('DotFormDialogComponent', () => {
             expect(component.save.emit).toHaveBeenCalledWith(event);
         });
 
-        // TODO: find a way to dispatch the event and that it gets caught by the listener
-        xit('should have emit save event on CMD + ENTER keys', () => {
-            const saveButton = de.query(By.css('#testInput'));
-            dispatchKeydownEvent(saveButton.nativeElement, 'enter', true);
+        it('should have emit save event on CMD + ENTER keys', () => {
+            component.saveButtonDisabled = false;
+            dispatchKeydownEvent(de.nativeElement, 'Enter', true);
             fixture.detectChanges();
             expect(component.save.emit).toHaveBeenCalledTimes(1);
         });
