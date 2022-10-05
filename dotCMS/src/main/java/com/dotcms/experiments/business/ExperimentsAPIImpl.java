@@ -183,7 +183,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         experimentRule.setName(experiment.name());
         experimentRule.setFireOn(FireOn.EVERY_PAGE);
         experimentRule.setEnabled(true);
-        rulesAPI.saveRule(experimentRule, user, false);
+        rulesAPI.saveRuleNoParentCheck(experimentRule, user, false);
 
         final ConditionGroup conditionGroup = new ConditionGroup();
         conditionGroup.setRuleId(experimentRule.getId());
@@ -501,7 +501,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         // Setting "now" with an additional minute to avoid failing validation
         final Instant now = Instant.now().plus(1, ChronoUnit.MINUTES);
         return Scheduling.builder().startDate(now)
-                .endDate(now.plus(EXPERIMENT_MAX_DURATION.get(), ChronoUnit.DAYS))
+                .endDate(now.plus(EXPERIMENTS_MAX_DURATION.get(), ChronoUnit.DAYS))
                 .build();
     }
 
@@ -532,15 +532,15 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     "Invalid Scheduling. Start date is in the past");
 
             toReturn = scheduling.withEndDate(scheduling.startDate().get()
-                    .plus(EXPERIMENT_MAX_DURATION.get(), ChronoUnit.DAYS));
+                    .plus(EXPERIMENTS_MAX_DURATION.get(), ChronoUnit.DAYS));
         } else if(scheduling.startDate().isEmpty() && scheduling.endDate().isPresent()) {
             DotPreconditions.checkState(scheduling.endDate().get().isAfter(NOW),
                     "Invalid Scheduling. End date is in the past");
             DotPreconditions.checkState(
-                    Instant.now().plus(EXPERIMENT_MAX_DURATION.get(), ChronoUnit.DAYS)
+                    Instant.now().plus(EXPERIMENTS_MAX_DURATION.get(), ChronoUnit.DAYS)
                             .isAfter(scheduling.endDate().get()),
                     "Experiment duration must be less than "
-                            + EXPERIMENT_MAX_DURATION.get() +" days. ");
+                            + EXPERIMENTS_MAX_DURATION.get() +" days. ");
 
             toReturn = scheduling.withStartDate(Instant.now());
         } else {
@@ -554,9 +554,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     "Invalid Scheduling. End date must be after the start date");
 
             DotPreconditions.checkState(Duration.between(scheduling.startDate().get(),
-                            scheduling.endDate().get()).toDays() <= EXPERIMENT_MAX_DURATION.get(),
+                            scheduling.endDate().get()).toDays() <= EXPERIMENTS_MAX_DURATION.get(),
                     "Experiment duration must be less than "
-                            + EXPERIMENT_MAX_DURATION.get() +" days. ");
+                            + EXPERIMENTS_MAX_DURATION.get() +" days. ");
         }
         return toReturn;
     }

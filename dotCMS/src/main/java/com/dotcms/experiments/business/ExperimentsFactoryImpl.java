@@ -18,13 +18,12 @@ public class ExperimentsFactoryImpl implements
 
     public static final String INSERT_EXPERIMENT = "INSERT INTO experiment(id, page_id, name, description, status, " +
             "traffic_proportion, traffic_allocation, mod_date, scheduling, "
-            + "creation_date, created_by, last_modified_by, goals) "
-            + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)";
+            + "creation_date, created_by, last_modified_by, goals, lookback_window) "
+            + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     public static final String UPDATE_EXPERIMENT = "UPDATE experiment set name=?, description=?, status=?, " +
             "traffic_proportion=?, traffic_allocation=?, mod_date=?, scheduling=?, "
-
-            + " creation_date=?, created_by=?, last_modified_by=?, goals=?"
+            + " creation_date=?, created_by=?, last_modified_by=?, goals=?, lookback_window=?"
             + " WHERE id=?";
 
     public static final String FIND_EXPERIMENT_BY_ID = "SELECT * FROM experiment WHERE id = ?";
@@ -123,7 +122,7 @@ public class ExperimentsFactoryImpl implements
         return TransformerLocator.createExperimentTransformer(results).list;
     }
 
-    private String insertInDB(final Experiment experiment) throws DotDataException {
+    private void insertInDB(final Experiment experiment) throws DotDataException {
         DotPreconditions.checkArgument(experiment.id().isPresent(), "Experiment id is "
                 + "required for saves ");
 
@@ -142,12 +141,11 @@ public class ExperimentsFactoryImpl implements
         dc.addParam(experiment.createdBy());
         dc.addParam(experiment.lastModifiedBy());
         dc.addJSONParam(experiment.goals().isPresent()?experiment.goals().get():null);
+        dc.addParam(experiment.lookbackWindow());
         dc.loadResult();
-
-        return experiment.id().get();
     }
 
-    private String updateInDB(final Experiment experiment) throws DotDataException {
+    private void updateInDB(final Experiment experiment) throws DotDataException {
         DotPreconditions.checkArgument(experiment.id().isPresent(), "Experiment id is "
                 + "required for updates ");
 
@@ -164,9 +162,8 @@ public class ExperimentsFactoryImpl implements
         dc.addParam(experiment.createdBy());
         dc.addParam(experiment.lastModifiedBy());
         dc.addJSONParam(experiment.goals().isPresent()?experiment.goals().get():null);
+        dc.addParam(experiment.lookbackWindow());
         dc.addParam(experiment.id().get());
         dc.loadResult();
-
-        return experiment.id().get();
     }
 }
