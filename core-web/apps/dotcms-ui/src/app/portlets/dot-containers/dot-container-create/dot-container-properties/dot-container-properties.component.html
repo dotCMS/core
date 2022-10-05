@@ -1,0 +1,53 @@
+<ng-container *ngIf="vm$ | async as vm">
+    <div class="dot-container-properties__title-container">
+        <p-inplace #editText>
+            <ng-template pTemplate="content">
+                <span class="p-input-icon-right">
+                    <i class="pi pi-times" (click)="editText.deactivate()"></i>
+                    <input type="text" pInputText />
+                </span>
+            </ng-template>
+            <ng-template pTemplate="display">
+                {{ 'message.containers.create.click_to_edit' | dm }}
+                <i class="pi pi-pencil"></i>
+            </ng-template>
+        </p-inplace>
+    </div>
+    <div class="field">
+        <label for="description" class="block">{{
+            'message.containers.create.description' | dm
+        }}</label>
+        <input id="description" type="text" pInputText />
+    </div>
+    <div class="field">
+        <label for="max-contents" class="block">{{
+            'message.containers.create.max_contents' | dm
+        }}</label>
+        <input id="max-contents" type="text" pInputText />
+        <button
+            pButton
+            class="p-button-secondary"
+            type="button"
+            [label]="'message.containers.create.clear' | dm"
+        ></button>
+        <button
+            pButton
+            type="button"
+            [label]="'message.containers.create.content_type_code' | dm"
+        ></button>
+    </div>
+
+    <div class="dot-container-properties__code-container-outer">
+        <form [formGroup]="form">
+            <dot-loop-editor
+                (buttonClick)="showLoopInput()"
+                [isEditorVisible]="vm.showPrePostLoopInput"
+            ></dot-loop-editor>
+            <dot-content-editor></dot-content-editor>
+            <dot-loop-editor
+                (buttonClick)="showLoopInput()"
+                [isEditorVisible]="vm.showPrePostLoopInput"
+            ></dot-loop-editor>
+        </form>
+    </div>
+</ng-container>

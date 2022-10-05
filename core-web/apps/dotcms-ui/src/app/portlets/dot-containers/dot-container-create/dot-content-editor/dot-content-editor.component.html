@@ -1,0 +1,31 @@
+<div class="dot-content-editor__content-tab-container" *ngIf="vm$ | async as vm">
+    <label>{{ 'message.containers.create.content_type_code' | dm }}</label>
+    <p-tabView
+        [scrollable]="true"
+        (onChange)="handleChange($event, $event.index)"
+        [activeIndex]="vm.activeTabIndex"
+    >
+        <p-tabPanel headerStyleClass="tab-panel-btn">
+            <ng-template pTemplate="header">
+                <i
+                    class="pi pi-plus"
+                    (click)="handleChange($event); actionsMenu.toggle($event)"
+                ></i>
+                <p-menu
+                    #actionsMenu
+                    [popup]="true"
+                    [model]="vm.contentTypes"
+                    appendTo="body"
+                ></p-menu>
+            </ng-template>
+        </p-tabPanel>
+        <p-tabPanel closable="true" header="Content (Generic)">
+            <dot-textarea-content
+                #body
+                formControlName="body"
+                [show]="['code']"
+                language="html"
+            ></dot-textarea-content>
+        </p-tabPanel>
+    </p-tabView>
+</div>
