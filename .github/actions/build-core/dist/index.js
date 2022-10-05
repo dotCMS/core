@@ -50,16 +50,28 @@ const dotCmsRoot = path.join(projectRoot, 'dotCMS');
 const COMMANDS = {
     gradle: [
         {
-            cmd: gradleCmd,
-            args: ['build', '-x', 'test'],
+            cmd: 'rm',
+            args: ['-rf', 'dist'],
+            workingDir: projectRoot
+        },
+        {
+            cmd: 'rm',
+            args: ['-rf', 'build'],
             workingDir: dotCmsRoot
+        },
+        {
+            cmd: gradleCmd,
+            args: ['clean', 'build', '-x', 'test'],
+            workingDir: dotCmsRoot,
+            exitOnError: true
         }
     ],
     maven: [
         {
             cmd: mavenCmd,
-            args: ['package', '-DskipTests'],
-            workingDir: dotCmsRoot
+            args: ['clean', 'package', '-DskipTests'],
+            workingDir: dotCmsRoot,
+            exitOnError: true
         }
     ]
 };
@@ -79,7 +91,7 @@ const build = (buildEnv) => __awaiter(void 0, void 0, void 0, function* () {
     for (const cmd of cmds) {
         core.info(`Executing command: ${cmd.cmd} ${cmd.args.join(' ')}`);
         rc = yield exec.exec(cmd.cmd, cmd.args, { cwd: cmd.workingDir });
-        if (rc !== 0) {
+        if (!!cmd.exitOnError && rc !== 0) {
             break;
         }
     }
