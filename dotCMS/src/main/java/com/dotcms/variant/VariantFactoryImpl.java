@@ -23,7 +23,7 @@ public class VariantFactoryImpl implements VariantFactory{
     private String VARIANT_UPDATE_QUERY = "UPDATE variant SET description = ?, archived = ? WHERE name =?";
     private String VARIANT_DELETE_QUERY = "DELETE from variant WHERE name =?";
     private String VARIANT_SELECT_QUERY = "SELECT * from variant WHERE name =?";
-    private String VARIANT_SELECT_ALL_QUERY = "SELECT * from variant";
+    private String VARIANT_SELECT_ALL_QUERY = "SELECT * from variant WHERE archived=?";
 
     /**
      * Implementation for {@link VariantFactory#save(Variant)}
@@ -127,6 +127,7 @@ public class VariantFactoryImpl implements VariantFactory{
     public List<Variant> getVariants() throws DotDataException {
         return TransformerLocator.createVariantTransformer(new DotConnect()
                 .setSQL(VARIANT_SELECT_ALL_QUERY)
+                .addParam(false)
                 .loadResults()).asList();
     }
 }
