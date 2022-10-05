@@ -24,7 +24,6 @@ import org.immutables.value.Value;
  * <p>
  * The Experiment can be started now or scheduled to start and finish according to given dates
  * <p>
- *
  */
 @Value.Style(typeImmutable="*", typeAbstract="Abstract*")
 @Value.Immutable
@@ -87,7 +86,6 @@ public interface AbstractExperiment extends Serializable, ManifestItem, Ruleable
     Optional<List<TargetingCondition>> targetingConditions();
 
     // Beginning Permissionable methods
-
     @Value.Derived
     default String getIdentifier() {
         return id().orElse("");
