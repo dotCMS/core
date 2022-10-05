@@ -12,12 +12,12 @@ export class DotApiNavigation {
         this.dotCMSHttpClient = httpClient;
     }
 
-    get(deep = '2', location = '/'): Promise<DotCMSNavigationItem> {
+    get(depth = '2', location = '/'): Promise<DotCMSNavigationItem> {
         return this.dotCMSHttpClient
             .request({
                 url: `/api/v1/nav/${location}`,
                 params: {
-                    deep
+                    depth
                 }
             })
             .then(async (res: Response) => {
