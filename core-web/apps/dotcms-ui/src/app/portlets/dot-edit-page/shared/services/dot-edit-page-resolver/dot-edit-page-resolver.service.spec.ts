@@ -22,6 +22,7 @@ import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { mockResponseView } from '@tests/response-view.mock';
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
+import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
 
 const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
     'toString'
@@ -51,6 +52,7 @@ describe('DotEditPageResolver', () => {
                 DotAlertConfirmService,
                 ConfirmationService,
                 DotFormatDateService,
+                DotESContentService,
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 {
                     provide: ActivatedRouteSnapshot,

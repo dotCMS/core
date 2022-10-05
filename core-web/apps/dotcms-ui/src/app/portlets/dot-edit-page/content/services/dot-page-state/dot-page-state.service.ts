@@ -19,6 +19,8 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { PageModelChangeEvent, PageModelChangeEventType } from '../dot-edit-content-html/models';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DotPageRenderParameters } from '@models/dot-page/dot-rendered-page.model';
+import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
+import { ESContent } from '@dotcms/app/shared/models/dot-es-content/dot-es-content.model';
 
 @Injectable()
 export class DotPageStateService {
@@ -30,6 +32,7 @@ export class DotPageStateService {
 
     constructor(
         private dotContentletLockerService: DotContentletLockerService,
+        private dotESContentService: DotESContentService,
         private dotHttpErrorManagerService: DotHttpErrorManagerService,
         private dotPageRenderService: DotPageRenderService,
         private dotRouterService: DotRouterService,
@@ -197,6 +200,23 @@ export class DotPageStateService {
                 return this.currentState;
             })
         );
+    }
+
+    /**
+     * Calls ES endpoint to fetch DotFavoritePage data using a specific url
+     *
+     * @param {string} url
+     * @returns {Observable<ESContent>}
+     * @memberof DotPageStateService
+     */
+    requestFavoritePageData(url: string): Observable<ESContent> {
+        return this.dotESContentService
+            .get({
+                itemsPerPage: 10,
+                offset: '0',
+                query: `+contentType:FavoritePage +favoritePage.url_dotraw:${url}`
+            })
+            .pipe(take(1));
     }
 
     private contentAdded(): void {

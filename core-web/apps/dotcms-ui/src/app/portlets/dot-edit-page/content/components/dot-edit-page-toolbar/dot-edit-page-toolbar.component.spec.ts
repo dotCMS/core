@@ -56,6 +56,7 @@ import { DotFormatDateServiceMock } from '@dotcms/app/test/format-date-service.m
 import { DialogService } from 'primeng/dynamicdialog';
 import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
 import { TooltipModule } from 'primeng/tooltip';
+import { ESContent } from '@dotcms/app/shared/models/dot-es-content/dot-es-content.model';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -86,6 +87,13 @@ class MockDotLicenseService {
     }
 }
 
+@Injectable()
+class MockDotPageStateService{
+    requestFavoritePageData(_urlParam: string): Observable<ESContent> {
+        return of();
+    }
+}
+
 describe('DotEditPageToolbarComponent', () => {
     let fixtureHost: ComponentFixture<TestHostComponent>;
     let componentHost: TestHostComponent;
@@ -93,7 +101,7 @@ describe('DotEditPageToolbarComponent', () => {
     let de: DebugElement;
     let deHost: DebugElement;
     let dotLicenseService: DotLicenseService;
-    let dotESContentService: DotESContentService;
+    let dotPageStateService: DotPageStateService;
     let dotMessageDisplayService: DotMessageDisplayService;
     let dotDialogService: DialogService;
 
@@ -133,7 +141,7 @@ describe('DotEditPageToolbarComponent', () => {
                 },
                 {
                     provide: DotPageStateService,
-                    useValue: {}
+                    useClass: MockDotPageStateService
                 },
                 {
                     provide: SiteService,
@@ -175,7 +183,7 @@ describe('DotEditPageToolbarComponent', () => {
         de = deHost.query(By.css('dot-edit-page-toolbar'));
         component = de.componentInstance;
 
-        dotESContentService = de.injector.get(DotESContentService);
+        dotPageStateService = de.injector.get(DotPageStateService);
         dotLicenseService = de.injector.get(DotLicenseService);
         dotMessageDisplayService = de.injector.get(DotMessageDisplayService);
         dotDialogService = de.injector.get(DialogService);
@@ -316,7 +324,7 @@ describe('DotEditPageToolbarComponent', () => {
 
     describe("what's change", () => {
         it('should change icon on favorite page if contentlet exist', () => {
-            spyOn(dotESContentService, 'get').and.returnValue(
+            spyOn(dotPageStateService, 'requestFavoritePageData').and.returnValue(
                 of({
                     contentTook: 0,
                     jsonObjectView: {
@@ -331,7 +339,7 @@ describe('DotEditPageToolbarComponent', () => {
         });
 
         it('should show empty star icon on favorite page if NO contentlet exist', () => {
-            spyOn(dotESContentService, 'get').and.returnValue(
+            spyOn(dotPageStateService, 'requestFavoritePageData').and.returnValue(
                 of({
                     contentTook: 0,
                     jsonObjectView: {

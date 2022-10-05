@@ -24,6 +24,7 @@ import { mockResponseView } from '@tests/response-view.mock';
 import { PageModelChangeEventType } from '../dot-edit-content-html/models';
 import { mockDotPersona } from '@tests/dot-persona.mock';
 import { mockUserAuth } from '@tests/dot-auth-user.mock';
+import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
 
 const getDotPageRenderStateMock = () => {
     return new DotPageRenderState(mockUser(), mockDotRenderedPage());
@@ -36,6 +37,7 @@ describe('DotPageStateService', () => {
     let dotPageRenderService: DotPageRenderService;
     let dotPageRenderServiceGetSpy: jasmine.Spy;
     let dotRouterService: DotRouterService;
+    let dotESContentService: DotESContentService;
     let loginService: LoginService;
     let injector: TestBed;
     let service: DotPageStateService;
@@ -51,6 +53,7 @@ describe('DotPageStateService', () => {
                 DotAlertConfirmService,
                 ConfirmationService,
                 DotFormatDateService,
+                DotESContentService,
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 {
@@ -66,6 +69,7 @@ describe('DotPageStateService', () => {
         dotHttpErrorManagerService = injector.get(DotHttpErrorManagerService);
         dotPageRenderService = injector.get(DotPageRenderService);
         dotRouterService = injector.get(DotRouterService);
+        dotESContentService = injector.inject(DotESContentService);
         loginService = injector.get(LoginService);
 
         dotPageRenderServiceGetSpy = spyOn(dotPageRenderService, 'get').and.returnValue(
@@ -107,6 +111,28 @@ describe('DotPageStateService', () => {
                 },
                 {}
             ]);
+        });
+    });
+
+    describe('DotFavoritePage', () => {
+        it('should load FavoritePage data from ES using a specific url', () => {
+            spyOn(dotESContentService, 'get').and.returnValue(
+                of({
+                    contentTook: 0,
+                    jsonObjectView: {
+                        contentlets: []
+                    },
+                    queryTook: 1,
+                    resultsSize: 20
+                })
+            );
+            service.requestFavoritePageData('test');
+
+            expect(dotESContentService.get).toHaveBeenCalledWith({
+                itemsPerPage: 10,
+                offset: '0',
+                query: `+contentType:FavoritePage +favoritePage.url_dotraw:test`
+            });
         });
     });
 

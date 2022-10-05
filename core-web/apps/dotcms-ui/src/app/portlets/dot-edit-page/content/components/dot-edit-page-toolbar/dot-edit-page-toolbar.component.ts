@@ -16,10 +16,9 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { DotFavoritePageComponent } from '../../../components/dot-favorite-page/dot-favorite-page.component';
 import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
 import { LoggerService } from '@dotcms/dotcms-js';
-import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
-import { take } from 'rxjs/operators';
 import { ESContent } from '@dotcms/app/shared/models/dot-es-content/dot-es-content.model';
 import { generateDotFavoritePageUrl } from '@dotcms/app/shared/dot-utils';
+import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
 @Component({
     selector: 'dot-edit-page-toolbar',
     templateUrl: './dot-edit-page-toolbar.component.html',
@@ -46,7 +45,7 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
         private dotLicenseService: DotLicenseService,
         private dialogService: DialogService,
         private dotMessageService: DotMessageService,
-        private dotESContentService: DotESContentService,
+        private dotPageStateService: DotPageStateService,
 
         // TODO: Remove next line when total functionality of Favorite page is done for release
         private loggerService: LoggerService
@@ -117,13 +116,8 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
     loadFavoritePageData(): void {
         const urlParam = generateDotFavoritePageUrl(this.pageState);
 
-        this.dotESContentService
-            .get({
-                itemsPerPage: 10,
-                offset: '0',
-                query: `+contentType:FavoritePage +favoritePage.url_dotraw:${urlParam}`
-            })
-            .pipe(take(1))
+        this.dotPageStateService
+            .requestFavoritePageData(urlParam)
             .subscribe((response: ESContent) => {
                 if (response.resultsSize > 0) {
                     this.setDotFavoritePageHighlighted();
