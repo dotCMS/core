@@ -17,6 +17,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -134,18 +135,18 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
             while (!isFinish()) {
                 try {
                     Logger.debug(ConcurrentDependencyProcessor.class, () -> "Waiting for more assets");
-                    final DependencyProcessorItem dependencyProcessorItem = queue.poll();
+                    final DependencyProcessorItem dependencyProcessorItem = queue.poll(1000, TimeUnit.MILLISECONDS);
+
                     if(dependencyProcessorItem == null) {
-                        Thread.sleep(1000);
                         if(++emptyDependencies > 60) {
                             break;
                         }
                         
                         continue;
                     }
-                    emptyDependencies=0;
-                    
-                    
+
+                    emptyDependencies = 0;
+
                     Logger.debug(ConcurrentDependencyProcessor.class,
                             () -> "Taking one " + dependencyProcessorItem.asset);
                     if (!dependencyProcessorItem
