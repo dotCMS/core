@@ -1,0 +1,101 @@
+<dot-portlet-base *ngIf="vm$ | async as vm">
+    <div class="flex justify-content-between p-3">
+        <div>
+            <button
+                class="p-button-secondary p-button"
+                [label]="'Actions' | dm"
+                (click)="actionsMenu.toggle($event)"
+                type="button"
+                pButton
+                icon="pi pi-ellipsis-v"
+                attr.data-testid="actions"
+            ></button>
+            <p-menu
+                #actionsMenu
+                [popup]="true"
+                [model]="vm.categoriesBulkActions"
+                appendTo="body"
+            ></p-menu>
+        </div>
+        <div class="w-3">
+            <div class="p-inputgroup">
+                <span class="p-inputgroup-addon"><i class="pi pi-search"></i></span>
+                <input
+                    (input)="onChange($event)"
+                    type="text"
+                    pInputText
+                    placeholder="Type to filter"
+                />
+            </div>
+        </div>
+        <div>
+            <button
+                class="p-button-outlined"
+                pButton
+                pRipple
+                type="button"
+                label="IMPORT"
+                icon="pi pi-upload"
+            ></button>
+            <button
+                class="p-button-outlined mx-2"
+                pButton
+                pRipple
+                type="button"
+                label="EXPORT"
+                icon="pi pi-download"
+            ></button>
+            <button
+                class="p-button-raised p-button-rounded text-white"
+                pButton
+                pRipple
+                type="button"
+                icon="pi pi-plus"
+            ></button>
+        </div>
+    </div>
+    <div class="p-3">
+        <p-table
+            [(selection)]="selectedCategories"
+            [metaKeySelection]="true"
+            [reorderableColumns]="true"
+            [columns]="vm.tableColumns"
+            [value]="vm.categories"
+            selectionMode="multiple"
+            dataKey="inode"
+        >
+            <ng-template pTemplate="header" let-columns>
+                <tr>
+                    <th style="width: 3rem"></th>
+                    <th style="width: 3rem">
+                        <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+                    </th>
+                    <th *ngFor="let col of columns" pReorderableColumn>
+                        {{ col.header }}
+                    </th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-category let-columns="columns">
+                <tr [pReorderableRow]="category.sortOrder" [pSelectableRow]="category">
+                    <td>
+                        <span class="pi pi-bars" pReorderableRowHandle></span>
+                    </td>
+                    <td style="width: 3rem">
+                        <p-tableCheckbox [value]="category"></p-tableCheckbox>
+                    </td>
+                    <td *ngFor="let col of columns">
+                        <div *ngIf="col.fieldName === ''; else other_content">hello</div>
+                        <ng-template #other_content>
+                            {{ category[col.fieldName] }}
+                        </ng-template>
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+        <p-paginator
+            [rows]="vm.paginationPerPage"
+            [totalRecords]="vm.totalRecords"
+            (onPageChange)="paginate($event)"
+        ></p-paginator>
+    </div>
+</dot-portlet-base>

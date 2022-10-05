@@ -6,15 +6,12 @@ import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
 import { PaginatorService } from '@dotcms/app/api/services/paginator';
 import { take } from 'rxjs/operators';
-import { Observable } from 'rxjs';
 
-export interface DotCategoriesListState {
+export interface DotCategoriescTableState {
     categoriesBulkActions: MenuItem[];
     selectedCategories: DotCategory[];
     addToBundleIdentifier: string;
     tableColumns: DataTableColumn[];
-    categoryBreadCrumb: MenuItem[];
-    breadCrumbStarterIcon: MenuItem;
     categories: DotCategory[];
     paginationPerPage: number;
     currentPage: number;
@@ -22,16 +19,15 @@ export interface DotCategoriesListState {
 }
 
 @Injectable()
-export class DotCategoriesListStore extends ComponentStore<DotCategoriesListState> {
+export class DotCategoriesTableStore extends ComponentStore<DotCategoriescTableState> {
     constructor(
         private dotMessageService: DotMessageService,
         public paginatorService: PaginatorService
     ) {
         super(null);
-        this.breadCrumbStarterIcon = { icon: 'pi pi-home', disabled: true };
         this.paginatorService.url = 'v1/categories';
-        this.paginatorService.get();
-        this.getCategories()
+        this.paginatorService
+            .get()
             .pipe(take(1))
             .subscribe((items: DotCategory[]) => {
                 this.setState({
@@ -39,8 +35,6 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
                     tableColumns: this.getCategoriesColumns(),
                     addToBundleIdentifier: '',
                     selectedCategories: [],
-                    categoryBreadCrumb: this.getCategoryBreadCrumbs(),
-                    breadCrumbStarterIcon: this.breadCrumbStarterIcon,
                     categories: items,
                     currentPage: this.paginatorService.currentPage,
                     paginationPerPage: this.paginatorService.paginationPerPage,
@@ -48,48 +42,7 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
                 });
             });
     }
-    breadCrumbStarterIcon: MenuItem;
-    readonly vm$ = this.select((state: DotCategoriesListState) => state);
-
-    /* A selector that returns the categoryBreadCrumb property of the state. */
-    readonly categoryBreadCrumbSelector$ = this.select(
-        ({ categoryBreadCrumb }: DotCategoriesListState) => {
-            return {
-                categoryBreadCrumb
-            };
-        }
-    );
-
-    /**
-     * A function that updates the state of the store.
-     * @param state DotCategoryListState
-     * @param categoryBreadCrumb MenuItem
-     */
-    readonly addCategoriesBreadCrumb = this.updater<MenuItem>(
-        (state: DotCategoriesListState, categoryBreadCrumb: MenuItem) => {
-            return {
-                ...state,
-                categoryBreadCrumb: [
-                    ...state.categoryBreadCrumb,
-                    { ...categoryBreadCrumb, tabindex: state.categoryBreadCrumb.length.toString() }
-                ]
-            };
-        }
-    );
-
-    /**
-     * A function that updates the state of the store.
-     * @param state DotCategoryListState
-     * @param categoryBreadCrumb MenuItem[]
-     */
-    readonly updateCategoriesBreadCrumb = this.updater<MenuItem[]>(
-        (state: DotCategoriesListState, categoryBreadCrumb: MenuItem[]) => {
-            return {
-                ...state,
-                categoryBreadCrumb
-            };
-        }
-    );
+    readonly vm$ = this.select((state: DotCategoriescTableState) => state);
 
     /**
      * A function that updates the state of the store.
@@ -97,7 +50,7 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
      * @param selectedCategories DotCategory[]
      */
     readonly updateSelectedCategories = this.updater<DotCategory[]>(
-        (state: DotCategoriesListState, selectedCategories: DotCategory[]) => {
+        (state: DotCategoriescTableState, selectedCategories: DotCategory[]) => {
             return {
                 ...state,
                 selectedCategories
@@ -105,16 +58,15 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
         }
     );
 
-    /**
-     * A function that updates the state of the store.
+    /** A function that updates the state of the store.
      * @param state DotCategoryListState
-     * @param getCategoryEndPoint string
+     * @param categories DotCategory[]
      */
-    readonly updateCategoryEndPoint = this.updater<string>(
-        (state: DotCategoriesListState, getCategoryEndPoint: string) => {
+    readonly setCategories = this.updater<DotCategory[]>(
+        (state: DotCategoriescTableState, categories: DotCategory[]) => {
             return {
                 ...state,
-                getCategoryEndPoint
+                categories
             };
         }
     );
@@ -123,8 +75,15 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
      * > This function returns an observable of an array of DotCategory objects
      * @returns Observable<DotCategory[]>
      */
-    private getCategories(): Observable<DotCategory[]> {
-        return this.paginatorService.get();
+    public getCategories(filter?: string, currentPage?: number): void {
+        this.paginatorService.filter = filter || '';
+        if (currentPage) this.paginatorService.setExtraParams('page', currentPage);
+        this.paginatorService
+            .get()
+            .pipe(take(1))
+            .subscribe((items: DotCategory[]) => {
+                this.setCategories(items);
+            });
     }
 
     /**
@@ -144,19 +103,6 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
             },
             {
                 label: this.dotMessageService.get('Export')
-            }
-        ];
-    }
-
-    /**
-     * It returns an array of MenuItem objects
-     * @returns An array of MenuItem objects.
-     */
-    private getCategoryBreadCrumbs(): MenuItem[] {
-        return [
-            {
-                label: 'Top',
-                tabindex: '0'
             }
         ];
     }

@@ -1,8 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-import { DotCategoriesListRoutingModule } from './dot-categories-list-routing.module';
-import { DotCategoriesListComponent } from './dot-categories-list.component';
+import { DotCategoriesTableComponent } from './dot-categories-table.component';
 import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
 import { MenuModule } from 'primeng/menu';
 import { ButtonModule } from 'primeng/button';
@@ -10,14 +9,14 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
 import { PaginatorModule } from 'primeng/paginator';
 import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
-import { DotCategoriesTableModule } from '../dot-categories-table/dot-categories-table.module';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { FormsModule } from '@angular/forms';
 
 @NgModule({
-    declarations: [DotCategoriesListComponent],
+    declarations: [DotCategoriesTableComponent],
+    exports: [DotCategoriesTableComponent],
     imports: [
         CommonModule,
-        DotCategoriesListRoutingModule,
         DotPortletBaseModule,
         MenuModule,
         ButtonModule,
@@ -25,8 +24,8 @@ import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module
         TableModule,
         PaginatorModule,
         DotActionMenuButtonModule,
-        DotCategoriesTableModule,
+        FormsModule,
         DotMessagePipeModule
     ]
 })
-export class DotCategoriesListingModule {}
+export class DotCategoriesTableModule {}
