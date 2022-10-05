@@ -6,7 +6,6 @@ interface Command {
   cmd: string
   args: string[]
   workingDir?: string
-  exitOnError?: boolean
 }
 interface Commands {
   gradle: Command[]
@@ -21,28 +20,16 @@ const dotCmsRoot = path.join(projectRoot, 'dotCMS')
 const COMMANDS: Commands = {
   gradle: [
     {
-      cmd: 'rm',
-      args: ['-rf', 'dist'],
-      workingDir: projectRoot
-    },
-    {
-      cmd: 'rm',
-      args: ['-rf', 'build'],
-      workingDir: dotCmsRoot
-    },
-    {
       cmd: gradleCmd,
-      args: ['clean', 'build', '-x', 'test'],
-      workingDir: dotCmsRoot,
-      exitOnError: true
+      args: ['build', '-x', 'test'],
+      workingDir: dotCmsRoot
     }
   ],
   maven: [
     {
       cmd: mavenCmd,
-      args: ['clean', 'package', '-DskipTests'],
-      workingDir: dotCmsRoot,
-      exitOnError: true
+      args: ['package', '-DskipTests'],
+      workingDir: dotCmsRoot
     }
   ]
 }
@@ -64,7 +51,7 @@ export const build = async (buildEnv: string): Promise<number> => {
   for (const cmd of cmds) {
     core.info(`Executing command: ${cmd.cmd} ${cmd.args.join(' ')}`)
     rc = await exec.exec(cmd.cmd, cmd.args, {cwd: cmd.workingDir})
-    if (!!cmd.exitOnError && rc !== 0) {
+    if (rc !== 0) {
       break
     }
   }
