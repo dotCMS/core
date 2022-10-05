@@ -125,6 +125,7 @@ import com.dotmarketing.portlets.templates.business.TemplateFactoryImplTest;
 import com.dotcms.variant.VariantFactoryTest;
 import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletAbortTest;
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
 import com.dotmarketing.portlets.workflows.util.WorkflowEmailUtilTest;
@@ -582,7 +583,8 @@ import org.junit.runners.Suite.SuiteClasses;
         StoryBlockTest.class,
         IdentifierCacheImplTest.class,
         VariantCacheTest.class,
-        VersionableFactoryImplTest.class
+        VersionableFactoryImplTest.class,
+        SaveContentAsDraftActionletTest.class
 })
 public class MainSuite {
 
