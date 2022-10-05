@@ -1,35 +1,23 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-import { RouterModule, Routes } from '@angular/router';
-import { DotExperimentsListModule } from '../dot-experiments-list/dot-experiments-list.module';
+import { RouterModule } from '@angular/router';
 import { DotExperimentsShellComponent } from './dot-experiments-shell.component';
-import { DotExperimentsStore } from '../shared/stores/dot-experiments-store.service';
 import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
-
-const routes: Routes = [
-    {
-        path: '',
-        component: DotExperimentsShellComponent,
-        children: [
-            {
-                path: '',
-                loadChildren: async () =>
-                    (await import('../dot-experiments-list/dot-experiments-list.module'))
-                        .DotExperimentsListModule
-            }
-        ]
-    }
-];
+import { DotExperimentsUiHeaderComponent } from '../shared/ui/experiments-header/dot-experiments-ui-header.component';
+import { DotExperimentsShellRoutingModule } from '@portlets/dot-experiments/dot-experiments-shell/dot-experiments-shell-routing.module';
+import { DotExperimentsListModule } from '@portlets/dot-experiments/dot-experiments-list/dot-experiments-list.module';
 
 @NgModule({
     declarations: [DotExperimentsShellComponent],
     imports: [
         CommonModule,
-        RouterModule.forChild(routes),
+        RouterModule,
+        DotExperimentsShellRoutingModule,
         DotLoadingIndicatorModule,
-        DotExperimentsListModule
-    ],
-    providers: [DotExperimentsStore]
+        DotExperimentsListModule,
+
+        DotExperimentsUiHeaderComponent
+    ]
 })
 export class DotExperimentsShellModule {}

@@ -54,6 +54,8 @@ $button-shadow-focus: 0 0 0 4px rgba(var(--color-sec_rgb), 0.2);
 // Tables
 $th-text-color: $gray-light;
 $table-border-color: $gray-light;
+$table-border-color-experiments: $gray-lighter;
+$th-text-color-experiments: $gray;
 
 // Spacing
 $spacing-0: 0;
@@ -66,6 +68,7 @@ $spacing-6: 2.5rem;
 $spacing-7: 3rem;
 $spacing-8: 4rem;
 $spacing-9: 4.5rem;
+$spacing-10: 7rem;
 
 $error: #d0021b;
 $warn: $orange;

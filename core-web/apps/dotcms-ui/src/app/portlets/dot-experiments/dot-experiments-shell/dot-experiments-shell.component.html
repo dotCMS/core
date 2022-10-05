@@ -1,2 +1,9 @@
+<ng-container *ngIf="vmShell$ | async as vm">
+    <dot-experiments-header
+        [title]="vm.currentTitlePage"
+        (goBack)="goBack()"
+    ></dot-experiments-header>
+    <dot-loading-indicator [show]="vm.status" fullscreen="true"></dot-loading-indicator>
+</ng-container>
+
 <router-outlet></router-outlet>
-<dot-loading-indicator [show]="(status$ | async)!" fullscreen="true"></dot-loading-indicator>

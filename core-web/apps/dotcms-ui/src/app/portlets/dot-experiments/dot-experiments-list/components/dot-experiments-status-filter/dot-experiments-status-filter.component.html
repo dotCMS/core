@@ -1,0 +1,8 @@
+<p-multiSelect
+    [(ngModel)]="selectedItems"
+    [filter]="false"
+    [options]="options"
+    (onChange)="checkedOptions.emit($event.value)"
+    defaultLabel="{{ 'experimentspage.experiment.status.placeholder' | dm }}"
+>
+</p-multiSelect>

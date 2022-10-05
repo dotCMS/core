@@ -1,0 +1,20 @@
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+
+// TODO: make more generic
+
+@Component({
+    selector: 'dot-experiments-empty-experiments',
+    templateUrl: './dot-experiments-empty-experiments.component.html',
+    styleUrls: ['./dot-experiments-empty-experiments.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class DotExperimentsEmptyExperimentsComponent {
+    @Input()
+    description: string;
+
+    @Input()
+    showButton = true;
+
+    @Output()
+    addNewBtn = new EventEmitter<void>();
+}

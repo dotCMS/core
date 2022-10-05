@@ -1,9 +1,23 @@
 @use "variables" as *;
 
 :host {
-    background: $gray-bg;
+    background: $white;
     display: flex;
     height: 100%;
     overflow: auto;
-    padding: $spacing-4 $spacing-4 0;
+    padding: $spacing-4;
+
+    .dot-experiment {
+        &__wrapper {
+            display: flex;
+            gap: 15px;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        &__actions {
+            justify-content: space-between;
+            display: flex;
+        }
+    }
 }

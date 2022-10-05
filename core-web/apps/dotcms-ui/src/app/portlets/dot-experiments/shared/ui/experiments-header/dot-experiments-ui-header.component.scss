@@ -1,0 +1,22 @@
+@use "variables" as *;
+:host {
+    display: flex;
+    flex-direction: row;
+    height: $dot-secondary-toolbar-height;
+    align-items: center;
+    background-color: $white;
+    border-bottom: 1px $gray-lighter;
+    color: #7e7b86;
+    font-size: $font-size-medium;
+    column-gap: 15px;
+    border-bottom: 1px solid $gray-lighter;
+    a {
+        padding-left: 15px;
+        align-items: center;
+        display: flex;
+        height: 100%;
+        color: $gray;
+        cursor: pointer;
+        border-right: 1px solid $gray-bg;
+    }
+}

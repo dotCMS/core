@@ -1,0 +1,20 @@
+@use "variables" as *;
+
+:host {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    overflow: auto;
+    .row {
+        display: flex;
+        flex-direction: row;
+        width: 100%;
+        justify-content: space-between;
+        margin-bottom: 15px;
+        &.line {
+            justify-content: start;
+            column-gap: 3rem;
+        }
+    }
+}
