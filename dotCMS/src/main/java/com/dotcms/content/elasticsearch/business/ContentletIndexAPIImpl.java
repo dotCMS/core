@@ -881,8 +881,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         for (Language language : languages) {
             for (final String index : info.asMap().values()) {
                 for(final Variant variant: variants) {
-                    final String id = entry.getIdentToIndex() + "_" + language.getId()
-                            + "_" + variant.name();
+                    final String id = entry.getIdentToIndex() + StringPool.UNDERLINE + language.getId()
+                            + StringPool.UNDERLINE + variant.name();
 
                     System.err.println("deleting:" + id);
                     bulk.add(new DeleteRequest(index, "_doc", id));

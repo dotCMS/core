@@ -23,7 +23,7 @@ import org.immutables.value.Value;
  * and then get a report on which page performed better according to the decided goals.
  * <p>
  * The Experiment can be started now or scheduled to start and finish according to given dates
- * <p>
+ * <p> 
  *
  */
 @Value.Style(typeImmutable="*", typeAbstract="Abstract*")

@@ -106,7 +106,7 @@ public class BulkProcessorListener implements BulkProcessor.Listener {
     static String getMatchingReservedIdIfAny(String id) {
         String matchingReservedId = null;
 
-        for (String reservedId : RESERVED_IDS) {
+        for (final String reservedId : RESERVED_IDS) {
             if(id.contains(reservedId)) {
                 matchingReservedId = reservedId;
                 break;
