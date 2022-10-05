@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 import { DotContainerPropertiesStore } from '@portlets/dot-containers/dot-container-create/dot-container-properties/store/dot-container-properties.store';
 import { MonacoEditor } from '@models/monaco-editor';
+import { DotAlertConfirmService } from '@dotcms/app/api/services/dot-alert-confirm';
+import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
 
 @Component({
     selector: 'dot-container-properties',
@@ -14,7 +16,12 @@ export class DotContainerPropertiesComponent implements OnInit {
     editor: MonacoEditor;
     form: UntypedFormGroup;
 
-    constructor(private store: DotContainerPropertiesStore, private fb: UntypedFormBuilder) {
+    constructor(
+        private store: DotContainerPropertiesStore,
+        private dotMessageService: DotMessageService,
+        private fb: UntypedFormBuilder,
+        private dotAlertConfirmService: DotAlertConfirmService
+    ) {
         //
     }
 
@@ -42,5 +49,23 @@ export class DotContainerPropertiesComponent implements OnInit {
      */
     showContentTypeAndCode(): void {
         this.store.updateContentTypeVisibilty(true);
+    }
+
+    clearContent() {
+        this.dotAlertConfirmService.confirm({
+            accept: () => {
+                this.store.updateContentTypeVisibilty(false);
+                this.form.reset();
+            },
+            reject: () => {
+                //
+            },
+            header: this.dotMessageService.get(
+                'message.container.properties.confirm.clear.content.title'
+            ),
+            message: this.dotMessageService.get(
+                'message.container.properties..confirm.clear.content.message'
+            )
+        });
     }
 }

@@ -28,6 +28,7 @@
             class="p-button-secondary"
             *ngIf="vm.isContentTypeVisible"
             [label]="'message.containers.create.clear' | dm"
+            (click)="clearContent()"
             pButton
             type="button"
         ></button>
