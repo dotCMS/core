@@ -244,7 +244,6 @@
                 const pagesToDrop = Math.round((pagesOnScreen * DROP_PAGES_PERCENT) * .01);
                 for (let i = 1; i <= pagesToDrop; i++) {
                     const first = dest.querySelector(`.log:first-child`);
-                    //console.log("First:: " + first);
                     if (!first) {
                         break;
                     }
@@ -268,20 +267,31 @@
             if(first){
                 let firstPageId = first.dataset.page;
                 firstPageId--;
-                const list = src.document.body.querySelectorAll(`.page${firstPageId}`);
-                if (list.length > 0) {
-                    //iterate backwards to preserve the original order
-                    for (let i = list.length - 1; i >= 0; i--) {
-                        const elem = list[i];
-                        if(true === _isFiltering()){
-                            dest.insertAdjacentHTML('afterbegin', _applyHighlight(elem.outerHTML));
-                        } else {
-                            dest.insertAdjacentHTML('afterbegin', elem.outerHTML);
+                if (matchLinesOnlyView) {
+                    const lines = _fetchPriorLinesOnly(firstPageId);
+                    if (lines && lines.buffer.length > 0) {
+                        for (let i = lines.buffer.length - 1; i >= 0; i--) {
+                            const value = list[i];
+                            dest.insertAdjacentHTML('afterbegin', _applyHighlight(value));
                         }
+                        lines.buffer.length = 0;
                     }
-                    pagesOnScreen++;
-                    //Move the scroll just a tiny bit, so we have room to fire the event again.
-                    dest.scrollTop = dest.scrollTop + 10;
+                } else {
+                    const list = src.document.body.querySelectorAll(`.page${firstPageId}`);
+                    if (list.length > 0) {
+                        //iterate backwards to preserve the original order
+                        for (let i = list.length - 1; i >= 0; i--) {
+                            const elem = list[i];
+                            if(true === _isFiltering()){
+                                dest.insertAdjacentHTML('afterbegin', _applyHighlight(elem.outerHTML));
+                            } else {
+                                dest.insertAdjacentHTML('afterbegin', elem.outerHTML);
+                            }
+                        }
+                        pagesOnScreen++;
+                        //Move the scroll just a tiny bit, so we have room to fire the event again.
+                        dest.scrollTop = dest.scrollTop + 10;
+                    }
                 }
             }
         }
@@ -311,23 +321,31 @@
             }
         }
 
-        function _fetchNextPage(){
-
+        function _fetchNextPage() {
             const last = dest.querySelector(`.log:last-child`);
-            if(last){
+            if (last) {
                 let lastPageId = last.dataset.page;
-                //console.log(" Last page id is  ::: " + lastPageId);
                 lastPageId++;
-                const list = src.document.body.querySelectorAll(`.page${lastPageId}`);
-                if (list.length > 0) {
-                    list.forEach((elem)=>{
-                         if(true === _isFiltering()){
-                             dest.insertAdjacentHTML('beforeend', _applyHighlight(elem.outerHTML));
-                         } else {
-                             dest.insertAdjacentHTML('beforeend', elem.outerHTML);
-                         }
-                    });
-                    pagesOnScreen++;
+                if (matchLinesOnlyView) {
+                    const lines = _fetchNextLinesOnly(lastPageId);
+                    if (lines && lines.buffer.length > 0) {
+                        lines.buffer.forEach((value) => {
+                            dest.insertAdjacentHTML('beforeend', _applyHighlight(value));
+                        });
+                     lines.buffer.length = 0;
+                    }
+                } else {
+                    const list = src.document.body.querySelectorAll(`.page${lastPageId}`);
+                    if (list.length > 0) {
+                        list.forEach((elem) => {
+                            if (true === _isFiltering()) {
+                                dest.insertAdjacentHTML('beforeend', _applyHighlight(elem.outerHTML));
+                            } else {
+                                dest.insertAdjacentHTML('beforeend', elem.outerHTML);
+                            }
+                        });
+                        pagesOnScreen++;
+                    }
                 }
             }
         }
@@ -384,13 +402,13 @@
 
             if (true === _isFiltering()) {
 
-                let ms1 = Date.now();
+                let t1 = Date.now();
 
                 const first = dest.querySelector(`.log:first-child`);
                 const last = dest.querySelector(`.log:last-child`);
 
                 if(!first || !last){
-                    console.warn('no items are loaded in the view.');
+                    console.error(' No items are loaded in the view.');
                     return;
                 }
                 //first and last on-screen items
@@ -421,7 +439,7 @@
                 let priorLinesBuffer = [];
                 let pageId = firstPageId - 1;
                 for(let i=PAGE_SIZE; i < MAX_VISITED_PAGES; i+= PAGE_SIZE) {
-                    let lines = _fetchPriorLinesOnly(pageId, PAGE_SIZE);
+                    let lines = _fetchPriorLinesOnly(pageId);
                     if(lines.buffer && lines.buffer.length > 0) {
                         priorLinesBuffer = priorLinesBuffer.concat(lines.buffer);
                     }
@@ -442,7 +460,7 @@
                 pageId = lastPageId + 1;
                 let nextLinesBuffer = [];
                 for(let i=PAGE_SIZE; i < MAX_VISITED_PAGES; i += PAGE_SIZE) {
-                    let lines = _fetchNextLinesOnly(pageId, PAGE_SIZE);
+                    let lines = _fetchNextLinesOnly(pageId);
                     if(lines.buffer && lines.buffer.length > 0) {
                         nextLinesBuffer = nextLinesBuffer.concat(lines.buffer);
                     }
@@ -463,13 +481,17 @@
 
                 matchLinesOnlyView = true;
 
-                let ms2 = Date.now();
+                let t2 = Date.now();
 
-                console.log( "duration in ms is ::: " +  (ms2 - ms1));
+                console.log( "duration in ms is ::: " +  (t2 - t1));
             }
         }
 
         function _fetchPriorLinesOnly(startFromPageId, numPages){
+
+            if(!numPages){
+                numPages = PAGE_SIZE;
+            }
 
             const lines = {
                 buffer:[],
@@ -492,6 +514,10 @@
         }
 
         function _fetchNextLinesOnly(startFromPageId, numPages){
+
+            if(!numPages){
+                numPages = PAGE_SIZE;
+            }
 
             const lines = {
                 buffer:[],
@@ -533,6 +559,7 @@
         }
 
         function _loadDefaultView() {
+
             dest.replaceChildren();
             //this should give me the last paragraph
             const last = src.document.body.lastElementChild.previousSibling;
@@ -542,9 +569,8 @@
             }
 
             pagesOnScreen = 0;
-            const pagesToLoad = ON_SCREEN_PAGES;
             const lastPageId = last.dataset.page;
-            const stopAtPage = lastPageId - pagesToLoad;
+            const stopAtPage = lastPageId - ON_SCREEN_PAGES;
             for (let pageId = lastPageId; pageId >= stopAtPage; pageId--) {
                 const list = src.document.body.querySelectorAll(`.page${pageId}`);
                 if (list && list.length > 0) {
