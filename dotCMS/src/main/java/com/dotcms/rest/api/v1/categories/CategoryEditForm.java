@@ -1,22 +1,17 @@
 package com.dotcms.rest.api.v1.categories;
 
-import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.Validated;
-import com.dotcms.rest.api.v1.categories.CategoryForm.Builder;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import java.io.Serializable;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
 
 /**
  * Category Input Form
  *
  * @author Hassan Mustafa Baig
  */
-@JsonDeserialize(builder = CategoryEditDTO.Builder.class)
-public class CategoryEditDTO extends Validated {
+@JsonDeserialize(builder = CategoryEditForm.Builder.class)
+public class CategoryEditForm extends Validated {
 
     private String filter;
     private int page;
@@ -27,7 +22,7 @@ public class CategoryEditDTO extends Validated {
     private String parentInode;
     private HashMap<String, Integer> categoryData;
 
-    private CategoryEditDTO(final Builder builder) {
+    private CategoryEditForm(final Builder builder) {
         this.filter = builder.filter;
         this.page = builder.page;
         this.perPage = builder.perPage;
@@ -143,9 +138,9 @@ public class CategoryEditDTO extends Validated {
             return this;
         }
 
-        public CategoryEditDTO build() {
+        public CategoryEditForm build() {
 
-            return new CategoryEditDTO(this);
+            return new CategoryEditForm(this);
         }
     }
 }

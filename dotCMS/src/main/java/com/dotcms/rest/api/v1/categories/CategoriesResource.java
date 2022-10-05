@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.categories;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
@@ -276,7 +277,7 @@ public class CategoriesResource {
      *
      * @param httpRequest       {@link HttpServletRequest}
      * @param httpResponse      {@link HttpServletResponse}
-     * @param categoryEditDTO  {@link CategoryForm}
+     * @param categoryEditForm  {@link CategoryForm}
      * @return CategoryView
      * @throws DotDataException
      * @throws DotSecurityException
@@ -288,68 +289,37 @@ public class CategoriesResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response save(@Context final HttpServletRequest  httpRequest,
             @Context final HttpServletResponse httpResponse,
-            final CategoryEditDTO categoryEditDTO
+            final CategoryEditForm categoryEditForm
             ) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
         final User user = initData.getUser();
-        final Host host = this.categoryHelper.getHost(categoryEditDTO.getSiteId(),
+        final Host host = this.categoryHelper.getHost(categoryEditForm.getSiteId(),
                 () -> this.hostWebAPI.getCurrentHostNoThrow(httpRequest));
         final PageMode pageMode = PageMode.get(httpRequest);
 
         Logger.debug(this,
                 () -> "Saving category sortOrder. Request payload is : " + getObjectToJsonString(
-                        categoryEditDTO));
+                        categoryEditForm));
 
-        DotPreconditions.checkArgument(UtilMethods.isSet(categoryEditDTO.getCategoryData()),
+        DotPreconditions.checkArgument(UtilMethods.isSet(categoryEditForm.getCategoryData()),
                 "The body must send a collection of category inode and sortOrder");
 
         Category parentCategory = null;
 
-        if (UtilMethods.isSet(categoryEditDTO.getParentInode())) {
-            parentCategory = this.categoryAPI.find(categoryEditDTO.getParentInode(), user,
+        if (UtilMethods.isSet(categoryEditForm.getParentInode())) {
+            parentCategory = this.categoryAPI.find(categoryEditForm.getParentInode(), user,
                     pageMode.respectAnonPerms);
         }
 
-        Iterator iterator = categoryEditDTO.getCategoryData().entrySet().iterator();
+        updateSortOrder(categoryEditForm, user, host, pageMode, parentCategory);
 
-        while(iterator.hasNext()) {
-            Map.Entry entry = (Map.Entry) iterator.next();
-            String key = (String) entry.getKey();
-            Integer value = (Integer) entry.getValue();
-
-                final Category category = this.categoryAPI.find(key, user, pageMode.respectAnonPerms);
-
-                if (null == category) {
-                    Logger.error(this,
-                            "Category with Id: " + key + " does not exist");
-                } else {
-
-                    category.setSortOrder(value);
-
-                    Logger.debug(this,
-                            () -> "Saving category entity : " + getObjectToJsonString(category));
-                    this.categoryAPI.save(parentCategory, category, user,
-                            pageMode.respectAnonPerms);
-                    Logger.debug(this,
-                            () -> "Saved category entity : " + getObjectToJsonString(category));
-
-                    ActivityLogger.logInfo(this.getClass(), "Saved Category",
-                            "User " + user.getPrimaryKey()
-                                    + "Category: " + category.getCategoryName(),
-                            host.getTitle() != null ? host.getTitle() : "default");
-                }
-            }
-
-        if(parentCategory == null) {
-            return this.paginationUtil.getPage(httpRequest, user, categoryEditDTO.getFilter(),
-                    categoryEditDTO.getPage(), categoryEditDTO.getPerPage());
-        }
-        else{
-           return this.getChildren(httpRequest,httpResponse,categoryEditDTO.getFilter(), categoryEditDTO.getPage(),
-                    categoryEditDTO.getPerPage(),"", categoryEditDTO.getDirection(),categoryEditDTO.getParentInode());
-        }
+        return parentCategory == null
+                ? this.paginationUtil.getPage(httpRequest, user, categoryEditForm.getFilter(),
+                categoryEditForm.getPage(), categoryEditForm.getPerPage())
+                    : this.getChildren(httpRequest,httpResponse,categoryEditForm.getFilter(), categoryEditForm.getPage(),
+                            categoryEditForm.getPerPage(),"", categoryEditForm.getDirection(),categoryEditForm.getParentInode());
     }
 
     /**
@@ -470,6 +440,42 @@ public class CategoriesResource {
                 host.getTitle() != null ? host.getTitle() : "default");
 
         return updatedCategory;
+    }
+
+    @WrapInTransaction
+    private void updateSortOrder(final CategoryEditForm categoryEditForm, final User user, final Host host,
+            final PageMode pageMode, final Category parentCategory)
+            throws DotDataException, DotSecurityException {
+
+        Iterator iterator = categoryEditForm.getCategoryData().entrySet().iterator();
+
+        while(iterator.hasNext()) {
+            Map.Entry entry = (Map.Entry) iterator.next();
+            String key = (String) entry.getKey();
+            Integer value = (Integer) entry.getValue();
+
+            final Category category = this.categoryAPI.find(key, user, pageMode.respectAnonPerms);
+
+            if (null == category) {
+                Logger.error(this, "Category with Id: " + key + " does not exist");
+                throw new IllegalArgumentException("Category with Id: " + key + " does not exist");
+            } else {
+
+                category.setSortOrder(value);
+
+                Logger.debug(this,
+                        () -> "Saving category entity : " + getObjectToJsonString(category));
+                this.categoryAPI.save(parentCategory, category, user,
+                        pageMode.respectAnonPerms);
+                Logger.debug(this,
+                        () -> "Saved category entity : " + getObjectToJsonString(category));
+
+                ActivityLogger.logInfo(this.getClass(), "Saved Category",
+                        "User " + user.getPrimaryKey()
+                                + "Category: " + category.getCategoryName(),
+                        host.getTitle() != null ? host.getTitle() : "default");
+            }
+        }
     }
 
     private Response getPage(final List<Category> list, final int totalCount, final int page,
