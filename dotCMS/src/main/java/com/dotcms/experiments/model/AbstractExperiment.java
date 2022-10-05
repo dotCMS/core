@@ -7,6 +7,7 @@ import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.business.Ruleable;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.vavr.control.Try;
 import java.io.Serializable;
@@ -115,6 +116,7 @@ public interface AbstractExperiment extends Serializable, ManifestItem, Ruleable
         return Collections.emptyList();
     }
 
+    @JsonIgnore
     @Value.Derived
     default Permissionable getParentPermissionable() {
         return Try.of(()->APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(pageId()))
