@@ -14,40 +14,54 @@
         </p-inplace>
     </div>
     <div class="field">
-        <label for="description" class="block">{{
+        <label class="block" for="description">{{
             'message.containers.create.description' | dm
         }}</label>
         <input id="description" type="text" pInputText />
     </div>
     <div class="field">
-        <label for="max-contents" class="block">{{
+        <label class="block" for="max-contents">{{
             'message.containers.create.max_contents' | dm
         }}</label>
         <input id="max-contents" type="text" pInputText />
         <button
-            pButton
             class="p-button-secondary"
-            type="button"
+            *ngIf="vm.isContentTypeVisible"
             [label]="'message.containers.create.clear' | dm"
+            pButton
+            type="button"
         ></button>
         <button
+            *ngIf="!vm.isContentTypeVisible"
+            [label]="'message.containers.create.content_type_code' | dm"
+            (click)="showContentTypeAndCode()"
             pButton
             type="button"
-            [label]="'message.containers.create.content_type_code' | dm"
         ></button>
     </div>
 
     <div class="dot-container-properties__code-container-outer">
         <form [formGroup]="form">
-            <dot-loop-editor
-                (buttonClick)="showLoopInput()"
-                [isEditorVisible]="vm.showPrePostLoopInput"
-            ></dot-loop-editor>
-            <dot-content-editor></dot-content-editor>
-            <dot-loop-editor
-                (buttonClick)="showLoopInput()"
-                [isEditorVisible]="vm.showPrePostLoopInput"
-            ></dot-loop-editor>
+            <div *ngIf="vm.isContentTypeVisible">
+                <dot-loop-editor
+                    [isEditorVisible]="vm.showPrePostLoopInput"
+                    [control]="$any(form).get('preLoop')"
+                    (buttonClick)="showLoopInput()"
+                ></dot-loop-editor>
+                <dot-content-editor [form]="form"></dot-content-editor>
+                <dot-loop-editor
+                    [isEditorVisible]="vm.showPrePostLoopInput"
+                    [control]="$any(form).get('postLoop')"
+                    (buttonClick)="showLoopInput()"
+                ></dot-loop-editor>
+            </div>
+            <div *ngIf="!vm.isContentTypeVisible">
+                <dot-textarea-content
+                    [show]="['code']"
+                    formControlName="body"
+                    language="html"
+                ></dot-textarea-content>
+            </div>
         </form>
     </div>
 </ng-container>

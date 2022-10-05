@@ -2,8 +2,10 @@
     <label>{{ 'message.containers.create.content_type_code' | dm }}</label>
     <p-tabView
         [scrollable]="true"
-        (onChange)="handleChange($event, $event.index)"
         [activeIndex]="vm.activeTabIndex"
+        [controlClose]="true"
+        (onChange)="handleChange($event, $event.index)"
+        (onClose)="handleClose($event.index, $event.close)"
     >
         <p-tabPanel headerStyleClass="tab-panel-btn">
             <ng-template pTemplate="header">
@@ -19,11 +21,16 @@
                 ></p-menu>
             </ng-template>
         </p-tabPanel>
-        <p-tabPanel closable="true" header="Content (Generic)">
+        <p-tabPanel
+            *ngFor="let contentType of vm.selectedContentTypes; let i = index"
+            [header]="contentType.label"
+            [selected]="vm.activeTabIndex === i + 1"
+            closable="true"
+        >
             <dot-textarea-content
                 #body
-                formControlName="body"
                 [show]="['code']"
+                formControlName="body"
                 language="html"
             ></dot-textarea-content>
         </p-tabPanel>

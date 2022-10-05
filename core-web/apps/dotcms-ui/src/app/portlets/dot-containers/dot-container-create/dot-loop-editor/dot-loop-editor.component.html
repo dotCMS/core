@@ -1,18 +1,17 @@
 <div class="dot-loop-editor__pre-post-loop">
     <div class="dot-loop-editor__pre-post-loop-inplace" *ngIf="!isEditorVisible">
         <button
-            pButton
             class="p-button-outlined p-button-secondary"
-            type="button"
             [label]="'message.containers.create.add_pre_post' | dm"
             (click)="handleClick()"
+            pButton
+            type="button"
         ></button>
     </div>
     <div *ngIf="isEditorVisible">
         <label>{{ 'message.containers.create.pre_loop' | dm }}</label>
         <dot-textarea-content
-            formControlName="preLoop"
-            #preLoop
+            [formControl]="control"
             [show]="['code']"
             language="html"
         ></dot-textarea-content>

@@ -1,4 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { FormControl } from '@angular/forms';
 
 @Component({
     selector: 'dot-loop-editor',
@@ -7,6 +8,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 })
 export class DotLoopEditorComponent {
     @Input() isEditorVisible = false;
+    @Input() control: FormControl;
     @Output() buttonClick = new EventEmitter();
 
     constructor() {

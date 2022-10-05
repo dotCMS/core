@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { DotContentEditorStore } from '@portlets/dot-containers/dot-container-create/dot-content-editor/store/dot-content-editor.store';
+import { UntypedFormGroup } from '@angular/forms';
 
 @Component({
     selector: 'dot-content-editor',
@@ -8,6 +9,7 @@ import { DotContentEditorStore } from '@portlets/dot-containers/dot-container-cr
     providers: [DotContentEditorStore]
 })
 export class DotContentEditorComponent {
+    @Input() form: UntypedFormGroup;
     vm$ = this.store.vm$;
 
     constructor(private store: DotContentEditorStore) {
@@ -26,8 +28,15 @@ export class DotContentEditorComponent {
         if (index === null) {
             e.preventDefault();
             e.stopPropagation();
+        } else {
+            this.store.updateActiveTabIndex(index);
         }
 
         return false;
+    }
+
+    handleClose(index: number = null, close: () => void): void {
+        this.store.updateClosedTab(index - 1);
+        close();
     }
 }

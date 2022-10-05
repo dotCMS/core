@@ -5,6 +5,7 @@ import { TabViewModule } from 'primeng/tabview';
 import { MenuModule } from 'primeng/menu';
 import { DotTextareaContentModule } from '@components/_common/dot-textarea-content/dot-textarea-content.module';
 import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-message-pipe.module';
+import { ReactiveFormsModule } from '@angular/forms';
 
 @NgModule({
     declarations: [DotContentEditorComponent],
@@ -13,7 +14,8 @@ import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-mes
         TabViewModule,
         MenuModule,
         DotTextareaContentModule,
-        DotMessagePipeModule
+        DotMessagePipeModule,
+        ReactiveFormsModule
     ],
     exports: [DotContentEditorComponent]
 })

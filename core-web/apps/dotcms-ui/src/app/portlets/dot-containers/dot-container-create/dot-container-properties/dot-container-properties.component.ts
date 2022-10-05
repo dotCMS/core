@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 import { DotContainerPropertiesStore } from '@portlets/dot-containers/dot-container-create/dot-container-properties/store/dot-container-properties.store';
 import { MonacoEditor } from '@models/monaco-editor';
@@ -14,14 +14,17 @@ export class DotContainerPropertiesComponent implements OnInit {
     editor: MonacoEditor;
     form: UntypedFormGroup;
 
-    @Input() body: string;
-
     constructor(private store: DotContainerPropertiesStore, private fb: UntypedFormBuilder) {
         //
     }
 
     ngOnInit(): void {
-        this.form = this.fb.group({ body: this.body });
+        this.form = this.fb.group({
+            body: '',
+            preLoop: '',
+            postLoop: '',
+            containerStructures: this.fb.array([])
+        });
     }
 
     /**
@@ -32,5 +35,12 @@ export class DotContainerPropertiesComponent implements OnInit {
      */
     showLoopInput(): void {
         this.store.updatePrePostLoopInputVisibility(true);
+    }
+
+    /**
+     * This method shows the Content type inputs
+     */
+    showContentTypeAndCode(): void {
+        this.store.updateContentTypeVisibilty(true);
     }
 }
