@@ -940,7 +940,11 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 			if(contentletFind != null) {
 
-				if (contentletFind.getVariantId().equals(contentletFormData.get(VariantAPI.VARIANT_KEY))) {
+				final String variantNameFormData = UtilMethods.isSet(contentletFormData.get(VariantAPI.VARIANT_KEY)) ?
+						contentletFormData.get(VariantAPI.VARIANT_KEY).toString() :
+						VariantAPI.DEFAULT_VARIANT.name();
+
+				if (contentletFind.getVariantId().equals(variantNameFormData)) {
 					contentlet.getMap().putAll(contentletFind.getMap());
 				} else {
 					contentletFormData.put("contentletInode", StringPool.BLANK);
