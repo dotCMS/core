@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.services;
 
+import com.dotcms.util.ConversionUtils;
 import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -202,7 +203,7 @@ public class PageLoader implements DotLoader {
 
         HTMLPageAsset page = APILocator.getHTMLPageAssetAPI()
                 .fromContentlet(APILocator.getContentletAPI()
-                .findContentletByIdentifier(key.id1, key.mode.showLive, Long.parseLong(key.language),
+                .findContentletByIdentifier(key.id1, key.mode.showLive, ConversionUtils.toLong(key.language),
                         key.variant, sysUser(), true));
 
         return buildStream(page, key.mode, key.path);

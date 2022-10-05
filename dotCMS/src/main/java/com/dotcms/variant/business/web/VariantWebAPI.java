@@ -29,8 +29,8 @@ public interface VariantWebAPI {
             final PageMode pageMode, final User user);
 
     class RenderContext {
-        private String currentVariantKey;
-        private long currentLanguageId;
+        private final String currentVariantKey;
+        private final long currentLanguageId;
 
         public RenderContext(final String currentVariantKey,
                 long currentLanguageId) {
