@@ -21,14 +21,14 @@ const COMMANDS: Commands = {
   gradle: [
     {
       cmd: gradleCmd,
-      args: ['clean', 'createDistPrep', 'build', '-x', 'test'],
+      args: ['build', '-x', 'test'],
       workingDir: dotCmsRoot
     }
   ],
   maven: [
     {
       cmd: mavenCmd,
-      args: ['clean', 'package', '-DskipTests'],
+      args: ['package', '-DskipTests'],
       workingDir: dotCmsRoot
     }
   ]
