@@ -13,35 +13,40 @@ export class IframeMockComponent {
     @ViewChild('iframeElement') iframeElement: ElementRef;
 }
 
+@Component({
+    selector: `dot-host-component`,
+    template: `<dot-container-history [containerId]="containerId"></dot-container-history>`
+})
+class DotTestHostComponent {
+    containerId = '';
+}
+
 describe('ContainerHistoryComponent', () => {
-    let component: DotContainerHistoryComponent;
-    let fixture: ComponentFixture<DotContainerHistoryComponent>;
+    let hostComponent: DotTestHostComponent;
+    let fixture: ComponentFixture<DotTestHostComponent>;
     let de: DebugElement;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotContainerHistoryComponent, IframeMockComponent],
+            declarations: [DotContainerHistoryComponent, IframeMockComponent, DotTestHostComponent],
             imports: [DotPortletBoxModule]
         }).compileComponents();
 
-        fixture = TestBed.createComponent(DotContainerHistoryComponent);
+        fixture = TestBed.createComponent(DotTestHostComponent);
         de = fixture.debugElement;
-        component = fixture.componentInstance;
+        hostComponent = fixture.componentInstance;
+        hostComponent.containerId = '123';
         fixture.detectChanges();
     });
 
     it('should create', () => {
-        expect(component).toBeTruthy();
+        expect(hostComponent).toBeTruthy();
     });
 
     describe('history', () => {
-        beforeEach(() => {
-            component.containerId = '123';
-            component.ngOnInit();
-            fixture.detectChanges();
-        });
-
         it('should set iframe history url', () => {
+            hostComponent.containerId = '123';
+            fixture.detectChanges();
             const permissions = de.query(By.css('[data-testId="historyIframe"]'));
             expect(permissions.componentInstance.src).toBe(
                 '/html/containers/push_history.jsp?containerId=123&popup=true'

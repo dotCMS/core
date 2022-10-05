@@ -13,35 +13,44 @@ export class IframeMockComponent {
     @ViewChild('iframeElement') iframeElement: ElementRef;
 }
 
+@Component({
+    selector: `dot-host-component`,
+    template: `<dot-container-permissions [containerId]="containerId"></dot-container-permissions>`
+})
+class DotTestHostComponent {
+    containerId = '';
+}
+
 describe('ContainerPermissionsComponent', () => {
-    let component: DotContainerPermissionsComponent;
-    let fixture: ComponentFixture<DotContainerPermissionsComponent>;
+    let hostComponent: DotTestHostComponent;
+    let fixture: ComponentFixture<DotTestHostComponent>;
     let de: DebugElement;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotContainerPermissionsComponent, IframeMockComponent],
+            declarations: [
+                DotContainerPermissionsComponent,
+                IframeMockComponent,
+                DotTestHostComponent
+            ],
             imports: [DotPortletBoxModule]
         }).compileComponents();
 
         fixture = TestBed.createComponent(DotContainerPermissionsComponent);
         de = fixture.debugElement;
-        component = fixture.componentInstance;
+        hostComponent = fixture.componentInstance;
+        hostComponent.containerId = '123';
         fixture.detectChanges();
     });
 
     it('should create', () => {
-        expect(component).toBeTruthy();
+        expect(hostComponent).toBeTruthy();
     });
 
     describe('permissions', () => {
-        beforeEach(() => {
-            component.containerId = '123';
-            component.ngOnInit();
-            fixture.detectChanges();
-        });
-
         it('should set iframe permissions url', () => {
+            hostComponent.containerId = '123';
+            fixture.detectChanges();
             const permissions = de.query(By.css('[data-testId="permissionsIframe"]'));
             expect(permissions.componentInstance.src).toBe(
                 '/html/containers/permissions.jsp?containerId=123&popup=true'
