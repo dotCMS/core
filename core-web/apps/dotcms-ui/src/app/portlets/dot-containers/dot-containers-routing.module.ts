@@ -30,6 +30,7 @@ const routes: Routes = [
 @NgModule({
     declarations: [],
     imports: [RouterModule.forChild(routes)],
-    exports: [RouterModule]
+    exports: [RouterModule],
+    providers: [DotContainerCreateEditResolver]
 })
 export class DotContainersRoutingModule {}

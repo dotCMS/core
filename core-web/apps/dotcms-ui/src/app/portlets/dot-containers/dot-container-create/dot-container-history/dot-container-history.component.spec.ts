@@ -36,12 +36,16 @@ describe('ContainerHistoryComponent', () => {
 
     describe('history', () => {
         beforeEach(() => {
+            component.containerId = '123';
+            component.ngOnInit();
             fixture.detectChanges();
         });
 
         it('should set iframe history url', () => {
             const permissions = de.query(By.css('[data-testId="historyIframe"]'));
-            expect(permissions.componentInstance.src).toBe('/html/containers/push_history.jsp');
+            expect(permissions.componentInstance.src).toBe(
+                '/html/containers/push_history.jsp?containerId=123&popup=true'
+            );
         });
     });
 });

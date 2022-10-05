@@ -36,12 +36,16 @@ describe('ContainerPermissionsComponent', () => {
 
     describe('permissions', () => {
         beforeEach(() => {
+            component.containerId = '123';
+            component.ngOnInit();
             fixture.detectChanges();
         });
 
         it('should set iframe permissions url', () => {
             const permissions = de.query(By.css('[data-testId="permissionsIframe"]'));
-            expect(permissions.componentInstance.src).toBe('/html/containers/permissions.jsp');
+            expect(permissions.componentInstance.src).toBe(
+                '/html/containers/permissions.jsp?containerId=123&popup=true'
+            );
         });
     });
 });

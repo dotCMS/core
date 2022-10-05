@@ -6,11 +6,11 @@
                     <dot-container-properties></dot-container-properties>
                 </ng-template>
             </p-tabPanel>
-            <p-tabPanel [header]="'message.containers.tab.permissions' | dm">
-                <dot-container-permissions></dot-container-permissions>
+            <p-tabPanel *ngIf="containerId" [header]="'message.containers.tab.permissions' | dm">
+                <dot-container-permissions [containerId]="containerId"></dot-container-permissions>
             </p-tabPanel>
-            <p-tabPanel [header]="'message.containers.tab.history' | dm">
-                <dot-container-history></dot-container-history>
+            <p-tabPanel *ngIf="containerId" [header]="'message.containers.tab.history' | dm">
+                <dot-container-history [containerId]="containerId"></dot-container-history>
             </p-tabPanel>
         </p-tabView>
     </div>

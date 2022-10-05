@@ -1,26 +1,57 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DotContainerCreateComponent } from './dot-container-create.component';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { ActivatedRoute } from '@angular/router';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { Pipe, PipeTransform } from '@angular/core';
+import { of } from 'rxjs';
+import { CONTAINER_SOURCE } from '@dotcms/app/shared/models/container/dot-container.model';
 
-const messages = {};
-
+@Pipe({
+    name: 'dm'
+})
+class DotMessageMockPipe implements PipeTransform {
+    transform(): string {
+        return 'Required';
+    }
+}
 describe('ContainerCreateComponent', () => {
     let component: DotContainerCreateComponent;
     let fixture: ComponentFixture<DotContainerCreateComponent>;
-    const messageServiceMock = new MockDotMessageService(messages);
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotContainerCreateComponent],
-            imports: [DotMessagePipeModule],
+            declarations: [DotContainerCreateComponent, DotMessageMockPipe],
             providers: [
-                { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: CoreWebService, useClass: CoreWebServiceMock }
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        data: of({
+                            container: of({
+                                archived: false,
+                                live: true,
+                                working: true,
+                                locked: false,
+                                identifier: '',
+                                name: '',
+                                type: '',
+                                source: CONTAINER_SOURCE.DB,
+                                parentPermissionable: {
+                                    hostname: 'dotcms.com'
+                                }
+                            })
+                        }),
+                        snapshot: {
+                            params: {
+                                id: '123'
+                            }
+                        }
+                    }
+                },
+                DotRouterService
             ]
         }).compileComponents();
 

@@ -81,7 +81,7 @@ describe('DotContainersService', () => {
             expect(container).toEqual(mockContainer);
         });
 
-        const req = httpMock.expectOne(`${CONTAINER_API_URL}123/working`);
+        const req = httpMock.expectOne(`${CONTAINER_API_URL}working?containerId=123`);
 
         expect(req.request.method).toBe('GET');
 
