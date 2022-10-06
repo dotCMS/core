@@ -198,6 +198,13 @@ export class DotRouterService {
     }
 
     /**
+     * It navigates to the create container page
+     */
+    goToCreateContainer(): void {
+        this.router.navigate(['/containers/create']);
+    }
+
+    /**
      * Redirect to edit the container.
      * If the inode is passed, load a specific version of the container
      *

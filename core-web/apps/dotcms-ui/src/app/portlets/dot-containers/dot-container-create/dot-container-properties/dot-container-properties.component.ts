@@ -5,6 +5,9 @@ import { MonacoEditor } from '@models/monaco-editor';
 import { DotAlertConfirmService } from '@dotcms/app/api/services/dot-alert-confirm';
 import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { ActivatedRoute } from '@angular/router';
+import { pluck, take } from 'rxjs/operators';
+import { DotContainer } from '@dotcms/app/shared/models/container/dot-container.model';
 
 @Component({
     selector: 'dot-container-properties',
@@ -22,21 +25,45 @@ export class DotContainerPropertiesComponent implements OnInit {
         private dotMessageService: DotMessageService,
         private fb: UntypedFormBuilder,
         private dotAlertConfirmService: DotAlertConfirmService,
-        private dotRouterService: DotRouterService
+        private dotRouterService: DotRouterService,
+        private activatedRoute: ActivatedRoute
     ) {
         //
     }
 
     ngOnInit(): void {
-        this.form = this.fb.group({
-            title: '',
-            friendlyName: '',
-            maxContentlets: 1,
-            code: '',
-            preLoop: '',
-            postLoop: '',
-            containerStructures: this.fb.array([])
-        });
+        this.activatedRoute.data
+            .pipe(pluck('container'), take(1))
+            .subscribe((container: DotContainer) => {
+                if (container) {
+                    if (container.preLoop) {
+                        this.store.updatePrePostLoopAndContentTypeVisibilty({
+                            showPrePostLoopInput: true,
+                            isContentTypeVisible: true
+                        });
+                    }
+
+                    this.form = this.fb.group({
+                        title: container.title,
+                        friendlyName: container.friendlyName,
+                        maxContentlets: container.maxContentlets,
+                        code: container.code,
+                        preLoop: container.preLoop,
+                        postLoop: container.postLoop,
+                        containerStructures: this.fb.array([])
+                    });
+                } else {
+                    this.form = this.fb.group({
+                        title: '',
+                        friendlyName: '',
+                        maxContentlets: 1,
+                        code: '',
+                        preLoop: '',
+                        postLoop: '',
+                        containerStructures: this.fb.array([])
+                    });
+                }
+            });
     }
 
     /**

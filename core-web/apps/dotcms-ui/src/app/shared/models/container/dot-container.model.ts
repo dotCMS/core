@@ -17,6 +17,10 @@ export interface DotContainer {
     type?: string;
     title?: string;
     source?: CONTAINER_SOURCE;
+    maxContentlets?: number;
+    preLoop?: string;
+    postLoop?: string;
+    code?: string;
     parentPermissionable?: {
         hostname: string;
     };

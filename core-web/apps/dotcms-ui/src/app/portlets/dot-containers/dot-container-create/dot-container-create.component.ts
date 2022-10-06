@@ -21,7 +21,7 @@ export class DotContainerCreateComponent implements OnInit {
             .pipe(pluck('container'), take(1))
             .subscribe((container: DotContainer) => {
                 if (container) this.containerId = container.identifier;
-                else this.dotRouterService.goToPreviousUrl();
+                else this.dotRouterService.goToCreateContainer();
             });
     }
 }
