@@ -490,7 +490,7 @@ public class CategoriesResource {
     @Path(("/_export"))
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({"text/csv"})
     public final void export(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
             @QueryParam("contextInode") final String contextInode,
