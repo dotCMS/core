@@ -5,7 +5,7 @@
     "prefix": "dotcms",
     "targets": {
         "build": {
-            "executor": "@angular-devkit/build-ng-packagr:build",
+            "executor": "@nrwl/angular:ng-packagr-lite",
             "options": {
                 "tsConfig": "libs/dotcms/tsconfig.lib.json",
                 "project": "libs/dotcms/ng-package.json"
