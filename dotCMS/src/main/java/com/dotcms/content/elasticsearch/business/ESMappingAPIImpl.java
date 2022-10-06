@@ -337,7 +337,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                         .getIdentifier());
                 throw new DotDataException(errorMsg);
             }
-			final Optional<ContentletVersionInfo> versionInfo = versionableAPI.getContentletVersionInfo(contentIdentifier.getId(), contentlet.getLanguageId());
+			final Optional<ContentletVersionInfo> versionInfo = versionableAPI.getContentletVersionInfo(contentIdentifier.getId(),
+					contentlet.getLanguageId(), contentlet.getVariantId());
+
             if (!versionInfo.isPresent()) {
                 final String errorMsg = String.format("Version Info for Identifier '%s' and Language '%s' was not" +
                         " found via API.", contentIdentifier.getId(), contentlet.getLanguageId());

@@ -328,7 +328,7 @@ public class ESMappingAPITest {
         final VersionableAPI versionableAPI = mock(VersionableAPIImpl.class);
         final ContentletVersionInfo versionInfo = mock(ContentletVersionInfo.class);
         when(versionableAPI
-                .getContentletVersionInfo(Matchers.any(String.class), Matchers.any(Long.class)))
+                .getContentletVersionInfo(Matchers.any(String.class), Matchers.any(Long.class), Matchers.any(String.class)))
                 .thenReturn(Optional.of(versionInfo));
 
         final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl(
@@ -381,7 +381,7 @@ public class ESMappingAPITest {
         final VersionableAPI versionableAPI = mock(VersionableAPIImpl.class);
         final ContentletVersionInfo versionInfo = mock(ContentletVersionInfo.class);
         when(versionableAPI
-                .getContentletVersionInfo(Matchers.any(String.class), Matchers.any(Long.class)))
+                .getContentletVersionInfo(Matchers.any(String.class), Matchers.any(Long.class), Matchers.any(String.class)))
                 .thenReturn(Optional.of(versionInfo));
 
         final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl(
