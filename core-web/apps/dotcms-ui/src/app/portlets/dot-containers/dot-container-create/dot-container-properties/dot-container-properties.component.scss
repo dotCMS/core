@@ -13,6 +13,10 @@
     .dot-container-properties__title-container {
         padding: $spacing-4 0;
     }
+    .dot-container-properties__title-text {
+        display: inline-block;
+        padding-right: $spacing-2;
+    }
 
     .dot-container-properties__code-container-outer {
         background: $white;

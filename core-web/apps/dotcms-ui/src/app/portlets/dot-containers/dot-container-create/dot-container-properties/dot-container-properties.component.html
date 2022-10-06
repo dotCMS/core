@@ -25,7 +25,12 @@
                     </span>
                 </ng-template>
                 <ng-template pTemplate="display">
-                    {{ 'message.containers.create.click_to_edit' | dm }}
+                    <span class="dot-container-properties__title-text" *ngIf="!form.value.title">{{
+                        'message.containers.create.click_to_edit' | dm
+                    }}</span>
+                    <span class="dot-container-properties__title-text" *ngIf="form.value.title">{{
+                        form.value.title
+                    }}</span>
                     <i class="pi pi-pencil"></i>
                 </ng-template>
             </p-inplace>
