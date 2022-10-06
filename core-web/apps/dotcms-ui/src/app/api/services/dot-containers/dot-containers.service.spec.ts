@@ -8,7 +8,11 @@ import { DotContainersService, CONTAINER_API_URL } from './dot-containers.servic
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { DotActionBulkResult } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
 import { of } from 'rxjs';
-import { CONTAINER_SOURCE, DotContainer } from '@models/container/dot-container.model';
+import {
+    CONTAINER_SOURCE,
+    DotContainer,
+    DotContainerRequest
+} from '@models/container/dot-container.model';
 
 const mockBulkResponseSuccess: DotActionBulkResult = {
     skippedCount: 0,
@@ -107,9 +111,9 @@ describe('DotContainersService', () => {
     it('should post to create a container', () => {
         service
             .create({
-                name: '',
+                title: '',
                 friendlyName: ''
-            } as DotContainer)
+            } as DotContainerRequest)
             .subscribe((container: DotContainer) => {
                 expect(container).toEqual(mockContainer);
             });
@@ -117,7 +121,7 @@ describe('DotContainersService', () => {
         const req = httpMock.expectOne(CONTAINER_API_URL);
 
         expect(req.request.method).toBe('POST');
-        expect(req.request.body.name).toEqual('');
+        expect(req.request.body.title).toEqual('');
         expect(req.request.body.friendlyName).toEqual('');
 
         req.flush({
@@ -128,9 +132,9 @@ describe('DotContainersService', () => {
     it('should put to update a container', () => {
         service
             .update({
-                name: '',
+                title: '',
                 friendlyName: ''
-            } as DotContainer)
+            } as DotContainerRequest)
             .subscribe((container) => {
                 expect(container).toEqual(mockContainer);
             });
@@ -138,7 +142,7 @@ describe('DotContainersService', () => {
         const req = httpMock.expectOne(CONTAINER_API_URL);
 
         expect(req.request.method).toBe('PUT');
-        expect(req.request.body.name).toEqual('');
+        expect(req.request.body.title).toEqual('');
         expect(req.request.body.friendlyName).toEqual('');
 
         req.flush({

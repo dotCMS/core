@@ -20,6 +20,9 @@ export class DotContainerPropertiesComponent implements OnInit {
     editor: MonacoEditor;
     form: UntypedFormGroup;
 
+    private isEdit = false;
+    private containerIdentifier: string;
+
     constructor(
         private store: DotContainerPropertiesStore,
         private dotMessageService: DotMessageService,
@@ -36,7 +39,10 @@ export class DotContainerPropertiesComponent implements OnInit {
             .pipe(pluck('container'), take(1))
             .subscribe((container: DotContainer) => {
                 if (container) {
-                    if (container.preLoop) {
+                    this.isEdit = true;
+                    this.containerIdentifier = container.identifier;
+
+                    if (container.preLoop || container.postLoop) {
                         this.store.updatePrePostLoopAndContentTypeVisibilty({
                             showPrePostLoopInput: true,
                             isContentTypeVisible: true
@@ -67,7 +73,7 @@ export class DotContainerPropertiesComponent implements OnInit {
     }
 
     /**
-     * This method shows the Pre- and Post-Loop Inputs
+     * This method shows the Pre- and Post-Loop Inputs.
      *
      * @return void
      * @memberof DotContainerPropertiesComponent
@@ -77,27 +83,44 @@ export class DotContainerPropertiesComponent implements OnInit {
     }
 
     /**
-     * This method shows the Content type inputs
+     * This method shows the Content type inputs.
+     * @return void
+     * @memberof DotContainerPropertiesComponent
      */
     showContentTypeAndCode(): void {
         this.store.updateContentTypeVisibilty(true);
     }
 
     /**
-     * This method saves the container
+     * Updates or Saves the container based on the isEdit variable.
+     * @return void
+     * @memberof DotContainerPropertiesComponent
      */
-    saveContainer(): void {
-        this.store.saveContainer(this.form.value);
+    save(): void {
+        const formValues = this.form.value;
+        if (this.isEdit) {
+            formValues.identifier = this.containerIdentifier;
+            this.store.editContainer(formValues);
+        } else {
+            this.store.saveContainer(formValues);
+        }
     }
 
     /**
-     * This method navigates the user back to previous page
+     * This method navigates the user back to previous page.
+     * @return void
+     * @memberof DotContainerPropertiesComponent
      */
     cancel(): void {
         this.dotRouterService.goToPreviousUrl();
     }
 
-    clearContent() {
+    /**
+     * Opens modal on clear content button click.
+     * @return void
+     * @memberof DotContainerPropertiesComponent
+     */
+    clearContent(): void {
         this.dotAlertConfirmService.confirm({
             accept: () => {
                 this.store.updateContentTypeVisibilty(false);

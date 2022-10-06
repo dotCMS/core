@@ -6,7 +6,7 @@
         top: 4.8rem;
         right: $spacing-7;
         button {
-            margin: 0 $spacing-1/2;
+            margin: 0 calc($spacing-1/2);
         }
     }
 

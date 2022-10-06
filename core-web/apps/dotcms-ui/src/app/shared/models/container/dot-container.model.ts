@@ -27,6 +27,7 @@ export interface DotContainer {
 }
 
 export interface DotContainerRequest {
+    identifier?: string;
     title: string;
     friendlyName: string;
     maxContentlets: number;
@@ -38,8 +39,8 @@ export interface DotContainerRequest {
 }
 
 export interface DotContainerStructure {
-    structureId: string;
-    code: string;
+    structureId?: string;
+    code?: string;
 }
 
 export interface DotContainerStructure {

@@ -101,4 +101,26 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
             })
         );
     });
+
+    readonly editContainer = this.effect((origin$: Observable<DotContainerRequest>) => {
+        return origin$.pipe(
+            switchMap((container: DotContainerRequest) => {
+                this.dotGlobalMessageService.loading(this.dotMessageService.get('update'));
+
+                return this.dotContainersService.update(container);
+            }),
+            tap((container: DotContainer) => {
+                this.dotGlobalMessageService.success(
+                    this.dotMessageService.get('message.container.updated')
+                );
+                this.updateContainerState(container);
+            }),
+            catchError((err: HttpErrorResponse) => {
+                this.dotGlobalMessageService.error(err.statusText);
+                this.dotHttpErrorManagerService.handle(err);
+
+                return of(null);
+            })
+        );
+    });
 }

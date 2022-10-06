@@ -82,7 +82,7 @@ export class DotContainersService {
      * @returns Observable<DotContainer>
      * @memberof DotContainersService
      */
-    update(values: DotContainer): Observable<DotContainer> {
+    update(values: DotContainerRequest): Observable<DotContainer> {
         return this.request<DotContainer>({ method: 'PUT', url: CONTAINER_API_URL, body: values });
     }
 
