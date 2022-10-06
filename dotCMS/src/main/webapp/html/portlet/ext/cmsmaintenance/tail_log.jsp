@@ -448,10 +448,9 @@
 
         sseSource.addEventListener('success', function(e) {
             // Assuming we receive JSON-encoded data payloads:
+            // Assuming we receive JSON-encoded data payloads:
             const data = JSON.parse(e.data);
-            iDoc.document.open();
-            iDoc.document.write(data.lines);
-            iDoc.document.close();
+            iDoc.document.body.insertAdjacentHTML('beforeend', data.lines);
 
             logViewManager.updateView(data);
         });
