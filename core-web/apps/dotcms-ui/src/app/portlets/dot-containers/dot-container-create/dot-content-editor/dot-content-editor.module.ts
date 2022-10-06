@@ -7,6 +7,8 @@ import { DotTextareaContentModule } from '@components/_common/dot-textarea-conte
 import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-message-pipe.module';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
+import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
+import { DotAddVariableModule } from './dot-add-variable/dot-add-variable.module';
 
 @NgModule({
     declarations: [DotContentEditorComponent],
@@ -17,8 +19,11 @@ import { ButtonModule } from 'primeng/button';
         DotTextareaContentModule,
         DotMessagePipeModule,
         ReactiveFormsModule,
-        ButtonModule
+        ButtonModule,
+        DynamicDialogModule,
+        DotAddVariableModule
     ],
-    exports: [DotContentEditorComponent]
+    exports: [DotContentEditorComponent],
+    providers: [DialogService]
 })
 export class DotContentEditorModule {}
