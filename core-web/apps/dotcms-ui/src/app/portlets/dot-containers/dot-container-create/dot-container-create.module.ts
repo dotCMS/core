@@ -9,6 +9,7 @@ import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module
 import { DotContainerPropertiesModule } from '@portlets/dot-containers/dot-container-create/dot-container-properties/dot-container-properties.module';
 import { DotContainerPermissionsModule } from '@dotcms/app/portlets/dot-containers/dot-container-create/dot-container-permissions/dot-container-permissions.module';
 import { DotContainerHistoryModule } from '@dotcms/app/portlets/dot-containers/dot-container-create/dot-container-history/dot-container-history.module';
+import { DotGlobalMessageModule } from '@components/_common/dot-global-message/dot-global-message.module';
 
 @NgModule({
     declarations: [DotContainerCreateComponent],
@@ -20,7 +21,8 @@ import { DotContainerHistoryModule } from '@dotcms/app/portlets/dot-containers/d
         DotMessagePipeModule,
         DotContainerPropertiesModule,
         DotContainerPermissionsModule,
-        DotContainerHistoryModule
+        DotContainerHistoryModule,
+        DotGlobalMessageModule
     ]
 })
 export class DotContainerCreateModule {}

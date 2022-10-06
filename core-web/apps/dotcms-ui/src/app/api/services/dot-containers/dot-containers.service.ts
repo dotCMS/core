@@ -7,7 +7,10 @@ import { CoreWebService, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
 
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotActionBulkResult } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
-import { DotContainer } from '@dotcms/app/shared/models/container/dot-container.model';
+import {
+    DotContainer,
+    DotContainerRequest
+} from '@dotcms/app/shared/models/container/dot-container.model';
 
 export const CONTAINER_API_URL = '/api/v1/containers/';
 
@@ -70,7 +73,7 @@ export class DotContainersService {
      * @return Observable<DotContainer>
      * @memberof DotContainersService
      */
-    create(values: DotContainer): Observable<DotContainer> {
+    create(values: DotContainerRequest): Observable<DotContainer> {
         return this.request<DotContainer>({ method: 'POST', url: CONTAINER_API_URL, body: values });
     }
 

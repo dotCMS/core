@@ -4,6 +4,7 @@ import { DotContainerPropertiesStore } from '@portlets/dot-containers/dot-contai
 import { MonacoEditor } from '@models/monaco-editor';
 import { DotAlertConfirmService } from '@dotcms/app/api/services/dot-alert-confirm';
 import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 @Component({
     selector: 'dot-container-properties',
@@ -20,14 +21,18 @@ export class DotContainerPropertiesComponent implements OnInit {
         private store: DotContainerPropertiesStore,
         private dotMessageService: DotMessageService,
         private fb: UntypedFormBuilder,
-        private dotAlertConfirmService: DotAlertConfirmService
+        private dotAlertConfirmService: DotAlertConfirmService,
+        private dotRouterService: DotRouterService
     ) {
         //
     }
 
     ngOnInit(): void {
         this.form = this.fb.group({
-            body: '',
+            title: '',
+            friendlyName: '',
+            maxContentlets: 1,
+            code: '',
             preLoop: '',
             postLoop: '',
             containerStructures: this.fb.array([])
@@ -49,6 +54,20 @@ export class DotContainerPropertiesComponent implements OnInit {
      */
     showContentTypeAndCode(): void {
         this.store.updateContentTypeVisibilty(true);
+    }
+
+    /**
+     * This method saves the container
+     */
+    saveContainer(): void {
+        this.store.saveContainer(this.form.value);
+    }
+
+    /**
+     * This method navigates the user back to previous page
+     */
+    cancel(): void {
+        this.dotRouterService.goToPreviousUrl();
     }
 
     clearContent() {

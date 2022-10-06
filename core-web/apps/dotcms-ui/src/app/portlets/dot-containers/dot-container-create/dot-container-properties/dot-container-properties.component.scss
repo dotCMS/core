@@ -1,6 +1,15 @@
 @use "variables" as *;
 
 :host {
+    .dot-container-properties__button-container {
+        position: absolute;
+        top: 4.8rem;
+        right: $spacing-7;
+        button {
+            margin: 0 $spacing-1/2;
+        }
+    }
+
     .dot-container-properties__title-container {
         padding: $spacing-4 0;
     }
@@ -35,7 +44,7 @@
 
         .p-tabview-panel {
             padding: 0 !important;
-            padding-top: 1.5rem !important;
+            padding-top: $spacing-1 !important;
         }
     }
 }

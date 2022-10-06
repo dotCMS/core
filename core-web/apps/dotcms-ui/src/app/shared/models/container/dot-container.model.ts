@@ -22,6 +22,22 @@ export interface DotContainer {
     };
 }
 
+export interface DotContainerRequest {
+    title: string;
+    friendlyName: string;
+    maxContentlets: number;
+    notes: string;
+    code: string;
+    preLoop: string;
+    postLoop: string;
+    containerStructures: DotContainerStructure[];
+}
+
+export interface DotContainerStructure {
+    structureId: string;
+    code: string;
+}
+
 export interface DotContainerStructure {
     contentTypeVar: string;
 }

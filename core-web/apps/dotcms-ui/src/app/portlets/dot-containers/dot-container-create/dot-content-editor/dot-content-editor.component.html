@@ -27,6 +27,11 @@
             [selected]="vm.activeTabIndex === i + 1"
             closable="true"
         >
+            <button
+                class="p-button-secondary dot-content-editor__variable-btn"
+                [label]="'add-variable' | dm"
+                pButton
+            ></button>
             <dot-textarea-content
                 #body
                 [show]="['code']"

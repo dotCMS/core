@@ -1,48 +1,64 @@
 <ng-container *ngIf="vm$ | async as vm">
-    <div class="dot-container-properties__title-container">
-        <p-inplace #editText>
-            <ng-template pTemplate="content">
-                <span class="p-input-icon-right">
-                    <i class="pi pi-times" (click)="editText.deactivate()"></i>
-                    <input type="text" pInputText />
-                </span>
-            </ng-template>
-            <ng-template pTemplate="display">
-                {{ 'message.containers.create.click_to_edit' | dm }}
-                <i class="pi pi-pencil"></i>
-            </ng-template>
-        </p-inplace>
-    </div>
-    <div class="field">
-        <label class="block" for="description">{{
-            'message.containers.create.description' | dm
-        }}</label>
-        <input id="description" type="text" pInputText />
-    </div>
-    <div class="field">
-        <label class="block" for="max-contents">{{
-            'message.containers.create.max_contents' | dm
-        }}</label>
-        <input id="max-contents" type="text" pInputText />
+    <div class="dot-container-properties__button-container">
         <button
             class="p-button-secondary"
-            *ngIf="vm.isContentTypeVisible"
-            [label]="'message.containers.create.clear' | dm"
-            (click)="clearContent()"
+            [label]="'Cancel' | dm"
+            (click)="cancel()"
             pButton
             type="button"
         ></button>
         <button
-            *ngIf="!vm.isContentTypeVisible"
-            [label]="'message.containers.create.content_type_code' | dm"
-            (click)="showContentTypeAndCode()"
+            class="p-button-primary"
+            [label]="'Save' | dm"
+            (click)="saveContainer()"
             pButton
             type="button"
         ></button>
     </div>
+    <form [formGroup]="form">
+        <div class="dot-container-properties__title-container">
+            <p-inplace #editText>
+                <ng-template pTemplate="content">
+                    <span class="p-input-icon-right">
+                        <i class="pi pi-times" (click)="editText.deactivate()"></i>
+                        <input type="text" pInputText formControlName="title" />
+                    </span>
+                </ng-template>
+                <ng-template pTemplate="display">
+                    {{ 'message.containers.create.click_to_edit' | dm }}
+                    <i class="pi pi-pencil"></i>
+                </ng-template>
+            </p-inplace>
+        </div>
+        <div class="field">
+            <label class="block" for="description">{{
+                'message.containers.create.description' | dm
+            }}</label>
+            <input id="description" type="text" formControlName="friendlyName" pInputText />
+        </div>
+        <div class="field">
+            <label class="block" for="max-contents">{{
+                'message.containers.create.max_contents' | dm
+            }}</label>
+            <input id="max-contents" type="text" formControlName="maxContentlets" pInputText />
+            <button
+                class="p-button-secondary"
+                *ngIf="vm.isContentTypeVisible"
+                [label]="'message.containers.create.clear' | dm"
+                (click)="clearContent()"
+                pButton
+                type="button"
+            ></button>
+            <button
+                *ngIf="!vm.isContentTypeVisible"
+                [label]="'message.containers.create.content_type_code' | dm"
+                (click)="showContentTypeAndCode()"
+                pButton
+                type="button"
+            ></button>
+        </div>
 
-    <div class="dot-container-properties__code-container-outer">
-        <form [formGroup]="form">
+        <div class="dot-container-properties__code-container-outer">
             <div *ngIf="vm.isContentTypeVisible">
                 <dot-loop-editor
                     [isEditorVisible]="vm.showPrePostLoopInput"
@@ -59,10 +75,10 @@
             <div *ngIf="!vm.isContentTypeVisible">
                 <dot-textarea-content
                     [show]="['code']"
-                    formControlName="body"
+                    formControlName="code"
                     language="html"
                 ></dot-textarea-content>
             </div>
-        </form>
-    </div>
+        </div>
+    </form>
 </ng-container>

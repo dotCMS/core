@@ -13,7 +13,7 @@ import { MenuModule } from 'primeng/menu';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotLoopEditorModule } from '@portlets/dot-containers/dot-container-create/dot-loop-editor/dot-loop-editor.module';
 import { DotContentEditorModule } from '@portlets/dot-containers/dot-container-create/dot-content-editor/dot-content-editor.module';
-// import { DialogService } from 'primeng/dynamicdialog';
+import { DotContainersService } from '@services/dot-containers/dot-containers.service';
 
 @NgModule({
     declarations: [DotContainerPropertiesComponent],
@@ -32,7 +32,7 @@ import { DotContentEditorModule } from '@portlets/dot-containers/dot-container-c
         DotMessagePipeModule,
         DotLoopEditorModule,
         DotContentEditorModule
-    ]
-    // providers: [DialogService]
+    ],
+    providers: [DotContainersService]
 })
 export class DotContainerPropertiesModule {}

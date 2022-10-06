@@ -6,6 +6,7 @@ import { MenuModule } from 'primeng/menu';
 import { DotTextareaContentModule } from '@components/_common/dot-textarea-content/dot-textarea-content.module';
 import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-message-pipe.module';
 import { ReactiveFormsModule } from '@angular/forms';
+import { ButtonModule } from 'primeng/button';
 
 @NgModule({
     declarations: [DotContentEditorComponent],
@@ -15,7 +16,8 @@ import { ReactiveFormsModule } from '@angular/forms';
         MenuModule,
         DotTextareaContentModule,
         DotMessagePipeModule,
-        ReactiveFormsModule
+        ReactiveFormsModule,
+        ButtonModule
     ],
     exports: [DotContentEditorComponent]
 })
