@@ -19,7 +19,9 @@ import java.util.Optional;
 
 public interface ExperimentsAPI {
 
-    Lazy<Integer> EXPERIMENT_MAX_DURATION = Lazy.of(()->Config.getIntProperty("EXPERIMENT_MAX_DURATION", 35));
+    Lazy<Integer> EXPERIMENTS_MAX_DURATION = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_MAX_DURATION", 35));
+    Lazy<Integer> EXPERIMENT_LOOKBACK_WINDOW = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_LOOKBACK_WINDOW", 10));
+
 
     /**
      * Save a new experiment when the Experiment doesn't have an id
@@ -68,7 +70,7 @@ public interface ExperimentsAPI {
      * <li>Unable to start if provided {@link Scheduling#startDate()} is in the past
      * <li>Unable to start if provided {@link Scheduling#endDate()} is in the past
      * <li>Unable to start if provided {@link Scheduling#endDate()} is not after provided {@link Scheduling#startDate()}
-     * <li>Unable to start if difference between {@link Scheduling#endDate()} and {@link Scheduling#startDate()} is more than {@link ExperimentsAPI#EXPERIMENT_MAX_DURATION}
+     * <li>Unable to start if difference between {@link Scheduling#endDate()} and {@link Scheduling#startDate()} is more than {@link ExperimentsAPI#EXPERIMENTS_MAX_DURATION}
      *
      * @return
      */
@@ -94,7 +96,7 @@ public interface ExperimentsAPI {
      * <li>Provided {@link Scheduling#startDate()} needs to be now or in the future
      * <li>Provided {@link Scheduling#endDate()} needs to be in the future
      * <li>Provided {@link Scheduling#endDate()} needs to be after provided {@link Scheduling#startDate()}
-     * <li>Difference between provided {@link Scheduling#endDate()} and {@link Scheduling#startDate()} needs to be less or equal than {@link ExperimentsAPI#EXPERIMENT_MAX_DURATION}
+     * <li>Difference between provided {@link Scheduling#endDate()} and {@link Scheduling#startDate()} needs to be less or equal than {@link ExperimentsAPI#EXPERIMENTS_MAX_DURATION}
      */
     Scheduling validateScheduling(final Scheduling scheduling);
 

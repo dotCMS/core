@@ -324,6 +324,7 @@ public class TaskLocatorUtil {
 		.add(Task220829CreateExperimentsTable.class)
 		.add(Task220912UpdateCorrectShowOnMenuProperty.class)
 		.add(Task220824CreateDefaultVariant.class)
+		.add(Task220928AddLookbackWindowColumnToExperiment.class)
 		.build();
         
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
