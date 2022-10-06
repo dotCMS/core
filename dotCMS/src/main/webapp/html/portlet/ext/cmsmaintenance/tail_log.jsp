@@ -217,6 +217,12 @@
 
         let matchLinesOnlyView = false;
 
+        /**
+         * As we move (forward) through the contents loaded into the view (Div)
+         * We need to dispose old pages to avoid saturating the div with a ton of content
+         * We simply load a small number of pages and drop the old ones
+         * @private
+         */
         function _dropOldestPages(){
             if (pagesOnScreen >= ON_SCREEN_PAGES) {
 
@@ -275,6 +281,12 @@
             }
         }
 
+        /**
+         * As we move (backwards) through the contents loaded into the view (Div)
+         * We need to dispose the newest pages to avoid saturating the div with a ton of content
+         * We simply load a small number of pages and drop the newer ones
+         * @private
+         */
         function _dropNewestPages() {
             if (pagesOnScreen >= ON_SCREEN_PAGES) {
 
@@ -300,6 +312,10 @@
             }
         }
 
+        /**
+         * if scrolling down we need to be able to load contents that lay up ahead
+         * @private
+         */
         function _fetchNextPage() {
             const last = dest.querySelector(`.log:last-child`);
             if (last) {
@@ -329,6 +345,11 @@
             }
         }
 
+        /**
+         * Append incoming content into the view
+         * @param e
+         * @private
+         */
         function _updateView(e){
 
             const pageId = parseInt(e.detail.pageId);
@@ -353,6 +374,11 @@
 
         }
 
+        /**
+         * First: Reset the view Removing any previously applied  filter
+         * Then: if filtering then apply the highlight
+         * @private
+         */
         function _applyFilter() {
             _removeHighlight();
             if (_isFiltering()) {
@@ -360,25 +386,48 @@
             }
         }
 
+        /**
+         * Adds the style that highlights contents
+         * @param newContent
+         * @returns {*}
+         * @private
+         */
         function _applyHighlight(newContent) {
             const regEx = new RegExp(keyword, "ig");
             return newContent.replaceAll(regEx,
                 '<span class="highlightKeywordMatchLogViewer">$&</span>');
         }
 
+        /**
+         * Destroy the style that was added to highlight contents
+         * @private
+         */
         function _removeHighlight() {
             dest.querySelectorAll(".highlightKeywordMatchLogViewer").forEach(
                 el => el.replaceWith(...el.childNodes));
         }
 
+        /**
+         * This indicates if a valid keyword was provided
+         * @returns {boolean}
+         * @private
+         */
         function _isFiltering(){
             return keyword != null && keyword.length > MIN_KEYWORD_LENGTH;
         }
 
+        /**
+         * Move the scroll down to the bottom
+         * @private
+         */
         function _scrollDownToBottom() {
             dest.scrollTop = dest.scrollHeight;
         }
 
+        /**
+         * When enter key is pressed we need to build a view when only the lines matching the search criteria (keyword) are shown
+         * @private
+         */
         function _matchingLinesOnlyView(){
 
             if (true === _isFiltering()) {
@@ -415,6 +464,7 @@
                 buffer.length = 0;
 
                 //Grab Pages before the current first line
+                //These means pages not loaded into the view that are in the iframe before the first line shown in the div
                 //These must go before the ones we just loaded
 
                 let priorLinesBuffer = [];
@@ -438,6 +488,7 @@
                 priorLinesBuffer.length = 0;
 
                 //Grab Pages after the current last line
+                //These means pages not loaded into the view that are in the iframe after the last line currently shown in the div
                 pageId = lastPageId + 1;
                 let nextLinesBuffer = [];
                 for(let i=PAGE_SIZE; i < MAX_VISITED_PAGES; i += PAGE_SIZE) {
@@ -460,6 +511,7 @@
 
                 dest.innerHTML = _applyHighlight(dest.innerHTML);
 
+                //Tell the Manager we're only showing lines matching the search criteria
                 matchLinesOnlyView = true;
 
                 let t2 = Date.now();
@@ -468,6 +520,14 @@
             }
         }
 
+        /**
+         * The method is meant to load pages not loaded yet and apply the lines filtering
+         * When filtering and showing only matching lines this method should be called to load the matching line
+         * @param startFromPageId
+         * @param numPages
+         * @returns {{hasMorePages: boolean, buffer: *[]}}
+         * @private
+         */
         function _fetchPriorLinesOnly(startFromPageId, numPages){
 
             if(!numPages){
@@ -494,6 +554,14 @@
              return lines;
         }
 
+        /**
+         * The method is meant to load pages not loaded yet and apply the lines filtering
+         * When filtering and showing only matching lines this method should be called to load the matching line
+         * @param startFromPageId
+         * @param numPages
+         * @returns {{hasMorePages: boolean, buffer: *[]}}
+         * @private
+         */
         function _fetchNextLinesOnly(startFromPageId, numPages){
 
             if(!numPages){
@@ -520,6 +588,13 @@
             return lines;
         }
 
+        /**
+         * This takes an HTMLNodeList and filters out all nodes where keyword does not have a match
+         * Returns a list with brand new HTMLNodes of type `p`
+         * @param nodes
+         * @returns {*[Node]}
+         * @private
+         */
         function _matchingLines(nodes){
             const regEx = new RegExp( keyword, "i");
             let matches = [];
@@ -539,6 +614,11 @@
             return matches;
         }
 
+        /**
+         * Once a search criteria has been cleared we need to recreate content and start somewhere
+         * That's what this method does. it shows the last three existing pages on the iframe
+         * @private
+         */
         function _loadDefaultView() {
 
             dest.replaceChildren();
@@ -565,6 +645,7 @@
             matchLinesOnlyView = false;
         }
 
+        // Return our public API
         return ({
 
             setFollowing : (value) => {
@@ -604,15 +685,14 @@
                     return;
                 }
                 _updateView(e);
-                _scrollDownToBottom();
                 _dropOldestPages();
+                _scrollDownToBottom();
             }
 
         });
     }
 
     let logViewManager = null;
-
 
 
     function attachLogIframeEvents() {
@@ -647,7 +727,7 @@
             const scrollTop = div.scrollTop;
             const scrollPercentage = computeScrollPercentage(div.scrollHeight, scrollTop);
 
-           // console.log(" scroll % :: " + scrollPercentage);
+            console.log(" scroll % :: " + scrollPercentage);
 
             if (scrollTop < lastScrollTop) {
                 //We're scrolling up
@@ -655,7 +735,7 @@
                 if (followCheck.checked) {
                     //This does guarantee that we need to scroll back up at least till the scroll top is at the 94% of the div height
                     //This is makes the check-box stay checked until we have scrolled back a bit more
-                    if (scrollPercentage <= 91) {
+                    if (scrollPercentage <= 88) {
                         //This does not fire the change event
                         followCheck.setValue(false);
                         //Therefore, we need to explicitly indicate we want to stop following the events
