@@ -44,7 +44,7 @@ export class DotContainersService {
      * @memberof DotContainersService
      */
     getById(id: string, version = 'working'): Observable<DotContainer> {
-        const url = `${CONTAINER_API_URL}${id}/${version}`;
+        const url = `${CONTAINER_API_URL}${version}?containerId=${id}`;
 
         return this.request<DotContainer>({
             url

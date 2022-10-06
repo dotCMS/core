@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.categories;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
@@ -26,9 +27,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.business.PaginatedCategories;
 import com.dotmarketing.portlets.categories.model.Category;
-import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.ActivityLogger;
-import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
@@ -40,7 +39,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -272,6 +273,56 @@ public class CategoriesResource {
     }
 
     /**
+     * Update a working version of an existing category for sortOrder. The categoryEditDTO must contain the inode and sortOrder of the category.
+     *
+     * @param httpRequest       {@link HttpServletRequest}
+     * @param httpResponse      {@link HttpServletResponse}
+     * @param categoryEditForm  {@link CategoryForm}
+     * @return CategoryView
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @PUT
+    @Path("/_sort")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response save(@Context final HttpServletRequest  httpRequest,
+            @Context final HttpServletResponse httpResponse,
+            final CategoryEditForm categoryEditForm
+            ) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
+        final User user = initData.getUser();
+        final Host host = this.categoryHelper.getHost(categoryEditForm.getSiteId(),
+                () -> this.hostWebAPI.getCurrentHostNoThrow(httpRequest));
+        final PageMode pageMode = PageMode.get(httpRequest);
+
+        Logger.debug(this,
+                () -> "Saving category sortOrder. Request payload is : " + getObjectToJsonString(
+                        categoryEditForm));
+
+        DotPreconditions.checkArgument(UtilMethods.isSet(categoryEditForm.getCategoryData()),
+                "The body must send a collection of category inode and sortOrder");
+
+        Category parentCategory = null;
+
+        if (UtilMethods.isSet(categoryEditForm.getParentInode())) {
+            parentCategory = this.categoryAPI.find(categoryEditForm.getParentInode(), user,
+                    pageMode.respectAnonPerms);
+        }
+
+        updateSortOrder(categoryEditForm, user, host, pageMode, parentCategory);
+
+        return parentCategory == null
+                ? this.paginationUtil.getPage(httpRequest, user, categoryEditForm.getFilter(),
+                categoryEditForm.getPage(), categoryEditForm.getPerPage())
+                    : this.getChildren(httpRequest,httpResponse,categoryEditForm.getFilter(), categoryEditForm.getPage(),
+                            categoryEditForm.getPerPage(),"", categoryEditForm.getDirection(),categoryEditForm.getParentInode());
+    }
+
+    /**
      * Deletes Categories.
      *
      * This method receives a list of inodes and deletes all the children and the parent categories.
@@ -314,6 +365,7 @@ public class CategoriesResource {
 
             if(!undeletedCategoryList.isEmpty()) {
                 for (final String categoryInode : undeletedIds) {
+                    Logger.error(this, "Category with Id: " + categoryInode + " does not exist");
                     failedToDelete.add(new FailedResultView(categoryInode, "Category does not exist or failed to remove child category"));
                 }
             }
@@ -388,6 +440,42 @@ public class CategoriesResource {
                 host.getTitle() != null ? host.getTitle() : "default");
 
         return updatedCategory;
+    }
+
+    @WrapInTransaction
+    private void updateSortOrder(final CategoryEditForm categoryEditForm, final User user, final Host host,
+            final PageMode pageMode, final Category parentCategory)
+            throws DotDataException, DotSecurityException {
+
+        Iterator iterator = categoryEditForm.getCategoryData().entrySet().iterator();
+
+        while(iterator.hasNext()) {
+            Map.Entry entry = (Map.Entry) iterator.next();
+            String key = (String) entry.getKey();
+            Integer value = (Integer) entry.getValue();
+
+            final Category category = this.categoryAPI.find(key, user, pageMode.respectAnonPerms);
+
+            if (null == category) {
+                Logger.error(this, "Category with Id: " + key + " does not exist");
+                throw new IllegalArgumentException("Category with Id: " + key + " does not exist");
+            } else {
+
+                category.setSortOrder(value);
+
+                Logger.debug(this,
+                        () -> "Saving category entity : " + getObjectToJsonString(category));
+                this.categoryAPI.save(parentCategory, category, user,
+                        pageMode.respectAnonPerms);
+                Logger.debug(this,
+                        () -> "Saved category entity : " + getObjectToJsonString(category));
+
+                ActivityLogger.logInfo(this.getClass(), "Saved Category",
+                        "User " + user.getPrimaryKey()
+                                + "Category: " + category.getCategoryName(),
+                        host.getTitle() != null ? host.getTitle() : "default");
+            }
+        }
     }
 
     private Response getPage(final List<Category> list, final int totalCount, final int page,
