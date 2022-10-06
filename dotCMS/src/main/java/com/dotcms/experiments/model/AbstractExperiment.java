@@ -124,7 +124,6 @@ public interface AbstractExperiment extends Serializable, ManifestItem, Ruleable
         return Collections.emptyList();
     }
 
-    @JsonIgnore
     @Value.Derived
     @JsonIgnore
     default Permissionable getParentPermissionable() {
