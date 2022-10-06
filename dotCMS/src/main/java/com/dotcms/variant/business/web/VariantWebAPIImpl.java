@@ -26,7 +26,7 @@ import org.apache.velocity.exception.ResourceNotFoundException;
 public class VariantWebAPIImpl implements VariantWebAPI{
 
     /**
-     * Return the current version following this steps:
+     * Return the current variant following this steps:
      *
      * - Get the current {@link HttpServletRequest} from {@link HttpServletRequestThreadLocal#getRequest()},
      * If the method {@link HttpServletRequestThreadLocal#getRequest()} return null then return {@link VariantAPI#DEFAULT_VARIANT}..
