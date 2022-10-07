@@ -6,9 +6,15 @@
             [apiLink]="apiLink"
         ></dot-edit-page-info>
         <dot-icon-button
+            *ngIf="showFavoritePageStar"
+            [icon]="pageState.favoritePage ? 'grade' : 'star_outline'"
+            [ngClass]="{
+                'dot-favorite-page-highlight': pageState.favoritePage
+            }"
+            [pTooltip]="'favoritePage.star.icon.tooltip' | dm"
+            (click)="favoritePage.emit(true)"
             data-testId="addFavoritePageButton"
-            icon="star_outline"
-            (click)="addFavoritePage()"
+            tooltipPosition="bottom"
         ></dot-icon-button>
     </div>
 
@@ -22,15 +28,15 @@
 
     <div class="lower-toolbar-left">
         <dot-edit-page-state-controller
-            (modeChange)="stateChange()"
             [pageState]="pageState"
+            (modeChange)="stateChange()"
         ></dot-edit-page-state-controller>
 
         <p-checkbox
             class="dot-edit__what-changed-button"
+            *ngIf="showWhatsChanged && isEnterpriseLicense$ | async"
             [binary]="true"
             [label]="'dot.common.whats.changed' | dm"
-            *ngIf="showWhatsChanged && isEnterpriseLicense$ | async"
             (onChange)="whatschange.emit($event.checked)"
         ></p-checkbox>
     </div>

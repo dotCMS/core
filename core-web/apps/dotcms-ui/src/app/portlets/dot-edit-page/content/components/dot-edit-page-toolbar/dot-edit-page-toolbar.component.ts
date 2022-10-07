@@ -5,16 +5,14 @@ import {
     EventEmitter,
     Output,
     OnChanges,
-    OnDestroy
+    OnDestroy,
+    isDevMode
 } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models';
 import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DialogService } from 'primeng/dynamicdialog';
-import { DotFavoritePageComponent } from '../../../components/dot-favorite-page/dot-favorite-page.component';
-import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
 @Component({
     selector: 'dot-edit-page-toolbar',
     templateUrl: './dot-edit-page-toolbar.component.html',
@@ -24,6 +22,7 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
     @Input() pageState: DotPageRenderState;
     @Output() cancel = new EventEmitter<boolean>();
     @Output() actionFired = new EventEmitter<DotCMSContentlet>();
+    @Output() favoritePage = new EventEmitter<boolean>();
     @Output() whatschange = new EventEmitter<boolean>();
 
     isEnterpriseLicense$: Observable<boolean>;
@@ -31,15 +30,19 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
     apiLink: string;
     pageRenderedHtml: string;
 
+    // TODO: Remove next line when total functionality of Favorite page is done for release
+    showFavoritePageStar = false;
+
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        private dotLicenseService: DotLicenseService,
-        private dialogService: DialogService,
-        private dotMessageService: DotMessageService
-    ) {}
+    constructor(private dotLicenseService: DotLicenseService) {}
 
     ngOnInit() {
+        // TODO: Remove next line when total functionality of Favorite page is done for release
+        if (isDevMode()) {
+            this.showFavoritePageStar = true;
+        }
+
         this.isEnterpriseLicense$ = this.dotLicenseService.isEnterprise();
         this.apiLink = `api/v1/page/render${this.pageState.page.pageURI}?language_id=${this.pageState.page.languageId}`;
     }
@@ -67,24 +70,6 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
             this.showWhatsChanged = false;
             this.whatschange.emit(this.showWhatsChanged);
         }
-    }
-
-    /**
-     * Instantiate dialog to Add Favorite Page
-     *
-     * @memberof DotEditPageToolbarComponent
-     */
-    addFavoritePage(): void {
-        this.dialogService.open(DotFavoritePageComponent, {
-            header: this.dotMessageService.get('favoritePage.dialog.header.add.page'),
-            width: '80rem',
-            data: {
-                page: {
-                    pageState: this.pageState,
-                    pageRenderedHtml: this.pageRenderedHtml || null
-                }
-            }
-        });
     }
 
     private updateRenderedHtml(): string {

@@ -30,7 +30,7 @@ import {
 } from '@dotcms/dotcms-js';
 import { SiteServiceMock } from '@tests/site-service.mock';
 import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
-import { LoginServiceMock } from '@tests/login-service.mock';
+import { LoginServiceMock, mockUser } from '@tests/login-service.mock';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { mockDotPersona } from '@tests/dot-persona.mock';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
@@ -54,7 +54,11 @@ import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
 import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotFormatDateServiceMock } from '@dotcms/app/test/format-date-service.mock';
 import { DialogService } from 'primeng/dynamicdialog';
-import { DotFavoritePageComponent } from '../../../components/dot-favorite-page/dot-favorite-page.component';
+import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
+import { TooltipModule } from 'primeng/tooltip';
+import { ESContent } from '@dotcms/app/shared/models/dot-es-content/dot-es-content.model';
+import { DotPageRender } from '@dotcms/app/shared/models/dot-page/dot-rendered-page.model';
+import { mockDotRenderedPage } from '@dotcms/app/test/dot-page-render.mock';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -68,7 +72,9 @@ class TestHostComponent {
     selector: 'dot-icon-button',
     template: ''
 })
-class MockDotIconButtonComponent {}
+class MockDotIconButtonComponent {
+    @Input() icon: string;
+}
 
 @Component({
     selector: 'dot-global-message',
@@ -80,6 +86,13 @@ class MockGlobalMessageComponent {}
 class MockDotLicenseService {
     isEnterprise(): Observable<boolean> {
         return of(true);
+    }
+}
+
+@Injectable()
+class MockDotPageStateService {
+    requestFavoritePageData(_urlParam: string): Observable<ESContent> {
+        return of();
     }
 }
 
@@ -114,7 +127,8 @@ describe('DotEditPageToolbarComponent', () => {
                 DotEditPageInfoModule,
                 DotEditPageWorkflowsActionsModule,
                 DotPipesModule,
-                DotWizardModule
+                DotWizardModule,
+                TooltipModule
             ],
             providers: [
                 { provide: DotLicenseService, useClass: MockDotLicenseService },
@@ -128,7 +142,7 @@ describe('DotEditPageToolbarComponent', () => {
                 },
                 {
                     provide: DotPageStateService,
-                    useValue: {}
+                    useClass: MockDotPageStateService
                 },
                 {
                     provide: SiteService,
@@ -156,7 +170,8 @@ describe('DotEditPageToolbarComponent', () => {
                 ApiRoot,
                 UserModel,
                 DotIframeService,
-                DialogService
+                DialogService,
+                DotESContentService
             ]
         });
     });
@@ -307,32 +322,51 @@ describe('DotEditPageToolbarComponent', () => {
         });
     });
 
+    describe('Favorite icon', () => {
+        it('should change icon on favorite page if contentlet exist', () => {
+            componentHost.pageState = new DotPageRenderState(
+                mockUser(),
+                new DotPageRender(mockDotRenderedPage()),
+                true
+            );
+            component.showFavoritePageStar = true;
+
+            fixtureHost.detectChanges();
+
+            const favoritePageIcon = de.query(By.css('[data-testId="addFavoritePageButton"]'));
+            expect(favoritePageIcon.componentInstance.icon).toBe('grade');
+        });
+
+        it('should show empty star icon on favorite page if NO contentlet exist', () => {
+            component.showFavoritePageStar = true;
+
+            fixtureHost.detectChanges();
+
+            const favoritePageIcon = de.query(By.css('[data-testId="addFavoritePageButton"]'));
+            expect(favoritePageIcon.componentInstance.icon).toBe('star_outline');
+        });
+    });
+
     describe('events', () => {
         let whatsChangedElem: DebugElement;
         beforeEach(() => {
             spyOn(component.whatschange, 'emit');
             spyOn(dotMessageDisplayService, 'push');
             spyOn(dotDialogService, 'open');
+            spyOn(component.favoritePage, 'emit');
 
             componentHost.pageState.state.mode = DotPageMode.PREVIEW;
             delete componentHost.pageState.viewAs.persona;
+            component.showFavoritePageStar = true;
             fixtureHost.detectChanges();
             whatsChangedElem = de.query(By.css('.dot-edit__what-changed-button'));
         });
 
-        // TODO: enable when Add Favorite Page functionality finished
-        xit('should instantiate dialog with DotFavoritePageComponent', () => {
+        it('should instantiate dialog with DotFavoritePageComponent', () => {
             de.query(By.css('[data-testId="addFavoritePageButton"]')).nativeElement.click();
-            expect(dotDialogService.open).toHaveBeenCalledWith(DotFavoritePageComponent, {
-                header: 'Add Favorite Page',
-                width: '40rem',
-                data: {
-                    page: {
-                        pageState: mockDotRenderedPageState,
-                        pageRenderedHtml: component.pageRenderedHtml || null
-                    }
-                }
-            });
+            fixtureHost.detectChanges();
+
+            expect(component.favoritePage.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should store RenderedHTML value if PREVIEW MODE', () => {
