@@ -178,6 +178,7 @@ import com.dotmarketing.startup.runonce.Task220822CreateVariantTableTest;
 import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTableTest;
 
 import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExperimentTest;
+import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -584,7 +585,8 @@ import org.junit.runners.Suite.SuiteClasses;
         IdentifierCacheImplTest.class,
         VariantCacheTest.class,
         VersionableFactoryImplTest.class,
-        Task220928AddLookbackWindowColumnToExperimentTest.class
+        Task220928AddLookbackWindowColumnToExperimentTest.class,
+        Task221007AddVariantIntoPrimaryKeyTest.class
 })
 public class MainSuite {
 
