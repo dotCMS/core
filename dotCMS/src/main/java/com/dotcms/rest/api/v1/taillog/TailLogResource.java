@@ -2,7 +2,7 @@ package com.dotcms.rest.api.v1.taillog;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
-import com.dotcms.repackage.org.apache.commons.io.input.TailerListenerAdapter;
+import org.apache.commons.io.input.TailerListenerAdapter;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;

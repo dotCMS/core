@@ -21,11 +21,12 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.org.apache.commons.io.input.TailerListener;
 
 import com.dotmarketing.util.Logger;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.TailerListener;
+import org.apache.commons.io.input.TailerListenerAdapter;
 
 /**
  * Simple implementation of the unix "tail -f" functionality.
@@ -107,7 +108,7 @@ import com.dotmarketing.util.Logger;
  * @version $Id$
  * @since Commons IO 2.0
  */
-public class Tailer extends com.dotcms.repackage.org.apache.commons.io.input.Tailer {
+public class Tailer extends org.apache.commons.io.input.Tailer {
 
     /**
      * The file which will be tailed.

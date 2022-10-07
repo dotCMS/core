@@ -34,13 +34,14 @@ import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FileUtils;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.uuid.shorty.ShortyIdCache;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -4004,11 +4005,12 @@ public class ContentletAPITest extends ContentletBaseTest {
         requestProxy.setAttribute(com.liferay.portal.util.WebKeys.USER,APILocator.getUserAPI().getSystemUser());
 
         org.apache.velocity.Template teng1 = engine.getTemplate(
-                File.separator + PageMode.LIVE.name() + File.separator + w.getIdentifier() + "_1."
+                File.separator + PageMode.LIVE.name() + File.separator + w.getIdentifier() + "_1" +
+                        StringPool.UNDERLINE + VariantAPI.DEFAULT_VARIANT.name() + "."
                         + VelocityType.CONTENT.fileExtension);
         org.apache.velocity.Template tesp1 = engine.getTemplate(
                 File.separator + PageMode.LIVE.name() + File.separator + w.getIdentifier() + "_"
-                        + spanishLanguage.getId() + "."
+                        + spanishLanguage.getId() + StringPool.UNDERLINE + VariantAPI.DEFAULT_VARIANT.name() + "."
                         + VelocityType.CONTENT.fileExtension);
 
         Context ctx = VelocityUtil.getWebContext(requestProxy, responseProxy);
@@ -4033,11 +4035,12 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         // now if everything have been cleared correctly those should match again
         org.apache.velocity.Template teng3 = engine.getTemplate(
-                File.separator + PageMode.LIVE.name() + File.separator + w.getIdentifier() + "_1."
+                File.separator + PageMode.LIVE.name() + File.separator + w.getIdentifier() + "_1"
+                        + StringPool.UNDERLINE + VariantAPI.DEFAULT_VARIANT.name() + "."
                         + VelocityType.CONTENT.fileExtension);
         org.apache.velocity.Template tesp3 = engine.getTemplate(
                 File.separator + PageMode.LIVE.name() + File.separator + w.getIdentifier() + "_"
-                        + spanishLanguage.getId() + "."
+                        + spanishLanguage.getId() + StringPool.UNDERLINE + VariantAPI.DEFAULT_VARIANT.name() + "."
                         + VelocityType.CONTENT.fileExtension);
         ctx = VelocityUtil.getWebContext(requestProxy, responseProxy);
         writer=new StringWriter();

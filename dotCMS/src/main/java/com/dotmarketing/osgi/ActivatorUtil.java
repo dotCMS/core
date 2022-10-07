@@ -1,6 +1,6 @@
 package com.dotmarketing.osgi;
 
-import com.dotcms.repackage.org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.FilenameUtils;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
 import com.dotcms.repackage.org.apache.struts.config.impl.ModuleConfigImpl;
