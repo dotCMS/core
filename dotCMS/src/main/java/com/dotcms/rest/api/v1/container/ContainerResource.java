@@ -1139,7 +1139,7 @@ public class ContainerResource implements Serializable {
      * @throws DotSecurityException
      */
     @DELETE
-    @Path("bulkdelete")
+    @Path("_bulkdelete")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -1153,6 +1153,9 @@ public class ContainerResource implements Serializable {
         final PageMode pageMode = PageMode.get(request);
         Long deletedContainersCount  = 0L;
         final List<FailedResultView> failedToDelete  = new ArrayList<>();
+
+        Logger.debug(this,
+                () -> "Deleting containers in bulk. Request payload is : {" + String.join(",", containersToDelete) + "}");
 
         DotPreconditions.checkArgument(UtilMethods.isSet(containersToDelete),
                 "The body must send a collection of container identifier such as: " +
@@ -1213,6 +1216,9 @@ public class ContainerResource implements Serializable {
         Long publishedContainersCount = 0L;
         final List<FailedResultView> failedToPublish    = new ArrayList<>();
 
+        Logger.debug(this,
+                () -> "Publishing containers in bulk. Request payload is : {" + String.join(",", containersToPublish) + "}");
+
         DotPreconditions.checkArgument(UtilMethods.isSet(containersToPublish),
                 "The body must send a collection of container identifier such as: " +
                         "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
@@ -1270,6 +1276,9 @@ public class ContainerResource implements Serializable {
         Long unpublishedContainersCount = 0L;
         final List<FailedResultView> failedToUnpublish    = new ArrayList<>();
 
+        Logger.debug(this,
+                () -> "Unpublishing containers in bulk. Request payload is : {" + String.join(",", containersToUnpublish) + "}");
+
         DotPreconditions.checkArgument(UtilMethods.isSet(containersToUnpublish),
                 "The body must send a collection of container identifier such as: " +
                         "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
@@ -1326,6 +1335,9 @@ public class ContainerResource implements Serializable {
         final PageMode pageMode = PageMode.get(request);
         Long archivedContainersCount = 0L;
         final List<FailedResultView> failedToArchive    = new ArrayList<>();
+
+        Logger.debug(this,
+                () -> "Archiving containers in bulk. Request payload is : {" + String.join(",", containersToArchive) + "}");
 
         DotPreconditions.checkArgument(UtilMethods.isSet(containersToArchive),
                 "The body must send a collection of container identifier such as: " +
@@ -1385,6 +1397,9 @@ public class ContainerResource implements Serializable {
         final PageMode pageMode = PageMode.get(request);
         Long unarchivedContainersCount = 0L;
         final List<FailedResultView> failedToUnarchive    = new ArrayList<>();
+
+        Logger.debug(this,
+                () -> "Unarchiving containers in bulk. Request payload is : {" + String.join(",", containersToUnarchive) + "}");
 
         DotPreconditions.checkArgument(UtilMethods.isSet(containersToUnarchive),
                 "The body must send a collection of container identifier such as: " +
