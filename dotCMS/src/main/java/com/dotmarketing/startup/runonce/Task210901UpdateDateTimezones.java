@@ -85,12 +85,12 @@ public class Task210901UpdateDateTimezones extends AbstractJDBCStartupTask {
             while (results.next()) {
                 if ("timestamp".equalsIgnoreCase(results.getString("TYPE_NAME"))) {
                     final String columnName = results.getString("COLUMN_NAME");
-                    Logger.info(this, "Updating " + tableName + "." + columnName + " to timestamp with timezone");
-                    String statmentString =
+                    Logger.info(this, "Updating " + tableName + "." + columnName + " column to timestamp with timezone");
+                    String statementString =
                                     "ALTER TABLE \"{0}\" ALTER COLUMN \"{1}\" TYPE TIMESTAMP WITH TIME ZONE USING \"{2}\"";
-                    statmentString = statmentString.replace("{0}", tableName).replace("{1}", columnName).replace("{2}",
+                    statementString = statementString.replace("{0}", tableName).replace("{1}", columnName).replace("{2}",
                                     columnName);
-                    conn.prepareStatement(statmentString).execute();
+                    conn.prepareStatement(statementString).execute();
                     tableUpdated = true;
                 }
             }
@@ -118,10 +118,10 @@ public class Task210901UpdateDateTimezones extends AbstractJDBCStartupTask {
                   tablesCount++;
                 }
             }
-        } catch (Exception e) {
+            updateDateFieldsToUTC();
+        } catch (final Exception e) {
             throw new DotRuntimeException(e);
         }
-        updateContentDateFieldsToUTC();
     }
 
     /**
@@ -151,22 +151,41 @@ public class Task210901UpdateDateTimezones extends AbstractJDBCStartupTask {
     }
 
     /**
-     * Updates the value of all 'date' columns in the {@code contentlet} table as well as the {@code mod_date} column.
+     * Updates the values of specific 'date' columns in several dotCMS tables.
      *
-     * @throws DotDataException An error occurred when updating the values.
+     * @throws DotDataException An error occurred when updating date values.
      */
     @VisibleForTesting
-    void updateContentDateFieldsToUTC() throws DotDataException {
+    void updateDateFieldsToUTC() throws DotDataException {
         int offset = calculateOffsetSeconds();
-        String sql;
-        for(int i=1;i<26;i++) {
-            Logger.info(this, "Updating contentlet.date" + i + " column value to UTC time");
-            sql = "update contentlet set {1} = {1} + interval '{2}' SECOND where {1} is not null"
-                            .replace("{1}", "date" + i)
-                            .replace("{2}", String.valueOf(offset));
-            new DotConnect().setSQL(sql).loadResult();
+        // Updating all 25 date values in the "contentlet" table
+        for (int i = 1; i < 26; i++) {
+            updateDateValue("contentlet", "date" + i, offset);
         }
-        sql = "UPDATE contentlet SET mod_date = mod_date + INTERVAL '" + offset + "' SECOND WHERE mod_date IS NOT NULL";
+        // Updating "mod_date" value in the "contentlet" table
+        updateDateValue("contentlet", "mod_date", offset);
+        // Updating date values in the "identifier" table
+        updateDateValue("identifier", "syspublish_date", offset);
+        updateDateValue("identifier", "sysexpire_date", offset);
+        updateDateValue("identifier", "create_date", offset);
+    }
+
+    /**
+     * Runs the query that updates the value of a specific date with timezone column with the appropriate time offset
+     * based on the Time Zone selected by the respective dotCMS Admin.
+     *
+     * @param table  The name of the dotCMS table containing the specified date column.
+     * @param column The date column that will be updated.
+     * @param offset The time offset in seconds from the UTC Time Zone to the user-selected Time Zone.
+     *
+     * @throws DotDataException An error occurred when running the SQL query.
+     */
+    private void updateDateValue(final String table, final String column, final int offset) throws DotDataException {
+        Logger.info(this, String.format("Updating existing %s.%s values to UTC time", table, column));
+        final String sql = "UPDATE {1} SET {2} = {2} + INTERVAL '{3}' SECOND WHERE {2} IS NOT NULL"
+                                   .replace("{1}", table)
+                                   .replace("{2}", column)
+                                   .replace("{3}", String.valueOf(offset));
         new DotConnect().setSQL(sql).loadResult();
     }
 
