@@ -1,5 +1,11 @@
 import { Component, OnInit } from '@angular/core';
-import { FormControl, UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import {
+    FormArray,
+    FormControl,
+    UntypedFormBuilder,
+    UntypedFormGroup,
+    Validators
+} from '@angular/forms';
 import { DotContainerPropertiesStore } from '@portlets/dot-containers/dot-container-create/dot-container-properties/store/dot-container-properties.store';
 import { MonacoEditor } from '@models/monaco-editor';
 import { DotAlertConfirmService } from '@dotcms/app/api/services/dot-alert-confirm';
@@ -8,6 +14,7 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { ActivatedRoute } from '@angular/router';
 import { pluck, take } from 'rxjs/operators';
 import { DotContainer } from '@dotcms/app/shared/models/container/dot-container.model';
+import { MenuItem } from 'primeng/api';
 
 @Component({
     selector: 'dot-container-properties',
@@ -51,14 +58,14 @@ export class DotContainerPropertiesComponent implements OnInit {
                 }
 
                 this.form = this.fb.group({
-                    title: new FormControl(container.title ?? '', [Validators.required]),
-                    friendlyName: new FormControl(container.friendlyName ?? ''),
-                    maxContentlets: new FormControl(container.maxContentlets ?? 0, [
+                    title: new FormControl(container?.title ?? '', [Validators.required]),
+                    friendlyName: new FormControl(container?.friendlyName ?? ''),
+                    maxContentlets: new FormControl(container?.maxContentlets ?? 0, [
                         Validators.required
                     ]),
-                    code: container.code ?? '',
-                    preLoop: container.preLoop ?? '',
-                    postLoop: container.postLoop ?? '',
+                    code: container?.code ?? '',
+                    preLoop: container?.preLoop ?? '',
+                    postLoop: container?.postLoop ?? '',
                     containerStructures: this.fb.array([])
                 });
 
@@ -100,6 +107,20 @@ export class DotContainerPropertiesComponent implements OnInit {
         } else {
             this.store.saveContainer(formValues);
         }
+    }
+
+    updateContainerStructure(containerStructures: MenuItem[]) {
+        const addInContainerStructure = this.form.get('containerStructures') as FormArray;
+        // clear containerStructures array
+        (this.form.get('containerStructures') as FormArray).clear();
+        containerStructures.forEach(({ label, state }: MenuItem) =>
+            addInContainerStructure.push(
+                this.fb.group({
+                    contentType: label,
+                    content: state?.title || ''
+                })
+            )
+        );
     }
 
     /**

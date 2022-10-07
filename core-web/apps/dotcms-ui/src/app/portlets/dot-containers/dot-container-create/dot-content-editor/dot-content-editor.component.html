@@ -30,13 +30,13 @@
             <button
                 class="p-button-secondary dot-content-editor__variable-btn"
                 [label]="'add-variable' | dm"
-                (click)="handleAddVariable()"
+                (click)="handleAddVariable(contentType.state.contentType)"
                 pButton
             ></button>
             <dot-textarea-content
                 #body
                 [show]="['code']"
-                formControlName="body"
+                (ValueChange)="updateContentTypeText($event)"
                 language="html"
             ></dot-textarea-content>
         </p-tabPanel>

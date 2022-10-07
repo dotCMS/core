@@ -9,6 +9,7 @@ export interface DotContentEditorState {
     activeTabIndex: number;
     contentTypes: MenuItem[];
     selectedContentTypes: MenuItem[];
+    contentTypesData: MenuItem[];
 }
 
 @Injectable()
@@ -17,7 +18,8 @@ export class DotContentEditorStore extends ComponentStore<DotContentEditorState>
         super({
             activeTabIndex: 1,
             contentTypes: [],
-            selectedContentTypes: []
+            selectedContentTypes: [],
+            contentTypesData: []
         });
 
         this.dotContentTypeService
@@ -28,12 +30,16 @@ export class DotContentEditorStore extends ComponentStore<DotContentEditorState>
                 this.setState({
                     activeTabIndex: 1,
                     contentTypes: mappedContentTypes,
-                    selectedContentTypes: [mappedContentTypes[0]]
+                    selectedContentTypes: [mappedContentTypes[0]],
+                    contentTypesData: [mappedContentTypes[0]]
                 });
             });
     }
 
     readonly vm$ = this.select((state: DotContentEditorState) => state);
+    readonly contentTypeData$ = this.select(
+        ({ contentTypesData }: DotContentEditorState) => contentTypesData
+    );
 
     updateActiveTabIndex = this.updater<number>((state, activeTabIndex) => {
         return {
@@ -56,19 +62,40 @@ export class DotContentEditorStore extends ComponentStore<DotContentEditorState>
 
     updateSelectedContentType = this.updater<MenuItem>((state, selectedContentType) => {
         const selected = state.selectedContentTypes;
+        const contentTypesData = state.contentTypesData;
         selected.push(selectedContentType);
+        contentTypesData.push(selectedContentType);
 
         return {
             ...state,
+            contentTypesData,
             selectedContentTypes: selected
+        };
+    });
+
+    updateSelectedContentTypeContent = this.updater<string>((state, title) => {
+        const { contentTypesData, activeTabIndex } = this.get();
+        const contentTypes = [...contentTypesData];
+        const currentContent = contentTypes[activeTabIndex - 1];
+        const contentType = {
+            ...currentContent,
+            state: { title: title || currentContent?.state?.title || '' }
+        };
+        contentTypes[activeTabIndex - 1] = contentType;
+
+        return {
+            ...state,
+            contentTypesData: contentTypes
         };
     });
 
     private mapActions(contentTypes: DotCMSContentType[]): MenuItem[] {
         return contentTypes.map((contentType) => {
             const menuItem = {
-                state: { contentType },
                 label: contentType.name,
+                state: {
+                    title: ''
+                },
                 command: () => {
                     if (!this.checkIfAlreadyExists(menuItem.label)) {
                         this.updateSelectedContentType(menuItem);
