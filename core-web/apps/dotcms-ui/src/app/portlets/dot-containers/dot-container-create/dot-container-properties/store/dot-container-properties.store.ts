@@ -15,6 +15,7 @@ import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-er
 export interface DotContainerPropertiesState {
     showPrePostLoopInput: boolean;
     isContentTypeVisible: boolean;
+    isContentTypeButtonEnabled: boolean;
 }
 
 @Injectable()
@@ -27,20 +28,29 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
     ) {
         super({
             showPrePostLoopInput: false,
-            isContentTypeVisible: false
+            isContentTypeVisible: false,
+            isContentTypeButtonEnabled: false
         });
     }
 
     readonly vm$ = this.select(
-        ({ showPrePostLoopInput, isContentTypeVisible }: DotContainerPropertiesState) => {
+        ({
+            showPrePostLoopInput,
+            isContentTypeVisible,
+            isContentTypeButtonEnabled
+        }: DotContainerPropertiesState) => {
             return {
                 showPrePostLoopInput,
-                isContentTypeVisible
+                isContentTypeVisible,
+                isContentTypeButtonEnabled
             };
         }
     );
 
-    readonly updatePrePostLoopAndContentTypeVisibilty = this.updater<DotContainerPropertiesState>(
+    readonly updatePrePostLoopAndContentTypeVisibility = this.updater<{
+        showPrePostLoopInput: boolean;
+        isContentTypeVisible: boolean;
+    }>(
         (
             state: DotContainerPropertiesState,
             { showPrePostLoopInput, isContentTypeVisible }: DotContainerPropertiesState
@@ -58,6 +68,15 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
             return {
                 ...state,
                 showPrePostLoopInput
+            };
+        }
+    );
+
+    readonly updateIsContentTypeButtonEnabled = this.updater<boolean>(
+        (state: DotContainerPropertiesState, isContentTypeButtonEnabled: boolean) => {
+            return {
+                ...state,
+                isContentTypeButtonEnabled
             };
         }
     );

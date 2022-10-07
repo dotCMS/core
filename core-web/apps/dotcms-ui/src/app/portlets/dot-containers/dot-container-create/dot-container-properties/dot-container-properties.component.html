@@ -1,21 +1,21 @@
 <ng-container *ngIf="vm$ | async as vm">
-    <div class="dot-container-properties__button-container">
-        <button
-            class="p-button-secondary"
-            [label]="'Cancel' | dm"
-            (click)="cancel()"
-            pButton
-            type="button"
-        ></button>
-        <button
-            class="p-button-primary"
-            [label]="'Save' | dm"
-            (click)="save()"
-            pButton
-            type="button"
-        ></button>
-    </div>
     <form [formGroup]="form">
+        <div class="dot-container-properties__button-container">
+            <button
+                class="p-button-secondary"
+                [label]="'Cancel' | dm"
+                (click)="cancel()"
+                pButton
+                type="button"
+            ></button>
+            <button
+                class="p-button-primary"
+                [label]="'Save' | dm"
+                (click)="save()"
+                pButton
+                type="submit"
+            ></button>
+        </div>
         <div class="dot-container-properties__title-container">
             <p-inplace #editText>
                 <ng-template pTemplate="content">
@@ -57,6 +57,7 @@
             <button
                 *ngIf="!vm.isContentTypeVisible"
                 [label]="'message.containers.create.content_type_code' | dm"
+                [disabled]="vm.isContentTypeButtonEnabled"
                 (click)="showContentTypeAndCode()"
                 pButton
                 type="button"

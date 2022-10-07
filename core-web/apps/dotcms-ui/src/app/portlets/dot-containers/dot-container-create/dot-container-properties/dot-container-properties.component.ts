@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import { FormControl, UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { DotContainerPropertiesStore } from '@portlets/dot-containers/dot-container-create/dot-container-properties/store/dot-container-properties.store';
 import { MonacoEditor } from '@models/monaco-editor';
 import { DotAlertConfirmService } from '@dotcms/app/api/services/dot-alert-confirm';
@@ -43,32 +43,28 @@ export class DotContainerPropertiesComponent implements OnInit {
                     this.containerIdentifier = container.identifier;
 
                     if (container.preLoop || container.postLoop) {
-                        this.store.updatePrePostLoopAndContentTypeVisibilty({
+                        this.store.updatePrePostLoopAndContentTypeVisibility({
                             showPrePostLoopInput: true,
                             isContentTypeVisible: true
                         });
                     }
-
-                    this.form = this.fb.group({
-                        title: container.title,
-                        friendlyName: container.friendlyName,
-                        maxContentlets: container.maxContentlets,
-                        code: container.code,
-                        preLoop: container.preLoop,
-                        postLoop: container.postLoop,
-                        containerStructures: this.fb.array([])
-                    });
-                } else {
-                    this.form = this.fb.group({
-                        title: '',
-                        friendlyName: '',
-                        maxContentlets: 1,
-                        code: '',
-                        preLoop: '',
-                        postLoop: '',
-                        containerStructures: this.fb.array([])
-                    });
                 }
+
+                this.form = this.fb.group({
+                    title: new FormControl(container.title ?? '', [Validators.required]),
+                    friendlyName: new FormControl(container.friendlyName ?? ''),
+                    maxContentlets: new FormControl(container.maxContentlets ?? 0, [
+                        Validators.required
+                    ]),
+                    code: container.code ?? '',
+                    preLoop: container.preLoop ?? '',
+                    postLoop: container.postLoop ?? '',
+                    containerStructures: this.fb.array([])
+                });
+
+                this.form.valueChanges.subscribe((values) => {
+                    this.store.updateIsContentTypeButtonEnabled(values.maxContentlets > 0);
+                });
             });
     }
 
