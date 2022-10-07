@@ -1,7 +1,7 @@
 package com.dotcms.util;
 
 import com.dotcms.UnitTestBase;
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FileUtils;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import org.junit.Assert;
 import org.junit.BeforeClass;

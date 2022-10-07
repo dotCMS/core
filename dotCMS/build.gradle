@@ -262,12 +262,10 @@ dependencies {
 
     if (!(project.gradle.startParameter.taskNames.contains('deployWarTomcatDev') || project.gradle.startParameter.taskNames.contains('testDev'))) {
 
-        implementation group: 'com.dotcms.enterprise', name: 'ee', version: dotcmsReleaseVersion + eeType, changing: true
+        implementation group: 'com.dotcms.enterprise', name: 'ee', version: 'issue22978-SNAPSHOT', changing: true
     }
 }
 
-
-import com.dotcms.repackage.org.apache.commons.io.FileUtils
 import groovy.json.JsonSlurper
 import org.ajoberstar.grgit.Grgit
 import org.gradle.api.tasks.testing.logging.TestLogEvent
