@@ -14,6 +14,7 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { ActivatedRoute } from '@angular/router';
 import { pluck, take } from 'rxjs/operators';
 import {
+    DotContainer,
     DotContainerEntity,
     DotContainerStructure
 } from '@dotcms/app/shared/models/container/dot-container.model';
@@ -50,11 +51,10 @@ export class DotContainerPropertiesComponent implements OnInit {
         this.activatedRoute.data
             .pipe(pluck('container'), take(1))
             .subscribe((containerEntity: DotContainerEntity) => {
-                const { container, containerStructures } = containerEntity;
+                if (containerEntity) {
+                    const { container, containerStructures } = containerEntity;
 
-                this.containerStructures = containerStructures;
-
-                if (container) {
+                    this.containerStructures = containerStructures;
                     this.isEdit = true;
                     this.containerIdentifier = container.identifier;
 
@@ -64,19 +64,11 @@ export class DotContainerPropertiesComponent implements OnInit {
                             isContentTypeVisible: true
                         });
                     }
-                }
 
-                this.form = this.fb.group({
-                    title: new FormControl(container?.title ?? '', [Validators.required]),
-                    friendlyName: new FormControl(container?.friendlyName ?? ''),
-                    maxContentlets: new FormControl(container?.maxContentlets ?? 0, [
-                        Validators.required
-                    ]),
-                    code: container?.code ?? '',
-                    preLoop: container?.preLoop ?? '',
-                    postLoop: container?.postLoop ?? '',
-                    containerStructures: this.fb.array(containerStructures ?? [])
-                });
+                    this.initForm(container, containerStructures);
+                } else {
+                    this.initForm();
+                }
 
                 this.form.valueChanges.subscribe((values) => {
                     this.store.updateIsContentTypeButtonEnabled(values.maxContentlets > 0);
@@ -168,6 +160,27 @@ export class DotContainerPropertiesComponent implements OnInit {
             message: this.dotMessageService.get(
                 'message.container.properties.confirm.clear.content.message'
             )
+        });
+    }
+
+    /**
+     * The function takes in two parameters, a container and an array of container structures. It then creates a form group
+     * @param {DotContainer} container - DotContainer = {}
+     * @param {DotContainerStructure[]} containerStructures - DotContainerStructure[] = []
+     * @memberof DotContainerPropertiesComponent
+     */
+    private initForm(
+        container: DotContainer = {},
+        containerStructures: DotContainerStructure[] = []
+    ): void {
+        this.form = this.fb.group({
+            title: new FormControl(container?.title ?? '', [Validators.required]),
+            friendlyName: new FormControl(container?.friendlyName ?? ''),
+            maxContentlets: new FormControl(container?.maxContentlets ?? 0, [Validators.required]),
+            code: container?.code ?? '',
+            preLoop: container?.preLoop ?? '',
+            postLoop: container?.postLoop ?? '',
+            containerStructures: this.fb.array(containerStructures ?? [])
         });
     }
 }
