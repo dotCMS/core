@@ -7,12 +7,12 @@
         ></dot-edit-page-info>
         <dot-icon-button
             *ngIf="showFavoritePageStar"
-            [icon]="dotFavoritePageIconName"
+            [icon]="pageState.favoritePage ? 'grade' : 'star_outline'"
             [ngClass]="{
-                'dot-favorite-page-highlight': dotFavoritePageIconName === 'grade'
+                'dot-favorite-page-highlight': pageState.favoritePage
             }"
             [pTooltip]="'favoritePage.star.icon.tooltip' | dm"
-            (click)="addFavoritePage()"
+            (click)="favoritePage.emit(true)"
             data-testId="addFavoritePageButton"
             tooltipPosition="bottom"
         ></dot-icon-button>

@@ -13,12 +13,6 @@ import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models';
 import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DialogService } from 'primeng/dynamicdialog';
-import { DotFavoritePageComponent } from '../../../components/dot-favorite-page/dot-favorite-page.component';
-import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
-import { ESContent } from '@dotcms/app/shared/models/dot-es-content/dot-es-content.model';
-import { generateDotFavoritePageUrl } from '@dotcms/app/shared/dot-utils';
-import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
 @Component({
     selector: 'dot-edit-page-toolbar',
     templateUrl: './dot-edit-page-toolbar.component.html',
@@ -28,25 +22,20 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
     @Input() pageState: DotPageRenderState;
     @Output() cancel = new EventEmitter<boolean>();
     @Output() actionFired = new EventEmitter<DotCMSContentlet>();
+    @Output() favoritePage = new EventEmitter<boolean>();
     @Output() whatschange = new EventEmitter<boolean>();
 
     isEnterpriseLicense$: Observable<boolean>;
     showWhatsChanged: boolean;
     apiLink: string;
     pageRenderedHtml: string;
-    dotFavoritePageIconName = 'star_outline';
 
     // TODO: Remove next line when total functionality of Favorite page is done for release
     showFavoritePageStar = false;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        private dotLicenseService: DotLicenseService,
-        private dialogService: DialogService,
-        private dotMessageService: DotMessageService,
-        private dotPageStateService: DotPageStateService
-    ) {}
+    constructor(private dotLicenseService: DotLicenseService) {}
 
     ngOnInit() {
         // TODO: Remove next line when total functionality of Favorite page is done for release
@@ -56,8 +45,6 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
 
         this.isEnterpriseLicense$ = this.dotLicenseService.isEnterprise();
         this.apiLink = `api/v1/page/render${this.pageState.page.pageURI}?language_id=${this.pageState.page.languageId}`;
-
-        this.loadFavoritePageData();
     }
 
     ngOnChanges(): void {
@@ -85,52 +72,9 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
         }
     }
 
-    /**
-     * Instantiate dialog to Add Favorite Page
-     *
-     * @memberof DotEditPageToolbarComponent
-     */
-    addFavoritePage(): void {
-        this.dialogService.open(DotFavoritePageComponent, {
-            header: this.dotMessageService.get('favoritePage.dialog.header.add.page'),
-            width: '80rem',
-            data: {
-                page: {
-                    pageState: this.pageState,
-                    pageRenderedHtml: this.pageRenderedHtml || null
-                },
-                onSave: () => {
-                    this.setDotFavoritePageHighlighted();
-                    this.loadFavoritePageData();
-                }
-            }
-        });
-    }
-
-    /**
-     * Calls ES endpoint to verify if DotFavoritePage contentlet exist on current page
-     *
-     * @memberof DotEditPageToolbarComponent
-     */
-    loadFavoritePageData(): void {
-        const urlParam = generateDotFavoritePageUrl(this.pageState);
-
-        this.dotPageStateService
-            .requestFavoritePageData(urlParam)
-            .subscribe((response: ESContent) => {
-                if (response.resultsSize > 0) {
-                    this.setDotFavoritePageHighlighted();
-                }
-            });
-    }
-
     private updateRenderedHtml(): string {
         return this.pageState?.params.viewAs.mode === DotPageMode.PREVIEW
             ? this.pageState.params.page.rendered
             : this.pageRenderedHtml;
-    }
-
-    private setDotFavoritePageHighlighted(): void {
-        this.dotFavoritePageIconName = 'grade';
     }
 }

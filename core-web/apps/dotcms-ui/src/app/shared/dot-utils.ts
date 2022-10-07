@@ -1,4 +1,4 @@
-import { DotPageRenderState } from '../portlets/dot-edit-page/shared/models';
+import { DotPageRenderParameters } from './models/dot-page/dot-rendered-page.model';
 
 /**
  * Generate an anchor element with a Blob file to eventually be click to force a download
@@ -20,13 +20,13 @@ export function formatMessage(message: string, args: string[]): string {
 }
 
 // Generates an unique Url with host, language and device Ids
-export function generateDotFavoritePageUrl(pageState: DotPageRenderState): string {
+export function generateDotFavoritePageUrl(params: DotPageRenderParameters): string {
+    const { page, site, viewAs } = params;
+
     return (
-        `${pageState.params.page?.pageURI}?` +
-        (pageState.params.site?.identifier ? `host_id=${pageState.params.site?.identifier}` : '') +
-        `&language_id=${pageState.params.viewAs.language.id}` +
-        (pageState.params.viewAs.device?.identifier
-            ? `&device_id=${pageState.params.viewAs.device?.identifier}`
-            : '')
+        `${page?.pageURI}?` +
+        (site?.identifier ? `host_id=${site?.identifier}` : '') +
+        `&language_id=${viewAs.language.id}` +
+        (viewAs.device?.identifier ? `&device_id=${viewAs.device?.identifier}` : '')
     );
 }

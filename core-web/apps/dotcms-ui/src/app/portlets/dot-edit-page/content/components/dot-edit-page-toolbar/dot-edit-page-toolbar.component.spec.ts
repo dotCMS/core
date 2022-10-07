@@ -30,7 +30,7 @@ import {
 } from '@dotcms/dotcms-js';
 import { SiteServiceMock } from '@tests/site-service.mock';
 import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
-import { LoginServiceMock } from '@tests/login-service.mock';
+import { LoginServiceMock, mockUser } from '@tests/login-service.mock';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { mockDotPersona } from '@tests/dot-persona.mock';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
@@ -57,6 +57,8 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
 import { TooltipModule } from 'primeng/tooltip';
 import { ESContent } from '@dotcms/app/shared/models/dot-es-content/dot-es-content.model';
+import { DotPageRender } from '@dotcms/app/shared/models/dot-page/dot-rendered-page.model';
+import { mockDotRenderedPage } from '@dotcms/app/test/dot-page-render.mock';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -88,7 +90,7 @@ class MockDotLicenseService {
 }
 
 @Injectable()
-class MockDotPageStateService{
+class MockDotPageStateService {
     requestFavoritePageData(_urlParam: string): Observable<ESContent> {
         return of();
     }
@@ -101,7 +103,6 @@ describe('DotEditPageToolbarComponent', () => {
     let de: DebugElement;
     let deHost: DebugElement;
     let dotLicenseService: DotLicenseService;
-    let dotPageStateService: DotPageStateService;
     let dotMessageDisplayService: DotMessageDisplayService;
     let dotDialogService: DialogService;
 
@@ -183,7 +184,6 @@ describe('DotEditPageToolbarComponent', () => {
         de = deHost.query(By.css('dot-edit-page-toolbar'));
         component = de.componentInstance;
 
-        dotPageStateService = de.injector.get(DotPageStateService);
         dotLicenseService = de.injector.get(DotLicenseService);
         dotMessageDisplayService = de.injector.get(DotMessageDisplayService);
         dotDialogService = de.injector.get(DialogService);
@@ -322,35 +322,28 @@ describe('DotEditPageToolbarComponent', () => {
         });
     });
 
-    describe("what's change", () => {
+    describe('Favorite icon', () => {
         it('should change icon on favorite page if contentlet exist', () => {
-            spyOn(dotPageStateService, 'requestFavoritePageData').and.returnValue(
-                of({
-                    contentTook: 0,
-                    jsonObjectView: {
-                        contentlets: []
-                    },
-                    queryTook: 1,
-                    resultsSize: 20
-                })
+            componentHost.pageState = new DotPageRenderState(
+                mockUser(),
+                new DotPageRender(mockDotRenderedPage()),
+                true
             );
+            component.showFavoritePageStar = true;
+
             fixtureHost.detectChanges();
-            expect(component.dotFavoritePageIconName).toBe('grade');
+
+            const favoritePageIcon = de.query(By.css('[data-testId="addFavoritePageButton"]'));
+            expect(favoritePageIcon.componentInstance.icon).toBe('grade');
         });
 
         it('should show empty star icon on favorite page if NO contentlet exist', () => {
-            spyOn(dotPageStateService, 'requestFavoritePageData').and.returnValue(
-                of({
-                    contentTook: 0,
-                    jsonObjectView: {
-                        contentlets: []
-                    },
-                    queryTook: 1,
-                    resultsSize: 0
-                })
-            );
+            component.showFavoritePageStar = true;
+
             fixtureHost.detectChanges();
-            expect(component.dotFavoritePageIconName).toBe('star_outline');
+
+            const favoritePageIcon = de.query(By.css('[data-testId="addFavoritePageButton"]'));
+            expect(favoritePageIcon.componentInstance.icon).toBe('star_outline');
         });
     });
 
@@ -360,16 +353,20 @@ describe('DotEditPageToolbarComponent', () => {
             spyOn(component.whatschange, 'emit');
             spyOn(dotMessageDisplayService, 'push');
             spyOn(dotDialogService, 'open');
+            spyOn(component.favoritePage, 'emit');
 
             componentHost.pageState.state.mode = DotPageMode.PREVIEW;
             delete componentHost.pageState.viewAs.persona;
+            component.showFavoritePageStar = true;
             fixtureHost.detectChanges();
             whatsChangedElem = de.query(By.css('.dot-edit__what-changed-button'));
         });
 
         it('should instantiate dialog with DotFavoritePageComponent', () => {
             de.query(By.css('[data-testId="addFavoritePageButton"]')).nativeElement.click();
-            expect(dotDialogService.open).toHaveBeenCalledTimes(1);
+            fixtureHost.detectChanges();
+
+            expect(component.favoritePage.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should store RenderedHTML value if PREVIEW MODE', () => {
