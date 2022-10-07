@@ -1,5 +1,4 @@
 import { ComponentStore } from '@ngrx/component-store';
-import { StructureTypeView } from '@models/contentlet';
 import { take } from 'rxjs/operators';
 import { DotContentTypeService } from '@dotcms/app/api/services/dot-content-type';
 import { Injectable } from '@angular/core';
@@ -68,6 +67,7 @@ export class DotContentEditorStore extends ComponentStore<DotContentEditorState>
     private mapActions(contentTypes: DotCMSContentType[]): MenuItem[] {
         return contentTypes.map((contentType) => {
             const menuItem = {
+                state: { contentType },
                 label: contentType.name,
                 command: () => {
                     if (!this.checkIfAlreadyExists(menuItem.label)) {
