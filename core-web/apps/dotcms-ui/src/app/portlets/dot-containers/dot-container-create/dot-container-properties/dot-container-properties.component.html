@@ -57,7 +57,7 @@
             <button
                 *ngIf="!vm.isContentTypeVisible"
                 [label]="'message.containers.create.content_type_code' | dm"
-                [disabled]="vm.isContentTypeButtonEnabled"
+                [disabled]="!vm.isContentTypeButtonEnabled"
                 (click)="showContentTypeAndCode()"
                 pButton
                 type="button"

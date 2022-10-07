@@ -4,6 +4,7 @@ import { take } from 'rxjs/operators';
 import { DotContentTypeService } from '@dotcms/app/api/services/dot-content-type';
 import { Injectable } from '@angular/core';
 import { MenuItem } from 'primeng/api';
+import { DotCMSContentType } from '@dotcms/dotcms-models';
 
 export interface DotContentEditorState {
     activeTabIndex: number;
@@ -21,7 +22,7 @@ export class DotContentEditorStore extends ComponentStore<DotContentEditorState>
         });
 
         this.dotContentTypeService
-            .getAllContentTypes()
+            .getContentTypes({ page: 999 }) //TODO: Add call to get all contentTypes
             .pipe(take(1))
             .subscribe((contentTypes) => {
                 const mappedContentTypes = this.mapActions(contentTypes);
@@ -64,10 +65,10 @@ export class DotContentEditorStore extends ComponentStore<DotContentEditorState>
         };
     });
 
-    private mapActions(contentTypes: StructureTypeView[]): MenuItem[] {
+    private mapActions(contentTypes: DotCMSContentType[]): MenuItem[] {
         return contentTypes.map((contentType) => {
             const menuItem = {
-                label: contentType.label,
+                label: contentType.name,
                 command: () => {
                     if (!this.checkIfAlreadyExists(menuItem.label)) {
                         this.updateSelectedContentType(menuItem);
