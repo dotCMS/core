@@ -46,7 +46,7 @@ public class TailLogResourceTest {
             assertEquals("success", outputName);
             assertTrue(outputData instanceof Map);
             assertTrue(((Map)outputData).containsKey("lines"));
-            assertTrue(((Map)outputData).get("lines").toString().contains("Tailing 300 lines from file"));
+            assertTrue(((Map)outputData).get("lines").toString().contains("Tailing info from file"));
         } finally {
             //we force the event execution and stop the thread
             eventOutput.close();
