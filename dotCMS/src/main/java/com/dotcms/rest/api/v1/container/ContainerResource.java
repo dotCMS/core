@@ -1428,4 +1428,42 @@ public class ContainerResource implements Serializable {
                         new BulkResultView(unarchivedContainersCount,0L,failedToUnarchive)))
                 .build();
     }
+
+    /**
+     * Saves a new working version of a container.
+     *
+     * @param request
+     * @param response
+     * @param containerForm
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @POST
+    @Path("_add")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response add(@Context final HttpServletRequest  request,
+            @Context final HttpServletResponse response,
+            final ContainerForm containerForm) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).requiredBackendUser(true).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final Host host         = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+        final PageMode pageMode = PageMode.get(request);
+        Container container     = new Container();
+
+        Logger.debug(this,
+                () -> "Adding container. Request payload is : " + ContainerResourceHelper.getInstance().getObjectToJsonString(containerForm));
+
+        this.containerAPI.add(container, containerForm.getContainerStructures(), containerForm, host, user, pageMode.respectAnonPerms);
+        Logger.debug(this, ()-> "The container: " + container.getIdentifier() + " has been added");
+
+        ActivityLogger.logInfo(this.getClass(), "Add Container",
+                "User " + user.getPrimaryKey() + " added " + container.getTitle(), host.getHostname());
+
+        return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
+    }
 }
