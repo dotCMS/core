@@ -109,7 +109,14 @@ export class DotContainerPropertiesComponent implements OnInit {
         }
     }
 
-    updateContainerStructure(containerStructures: MenuItem[]) {
+    /**
+     * Updates containerStructures based on tab data
+     *
+     * @param {MenuItem[]} containerStructures
+     * @return {void}
+     * @memberof DotContainerPropertiesComponent
+     */
+    updateContainerStructure(containerStructures: MenuItem[]): void {
         const addInContainerStructure = this.form.get('containerStructures') as FormArray;
         // clear containerStructures array
         (this.form.get('containerStructures') as FormArray).clear();

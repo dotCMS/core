@@ -132,7 +132,7 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
     /**
      * Update the value and form control
      *
-     * @param any value
+     * @param {string} value
      * @memberof DotTextareaContentComponent
      */
     onModelChange(value: string) {

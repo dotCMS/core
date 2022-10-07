@@ -69,8 +69,8 @@ export class DotContainersService {
     /**
      * Creates a container
      *
-     * @param {DotContainer} values
-     * @return Observable<DotContainer>
+     * @param {DotContainerRequest} values
+     * @returns Observable<DotContainer>
      * @memberof DotContainersService
      */
     create(values: DotContainerRequest): Observable<DotContainer> {
@@ -83,6 +83,8 @@ export class DotContainersService {
 
     /**
      * Updates a container
+     *
+     * @param {DotContainerRequest} values
      * @returns Observable<DotContainer>
      * @memberof DotContainersService
      */

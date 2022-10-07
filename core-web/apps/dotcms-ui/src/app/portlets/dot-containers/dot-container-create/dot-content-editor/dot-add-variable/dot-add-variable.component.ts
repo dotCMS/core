@@ -5,13 +5,11 @@ import { DotAddVariableStore } from '@portlets/dot-containers/dot-container-crea
 @Component({
     selector: 'dot-add-variable',
     templateUrl: './dot-add-variable.component.html',
-    styleUrls: ['./dot-add-variable.component.scss'],
     providers: [DotAddVariableStore]
 })
 export class DotAddVariableComponent {
     vm$ = this.store.vm$;
 
-    variables = [1, 2, 3];
     constructor(
         private store: DotAddVariableStore,
         private ref: DynamicDialogRef,
@@ -23,6 +21,8 @@ export class DotAddVariableComponent {
     /**
      * Handle save button
      *
+     * @param {string} variable
+     * @returns void
      * @memberof DotAddVariableComponent
      */
     onSave(variable: string): void {

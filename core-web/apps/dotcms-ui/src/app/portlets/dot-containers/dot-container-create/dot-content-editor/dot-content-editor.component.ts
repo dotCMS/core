@@ -22,6 +22,7 @@ export class DotContentEditorComponent {
     contentTypesData$ = this.store.contentTypeData$;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
+
     constructor(
         private store: DotContentEditorStore,
         private dialogService: DialogService,
@@ -54,15 +55,35 @@ export class DotContentEditorComponent {
         return false;
     }
 
-    updateContentTypeText(text: string) {
+    /**
+     * It updates the content type text
+     * @param {string} text - The text to be updated
+     * @returns {void}
+     * @memberof DotContentEditorComponent
+     */
+    updateContentTypeText(text: string): void {
         this.store.updateSelectedContentTypeContent(text);
     }
 
+    /**
+     * The function takes in an index and a close function. It then updates the store with the index of the tab that was
+     * closed and then calls the close function
+     * @param {number} [index=null] - The index of the tab that is being closed.
+     * @param close - This is a function that closes the tab.
+     * @returns {void}
+     * @memberof DotContentEditorComponent
+     */
     handleClose(index: number = null, close: () => void): void {
         this.store.updateClosedTab(index - 1);
         close();
     }
 
+    /**
+     * This function opens a dialog window that allows the user to add a variable to a content type
+     * @param {DotCMSContentType} contentType - DotCMSContentType
+     * @returns {void}
+     * @memberof DotContentEditorComponent
+     */
     handleAddVariable(contentType: DotCMSContentType) {
         this.dialogService.open(DotAddVariableComponent, {
             header: this.dotMessageService.get('containers.properties.add.variable.title'),

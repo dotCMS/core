@@ -198,7 +198,9 @@ export class DotRouterService {
     }
 
     /**
-     * It navigates to the create container page
+     * Redirects to the create container page
+     * @returns {void}
+     * @memberof DotRouterService
      */
     goToCreateContainer(): void {
         this.router.navigate(['/containers/create']);
