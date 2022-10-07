@@ -22,7 +22,7 @@ export class DotContentEditorComponent implements OnChanges {
     inputContainerStructures: DotContainerStructure[];
     vm$ = this.store.vm$;
     contentTypesData$ = this.store.contentTypeData$;
-    monacoEditor = [];
+    monacoEditors = [];
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
@@ -104,8 +104,8 @@ export class DotContentEditorComponent implements OnChanges {
                 contentTypeVariable: contentType.variable,
                 activeTabIndex: index,
                 onSave: (variable, idx) => {
-                    const editor = this.monacoEditor[idx].getModel();
-                    this.monacoEditor[idx].getModel().setValue(editor.getValue() + `${variable}`);
+                    const editor = this.monacoEditors[idx].getModel();
+                    this.monacoEditors[idx].getModel().setValue(editor.getValue() + `${variable}`);
                 }
             }
         });
@@ -116,6 +116,6 @@ export class DotContentEditorComponent implements OnChanges {
      * @param monacoInstance - The monaco instance that is created by the component.
      */
     monacoInit(monacoInstance) {
-        this.monacoEditor.push(monacoInstance);
+        this.monacoEditors.push(monacoInstance);
     }
 }

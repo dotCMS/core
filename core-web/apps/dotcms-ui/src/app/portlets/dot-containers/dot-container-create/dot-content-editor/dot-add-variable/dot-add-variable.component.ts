@@ -1,5 +1,5 @@
-import { Component } from '@angular/core';
-import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { Component, OnInit } from '@angular/core';
+import { DynamicDialogConfig } from 'primeng/dynamicdialog';
 import { DotAddVariableStore } from '@portlets/dot-containers/dot-container-create/dot-content-editor/dot-add-variable/store/dot-add-variable.store';
 
 @Component({
@@ -7,15 +7,13 @@ import { DotAddVariableStore } from '@portlets/dot-containers/dot-container-crea
     templateUrl: './dot-add-variable.component.html',
     providers: [DotAddVariableStore]
 })
-export class DotAddVariableComponent {
+export class DotAddVariableComponent implements OnInit {
     vm$ = this.store.vm$;
 
-    constructor(
-        private store: DotAddVariableStore,
-        private ref: DynamicDialogRef,
-        private config: DynamicDialogConfig
-    ) {
-        this.store.getVariables(this.contentTypeVariable);
+    constructor(private store: DotAddVariableStore, private config: DynamicDialogConfig) {}
+
+    ngOnInit() {
+        this.store.getVariables(this.config.data?.contentTypeVariable);
     }
 
     /**
@@ -40,9 +38,5 @@ export class DotAddVariableComponent {
      */
     private applyMask(variable: string): string {
         return `$!{${variable}}`;
-    }
-
-    private get contentTypeVariable() {
-        return this.config.data?.contentTypeVariable;
     }
 }

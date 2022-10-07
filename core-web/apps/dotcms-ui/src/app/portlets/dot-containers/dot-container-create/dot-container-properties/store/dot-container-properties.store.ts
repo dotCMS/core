@@ -33,19 +33,9 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
         });
     }
 
-    readonly vm$ = this.select(
-        ({
-            showPrePostLoopInput,
-            isContentTypeVisible,
-            isContentTypeButtonEnabled
-        }: DotContainerPropertiesState) => {
-            return {
-                showPrePostLoopInput,
-                isContentTypeVisible,
-                isContentTypeButtonEnabled
-            };
-        }
-    );
+    readonly vm$ = this.select((state: DotContainerPropertiesState) => {
+        return state;
+    });
 
     readonly updatePrePostLoopAndContentTypeVisibility = this.updater<{
         showPrePostLoopInput: boolean;
