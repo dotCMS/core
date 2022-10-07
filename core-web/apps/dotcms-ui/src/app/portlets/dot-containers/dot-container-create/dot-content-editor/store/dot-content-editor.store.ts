@@ -4,6 +4,7 @@ import { DotContentTypeService } from '@dotcms/app/api/services/dot-content-type
 import { Injectable } from '@angular/core';
 import { MenuItem } from 'primeng/api';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotContainerStructure } from '@models/container/dot-container.model';
 
 export interface DotContentEditorState {
     activeTabIndex: number;
@@ -47,6 +48,7 @@ export class DotContentEditorStore extends ComponentStore<DotContentEditorState>
             activeTabIndex
         };
     });
+
     updateClosedTab = this.updater<number>((state, closedTabIndex) => {
         const { selectedContentTypes } = this.get();
 
@@ -77,17 +79,36 @@ export class DotContentEditorStore extends ComponentStore<DotContentEditorState>
         const { contentTypesData, activeTabIndex } = this.get();
         const contentTypes = [...contentTypesData];
         const currentContent = contentTypes[activeTabIndex - 1];
-        const contentType = {
+
+        contentTypes[activeTabIndex - 1] = {
             ...currentContent,
             state: { ...currentContent.state, code: code || currentContent?.state?.code || '' }
         };
-        contentTypes[activeTabIndex - 1] = contentType;
 
         return {
             ...state,
             contentTypesData: contentTypes
         };
     });
+
+    updateRetrievedContentTypes = this.updater<DotContainerStructure[]>(
+        (state, containerStructures) => {
+            const { contentTypes } = this.get();
+
+            const containerStructureVars = containerStructures.map((containerStructure) => {
+                return containerStructure.contentTypeVar;
+            });
+
+            const selectedContentTypes = contentTypes.filter((contentType) => {
+                return containerStructureVars.includes(contentType.state.contentType.variable);
+            });
+
+            return {
+                ...state,
+                selectedContentTypes
+            };
+        }
+    );
 
     private mapActions(contentTypes: DotCMSContentType[]): MenuItem[] {
         return contentTypes.map((contentType) => {

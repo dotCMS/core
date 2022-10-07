@@ -1,6 +1,5 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChange } from '@angular/core';
 import { DotContentEditorStore } from '@portlets/dot-containers/dot-container-create/dot-content-editor/store/dot-content-editor.store';
-import { UntypedFormGroup } from '@angular/forms';
 import { DialogService } from 'primeng/dynamicdialog';
 import { DotAddVariableComponent } from './dot-add-variable/dot-add-variable.component';
 import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
@@ -8,6 +7,7 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { MenuItem } from '@dotcms/dotcms-js';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { DotContainerStructure } from '@models/container/dot-container.model';
 
 @Component({
     selector: 'dot-content-editor',
@@ -15,9 +15,11 @@ import { takeUntil } from 'rxjs/operators';
     styleUrls: ['./dot-content-editor.component.scss'],
     providers: [DotContentEditorStore]
 })
-export class DotContentEditorComponent {
-    @Input() form: UntypedFormGroup;
+export class DotContentEditorComponent implements OnChanges {
+    @Input() containerStructures: DotContainerStructure[];
     @Output() updateContainerStructure = new EventEmitter<MenuItem[]>();
+
+    inputContainerStructures: DotContainerStructure[];
     vm$ = this.store.vm$;
     contentTypesData$ = this.store.contentTypeData$;
     monacoEditor = [];
@@ -34,6 +36,14 @@ export class DotContentEditorComponent {
             .subscribe((contentTypesData: MenuItem[]) => {
                 this.updateContainerStructure.emit(contentTypesData);
             });
+    }
+
+    ngOnChanges(changes: { [property: string]: SimpleChange }) {
+        const change: SimpleChange = changes['containerStructures'];
+
+        this.inputContainerStructures = change.currentValue;
+
+        this.store.updateRetrievedContentTypes(this.inputContainerStructures);
     }
 
     /**
@@ -95,7 +105,7 @@ export class DotContentEditorComponent {
                 activeTabIndex: index,
                 onSave: (variable, idx) => {
                     const editor = this.monacoEditor[idx].getModel();
-                    this.monacoEditor[idx].getModel().setValue(editor.getValue() + `\n${variable}`);
+                    this.monacoEditor[idx].getModel().setValue(editor.getValue() + `${variable}`);
                 }
             }
         });

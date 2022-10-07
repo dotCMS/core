@@ -13,7 +13,10 @@ import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-mess
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { ActivatedRoute } from '@angular/router';
 import { pluck, take } from 'rxjs/operators';
-import { DotContainer } from '@dotcms/app/shared/models/container/dot-container.model';
+import {
+    DotContainerEntity,
+    DotContainerStructure
+} from '@dotcms/app/shared/models/container/dot-container.model';
 import { MenuItem } from 'primeng/api';
 
 @Component({
@@ -26,6 +29,8 @@ export class DotContainerPropertiesComponent implements OnInit {
     vm$ = this.store.vm$;
     editor: MonacoEditor;
     form: UntypedFormGroup;
+
+    containerStructures: DotContainerStructure[];
 
     private isEdit = false;
     private containerIdentifier: string;
@@ -44,7 +49,11 @@ export class DotContainerPropertiesComponent implements OnInit {
     ngOnInit(): void {
         this.activatedRoute.data
             .pipe(pluck('container'), take(1))
-            .subscribe((container: DotContainer) => {
+            .subscribe((containerEntity: DotContainerEntity) => {
+                const { container, containerStructures } = containerEntity;
+
+                this.containerStructures = containerStructures;
+
                 if (container) {
                     this.isEdit = true;
                     this.containerIdentifier = container.identifier;
@@ -66,7 +75,7 @@ export class DotContainerPropertiesComponent implements OnInit {
                     code: container?.code ?? '',
                     preLoop: container?.preLoop ?? '',
                     postLoop: container?.postLoop ?? '',
-                    containerStructures: this.fb.array([])
+                    containerStructures: this.fb.array(containerStructures ?? [])
                 });
 
                 this.form.valueChanges.subscribe((values) => {

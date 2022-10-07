@@ -3,6 +3,11 @@ export enum CONTAINER_SOURCE {
     DB = 'DB'
 }
 
+export interface DotContainerEntity {
+    container: DotContainer;
+    containerStructures: DotContainerStructure[];
+}
+
 export interface DotContainer {
     archived?: boolean;
     categoryId?: string;

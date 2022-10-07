@@ -9,6 +9,7 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
 import { DotActionBulkResult } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
 import {
     DotContainer,
+    DotContainerEntity,
     DotContainerRequest
 } from '@dotcms/app/shared/models/container/dot-container.model';
 
@@ -39,14 +40,13 @@ export class DotContainersService {
      * Get the container, pass the version default working
      *
      * @param {string} id
-     * @param {string} [version='working']
      * @returns {Observable<DotContainer>}
      * @memberof DotContainersService
      */
-    getById(id: string, version = 'working'): Observable<DotContainer> {
-        const url = `${CONTAINER_API_URL}${version}?containerId=${id}`;
+    getById(id: string): Observable<DotContainerEntity> {
+        const url = `${CONTAINER_API_URL}details?containerId=${id}`;
 
-        return this.request<DotContainer>({
+        return this.request<DotContainerEntity>({
             url
         });
     }

@@ -11,6 +11,7 @@ import { of } from 'rxjs';
 import {
     CONTAINER_SOURCE,
     DotContainer,
+    DotContainerEntity,
     DotContainerRequest
 } from '@models/container/dot-container.model';
 
@@ -81,16 +82,18 @@ describe('DotContainersService', () => {
     });
 
     it('should get a container by id', () => {
-        service.getById('123').subscribe((container: DotContainer) => {
-            expect(container).toEqual(mockContainer);
+        service.getById('123').subscribe((containerEntity: DotContainerEntity) => {
+            expect(containerEntity.container).toEqual(mockContainer);
         });
 
-        const req = httpMock.expectOne(`${CONTAINER_API_URL}working?containerId=123`);
+        const req = httpMock.expectOne(`${CONTAINER_API_URL}details?containerId=123`);
 
         expect(req.request.method).toBe('GET');
 
         req.flush({
-            entity: mockContainer
+            entity: {
+                container: mockContainer
+            }
         });
     });
 
@@ -118,7 +121,7 @@ describe('DotContainersService', () => {
                 expect(container).toEqual(mockContainer);
             });
 
-        const req = httpMock.expectOne(CONTAINER_API_URL);
+        const req = httpMock.expectOne(`${CONTAINER_API_URL}_add`);
 
         expect(req.request.method).toBe('POST');
         expect(req.request.body.title).toEqual('');
@@ -171,7 +174,7 @@ describe('DotContainersService', () => {
     });
     it('should delete a container', () => {
         service.delete(['testId01']).subscribe();
-        const req = httpMock.expectOne(`${CONTAINER_API_URL}bulkdelete`);
+        const req = httpMock.expectOne(`${CONTAINER_API_URL}_bulkdelete`);
 
         expect(req.request.method).toBe('DELETE');
         expect(req.request.body).toEqual(['testId01']);
