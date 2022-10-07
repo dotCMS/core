@@ -2,48 +2,48 @@
 <%@ page import="com.dotmarketing.servlets.taillog.TailLogServlet" %>
 <%
 
-	String regex = com.dotmarketing.util.Config.getStringProperty("TAIL_LOG_FILE_REGEX");
-	if(!com.dotmarketing.util.UtilMethods.isSet(regex)){
-		regex=".*";
-	}
+    String regex = com.dotmarketing.util.Config.getStringProperty("TAIL_LOG_FILE_REGEX");
+    if(!com.dotmarketing.util.UtilMethods.isSet(regex)){
+        regex=".*";
+    }
     String logPath = com.dotmarketing.util.Config.getStringProperty("TAIL_LOG_LOG_FOLDER", "./dotsecure/logs/");
-	logPath = com.dotmarketing.util.FileUtil.getAbsolutlePath(logPath);
+    logPath = com.dotmarketing.util.FileUtil.getAbsolutlePath(logPath);
     if (!logPath.endsWith(java.io.File.separator)) {
         logPath = logPath + java.io.File.separator;
     }
-	File[] files = com.liferay.util.FileUtil.listFileHandles(logPath, true);
-	java.util.regex.Pattern pp = java.util.regex.Pattern.compile(regex);
-	java.util.List<File> l = new java.util.ArrayList<File>();
-	for(File x : files){
-		if(pp.matcher(x.getName()).matches()){
-			l.add(x);
-		}
-	}
-	// http://jira.dotmarketing.net/browse/DOTCMS-6271
-	// put matched files set to an array with exact size and then sort them
-	files = l.toArray(new File[l.size()]);
-	java.util.Arrays.sort(files);
+    File[] files = com.liferay.util.FileUtil.listFileHandles(logPath, true);
+    java.util.regex.Pattern pp = java.util.regex.Pattern.compile(regex);
+    java.util.List<File> l = new java.util.ArrayList<File>();
+    for(File x : files){
+        if(pp.matcher(x.getName()).matches()){
+            l.add(x);
+        }
+    }
+    // http://jira.dotmarketing.net/browse/DOTCMS-6271
+    // put matched files set to an array with exact size and then sort them
+    files = l.toArray(new File[l.size()]);
+    java.util.Arrays.sort(files);
 
 
 
 
-	com.liferay.portal.model.User uu=null;
-	try {
-		uu = com.liferay.portal.util.PortalUtil.getUser(request);
-	} catch (Exception e) {
-		response.sendError(403);
-		return;
-	}
-	try {
-		if (!com.dotmarketing.business.APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", uu)) {
-			response.sendError(403);
-			return;
-		}
-	} catch (Exception e2) {
-		com.dotmarketing.util.Logger.error(this.getClass(), e2.getMessage(), e2);
-		response.sendError(403);
-		return;
-	}
+    com.liferay.portal.model.User uu=null;
+    try {
+        uu = com.liferay.portal.util.PortalUtil.getUser(request);
+    } catch (Exception e) {
+        response.sendError(403);
+        return;
+    }
+    try {
+        if (!com.dotmarketing.business.APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", uu)) {
+            response.sendError(403);
+            return;
+        }
+    } catch (Exception e2) {
+        com.dotmarketing.util.Logger.error(this.getClass(), e2.getMessage(), e2);
+        response.sendError(403);
+        return;
+    }
 
 
 %>
@@ -94,21 +94,21 @@
         }, 200)
     }
 
-	function doPopup(){
-			var x = dijit.byId("fileName").getValue();
-			dijit.byId("fileName").setValue("");
-			var newwin = window.open("/html/portlet/ext/cmsmaintenance/tail_log_popup.jsp?fileName=" + x, "tailwin", "status=1,toolbars=1,resizable=1,scrollbars=1,height=800,width=1000");
-			newwin.focus();
-	}
+    function doPopup(){
+        var x = dijit.byId("fileName").getValue();
+        dijit.byId("fileName").setValue("");
+        var newwin = window.open("/html/portlet/ext/cmsmaintenance/tail_log_popup.jsp?fileName=" + x, "tailwin", "status=1,toolbars=1,resizable=1,scrollbars=1,height=800,width=1000");
+        newwin.focus();
+    }
 
-	dojo.ready(function(){
-		<%if(request.getParameter("fileName")!= null){
-			String selectedFileNameStr = com.dotmarketing.util.UtilMethods.xmlEscape(request.getParameter("fileName")).replace(logPath + File.separator, "");
-			selectedFileNameStr = selectedFileNameStr.replace("\\", "\\\\");
-		%>
-		dijit.byId("fileName").attr("displayedValue","<%=selectedFileNameStr%>");
-		<%}%>
-	});
+    dojo.ready(function(){
+        <%if(request.getParameter("fileName")!= null){
+            String selectedFileNameStr = com.dotmarketing.util.UtilMethods.xmlEscape(request.getParameter("fileName")).replace(logPath + File.separator, "");
+            selectedFileNameStr = selectedFileNameStr.replace("\\", "\\\\");
+        %>
+        dijit.byId("fileName").attr("displayedValue","<%=selectedFileNameStr%>");
+        <%}%>
+    });
 
     /**
      * Populate the logs table with a given logs details array
@@ -158,10 +158,10 @@
 
     };
 
-	function reloadTail(){
-		var x = dijit.byId("fileName").getValue();
+    function reloadTail(){
+        var x = dijit.byId("fileName").getValue();
         if(x) {
-		    dojo.byId("tailingFrame").src='/dotTailLogServlet/?fileName='+x;
+            dojo.byId("tailingFrame").src='/dotTailLogServlet/?fileName='+x;
             disableFollowOnScrollUp();
             dijit.byId("downloadLog").attr("disabled", false);
         } else {
@@ -183,7 +183,7 @@
         }, 200);
 
 
-	}
+    }
 
     /**********************/
     /* Log Viewer - BEGIN */
@@ -217,6 +217,10 @@
 
         let matchLinesOnlyView = false;
 
+        let updatingView = false;
+
+        let lastViewUpdateTimeMark = Date.now();
+
         /**
          * As we move (forward) through the contents loaded into the view (Div)
          * We need to dispose old pages to avoid saturating the div with a ton of content
@@ -232,16 +236,16 @@
                     if (!first) {
                         break;
                     }
-                        const firstPageId = first.dataset.page;
-                        //console.log("FirstPageID:: " + firstPageId);
-                        let pageToDrop = dest.querySelectorAll(`.page${firstPageId}`);
-                        //console.log("PageToDrop ::: " + pageToDrop);
-                        if (pageToDrop.length > 0) {
-                            //Remove all items on that page
-                            pageToDrop.forEach((elem) => elem.remove());
-                            pagesOnScreen--;
-                        }
-                        console.log(' page  : ' + firstPageId + ' dropped!');
+                    const firstPageId = first.dataset.page;
+                    //console.log("FirstPageID:: " + firstPageId);
+                    let pageToDrop = dest.querySelectorAll(`.page${firstPageId}`);
+                    //console.log("PageToDrop ::: " + pageToDrop);
+                    if (pageToDrop.length > 0) {
+                        //Remove all items on that page
+                        pageToDrop.forEach((elem) => elem.remove());
+                        pagesOnScreen--;
+                    }
+                    console.log(' page  : ' + firstPageId + ' dropped!');
                 }
             }
         }
@@ -263,6 +267,7 @@
                     }
                 } else {
                     const list = src.document.body.querySelectorAll(`.page${firstPageId}`);
+                    console.log(`loading prior page with id ${firstPageId}  and list with ${list.length} elements. `);
                     if (list.length > 0) {
                         //iterate backwards to preserve the original order
                         for (let i = list.length - 1; i >= 0; i--) {
@@ -274,8 +279,6 @@
                             }
                         }
                         pagesOnScreen++;
-                        //Move the scroll just a tiny bit, so we have room to fire the event again.
-                        dest.scrollTop = dest.scrollTop + 10;
                     }
                 }
             }
@@ -294,20 +297,20 @@
 
                 for (let i = 1; i <= pagesToDrop; i++) {
 
-                    const last = dest.querySelector(`.log:last-child`)
+                    const last = dest.querySelector(`.log:last-child`);
                     if (!last) {
                         break;
                     }
-                        let lastPageId = last.dataset.page;
-                        //console.log("LastPageID:: " + lastPageId);
-                        const pageToDrop = dest.querySelectorAll(`.page${lastPageId}`);
-                        //console.log("PageToDrop ::: " + pageToDrop);
-                        if (pageToDrop.length > 0) {
-                            //Remove all items on that page
-                            pageToDrop.forEach((elem) => elem.remove());
-                            pagesOnScreen--;
-                        }
-                        console.log(' page  : ' + lastPageId + ' dropped!');
+                    let lastPageId = last.dataset.page;
+                    //console.log("LastPageID:: " + lastPageId);
+                    const pageToDrop = dest.querySelectorAll(`.page${lastPageId}`);
+                    //console.log("PageToDrop ::: " + pageToDrop);
+                    if (pageToDrop.length > 0) {
+                        //Remove all items on that page
+                        pageToDrop.forEach((elem) => elem.remove());
+                        pagesOnScreen--;
+                    }
+                    console.log(' page  : ' + lastPageId + ' dropped!');
                 }
             }
         }
@@ -327,10 +330,11 @@
                         lines.buffer.forEach((value) => {
                             dest.insertAdjacentHTML('beforeend', _applyHighlight(value));
                         });
-                     lines.buffer.length = 0;
+                        lines.buffer.length = 0;
                     }
                 } else {
                     const list = src.document.body.querySelectorAll(`.page${lastPageId}`);
+                    console.log(`loading next page with id ${lastPageId}  and list with ${list.length} elements. `);
                     if (list.length > 0) {
                         list.forEach((elem) => {
                             if (true === _isFiltering()) {
@@ -421,7 +425,11 @@
          * @private
          */
         function _scrollDownToBottom() {
-            dest.scrollTop = dest.scrollHeight;
+            //We don't need to scroll after every update
+            if((Date.now() - lastViewUpdateTimeMark) >= 1000 ){
+                dest.scrollTo(0, dest.scrollHeight);
+                lastViewUpdateTimeMark = Date.now();
+            }
         }
 
         /**
@@ -445,23 +453,6 @@
                 const firstPageId = first.dataset.page;
                 const lastPageId = last.dataset.page;
 
-                let buffer = [];
-                //Filter lines matching the keyword using the pages currently on screen
-                for(let i = firstPageId; i <= lastPageId; i++){
-                    const list = src.document.body.querySelectorAll(`.page${i}`);
-                    const matches = _matchingLines(list);
-                    if(matches && matches.length > 0){
-                        buffer = buffer.concat(matches);
-                    }
-                }
-
-                dest.replaceChildren();
-
-                buffer.forEach(value => {
-                    dest.insertAdjacentHTML('beforeend',value);
-                });
-
-                buffer.length = 0;
 
                 //Grab Pages before the current first line
                 //These means pages not loaded into the view that are in the iframe before the first line shown in the div
@@ -481,16 +472,22 @@
                     pageId -= PAGE_SIZE;
                 }
 
-                priorLinesBuffer.reverse().forEach(value => {
-                    dest.insertAdjacentHTML('afterbegin', value );
-                });
 
-                priorLinesBuffer.length = 0;
+                let midLinesBuffer = [];
+                //Filter lines matching the keyword using the pages currently on screen
+                for(let i = firstPageId; i <= lastPageId; i++){
+                    const list = src.document.body.querySelectorAll(`.page${i}`);
+                    const matches = _matchingLines(list);
+                    if(matches && matches.length > 0){
+                        midLinesBuffer = midLinesBuffer.concat(matches);
+                    }
+                }
 
                 //Grab Pages after the current last line
                 //These means pages not loaded into the view that are in the iframe after the last line currently shown in the div
                 pageId = lastPageId + 1;
                 let nextLinesBuffer = [];
+                /*
                 for(let i=PAGE_SIZE; i < MAX_VISITED_PAGES; i += PAGE_SIZE) {
                     let lines = _fetchNextLinesOnly(pageId);
                     if(lines.buffer && lines.buffer.length > 0) {
@@ -501,13 +498,20 @@
                     }
 
                     pageId += PAGE_SIZE;
-                }
+                }*/
 
-                nextLinesBuffer.forEach(value => {
+                let buffer = [].concat(priorLinesBuffer, midLinesBuffer, nextLinesBuffer);
+
+                // console.log(priorLinesBuffer);
+                // console.log(midLinesBuffer);
+
+                dest.replaceChildren();
+
+                buffer.forEach(value => {
                     dest.insertAdjacentHTML('beforeend',value);
                 });
 
-                nextLinesBuffer.length = 0;
+                buffer.length = 0;
 
                 dest.innerHTML = _applyHighlight(dest.innerHTML);
 
@@ -524,56 +528,48 @@
          * The method is meant to load pages not loaded yet and apply the lines filtering
          * When filtering and showing only matching lines this method should be called to load the matching line
          * @param startFromPageId
-         * @param numPages
          * @returns {{hasMorePages: boolean, buffer: *[]}}
          * @private
          */
-        function _fetchPriorLinesOnly(startFromPageId, numPages){
-
-            if(!numPages){
-                numPages = PAGE_SIZE;
-            }
+        function _fetchPriorLinesOnly(startFromPageId){
 
             const lines = {
                 buffer:[],
                 hasMorePages: true
             };
 
-             const stopAtPageId = (startFromPageId - numPages);
-             for(let i = startFromPageId; i >= stopAtPageId; i--){
-                 const list = src.document.body.querySelectorAll(`.page${i}`);
-                 if(!list || list.length === 0){
-                     lines.hasMorePages = false;
-                     break;
-                 }
-                 const matches = _matchingLines(list);
-                 if(matches && matches.length > 0){
-                     lines.buffer = lines.buffer.concat(matches);
-                 }
-             }
-             return lines;
+            let buffer = [];
+            const stopAtPageId = (startFromPageId - PAGE_SIZE);
+            for(let i = startFromPageId; i >= stopAtPageId; i--){
+                const list = src.document.body.querySelectorAll(`.page${i}`);
+                if(!list || list.length === 0){
+                    lines.hasMorePages = false;
+                    break;
+                }
+                const matches = _matchingLines(list);
+                if(matches && matches.length > 0){
+                    buffer = [].concat(matches, buffer);
+                }
+            }
+            lines.buffer.concat(buffer);
+            return lines;
         }
 
         /**
          * The method is meant to load pages not loaded yet and apply the lines filtering
          * When filtering and showing only matching lines this method should be called to load the matching line
          * @param startFromPageId
-         * @param numPages
          * @returns {{hasMorePages: boolean, buffer: *[]}}
          * @private
          */
-        function _fetchNextLinesOnly(startFromPageId, numPages){
-
-            if(!numPages){
-                numPages = PAGE_SIZE;
-            }
+        function _fetchNextLinesOnly(startFromPageId){
 
             const lines = {
                 buffer:[],
                 hasMorePages: true
             };
 
-            const stopAtPageId = (startFromPageId + numPages);
+            const stopAtPageId = (startFromPageId + PAGE_SIZE);
             for(let i = startFromPageId; i <= stopAtPageId; i++){
                 const list = src.document.body.querySelectorAll(`.page${i}`);
                 if(!list || list.length === 0){
@@ -643,57 +639,133 @@
                 }
             }
             matchLinesOnlyView = false;
+            _scrollDownToBottom();
         }
 
         // Return our public API
         return ({
-
             setFollowing : (value) => {
                 following = value;
             },
 
-            filterByKeyword : (value, showMatchingLinesOnly) => {
-                keyword = value;
-                if(showMatchingLinesOnly){
-                    _matchingLinesOnlyView();
-                } else {
-                    if(true === matchLinesOnlyView && null == keyword ){
-                        _loadDefaultView();
+            filterByKeyword: (value, showMatchingLinesOnly) => {
+                if (updatingView) {
+                    return;
+                }
+                updatingView = true;
+                try {
+                    keyword = value;
+                    if (showMatchingLinesOnly) {
+                        _matchingLinesOnlyView();
+                    } else {
+                        if (true === matchLinesOnlyView && null == keyword) {
+                            _loadDefaultView();
+                        }
+                        _applyFilter();
                     }
-                    _applyFilter();
+                } finally {
+                    updatingView = false;
                 }
             },
 
-            fetchPriorPage : () => {
-                if(following){
+            fetchPriorPage: () => {
+
+                if (following) {
                     return;
                 }
-                _fetchPriorPage();
-                _dropNewestPages();
+                if (updatingView) {
+                    return;
+                }
+                updatingView = true;
+                try {
+                    _fetchPriorPage();
+                    _dropNewestPages();
+                } finally {
+                    updatingView = false;
+                }
             },
 
-            fetchNextPage : () => {
-                if(following){
+            fetchNextPage: () => {
+
+                if (following) {
                     return;
                 }
-                _fetchNextPage();
-                _dropOldestPages();
+                if (updatingView) {
+                    return;
+                }
+                updatingView = true;
+                try {
+                    _fetchNextPage();
+                    _dropOldestPages();
+                } finally {
+                    updatingView = false;
+                }
             },
 
-            updateView : (e) => {
-                if(!following){
+            updateView: (e) => {
+                if (!following) {
                     return;
                 }
-                _updateView(e);
-                _dropOldestPages();
-                _scrollDownToBottom();
-            }
+
+                if (updatingView) {
+                    return;
+                }
+                updatingView = true;
+                try {
+                    _updateView(e);
+                    _dropOldestPages();
+                    _scrollDownToBottom();
+                } finally {
+                    updatingView = false;
+                }
+            },
 
         });
     }
 
     let logViewManager = null;
 
+    /**
+     * Here we handle
+     * @param e scroll in general, for fetching prior and next pages
+     */
+    function scrollHandler(e){
+
+        const div = e.target;
+        const scrollPercentage = computeScrollPercentage(div.scrollHeight, div.scrollTop);
+
+        //console.log(" scroll % :: " + scrollPercentage);
+
+        if(scrollPercentage === 0) {
+            //We're at the top of the container.
+            logViewManager.fetchPriorPage();
+            return;
+        }
+
+        if( scrollPercentage === 95 ){
+            //we're at the bottom of the scroll
+            logViewManager.fetchNextPage();
+        }
+    }
+
+    const debounce = (callback, time = 300, interval) => (...args) => {
+        clearTimeout(interval, interval = setTimeout(() => callback(...args), time));
+    };
+
+    const ignoredKeys = ["ArrowLeft", "ArrowUp", "ArrowDown", "ArrowRight"];
+
+    function keyUpHandler(e){
+
+        if(ignoredKeys.includes(e.key)){
+            return;
+        }
+        const input = e.target;
+        if(input.value.length > 2){
+            logViewManager.filterByKeyword(input.value, e.key === 'Enter');
+        } else {
+            logViewManager.filterByKeyword(null);
+        }
+    }
 
     function attachLogIframeEvents() {
 
@@ -708,7 +780,6 @@
         const logView = document.querySelector('.logViewerPrinted');
         const iDoc = dataLogSourceElem.contentWindow || dataLogSourceElem.contentDocument;
 
-
         logViewManager = LogViewManager({src:iDoc,dest:logView});
 
         followCheck.addEventListener("change",(e)=>{
@@ -719,67 +790,9 @@
             logViewManager.updateView(e);
         });
 
-        let lastScrollTop = 0;
+        logView.addEventListener("scroll", scrollHandler);
 
-        logView.addEventListener("scroll", (e)=>{
-
-            const div = e.target;
-            const scrollTop = div.scrollTop;
-            const scrollPercentage = computeScrollPercentage(div.scrollHeight, scrollTop);
-
-            console.log(" scroll % :: " + scrollPercentage);
-
-            if (scrollTop < lastScrollTop) {
-                //We're scrolling up
-                const followCheck = dijit.byId('scrollMe');
-                if (followCheck.checked) {
-                    //This does guarantee that we need to scroll back up at least till the scroll top is at the 94% of the div height
-                    //This is makes the check-box stay checked until we have scrolled back a bit more
-                    if (scrollPercentage <= 88) {
-                        //This does not fire the change event
-                        followCheck.setValue(false);
-                        //Therefore, we need to explicitly indicate we want to stop following the events
-                        logViewManager.setFollowing(false);
-                    }
-                }
-            }
-
-            lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
-
-            if(scrollPercentage === 0) {
-                //We're at the top of the container.
-                logViewManager.fetchPriorPage();
-                return;
-            }
-
-            if( scrollPercentage === 95 ){
-                //we're at the bottom of the scroll
-                logViewManager.fetchNextPage();
-            }
-
-        });
-
-        const debounce = (callback, time = 300, interval) => (...args) => {
-            clearTimeout(interval, interval = setTimeout(() => callback(...args), time));
-        };
-
-        const ignoredKeys = ["ArrowLeft", "ArrowUp", "ArrowDown", "ArrowRight"];
-
-        function processKeyEvent(e){
-
-            if(ignoredKeys.includes(e.key)){
-               return;
-            }
-
-            const input = e.target;
-            if(input.value.length > 2){
-                logViewManager.filterByKeyword(input.value, e.key === 'Enter');
-            } else {
-                logViewManager.filterByKeyword(null);
-            }
-        }
-
-        keywordInput.addEventListener("keyup", debounce(processKeyEvent, 300));
+        keywordInput.addEventListener("keyup", debounce(keyUpHandler, 300));
 
     }
 
@@ -805,7 +818,7 @@
             <select name="fileName" dojoType="dijit.form.FilteringSelect" ignoreCase="true" id="fileName" style="width:250px;" onchange="reloadTail();">
                 <option value=""></option>
                 <%for(File f: files){%>
-                    <option value="<%= f.getPath().replace(logPath, "")%>"><%= f.getPath().replace(logPath, "")%></option>
+                <option value="<%= f.getPath().replace(logPath, "")%>"><%= f.getPath().replace(logPath, "")%></option>
                 <%} %>
             </select>
             <div class="checkbox">
