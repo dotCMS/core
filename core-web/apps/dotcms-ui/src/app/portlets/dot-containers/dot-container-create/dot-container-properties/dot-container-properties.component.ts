@@ -157,7 +157,7 @@ export class DotContainerPropertiesComponent implements OnInit {
                 'message.container.properties.confirm.clear.content.title'
             ),
             message: this.dotMessageService.get(
-                'message.container.properties..confirm.clear.content.message'
+                'message.container.properties.confirm.clear.content.message'
             )
         });
     }
