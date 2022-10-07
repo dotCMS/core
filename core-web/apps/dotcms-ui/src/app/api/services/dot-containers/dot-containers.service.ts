@@ -74,7 +74,11 @@ export class DotContainersService {
      * @memberof DotContainersService
      */
     create(values: DotContainerRequest): Observable<DotContainer> {
-        return this.request<DotContainer>({ method: 'POST', url: CONTAINER_API_URL, body: values });
+        return this.request<DotContainer>({
+            method: 'POST',
+            url: `${CONTAINER_API_URL}_add`,
+            body: values
+        });
     }
 
     /**
@@ -109,7 +113,7 @@ export class DotContainersService {
     delete(identifiers: string[]): Observable<DotActionBulkResult> {
         return this.request<DotActionBulkResult>({
             method: 'DELETE',
-            url: `${CONTAINER_API_URL}bulkdelete`,
+            url: `${CONTAINER_API_URL}_bulkdelete`,
             body: identifiers
         });
     }

@@ -4,6 +4,7 @@ import { UntypedFormGroup } from '@angular/forms';
 import { DialogService } from 'primeng/dynamicdialog';
 import { DotAddVariableComponent } from './dot-add-variable/dot-add-variable.component';
 import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
+import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { MenuItem } from '@dotcms/dotcms-js';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -62,13 +63,18 @@ export class DotContentEditorComponent {
         close();
     }
 
-    handleAddVariable() {
+    handleAddVariable(contentType: DotCMSContentType) {
         this.dialogService.open(DotAddVariableComponent, {
             header: this.dotMessageService.get('containers.properties.add.variable.title'),
-            width: '50rem'
-            // data: {
-            //     onSave: () => {}
-            // }
+            width: '50rem',
+            data: {
+                contentTypeVariable: contentType.variable,
+                onSave: () =>
+                    //variable: string
+                    {
+                        //
+                    }
+            }
         });
     }
 }
