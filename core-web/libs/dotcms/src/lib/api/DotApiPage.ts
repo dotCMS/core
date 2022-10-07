@@ -1,4 +1,4 @@
-import { DotCMSPageParams } from './../models/DotCMSPage.model';
+import { DotCMSPageParams } from '../models/DotCMSPage.model';
 import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
 import { DotCMSPageAsset, DotCMSError, DotCMSPageFormat } from '../models';
 import { DotApiLanguage } from './DotApiLanguage';
