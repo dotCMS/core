@@ -1479,7 +1479,7 @@ public class ContainerResource implements Serializable {
      * @throws DotDataException
      */
     @GET
-    @Path("/_details")
+    @Path("/details")
     @JSONP
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
