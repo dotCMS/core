@@ -113,14 +113,14 @@ export class DotContainerPropertiesComponent implements OnInit {
         const addInContainerStructure = this.form.get('containerStructures') as FormArray;
         // clear containerStructures array
         (this.form.get('containerStructures') as FormArray).clear();
-        containerStructures.forEach(({ label, state }: MenuItem) =>
+        containerStructures.forEach(({ state }: MenuItem) => {
             addInContainerStructure.push(
                 this.fb.group({
-                    contentType: label,
-                    content: state?.title || ''
+                    structureId: state.contentType.variable,
+                    code: state?.code || ''
                 })
-            )
-        );
+            );
+        });
     }
 
     /**

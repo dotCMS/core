@@ -73,13 +73,13 @@ export class DotContentEditorStore extends ComponentStore<DotContentEditorState>
         };
     });
 
-    updateSelectedContentTypeContent = this.updater<string>((state, title) => {
+    updateSelectedContentTypeContent = this.updater<string>((state, code) => {
         const { contentTypesData, activeTabIndex } = this.get();
         const contentTypes = [...contentTypesData];
         const currentContent = contentTypes[activeTabIndex - 1];
         const contentType = {
             ...currentContent,
-            state: { title: title || currentContent?.state?.title || '' }
+            state: { ...currentContent.state, code: code || currentContent?.state?.code || '' }
         };
         contentTypes[activeTabIndex - 1] = contentType;
 
@@ -94,7 +94,8 @@ export class DotContentEditorStore extends ComponentStore<DotContentEditorState>
             const menuItem = {
                 label: contentType.name,
                 state: {
-                    title: ''
+                    code: '',
+                    contentType
                 },
                 command: () => {
                     if (!this.checkIfAlreadyExists(menuItem.label)) {
