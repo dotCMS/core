@@ -21,6 +21,7 @@ import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
@@ -1458,12 +1459,51 @@ public class ContainerResource implements Serializable {
         Logger.debug(this,
                 () -> "Adding container. Request payload is : " + ContainerResourceHelper.getInstance().getObjectToJsonString(containerForm));
 
-        this.containerAPI.add(container, containerForm.getContainerStructures(), containerForm, host, user, pageMode.respectAnonPerms);
+        this.containerAPI.save(container, containerForm.getContainerStructures(), containerForm, host, user, pageMode.respectAnonPerms);
         Logger.debug(this, ()-> "The container: " + container.getIdentifier() + " has been added");
 
         ActivityLogger.logInfo(this.getClass(), "Add Container",
                 "User " + user.getPrimaryKey() + " added " + container.getTitle(), host.getHostname());
 
         return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
+    }
+
+    /**
+     * Returns working version along with containerStructures {@link com.dotmarketing.portlets.containers.model.Container} based on the id
+     *
+     * @param request
+     * @param httpResponse
+     * @param containerId container identifier to get the working version.
+     * @return Response
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @GET
+    @Path("/_details")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response getContainerWithStructures(@Context final HttpServletRequest  request,
+            @Context final HttpServletResponse httpResponse,
+            @QueryParam("containerId") final String containerId) throws DotSecurityException, DotDataException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, httpResponse).rejectWhenNoUser(true).init();
+        final User user     = initData.getUser();
+        Logger.debug(this, ()-> "Getting the working container by id: " + containerId);
+
+        final Host      host      =  WebAPILocator.getHostWebAPI().getHost(request);
+        final Container container = this.getContainerWorking(containerId, user, host);
+
+        if (null == container || UtilMethods.isNotSet(container.getIdentifier())) {
+
+            Logger.error(this, "Working Version of the Container with Id: " + containerId + " does not exist");
+            throw new DoesNotExistException("Working Version of the Container with Id: " + containerId + " does not exist");
+        }
+
+        List<ContainerStructure> structures = this.containerAPI.getContainerStructures(container);
+
+        return Response.ok(new ResponseEntityView(ContainerResourceHelper.getInstance().toResponseEntityContainerWithStructuresView(container, structures))).build();
     }
 }

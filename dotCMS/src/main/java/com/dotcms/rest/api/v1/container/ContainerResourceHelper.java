@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.container;
 
 import com.dotcms.rendering.velocity.directive.DotParse;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
@@ -75,6 +76,10 @@ public class ContainerResourceHelper implements Serializable {
                 }
             }
         }
+    }
+
+    public ContainerWithStructuresView toResponseEntityContainerWithStructuresView(final Container container, final List<ContainerStructure> containerStructures) {
+        return new ContainerWithStructuresView(container, containerStructures);
     }
 
     public String getObjectToJsonString(final Object object) {

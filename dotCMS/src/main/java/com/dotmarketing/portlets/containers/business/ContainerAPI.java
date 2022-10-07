@@ -329,7 +329,7 @@ public interface ContainerAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	Container add(Container container, List<ContainerStructure> containerStructureList,
+	Container save(Container container, List<ContainerStructure> containerStructureList,
 			ContainerForm containerForm, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	/**
 	 * Deletes the template version by inode

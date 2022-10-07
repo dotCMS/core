@@ -815,7 +815,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 	@WrapInTransaction
 	@Override
 	@SuppressWarnings("unchecked")
-	public Container add(Container container, List<ContainerStructure> containerStructureList,
+	public Container save(Container container, List<ContainerStructure> containerStructureList,
 			ContainerForm containerForm, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		if (Container.SYSTEM_CONTAINER.equals(container.getIdentifier())) {
 			Logger.debug(this, "System Container cannot be saved/updated.");
@@ -922,7 +922,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 
 		APILocator.getVersionableAPI().setWorking(container);
 
-		// Get templates of the old version so you can update the working
+		// Get templates of the old version, so you can update the working
 		// information to this new version.
 		if (currentTemplates != null) {
 			Iterator<Template> it = currentTemplates.iterator();
