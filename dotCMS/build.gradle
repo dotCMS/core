@@ -266,8 +266,6 @@ dependencies {
     }
 }
 
-
-import com.dotcms.repackage.org.apache.commons.io.FileUtils
 import groovy.json.JsonSlurper
 import org.ajoberstar.grgit.Grgit
 import org.gradle.api.tasks.testing.logging.TestLogEvent

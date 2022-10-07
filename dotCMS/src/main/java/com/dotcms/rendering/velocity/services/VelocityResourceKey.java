@@ -1,6 +1,7 @@
 package com.dotcms.rendering.velocity.services;
 
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -11,6 +12,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.runtime.resource.ResourceManager;
 
@@ -18,15 +21,13 @@ import java.io.Serializable;
 import java.io.StringWriter;
 import java.util.Optional;
 
-
-
 public class VelocityResourceKey implements Serializable {
 
     private static final char RESOURCE_TEMPLATE = ResourceManager.RESOURCE_TEMPLATE + '0';
     private static final String HOST_INDICATOR = "///";
     private static final long serialVersionUID = 1L;
 
-    public final String path, language, id1, id2, cacheKey;
+    public final String path, language, id1, id2, cacheKey, variant;
     public final VelocityType type;
     public final PageMode mode;
 
@@ -51,24 +52,41 @@ public class VelocityResourceKey implements Serializable {
 
 
     public VelocityResourceKey(final HTMLPageAsset asset, final PageMode mode, final long language) {
-        this("/" + mode.name() + "/" + asset.getIdentifier() + "_" + language + "." + VelocityType.HTMLPAGE.fileExtension);
+        this(getHTMLPageFilePath(asset, mode, language));
     }
+
+    public static String getHTMLPageFilePath(HTMLPageAsset asset, PageMode mode, long language) {
+        return getHTMLPageFilePath(asset.getIdentifier(), mode, language, asset.getVariantId());
+    }
+
+    public static String getHTMLPageFilePath(String id, PageMode mode, long language, String variantId) {
+        return "/" + mode.name() + "/" + id + StringPool.UNDERLINE + language +
+                StringPool.UNDERLINE +  variantId + "." + VelocityType.HTMLPAGE.fileExtension;
+    }
+
     public VelocityResourceKey(final Contentlet asset, final PageMode mode, final long language) {
-        this("/" + mode.name() + "/" + asset.getIdentifier() + "_" + language + "." + VelocityType.CONTENT.fileExtension);
+        this("/" + mode.name() + "/" + asset.getIdentifier() + StringPool.UNDERLINE + language +
+                StringPool.UNDERLINE +  asset.getVariantId() + "." + VelocityType.CONTENT.fileExtension);
     }
     public VelocityResourceKey(final String filePath) {
 
         path = cleanKey(filePath);
 
-
         final String[] pathArry = path.split("[/\\.]", 0);
 
         this.mode = PageMode.get(pathArry[1]);
 
-        this.id1 = pathArry[2].indexOf("_") > -1 ? pathArry[2].substring(0, pathArry[2].indexOf("_")) : pathArry[2];
+        final String[] underlineSplit = pathArry[2].split(StringPool.UNDERLINE);
+        this.id1 = underlineSplit[0];
 
-        this.language = pathArry[2].indexOf("_") > -1 ? pathArry[2].substring(pathArry[2].indexOf("_") + 1, pathArry[2].length())
+        this.language = underlineSplit.length > 1 ? underlineSplit[1]
                 : String.valueOf(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+
+        this.variant = underlineSplit.length > 2 ?
+                Arrays.stream(Arrays.copyOfRange(underlineSplit, 2, underlineSplit.length))
+                        .collect(Collectors.joining(StringPool.UNDERLINE)) :
+                VariantAPI.DEFAULT_VARIANT.name();
+
         this.type = VelocityType.resolveVelocityType(filePath);
         this.id2 = pathArry.length > 4 ? pathArry[3] : null;
         this.cacheKey = cacheKey();

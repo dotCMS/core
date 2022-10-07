@@ -55,6 +55,7 @@ import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.FunctionUtils;
 import com.dotcms.util.JsonUtil;
 import com.dotcms.util.ThreadContextUtil;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -227,29 +228,30 @@ import org.jetbrains.annotations.Nullable;
 public class ESContentletAPIImpl implements ContentletAPI {
 
     private static final String CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT = "Can't change state of checked out content or where inode is not set. Use Search or Find then use method";
-    private static final String CANT_GET_LOCK_ON_CONTENT                  = "Only the CMS Admin or the user who locked the contentlet can lock/unlock it";
-    private static final String FAILED_TO_DELETE_UNARCHIVED_CONTENT       = "Failed to delete unarchived content. Content must be archived first before it can be deleted.";
-    private static final String NEVER_EXPIRE                              = "NeverExpire";
-    private static final String CHECKIN_IN_PROGRESS                      = "__checkin_in_progress__";
+    private static final String CANT_GET_LOCK_ON_CONTENT = "Only the CMS Admin or the user who locked the contentlet can lock/unlock it";
+    private static final String FAILED_TO_DELETE_UNARCHIVED_CONTENT = "Failed to delete unarchived content. Content must be archived first before it can be deleted.";
+    private static final String NEVER_EXPIRE = "NeverExpire";
+    private static final String CHECKIN_IN_PROGRESS = "__checkin_in_progress__";
 
-    private final ContentletIndexAPIImpl  indexAPI;
-    private final ESContentFactoryImpl  contentFactory;
-    private final PermissionAPI         permissionAPI;
-    private final CategoryAPI           categoryAPI;
-    private final RelationshipAPI       relationshipAPI;
-    private final FieldAPI              fieldAPI;
-    private final LanguageAPI           languageAPI;
-    private final ReindexQueueAPI       reindexQueueAPI;
-    private final TagAPI                tagAPI;
+    private final ContentletIndexAPIImpl indexAPI;
+    private final ESContentFactoryImpl contentFactory;
+    private final PermissionAPI permissionAPI;
+    private final CategoryAPI categoryAPI;
+    private final RelationshipAPI relationshipAPI;
+    private final FieldAPI fieldAPI;
+    private final LanguageAPI languageAPI;
+    private final ReindexQueueAPI reindexQueueAPI;
+    private final TagAPI tagAPI;
     private final IdentifierStripedLock lockManager;
-    private final TempFileAPI           tempApi ;
-    private final FileMetadataAPI       fileMetadataAPI;
+    private final TempFileAPI tempApi;
+    private final FileMetadataAPI fileMetadataAPI;
     public static final int MAX_LIMIT = 10000;
     private static final boolean INCLUDE_DEPENDENCIES = true;
 
-    private static final String backupPath = ConfigUtils.getBackupPath() + File.separator + "contentlets";
+    private static final String backupPath =
+            ConfigUtils.getBackupPath() + File.separator + "contentlets";
 
-    public final static String  UNIQUE_PER_SITE_FIELD_VARIABLE_NAME = "uniquePerSite";
+    public final static String UNIQUE_PER_SITE_FIELD_VARIABLE_NAME = "uniquePerSite";
 
 
     /**
@@ -260,22 +262,24 @@ public class ESContentletAPIImpl implements ContentletAPI {
             .getBooleanProperty("GET_RELATED_CONTENT_FROM_DB", true);
 
     private final ContentletSystemEventUtil contentletSystemEventUtil;
-    private final LocalSystemEventsAPI      localSystemEventsAPI;
+    private final LocalSystemEventsAPI localSystemEventsAPI;
     private final BaseTypeToContentTypeStrategyResolver baseTypeToContentTypeStrategyResolver =
             BaseTypeToContentTypeStrategyResolver.getInstance();
 
     public static enum QueryType {
         search, suggest, moreLike, Facets
-    };
+    }
 
-    private static final Supplier<String> ND_SUPPLIER = ()->"N/D";
+    ;
+
+    private static final Supplier<String> ND_SUPPLIER = () -> "N/D";
     private ElasticReadOnlyCommand elasticReadOnlyCommand;
 
     /**
      * Default class constructor.
      */
     @VisibleForTesting
-    public ESContentletAPIImpl (final ElasticReadOnlyCommand readOnlyCommand) {
+    public ESContentletAPIImpl(final ElasticReadOnlyCommand readOnlyCommand) {
         indexAPI = new ContentletIndexAPIImpl();
         fieldAPI = APILocator.getFieldAPI();
         contentFactory = new ESContentFactoryImpl();
@@ -286,25 +290,27 @@ public class ESContentletAPIImpl implements ContentletAPI {
         reindexQueueAPI = APILocator.getReindexQueueAPI();
         tagAPI = APILocator.getTagAPI();
         contentletSystemEventUtil = ContentletSystemEventUtil.getInstance();
-        localSystemEventsAPI      = APILocator.getLocalSystemEventsAPI();
+        localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
         lockManager = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
-        tempApi=  APILocator.getTempFileAPI();
+        tempApi = APILocator.getTempFileAPI();
         this.elasticReadOnlyCommand = readOnlyCommand;
         fileMetadataAPI = APILocator.getFileMetadataAPI();
     }
 
-    public ESContentletAPIImpl () {
+    public ESContentletAPIImpl() {
         this(ElasticReadOnlyCommand.getInstance());
     }
 
 
     @Override
-    public SearchResponse esSearchRaw ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException {
+    public SearchResponse esSearchRaw(String esQuery, boolean live, User user,
+            boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
         return APILocator.getEsSearchAPI().esSearchRaw(esQuery, live, user, respectFrontendRoles);
     }
 
     @Override
-    public ESSearchResults esSearch ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException {
+    public ESSearchResults esSearch(String esQuery, boolean live, User user,
+            boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
         return APILocator.getEsSearchAPI().esSearch(esQuery, live, user, respectFrontendRoles);
     }
 
@@ -315,35 +321,36 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @CloseDBIfOpened
-    public Object loadField(final String inode, final com.dotcms.contenttype.model.field.Field field) throws DotDataException{
-        if(APILocator.getContentletJsonAPI().isPersistContentAsJson()){
-          final Object value = contentFactory.loadJsonField(inode, field);
-          if(null != value){
-              return value;
-          }
+    public Object loadField(final String inode,
+            final com.dotcms.contenttype.model.field.Field field) throws DotDataException {
+        if (APILocator.getContentletJsonAPI().isPersistContentAsJson()) {
+            final Object value = contentFactory.loadJsonField(inode, field);
+            if (null != value) {
+                return value;
+            }
         }
         return contentFactory.loadField(inode, field.dbColumn());
     }
 
     @CloseDBIfOpened
     @Override
-    public List<Contentlet> findAllContent(int offset, int limit) throws DotDataException{
+    public List<Contentlet> findAllContent(int offset, int limit) throws DotDataException {
         return contentFactory.findAllCurrent(offset, limit);
     }
 
     @Override
     public boolean isContentlet(String inode) throws DotDataException, DotRuntimeException {
         Contentlet contentlet = new Contentlet();
-        try{
+        try {
             contentlet = find(inode, APILocator.getUserAPI().getSystemUser(), true);
-        }catch (DotSecurityException dse) {
+        } catch (DotSecurityException dse) {
             throw new DotRuntimeException("Unable to use system user : ", dse);
-        }catch (Exception e) {
-            Logger.debug(this,"Inode unable to load as contentlet.  Asssuming it is not content");
+        } catch (Exception e) {
+            Logger.debug(this, "Inode unable to load as contentlet.  Asssuming it is not content");
             return false;
         }
-        if(contentlet!=null){
-            if(InodeUtils.isSet(contentlet.getInode())){
+        if (contentlet != null) {
+            if (InodeUtils.isSet(contentlet.getInode())) {
                 return true;
             }
         }
@@ -352,61 +359,75 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public Contentlet find(final String inode, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+    public Contentlet find(final String inode, final User user, final boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException {
         final Contentlet contentlet = contentFactory.find(inode);
         if (contentlet == null) {
             return null;
         }
 
-        if (this.permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user,
+        if (this.permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ,
+                user,
                 respectFrontendRoles)) {
             return contentlet;
         } else {
             final String userId = (user == null) ? "Unknown" : user.getUserId();
-            throw new DotSecurityException(String.format("User '%s' does not have READ permissions on %s", userId, ContentletUtil
-                    .toShortString(contentlet)));
+            throw new DotSecurityException(
+                    String.format("User '%s' does not have READ permissions on %s", userId,
+                            ContentletUtil
+                                    .toShortString(contentlet)));
         }
     }
 
     @Override
-    public Contentlet move(final Contentlet contentlet, final User user, final String hostAndFolderPath,
+    public Contentlet move(final Contentlet contentlet, final User user,
+            final String hostAndFolderPath,
             final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
-        Logger.debug(this, ()->"Moving contentlet: " + contentlet.getIdentifier() + " to: " + hostAndFolderPath);
+        Logger.debug(this, () -> "Moving contentlet: " + contentlet.getIdentifier() + " to: "
+                + hostAndFolderPath);
 
-        if (UtilMethods.isNotSet(hostAndFolderPath) || !hostAndFolderPath.startsWith(HostUtil.HOST_INDICATOR)) {
+        if (UtilMethods.isNotSet(hostAndFolderPath) || !hostAndFolderPath.startsWith(
+                HostUtil.HOST_INDICATOR)) {
 
             throw new IllegalArgumentException("The host path is not valid: " + hostAndFolderPath);
         }
 
-        final Tuple2<String, Host> hostPathTuple = Try.of(()->HostUtil.splitPathHost(hostAndFolderPath, user,
-                StringPool.FORWARD_SLASH)).getOrElseThrow(e -> new DotRuntimeException(e));
+        final Tuple2<String, Host> hostPathTuple = Try.of(
+                () -> HostUtil.splitPathHost(hostAndFolderPath, user,
+                        StringPool.FORWARD_SLASH)).getOrElseThrow(e -> new DotRuntimeException(e));
 
-        return this.move(contentlet, user, hostPathTuple._2(), hostPathTuple._1(), respectFrontendRoles);
+        return this.move(contentlet, user, hostPathTuple._2(), hostPathTuple._1(),
+                respectFrontendRoles);
     }
 
     @Override
-    public Contentlet move(final Contentlet contentlet, final User user, final Host host, final String folderPathParam,
+    public Contentlet move(final Contentlet contentlet, final User user, final Host host,
+            final String folderPathParam,
             final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
-        Logger.debug(this, ()->"Moving contentlet: " + contentlet.getIdentifier() + " to: " + folderPathParam);
+        Logger.debug(this, () -> "Moving contentlet: " + contentlet.getIdentifier() + " to: "
+                + folderPathParam);
 
-        if (UtilMethods.isNotSet(folderPathParam) || !folderPathParam.startsWith(StringPool.SLASH)) {
+        if (UtilMethods.isNotSet(folderPathParam) || !folderPathParam.startsWith(
+                StringPool.SLASH)) {
 
             throw new IllegalArgumentException("The folder is not valid: " + folderPathParam);
         }
 
         // we need a / at the end to check if exits
-        final String folderPath = folderPathParam.endsWith(StringPool.SLASH)?folderPathParam: folderPathParam + StringPool.SLASH;
+        final String folderPath = folderPathParam.endsWith(StringPool.SLASH) ? folderPathParam
+                : folderPathParam + StringPool.SLASH;
 
         //Check if the folder exists via Admin user, b/c user couldn't have VIEW Permissions over the folder
-        Folder folder = Try.of(()-> APILocator.getFolderAPI()
-                .findFolderByPath(folderPath, host, APILocator.systemUser(), respectFrontendRoles)).getOrNull();
+        Folder folder = Try.of(() -> APILocator.getFolderAPI()
+                        .findFolderByPath(folderPath, host, APILocator.systemUser(), respectFrontendRoles))
+                .getOrNull();
 
         if (null == folder || !UtilMethods.isSet(folder.getInode())) {
 
             // if the folder does not exists try, let's see if the current user can create it.
-            Logger.debug(this, ()->"On Moving Contentlet, creating the Folders: " + folderPath);
+            Logger.debug(this, () -> "On Moving Contentlet, creating the Folders: " + folderPath);
 
             try {
                 // multiple contentlets on a bulk action may require to create the same folder
@@ -415,26 +436,32 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 folder = lockManager.tryLock(lockKey,
                         () -> {
 
-                            Folder testFolder = Try.of(()-> APILocator.getFolderAPI()
-                                    .findFolderByPath(folderPath, host, user, respectFrontendRoles)).getOrNull();
+                            Folder testFolder = Try.of(() -> APILocator.getFolderAPI()
+                                            .findFolderByPath(folderPath, host, user, respectFrontendRoles))
+                                    .getOrNull();
 
                             if (null == testFolder || !UtilMethods.isSet(testFolder.getInode())) {
 
-                                Logger.debug(this, ()->"Creating folders: " + folderPath + ", contentlet: " + contentlet.getIdentifier());
-                                testFolder = DotConcurrentFactory.getInstance().getSingleSubmitter() // we need to run this in a separated thread, to use a diff conn.
-                                        .submit(()->this.createFolder(folderPath, contentlet, host, user, respectFrontendRoles)).get(); // b.c the folder is a pre-requisites
+                                Logger.debug(this,
+                                        () -> "Creating folders: " + folderPath + ", contentlet: "
+                                                + contentlet.getIdentifier());
+                                testFolder = DotConcurrentFactory.getInstance()
+                                        .getSingleSubmitter() // we need to run this in a separated thread, to use a diff conn.
+                                        .submit(() -> this.createFolder(folderPath, contentlet,
+                                                host, user, respectFrontendRoles))
+                                        .get(); // b.c the folder is a pre-requisites
                             }
 
                             return testFolder;
                         });
             } catch (final Throwable t) {
-                Logger.warn(getClass(),t.getMessage(),t);
+                Logger.warn(getClass(), t.getMessage(), t);
                 folder = null;
             }
 
-
             if (null == folder || !UtilMethods.isSet(folder.getInode())) {
-                throw new IllegalArgumentException("The folder does not exists: " + folderPath + " and could not be created");
+                throw new IllegalArgumentException(
+                        "The folder does not exists: " + folderPath + " and could not be created");
             }
         }
 
@@ -442,52 +469,67 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @WrapInTransaction
-    private Folder createFolder (final String folderPath, final Contentlet contentlet, final Host host,
-            final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+    private Folder createFolder(final String folderPath, final Contentlet contentlet,
+            final Host host,
+            final User user, final boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException {
 
-        Logger.debug(this, ()->"Creating folders: " + folderPath + ", contentlet: " + contentlet.getIdentifier());
-        return APILocator.getFolderAPI().createFolders(folderPath, host, user, respectFrontendRoles);
+        Logger.debug(this, () -> "Creating folders: " + folderPath + ", contentlet: "
+                + contentlet.getIdentifier());
+        return APILocator.getFolderAPI()
+                .createFolders(folderPath, host, user, respectFrontendRoles);
     }
 
     @WrapInTransaction
     @Override
-    public Contentlet move(final Contentlet contentlet, final User incomingUser, final Host host, final Folder folder,
+    public Contentlet move(final Contentlet contentlet, final User incomingUser, final Host host,
+            final Folder folder,
             final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
-        Logger.debug(this, ()-> "Moving contentlet: " + contentlet.getIdentifier()
-                + " to host: " + host.getHostname() + " and path: " + folder.getPath() + ", id: " + folder.getIdentifier());
+        Logger.debug(this, () -> "Moving contentlet: " + contentlet.getIdentifier()
+                + " to host: " + host.getHostname() + " and path: " + folder.getPath() + ", id: "
+                + folder.getIdentifier());
 
-        final User user = incomingUser!=null ? incomingUser: APILocator.getUserAPI().getAnonymousUser();
+        final User user =
+                incomingUser != null ? incomingUser : APILocator.getUserAPI().getAnonymousUser();
 
-        if(user.isAnonymousUser() && AnonymousAccess.systemSetting() != AnonymousAccess.WRITE) {
-            throw new DotSecurityException("CONTENT_APIS_ALLOW_ANONYMOUS setting does not allow anonymous content WRITEs");
+        if (user.isAnonymousUser() && AnonymousAccess.systemSetting() != AnonymousAccess.WRITE) {
+            throw new DotSecurityException(
+                    "CONTENT_APIS_ALLOW_ANONYMOUS setting does not allow anonymous content WRITEs");
         }
 
         // if the user can write and add a children to the folder
-        if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles) ||
+        if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user,
+                respectFrontendRoles) ||
                 !permissionAPI.doesUserHavePermission(folder, PERMISSION_CAN_ADD_CHILDREN, user)) {
 
             this.throwSecurityException(contentlet, user);
         }
 
-        final Identifier identifier = APILocator.getIdentifierAPI().loadFromDb(contentlet.getIdentifier());
+        final Identifier identifier = APILocator.getIdentifierAPI()
+                .loadFromDb(contentlet.getIdentifier());
 
         // if id exists
         if (null == identifier || !UtilMethods.isSet(identifier.getId())) {
 
-            throw new DoesNotExistException("The identifier does not exists: " + contentlet.getIdentifier());
+            throw new DoesNotExistException(
+                    "The identifier does not exists: " + contentlet.getIdentifier());
         }
 
         //Check if another content with the same name already exists in the new folder
-        if(APILocator.getFileAssetAPI().fileNameExists(host, folder, identifier.getAssetName(), contentlet.getIdentifier())){
-            throw new IllegalArgumentException("Content with the same name: '" + identifier.getAssetName() + "' already exists at the new path: " + host.getHostname() + folder.getPath());
+        if (APILocator.getFileAssetAPI().fileNameExists(host, folder, identifier.getAssetName(),
+                contentlet.getIdentifier())) {
+            throw new IllegalArgumentException(
+                    "Content with the same name: '" + identifier.getAssetName()
+                            + "' already exists at the new path: " + host.getHostname()
+                            + folder.getPath());
         }
 
         // update with the new host and path
         identifier.setHostId(host.getIdentifier());
         identifier.setParentPath(folder.getPath());
 
-        Logger.debug(this, ()->"Updating the identifier: " + identifier);
+        Logger.debug(this, () -> "Updating the identifier: " + identifier);
         // changing the host and path will move the contentlet
         APILocator.getIdentifierAPI().save(identifier);
 
@@ -527,38 +569,47 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public List<Contentlet> findByStructure(String structureInode, User user,   boolean respectFrontendRoles, int limit, int offset) throws DotDataException,DotSecurityException {
-        List<Contentlet> contentlets = contentFactory.findByStructure(structureInode, limit, offset);
-        return permissionAPI.filterCollection(contentlets, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+    public List<Contentlet> findByStructure(String structureInode, User user,
+            boolean respectFrontendRoles, int limit, int offset)
+            throws DotDataException, DotSecurityException {
+        List<Contentlet> contentlets = contentFactory.findByStructure(structureInode, limit,
+                offset);
+        return permissionAPI.filterCollection(contentlets, PermissionAPI.PERMISSION_READ,
+                respectFrontendRoles, user);
     }
 
     @Override
-    public List<Contentlet> findByStructure(Structure structure, User user, boolean respectFrontendRoles, int limit, int offset) throws DotDataException,DotSecurityException {
+    public List<Contentlet> findByStructure(Structure structure, User user,
+            boolean respectFrontendRoles, int limit, int offset)
+            throws DotDataException, DotSecurityException {
         return findByStructure(structure.getInode(), user, respectFrontendRoles, limit, offset);
     }
 
     @CloseDBIfOpened
     @Override
-    public Contentlet findContentletForLanguage(long languageId, Identifier contentletId) throws DotDataException, DotSecurityException {
+    public Contentlet findContentletForLanguage(long languageId, Identifier contentletId)
+            throws DotDataException, DotSecurityException {
         try {
-            return findContentletByIdentifier(contentletId.getId(), false, languageId, APILocator.systemUser(), false);
+            return findContentletByIdentifier(contentletId.getId(), false, languageId,
+                    APILocator.systemUser(), false);
         } catch (DotContentletStateException dcs) {
-            Logger.debug(this, ()->String.format("No working contentlet found for language: %d and identifier: %s ", languageId, null != contentletId ? contentletId.getId() : "Unkown"));
+            Logger.debug(this, () -> String.format(
+                    "No working contentlet found for language: %d and identifier: %s ", languageId,
+                    null != contentletId ? contentletId.getId() : "Unkown"));
         }
         return null;
     }
 
 
-
-    @CloseDBIfOpened
-    @Override
-    public Contentlet findContentletByIdentifier(String identifier, boolean live, long languageId, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException, DotContentletStateException {
+    public Contentlet findContentletByIdentifier(String identifier, boolean live, long languageId,
+            String variantId, User user, boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException, DotContentletStateException {
         if(languageId<=0) {
             languageId=APILocator.getLanguageAPI().getDefaultLanguage().getId();
         }
 
         try {
-            Optional<ContentletVersionInfo> clvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, languageId);
+            Optional<ContentletVersionInfo> clvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, languageId, variantId);
             String liveInode = null;
             String workingInode = null;
 
@@ -577,6 +628,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }catch (Exception e) {
             throw new DotContentletStateException("Can't find contentlet: " + identifier + " lang:" + languageId + " live:" + live,e);
         }
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public Contentlet findContentletByIdentifier(String identifier, boolean live, long languageId, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException, DotContentletStateException {
+        return findContentletByIdentifier(identifier, live, languageId, VariantAPI.DEFAULT_VARIANT.name(), user, respectFrontendRoles);
 
     }
 
@@ -6254,6 +6311,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet.setFolder((String)value);
                 }else if(isSetPropertyVariable(conVariable)){
                     contentlet.setProperty(conVariable, value);
+                } else if(conVariable.equals(Contentlet.VARIANT_ID)) {
+                    contentlet.setVariantId(value.toString());
                 } else if(velFieldmap.get(conVariable) != null){
                     Field field = velFieldmap.get(conVariable);
                     if(isFieldTypeString(field))

@@ -85,7 +85,7 @@ public class PageViewStrategy extends WebAssetStrategy<HTMLPageAsset> {
         map.put("__icon__", IconType.HTMLPAGE.iconName());
 
         final Optional<ContentletVersionInfo> info = APILocator.getVersionableAPI().
-                getContentletVersionInfo(page.getIdentifier(), page.getLanguageId());
+                getContentletVersionInfo(page.getIdentifier(), page.getLanguageId(), page.getVariantId());
 
         info.ifPresent(contentletVersionInfo -> map.put("workingInode",
                 contentletVersionInfo.getWorkingInode()));
