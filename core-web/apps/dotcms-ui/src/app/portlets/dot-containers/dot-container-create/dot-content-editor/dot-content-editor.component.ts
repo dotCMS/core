@@ -20,7 +20,7 @@ export class DotContentEditorComponent {
     @Output() updateContainerStructure = new EventEmitter<MenuItem[]>();
     vm$ = this.store.vm$;
     contentTypesData$ = this.store.contentTypeData$;
-
+    monacoEditor = [];
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
@@ -79,23 +79,33 @@ export class DotContentEditorComponent {
     }
 
     /**
-     * This function opens a dialog window that allows the user to add a variable to a content type
-     * @param {DotCMSContentType} contentType - DotCMSContentType
+     * It opens a dialog with a form to add a variable to the container
+     * @param {DotCMSContentType} contentType - DotCMSContentType - The content type object that contains
+     * the variables.
      * @returns {void}
+     * @param {number} index - The index of the tab that was clicked.
      * @memberof DotContentEditorComponent
      */
-    handleAddVariable(contentType: DotCMSContentType) {
+    handleAddVariable(contentType: DotCMSContentType, index: number) {
         this.dialogService.open(DotAddVariableComponent, {
             header: this.dotMessageService.get('containers.properties.add.variable.title'),
             width: '50rem',
             data: {
                 contentTypeVariable: contentType.variable,
-                onSave: () =>
-                    //variable: string
-                    {
-                        //
-                    }
+                activeTabIndex: index,
+                onSave: (variable, idx) => {
+                    const editor = this.monacoEditor[idx].getModel();
+                    this.monacoEditor[idx].getModel().setValue(editor.getValue() + `\n${variable}`);
+                }
             }
         });
+    }
+
+    /**
+     * It pushes the monaco instance into the monacoEditor array.
+     * @param monacoInstance - The monaco instance that is created by the component.
+     */
+    monacoInit(monacoInstance) {
+        this.monacoEditor.push(monacoInstance);
     }
 }

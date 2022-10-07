@@ -30,12 +30,13 @@
             <button
                 class="p-button-secondary dot-content-editor__variable-btn"
                 [label]="'add-variable' | dm"
-                (click)="handleAddVariable(contentType.state.contentType)"
+                (click)="handleAddVariable(contentType.state.contentType, i)"
                 pButton
             ></button>
             <dot-textarea-content
                 #body
                 [show]="['code']"
+                (monacoInit)="monacoInit($event)"
                 (ValueChange)="updateContentTypeText($event)"
                 language="html"
             ></dot-textarea-content>

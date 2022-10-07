@@ -22,11 +22,12 @@ export class DotAddVariableComponent {
      * Handle save button
      *
      * @param {string} variable
+     * @param {number} activeTabIndex
      * @returns void
      * @memberof DotAddVariableComponent
      */
     onSave(variable: string): void {
-        this.config.data?.onSave?.(this.applyMask(variable));
+        this.config.data?.onSave?.(this.applyMask(variable), this.config.data.activeTabIndex);
     }
 
     /**
