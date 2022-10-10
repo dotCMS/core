@@ -214,7 +214,6 @@
 
         let updatingView = false;
 
-        let lastViewUpdateTimeMark = Date.now();
 
         /**
          * As we move (forward) through the contents loaded into the view (Div)
@@ -391,8 +390,8 @@
          * @private
          */
         function _applyHighlight(newContent) {
-            const regEx = new RegExp(keyword, "ig");
-            return newContent.replaceAll(regEx,
+            const regExp = new RegExp(`(?!(class|style)+=\")${keyword}`, 'ig');
+            return newContent.replaceAll(regExp,
                 '<span class="highlightKeywordMatchLogViewer">$&</span>');
         }
 
