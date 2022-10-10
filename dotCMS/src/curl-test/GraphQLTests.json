@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "fb35c657-3a6d-41ba-909e-0a3b44e1c7d3",
+		"_postman_id": "ad523850-4a78-470e-bec1-3851dacaf4a9",
 		"name": "GraphQL",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "10041132"
+		"_exporter_id": "4500400"
 	},
 	"item": [
 		{
@@ -3497,9 +3497,6 @@
 									"    pm.expect(page.fileAsset.name, 'FAILED:[fileAsset.name]').equal(\"plugins.css\");",
 									"    pm.expect(hasProperty(page.metaData, \"contentType\", \"text/plain; charset=UTF-8\"), 'FAILED:[page.metaData.contentType]').to.be.true;",
 									"    pm.expect(hasProperty(page.metaData, \"fileSize\", \"188560\"), 'FAILED:[page.metaData.fileSize]').to.be.true;",
-									"    pm.expect(page.showOnMenu.length, 'FAILED:[showOnMenu]').to.eql(0);",
-									"    pm.expect(page.sortOrder, 'FAILED:[sortOrder]').to.eql(0);",
-									"    pm.expect(page.description, 'FAILED:[description]').to.eql(\"plugins\");",
 									"});",
 									"",
 									"",
@@ -3525,7 +3522,7 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "{\n  FileBaseTypeCollection(query:\"+identifier:0e480a8c-48bf-45a9-81b0-c8e2dd8aabd2\") {\n    title\n    hostFolder {\n      hostName\n      folderName\n    }\n    fileName\n    fileAsset {\n      name\n    }\n    metaData {\n      key\n      value\n    }\n    showOnMenu\n    sortOrder\n    description\n  }\n}",
+								"query": "{\n  FileBaseTypeCollection(query:\"+identifier:0e480a8c-48bf-45a9-81b0-c8e2dd8aabd2\") {\n    title\n    hostFolder {\n      hostName\n      folderName\n    }\n    fileName\n    fileAsset {\n      name\n    }\n    metaData {\n      key\n      value\n    }\n  }\n}",
 								"variables": ""
 							}
 						},
@@ -4283,8 +4280,6 @@
 									"    ",
 									"    // general attributes",
 									"    pm.expect(imageFieldJson.fileName).to.eql(\"tommylee18005.jpeg\");",
-									"    pm.expect(imageFieldJson.sortOrder).to.eql(2);",
-									"    pm.expect(imageFieldJson.showOnMenu[0]).to.eql(\"true\");",
 									"    ",
 									"    // fileAsset",
 									"    pm.expect(imageFieldJson.fileAsset.name).to.eql(\"tommylee18005.jpeg\");",
@@ -4313,8 +4308,6 @@
 									"    ",
 									"    // general attributes",
 									"    pm.expect(fileFieldJson.fileName, 'FAILED:[fileName]').to.eql(\"Readme18005.md\");",
-									"    pm.expect(fileFieldJson.sortOrder, 'FAILED:[sortOrder]').to.eql(2);",
-									"    pm.expect(fileFieldJson.showOnMenu[0], 'FAILED:[showOnMenu]').to.eql(\"true\");",
 									"    ",
 									"    // fileAsset",
 									"    pm.expect(fileFieldJson.fileAsset.name, 'FAILED:[name]').to.eql(\"Readme18005.md\");",
@@ -4365,7 +4358,7 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "{\n  {{contentTypeVariable}}Collection(limit: 20) {\n    myImage {\n      fileName\n      description\n      sortOrder\n      showOnMenu\n      \n      fileAsset {\n        name\n        size\n        mime\n      }\n      metaData {\n        key\n        value\n      }\n      description\n    }\n    \n    myFile {\n      fileName\n      description\n      sortOrder\n      showOnMenu\n      \n      fileAsset {\n        name\n        size\n        mime\n      }\n      metaData {\n        key\n        value\n      }\n      description\n    }\n  }\n}",
+								"query": "{\n  {{contentTypeVariable}}Collection(limit: 20) {\n    myImage {\n      fileName\n      \n      fileAsset {\n        name\n        size\n        mime\n      }\n      metaData {\n        key\n        value\n      }\n    }\n    \n    myFile {\n      fileName\n      \n      fileAsset {\n        name\n        size\n        mime\n      }\n      metaData {\n        key\n        value\n      }\n    }\n  }\n}",
 								"variables": ""
 							}
 						},
