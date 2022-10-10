@@ -1,4 +1,5 @@
 import { DotCMSConfigurationParams, DotAppHttpRequestParams } from '../models';
+import fetch from 'cross-fetch';
 
 async function getUrl(
     { params, url }: DotAppHttpRequestParams,
