@@ -376,6 +376,7 @@
          * Then: if filtering then apply the highlight
          * @private
          */
+
         function _applyFilter() {
             _removeHighlight();
             if (_isFiltering()) {
@@ -390,7 +391,7 @@
          * @private
          */
         function _applyHighlight(newContent) {
-            const regExp = new RegExp(`(?!(class|style)+=\")${keyword}`, 'ig');
+            const regExp = new RegExp(`(?!(class|style)+=\")(?!margin:0)${keyword}`, 'ig');
             return newContent.replaceAll(regExp,
                 '<span class="highlightKeywordMatchLogViewer">$&</span>');
         }
