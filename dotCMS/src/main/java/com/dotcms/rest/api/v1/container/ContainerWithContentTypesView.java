@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.container;
 
-import com.dotcms.rest.api.v1.contenttype.ContentTypeView;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.fasterxml.jackson.annotation.JsonCreator;

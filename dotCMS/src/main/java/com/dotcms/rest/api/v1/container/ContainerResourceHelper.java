@@ -1,23 +1,17 @@
 package com.dotcms.rest.api.v1.container;
 
 import com.dotcms.rendering.velocity.directive.DotParse;
-import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.liferay.util.StringPool;
-import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 
 
 public class ContainerResourceHelper implements Serializable {
