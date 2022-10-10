@@ -4,6 +4,7 @@ import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET
 import static com.dotcms.contenttype.model.type.BaseContentType.FILEASSET;
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.business.APILocator.getContentTypeFieldAPI;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.VARIANT_ID;
 import static java.io.File.separator;
 import static java.util.Collections.list;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -19,6 +20,7 @@ import static org.junit.Assert.fail;
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
+import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
@@ -42,6 +44,7 @@ import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.uuid.shorty.ShortyIdCache;
 import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -104,6 +107,7 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -145,6 +149,7 @@ import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
+import org.elasticsearch.action.search.SearchResponse;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -153,7 +158,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
 /**
- * Created by Jonathan Gamba.
+ * Created by Jonathan Gamba. 
  * Date: 3/20/12
  * Time: 12:12 PM
  */
@@ -7602,6 +7607,70 @@ public class ContentletAPITest extends ContentletBaseTest {
             }
             fail("Should have thrown ValidationException");
         }
+    }
+
+    /**
+     * Method to test: checkIn content
+     * Given scenario: given indexed content in different variants
+     * Expected result: each document contain the proper variant in the id
+     *
+     */
+    @Test
+    public void test_variant_present_in_document_id() throws Exception {
+        final ContentType type = new ContentTypeDataGen()
+                .fields(ImmutableList
+                        .of(ImmutableTextField.builder().name("Title").variable("title")
+                                .searchable(true).listed(true).build()))
+                .nextPersisted();
+
+        final Variant newVariant = new VariantDataGen().nextPersisted();
+
+        // saves with DEFAULT variant
+        final Contentlet contentDefaultVariant = new ContentletDataGen(type.id())
+                .setProperty("title", "contentTest " + System.currentTimeMillis())
+                .nextPersisted();
+
+        // saves with newly created variant
+        final Contentlet contentNewVariant =
+                new ContentletDataGen(type.id())
+                        .setProperty("title", "contentTest " + System.currentTimeMillis())
+                        .setProperty(VARIANT_ID, newVariant.name())
+                        .nextPersisted();
+
+
+        final String queryContentOnDefaultVariant = "{"
+                + "query: {"
+                + "   query_string: {"
+                + "        query: \"+identifier: "+contentDefaultVariant.getIdentifier()+"\""
+                + "     }"
+                + "  },"
+                + "}";
+
+        final SearchResponse responseDefaultVariant = APILocator.getContentletAPI().esSearchRaw(
+                StringUtils.lowercaseStringExceptMatchingTokens(queryContentOnDefaultVariant,
+                        ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX),
+                false, APILocator.systemUser(), false);
+
+        assertEquals(contentDefaultVariant.getIdentifier() + "_"
+                        + contentDefaultVariant.getLanguageId() + "_" + contentDefaultVariant.getVariantId(),
+                responseDefaultVariant.getHits().iterator().next().getId());
+
+        final String queryContentOnNewVariant = "{"
+                + "query: {"
+                + "   query_string: {"
+                + "        query: \"+identifier: "+contentNewVariant.getIdentifier()+"\""
+                + "     }"
+                + "  },"
+                + "}";
+
+        final SearchResponse responseNewVariant = APILocator.getContentletAPI().esSearchRaw(
+                StringUtils.lowercaseStringExceptMatchingTokens(queryContentOnNewVariant,
+                        ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX),
+                false, APILocator.systemUser(), false);
+
+        assertEquals(contentNewVariant.getIdentifier() + "_"
+                        + contentNewVariant.getLanguageId() + "_" + contentNewVariant.getVariantId(),
+                responseNewVariant.getHits().iterator().next().getId());
     }
 
 }

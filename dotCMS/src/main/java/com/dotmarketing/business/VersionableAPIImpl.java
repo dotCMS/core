@@ -6,16 +6,12 @@ import static com.dotcms.util.CollectionsUtils.list;
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
-import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.Debouncer;
-import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -38,7 +34,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.apache.commons.beanutils.BeanUtils;
-import org.jetbrains.annotations.NotNull;
 
 public class VersionableAPIImpl implements VersionableAPI {
 
@@ -310,8 +305,10 @@ public class VersionableAPIImpl implements VersionableAPI {
         if (contentlet.isHost()){
             info = versionableFactory.findAnyContentletVersionInfo(contentlet.getIdentifier());
         } else{
-            info = versionableFactory
-                    .getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId(), contentlet.getVariantId());
+            info = versionableFactory.getContentletVersionInfo(
+                    contentlet.getIdentifier(),
+                    contentlet.getLanguageId(),
+                    contentlet.getVariantId());
         }
 
         if(!info.isPresent())
