@@ -1,12 +1,12 @@
 import { DotExperimentsService } from './dot-experiments.service';
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { DotExperiment } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
+import { of } from 'rxjs';
 import {
-    DotExperiment,
     DotExperimentStatusList,
     TrafficProportionTypes
-} from '@portlets/dot-experiments/shared/models/dot-experiments.model';
-import { of } from 'rxjs';
+} from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
 
 const experimentsMock: DotExperiment[] = [
     {
@@ -85,6 +85,8 @@ describe('DotExperimentsService', () => {
             of('Experiment deleted')
         );
 
-        expect(dotExperimentsServiceSpy).toHaveBeenCalledWith(esperimentId);
+        dotExperimentsService.delete(esperimentId).subscribe(() => {
+            expect(dotExperimentsServiceSpy).toHaveBeenCalledWith(esperimentId);
+        });
     });
 });

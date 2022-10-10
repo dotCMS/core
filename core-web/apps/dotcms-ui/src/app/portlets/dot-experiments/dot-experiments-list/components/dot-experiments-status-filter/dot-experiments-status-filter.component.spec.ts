@@ -1,31 +1,34 @@
 import { DotExperimentsStatusFilterComponent } from './dot-experiments-status-filter.component';
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator';
+import { createComponentFactory, Spectator } from '@ngneat/spectator';
+
+import { MultiSelect, MultiSelectModule } from 'primeng/multiselect';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { FormsModule } from '@angular/forms';
 import {
     DotExperimentStatusList,
     ExperimentsStatusList
-} from '@portlets/dot-experiments/shared/models/dot-experiments.model';
-import { MultiSelect, MultiSelectModule } from 'primeng/multiselect';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { Pipe, PipeTransform } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+} from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { MockDotMessageService } from '@tests/dot-message-service.mock';
 
-@Pipe({ name: 'dm' })
-class MockDmPipe implements PipeTransform {
-    transform(value: string): string {
-        return value;
-    }
-}
+const messageServiceMock = new MockDotMessageService({
+    'experimentspage.experiment.status.placeholder': 'Select one Filter'
+});
 
 const selectOptions = ExperimentsStatusList;
-fdescribe('DotExperimentsStatusFilterComponent', () => {
+describe('DotExperimentsStatusFilterComponent', () => {
     let spectator: Spectator<DotExperimentsStatusFilterComponent>;
     let multiSelect: MultiSelect;
 
     const createComponent = createComponentFactory({
-        imports: [MultiSelectModule, FormsModule],
+        imports: [MultiSelectModule, FormsModule, DotMessagePipeModule],
         component: DotExperimentsStatusFilterComponent,
-        declarations: [MockDmPipe],
-        providers: [mockProvider(DotMessageService)]
+        providers: [
+            {
+                provide: DotMessageService,
+                useValue: messageServiceMock
+            }
+        ]
     });
 
     beforeEach(() => {

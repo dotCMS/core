@@ -1,25 +1,47 @@
 import { DotExperimentsListComponent } from './dot-experiments-list.component';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator';
-import { DotExperimentsStore } from '@portlets/dot-experiments/shared/stores/dot-experiments-store.service';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { DotExperimentsStatusFilterComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-status-filter/dot-experiments-status-filter.component';
 import { DotExperimentsEmptyExperimentsComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-empty-experiments/dot-experiments-empty-experiments.component';
 import { DotExperimentsListSkeletonComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-list-skeleton/dot-experiments-list-skeleton.component';
 import { of } from 'rxjs';
-import {
-    DotExperiment,
-    DotExperimentStatusList,
-    TrafficProportionTypes
-} from '@portlets/dot-experiments/shared/models/dot-experiments.model';
 import { SkeletonModule } from 'primeng/skeleton';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { NO_ERRORS_SCHEMA, Pipe, PipeTransform } from '@angular/core';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { DotExperimentsListTableComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-list-table/dot-experiments-list-table.component';
 import { ConfirmationService } from 'primeng/api';
 import { DotIconModule } from '@dotcms/ui';
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import {
+    DotExperimentStatusList,
+    TrafficProportionTypes
+} from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
+import {
+    DotExperimentsListStore,
+    VmListExperiments
+} from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store.service';
+import { ActivatedRoute } from '@angular/router';
+import { MockDotMessageService } from '@tests/dot-message-service.mock';
+
+const pageId = '1111-222';
+
+class ActivatedRouteMock {
+    get parent() {
+        return {
+            parent: {
+                parent: {
+                    snapshot: {
+                        params: {
+                            pageId
+                        }
+                    }
+                }
+            }
+        };
+    }
+}
 
 class storeMock {
     loadExperiments() {
@@ -27,19 +49,10 @@ class storeMock {
     }
 }
 
-@Pipe({ name: 'dm' })
-class MockDmPipe implements PipeTransform {
-    transform(value: string): string {
-        return value;
-    }
-}
-
-interface VmListExperiments {
-    isLoading: boolean;
-    experiments: DotExperiment[];
-    experimentsFiltered: { [key: string]: DotExperiment[] };
-    experimentsFilterStatus: Array<string>;
-}
+const messageServiceMock = new MockDotMessageService({
+    'experimentspage.add.new.experiment': 'Add a new experiment',
+    'experimentspage.not.experiments.founds': 'No experiments founds'
+});
 
 describe('ExperimentsListComponent', () => {
     let spectator: Spectator<DotExperimentsListComponent>;
@@ -60,11 +73,18 @@ describe('ExperimentsListComponent', () => {
             DotExperimentsStatusFilterComponent,
             DotExperimentsListSkeletonComponent,
             DotExperimentsEmptyExperimentsComponent,
-            MockDmPipe,
             DotExperimentsListTableComponent
         ],
         providers: [
-            { provide: DotExperimentsStore, useClass: storeMock },
+            { provide: DotExperimentsListStore, useClass: storeMock },
+            {
+                provide: ActivatedRoute,
+                useClass: ActivatedRouteMock
+            },
+            {
+                provide: DotMessageService,
+                useValue: messageServiceMock
+            },
             mockProvider(ConfirmationService),
             mockProvider(DotMessageService),
             mockProvider(DotExperimentsService)
@@ -81,11 +101,11 @@ describe('ExperimentsListComponent', () => {
     it('should show the skeleton component when is loading', () => {
         const vmListExperimentsMock$: VmListExperiments = {
             experiments: [],
-            experimentsFilterStatus: [],
+            filterStatus: [],
             experimentsFiltered: {},
             isLoading: true
         };
-        spectator.component.vmListExperiments$ = of(vmListExperimentsMock$);
+        spectator.component.vm$ = of(vmListExperimentsMock$);
         spectator.detectChanges();
 
         dotExperimentsListSkeletonComponent = spectator.query(DotExperimentsListSkeletonComponent);
@@ -95,11 +115,11 @@ describe('ExperimentsListComponent', () => {
     it('should show the empty component when is not loading and no experiments', () => {
         const vmListExperimentsMock$: VmListExperiments = {
             experiments: [],
-            experimentsFilterStatus: [],
+            filterStatus: [],
             experimentsFiltered: {},
             isLoading: false
         };
-        spectator.component.vmListExperiments$ = of(vmListExperimentsMock$);
+        spectator.component.vm$ = of(vmListExperimentsMock$);
         spectator.detectChanges();
 
         dotExperimentsEmptyExperimentsComponent = spectator.query(
@@ -129,11 +149,11 @@ describe('ExperimentsListComponent', () => {
                     modDate: new Date('2022-08-21 18:50:03')
                 }
             ],
-            experimentsFilterStatus: [],
+            filterStatus: [],
             experimentsFiltered: {},
             isLoading: false
         };
-        spectator.component.vmListExperiments$ = of(vmListExperimentsMock$);
+        spectator.component.vm$ = of(vmListExperimentsMock$);
         spectator.detectChanges();
 
         dotExperimentsStatusFilterComponent = spectator.query(DotExperimentsStatusFilterComponent);

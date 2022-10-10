@@ -1,4 +1,4 @@
-<div class="dot-experiment-list-table__wrapper">
+<div class="dot-experiment-list-table">
     <ng-container *ngIf="groupedExperimentsCount; else noExperimentsTpl">
         <ng-container *ngFor="let group of experimentGroupedByStatus | keyvalue">
             <p-table [value]="group.value" styleClass="experiment-list">
@@ -8,21 +8,21 @@
                 <ng-template pTemplate="header">
                     <tr>
                         <th>{{ 'experiments.list.name' | dm }}</th>
-                        <th style="width: 15%">{{ 'experiments.list.created' | dm }}</th>
-                        <th style="width: 15%">{{ 'experiments.list.modified' | dm }}</th>
+                        <th style="width: 20%">{{ 'experiments.list.created' | dm }}</th>
+                        <th style="width: 20%">{{ 'experiments.list.modified' | dm }}</th>
                         <th style="width: 5%"></th>
                     </tr>
                 </ng-template>
                 <ng-template let-experiment pTemplate="body">
                     <tr data-testId="experiment-row">
-                        <td data-testId="experiment-row-name">{{ experiment.name }}</td>
-                        <td data-testId="experiment-row-createdDate">
+                        <td data-testId="experiment-row__name">{{ experiment.name }}</td>
+                        <td data-testId="experiment-row__createdDate">
                             {{ experiment.creationDate | date: 'longDate' }}
                         </td>
-                        <td data-testId="experiment-row-modDate">
+                        <td data-testId="experiment-row__modDate">
                             {{ experiment.modDate | date: 'longDate' }}
                         </td>
-                        <td data-testId="experiment-row-actions">
+                        <td data-testId="experiment-row__actions">
                             <ng-container
                                 *ngTemplateOutlet="
                                     actionButtonTpl;
@@ -67,4 +67,3 @@
 </ng-template>
 
 <p-confirmPopup></p-confirmPopup>
-<p-toast></p-toast>

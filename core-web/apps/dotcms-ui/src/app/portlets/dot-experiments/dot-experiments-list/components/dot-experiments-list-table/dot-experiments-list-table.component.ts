@@ -1,11 +1,9 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
-import {
-    DotExperiment,
-    DotExperimentStatusList
-} from '@portlets/dot-experiments/shared/models/dot-experiments.model';
+import { DotExperiment } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
 import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { DotExperimentStatusList } from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
 
 @Component({
     selector: 'dot-experiments-list-table',
@@ -21,14 +19,13 @@ export class DotExperimentsListTableComponent {
     experimentStatus = DotExperimentStatusList;
 
     @Output()
-    archiveItem = new EventEmitter<string>();
+    archiveItem = new EventEmitter<DotExperiment>();
     @Output()
-    deleteItem = new EventEmitter<string>();
+    deleteItem = new EventEmitter<DotExperiment>();
 
     constructor(
         private readonly dotMessageService: DotMessageService,
-        private readonly confirmationService: ConfirmationService,
-        private readonly messageService: MessageService
+        private readonly confirmationService: ConfirmationService
     ) {}
 
     @Input()
@@ -37,43 +34,31 @@ export class DotExperimentsListTableComponent {
         this.groupedExperimentsCount = Object.keys(items).length;
     }
 
+    /**
+     * Show a confirmation dialog to Archive an experiment
+     * @param event
+     * @param item
+     */
     archive(event: Event, item: DotExperiment) {
         this.confirmationService.confirm({
             target: event.target,
             message: this.dotMessageService.get('experiments.action.archive.confirm-question'),
             icon: 'pi pi-exclamation-triangle',
-            accept: () => {
-                this.messageService.add({
-                    severity: 'info',
-                    summary: this.dotMessageService.get(
-                        'experiments.action.archived.confirm-title'
-                    ),
-                    detail: this.dotMessageService.get(
-                        'experiments.action.archived.confirm-message',
-                        item.name
-                    )
-                });
-                this.archiveItem.emit(item.id);
-            }
+            accept: () => this.archiveItem.emit(item)
         });
     }
 
+    /**
+     * Show a confirmation dialog to delete an experiment
+     * @param event
+     * @param item
+     */
     delete(event: Event, item: DotExperiment) {
         this.confirmationService.confirm({
             target: event.target,
             message: this.dotMessageService.get('experiments.action.delete.confirm-question'),
             icon: 'pi pi-exclamation-triangle',
-            accept: () => {
-                this.messageService.add({
-                    severity: 'info',
-                    summary: this.dotMessageService.get('experiments.action.delete.confirm-title'),
-                    detail: this.dotMessageService.get(
-                        'experiments.action.delete.confirm-message',
-                        item.name
-                    )
-                });
-                this.deleteItem.emit(item.id);
-            }
+            accept: () => this.deleteItem.emit(item)
         });
     }
 }

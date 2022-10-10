@@ -7,17 +7,24 @@ import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loadin
 import { DotExperimentsUiHeaderComponent } from '../shared/ui/experiments-header/dot-experiments-ui-header.component';
 import { DotExperimentsShellRoutingModule } from '@portlets/dot-experiments/dot-experiments-shell/dot-experiments-shell-routing.module';
 import { DotExperimentsListModule } from '@portlets/dot-experiments/dot-experiments-list/dot-experiments-list.module';
+import { ToastModule } from 'primeng/toast';
+import { MessageService } from 'primeng/api';
+import { ComponentStore } from '@ngrx/component-store';
 
 @NgModule({
     declarations: [DotExperimentsShellComponent],
     imports: [
         CommonModule,
         RouterModule,
+
         DotExperimentsShellRoutingModule,
         DotLoadingIndicatorModule,
         DotExperimentsListModule,
+        DotExperimentsUiHeaderComponent,
 
-        DotExperimentsUiHeaderComponent
-    ]
+        // PrimeNg
+        ToastModule
+    ],
+    providers: [ComponentStore, MessageService]
 })
 export class DotExperimentsShellModule {}

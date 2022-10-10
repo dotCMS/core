@@ -1,19 +1,19 @@
-<ng-container *ngIf="vmListExperiments$ | async as vm">
+<ng-container *ngIf="vm$ | async as vm">
     <ng-container
         *ngIf="vm.experiments.length; else vm.isLoading ? loadingExperiments : noExperiments"
     >
-        <div class="dot-experiment__wrapper">
+        <div class="dot-experiment">
             <div class="dot-experiment__actions">
                 <dot-experiments-status-filter
-                    [options]="statusOptions"
-                    [selectedItems]="vm.experimentsFilterStatus"
-                    (checkedOptions)="selectedStatusFilter($event)"
+                    [options]="statusOptionList"
+                    [selectedItems]="vm.filterStatus"
+                    (switch)="selectedStatusFilter($event)"
                 ></dot-experiments-status-filter>
 
                 <button
                     data-testId="add-experiment-button"
                     disabled
-                    label="Create new"
+                    label="{{ 'experimentspage.add.new.experiment' | dm }}"
                     pButton
                     pRipple
                     type="button"
@@ -31,7 +31,7 @@
 
 <ng-template #noExperiments>
     <dot-experiments-empty-experiments
-        (addNewBtn)="addNewExperiment()"
+        (addNew)="addNewExperiment()"
         description="{{ 'experimentspage.not.experiments.founds' | dm }}"
     ></dot-experiments-empty-experiments>
 </ng-template>

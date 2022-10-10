@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 import { Pipe, PipeTransform } from '@angular/core';
 import { DotExperimentsListTableComponent } from './dot-experiments-list-table.component';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
@@ -7,15 +7,19 @@ import { ConfirmPopup, ConfirmPopupModule } from 'primeng/confirmpopup';
 import { DotExperimentsEmptyExperimentsComponent } from '../dot-experiments-empty-experiments/dot-experiments-empty-experiments.component';
 import {
     DotExperiment,
-    DotExperimentStatusList,
-    GroupedExperimentByStatus,
-    TrafficProportionTypes
+    GroupedExperimentByStatus
 } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
 import { Table, TableModule } from 'primeng/table';
 import { DotIconModule } from '@dotcms/ui';
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { UiDotIconButtonTooltipComponent } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.component';
-import { Toast, ToastModule } from 'primeng/toast';
+import { ToastModule } from 'primeng/toast';
+import {
+    DotExperimentStatusList,
+    TrafficProportionTypes
+} from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { MockDotMessageService } from '@tests/dot-message-service.mock';
 
 const draftExperiments: DotExperiment[] = [
     {
@@ -108,12 +112,19 @@ class MockDatePipe implements PipeTransform {
     }
 }
 
+const messageServiceMock = new MockDotMessageService({
+    'experiments.list.name': 'Name',
+    'experiments.list.created': 'Created',
+    'experiments.list.modified': 'Modified',
+    'experiments.action.delete': 'Delete',
+    'experimentspage.not.experiments.found.filtered': 'Not experiments founds'
+});
+
 describe('DotExperimentsListTableComponent', () => {
     let spectator: Spectator<DotExperimentsListTableComponent>;
     let uiDotIconButtonTooltipComponent: UiDotIconButtonTooltipComponent | null;
     let dotExperimentsEmpty: DotExperimentsEmptyExperimentsComponent | null;
     let confirmPopupComponent: ConfirmPopup | null;
-    let toastComponent: Toast | null;
 
     const createComponent = createComponentFactory({
         imports: [
@@ -121,12 +132,20 @@ describe('DotExperimentsListTableComponent', () => {
             DotIconModule,
             UiDotIconButtonTooltipModule,
             ConfirmPopupModule,
-            ToastModule
+            ToastModule,
+            DotMessagePipeModule
         ],
         component: DotExperimentsListTableComponent,
         componentMocks: [ConfirmPopup],
         declarations: [MockDmPipe, MockDatePipe, DotExperimentsEmptyExperimentsComponent],
-        providers: [mockProvider(DotMessageService), MessageService, ConfirmationService]
+        providers: [
+            {
+                provide: DotMessageService,
+                useValue: messageServiceMock
+            },
+            MessageService,
+            ConfirmationService
+        ]
     });
 
     beforeEach(() => {
@@ -169,13 +188,13 @@ describe('DotExperimentsListTableComponent', () => {
             const experimentRow = spectator.query(byTestId('experiment-row'));
             expect(experimentRow.querySelectorAll('td').length).toBe(COLUMNS_QTY_BY_ROW);
 
-            expect(spectator.query(byTestId('experiment-row-name'))).toHaveText(
+            expect(spectator.query(byTestId('experiment-row__name'))).toHaveText(
                 groupedExperimentByStatus.DRAFT[0].name
             );
-            expect(spectator.query(byTestId('experiment-row-createdDate'))).toHaveText(
+            expect(spectator.query(byTestId('experiment-row__createdDate'))).toHaveText(
                 groupedExperimentByStatus.DRAFT[0].creationDate.toLocaleDateString()
             );
-            expect(spectator.query(byTestId('experiment-row-modDate'))).toHaveText(
+            expect(spectator.query(byTestId('experiment-row__modDate'))).toHaveText(
                 groupedExperimentByStatus.DRAFT[0].modDate.toLocaleDateString()
             );
         });
@@ -238,7 +257,7 @@ describe('DotExperimentsListTableComponent', () => {
             confirmPopupComponent = spectator.query(ConfirmPopup);
             confirmPopupComponent.accept();
 
-            expect(output).toEqual(itemToDelete.id);
+            expect(output).toEqual(itemToDelete);
         });
     });
 
@@ -254,10 +273,7 @@ describe('DotExperimentsListTableComponent', () => {
             confirmPopupComponent = spectator.query(ConfirmPopup);
             confirmPopupComponent.accept();
 
-            toastComponent = spectator.query(Toast);
-
-            expect(output).toEqual(itemToArchive.id);
-            expect(toastComponent).toExist();
+            expect(output).toEqual(itemToArchive);
         });
     });
 });

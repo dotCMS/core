@@ -2,7 +2,8 @@
     [(ngModel)]="selectedItems"
     [filter]="false"
     [options]="options"
-    (onChange)="checkedOptions.emit($event.value)"
+    [style]="{ width: '15rem' }"
+    (onChange)="switch.emit($event.value)"
     defaultLabel="{{ 'experimentspage.experiment.status.placeholder' | dm }}"
 >
 </p-multiSelect>

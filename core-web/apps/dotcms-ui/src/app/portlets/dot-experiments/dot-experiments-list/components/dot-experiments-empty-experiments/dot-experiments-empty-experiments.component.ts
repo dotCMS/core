@@ -16,5 +16,5 @@ export class DotExperimentsEmptyExperimentsComponent {
     showButton = true;
 
     @Output()
-    addNewBtn = new EventEmitter<void>();
+    addNew = new EventEmitter<void>();
 }

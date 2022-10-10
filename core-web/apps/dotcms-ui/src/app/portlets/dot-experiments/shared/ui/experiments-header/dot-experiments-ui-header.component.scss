@@ -1,4 +1,5 @@
 @use "variables" as *;
+
 :host {
     display: flex;
     flex-direction: row;
@@ -6,12 +7,13 @@
     align-items: center;
     background-color: $white;
     border-bottom: 1px $gray-lighter;
-    color: #7e7b86;
+    color: $gray;
     font-size: $font-size-medium;
-    column-gap: 15px;
+    column-gap: $spacing-3;
     border-bottom: 1px solid $gray-lighter;
+
     a {
-        padding-left: 15px;
+        padding-left: $spacing-3;
         align-items: center;
         display: flex;
         height: 100%;

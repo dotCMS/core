@@ -25,6 +25,8 @@ import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-butto
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotExperimentsListRoutingModule } from '@portlets/dot-experiments/dot-experiments-list/dot-experiments-list-routing.module';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
+import { DotExperimentsListStore } from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store.service';
 
 @NgModule({
     declarations: [
@@ -39,13 +41,13 @@ import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module
         FormsModule,
         // DotCMS
         DotExperimentsListRoutingModule,
-        DotMessagePipeModule,
         DotIconModule,
         UiDotIconButtonTooltipModule,
         DotActionMenuButtonModule,
         UiDotIconButtonModule,
+        DotMessagePipeModule,
 
-        // NgPrime
+        // PrimeNG
         SkeletonModule,
         ButtonModule,
         MultiSelectModule,
@@ -55,8 +57,9 @@ import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module
         ConfirmPopupModule,
         ToastModule
     ],
-    exports: [DotExperimentsListComponent],
     providers: [
+        DotExperimentsListStore,
+        DotExperimentsService,
         {
             provide: HTTP_INTERCEPTORS,
             useClass: ServerErrorInterceptor,

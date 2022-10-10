@@ -1,26 +1,31 @@
 import { DotExperimentsEmptyExperimentsComponent } from './dot-experiments-empty-experiments.component';
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
-import { CUSTOM_ELEMENTS_SCHEMA, Pipe, PipeTransform } from '@angular/core';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator';
 import { Button, ButtonModule } from 'primeng/button';
-import { DotIconComponent } from '@dotcms/ui';
+import { DotIconComponent, DotIconModule } from '@dotcms/ui';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { CoreWebService } from '@dotcms/dotcms-js';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 
-@Pipe({ name: 'dm' })
-class MockPipe implements PipeTransform {
-    transform(value: string): string {
-        return value;
-    }
-}
+const messageServiceMock = new MockDotMessageService({
+    'experimentspage.add.new.experiment': 'Add a new experiment'
+});
 
 describe('DotExperimentsEmptyExperimentsComponent', () => {
     let spectator: Spectator<DotExperimentsEmptyExperimentsComponent>;
     let pButton: Button | null;
+    let dotIcon: DotIconComponent | null;
 
     const createComponent = createComponentFactory({
-        imports: [ButtonModule],
+        imports: [ButtonModule, DotMessagePipeModule, DotIconModule],
         component: DotExperimentsEmptyExperimentsComponent,
-        componentMocks: [DotIconComponent],
-        declarations: [MockPipe],
-        schemas: [CUSTOM_ELEMENTS_SCHEMA]
+        providers: [
+            mockProvider(CoreWebService),
+            {
+                provide: DotMessageService,
+                useValue: messageServiceMock
+            }
+        ]
     });
 
     beforeEach(() => {
@@ -34,10 +39,13 @@ describe('DotExperimentsEmptyExperimentsComponent', () => {
             showButton: true
         });
 
+        dotIcon = spectator.query(DotIconComponent);
         pButton = spectator.query(Button);
 
+        expect(dotIcon).toExist();
+
         expect(spectator.query(byTestId('description'))).toHaveText(description);
-        expect(pButton.label).toBe('experimentspage.add.new.experiment');
+        expect(pButton.label).toBe('Add a new experiment');
     });
 
     it('should show icon and title, not button', () => {
@@ -47,7 +55,10 @@ describe('DotExperimentsEmptyExperimentsComponent', () => {
             showButton: false
         });
 
+        dotIcon = spectator.query(DotIconComponent);
         pButton = spectator.query(Button);
+
+        expect(dotIcon).toExist();
 
         expect(spectator.query(byTestId('description'))).toHaveText(description);
         expect(pButton).not.toExist();

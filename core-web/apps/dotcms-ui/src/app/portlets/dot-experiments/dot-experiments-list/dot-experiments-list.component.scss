@@ -8,14 +8,12 @@
     padding: $spacing-4;
 
     .dot-experiment {
-        &__wrapper {
-            display: flex;
-            gap: 15px;
-            flex-direction: column;
-            width: 100%;
-        }
+        display: flex;
+        gap: $spacing-3;
+        flex-direction: column;
+        width: 100%;
 
-        &__actions {
+        .dot-experiment__actions {
             justify-content: space-between;
             display: flex;
         }

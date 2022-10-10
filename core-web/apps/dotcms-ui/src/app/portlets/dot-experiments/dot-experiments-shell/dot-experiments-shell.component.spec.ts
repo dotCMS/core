@@ -1,11 +1,12 @@
 import { DotExperimentsShellComponent } from './dot-experiments-shell.component';
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator';
+import { createComponentFactory, Spectator } from '@ngneat/spectator';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { DotExperimentsStore } from '@portlets/dot-experiments/shared/stores/dot-experiments-store.service';
 import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/shared/ui/experiments-header/dot-experiments-ui-header.component';
-import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
+import { ComponentStore } from '@ngrx/component-store';
+import { Toast, ToastModule } from 'primeng/toast';
+import { MessageService } from 'primeng/api';
 
 class ActivatedRouteMock {
     get parent() {
@@ -35,17 +36,20 @@ class RouterMock {
 describe('DotExperimentsShellComponent', () => {
     let spectator: Spectator<DotExperimentsShellComponent>;
     let dotExperimentsUiHeaderComponent: DotExperimentsUiHeaderComponent;
+    let toastComponent: Toast;
 
     const createComponent = createComponentFactory({
         imports: [
             HttpClientTestingModule,
             DotExperimentsUiHeaderComponent,
             DotLoadingIndicatorModule,
-            RouterModule
+            RouterModule,
+            ToastModule
         ],
         component: DotExperimentsShellComponent,
         providers: [
-            DotExperimentsStore,
+            ComponentStore,
+            MessageService,
             {
                 provide: ActivatedRoute,
                 useClass: ActivatedRouteMock
@@ -53,8 +57,7 @@ describe('DotExperimentsShellComponent', () => {
             {
                 provide: Router,
                 useClass: RouterMock
-            },
-            mockProvider(DotExperimentsService)
+            }
         ]
     });
 
@@ -62,6 +65,11 @@ describe('DotExperimentsShellComponent', () => {
         spectator = createComponent();
     });
 
+    it('should has DotExperimentHeaderComponent', () => {
+        toastComponent = spectator.query(Toast);
+
+        expect(toastComponent).toExist();
+    });
     it('should has DotExperimentHeaderComponent', () => {
         const page = new ActivatedRouteMock().parent.parent.snapshot.data.content.page;
         dotExperimentsUiHeaderComponent = spectator.query(DotExperimentsUiHeaderComponent);

@@ -2,12 +2,12 @@
 
 .p-confirm-popup {
     position: absolute;
-    margin-top: 10px;
+    margin-top: $spacing-2;
     top: 0;
     left: 0;
 
     background: $white;
-    color: #495057;
+    color: $gray-dark;
     border: 0 none;
     border-radius: $border-radius;
     box-shadow: $md-shadow-1;
@@ -23,7 +23,7 @@
     .p-confirm-popup-footer {
         padding: $spacing-2 $spacing-4;
         display: flex;
-        column-gap: 5px;
+        column-gap: $confirm-popup-column-gap;
         justify-content: flex-end;
 
         button {
@@ -35,7 +35,7 @@
 
 .p-confirm-popup-flipped {
     margin-top: 0;
-    margin-bottom: 10px;
+    margin-bottom: $spacing-2;
 }
 
 .p-confirm-popup:after,
@@ -86,6 +86,6 @@
 
 .p-button.p-button-text {
     background-color: transparent;
-    color: #3b82f6;
+    color: $brand-primary;
     border-color: transparent;
 }
