@@ -21,6 +21,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
+import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -30,7 +31,13 @@ public class Task220825CreateVariantFieldTest {
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
 
-       // checkIfVariantColumnExist();
+       checkIfVariantColumnExist();
+    }
+
+    @After
+    public void createPrimaryKeyAgain() throws Exception {
+        new DotConnect().executeStatement("ALTER TABLE contentlet_version_info "
+                + " ADD CONSTRAINT contentlet_version_info_pkey PRIMARY KEY (identifier, lang)");
     }
 
     private static void checkIfVariantColumnExist() throws SQLException {
@@ -208,7 +215,7 @@ public class Task220825CreateVariantFieldTest {
                 }
             }
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            //throw new RuntimeException(e);
         }
     }
 
