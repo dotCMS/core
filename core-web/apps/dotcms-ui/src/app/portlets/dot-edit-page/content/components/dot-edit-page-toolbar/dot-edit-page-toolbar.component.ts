@@ -5,14 +5,15 @@ import {
     EventEmitter,
     Output,
     OnChanges,
-    OnDestroy,
-    isDevMode
+    OnDestroy
 } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models';
 import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotPropertiesService } from '@dotcms/app/api/services/dot-properties/dot-properties.service';
+import { take } from 'rxjs/operators';
 @Component({
     selector: 'dot-edit-page-toolbar',
     templateUrl: './dot-edit-page-toolbar.component.html',
@@ -35,13 +36,19 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(private dotLicenseService: DotLicenseService) {}
+    constructor(
+        private dotLicenseService: DotLicenseService,
+        private dotConfigurationService: DotPropertiesService
+    ) {}
 
     ngOnInit() {
         // TODO: Remove next line when total functionality of Favorite page is done for release
-        if (isDevMode()) {
-            this.showFavoritePageStar = true;
-        }
+        this.dotConfigurationService
+            .getKey('DOTFAVORITEPAGE_FEATURE_ENABLE')
+            .pipe(take(1))
+            .subscribe((enabled: string) => {
+                this.showFavoritePageStar = enabled === 'true';
+            });
 
         this.isEnterpriseLicense$ = this.dotLicenseService.isEnterprise();
         this.apiLink = `api/v1/page/render${this.pageState.page.pageURI}?language_id=${this.pageState.page.languageId}`;
