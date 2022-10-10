@@ -657,9 +657,6 @@
 
             fetchPriorPage: () => {
 
-                if (following) {
-                    return;
-                }
                 if (updatingView) {
                     return;
                 }
@@ -673,10 +670,7 @@
             },
 
             fetchNextPage: () => {
-
-                if (following) {
-                    return;
-                }
+                
                 if (updatingView) {
                     return;
                 }
