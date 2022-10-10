@@ -2271,7 +2271,7 @@
 			]
 		},
 		{
-			"name": "Add",
+			"name": "Save new",
 			"item": [
 				{
 					"name": "CreateNewContainer",
@@ -2341,15 +2341,14 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/containers/_add",
+							"raw": "{{serverURL}}/api/v1/containers",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
 								"v1",
-								"containers",
-								"_add"
+								"containers"
 							]
 						},
 						"description": "Create a container"
@@ -2424,15 +2423,14 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/containers/_add",
+							"raw": "{{serverURL}}/api/v1/containers",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
 								"v1",
-								"containers",
-								"_add"
+								"containers"
 							]
 						},
 						"description": "Create a container"
@@ -2507,15 +2505,14 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/containers/_add",
+							"raw": "{{serverURL}}/api/v1/containers",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
 								"v1",
-								"containers",
-								"_add"
+								"containers"
 							]
 						},
 						"description": "Create a container"
@@ -2525,7 +2522,7 @@
 			]
 		},
 		{
-			"name": "Details",
+			"name": "get working",
 			"item": [
 				{
 					"name": "Add Container with containerStructures",
@@ -2594,15 +2591,14 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/containers/_add",
+							"raw": "{{serverURL}}/api/v1/containers",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
 								"v1",
-								"containers",
-								"_add"
+								"containers"
 							]
 						},
 						"description": "Create a container"
@@ -2610,7 +2606,7 @@
 					"response": []
 				},
 				{
-					"name": "Get details - Success",
+					"name": "Get working with content types- Success",
 					"event": [
 						{
 							"listen": "test",
@@ -2656,7 +2652,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/containers/details?containerId={{containderIdentifierToGetDetails}}",
+							"raw": "{{serverURL}}/api/v1/containers/working?containerId={{containderIdentifierToGetDetails}}&includeContentType=true",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -2664,12 +2660,16 @@
 								"api",
 								"v1",
 								"containers",
-								"details"
+								"working"
 							],
 							"query": [
 								{
 									"key": "containerId",
 									"value": "{{containderIdentifierToGetDetails}}"
+								},
+								{
+									"key": "includeContentType",
+									"value": "true"
 								}
 							]
 						},
@@ -2724,7 +2724,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/containers/details?containerId=12345678-abcd-1234-abcd-123456789abc",
+							"raw": "{{serverURL}}/api/v1/containers/working?containerId=12345678-abcd-1234-abcd-123456789abc",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -2732,7 +2732,7 @@
 								"api",
 								"v1",
 								"containers",
-								"details"
+								"working"
 							],
 							"query": [
 								{
@@ -4245,13 +4245,13 @@
 					"type": "basic",
 					"basic": [
 						{
-							"key": "username",
-							"value": "admin@dotcms.com",
+							"key": "password",
+							"value": "admin123",
 							"type": "string"
 						},
 						{
-							"key": "password",
-							"value": "admin",
+							"key": "username",
+							"value": "admin@dotcms.com",
 							"type": "string"
 						}
 					]

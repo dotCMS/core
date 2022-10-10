@@ -763,7 +763,8 @@ public class ContainerResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response getLiveById(@Context final HttpServletRequest  httpRequest,
                                       @Context final HttpServletResponse httpResponse,
-                                      @QueryParam("containerId")  final String containerId) throws DotSecurityException, DotDataException {
+                                      @QueryParam("containerId")  final String containerId,
+                                      @QueryParam("includeContentType")  final boolean includeContentType) throws DotSecurityException, DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
@@ -776,6 +777,11 @@ public class ContainerResource implements Serializable {
 
             Logger.error(this, "Live Version of the Container with Id: " + containerId + " does not exist");
             throw new DoesNotExistException("Live Version of the Container with Id: " + containerId + " does not exist");
+        }
+
+        if(includeContentType){
+            List<ContainerStructure> structures = this.containerAPI.getContainerStructures(container);
+            return Response.ok(new ResponseEntityView(ContainerResourceHelper.getInstance().toResponseEntityContainerWithContentTypesView(container, structures))).build();
         }
 
         return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
@@ -799,7 +805,8 @@ public class ContainerResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response getWorkingById(@Context final HttpServletRequest  request,
                                          @Context final HttpServletResponse httpResponse,
-                                         @QueryParam("containerId") final String containerId) throws DotSecurityException, DotDataException {
+                                         @QueryParam("containerId") final String containerId,
+                                         @QueryParam("includeContentType")  final boolean includeContentType) throws DotSecurityException, DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, httpResponse).rejectWhenNoUser(true).init();
@@ -813,6 +820,11 @@ public class ContainerResource implements Serializable {
 
             Logger.error(this, "Working Version of the Container with Id: " + containerId + " does not exist");
             throw new DoesNotExistException("Working Version of the Container with Id: " + containerId + " does not exist");
+        }
+
+        if(includeContentType){
+            List<ContainerStructure> structures = this.containerAPI.getContainerStructures(container);
+            return Response.ok(new ResponseEntityView(ContainerResourceHelper.getInstance().toResponseEntityContainerWithContentTypesView(container, structures))).build();
         }
 
         return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
@@ -1437,44 +1449,5 @@ public class ContainerResource implements Serializable {
         return Response.ok(new ResponseEntityView(
                         new BulkResultView(unarchivedContainersCount,0L,failedToUnarchive)))
                 .build();
-    }
-
-    /**
-     * Returns working version along with containerStructures {@link com.dotmarketing.portlets.containers.model.Container} based on the id
-     *
-     * @param request
-     * @param httpResponse
-     * @param containerId container identifier to get the working version.
-     * @return Response
-     * @throws DotSecurityException
-     * @throws DotDataException
-     */
-    @GET
-    @Path("/details")
-    @JSONP
-    @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response getContainerWithStructures(@Context final HttpServletRequest  request,
-            @Context final HttpServletResponse httpResponse,
-            @QueryParam("containerId") final String containerId) throws DotSecurityException, DotDataException {
-
-        final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .requestAndResponse(request, httpResponse).rejectWhenNoUser(true).init();
-        final User user     = initData.getUser();
-        Logger.debug(this, ()-> "Getting the working container by id: " + containerId);
-
-        final Host      host      =  WebAPILocator.getHostWebAPI().getHost(request);
-        final Container container = this.getContainerWorking(containerId, user, host);
-
-        if (null == container || UtilMethods.isNotSet(container.getIdentifier())) {
-
-            Logger.error(this, "Working Version of the Container with Id: " + containerId + " does not exist");
-            throw new DoesNotExistException("Working Version of the Container with Id: " + containerId + " does not exist");
-        }
-
-        List<ContainerStructure> contentTypes = this.containerAPI.getContainerStructures(container);
-
-        return Response.ok(new ResponseEntityView(ContainerResourceHelper.getInstance().toResponseEntityContainerWithContentTypesView(container, contentTypes))).build();
     }
 }
