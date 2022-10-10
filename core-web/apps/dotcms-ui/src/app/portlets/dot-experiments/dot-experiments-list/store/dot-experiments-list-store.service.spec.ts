@@ -18,6 +18,7 @@ import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MessageService } from 'primeng/api';
+import { filter, tap } from 'rxjs/operators';
 
 class MockDotExperimentsService {
     get(): Observable<DotExperiment[]> {
@@ -218,9 +219,14 @@ describe('DotExperimentsStore', () => {
             ...archivedExperiments
         ]);
 
-        experimentsStore.getExperimentsFilteredAndGroupedByStatus$.subscribe((exp) => {
-            expect(exp).toEqual(expected);
-        });
+        experimentsStore.getExperimentsFilteredAndGroupedByStatus$
+            .pipe(
+                tap((group) => console.warn(group)),
+                filter((exp) => !!exp)
+            )
+            .subscribe((exp) => {
+                expect(exp).toEqual(expected);
+            });
     });
 
     describe('Effects', () => {
