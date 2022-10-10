@@ -22,8 +22,6 @@ public class Task221007AddVariantIntoPrimaryKeyTest {
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
-
-        checkPrimaryKey();
     }
 
     /**
