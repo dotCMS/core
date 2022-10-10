@@ -1,12 +1,4 @@
-import {
-    Component,
-    EventEmitter,
-    HostListener,
-    Input,
-    OnDestroy,
-    OnInit,
-    Output
-} from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 import { fromEvent, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -29,16 +21,8 @@ export class DotFormDialogComponent implements OnInit, OnDestroy {
     @Output()
     cancel: EventEmitter<MouseEvent> = new EventEmitter(null);
 
-    constructor(private dynamicDialog: DynamicDialogRef) {}
-
-    @HostListener('document:keydown.enter', ['$event'])
-    onEnter($event: KeyboardEvent) {
-        const nodeName = ($event.target as Element).nodeName;
-
-        if (!this.saveButtonDisabled && nodeName !== 'TEXTAREA') {
-            this.save.emit($event);
-        }
-    }
+    constructor(private dynamicDialog: DynamicDialogRef,
+        private el: ElementRef) {}
 
     ngOnInit(): void {
         const content = document.querySelector('p-dynamicdialog .p-dialog-content');
@@ -49,6 +33,20 @@ export class DotFormDialogComponent implements OnInit, OnDestroy {
                 const pos = this.getYPosition(e);
                 const target = e.target as HTMLDivElement;
                 target.style.boxShadow = pos > 10 ? 'inset 0px 3px 20px 0 #00000026' : null;
+            });
+
+        fromEvent(this.el.nativeElement, 'keydown')
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((keyboardEvent: KeyboardEvent) => {
+                const nodeName = (keyboardEvent.target as Element).nodeName;
+                if (
+                    !this.saveButtonDisabled &&
+                    nodeName !== 'TEXTAREA' &&
+                    keyboardEvent.key === 'Enter' &&
+                    (keyboardEvent.metaKey || keyboardEvent.altKey)
+                ) {
+                    this.save.emit(keyboardEvent);
+                }
             });
     }
 

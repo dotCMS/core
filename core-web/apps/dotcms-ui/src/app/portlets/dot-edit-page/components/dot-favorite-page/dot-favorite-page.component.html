@@ -1,14 +1,14 @@
 <dot-form-dialog
-    data-testId="dialogForm"
+    *ngIf="vm$ | async as vm"
     [saveButtonDisabled]="(isFormValid$ | async) === false"
     (cancel)="onCancel()"
     (save)="onSave()"
-    *ngIf="vm$ | async as vm"
+    data-testId="dialogForm"
 >
-    <form class="p-fluid" [formGroup]="form" data-testId="form" *ngIf="form">
+    <form class="p-fluid" *ngIf="form" [formGroup]="form" data-testId="form">
         <div class="fields-col">
             <div class="field" data-testId="titleField">
-                <label for="title" class="p-label-input-required">{{ 'title' | dm }}</label>
+                <label class="p-label-input-required" for="title">{{ 'title' | dm }}</label>
                 <input
                     id="title"
                     pInputText
@@ -21,7 +21,7 @@
                 ></dot-field-validation-message>
             </div>
             <div class="field" data-testId="urlField">
-                <label for="url" class="p-label-input-required">{{ 'url' | dm }}</label>
+                <label class="p-label-input-required" for="url">{{ 'url' | dm }}</label>
                 <input
                     id="url"
                     pInputText
@@ -33,7 +33,7 @@
                 ></dot-field-validation-message>
             </div>
             <div class="field" data-testId="orderField">
-                <label for="order" class="p-label-input-required">{{ 'order' | dm }}</label>
+                <label class="p-label-input-required" for="order">{{ 'order' | dm }}</label>
                 <input
                     id="order"
                     pInputText
@@ -44,7 +44,7 @@
                     [field]="form.get('order')"
                 ></dot-field-validation-message>
             </div>
-            <div class="field" data-testId="shareWithField" *ngIf="vm.isAdmin">
+            <div class="field" *ngIf="vm.isAdmin" data-testId="shareWithField">
                 <label for="permissions">{{ 'favoritePage.dialog.field.shareWith' | dm }}</label>
                 <p-multiSelect
                     id="permissions"
@@ -57,7 +57,7 @@
         </div>
         <div class="fields-col">
             <div class="field" data-testId="thumbnailField">
-                <label for="previewThumbnail" class="p-label-input-required">{{
+                <label class="p-label-input-required" for="previewThumbnail">{{
                     'preview' | dm
                 }}</label>
                 <dot-html-to-image

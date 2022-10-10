@@ -15,12 +15,17 @@ import java.util.ArrayList;
 import java.util.List;
 import org.immutables.value.Value;
 
+/**
+ * Provides the basic definition and field layout of the Persona Base Type. By default, all contents of type Persona
+ * will have the list of fields specified in this class.
+ *
+ * @author Will Ezell
+ * @since Jun 29th, 2016
+ */
 @JsonSerialize(as = ImmutablePersonaContentType.class)
 @JsonDeserialize(as = ImmutablePersonaContentType.class)
 @Value.Immutable
 public abstract class PersonaContentType extends ContentType implements Expireable, EnterpriseType {
-
-
 
 	private static final long serialVersionUID = 1L;
 	public static final String PERSONA_HOST_FOLDER_FIELD_VAR = "hostFolder";
@@ -35,16 +40,16 @@ public abstract class PersonaContentType extends ContentType implements Expireab
 		return  BaseContentType.PERSONA;
 	}
 
-	
-	
 	public abstract static class Builder implements ContentTypeBuilder {}
-	
-	
-	
-	public  List<Field> requiredFields(){
-		List<Field> fields = new ArrayList<Field>();
 
-		
+	/**
+	 * Returns the list of official or recommended fields for this Base Content Type. Some of them can be deleted by
+	 * the User via the UI if necessary.
+	 *
+	 * @return The list of {@link Field} objects that make up the Base Content Type.
+	 */
+	public  List<Field> requiredFields(){
+		final List<Field> fields = new ArrayList<>();
 		fields.add(
 			ImmutableHostFolderField.builder()
 				.name("Site/Folder")
@@ -56,8 +61,6 @@ public abstract class PersonaContentType extends ContentType implements Expireab
 				.sortOrder(1)
 				.build()
 		);
-
-		
 		fields.add(
 			ImmutableTextField.builder()
 				.name("Name")
@@ -71,7 +74,6 @@ public abstract class PersonaContentType extends ContentType implements Expireab
 				.searchable(true)
 				.build()
 		);
-
 		fields.add(
 			ImmutableCustomField.builder()
 				.name("Key Tag")
@@ -87,7 +89,6 @@ public abstract class PersonaContentType extends ContentType implements Expireab
 				.searchable(true)
 				.build()
 		);
-		
 		fields.add(
 			ImmutableBinaryField.builder()
 				.name("Photo")
@@ -96,34 +97,29 @@ public abstract class PersonaContentType extends ContentType implements Expireab
 				.fixed(true)
 				.build()
 		);
-		 
 		fields.add(
 			ImmutableTagField.builder()
 				.name("Other Tags")
 				.variable(PERSONA_OTHER_TAGS_FIELD_VAR)
 				.dataType(DataTypes.SYSTEM)
-
 				.sortOrder(5)
 				.fixed(true)
 				.indexed(true)
 				.searchable(true)
 				.build()
 		);
-		
 		fields.add(
 			ImmutableTextAreaField.builder()
 				.name("Description")
 				.variable(PERSONA_DESCRIPTION_FIELD_VAR)
 				.dataType(DataTypes.LONG_TEXT)
+				.forceIncludeInApi(true)
 				.sortOrder(6)
-				.fixed(true)
 				.indexed(true)
 				.searchable(true)
 				.build()
 		);
-	
 		return ImmutableList.copyOf(fields);
 	}
-	
 
 }

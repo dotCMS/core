@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 
-import com.dotcms.repackage.org.apache.commons.io.filefilter.DirectoryFileFilter;
+import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.TrashUtils;

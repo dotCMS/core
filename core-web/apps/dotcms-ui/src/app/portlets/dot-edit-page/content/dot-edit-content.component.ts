@@ -41,6 +41,8 @@ import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotContentletEventAddContentType } from './services/dot-edit-content-html/models/dot-contentlets-events.model';
 import { DotIframeEditEvent } from '@dotcms/dotcms-models';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { DialogService } from 'primeng/dynamicdialog';
+import { DotFavoritePageComponent } from '../components/dot-favorite-page/dot-favorite-page.component';
 
 export const EDIT_BLOCK_EDITOR_CUSTOM_EVENT = 'edit-block-editor';
 
@@ -78,6 +80,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     private pageStateInternal: DotPageRenderState;
 
     constructor(
+        private dialogService: DialogService,
         private dotContentletEditorService: DotContentletEditorService,
         private dotDialogService: DotAlertConfirmService,
         private dotEditPageService: DotEditPageService,
@@ -263,6 +266,32 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     addFormContentType(): void {
         this.editForm = true;
         this.dotEditContentHtmlService.removeContentletPlaceholder();
+    }
+
+    /**
+     * Fires a dynamic dialog instance with DotFavoritePage component
+     *
+     * @param boolean openDialog
+     * @memberof DotEditContentComponent
+     */
+    showFavoritePageDialog(openDialog: boolean): void {
+        this.pageState$.pipe(take(1)).subscribe((pageState: DotPageRenderState) => {
+            if (openDialog) {
+                this.dialogService.open(DotFavoritePageComponent, {
+                    header: this.dotMessageService.get('favoritePage.dialog.header.add.page'),
+                    width: '80rem',
+                    data: {
+                        page: {
+                            pageState: pageState,
+                            pageRenderedHtml: pageState.params.page.rendered || null
+                        },
+                        onSave: () => {
+                            this.dotPageStateService.setFavoritePageHighlight(true);
+                        }
+                    }
+                });
+            }
+        });
     }
 
     private setAllowedContent(pageState: DotPageRenderState): void {

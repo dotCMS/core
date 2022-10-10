@@ -1,7 +1,7 @@
 package com.dotcms.publishing.output;
 
 import com.dotcms.publishing.PublisherConfig;
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import org.apache.commons.io.IOUtils;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;

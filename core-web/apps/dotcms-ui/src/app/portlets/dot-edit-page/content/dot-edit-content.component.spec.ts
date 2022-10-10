@@ -30,7 +30,6 @@ import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/index';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
 import { DotEditPageService } from '@services/dot-edit-page/dot-edit-page.service';
-import { DotEditPageToolbarModule } from './components/dot-edit-page-toolbar/dot-edit-page-toolbar.module';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
@@ -84,6 +83,9 @@ import { DotPropertiesService } from '@services/dot-properties/dot-properties.se
 import { PageModelChangeEventType } from './services/dot-edit-content-html/models';
 import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
 import { mockDotLanguage } from '@dotcms/app/test/dot-language.mock';
+import { mockDotRenderedPageState } from '@dotcms/app/test/dot-rendered-page-state.mock';
+import { DotWorkflowActionsFireService } from '@dotcms/app/api/services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
+import { DialogService } from 'primeng/dynamicdialog';
 
 @Component({
     selector: 'dot-global-message',
@@ -125,6 +127,18 @@ export class MockDotFormSelectorComponent {
 }
 
 @Component({
+    selector: 'dot-edit-page-toolbar',
+    template: ''
+})
+export class MockDotEditPageToolbarComponent {
+    @Input() pageState = mockDotRenderedPageState;
+    @Output() actionFired = new EventEmitter<DotCMSContentlet>();
+    @Output() cancel = new EventEmitter<boolean>();
+    @Output() favoritePage = new EventEmitter<boolean>();
+    @Output() whatschange = new EventEmitter<boolean>();
+}
+
+@Component({
     selector: 'dot-palette',
     template: ''
 })
@@ -153,6 +167,7 @@ describe('DotEditContentComponent', () => {
     let iframeOverlayService: IframeOverlayService;
     let dotLoadingIndicatorService: DotLoadingIndicatorService;
     let dotContentletEditorService: DotContentletEditorService;
+    let dialogService: DialogService;
     let dotDialogService: DotAlertConfirmService;
     let dotCustomEventHandlerService: DotCustomEventHandlerService;
     let dotConfigurationService: DotPropertiesService;
@@ -189,6 +204,7 @@ describe('DotEditContentComponent', () => {
                 DotEditContentComponent,
                 MockDotWhatsChangedComponent,
                 MockDotFormSelectorComponent,
+                MockDotEditPageToolbarComponent,
                 MockDotIconComponent,
                 MockDotPaletteComponent,
                 HostTestComponent,
@@ -200,7 +216,6 @@ describe('DotEditContentComponent', () => {
                 ButtonModule,
                 DialogModule,
                 DotContentletEditorModule,
-                DotEditPageToolbarModule,
                 DotEditPageInfoModule,
                 DotLoadingIndicatorModule,
                 DotEditPageWorkflowsActionsModule,
@@ -214,6 +229,7 @@ describe('DotEditContentComponent', () => {
                 ])
             ],
             providers: [
+                DialogService,
                 DotContentletLockerService,
                 DotPageRenderService,
                 DotContainerContentletService,
@@ -225,6 +241,7 @@ describe('DotEditContentComponent', () => {
                 DotEditPageService,
                 DotGlobalMessageService,
                 DotPageStateService,
+                DotWorkflowActionsFireService,
                 DotGenerateSecurePasswordService,
                 DotCustomEventHandlerService,
                 DotPropertiesService,
@@ -299,6 +316,7 @@ describe('DotEditContentComponent', () => {
         iframeOverlayService = de.injector.get(IframeOverlayService);
         dotLoadingIndicatorService = de.injector.get(DotLoadingIndicatorService);
         dotContentletEditorService = de.injector.get(DotContentletEditorService);
+        dialogService = de.injector.get(DialogService);
         dotDialogService = de.injector.get(DotAlertConfirmService);
         dotCustomEventHandlerService = de.injector.get(DotCustomEventHandlerService);
         dotConfigurationService = de.injector.get(DotPropertiesService);
@@ -367,6 +385,7 @@ describe('DotEditContentComponent', () => {
             let toolbarElement: DebugElement;
 
             beforeEach(() => {
+                spyOn(dialogService, 'open');
                 fixture.detectChanges();
                 toolbarElement = de.query(By.css('dot-edit-page-toolbar'));
             });
@@ -412,6 +431,11 @@ describe('DotEditContentComponent', () => {
                     fixture.detectChanges();
                     whatschange = de.query(By.css('dot-whats-changed'));
                     expect(whatschange).not.toBeNull();
+                });
+
+                it('should instantiate dialog with DotFavoritePageComponent', () => {
+                    toolbarElement.triggerEventHandler('favoritePage', true);
+                    expect(dialogService.open).toHaveBeenCalledTimes(1);
                 });
             });
         });
