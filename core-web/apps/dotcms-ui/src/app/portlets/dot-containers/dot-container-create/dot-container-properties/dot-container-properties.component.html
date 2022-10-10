@@ -73,10 +73,10 @@
                     [control]="$any(form).get('preLoop')"
                     (buttonClick)="showLoopInput()"
                 ></dot-loop-editor>
-                <dot-content-editor
+                <dot-content-code-editor
                     [containerStructures]="containerStructures"
                     (updateContainerStructure)="updateContainerStructure($event)"
-                ></dot-content-editor>
+                ></dot-content-code-editor>
                 <dot-loop-editor
                     [isEditorVisible]="vm.showPrePostLoopInput"
                     [control]="$any(form).get('postLoop')"

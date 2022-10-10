@@ -10,7 +10,7 @@ import { takeUntil } from 'rxjs/operators';
 import { DotContainerStructure } from '@models/container/dot-container.model';
 
 @Component({
-    selector: 'dot-content-editor',
+    selector: 'dot-content-code-editor',
     templateUrl: './dot-content-editor.component.html',
     styleUrls: ['./dot-content-editor.component.scss'],
     providers: [DotContentEditorStore]
@@ -43,7 +43,7 @@ export class DotContentEditorComponent implements OnChanges {
 
         this.inputContainerStructures = change.currentValue;
 
-        this.store.updateRetrievedContentTypes(this.inputContainerStructures);
+        this.store.updateRetrievedContentTypes(this.inputContainerStructures ?? []);
     }
 
     /**

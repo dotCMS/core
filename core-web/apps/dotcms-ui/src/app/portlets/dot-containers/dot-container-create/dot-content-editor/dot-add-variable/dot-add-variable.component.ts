@@ -17,8 +17,7 @@ export class DotAddVariableComponent implements OnInit {
     }
 
     /**
-     * Handle save button
-     *
+     * handle save button
      * @param {string} variable
      * @param {number} activeTabIndex
      * @returns void

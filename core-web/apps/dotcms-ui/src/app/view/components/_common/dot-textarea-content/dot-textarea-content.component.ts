@@ -49,7 +49,7 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
     monacoInit = new EventEmitter<unknown>();
 
     @Output()
-    ValueChange = new EventEmitter<string>();
+    valueChange = new EventEmitter<string>();
 
     @Input() set language(value: string) {
         this.editorOptions = {
@@ -131,15 +131,14 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
 
     /**
      * Update the value and form control
-     *
      * @param {string} value
      * @memberof DotTextareaContentComponent
      */
     onModelChange(value: string) {
         this.value = value;
         this.propagateChange(value ? value.replace(/\r/g, '').split('\n').join('\r\n') : value);
-        if (this.ValueChange.observers.length) {
-            this.ValueChange.emit(value);
+        if (this.valueChange.observers.length) {
+            this.valueChange.emit(value);
         }
     }
 

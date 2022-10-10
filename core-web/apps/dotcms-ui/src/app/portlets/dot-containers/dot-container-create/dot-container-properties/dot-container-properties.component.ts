@@ -6,19 +6,21 @@ import {
     UntypedFormGroup,
     Validators
 } from '@angular/forms';
-import { DotContainerPropertiesStore } from '@portlets/dot-containers/dot-container-create/dot-container-properties/store/dot-container-properties.store';
+import {
+    DotContainerPropertiesStore,
+    DotContainerPropertiesState
+} from '@portlets/dot-containers/dot-container-create/dot-container-properties/store/dot-container-properties.store';
 import { MonacoEditor } from '@models/monaco-editor';
 import { DotAlertConfirmService } from '@dotcms/app/api/services/dot-alert-confirm';
 import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { ActivatedRoute } from '@angular/router';
-import { pluck, take } from 'rxjs/operators';
+import { take, takeUntil } from 'rxjs/operators';
 import {
     DotContainer,
-    DotContainerEntity,
     DotContainerStructure
 } from '@dotcms/app/shared/models/container/dot-container.model';
 import { MenuItem } from 'primeng/api';
+import { Subject } from 'rxjs';
 
 @Component({
     selector: 'dot-container-properties',
@@ -32,48 +34,39 @@ export class DotContainerPropertiesComponent implements OnInit {
     form: UntypedFormGroup;
 
     containerStructures: DotContainerStructure[];
-
-    private isEdit = false;
-    private containerIdentifier: string;
+    private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         private store: DotContainerPropertiesStore,
         private dotMessageService: DotMessageService,
         private fb: UntypedFormBuilder,
         private dotAlertConfirmService: DotAlertConfirmService,
-        private dotRouterService: DotRouterService,
-        private activatedRoute: ActivatedRoute
+        private dotRouterService: DotRouterService
     ) {
         //
     }
 
     ngOnInit(): void {
-        this.activatedRoute.data
-            .pipe(pluck('container'), take(1))
-            .subscribe((containerEntity: DotContainerEntity) => {
-                if (containerEntity) {
-                    const { container, containerStructures } = containerEntity;
-
-                    this.containerStructures = containerStructures;
-                    this.isEdit = true;
-                    this.containerIdentifier = container.identifier;
-
-                    if (container.preLoop || container.postLoop) {
-                        this.store.updatePrePostLoopAndContentTypeVisibility({
-                            showPrePostLoopInput: true,
-                            isContentTypeVisible: true
-                        });
-                    }
-
-                    this.initForm(container, containerStructures);
-                } else {
-                    this.initForm();
-                }
-
-                this.form.valueChanges.subscribe((values) => {
-                    this.store.updateIsContentTypeButtonEnabled(values.maxContentlets > 0);
+        this.store.containerAndStructure$
+            .pipe(take(1))
+            .subscribe((state: DotContainerPropertiesState) => {
+                const { container, containerStructures } = state;
+                this.form = this.fb.group({
+                    identifier: new FormControl(container?.identifier ?? ''),
+                    title: new FormControl(container?.title ?? '', [Validators.required]),
+                    friendlyName: new FormControl(container?.friendlyName ?? ''),
+                    maxContentlets: new FormControl(container?.maxContentlets ?? 0, [
+                        Validators.required
+                    ]),
+                    code: container?.code ?? '',
+                    preLoop: container?.preLoop ?? '',
+                    postLoop: container?.postLoop ?? '',
+                    containerStructures: this.fb.array(containerStructures ?? [])
                 });
             });
+        this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((values) => {
+            this.store.updateIsContentTypeButtonEnabled(values.maxContentlets > 0);
+        });
     }
 
     /**
@@ -96,16 +89,17 @@ export class DotContainerPropertiesComponent implements OnInit {
     }
 
     /**
-     * Updates or Saves the container based on the isEdit variable.
+     * Updates or Saves the container based on the identifier form value.
      * @return void
      * @memberof DotContainerPropertiesComponent
      */
+
     save(): void {
         const formValues = this.form.value;
-        if (this.isEdit) {
-            formValues.identifier = this.containerIdentifier;
+        if (formValues.identifier) {
             this.store.editContainer(formValues);
         } else {
+            delete formValues.identifier;
             this.store.saveContainer(formValues);
         }
     }

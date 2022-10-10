@@ -44,7 +44,7 @@ export class DotContainersService {
      * @memberof DotContainersService
      */
     getById(id: string): Observable<DotContainerEntity> {
-        const url = `${CONTAINER_API_URL}details?containerId=${id}`;
+        const url = `${CONTAINER_API_URL}working?containerId=${id}`;
 
         return this.request<DotContainerEntity>({
             url
@@ -68,15 +68,15 @@ export class DotContainersService {
 
     /**
      * Creates a container
-     *
      * @param {DotContainerRequest} values
      * @returns Observable<DotContainer>
      * @memberof DotContainersService
      */
-    create(values: DotContainerRequest): Observable<DotContainer> {
-        return this.request<DotContainer>({
+
+    create(values: DotContainerRequest): Observable<DotContainerEntity> {
+        return this.request<DotContainerEntity>({
             method: 'POST',
-            url: `${CONTAINER_API_URL}_add`,
+            url: CONTAINER_API_URL,
             body: values
         });
     }
@@ -88,8 +88,12 @@ export class DotContainersService {
      * @returns Observable<DotContainer>
      * @memberof DotContainersService
      */
-    update(values: DotContainerRequest): Observable<DotContainer> {
-        return this.request<DotContainer>({ method: 'PUT', url: CONTAINER_API_URL, body: values });
+    update(values: DotContainerRequest): Observable<DotContainerEntity> {
+        return this.request<DotContainerEntity>({
+            method: 'PUT',
+            url: CONTAINER_API_URL,
+            body: values
+        });
     }
 
     /**
@@ -98,8 +102,8 @@ export class DotContainersService {
      * @returns Observable<DotContainer>
      * @memberof DotContainersService
      */
-    saveAndPublish(values: DotContainer): Observable<DotContainer> {
-        return this.request<DotContainer>({
+    saveAndPublish(values: DotContainer): Observable<DotContainerEntity> {
+        return this.request<DotContainerEntity>({
             method: 'PUT',
             url: `${CONTAINER_API_URL}_savepublish`,
             body: values

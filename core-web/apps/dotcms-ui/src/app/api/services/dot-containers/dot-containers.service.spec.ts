@@ -21,22 +21,25 @@ const mockBulkResponseSuccess: DotActionBulkResult = {
     fails: []
 };
 
-const mockContainer: DotContainer = {
-    archived: false,
-    categoryId: '6e07301c-e6d2-4c1f-9e8e-fcc4a31947d3',
-    deleted: false,
-    friendlyName: '',
-    identifier: '1234',
-    live: true,
-    name: 'movie',
-    parentPermissionable: {
-        hostname: 'default'
+const mockContainer: DotContainerEntity = {
+    container: {
+        archived: false,
+        categoryId: '6e07301c-e6d2-4c1f-9e8e-fcc4a31947d3',
+        deleted: false,
+        friendlyName: '',
+        identifier: '1234',
+        live: true,
+        name: 'movie',
+        parentPermissionable: {
+            hostname: 'default'
+        },
+        path: null,
+        source: CONTAINER_SOURCE.DB,
+        title: 'movie',
+        type: 'containers',
+        working: true
     },
-    path: null,
-    source: CONTAINER_SOURCE.DB,
-    title: 'movie',
-    type: 'containers',
-    working: true
+    containerStructures: []
 };
 
 describe('DotContainersService', () => {
@@ -86,7 +89,7 @@ describe('DotContainersService', () => {
             expect(containerEntity.container).toEqual(mockContainer);
         });
 
-        const req = httpMock.expectOne(`${CONTAINER_API_URL}details?containerId=123`);
+        const req = httpMock.expectOne(`${CONTAINER_API_URL}working?containerId=123`);
 
         expect(req.request.method).toBe('GET');
 
@@ -117,11 +120,11 @@ describe('DotContainersService', () => {
                 title: '',
                 friendlyName: ''
             } as DotContainerRequest)
-            .subscribe((container: DotContainer) => {
+            .subscribe((container: DotContainerEntity) => {
                 expect(container).toEqual(mockContainer);
             });
 
-        const req = httpMock.expectOne(`${CONTAINER_API_URL}_add`);
+        const req = httpMock.expectOne(`${CONTAINER_API_URL}`);
 
         expect(req.request.method).toBe('POST');
         expect(req.request.body.title).toEqual('');
@@ -158,7 +161,7 @@ describe('DotContainersService', () => {
                 name: '',
                 friendlyName: ''
             } as DotContainer)
-            .subscribe((container: DotContainer) => {
+            .subscribe((container: DotContainerEntity) => {
                 expect(container).toEqual(mockContainer);
             });
 
