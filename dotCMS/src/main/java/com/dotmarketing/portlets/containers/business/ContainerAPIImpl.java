@@ -701,7 +701,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 	@WrapInTransaction
 	@Override
 	@SuppressWarnings("unchecked")
-	public Container save(Container container, List<ContainerStructure> containerStructureList, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+	public Container save(final Container container,final List<ContainerStructure> containerStructureList,final Host host,final User user,final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		if (Container.SYSTEM_CONTAINER.equals(container.getIdentifier())) {
 			Logger.debug(this, "System Container cannot be saved/updated.");
 			throw new IllegalArgumentException("System Container and its associated data cannot be saved.");
@@ -779,6 +779,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 			       APILocator.getIdentifierAPI().createNew(container, host);
 			container.setIdentifier(ident.getId());
 		}
+
 		if(existingInode){
             save(container, container.getInode());
 		}
@@ -804,140 +805,6 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 		for (ContainerStructure cs : containerStructureList) {
 			cs.setContainerId(container.getIdentifier());
             cs.setContainerInode(container.getInode());
-		}
-		saveContainerStructures(containerStructureList);
-		// saves to working folder under velocity
-		new ContainerLoader().invalidate(container);
-
-		return container;
-	}
-
-	@WrapInTransaction
-	@Override
-	@SuppressWarnings("unchecked")
-	public Container save(Container container, List<ContainerStructure> containerStructureList,
-			ContainerForm containerForm, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-		if (Container.SYSTEM_CONTAINER.equals(container.getIdentifier())) {
-			Logger.debug(this, "System Container cannot be saved/updated.");
-			throw new IllegalArgumentException("System Container and its associated data cannot be saved.");
-		}
-
-		if(!APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles)
-				|| !APILocator.getPermissionAPI().doesUserHavePermissions(PermissionAPI.PermissionableType.CONTAINERS, PermissionAPI.PERMISSION_EDIT, user)) {
-
-			Logger.info(this, "The user: " + user.getUserId() + ", does not have ADD children permissions to the host: " + host.getHostname()
-					+ " or add containers");
-			throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
-		}
-
-		container.setMaxContentlets(containerForm.getMaxContentlets());
-		container.setNotes(containerForm.getNotes());
-		container.setPreLoop(containerForm.getPreLoop());
-		container.setPostLoop(containerForm.getPostLoop());
-		container.setSortContentletsBy(containerForm.getSortContentletsBy());
-		container.setStaticify(containerForm.isStaticify());
-		container.setUseDiv(containerForm.isUseDiv());
-		container.setFriendlyName(containerForm.getFriendlyName());
-		container.setModDate(new Date());
-		container.setModUser(user.getUserId());
-		container.setOwner(user.getUserId());
-		container.setShowOnMenu(containerForm.isShowOnMenu());
-		container.setTitle(containerForm.getTitle());
-
-		Container currentContainer = null;
-		List<Template> currentTemplates = null;
-		Identifier identifier = null;
-		boolean existingId=false;
-		boolean existingInode=false;
-
-		if(UtilMethods.isSet(container.getInode())) {
-			try {
-				Container existing=(Container) HibernateUtil.load(Container.class, container.getInode());
-				existingInode = existing==null || !UtilMethods.isSet(existing.getInode());
-			}
-			catch(Exception ex) {
-				existingInode=true;
-			}
-		}
-
-		if (UtilMethods.isSet(container.getIdentifier())) {
-			identifier = APILocator.getIdentifierAPI().find(container.getIdentifier());
-			if(identifier!=null && UtilMethods.isSet(identifier.getId())) {
-				if(!existingInode) {
-					currentContainer = getWorkingContainerById(container.getIdentifier(), user, respectFrontendRoles);
-					currentTemplates = APILocator.getTemplateAPI().findTemplatesByContainerInode(currentContainer.getInode());
-				}
-			}
-			else {
-				existingId=true;
-				identifier=null;
-			}
-		}
-
-		if ((identifier != null && !existingInode)  && !permissionAPI.doesUserHavePermission(currentContainer, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
-			throw new DotSecurityException(
-					String.format("User '%s' does not have WRITE permission on Container '%s'", user.getUserId(),
-							container.getName()));
-		}
-
-		for (ContainerStructure cs : containerStructureList) {
-			Structure st = CacheLocator.getContentTypeCache().getStructureByInode(cs.getStructureId());
-			if((st != null && !existingInode) && !permissionAPI.doesUserHavePermission(st, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-				throw new DotSecurityException(
-						String.format("User '%s' does not have WRITE permission on Content Type '%s'", user.getUserId(),
-								st.getName()));
-			}
-		}
-
-
-		if(!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
-			throw new DotSecurityException(
-					String.format("User '%s' does not have WRITE permission on Site '%s'", user.getUserId(), host));
-		}
-
-		String userId = user.getUserId();
-		container.setModUser(user.getUserId());
-		container.setModDate(new Date());
-
-		// it saves or updates the asset
-		if (identifier != null) {
-			container.setIdentifier(identifier.getId());
-		} else {
-			Identifier ident= (existingId) ?
-					APILocator.getIdentifierAPI().createNew(container, host, container.getIdentifier()) :
-					APILocator.getIdentifierAPI().createNew(container, host);
-			container.setIdentifier(ident.getId());
-		}
-
-		if(container.getMaxContentlets() == 0){
-			container.setCode(containerForm.getCode());
-		}
-
-		if(existingInode){
-			save(container, container.getInode());
-		}
-		else{
-			save(container);
-		}
-
-		APILocator.getVersionableAPI().setWorking(container);
-
-		// Get templates of the old version, so you can update the working
-		// information to this new version.
-		if (currentTemplates != null) {
-			Iterator<Template> it = currentTemplates.iterator();
-
-			// update templates to new version
-			while (it.hasNext()) {
-				Template parentInode = it.next();
-				TreeFactory.saveTree(new Tree(parentInode.getInode(), container.getInode()));
-			}
-		}
-
-		// save the container-structure relationships , issue-2093
-		for (ContainerStructure cs : containerStructureList) {
-			cs.setContainerId(container.getIdentifier());
-			cs.setContainerInode(container.getInode());
 		}
 		saveContainerStructures(containerStructureList);
 		// saves to working folder under velocity

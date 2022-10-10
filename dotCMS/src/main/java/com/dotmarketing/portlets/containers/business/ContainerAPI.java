@@ -316,21 +316,8 @@ public interface ContainerAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	Container save(Container container, List<ContainerStructure> containerStructureList, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
-	/**
-	 * Save container
-	 *
-	 * @param container
-	 * @param containerStructureList
-	 * @param host
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return Container
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-	Container save(Container container, List<ContainerStructure> containerStructureList,
-			ContainerForm containerForm, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	Container save(final Container container,final List<ContainerStructure> containerStructureList,final Host host,final User user,final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
 	/**
 	 * Deletes the template version by inode
 	 * @param inode String

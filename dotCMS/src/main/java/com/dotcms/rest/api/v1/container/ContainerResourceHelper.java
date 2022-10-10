@@ -78,18 +78,7 @@ public class ContainerResourceHelper implements Serializable {
         }
     }
 
-    public ContainerWithStructuresView toResponseEntityContainerWithStructuresView(final Container container, final List<ContainerStructure> containerStructures) {
-        return new ContainerWithStructuresView(container, containerStructures);
-    }
-
-    public String getObjectToJsonString(final Object object) {
-        ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
-        try {
-            final String json = mapper.writeValueAsString(object);
-            return json;
-        } catch (JsonProcessingException e) {
-            Logger.error(this, e.getMessage(), e);
-        }
-        return StringPool.BLANK;
+    public ContainerWithContentTypesView toResponseEntityContainerWithContentTypesView(final Container container, final List<ContainerStructure> containerStructures) {
+        return new ContainerWithContentTypesView(container, containerStructures);
     }
 }

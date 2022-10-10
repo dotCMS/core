@@ -15,6 +15,7 @@ import com.dotcms.rest.api.FailedResultView;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.DotPreconditions;
+import com.dotcms.util.JsonUtil;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.ContainerPaginator;
 import com.dotcms.util.pagination.OrderDirection;
@@ -657,8 +658,9 @@ public class ContainerResource implements Serializable {
         final PageMode pageMode = PageMode.get(request);
         Container container     = new Container();
 
-        ActivityLogger.logInfo(this.getClass(), "Save Container",
-                "User " + user.getPrimaryKey() + " saved " + container.getTitle(), host.getHostname());
+
+        Logger.debug(this,
+                () -> "Adding container. Request payload is : " + JsonUtil.getJsonStringFromObject(containerForm));
 
         container.setMaxContentlets(containerForm.getMaxContentlets());
         container.setNotes(containerForm.getNotes());
@@ -674,7 +676,14 @@ public class ContainerResource implements Serializable {
         container.setShowOnMenu(containerForm.isShowOnMenu());
         container.setTitle(containerForm.getTitle());
 
+        if(containerForm.getMaxContentlets() == 0){
+            container.setCode(containerForm.getCode());
+        }
+
         this.containerAPI.save(container, containerForm.getContainerStructures(), host, user, pageMode.respectAnonPerms);
+
+        ActivityLogger.logInfo(this.getClass(), "Save Container",
+                "User " + user.getPrimaryKey() + " saved " + container.getTitle(), host.getHostname());
 
         Logger.debug(this, ()-> "The container: " + container.getIdentifier() + " has been saved");
 
@@ -1431,44 +1440,6 @@ public class ContainerResource implements Serializable {
     }
 
     /**
-     * Saves a new working version of a container.
-     *
-     * @param request
-     * @param response
-     * @param containerForm
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    @POST
-    @Path("_add")
-    @JSONP
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response add(@Context final HttpServletRequest  request,
-            @Context final HttpServletResponse response,
-            final ContainerForm containerForm) throws DotDataException, DotSecurityException {
-
-        final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .requestAndResponse(request, response).requiredBackendUser(true).rejectWhenNoUser(true).init();
-        final User user         = initData.getUser();
-        final Host host         = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-        final PageMode pageMode = PageMode.get(request);
-        Container container     = new Container();
-
-        Logger.debug(this,
-                () -> "Adding container. Request payload is : " + ContainerResourceHelper.getInstance().getObjectToJsonString(containerForm));
-
-        this.containerAPI.save(container, containerForm.getContainerStructures(), containerForm, host, user, pageMode.respectAnonPerms);
-        Logger.debug(this, ()-> "The container: " + container.getIdentifier() + " has been added");
-
-        ActivityLogger.logInfo(this.getClass(), "Add Container",
-                "User " + user.getPrimaryKey() + " added " + container.getTitle(), host.getHostname());
-
-        return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
-    }
-
-    /**
      * Returns working version along with containerStructures {@link com.dotmarketing.portlets.containers.model.Container} based on the id
      *
      * @param request
@@ -1502,8 +1473,8 @@ public class ContainerResource implements Serializable {
             throw new DoesNotExistException("Working Version of the Container with Id: " + containerId + " does not exist");
         }
 
-        List<ContainerStructure> structures = this.containerAPI.getContainerStructures(container);
+        List<ContainerStructure> contentTypes = this.containerAPI.getContainerStructures(container);
 
-        return Response.ok(new ResponseEntityView(ContainerResourceHelper.getInstance().toResponseEntityContainerWithStructuresView(container, structures))).build();
+        return Response.ok(new ResponseEntityView(ContainerResourceHelper.getInstance().toResponseEntityContainerWithContentTypesView(container, contentTypes))).build();
     }
 }
