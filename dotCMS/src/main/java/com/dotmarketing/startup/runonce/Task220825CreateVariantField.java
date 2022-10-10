@@ -12,10 +12,14 @@ public class Task220825CreateVariantField extends AbstractJDBCStartupTask {
 
     @Override
     public boolean forceRun() {
+        return !hasVariantIdColumn();
+    }
+
+    private boolean hasVariantIdColumn() {
         final DotDatabaseMetaData databaseMetaData = new DotDatabaseMetaData();
 
         try {
-            return !databaseMetaData.hasColumn("contentlet_version_info", "variant_id");
+            return databaseMetaData.hasColumn("contentlet_version_info", "variant_id");
         } catch (SQLException e) {
             return false;
         }
@@ -23,12 +27,12 @@ public class Task220825CreateVariantField extends AbstractJDBCStartupTask {
 
     @Override
     public String getPostgresScript() {
-        return getCreateFieldStatement() + ";" + getUpdateStatement() + ";";
+        return !hasVariantIdColumn() ? getCreateFieldStatement() + ";" + getUpdateStatement() + ";" : null;
     }
 
     @Override
     public String getMSSQLScript(){
-        return getCreateFieldStatement() + ";" + getUpdateStatement() + ";";
+        return !hasVariantIdColumn() ? getCreateFieldStatement() + ";" + getUpdateStatement() + ";" : null;
     }
 
     private String getCreateFieldStatement() {

@@ -20,6 +20,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -29,7 +30,7 @@ public class Task220825CreateVariantFieldTest {
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
 
-        checkIfVariantColumnExist();
+       // checkIfVariantColumnExist();
     }
 
     private static void checkIfVariantColumnExist() throws SQLException {
@@ -128,7 +129,7 @@ public class Task220825CreateVariantFieldTest {
     public void runningTwice() throws DotDataException {
         cleanAllBefore();
 
-        final Task220824CreateDefaultVariant upgradeTask = new Task220824CreateDefaultVariant();
+        final Task220825CreateVariantField upgradeTask = new Task220825CreateVariantField();
         upgradeTask.executeUpgrade();
         upgradeTask.executeUpgrade();
     }
@@ -153,7 +154,43 @@ public class Task220825CreateVariantFieldTest {
     }
 
     private void cleanAllBefore()  {
+
+        if (hasVariantIdColumn()) {
+
+            final DotConnect dotConnect = new DotConnect();
+
+            try {
+
+                cleanAnyConstraint();
+
+                dotConnect.executeStatement(
+                        "ALTER TABLE contentlet_version_info DROP COLUMN variant_id");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private boolean hasVariantIdColumn() {
+        final DotDatabaseMetaData databaseMetaData = new DotDatabaseMetaData();
+        try {
+            return databaseMetaData.hasColumn("contentlet_version_info", "variant_id");
+        } catch (SQLException e) {
+            return false;
+        }
+    }
+
+    private void cleanAnyConstraint() throws SQLException {
         final DotConnect dotConnect = new DotConnect();
+
+        final Optional<String> constraintName = DbConnectionFactory.isPostgres() ?
+                Optional.of("contentlet_version_info_pkey") : getMSSQLPrimaryKeyName();
+
+        if (constraintName.isPresent()) {
+            dotConnect.executeStatement(
+                    String.format("ALTER TABLE contentlet_version_info "
+                            + "DROP CONSTRAINT %s", constraintName.get()));
+        }
 
         try {
             if (DbConnectionFactory.isMsSql()) {
@@ -164,19 +201,29 @@ public class Task220825CreateVariantFieldTest {
                         .addParam(VariantAPI.DEFAULT_VARIANT.name())
                         .loadResults();
 
-                dotConnect.setSQL("ALTER TABLE contentlet_version_info DROP CONSTRAINT " + loadResults.get(0).get("name").toString() )
-                        .loadResult();
+                if (!loadResults.isEmpty()) {
+                    dotConnect.setSQL("ALTER TABLE contentlet_version_info DROP CONSTRAINT "
+                                    + loadResults.get(0).get("name").toString())
+                            .loadResult();
+                }
             }
         } catch (Exception e) {
-
+            throw new RuntimeException(e);
         }
+    }
 
+    private Optional<String> getMSSQLPrimaryKeyName()  {
         try {
-            dotConnect
-                    .setSQL("ALTER TABLE contentlet_version_info DROP COLUMN variant_id")
-                    .loadResult();
-        } catch (Exception e) {
+            final ArrayList arrayList = new DotConnect()
+                    .setSQL("SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS T "
+                            + "WHERE table_name = 'contentlet_version_info' "
+                            + "AND constraint_type = 'PRIMARY KEY'")
+                    .loadResults();
 
+            return arrayList.isEmpty() ? Optional.empty() :
+                    Optional.of(((Map) arrayList.get(0)).get("constraint_name").toString());
+        } catch (DotDataException e) {
+            throw new RuntimeException(e);
         }
     }
 }
