@@ -64,27 +64,36 @@ public class CategoryHelper {
                 .build();
     }
 
-    public void AddOrUpdateCategory(final User user, final String contextInode,final BufferedReader br,final Boolean merge) throws IOException, Exception {
-        CsvReader csvreader = new CsvReader(br);
-        csvreader.setSafetySwitch(false);
-        csvreader.readHeaders();
-        String[] csvLine;
+    public void addOrUpdateCategory(final User user, final String contextInode,final BufferedReader br,final Boolean merge) throws IOException, Exception {
 
-        while (csvreader.readRecord()) {
-            csvLine = csvreader.getValues();
-            try {
-                AddOrUpdateCategory(user, true, contextInode, csvLine[0], csvLine[2], csvLine[1], null, csvLine[3], merge);
+        CsvReader csvreader = null;
+        try{
+            csvreader = new CsvReader(br);
+            csvreader.setSafetySwitch(false);
+            csvreader.readHeaders();
+            String[] csvLine;
 
-            } catch(Exception e) {
-                Logger.error(this, "Error trying to save/update the categories csv row: name=" +csvLine[0]+ ", variable=" + csvLine[2] + ", key=" + csvLine[1] + ", sort=" + csvLine[3] , e);
+            while (csvreader.readRecord()) {
+                csvLine = csvreader.getValues();
+                try {
+                    addOrUpdateCategory(user, true, contextInode, csvLine[0], csvLine[2],
+                            csvLine[1], null, csvLine[3], merge);
+
+                } catch (Exception e) {
+                    Logger.error(this,
+                            "Error trying to save/update the categories csv row: name=" + csvLine[0]
+                                    + ", variable=" + csvLine[2] + ", key=" + csvLine[1] + ", sort="
+                                    + csvLine[3], e);
+                }
             }
         }
-
-        csvreader.close();
-        br.close();
+        finally {
+            csvreader.close();
+            br.close();
+        }
     }
 
-    private Integer AddOrUpdateCategory(final User user, final Boolean isSave, final String inode, final String name, final String var, final String key, final String keywords, final String sort, final boolean isMerge)
+    private Integer addOrUpdateCategory(final User user, final Boolean isSave, final String inode, final String name, final String var, final String key, final String keywords, final String sort, final boolean isMerge)
             throws Exception {
 
         Category parent = null;

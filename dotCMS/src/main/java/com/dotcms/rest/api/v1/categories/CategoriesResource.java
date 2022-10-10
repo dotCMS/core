@@ -2,7 +2,6 @@ package com.dotcms.rest.api.v1.categories;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.exception.ExceptionUtil;
-import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -29,20 +28,15 @@ import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.business.PaginatedCategories;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.util.ActivityLogger;
-import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import io.vavr.control.Try;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -573,8 +567,9 @@ public class CategoriesResource {
      *
      * @param httpRequest
      * @param httpResponse
-     * @param fileInputStream
-     * @param fileMetaData
+     * @param uploadedFile
+     * @param multiPart
+     * @param fileDetail
      * @param filter
      * @param exportType
      * @param contextInode
@@ -595,10 +590,40 @@ public class CategoriesResource {
             @FormDataParam("file") FormDataContentDisposition fileDetail,
             @FormDataParam("filter") String filter,
             @FormDataParam("exportType") String exportType,
-            @FormDataParam("contextInode") String contextInode) {
+            @FormDataParam("contextInode") String contextInode) throws IOException {
+
+
+        return processImport(httpRequest, httpResponse, uploadedFile, multiPart, fileDetail, filter, exportType, contextInode);
+
+    }
+
+    private String getContentFromFile(String path) throws IOException {
+
+        String content = StringPool.BLANK;
+
+        try (InputStream file = java.nio.file.Files.newInputStream(java.nio.file.Path.of(path))) {
+            byte[] uploadedFileBytes = file.readAllBytes();
+
+            content = new String(uploadedFileBytes);
+        }
+        return content;
+    }
+
+    @WrapInTransaction
+    private Response processImport(final HttpServletRequest httpRequest,
+            final HttpServletResponse httpResponse,
+            final File uploadedFile,
+            final FormDataMultiPart multiPart,
+            final FormDataContentDisposition fileDetail,
+            final String filter,
+            final String exportType,
+            final String contextInode) throws IOException {
 
         List<Category> unableToDeleteCats = null;
         final List<FailedResultView> failedToDelete = new ArrayList<>();
+
+        BufferedReader br = null;
+        StringReader sr = null;
 
         try {
             final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true,
@@ -608,26 +633,28 @@ public class CategoriesResource {
             final PageMode pageMode = PageMode.get(httpRequest);
 
             Logger.debug(this, () -> "Importing the list of categories. " + String.format(
-                    "Request payload is : {contextInode : %s, filter : %s, exportType : %s}", contextInode,
+                    "Request payload is : {contextInode : %s, filter : %s, exportType : %s}",
+                    contextInode,
                     filter, exportType));
 
-            InputStream file = new FileInputStream(uploadedFile);
-            byte [] uploadedFileBytes = file.readAllBytes();
+            String content = getContentFromFile(uploadedFile.getPath());
 
-            String content = new String(uploadedFileBytes);
-            StringReader sr = new StringReader(content);
-            BufferedReader br = new BufferedReader(sr);
+            sr = new StringReader(content);
+            br = new BufferedReader(sr);
 
-            if(exportType.equals("replace")) {
+            if (exportType.equals("replace")) {
                 Logger.debug(this, () -> "Replacing categories");
-                if(UtilMethods.isSet(contextInode)) {
+                if (UtilMethods.isSet(contextInode)) {
                     Category contextCat = this.categoryAPI.find(contextInode, user, false);
-                    unableToDeleteCats = this.categoryAPI.removeAllChildren(contextCat, user, false);
+                    unableToDeleteCats = this.categoryAPI.removeAllChildren(contextCat, user,
+                            false);
                     if (!unableToDeleteCats.isEmpty()) {
                         for (final Category category : unableToDeleteCats) {
-                            Logger.error(this, "Category with Id: " + category.getInode() + " unable to delete");
+                            Logger.error(this, "Category with Id: " + category.getInode()
+                                    + " unable to delete");
                             failedToDelete.add(new FailedResultView(category.getInode(),
-                                    "Category with id: " + category.getInode() + " unable to delete"));
+                                    "Category with id: " + category.getInode()
+                                            + " unable to delete"));
                         }
                     }
                 } else {
@@ -636,22 +663,25 @@ public class CategoriesResource {
                     Logger.debug(this, () -> "Deleted all the categories");
                 }
 
-               this.categoryHelper.AddOrUpdateCategory(user, contextInode, br, false);
-            } else if(exportType.equals("merge")) {
+                this.categoryHelper.addOrUpdateCategory(user, contextInode, br, false);
+            } else if (exportType.equals("merge")) {
                 Logger.debug(this, () -> "Merging categories");
-                this.categoryHelper.AddOrUpdateCategory(user, contextInode, br, true);
+                this.categoryHelper.addOrUpdateCategory(user, contextInode, br, true);
             }
 
-            br.close();
-
-        } catch(Exception e) {
+        } catch (Exception e) {
             Logger.error(this, "Error importing categories", e);
+        } finally {
+            sr.close();
+            br.close();
         }
 
         return Response.ok(new ResponseEntityView(
-                        new BulkResultView(Long.valueOf(UtilMethods.isSet(unableToDeleteCats) ? 1 : 0), 0L, failedToDelete)))
+                        new BulkResultView(Long.valueOf(UtilMethods.isSet(unableToDeleteCats) ? 1 : 0), 0L,
+                                failedToDelete)))
                 .build();
     }
+
 
     @WrapInTransaction
     private void updateSortOrder(final CategoryEditForm categoryEditForm, final User user,
