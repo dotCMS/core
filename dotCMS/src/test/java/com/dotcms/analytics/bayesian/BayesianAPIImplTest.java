@@ -6,6 +6,12 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+
+/**
+ * Bayesian API implementation class unit tests.
+ *
+ * @author vico
+ */
 public class BayesianAPIImplTest {
 
     private BayesianAPI bayesianAPI;
@@ -15,6 +21,20 @@ public class BayesianAPIImplTest {
         bayesianAPI = new BayesianAPIImpl();
     }
 
+    /**
+     * Given Bayesian input parameters with these values:
+     *
+     * <pre>
+     *     priorAlpha: 10
+     *     priorBeta: 10
+     *     controlSuccesses: 5
+     *     controlFailures: 3
+     *     testSuccesses: 6
+     *     testFailures: 2
+     * </pre>
+     *
+     * Expect that the probability B beats A is at least 0.72.
+     */
     @Test
     public void test_calculateABTesting() {
         final BayesianInput input = BayesianInput.builder()
@@ -30,6 +50,10 @@ public class BayesianAPIImplTest {
         Assert.assertEquals("0.72", String.format("%.2f", result.result()));
     }
 
+    /**
+     * Given Bayesian input parameters with an invalid prior alpha.
+     * Expect a IllegalArgumentException to be thrown.
+     */
     @Test(expected = IllegalArgumentException.class)
     public void test_calculateABTesting_invalidPriorAlpha() {
         BayesianInput input = BayesianInput.builder()
@@ -43,6 +67,10 @@ public class BayesianAPIImplTest {
         bayesianAPI.calcABTesting(input);
     }
 
+    /**
+     * Given Bayesian input parameters with an invalid prior beta.
+     * Expect a IllegalArgumentException to be thrown.
+     */
     @Test(expected = IllegalArgumentException.class)
     public void test_calculateABTesting_invalidPriorBeta() {
         BayesianInput input = BayesianInput.builder()
@@ -56,6 +84,10 @@ public class BayesianAPIImplTest {
         bayesianAPI.calcABTesting(input);
     }
 
+    /**
+     * Given Bayesian input parameters with an invalid control successes.
+     * Expect a IllegalArgumentException to be thrown.
+     */
     @Test(expected = IllegalArgumentException.class)
     public void test_calculateABTesting_invalidControlSuccesses() {
         BayesianInput input = BayesianInput.builder()
@@ -69,6 +101,10 @@ public class BayesianAPIImplTest {
         bayesianAPI.calcABTesting(input);
     }
 
+    /**
+     * Given Bayesian input parameters with an invalid control failures.
+     * Expect a IllegalArgumentException to be thrown.
+     */
     @Test(expected = IllegalArgumentException.class)
     public void test_calculateABTesting_invalidControlFailures() {
         BayesianInput input = BayesianInput.builder()
@@ -82,6 +118,10 @@ public class BayesianAPIImplTest {
         bayesianAPI.calcABTesting(input);
     }
 
+    /**
+     * Given Bayesian input parameters with an invalid test successes.
+     * Expect a IllegalArgumentException to be thrown.
+     */
     @Test(expected = IllegalArgumentException.class)
     public void test_calculateABTesting_invalidTestSuccesses() {
         BayesianInput input = BayesianInput.builder()
@@ -95,6 +135,10 @@ public class BayesianAPIImplTest {
         bayesianAPI.calcABTesting(input);
     }
 
+    /**
+     * Given Bayesian input parameters with an invalid test failures.
+     * Expect a IllegalArgumentException to be thrown.
+     */
     @Test(expected = IllegalArgumentException.class)
     public void test_calculateABTesting_invalidTestFailures() {
         BayesianInput input = BayesianInput.builder()
