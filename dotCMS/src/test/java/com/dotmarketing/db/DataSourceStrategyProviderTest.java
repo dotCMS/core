@@ -18,6 +18,7 @@ import java.util.TimeZone;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests for {@link DataSourceStrategyProvider}
@@ -214,6 +215,7 @@ public class DataSourceStrategyProviderTest {
             final Connection connection = dataSource.getConnection();
             final PgConnection pgConn = connection.unwrap(PgConnection.class);
             final TimeZone connectionTz = pgConn.getQueryExecutor().getTimeZone();
+            assertTrue("Connection object Time Zone must always be UTC", "UTC".equalsIgnoreCase(connectionTz.getID()));
             assertFalse("TimeZone value from the Connection object must always be UTC!",
                     connectionTz.getID().equals(defaultTz.getID()));
         } catch (final ClassNotFoundException | IllegalAccessException | InstantiationException | SQLException e) {
