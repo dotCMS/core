@@ -1,5 +1,6 @@
 package com.dotcms;
 
+import com.dotcms.analytics.bayesian.BayesianAPIImplTest;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
 import com.dotcms.cache.lettuce.DotObjectCodecTest;
@@ -586,7 +587,8 @@ import org.junit.runners.Suite.SuiteClasses;
         IdentifierCacheImplTest.class,
         VariantCacheTest.class,
         VersionableFactoryImplTest.class,
-        Task220928AddLookbackWindowColumnToExperimentTest.class
+        Task220928AddLookbackWindowColumnToExperimentTest.class,
+        BayesianAPIImplTest.class
 })
 public class MainSuite {
 
