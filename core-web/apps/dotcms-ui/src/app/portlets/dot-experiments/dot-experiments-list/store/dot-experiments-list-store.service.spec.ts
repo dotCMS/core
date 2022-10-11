@@ -18,7 +18,6 @@ import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MessageService } from 'primeng/api';
-import { filter } from 'rxjs/operators';
 
 class MockDotExperimentsService {
     get(): Observable<DotExperiment[]> {
@@ -77,7 +76,7 @@ const messageServiceMock = new MockDotMessageService({
     'experimentspage.add.new.experiment': 'Add a new experiment'
 });
 
-describe('DotExperimentsStore', () => {
+fdescribe('DotExperimentsStore', () => {
     let experimentsStore: DotExperimentsListStore;
     let dotExperimentsService: DotExperimentsService;
 
@@ -208,22 +207,15 @@ describe('DotExperimentsStore', () => {
         ];
 
         const expected: GroupedExperimentByStatus = {
-            [DotExperimentStatusList.DRAFT]: [...experimentsMock],
             [DotExperimentStatusList.ENDED]: [...endedExperiments],
             [DotExperimentStatusList.ARCHIVED]: [...archivedExperiments]
         };
 
-        experimentsStore.setExperiments([
-            ...experimentsMock,
-            ...endedExperiments,
-            ...archivedExperiments
-        ]);
+        experimentsStore.setExperiments([...endedExperiments, ...archivedExperiments]);
 
-        experimentsStore.getExperimentsFilteredAndGroupedByStatus$
-            .pipe(filter((exp) => !!exp))
-            .subscribe((exp) => {
-                expect(exp).toEqual(expected);
-            });
+        experimentsStore.getExperimentsFilteredAndGroupedByStatus$.subscribe((exp) => {
+            expect(exp).toEqual(expected);
+        });
     });
 
     describe('Effects', () => {
