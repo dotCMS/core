@@ -76,14 +76,20 @@ public class Task221007AddVariantIntoPrimaryKeyTest {
         return primaryKeysFields;
     }
 
-    private void cleanUp() throws SQLException {
-        final String constraintName = DbConnectionFactory.isPostgres() ? "contentlet_version_info_pkey" : getMSSQLPrimaryKeyName();
+    private void cleanUp()  {
+        try {
+            final String constraintName =
+                    DbConnectionFactory.isPostgres() ? "contentlet_version_info_pkey"
+                            : getMSSQLPrimaryKeyName();
 
-        new DotConnect().executeStatement(String.format("ALTER TABLE contentlet_version_info "
-               + "DROP CONSTRAINT %s", constraintName));
+            new DotConnect().executeStatement(String.format("ALTER TABLE contentlet_version_info "
+                    + "DROP CONSTRAINT %s", constraintName));
 
-        new DotConnect().executeStatement(String.format("ALTER TABLE contentlet_version_info "
-                + " ADD CONSTRAINT %s PRIMARY KEY (identifier, lang)", constraintName));
+            new DotConnect().executeStatement(String.format("ALTER TABLE contentlet_version_info "
+                    + " ADD CONSTRAINT %s PRIMARY KEY (identifier, lang)", constraintName));
+        } catch (Exception e) {
+            //ignore
+        }
     }
 
     private String getMSSQLPrimaryKeyName()  {
