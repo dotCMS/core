@@ -15,6 +15,7 @@ import { DotMessageDisplayService } from '@components/dot-message-display/servic
 import { DialogService } from 'primeng/dynamicdialog';
 import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 @Component({
     selector: 'dot-container-list',
@@ -35,7 +36,8 @@ export class ContainerListComponent implements OnDestroy {
         private store: DotContainerListStore,
         private dotMessageService: DotMessageService,
         private dotMessageDisplayService: DotMessageDisplayService,
-        private dialogService: DialogService
+        private dialogService: DialogService,
+        private dotRouterService: DotRouterService
     ) {
         this.notify$.pipe(takeUntil(this.destroy$)).subscribe(({ payload, message, failsInfo }) => {
             this.notifyResult(payload, failsInfo, message);
@@ -98,7 +100,7 @@ export class ContainerListComponent implements OnDestroy {
         failsInfo: DotBulkFailItem[],
         message: string
     ): void {
-        if ('fails' in response && failsInfo.length) {
+        if ('fails' in response && failsInfo?.length) {
             this.showErrorDialog({
                 ...response,
                 fails: failsInfo,
@@ -110,6 +112,10 @@ export class ContainerListComponent implements OnDestroy {
 
         this.listing?.clearSelection();
         this.listing?.loadCurrentPage();
+    }
+
+    handleEmptyStateButtonClick(): void {
+        this.dotRouterService.goToCreateContainer();
     }
 
     private showToastNotification(message: string): void {
