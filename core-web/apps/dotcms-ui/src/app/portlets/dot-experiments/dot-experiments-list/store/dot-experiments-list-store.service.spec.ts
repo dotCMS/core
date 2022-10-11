@@ -76,7 +76,7 @@ const messageServiceMock = new MockDotMessageService({
     'experimentspage.add.new.experiment': 'Add a new experiment'
 });
 
-fdescribe('DotExperimentsStore', () => {
+describe('DotExperimentsStore', () => {
     let experimentsStore: DotExperimentsListStore;
     let dotExperimentsService: DotExperimentsService;
 
