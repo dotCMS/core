@@ -1,5 +1,6 @@
 package com.dotcms;
 
+import com.dotcms.analytics.bayesian.BayesianAPIImplTest;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
 import com.dotcms.cache.lettuce.DotObjectCodecTest;
@@ -175,6 +176,7 @@ import com.dotmarketing.startup.runonce.Task220606UpdatePushNowActionletNameTest
 import com.dotmarketing.startup.runonce.Task220824CreateDefaultVariantTest;
 
 import com.dotmarketing.startup.runonce.Task220822CreateVariantTableTest;
+import com.dotmarketing.startup.runonce.Task220825MakeSomeSystemFieldsRemovableTest;
 import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTableTest;
 
 import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExperimentTest;
@@ -580,13 +582,15 @@ import org.junit.runners.Suite.SuiteClasses;
         PaginatedContentletsIntegrationTest.class,
         Task220824CreateDefaultVariantTest.class,
         Task220822CreateVariantTableTest.class,
+        Task220825MakeSomeSystemFieldsRemovableTest.class,
         Task220829CreateExperimentsTableTest.class,
         StoryBlockTest.class,
         IdentifierCacheImplTest.class,
         VariantCacheTest.class,
         VersionableFactoryImplTest.class,
         Task220928AddLookbackWindowColumnToExperimentTest.class,
-        Task221007AddVariantIntoPrimaryKeyTest.class
+        Task221007AddVariantIntoPrimaryKeyTest.class,
+        BayesianAPIImplTest.class
 })
 public class MainSuite {
 

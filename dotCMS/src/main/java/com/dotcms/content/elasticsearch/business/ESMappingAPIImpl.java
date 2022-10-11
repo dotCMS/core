@@ -71,7 +71,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.ThreadSafeSimpleDateFormat;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableList;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
@@ -83,7 +82,6 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -337,9 +335,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                         .getIdentifier());
                 throw new DotDataException(errorMsg);
             }
-			final Optional<ContentletVersionInfo> versionInfo = versionableAPI.getContentletVersionInfo(contentIdentifier.getId(),
-					contentlet.getLanguageId(), contentlet.getVariantId());
-
+			final Optional<ContentletVersionInfo> versionInfo = versionableAPI.getContentletVersionInfo(
+					contentIdentifier.getId(),
+					contentlet.getLanguageId(),
+					contentlet.getVariantId());
             if (!versionInfo.isPresent()) {
                 final String errorMsg = String.format("Version Info for Identifier '%s' and Language '%s' was not" +
                         " found via API.", contentIdentifier.getId(), contentlet.getLanguageId());
@@ -389,6 +388,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			contentletMap.put(ESMappingConstants.DELETED + TEXT, Boolean.toString(contentlet.isArchived()));
 			contentletMap.put(ESMappingConstants.LANGUAGE_ID, contentlet.getLanguageId());
 			contentletMap.put(ESMappingConstants.LANGUAGE_ID + TEXT, Long.toString(contentlet.getLanguageId()));
+			contentletMap.put(ESMappingConstants.VARIANT, contentlet.getVariantId());
 			contentletMap.put(ESMappingConstants.IDENTIFIER, contentIdentifier.getId());
 			contentletMap.put(ESMappingConstants.CONTENTLET_HOST, contentIdentifier.getHostId());
 			contentletMap.put(ESMappingConstants.CONTENTLET_HOSTNAME, contentSite.getHostname());
