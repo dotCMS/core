@@ -1,5 +1,12 @@
-<h1>$!{title}</h1>
 #set($contentlet = $dotcontent.find($!{ContentIdentifier}))
-#if ("TITLE_IMAGE_NOT_FOUND" != $!{contentlet.titleImage})
-<img src="/contentAsset/raw-data/$!{ContentIdentifier}/$!{contentlet.titleImage}">
+
+#if (
+    $UtilMethods.isImage("$contentlet.fileName") ||
+    $UtilMethods.isImage("$contentlet.asset") ||
+    $UtilMethods.isImage("$contentlet.title") ||
+    $UtilMethods.isImage("$contentlet.image")
+)
+    <img src="/dA/$!{contentlet.inode}" />
+#else
+    <h1>$!{contentlet.title}</h1>
 #end
