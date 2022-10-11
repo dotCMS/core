@@ -36,8 +36,10 @@ export class DotExperimentsListTableComponent {
 
     /**
      * Show a confirmation dialog to Archive an experiment
-     * @param event
-     * @param item
+     * @param {Event} event
+     * @param {DotExperiment} item
+     * @returns void
+     * @memberof DotExperimentsListTableComponent
      */
     archive(event: Event, item: DotExperiment) {
         this.confirmationService.confirm({
@@ -50,8 +52,10 @@ export class DotExperimentsListTableComponent {
 
     /**
      * Show a confirmation dialog to delete an experiment
-     * @param event
-     * @param item
+     * @param {Event} event
+     * @param {DotExperiment} item
+     * @returns void
+     * @memberof DotExperimentsListTableComponent
      */
     delete(event: Event, item: DotExperiment) {
         this.confirmationService.confirm({

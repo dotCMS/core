@@ -13,7 +13,8 @@ export class DotExperimentsService {
 
     /**
      * Get an array of experiments of a pageId
-     * @param pageId
+     * @param {string} pageId
+     * @returns Observable<DotExperiment[]>
      * @memberof DotExperimentsService
      */
     get(pageId: string): Observable<DotExperiment[]> {
@@ -24,7 +25,8 @@ export class DotExperimentsService {
 
     /**
      * Archive an experiment with its experimentId
-     * @param experimentId
+     * @param {string} experimentId
+     * @returns Observable<DotExperiment[]>
      * @memberof DotExperimentsService
      */
     archive(experimentId: string): Observable<DotExperiment[]> {
@@ -35,7 +37,9 @@ export class DotExperimentsService {
 
     /**
      * Delete an experiment with its experimenId
-     * @param experimentId
+     * @param {string} experimentId
+     * @returns Observable<string | DotExperiment[]>
+     * @memberof DotExperimentsService
      */
     delete(experimentId: string): Observable<string | DotExperiment[]> {
         const URL = `${API_ENDPOINT}/${experimentId}`;

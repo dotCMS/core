@@ -34,29 +34,41 @@ export class DotExperimentsListComponent implements OnInit {
         this.dotExperimentsListStore.loadExperiments(pageId);
     }
 
+    /**
+     * Update the list of selected statuses
+     * @param {Array<string>} $event
+     * @returns void
+     * @memberof DotExperimentsListComponent
+     */
     selectedStatusFilter($event: Array<string>) {
         this.dotExperimentsListStore.setFilterStatus($event);
     }
 
     /**
-     * Add experiment
+     * Add new experiment
      * @param experiment
+     * @returns void
+     * @memberof DotExperimentsListComponent
      */
     addNewExperiment() {
         // To implement
     }
 
     /**
-     * Archive selected experiment
-     * @param experiment
+     * Archive experiment
+     * @param {DotExperiment} experiment
+     * @returns void
+     * @memberof DotExperimentsListComponent
      */
     archiveExperiment(experiment: DotExperiment) {
         this.dotExperimentsListStore.archiveExperiment(experiment);
     }
 
     /**
-     * Delete selected experiment
-     * @param experiment
+     * Delete experiment
+     * @param {DotExperiment} experiment
+     * @returns void
+     * @memberof DotExperimentsListComponent
      */
     deleteExperiment(experiment: DotExperiment) {
         this.dotExperimentsListStore.deleteExperiment(experiment);

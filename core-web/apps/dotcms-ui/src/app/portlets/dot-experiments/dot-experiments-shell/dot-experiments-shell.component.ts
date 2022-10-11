@@ -35,6 +35,8 @@ export class DotExperimentsShellComponent implements OnInit {
 
     /**
      * Back to Edit Page / Content
+     * @returns void
+     * @memberof DotExperimentsShellComponent
      */
     goBack() {
         this.router.navigate(['edit-page/content'], { queryParamsHandling: 'preserve' });
