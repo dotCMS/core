@@ -59,6 +59,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ESContent } from '@dotcms/app/shared/models/dot-es-content/dot-es-content.model';
 import { DotPageRender } from '@dotcms/app/shared/models/dot-page/dot-rendered-page.model';
 import { mockDotRenderedPage } from '@dotcms/app/test/dot-page-render.mock';
+import { DotPropertiesService } from '@dotcms/app/api/services/dot-properties/dot-properties.service';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -171,7 +172,8 @@ describe('DotEditPageToolbarComponent', () => {
                 UserModel,
                 DotIframeService,
                 DialogService,
-                DotESContentService
+                DotESContentService,
+                DotPropertiesService
             ]
         });
     });
