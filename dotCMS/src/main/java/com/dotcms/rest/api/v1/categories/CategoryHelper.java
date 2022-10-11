@@ -68,9 +68,8 @@ public class CategoryHelper {
             throws IOException, Exception {
 
         for (final CategoryDTO categoryDTO : CategoryImporter.from(bufferedReader)) {
-            addOrUpdateCategory(user, true, contextInode, categoryDTO.getInode(),
-                    categoryDTO.getCategoryName(),
-                    categoryDTO.getCategoryVelocityVarName(), null, categoryDTO.getSortOrder(),
+            addOrUpdateCategory(user, true, contextInode, categoryDTO.getCategoryName(),
+                    categoryDTO.getCategoryVelocityVarName(), categoryDTO.getKey(), null, categoryDTO.getSortOrder(),
                     merge);
         }
     }
