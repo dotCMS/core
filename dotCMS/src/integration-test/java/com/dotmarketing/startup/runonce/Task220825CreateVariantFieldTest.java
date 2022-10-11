@@ -173,7 +173,7 @@ public class Task220825CreateVariantFieldTest {
                 dotConnect.executeStatement(
                         "ALTER TABLE contentlet_version_info DROP COLUMN variant_id");
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                //ignore
             }
         }
     }
@@ -187,19 +187,19 @@ public class Task220825CreateVariantFieldTest {
         }
     }
 
-    private void cleanAnyConstraint() throws SQLException {
+    private void cleanAnyConstraint()  {
         final DotConnect dotConnect = new DotConnect();
 
         final Optional<String> constraintName = DbConnectionFactory.isPostgres() ?
                 Optional.of("contentlet_version_info_pkey") : getMSSQLPrimaryKeyName();
 
-        if (constraintName.isPresent()) {
-            dotConnect.executeStatement(
-                    String.format("ALTER TABLE contentlet_version_info "
-                            + "DROP CONSTRAINT %s", constraintName.get()));
-        }
-
         try {
+            if (constraintName.isPresent()) {
+                dotConnect.executeStatement(
+                        String.format("ALTER TABLE contentlet_version_info "
+                                + "DROP CONSTRAINT %s", constraintName.get()));
+            }
+
             if (DbConnectionFactory.isMsSql()) {
                 final ArrayList<Map> loadResults = dotConnect.setSQL("SELECT name "
                                 + "FROM sysobjects so JOIN sysconstraints sc ON so.id = sc.constid "
@@ -215,7 +215,7 @@ public class Task220825CreateVariantFieldTest {
                 }
             }
         } catch (Exception e) {
-            //throw new RuntimeException(e);
+            //ignore
         }
     }
 
