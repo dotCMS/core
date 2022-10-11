@@ -859,6 +859,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	private void triggerModifiedEvent(ContentletCheckinEvent event, FileListener fileListener, Predicate<FileAsset> fileAssetFilter) {
 
 		try {
+
 			final Contentlet contentletEvent = event.getContentlet();
 			if (null != contentletEvent && isFileAsset(contentletEvent)) {
 

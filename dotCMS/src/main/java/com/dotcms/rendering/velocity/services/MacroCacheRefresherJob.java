@@ -4,6 +4,8 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.fileassets.business.FileEvent;
+import com.dotmarketing.portlets.fileassets.business.FileListener;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -28,7 +30,7 @@ import java.util.List;
  * 2) find (content search) and read any file whose name is dot_velocity_macros.vtl and read those in
  * @author jsanca
  */
-public class MacroCacheRefresherJob implements Runnable {
+public class MacroCacheRefresherJob implements Runnable, FileListener {
 
     private static final int VELOCITY_MACRO_CACHE_REFRESH_QUERY_CONTENTLETS_LIMIT = Config.getIntProperty("VELOCITY_MACRO_CACHE_REFRESH_QUERY_CONTENTLETS_LIMIT",100000);
     private final static String VELOCITY_MACRO_CACHE_REFRESH_QUERY = Config.getStringProperty("VELOCITY_MACRO_CACHE_REFRESH_QUERY",
@@ -80,17 +82,27 @@ public class MacroCacheRefresherJob implements Runnable {
                 for (final Contentlet contentlet: contentletToProcess) {
 
                     final FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
-                    try (InputStream in = fileAsset.getInputStream()) {
-
-                        final String velocityCode = IOUtils.toString(in, Charset.defaultCharset());
-                        VelocityUtil.getInstance().parseVelocity(velocityCode, com.dotmarketing.util.VelocityUtil.getBasicContext());
-                    } catch (IOException e) {
-
-                        Logger.error(this, e.getMessage());
-                        Logger.debug(this, e.getMessage(), e);
-                    }
+                    this.refreshFileAsset(fileAsset);
                 }
             }
         }
     } // refreshDotVelocityMacros.
+
+    public void refreshFileAsset (final FileAsset fileAsset) {
+
+        try (InputStream in = fileAsset.getInputStream()) {
+
+            final String velocityCode = IOUtils.toString(in, Charset.defaultCharset());
+            VelocityUtil.getInstance().parseVelocity(velocityCode, com.dotmarketing.util.VelocityUtil.getBasicContext());
+        } catch (IOException e) {
+
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void fileModify(final FileEvent fileEvent) {
+        this.refreshFileAsset(fileEvent.getFileAsset());
+    }
 }
