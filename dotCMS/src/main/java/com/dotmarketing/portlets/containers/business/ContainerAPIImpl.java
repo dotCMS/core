@@ -10,6 +10,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.TemplateLoader;
+import com.dotcms.rest.api.v1.container.ContainerForm;
 import com.dotcms.system.event.local.model.Subscriber;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.transform.TransformerLocator;
@@ -700,7 +701,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 	@WrapInTransaction
 	@Override
 	@SuppressWarnings("unchecked")
-	public Container save(Container container, List<ContainerStructure> containerStructureList, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+	public Container save(final Container container,final List<ContainerStructure> containerStructureList,final Host host,final User user,final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		if (Container.SYSTEM_CONTAINER.equals(container.getIdentifier())) {
 			Logger.debug(this, "System Container cannot be saved/updated.");
 			throw new IllegalArgumentException("System Container and its associated data cannot be saved.");
@@ -778,6 +779,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 			       APILocator.getIdentifierAPI().createNew(container, host);
 			container.setIdentifier(ident.getId());
 		}
+
 		if(existingInode){
             save(container, container.getInode());
 		}
