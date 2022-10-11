@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.taillog;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
+import javax.ws.rs.QueryParam;
 import org.apache.commons.io.input.TailerListenerAdapter;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.WebResource;
@@ -36,26 +37,26 @@ import org.glassfish.jersey.server.JSONP;
  * This resource provides the endpoint used by the LogViewer functionality to display backend server logs
  * @author nollymarlonga
  */
-@Path("/v1/tailLog")
+@Path("/v1/logs")
 @Tag(name = "TailLog")
 public class TailLogResource {
 
-    private static final int LINES_PER_PAGE = 10;
+    public static final int LINES_PER_PAGE = Config.getIntProperty("TAIL_LOG_LINES_PER_PAGE",10);
 
 
     @GET
-    @Path("/{fileName}")
+    @Path("/{fileName}/_tail")
     @JSONP
     @NoCache
     @Produces(SseFeature.SERVER_SENT_EVENTS)
     public final EventOutput getLogs(@Context final HttpServletRequest request,
-            @PathParam("fileName") final String fileName, @PathParam("linesBack") final int linesBack) throws IOException {
+            @PathParam("fileName") final String fileName, @QueryParam("linesBack") final int linesBack) throws IOException {
 
         new WebResource().init(null, request, new EmptyHttpResponse(), true, null);
 
 
         if(fileName.trim().isEmpty()) {
-            return sendError("File should not be empty");
+            return sendError("Empty File name param");
         }
 
 
@@ -85,25 +86,26 @@ public class TailLogResource {
 
 
         if(!Pattern.compile(regex).matcher(sanitizedFileName).matches()){
-            sendError("Error ");
+            return sendError("File name does not match a valid file pattern. ");
         }
 
         final MyTailerListener listener = new MyTailerListener();
 
 
-        final MyTailerThread thread = new MyTailerThread(logFile, listener, new EventOutput(), linesBack);
+        final MyTailerThread thread = new MyTailerThread(logFile, listener, new EventOutput(),
+                linesBack);
 
         String name = null;
 
         //Finds a new thread to read the log
         for (int i = 0; i < 1000; i++) {
-            name = "LogTailer" + i + ":" + sanitizedFileName;
+            name = "Log-Tailer" + i + ":" + sanitizedFileName;
             Thread t = ThreadUtils.getThread(name);
             if (t == null) {
                 break;
             }
             if (i > 100) {
-                sendError("Too many Logger threads");
+               return sendError("Too many Logger threads");
             }
         }
 
@@ -133,12 +135,12 @@ public class TailLogResource {
     }
 
 
-    class MyTailerListener extends TailerListenerAdapter {
+    static class MyTailerListener extends TailerListenerAdapter {
 
         StringBuffer out = new StringBuffer();
 
         public void handle(String line) {
-            getOut().append(UtilMethods.xmlEscape(line) + "<br/>");
+            getOut().append(UtilMethods.xmlEscape(line)).append("<br/>");
         }
 
         StringBuffer getOut() {
@@ -158,7 +160,7 @@ public class TailLogResource {
 
     }
 
-    class MyTailerThread extends Thread {
+    static class MyTailerThread extends Thread {
 
         Tailer tailer;
         EventOutput eventOutput;

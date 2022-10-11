@@ -161,15 +161,15 @@
     };
 
     function reloadTail(){
-    		var fileName = dijit.byId("fileName").getValue();
+    		const fileName = dijit.byId("fileName").getValue();
 
             if(fileName) {
-                var url = '/api/v1/tailLog/' + fileName;
-                var source = new SSE(url, null);
+                const url = '/api/v1/logs/' + fileName + '/_tail';
+                console.log(url);
+                const source = new SSE(url, null);
 
                 attachLogIframeEvents(source);
 
-                //disableFollowOnScrollUp();
                 dijit.byId("downloadLog").attr("disabled", false);
                 source.stream();
             } else {
@@ -190,7 +190,7 @@
 
     const MIN_KEYWORD_LENGTH = 2;
 
-    const PAGE_SIZE = <%=TailLogResource.LINES_PER_PAGE%>;
+    const PAGE_SIZE = <%=Config.getIntProperty("TAIL_LOG_LINES_PER_PAGE",10)%>;
 
     const MAX_VISITED_PAGES = PAGE_SIZE * 10 * 4;
 

@@ -33,9 +33,9 @@ public class TailLogResourceTest {
     public void testTailLogResource() throws IOException, InterruptedException {
         final File file = File.createTempFile("tailLog", ".txt");
         final TailLogResource resource = new TailLogResource();
-        final MyTailerListener listener = resource.new MyTailerListener();
+        final MyTailerListener listener = new MyTailerListener();
         final EventOutput eventOutput = new TailerTestEventOutput();
-        final MyTailerThread tailerThread = resource.new MyTailerThread(file, listener, eventOutput, 300);
+        final MyTailerThread tailerThread = new MyTailerThread(file, listener, eventOutput, 300);
         tailerThread.start();
         try {
             //Give some time to the tailerThread to read the file
@@ -60,7 +60,7 @@ public class TailLogResourceTest {
         }
     }
 
-    class TailerTestEventOutput extends EventOutput{
+    static class TailerTestEventOutput extends EventOutput{
 
         private Object testOutputData;
         private String testOutputName;
