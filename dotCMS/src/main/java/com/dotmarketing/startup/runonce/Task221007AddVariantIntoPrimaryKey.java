@@ -1,7 +1,5 @@
 package com.dotmarketing.startup.runonce;
 
-import static io.vavr.API.Map;
-
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
