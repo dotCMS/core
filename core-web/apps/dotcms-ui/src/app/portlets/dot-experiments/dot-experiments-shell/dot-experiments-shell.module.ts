@@ -9,7 +9,7 @@ import { DotExperimentsShellRoutingModule } from '@portlets/dot-experiments/dot-
 import { DotExperimentsListModule } from '@portlets/dot-experiments/dot-experiments-list/dot-experiments-list.module';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
-import { ComponentStore } from '@ngrx/component-store';
+import { DotExperimentsShellStore } from './store/dot-experiments-shell-store.service';
 
 @NgModule({
     declarations: [DotExperimentsShellComponent],
@@ -25,6 +25,6 @@ import { ComponentStore } from '@ngrx/component-store';
         // PrimeNg
         ToastModule
     ],
-    providers: [ComponentStore, MessageService]
+    providers: [DotExperimentsShellStore, MessageService]
 })
 export class DotExperimentsShellModule {}

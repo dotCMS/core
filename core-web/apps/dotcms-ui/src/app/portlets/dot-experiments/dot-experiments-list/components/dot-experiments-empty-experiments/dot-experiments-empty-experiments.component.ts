@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 
 // TODO: make more generic
-
 @Component({
     selector: 'dot-experiments-empty-experiments',
     templateUrl: './dot-experiments-empty-experiments.component.html',
