@@ -585,11 +585,11 @@ import org.junit.runners.Suite.SuiteClasses;
         Task220825MakeSomeSystemFieldsRemovableTest.class,
         Task220829CreateExperimentsTableTest.class,
         StoryBlockTest.class,
+        Task221007AddVariantIntoPrimaryKeyTest.class,
         IdentifierCacheImplTest.class,
         VariantCacheTest.class,
         VersionableFactoryImplTest.class,
         Task220928AddLookbackWindowColumnToExperimentTest.class,
-        Task221007AddVariantIntoPrimaryKeyTest.class,
         BayesianAPIImplTest.class
 })
 public class MainSuite {
