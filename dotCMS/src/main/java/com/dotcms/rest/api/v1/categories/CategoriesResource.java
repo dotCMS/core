@@ -12,6 +12,7 @@ import com.dotcms.rest.api.FailedResultView;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.util.CloseUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.CategoriesPaginator;
@@ -622,8 +623,8 @@ public class CategoriesResource {
         List<Category> unableToDeleteCats = null;
         final List<FailedResultView> failedToDelete = new ArrayList<>();
 
-        BufferedReader br = null;
-        StringReader sr = null;
+        StringReader stringReader = null;
+        BufferedReader bufferedReader = null;
 
         try {
             final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true,
@@ -639,8 +640,8 @@ public class CategoriesResource {
 
             String content = getContentFromFile(uploadedFile.getPath());
 
-            sr = new StringReader(content);
-            br = new BufferedReader(sr);
+            stringReader = new StringReader(content);
+            bufferedReader = new BufferedReader(stringReader);
 
             if (exportType.equals("replace")) {
                 Logger.debug(this, () -> "Replacing categories");
@@ -663,17 +664,16 @@ public class CategoriesResource {
                     Logger.debug(this, () -> "Deleted all the categories");
                 }
 
-                this.categoryHelper.addOrUpdateCategory(user, contextInode, br, false);
+                this.categoryHelper.addOrUpdateCategory(user, contextInode, bufferedReader, false);
             } else if (exportType.equals("merge")) {
                 Logger.debug(this, () -> "Merging categories");
-                this.categoryHelper.addOrUpdateCategory(user, contextInode, br, true);
+                this.categoryHelper.addOrUpdateCategory(user, contextInode, bufferedReader, true);
             }
 
         } catch (Exception e) {
             Logger.error(this, "Error importing categories", e);
         } finally {
-            sr.close();
-            br.close();
+            CloseUtils.closeQuietly(stringReader, bufferedReader);
         }
 
         return Response.ok(new ResponseEntityView(

@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.categories;
 
 import com.dotcms.repackage.com.csvreader.CsvReader;
+import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -93,65 +94,64 @@ public class CategoryHelper {
         }
     }
 
-    private Integer addOrUpdateCategory(final User user, final Boolean isSave, final String inode, final String name, final String var, final String key, final String keywords, final String sort, final boolean isMerge)
+    private void addOrUpdateCategory(final User user, final Boolean isSave, final String inode, final String name, final String var, final String key, final String keywords, final String sort, final boolean isMerge)
             throws Exception {
 
         Category parent = null;
-        Category cat = new Category();
-        cat.setCategoryName(name);
-        cat.setKey(key);
-        cat.setCategoryVelocityVarName(var);
-        cat.setSortOrder(sort);
-        cat.setKeywords(keywords);
+        Category category = new Category();
+        category.setCategoryName(name);
+        category.setKey(key);
+        category.setCategoryVelocityVarName(var);
+        category.setSortOrder(sort);
+        category.setKeywords(keywords);
 
         if(UtilMethods.isSet(inode)){
             if(!isSave){//edit
-                cat.setInode(inode);
-                final Category finalCat = cat;//this is to be able to use the try.of
+                category.setInode(inode);
+                final Category finalCat = category;//this is to be able to use the try.of
                 parent = Try.of(()->categoryAPI.getParents(finalCat,user,false).get(0)).getOrNull();
             }else{//save
                 parent = categoryAPI.find(inode, user, false);
             }
         }
 
-        setVelocityVarName(cat, var, name);
+        setVelocityVarName(category, var, name);
 
         if(isMerge) { // add/edit
 
             if(isSave) { // Importing
                 if(UtilMethods.isSet(key)) {
-                    cat = categoryAPI.findByKey(key, user, false);
-                    if(cat==null) {
-                        cat = new Category();
-                        cat.setKey(key);
+                    category = categoryAPI.findByKey(key, user, false);
+                    if(category==null) {
+                        category = new Category();
+                        category.setKey(key);
                     }
 
-                    cat.setCategoryName(name);
-                    setVelocityVarName(cat, var, name);
-                    cat.setSortOrder(sort);
+                    category.setCategoryName(name);
+                    setVelocityVarName(category, var, name);
+                    category.setSortOrder(sort);
                 }
             } else { // Editing
-                cat = categoryAPI.find(inode, user, false);
-                cat.setCategoryName(name);
-                setVelocityVarName(cat, var, name);
-                cat.setKeywords(keywords);
-                cat.setKey(key);
+                category = categoryAPI.find(inode, user, false);
+                category.setCategoryName(name);
+                setVelocityVarName(category, var, name);
+                category.setKeywords(keywords);
+                category.setKey(key);
             }
 
         } else { // replace
-            cat.setCategoryName(name);
-            setVelocityVarName(cat, var, name);
-            cat.setSortOrder(sort);
-            cat.setKey(key);
+            category.setCategoryName(name);
+            setVelocityVarName(category, var, name);
+            category.setSortOrder(sort);
+            category.setKey(key);
         }
 
         try {
-            categoryAPI.save(parent, cat, user, false);
+            categoryAPI.save(parent, category, user, false);
         } catch (DotSecurityException e) {
-            return 1;
+            Logger.error(this,
+                    "Error trying to save/update the category " + category.getInode(), e);
         }
-
-        return 0;
     }
 
     private void setVelocityVarName(Category cat, String catvelvar, String catName) throws DotDataException, DotSecurityException {
