@@ -17,7 +17,11 @@ public class Task221007AddVariantIntoPrimaryKey extends AbstractJDBCStartupTask 
 
     @Override
     public boolean forceRun() {
-        return getPrimaryKeysFields().size() == 2;
+        final List<String> primaryKeysFields = getPrimaryKeysFields();
+        return primaryKeysFields.size() != 3 ||
+                (!primaryKeysFields.contains("identifier") ||
+                !primaryKeysFields.contains("variant_id") ||
+                !primaryKeysFields.contains("lang"));
     }
 
     public String getPostgresScript() {
