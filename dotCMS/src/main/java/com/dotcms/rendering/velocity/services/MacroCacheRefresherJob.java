@@ -59,7 +59,7 @@ public class MacroCacheRefresherJob implements Runnable {
                 runtimeServices.getTemplate(systemVelocityMacro);
             }
         }
-    }
+    } // refreshSystemMacros.
 
     public void refreshDotVelocityMacros() {
 
@@ -92,5 +92,5 @@ public class MacroCacheRefresherJob implements Runnable {
                 }
             }
         }
-    }
+    } // refreshDotVelocityMacros.
 }
