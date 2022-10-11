@@ -66,6 +66,7 @@ public class CategoryEditForm extends Validated {
     }
 
     public static final class Builder {
+
         @JsonProperty
         private String filter;
         @JsonProperty
@@ -108,7 +109,7 @@ public class CategoryEditForm extends Validated {
             return this;
         }
 
-        public Builder orderBy(final String orderBy){
+        public Builder orderBy(final String orderBy) {
             this.orderBy = orderBy;
             return this;
         }

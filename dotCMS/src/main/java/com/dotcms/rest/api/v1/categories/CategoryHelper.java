@@ -1,7 +1,5 @@
 package com.dotcms.rest.api.v1.categories;
 
-import com.dotcms.repackage.com.csvreader.CsvReader;
-import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -65,36 +63,21 @@ public class CategoryHelper {
                 .build();
     }
 
-    public void addOrUpdateCategory(final User user, final String contextInode,final BufferedReader br,final Boolean merge) throws IOException, Exception {
+    public void addOrUpdateCategory(final User user, final String contextInode,
+            final BufferedReader bufferedReader, final Boolean merge)
+            throws IOException, Exception {
 
-        CsvReader csvreader = null;
-        try{
-            csvreader = new CsvReader(br);
-            csvreader.setSafetySwitch(false);
-            csvreader.readHeaders();
-            String[] csvLine;
-
-            while (csvreader.readRecord()) {
-                csvLine = csvreader.getValues();
-                try {
-                    addOrUpdateCategory(user, true, contextInode, csvLine[0], csvLine[2],
-                            csvLine[1], null, csvLine[3], merge);
-
-                } catch (Exception e) {
-                    Logger.error(this,
-                            "Error trying to save/update the categories csv row: name=" + csvLine[0]
-                                    + ", variable=" + csvLine[2] + ", key=" + csvLine[1] + ", sort="
-                                    + csvLine[3], e);
-                }
-            }
-        }
-        finally {
-            csvreader.close();
-            br.close();
+        for (final CategoryDTO categoryDTO : CategoryImporter.from(bufferedReader)) {
+            addOrUpdateCategory(user, true, contextInode, categoryDTO.getInode(),
+                    categoryDTO.getCategoryName(),
+                    categoryDTO.getCategoryVelocityVarName(), null, categoryDTO.getSortOrder(),
+                    merge);
         }
     }
 
-    private void addOrUpdateCategory(final User user, final Boolean isSave, final String inode, final String name, final String var, final String key, final String keywords, final String sort, final boolean isMerge)
+    private void addOrUpdateCategory(final User user, final Boolean isSave, final String inode,
+            final String name, final String var, final String key, final String keywords,
+            final String sort, final boolean isMerge)
             throws Exception {
 
         Category parent = null;
@@ -105,24 +88,25 @@ public class CategoryHelper {
         category.setSortOrder(sort);
         category.setKeywords(keywords);
 
-        if(UtilMethods.isSet(inode)){
-            if(!isSave){//edit
+        if (UtilMethods.isSet(inode)) {
+            if (!isSave) {//edit
                 category.setInode(inode);
                 final Category finalCat = category;//this is to be able to use the try.of
-                parent = Try.of(()->categoryAPI.getParents(finalCat,user,false).get(0)).getOrNull();
-            }else{//save
+                parent = Try.of(() -> categoryAPI.getParents(finalCat, user, false).get(0))
+                        .getOrNull();
+            } else {//save
                 parent = categoryAPI.find(inode, user, false);
             }
         }
 
         setVelocityVarName(category, var, name);
 
-        if(isMerge) { // add/edit
+        if (isMerge) { // add/edit
 
-            if(isSave) { // Importing
-                if(UtilMethods.isSet(key)) {
+            if (isSave) { // Importing
+                if (UtilMethods.isSet(key)) {
                     category = categoryAPI.findByKey(key, user, false);
-                    if(category==null) {
+                    if (category == null) {
                         category = new Category();
                         category.setKey(key);
                     }
@@ -154,15 +138,16 @@ public class CategoryHelper {
         }
     }
 
-    private void setVelocityVarName(Category cat, String catvelvar, String catName) throws DotDataException, DotSecurityException {
-        Boolean Proceed=false;
-        if(!UtilMethods.isSet(catvelvar)){
-            catvelvar= StringUtils.camelCaseLower(catName);
-            Proceed=true;
+    private void setVelocityVarName(Category cat, String catvelvar, String catName)
+            throws DotDataException, DotSecurityException {
+        Boolean Proceed = false;
+        if (!UtilMethods.isSet(catvelvar)) {
+            catvelvar = StringUtils.camelCaseLower(catName);
+            Proceed = true;
         }
-        if(!InodeUtils.isSet(cat.getInode())|| Proceed){
-            if(VelocityUtil.isNotAllowedVelocityVariableName(catvelvar)){
-                catvelvar= catvelvar + "Field";
+        if (!InodeUtils.isSet(cat.getInode()) || Proceed) {
+            if (VelocityUtil.isNotAllowedVelocityVariableName(catvelvar)) {
+                catvelvar = catvelvar + "Field";
             }
             catvelvar = categoryAPI.suggestVelocityVarName(catvelvar);
             cat.setCategoryVelocityVarName(catvelvar);

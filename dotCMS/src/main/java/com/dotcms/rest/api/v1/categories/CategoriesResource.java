@@ -593,8 +593,8 @@ public class CategoriesResource {
             @FormDataParam("exportType") String exportType,
             @FormDataParam("contextInode") String contextInode) throws IOException {
 
-
-        return processImport(httpRequest, httpResponse, uploadedFile, multiPart, fileDetail, filter, exportType, contextInode);
+        return processImport(httpRequest, httpResponse, uploadedFile, multiPart, fileDetail, filter,
+                exportType, contextInode);
 
     }
 
