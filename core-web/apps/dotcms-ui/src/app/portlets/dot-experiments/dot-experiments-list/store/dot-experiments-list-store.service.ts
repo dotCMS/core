@@ -43,8 +43,11 @@ export interface VmListExperiments {
 export class DotExperimentsListStore extends ComponentStore<DotExperimentsState> {
     // Selectors
     readonly getStatus$ = this.select((state) => state.status);
+
     readonly getExperiments$ = this.select((state) => state.experiments);
+
     readonly getFilterStatusList$ = this.select((state) => state.filterStatus);
+
     readonly getExperimentsFilteredAndGroupedByStatus$ = this.select(
         ({ experiments, filterStatus }) =>
             experiments
@@ -56,6 +59,7 @@ export class DotExperimentsListStore extends ComponentStore<DotExperimentsState>
                     return group;
                 }, <GroupedExperimentByStatus>{})
     );
+
     readonly isLoading$: Observable<boolean> = this.select(
         (state) => state.status === LoadingState.LOADING || state.status === LoadingState.INIT
     );
@@ -65,23 +69,28 @@ export class DotExperimentsListStore extends ComponentStore<DotExperimentsState>
         ...state,
         status: LoadingState.INIT
     }));
+
     readonly setComponentStatus = this.updater((state, status: LoadingState) => ({
         ...state,
         status
     }));
+
     readonly setExperiments = this.updater((state, experiments: DotExperiment[]) => ({
         ...state,
         status: LoadingState.LOADED,
         experiments
     }));
+
     readonly setFilterStatus = this.updater((state, filterStatus: Array<string>) => ({
         ...state,
         filterStatus
     }));
+
     readonly deleteExperimentById = this.updater((state, experimentId: string) => ({
         ...state,
         experiments: state.experiments.filter((exp) => exp.id != experimentId)
     }));
+
     readonly archiveExperimentById = this.updater((state, experimentId: string) => ({
         ...state,
         experiments: state.experiments.map((exp) =>
@@ -135,6 +144,7 @@ export class DotExperimentsListStore extends ComponentStore<DotExperimentsState>
             )
         );
     });
+
     readonly archiveExperiment = this.effect((experiment$: Observable<DotExperiment>) => {
         return experiment$.pipe(
             tap(() => this.setComponentStatus(LoadingState.LOADING)),
