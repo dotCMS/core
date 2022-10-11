@@ -1,6 +1,11 @@
 #set($contentlet = $dotcontent.find($!{ContentIdentifier}))
 
-<h1>$!{contentlet.title}</h1>
+## Remove the file extension from the title
+#set($contentletTitle = $contentlet.title)
+#set($dot = $contentletTitle.lastIndexOf('.'))
+#set($title = $contentletTitle.substring(0, $dot))
+
+<h1>$!{title}</h1>
 
 #if (
     $UtilMethods.isImage("$contentlet.fileName") ||
