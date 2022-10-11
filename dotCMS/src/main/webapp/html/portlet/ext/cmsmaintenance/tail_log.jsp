@@ -1,4 +1,5 @@
 <%@page import="java.io.File"%>
+<%@ page import="com.dotcms.rest.api.v1.taillog.TailLogResource" %>
 <script type="text/javascript" src="/html/js/sse.js"></script>
 
 <style>
@@ -189,9 +190,9 @@
 
     const MIN_KEYWORD_LENGTH = 2;
 
-    const PAGE_SIZE = 10;
+    const PAGE_SIZE = <%=TailLogResource.LINES_PER_PAGE%>;
 
-    const MAX_VISITED_PAGES = PAGE_SIZE * 10;
+    const MAX_VISITED_PAGES = PAGE_SIZE * 10 * 4;
 
     /**
      *
@@ -209,6 +210,8 @@
         let following = true;
 
         let keyword = null;
+
+        let filterMatchFound = false;
 
         let matchLinesOnlyView = false;
 
@@ -381,6 +384,7 @@
             _removeHighlight();
             if (_isFiltering()) {
                 dest.innerHTML = _applyHighlight(dest.innerHTML);
+                filterMatchFound = (dest.querySelector(".highlightKeywordMatchLogViewer") != null);
             }
         }
 
@@ -401,6 +405,7 @@
          * @private
          */
         function _removeHighlight() {
+            filterMatchFound = false;
             dest.querySelectorAll(".highlightKeywordMatchLogViewer").forEach(
                 el => el.replaceWith(...el.childNodes));
         }
@@ -448,9 +453,11 @@
                 //These means pages not loaded into the view that are in the iframe before the first line shown in the div
                 //These must go before the ones we just loaded
 
+                let maxVisitedPages = MAX_VISITED_PAGES;
+
                 let priorLinesBuffer = [];
                 let pageId = firstPageId - 1;
-                for(let i=PAGE_SIZE; i < MAX_VISITED_PAGES; i+= PAGE_SIZE) {
+                for(let i=PAGE_SIZE; i <= maxVisitedPages; i+= PAGE_SIZE) {
                     let lines = _fetchPriorLinesOnly(pageId);
                     if(lines.buffer && lines.buffer.length > 0) {
                         priorLinesBuffer = priorLinesBuffer.concat(lines.buffer);
@@ -459,7 +466,17 @@
                         break;
                     }
 
+                    //This is an edge case on which we show a dialog  that allows breaking long search that hasn't returned any matches.
+                    if( i === maxVisitedPages && lines.buffer.length === 0){
+                        const keepLooking = confirm(`No matches have been found so far across ${i} prior pages. You want to continue looking?`);
+                        if(true === keepLooking){
+                           maxVisitedPages = maxVisitedPages * 2;
+                        } else
+                            break;
+                    }
+
                     pageId -= PAGE_SIZE;
+
                 }
 
 
@@ -475,16 +492,28 @@
 
                 //Grab Pages after the current last line
                 //These means pages not loaded into the view that are in the iframe after the last line currently shown in the div
+
+                maxVisitedPages = MAX_VISITED_PAGES;
+
                 pageId = lastPageId + 1;
                 let nextLinesBuffer = [];
 
-                for(let i=PAGE_SIZE; i < MAX_VISITED_PAGES; i += PAGE_SIZE) {
+                for(let i=PAGE_SIZE; i <= maxVisitedPages; i += PAGE_SIZE) {
                     let lines = _fetchNextLinesOnly(pageId);
                     if(lines.buffer && lines.buffer.length > 0) {
                         nextLinesBuffer = nextLinesBuffer.concat(lines.buffer);
                     }
                     if(lines.hasMorePages === false){
                         break;
+                    }
+
+                    //This is an edge case on which we show a dialog  that allows breaking long search that hasn't returned any matches.
+                    if( i === maxVisitedPages && lines.buffer.length === 0){
+                        const keepLooking = confirm(`No matches have been found so far across ${i} of the most recent pages. You want to continue looking?`);
+                        if(true === keepLooking){
+                            maxVisitedPages = maxVisitedPages * 2;
+                        } else
+                            break;
                     }
 
                     pageId += PAGE_SIZE;
@@ -642,7 +671,7 @@
                 updatingView = true;
                 try {
                     keyword = value;
-                    if (showMatchingLinesOnly) {
+                    if (showMatchingLinesOnly && filterMatchFound) {
                         _matchingLinesOnlyView();
                     } else {
                         if (true === matchLinesOnlyView && null == keyword) {
@@ -670,7 +699,7 @@
             },
 
             fetchNextPage: () => {
-                
+
                 if (updatingView) {
                     return;
                 }
