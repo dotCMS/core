@@ -1,5 +1,7 @@
 #set($contentlet = $dotcontent.find($!{ContentIdentifier}))
 
+<h1>$!{contentlet.title}</h1>
+
 #if (
     $UtilMethods.isImage("$contentlet.fileName") ||
     $UtilMethods.isImage("$contentlet.asset") ||
@@ -7,6 +9,4 @@
     $UtilMethods.isImage("$contentlet.image")
 )
     <img src="/dA/$!{contentlet.inode}" />
-#else
-    <h1>$!{contentlet.title}</h1>
 #end
