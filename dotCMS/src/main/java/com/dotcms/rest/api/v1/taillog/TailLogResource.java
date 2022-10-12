@@ -154,7 +154,7 @@ public class TailLogResource {
             return out;
         }
 
-        String getAndFlush() {
+        String getThenDispose() {
             synchronized (this) {
                 try {
                     return out.toString();
@@ -182,7 +182,7 @@ public class TailLogResource {
                 int count = 1;
                 int pageNumber = 1;
                 while (!eventOutput.isClosed()) {
-                    final String write = listener.getAndFlush();
+                    final String write = listener.getThenDispose();
                     if (write.length() > 0) {
                         final String prepWrite = String.format(
                                 "<p class=\"log page%d\" data-page=\"%d\" data-logNumber=\"%d\" style=\"margin:0\">%s</p>",
@@ -206,7 +206,6 @@ public class TailLogResource {
                 }
             } catch (Exception ex) {
                 Logger.warn(this.getClass(), String.format(" Thread [%s] has stopped listening log events for file [%s] with reason [%s] ", getName(), fileName, ex.getMessage()));
-                Logger.error(this.getClass(),ex);
             } finally {
                 stopTailer();
                 CloseUtils.closeQuietly(eventOutput);
