@@ -160,13 +160,21 @@
 
     };
 
+    let source = null;
+
     function reloadTail(){
+
     		const fileName = dijit.byId("fileName").getValue();
 
             if(fileName) {
                 const url = '/api/v1/logs/' + fileName + '/_tail';
                 console.log(url);
-                const source = new SSE(url, null);
+
+                closeSource(source);
+
+                console.log('Opening new connection to '+url);
+
+                source = new SSE(url, null);
 
                 attachLogIframeEvents(source);
 
@@ -174,12 +182,24 @@
                 source.stream();
             } else {
                 dijit.byId("downloadLog").attr("disabled", true);
+                closeSource(source);
             }
 
             // Reset values from Log Viewer container and input filter value
             document.querySelector('.logViewerPrinted').innerHTML = '';
             document.querySelector('#keywordLogFilterInput').value = '';
     	}
+
+    function closeSource(source){
+        if(null != source){
+            try{
+                source.close();
+                console.log('Prior Connection Successfully closed.');
+            }catch (e){
+                console.log(e);
+            }
+        }
+    }
 
     /**********************/
     /* Log Viewer - BEGIN */
@@ -776,16 +796,14 @@
     }
 
     function attachLogIframeEvents(sseSource) {
-        if(logViewManager){
-            console.warn("logView is already initialized.");
-            return;
-        }
 
         const followCheck = document.getElementById('scrollMe');
         const keywordInput = document.querySelector('#keywordLogFilterInput');
         const dataLogSourceElem = document.getElementById('tailingFrame');
         const logView = document.querySelector('.logViewerPrinted');
         const iDoc = dataLogSourceElem.contentWindow || dataLogSourceElem.contentDocument;
+
+        iDoc.document.body.innerHTML = '';
 
         logViewManager = LogViewManager({src:iDoc,dest:logView});
 
@@ -804,6 +822,7 @@
 
         sseSource.addEventListener('failure', function(e) {
             // process error
+            console.error(e);
         });
 
         logView.addEventListener("scroll", scrollHandler);

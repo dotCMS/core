@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.taillog;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
+import com.dotcms.rest.InitDataObject;
 import javax.ws.rs.QueryParam;
 import org.apache.commons.io.input.TailerListenerAdapter;
 import com.dotcms.rest.EmptyHttpResponse;
@@ -52,8 +53,13 @@ public class TailLogResource {
     public final EventOutput getLogs(@Context final HttpServletRequest request,
             @PathParam("fileName") final String fileName, @QueryParam("linesBack") final int linesBack) throws IOException {
 
-        new WebResource().init(null, request, new EmptyHttpResponse(), true, null);
-
+        final InitDataObject initData =
+                new WebResource.InitBuilder(new WebResource())
+                        .requiredBackendUser(true)
+                        .requiredFrontendUser(false)
+                        .requestAndResponse(request, new EmptyHttpResponse())
+                        .rejectWhenNoUser(true)
+                        .init();
 
         if(fileName.trim().isEmpty()) {
             return sendError("Empty File name param");
@@ -102,6 +108,7 @@ public class TailLogResource {
             name = "Log-Tailer" + i + ":" + sanitizedFileName;
             Thread t = ThreadUtils.getThread(name);
             if (t == null) {
+                Logger.warn(TailLogResource.class," TailLog Thread available with name: " +name);
                 break;
             }
             if (i > 100) {
@@ -144,17 +151,16 @@ public class TailLogResource {
         }
 
         StringBuffer getOut() {
-            return getOut(false);
+            return out;
         }
 
-        StringBuffer getOut(boolean refresh) {
+        String getAndFlush() {
             synchronized (this) {
-                if (refresh) {
-                    StringBuffer s = new StringBuffer().append(out.toString());
-                    this.out = new StringBuffer();
-                    return s;
+                try {
+                    return out.toString();
+                } finally {
+                    out.delete(0, out.length());
                 }
-                return out;
             }
         }
 
@@ -162,10 +168,10 @@ public class TailLogResource {
 
     static class MyTailerThread extends Thread {
 
-        Tailer tailer;
-        EventOutput eventOutput;
-        MyTailerListener listener;
-        String fileName;
+        final Tailer tailer;
+        final EventOutput eventOutput;
+        final MyTailerListener listener;
+        final String fileName;
 
         @Override
         public final void run() {
@@ -176,8 +182,8 @@ public class TailLogResource {
                 int count = 1;
                 int pageNumber = 1;
                 while (!eventOutput.isClosed()) {
-                    final String write = listener.getOut(true).toString();
-                    if (write != null && write.length() > 0) {
+                    final String write = listener.getAndFlush();
+                    if (write.length() > 0) {
                         final String prepWrite = String.format(
                                 "<p class=\"log page%d\" data-page=\"%d\" data-logNumber=\"%d\" style=\"margin:0\">%s</p>",
                                 pageNumber, pageNumber, logNumber, write);
@@ -199,7 +205,8 @@ public class TailLogResource {
                     Thread.sleep(1000);
                 }
             } catch (Exception ex) {
-                Logger.warn(this.getClass(), "Stopping listening log events for " + fileName + ". Reason: " + ex.getMessage());
+                Logger.warn(this.getClass(), String.format(" Thread [%s] has stopped listening log events for file [%s] with reason [%s] ", getName(), fileName, ex.getMessage()));
+                Logger.error(this.getClass(),ex);
             } finally {
                 stopTailer();
                 CloseUtils.closeQuietly(eventOutput);
@@ -218,15 +225,10 @@ public class TailLogResource {
             eventOutput = myEventOutput;
         }
 
-
         public void stopTailer() {
             if (tailer != null) {
                 tailer.stop();
             }
-        }
-
-        public void setTailer(Tailer tailer) {
-            this.tailer = tailer;
         }
 
         public EventOutput getEventOutput(){
