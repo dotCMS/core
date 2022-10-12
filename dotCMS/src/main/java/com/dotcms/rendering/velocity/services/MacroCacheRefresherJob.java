@@ -46,6 +46,9 @@ public class MacroCacheRefresherJob implements Runnable, FileListener {
         refreshDotVelocityMacros();
     }
 
+    /**
+     * Refresh the cache of the system macros
+     */
     public void refreshSystemMacros() {
 
         final String [] systemVelocityMacros = Config.getStringArrayProperty(RuntimeConstants.VM_LIBRARY,
@@ -63,6 +66,9 @@ public class MacroCacheRefresherJob implements Runnable, FileListener {
         }
     } // refreshSystemMacros.
 
+    /**
+     * Refresh all user macros contained in files called: dot_velocity_macros.vtl
+     */
     public void refreshDotVelocityMacros() {
 
         final List<Host> hostList = Try.of(()->APILocator.getHostAPI().findAllFromCache(
@@ -88,6 +94,10 @@ public class MacroCacheRefresherJob implements Runnable, FileListener {
         }
     } // refreshDotVelocityMacros.
 
+    /**
+     * Refresh the macros contained in the fileAsset
+     * @param fileAsset {@link FileAsset}
+     */
     public void refreshFileAsset (final FileAsset fileAsset) {
 
         try (InputStream in = fileAsset.getInputStream()) {
@@ -101,6 +111,10 @@ public class MacroCacheRefresherJob implements Runnable, FileListener {
         }
     }
 
+    /**
+     * When a dot_velocity_macros.vtl is being modified, refresh the macro inside
+     * @param fileEvent {@link FileEvent}
+     */
     @Override
     public void fileModify(final FileEvent fileEvent) {
         this.refreshFileAsset(fileEvent.getFileAsset());
