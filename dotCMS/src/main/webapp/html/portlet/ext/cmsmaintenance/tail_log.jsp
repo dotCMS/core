@@ -4,7 +4,7 @@
 
 <style>
     #Logging #tailContainer {
-        height: 100%;
+        height: 600px;
     }
     span[data-hr]{
         background-color: yellow;
