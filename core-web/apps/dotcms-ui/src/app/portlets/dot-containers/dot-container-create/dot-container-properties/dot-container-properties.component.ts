@@ -15,10 +15,6 @@ import { DotAlertConfirmService } from '@dotcms/app/api/services/dot-alert-confi
 import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { take, takeUntil } from 'rxjs/operators';
-import {
-    DotContainer,
-    DotContainerStructure
-} from '@dotcms/app/shared/models/container/dot-container.model';
 import { MenuItem } from 'primeng/api';
 import { Subject } from 'rxjs';
 
@@ -32,8 +28,6 @@ export class DotContainerPropertiesComponent implements OnInit {
     vm$ = this.store.vm$;
     editor: MonacoEditor;
     form: UntypedFormGroup;
-
-    containerStructures: DotContainerStructure[];
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
@@ -50,7 +44,7 @@ export class DotContainerPropertiesComponent implements OnInit {
         this.store.containerAndStructure$
             .pipe(take(1))
             .subscribe((state: DotContainerPropertiesState) => {
-                const { container, containerStructures } = state;
+                const { container, contentTypes } = state;
                 this.form = this.fb.group({
                     identifier: new FormControl(container?.identifier ?? ''),
                     title: new FormControl(container?.title ?? '', [Validators.required]),
@@ -61,7 +55,7 @@ export class DotContainerPropertiesComponent implements OnInit {
                     code: container?.code ?? '',
                     preLoop: container?.preLoop ?? '',
                     postLoop: container?.postLoop ?? '',
-                    containerStructures: this.fb.array(containerStructures ?? [])
+                    containerStructures: this.fb.array(contentTypes ?? [])
                 });
             });
         this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((values) => {
@@ -154,27 +148,6 @@ export class DotContainerPropertiesComponent implements OnInit {
             message: this.dotMessageService.get(
                 'message.container.properties.confirm.clear.content.message'
             )
-        });
-    }
-
-    /**
-     * The function takes in two parameters, a container and an array of container structures. It then creates a form group
-     * @param {DotContainer} container - DotContainer = {}
-     * @param {DotContainerStructure[]} containerStructures - DotContainerStructure[] = []
-     * @memberof DotContainerPropertiesComponent
-     */
-    private initForm(
-        container: DotContainer = {},
-        containerStructures: DotContainerStructure[] = []
-    ): void {
-        this.form = this.fb.group({
-            title: new FormControl(container?.title ?? '', [Validators.required]),
-            friendlyName: new FormControl(container?.friendlyName ?? ''),
-            maxContentlets: new FormControl(container?.maxContentlets ?? 0, [Validators.required]),
-            code: container?.code ?? '',
-            preLoop: container?.preLoop ?? '',
-            postLoop: container?.postLoop ?? '',
-            containerStructures: this.fb.array(containerStructures ?? [])
         });
     }
 }

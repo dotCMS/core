@@ -5,7 +5,7 @@ export enum CONTAINER_SOURCE {
 
 export interface DotContainerEntity {
     container: DotContainer;
-    containerStructures: DotContainerStructure[];
+    contentTypes: DotContainerStructure[];
 }
 
 export interface DotContainer {

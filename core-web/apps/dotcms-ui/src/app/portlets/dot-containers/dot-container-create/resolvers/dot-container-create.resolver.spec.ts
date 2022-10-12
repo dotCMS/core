@@ -50,7 +50,7 @@ describe('DotContainerService', () => {
                 null
             )
             .subscribe((res) => {
-                expect(containersService.getById).toHaveBeenCalledWith('ID');
+                expect(containersService.getById).toHaveBeenCalledWith('ID', 'working', true);
                 expect<any>(res).toEqual({ this: { is: 'a page' } });
                 done();
             });

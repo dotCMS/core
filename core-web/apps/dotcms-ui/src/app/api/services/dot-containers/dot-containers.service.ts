@@ -32,19 +32,26 @@ export class DotContainersService {
      * @returns Observable<DotContainer[]>
      * @memberof DotContainersService
      */
-    get(): Observable<DotContainer[]> {
-        return this.request<DotContainer[]>({ url: CONTAINER_API_URL });
+    get(): Observable<DotContainerEntity[]> {
+        return this.request<DotContainerEntity[]>({ url: CONTAINER_API_URL });
     }
 
     /**
-     * Get the container, pass the version default working
-     *
+     * Get the container, pass the version default working, pass the includeContentType default false
      * @param {string} id
-     * @returns {Observable<DotContainer>}
+     * @param {string} version
+     * @param {boolean} includeContentType
+     * @returns {Observable<DotContainerEntity>}
      * @memberof DotContainersService
      */
-    getById(id: string): Observable<DotContainerEntity> {
-        const url = `${CONTAINER_API_URL}working?containerId=${id}`;
+    getById(
+        id: string,
+        version = 'working',
+        includeContentType = false
+    ): Observable<DotContainerEntity> {
+        const url = includeContentType
+            ? `${CONTAINER_API_URL}${version}?containerId=${id}&includeContentType=${includeContentType}`
+            : `${CONTAINER_API_URL}${version}?containerId=${id}`;
 
         return this.request<DotContainerEntity>({
             url
@@ -55,13 +62,13 @@ export class DotContainersService {
      * Get the container filtered by tittle or inode .
      *
      * @param {string} filter
-     * @returns {Observable<DotContainer>}
+     * @returns {Observable<DotContainerEntity>}
      * @memberof DotContainersService
      */
-    getFiltered(filter: string): Observable<DotContainer[]> {
+    getFiltered(filter: string): Observable<DotContainerEntity[]> {
         const url = `${CONTAINER_API_URL}?filter=${filter}`;
 
-        return this.request<DotContainer[]>({
+        return this.request<DotContainerEntity[]>({
             url
         });
     }
@@ -102,7 +109,7 @@ export class DotContainersService {
      * @returns Observable<DotContainer>
      * @memberof DotContainersService
      */
-    saveAndPublish(values: DotContainer): Observable<DotContainerEntity> {
+    saveAndPublish(values: DotContainerEntity): Observable<DotContainerEntity> {
         return this.request<DotContainerEntity>({
             method: 'PUT',
             url: `${CONTAINER_API_URL}_savepublish`,

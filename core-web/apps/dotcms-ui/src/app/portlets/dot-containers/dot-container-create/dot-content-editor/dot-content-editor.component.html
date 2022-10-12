@@ -35,6 +35,7 @@
             ></button>
             <dot-textarea-content
                 #body
+                [value]="contentType.state.code"
                 [show]="['code']"
                 (monacoInit)="monacoInit($event)"
                 (valueChange)="updateContentTypeText($event)"

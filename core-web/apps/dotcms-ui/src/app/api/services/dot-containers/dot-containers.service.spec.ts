@@ -10,7 +10,6 @@ import { DotActionBulkResult } from '@models/dot-action-bulk-result/dot-action-b
 import { of } from 'rxjs';
 import {
     CONTAINER_SOURCE,
-    DotContainer,
     DotContainerEntity,
     DotContainerRequest
 } from '@models/container/dot-container.model';
@@ -39,7 +38,7 @@ const mockContainer: DotContainerEntity = {
         type: 'containers',
         working: true
     },
-    containerStructures: []
+    contentTypes: []
 };
 
 describe('DotContainersService', () => {
@@ -71,7 +70,7 @@ describe('DotContainersService', () => {
     });
 
     it('should get a list of containers', () => {
-        service.get().subscribe((container: DotContainer[]) => {
+        service.get().subscribe((container: DotContainerEntity[]) => {
             expect(container).toEqual([mockContainer]);
         });
 
@@ -86,7 +85,7 @@ describe('DotContainersService', () => {
 
     it('should get a container by id', () => {
         service.getById('123').subscribe((containerEntity: DotContainerEntity) => {
-            expect(containerEntity.container).toEqual(mockContainer);
+            expect(containerEntity).toEqual(mockContainer);
         });
 
         const req = httpMock.expectOne(`${CONTAINER_API_URL}working?containerId=123`);
@@ -95,13 +94,13 @@ describe('DotContainersService', () => {
 
         req.flush({
             entity: {
-                container: mockContainer
+                ...mockContainer
             }
         });
     });
 
     it('should get a containers by filter', () => {
-        service.getFiltered('123').subscribe((container: DotContainer[]) => {
+        service.getFiltered('123').subscribe((container: DotContainerEntity[]) => {
             expect(container).toEqual([mockContainer]);
         });
 
@@ -158,9 +157,9 @@ describe('DotContainersService', () => {
     it('should put to save and publish a container', () => {
         service
             .saveAndPublish({
-                name: '',
-                friendlyName: ''
-            } as DotContainer)
+                container: { name: '', friendlyName: '' },
+                contentTypes: []
+            } as DotContainerEntity)
             .subscribe((container: DotContainerEntity) => {
                 expect(container).toEqual(mockContainer);
             });
@@ -168,8 +167,8 @@ describe('DotContainersService', () => {
         const req = httpMock.expectOne(`${CONTAINER_API_URL}_savepublish`);
 
         expect(req.request.method).toBe('PUT');
-        expect(req.request.body.name).toEqual('');
-        expect(req.request.body.friendlyName).toEqual('');
+        expect(req.request.body.container.name).toEqual('');
+        expect(req.request.body.container.friendlyName).toEqual('');
 
         req.flush({
             entity: mockContainer

@@ -1,4 +1,12 @@
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChange } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    Input,
+    OnChanges,
+    OnInit,
+    Output,
+    SimpleChange
+} from '@angular/core';
 import { DotContentEditorStore } from '@portlets/dot-containers/dot-container-create/dot-content-editor/store/dot-content-editor.store';
 import { DialogService } from 'primeng/dynamicdialog';
 import { DotAddVariableComponent } from './dot-add-variable/dot-add-variable.component';
@@ -15,7 +23,7 @@ import { DotContainerStructure } from '@models/container/dot-container.model';
     styleUrls: ['./dot-content-editor.component.scss'],
     providers: [DotContentEditorStore]
 })
-export class DotContentEditorComponent implements OnChanges {
+export class DotContentEditorComponent implements OnInit, OnChanges {
     @Input() containerStructures: DotContainerStructure[];
     @Output() updateContainerStructure = new EventEmitter<MenuItem[]>();
 
@@ -37,7 +45,11 @@ export class DotContentEditorComponent implements OnChanges {
                 this.updateContainerStructure.emit(contentTypesData);
             });
     }
-
+    ngOnInit(): void {
+        this.store.contentTypes$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+            this.store.updateRetrievedContentTypes(this.containerStructures ?? []);
+        });
+    }
     ngOnChanges(changes: { [property: string]: SimpleChange }) {
         const change: SimpleChange = changes['containerStructures'];
 

@@ -74,7 +74,7 @@
                     (buttonClick)="showLoopInput()"
                 ></dot-loop-editor>
                 <dot-content-code-editor
-                    [containerStructures]="containerStructures"
+                    [containerStructures]="vm.contentTypes"
                     (updateContainerStructure)="updateContainerStructure($event)"
                 ></dot-content-code-editor>
                 <dot-loop-editor

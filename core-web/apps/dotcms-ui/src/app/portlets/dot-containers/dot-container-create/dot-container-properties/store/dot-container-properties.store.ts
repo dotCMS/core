@@ -20,7 +20,7 @@ export interface DotContainerPropertiesState {
     isContentTypeVisible: boolean;
     isContentTypeButtonEnabled: boolean;
     container: DotContainer;
-    containerStructures: DotContainerStructure[];
+    contentTypes: DotContainerStructure[];
 }
 
 @Injectable()
@@ -36,20 +36,20 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
             showPrePostLoopInput: false,
             isContentTypeVisible: false,
             isContentTypeButtonEnabled: false,
-            containerStructures: [],
+            contentTypes: [],
             container: null
         });
         this.activatedRoute.data
             .pipe(pluck('container'), take(1))
             .subscribe((containerEntity: DotContainerEntity) => {
                 if (containerEntity) {
-                    const { container, containerStructures } = containerEntity;
+                    const { container, contentTypes } = containerEntity;
                     if (container && (container.preLoop || container.postLoop)) {
                         this.updatePrePostLoopAndContentTypeVisibility({
                             showPrePostLoopInput: true,
                             isContentTypeVisible: true,
                             container: container,
-                            containerStructures: containerStructures ?? []
+                            contentTypes: contentTypes ?? []
                         });
                     } else {
                         this.updateContainerState(containerEntity);
@@ -63,10 +63,10 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
     });
 
     readonly containerAndStructure$ = this.select(
-        ({ container, containerStructures }: DotContainerPropertiesState) => {
+        ({ container, contentTypes }: DotContainerPropertiesState) => {
             return {
                 container,
-                containerStructures
+                contentTypes
             };
         }
     );
@@ -75,7 +75,7 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
         showPrePostLoopInput: boolean;
         isContentTypeVisible: boolean;
         container: DotContainer;
-        containerStructures: DotContainerStructure[];
+        contentTypes: DotContainerStructure[];
     }>(
         (
             state: DotContainerPropertiesState,
@@ -83,7 +83,7 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
                 showPrePostLoopInput,
                 isContentTypeVisible,
                 container,
-                containerStructures
+                contentTypes
             }: DotContainerPropertiesState
         ) => {
             return {
@@ -91,7 +91,7 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
                 showPrePostLoopInput,
                 isContentTypeVisible,
                 container,
-                containerStructures
+                contentTypes
             };
         }
     );
@@ -128,7 +128,7 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
             return {
                 ...state,
                 container: container.container,
-                containerStructures: container.containerStructures
+                contentTypes: container.contentTypes
             };
         }
     );

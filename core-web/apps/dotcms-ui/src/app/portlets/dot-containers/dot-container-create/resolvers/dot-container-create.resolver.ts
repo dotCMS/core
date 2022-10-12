@@ -13,6 +13,6 @@ export class DotContainerCreateEditResolver implements Resolve<DotContainerEntit
         route: ActivatedRouteSnapshot,
         _state: RouterStateSnapshot
     ): Observable<DotContainerEntity> {
-        return this.service.getById(route.paramMap.get('id'));
+        return this.service.getById(route.paramMap.get('id'), 'working', true);
     }
 }

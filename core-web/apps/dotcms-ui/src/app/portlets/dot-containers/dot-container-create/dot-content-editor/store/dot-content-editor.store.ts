@@ -41,6 +41,7 @@ export class DotContentEditorStore extends ComponentStore<DotContentEditorState>
     readonly contentTypeData$ = this.select(
         ({ contentTypesData }: DotContentEditorState) => contentTypesData
     );
+    readonly contentTypes$ = this.select(({ contentTypes }: DotContentEditorState) => contentTypes);
 
     updateActiveTabIndex = this.updater<number>((state, activeTabIndex) => {
         return {
@@ -94,13 +95,17 @@ export class DotContentEditorStore extends ComponentStore<DotContentEditorState>
     updateRetrievedContentTypes = this.updater<DotContainerStructure[]>(
         (state, containerStructures) => {
             const { contentTypes } = this.get();
-
-            const containerStructureVars = containerStructures.map((containerStructure) => {
-                return containerStructure.contentTypeVar;
-            });
-
-            const selectedContentTypes = contentTypes.filter((contentType) => {
-                return containerStructureVars.includes(contentType.state.contentType.variable);
+            const selectedContentTypes = [];
+            contentTypes.forEach((contentType) => {
+                const foundSelectedContentType = containerStructures.find(
+                    (content) => content.contentTypeVar === contentType.state.contentType.variable
+                );
+                if (foundSelectedContentType) {
+                    selectedContentTypes.push({
+                        ...contentType,
+                        state: { ...contentType.state, ...foundSelectedContentType }
+                    });
+                }
             });
 
             return {
