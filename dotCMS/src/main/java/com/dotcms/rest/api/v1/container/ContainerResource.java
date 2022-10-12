@@ -735,6 +735,10 @@ public class ContainerResource implements Serializable {
         container.setShowOnMenu(containerForm.isShowOnMenu());
         container.setTitle(containerForm.getTitle());
 
+        if(containerForm.getMaxContentlets() == 0){
+            container.setCode(containerForm.getCode());
+        }
+
         this.containerAPI.save(container, containerForm.getContainerStructures(), host, user, pageMode.respectAnonPerms);
 
         Logger.error(this, "The container: " + container.getIdentifier() + " has been updated");
