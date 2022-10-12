@@ -159,7 +159,7 @@ public class TailLogResource {
                 try {
                     return out.toString();
                 } finally {
-                    out.delete(0, out.length());
+                    out.setLength(0);
                 }
             }
         }
