@@ -30,7 +30,6 @@ public class XSSPreventionWebInterceptor implements WebInterceptor {
           "\\A/c/", 
           "\\A/servlets", 
           "\\A/servlet/",
-          "\\A/dottaillogservlet", 
           "\\A/dwr/",
           "\\A/dotajaxdirector", 
           "\\A/dotscheduledjobs", 
