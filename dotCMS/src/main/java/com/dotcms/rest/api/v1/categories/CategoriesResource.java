@@ -682,7 +682,6 @@ public class CategoriesResource {
                 .build();
     }
 
-
     @WrapInTransaction
     private void updateSortOrder(final CategoryEditForm categoryEditForm, final User user,
             final Host host,

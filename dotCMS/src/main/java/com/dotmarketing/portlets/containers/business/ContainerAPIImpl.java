@@ -751,15 +751,21 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 							container.getName()));
 		}
 
-		for (ContainerStructure cs : containerStructureList) {
-			Structure st = CacheLocator.getContentTypeCache().getStructureByInode(cs.getStructureId());
-			if((st != null && !existingInode) && !permissionAPI.doesUserHavePermission(st, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-				throw new DotSecurityException(
-						String.format("User '%s' does not have WRITE permission on Content Type '%s'", user.getUserId(),
-								st.getName()));
+		if(containerStructureList != null) {
+
+			for (ContainerStructure cs : containerStructureList) {
+				Structure st = CacheLocator.getContentTypeCache()
+						.getStructureByInode(cs.getStructureId());
+				if ((st != null && !existingInode) && !permissionAPI.doesUserHavePermission(st,
+						PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
+					throw new DotSecurityException(
+							String.format(
+									"User '%s' does not have WRITE permission on Content Type '%s'",
+									user.getUserId(),
+									st.getName()));
+				}
 			}
 		}
-
 
 		if(!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
 			throw new DotSecurityException(
@@ -801,12 +807,14 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 			}
 		}
 
-		// save the container-structure relationships , issue-2093
-		for (ContainerStructure cs : containerStructureList) {
-			cs.setContainerId(container.getIdentifier());
-            cs.setContainerInode(container.getInode());
+		if(containerStructureList != null) {
+			// save the container-structure relationships , issue-2093
+			for (ContainerStructure cs : containerStructureList) {
+				cs.setContainerId(container.getIdentifier());
+				cs.setContainerInode(container.getInode());
+			}
+			saveContainerStructures(containerStructureList);
 		}
-		saveContainerStructures(containerStructureList);
 		// saves to working folder under velocity
 		new ContainerLoader().invalidate(container);
 
