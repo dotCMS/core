@@ -25,7 +25,8 @@
 									"    ",
 									"    pm.expect(jsonData.categoryName).to.eql(\"Parent category name\");",
 									"});",
-									""
+									"",
+									"pm.collectionVariables.set(\"deleteParentCategoryId\", jsonData.inode);"
 								],
 								"type": "text/javascript"
 							}
