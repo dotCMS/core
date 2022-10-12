@@ -1,12 +1,16 @@
 package com.dotmarketing.business;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.StructureDataGen;
 import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.common.reindex.ReindexQueueFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -276,4 +280,89 @@ public class VersionableAPITest {
 		assertTrue(APILocator.getVersionableAPI().isLocked(host));
 	}
 
+	/**
+	 * Method to test: {@link Contentlet#isWorking()} and {@link Contentlet#isLive()}
+	 * When:
+	 * - Create a {@link Contentlet} but not publish it, the {@link Contentlet#isWorking()} should return
+	 * true and {@link Contentlet#isLive()} should return false.
+	 * - Publish a {@link Contentlet}, the {@link Contentlet#isWorking()} should return
+	 * true and {@link Contentlet#isLive()} should return true.
+	 * - Create a new version od a {@link Contentlet} but not publish it, the {@link Contentlet#isWorking()} should return
+	 * true and {@link Contentlet#isLive()} should return false.
+	 *
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@Test
+	public void setWorkingWithDefaultVariant() throws DotDataException, DotSecurityException {
+		final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+		final Contentlet contentlet = new ContentletDataGen(contentType).nextPersisted();
+
+		assertTrue(contentlet.isWorking());
+		assertFalse(contentlet.isLive());
+
+		ContentletDataGen.publish(contentlet);
+
+		assertTrue(contentlet.isWorking());
+		assertTrue(contentlet.isLive());
+
+		final Contentlet checkout = ContentletDataGen.checkout(contentlet);
+		final Contentlet checkin = ContentletDataGen.checkin(checkout);
+
+		assertTrue(checkin.isWorking());
+		assertFalse(checkin.isLive());
+	}
+
+	/**
+	 * Method to test: {@link Contentlet#isWorking()} and {@link Contentlet#isLive()}
+	 * When:
+	 * - Create a {@link Contentlet} but not publish it, the {@link Contentlet#isWorking()} should return
+	 * true and {@link Contentlet#isLive()} should return false.
+	 * - Publish a {@link Contentlet}, the {@link Contentlet#isWorking()} should return
+	 * true and {@link Contentlet#isLive()} should return true.
+	 * - Create a new version od a {@link Contentlet} but not publish it, the {@link Contentlet#isWorking()} should return
+	 * true and {@link Contentlet#isLive()} should return false.
+	 * - Create a new version for a specific {@link com.dotcms.variant.model.Variant} and repeat all the previous steps
+	 *
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@Test
+	public void setWorkingWithAnotherVariant() throws DotDataException, DotSecurityException {
+		final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+		final Contentlet contentlet = new ContentletDataGen(contentType).nextPersisted();
+
+		assertTrue(contentlet.isWorking());
+		assertFalse(contentlet.isLive());
+
+		ContentletDataGen.publish(contentlet);
+
+		assertTrue(contentlet.isWorking());
+		assertTrue(contentlet.isLive());
+
+		final Contentlet checkout = ContentletDataGen.checkout(contentlet);
+		final Contentlet checkin = ContentletDataGen.checkin(checkout);
+
+		assertTrue(checkin.isWorking());
+		assertFalse(checkin.isLive());
+
+		final Variant variant = new VariantDataGen().nextPersisted();
+		final Contentlet contentletCheckout_2 = ContentletDataGen.checkout(checkin);
+		contentletCheckout_2.setVariantId(variant.name());
+		final Contentlet checkinWithVariant = ContentletDataGen.checkin(contentletCheckout_2);
+
+		assertTrue(checkinWithVariant.isWorking());
+		assertFalse(checkinWithVariant.isLive());
+
+		ContentletDataGen.publish(checkinWithVariant);
+
+		assertTrue(checkinWithVariant.isWorking());
+		assertTrue(checkinWithVariant.isLive());
+
+		final Contentlet contentletWithVariantCheckout = ContentletDataGen.checkout(checkinWithVariant);
+		final Contentlet contentletWithVariantChecking = ContentletDataGen.checkin(contentletWithVariantCheckout);
+
+		assertTrue(contentletWithVariantChecking.isWorking());
+		assertFalse(contentletWithVariantChecking.isLive());
+	}
 }

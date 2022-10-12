@@ -151,7 +151,7 @@ export class DotEditPageNavComponent implements OnChanges {
         return {
             needsEntepriseLicense: !enterpriselicense,
             disabled: !this.canGoToLayout(dotRenderedPage),
-            icon: 'dataset',
+            icon: 'science',
             label: this.dotMessageService.get('editpage.toolbar.nav.experiments'),
             link: `experiments/${dotRenderedPage.page.identifier}`
         };

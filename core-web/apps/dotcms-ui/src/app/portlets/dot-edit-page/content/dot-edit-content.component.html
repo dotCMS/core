@@ -14,11 +14,12 @@
     <dot-loading-indicator fullscreen="true"></dot-loading-indicator>
     <ng-container *ngIf="pageState$ | async as pageState">
         <dot-edit-page-toolbar
+            class="dot-edit__toolbar"
+            [pageState]="pageState"
             (cancel)="onCancelToolbar()"
             (actionFired)="reload($event)"
+            (favoritePage)="showFavoritePageDialog($event)"
             (whatschange)="showWhatsChanged = $event"
-            [pageState]="pageState"
-            class="dot-edit__toolbar"
         ></dot-edit-page-toolbar>
 
         <div
@@ -42,22 +43,22 @@
                         (click)="iframeOverlayService.hide()"
                     ></dot-overlay-mask>
                     <dot-whats-changed
+                        *ngIf="showWhatsChanged"
                         [pageId]="pageState.page.identifier"
                         [languageId]="pageState.viewAs.language.id"
-                        *ngIf="showWhatsChanged"
                     ></dot-whats-changed>
                     <iframe
-                        *ngIf="showIframe"
-                        #iframe
-                        width="100%"
-                        height="100%"
-                        frameborder="0"
                         class="dot-edit__iframe"
-                        (load)="onLoad($event)"
+                        #iframe
+                        *ngIf="showIframe"
                         [ngStyle]="{
                             visibility: showWhatsChanged ? 'hidden' : '',
                             position: showWhatsChanged ? 'absolute' : ''
                         }"
+                        (load)="onLoad($event)"
+                        width="100%"
+                        height="100%"
+                        frameborder="0"
                     ></iframe>
                 </div>
             </div>
@@ -77,9 +78,9 @@
     </dot-palette>
     <div
         class="dot-edit-content__palette-visibility"
-        data-testId="palette-visibility"
         (click)="paletteCollapsed = !paletteCollapsed"
+        data-testId="palette-visibility"
     >
-        <dot-icon size="22" [name]="paletteCollapsed ? 'chevron_left' : 'chevron_right'"></dot-icon>
+        <dot-icon [name]="paletteCollapsed ? 'chevron_left' : 'chevron_right'" size="22"></dot-icon>
     </div>
 </div>
