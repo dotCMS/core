@@ -3,23 +3,26 @@
  */
 package com.dotmarketing.webdav;
 
-import com.dotcms.repackage.com.bradmcevoy.http.Auth;
-import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
-import com.dotcms.repackage.com.bradmcevoy.http.FolderResource;
-import com.dotcms.repackage.com.bradmcevoy.http.HttpManager;
-import com.dotcms.repackage.com.bradmcevoy.http.LockInfo;
-import com.dotcms.repackage.com.bradmcevoy.http.LockResult;
-import com.dotcms.repackage.com.bradmcevoy.http.LockTimeout;
-import com.dotcms.repackage.com.bradmcevoy.http.LockToken;
-import com.dotcms.repackage.com.bradmcevoy.http.LockableResource;
-import com.dotcms.repackage.com.bradmcevoy.http.LockingCollectionResource;
-import com.dotcms.repackage.com.bradmcevoy.http.MakeCollectionableResource;
-import com.dotcms.repackage.com.bradmcevoy.http.Request;
-import com.dotcms.repackage.com.bradmcevoy.http.Request.Method;
-import com.dotcms.repackage.com.bradmcevoy.http.Resource;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.BadRequestException;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.ConflictException;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotAuthorizedException;
+import io.milton.http.Auth;
+import io.milton.resource.CollectionResource;
+
+import io.milton.http.HttpManager;
+import io.milton.http.LockInfo;
+import io.milton.http.LockResult;
+import io.milton.http.LockTimeout;
+import io.milton.http.LockToken;
+import io.milton.common.*;
+import io.milton.http.Auth;
+import io.milton.http.*;
+import io.milton.resource.*;
+
+import io.milton.http.Request;
+import io.milton.http.Request.Method;
+import io.milton.resource.Resource;
+import io.milton.http.exceptions.BadRequestException;
+import io.milton.http.exceptions.ConflictException;
+import io.milton.http.exceptions.NotAuthorizedException;
+import io.milton.http.exceptions.PreConditionFailedException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -56,7 +59,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 	}
 	
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.MakeCollectionableResource#createCollection(java.lang.String)
+	 * @see io.milton.http.MakeCollectionableResource#createCollection(java.lang.String)
 	 */
 	public CollectionResource createCollection(String newName) throws DotRuntimeException {
 
@@ -97,7 +100,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.CollectionResource#child(java.lang.String)
+	 * @see io.milton.resource.CollectionResource#child(java.lang.String)
 	 */
 	public Resource child(String childName) {
 
@@ -141,7 +144,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.CollectionResource#getChildren()
+	 * @see io.milton.resource.CollectionResource#getChildren()
 	 */
 	public List<? extends Resource> getChildren() {
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
@@ -156,7 +159,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#authenticate(java.lang.String, java.lang.String)
+	 * @see io.milton.resource.Resource#authenticate(java.lang.String, java.lang.String)
 	 */
 	public Object authenticate(String username, String password) {
 		try {
@@ -168,7 +171,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#authorise(com.dotcms.repackage.com.bradmcevoy.http.Request, com.dotcms.repackage.com.bradmcevoy.http.Request.Method, com.dotcms.repackage.com.bradmcevoy.http.Auth)
+	 * @see io.milton.resource.Resource#authorise(io.milton.http.Request, io.milton.http.Request.Method, io.milton.http.Auth)
 	 */
 	public boolean authorise(Request req, Method method, Auth auth) {
 		try {
@@ -193,49 +196,49 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#checkRedirect(com.dotcms.repackage.com.bradmcevoy.http.Request)
+	 * @see io.milton.resource.Resource#checkRedirect(io.milton.http.Request)
 	 */
 	public String checkRedirect(Request req) {
 		return null;
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#getContentLength()
+	 * @see io.milton.resource.Resource#getContentLength()
 	 */
 	public Long getContentLength() {
 		return (long)0;
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#getContentType(java.lang.String)
+	 * @see io.milton.resource.Resource#getContentType(java.lang.String)
 	 */
 	public String getContentType(String arg0) {
 		return "folder";
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#getModifiedDate()
+	 * @see io.milton.resource.Resource#getModifiedDate()
 	 */
 	public Date getModifiedDate() {
 		return folder.getIDate();
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#getRealm()
+	 * @see io.milton.resource.Resource#getRealm()
 	 */
 	public String getRealm() {
 		return CompanyUtils.getDefaultCompany().getName();
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#getUniqueId()
+	 * @see io.milton.resource.Resource#getUniqueId()
 	 */
 	public String getUniqueId() {
 		return folder.getInode();
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.DeletableResource#delete()
+	 * @see io.milton.http.DeletableResource#delete()
 	 */
 	public void delete() throws DotRuntimeException{
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
@@ -248,7 +251,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.GetableResource#getMaxAgeSeconds()
+	 * @see io.milton.http.GetableResource#getMaxAgeSeconds()
 	 */
 	public Long getMaxAgeSeconds() {
 		return new Long(0);
@@ -290,7 +293,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
     }
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.MoveableResource#moveTo(com.dotcms.repackage.com.bradmcevoy.http.CollectionResource, java.lang.String)
+	 * @see io.milton.http.MoveableResource#moveTo(io.milton.resource.CollectionResource, java.lang.String)
 	 */
 	public void moveTo(CollectionResource collRes, String name) throws DotRuntimeException{
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
@@ -350,7 +353,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.PropFindableResource#getCreateDate()
+	 * @see io.milton.http.PropFindableResource#getCreateDate()
 	 */
 	public Date getCreateDate() {
 		return folder.getIDate();
@@ -406,5 +409,11 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 		createCollection(name);
 		return lock(timeout, lockInfo).getLockToken();
 	}
+
+    @Override
+    public LockResult refreshLock(String token, LockTimeout timeout) throws NotAuthorizedException, PreConditionFailedException {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 }

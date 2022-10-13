@@ -19,9 +19,9 @@
 
 package com.dotcms.webdav;
 
-import com.dotcms.repackage.com.bradmcevoy.http.*;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotAuthorizedException;
-import com.dotcms.repackage.com.ettrema.http.fs.LockManager;
+import io.milton.http.*;
+import io.milton.http.exceptions.NotAuthorizedException;
+import io.milton.resource.LockableResource;
 import com.dotmarketing.util.Logger;
 
 import java.io.File;
@@ -64,8 +64,9 @@ public class FsMemoryLockManager implements LockManager {
     }
 
     @Override
-    public synchronized LockResult refresh( String tokenId, LockableResource resource ) {
+    public LockResult refresh( String tokenId, LockTimeout timeout, LockableResource resource ) {
         CurrentLock curLock = locksByToken.get( tokenId );
+        
         if( curLock == null ) {
           Logger.info(FileSystemResourceFactory.class, "can't refresh because no lock");
             return LockResult.failed( LockResult.FailureReason.PRECONDITION_FAILED );
@@ -138,4 +139,6 @@ public class FsMemoryLockManager implements LockManager {
             this.lockedByUser = lockedByUser;
         }
     }
+
+
 }

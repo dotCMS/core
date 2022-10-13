@@ -19,8 +19,14 @@
 
 package com.dotcms.webdav;
 
-import com.dotcms.repackage.com.bradmcevoy.http.*;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotAuthorizedException;
+import io.milton.http.*;
+import io.milton.http.exceptions.NotAuthorizedException;
+import io.milton.http.exceptions.PreConditionFailedException;
+import io.milton.resource.CollectionResource;
+import io.milton.resource.MakeCollectionableResource;
+import io.milton.resource.MoveableResource;
+import io.milton.resource.*;
+import io.milton.resource.Resource;
 import com.dotmarketing.util.Logger;
 
 
@@ -259,5 +265,11 @@ public class FsDirectoryResource extends FsResource implements MakeCollectionabl
         String s = abUrl.substring(0, pos) + "/" + prefix;
         s += abUrl.substring(pos);
         return s;
+    }
+
+    @Override
+    public LockResult refreshLock(String token, LockTimeout timeout) throws NotAuthorizedException, PreConditionFailedException {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

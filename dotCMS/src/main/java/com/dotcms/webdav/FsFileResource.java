@@ -19,27 +19,21 @@
 
 package com.dotcms.webdav;
 
-import com.dotcms.repackage.com.bradmcevoy.common.ContentTypeUtils;
-import com.dotcms.repackage.com.bradmcevoy.http.Auth;
-import com.dotcms.repackage.com.bradmcevoy.http.CopyableResource;
-import com.dotcms.repackage.com.bradmcevoy.http.DeletableResource;
-import com.dotcms.repackage.com.bradmcevoy.http.GetableResource;
-import com.dotcms.repackage.com.bradmcevoy.http.MoveableResource;
-import com.dotcms.repackage.com.bradmcevoy.http.PropFindableResource;
-import com.dotcms.repackage.com.bradmcevoy.http.PropPatchableResource;
-import com.dotcms.repackage.com.bradmcevoy.http.Range;
-import com.dotcms.repackage.com.bradmcevoy.http.Request;
-import com.dotcms.repackage.com.bradmcevoy.http.entity.PartialEntity;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotFoundException;
-import com.dotcms.repackage.com.bradmcevoy.http.webdav.PropPatchHandler.Fields;
-import com.dotcms.repackage.com.bradmcevoy.io.ReadingException;
-import com.dotcms.repackage.com.bradmcevoy.io.WritingException;
+import io.milton.common.*;
+import io.milton.http.*;
+import io.milton.resource.*;
+import io.milton.http.entity.PartialEntity;
+import io.milton.http.exceptions.NotAuthorizedException;
+import io.milton.http.exceptions.NotFoundException;
+import io.milton.http.exceptions.PreConditionFailedException;
+import io.milton.http.webdav.PropPatchHandler.Fields;
 import com.dotmarketing.util.Logger;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.Map;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -47,7 +41,7 @@ import org.apache.commons.io.IOUtils;
 /**
  *
  */
-public class FsFileResource extends FsResource implements CopyableResource, DeletableResource, GetableResource, MoveableResource, PropFindableResource, PropPatchableResource {
+public class FsFileResource extends FsResource implements CopyableResource, DeletableResource, GetableResource, MoveableResource, PropFindableResource {
 
     private final FileContentService contentService;
 
@@ -78,26 +72,54 @@ public class FsFileResource extends FsResource implements CopyableResource, Dele
         return null;
     }
 
-    @Override
-    public void sendContent(OutputStream out, Range range, Map<String, String> params, String contentType) throws IOException, NotFoundException {
-      try (InputStream in  = contentService.getFileContent(file)){
-            if (range != null) {
-                Logger.debug(this.getClass(),
-                        "sendContent: ranged content: " + file.getAbsolutePath());
-                PartialEntity.writeRange(in, range, out);
-            } else {
-                Logger.debug(this.getClass(),
-                        "sendContent: send whole file " + file.getAbsolutePath());
-                IOUtils.copy(in, out);
+    public class RangeInputStream extends InputStream
+    {
+        private InputStream parent;
+        private long remaining;
+
+        public RangeInputStream(InputStream parent, long start, long end) throws IOException
+        {
+            if (end < start)
+            {
+                throw new IllegalArgumentException("end < start");
             }
+
+            if (parent.skip(start) < start)
+            {
+                throw new IOException("Unable to skip leading bytes");
+            }
+
+            this.parent=parent;
+            remaining = end - start;
+        }
+
+        @Override
+        public int read() throws IOException
+        {
+            return --remaining >= 0 ? parent.read() : -1;
+        }
+    }
+    
+    
+    
+    @Override
+    public void sendContent(OutputStream out, Range range, Map<String, String> params, String contentType)
+                    throws IOException, NotFoundException {
+        try (InputStream in = Files.newInputStream(file.toPath())) {
+            if (range != null) {
+                RangeInputStream rin = new RangeInputStream(in, range.getStart(), range.getFinish());
+                IOUtils.copy(rin, out);
+                Logger.debug(this.getClass(), "sendContent: ranged content: " + file.getAbsolutePath());
+                return;
+            }
+
+            Logger.debug(this.getClass(), "sendContent: send whole file " + file.getAbsolutePath());
+            IOUtils.copy(in, out);
+
             out.flush();
-        } catch (FileNotFoundException e) {
-            throw new NotFoundException("Couldnt locate content");
-        } catch (ReadingException e) {
+        } catch (Exception e) {
             throw new IOException(e);
-        } catch (WritingException e) {
-            throw new IOException(e);
-        } 
+        }
     }
 
     /**
@@ -120,10 +142,11 @@ public class FsFileResource extends FsResource implements CopyableResource, Dele
         }
     }
 
-    @Deprecated
     @Override
-    public void setProperties(Fields fields) {
-        // MIL-50
-        // not implemented. Just to keep MS Office sweet
+    public LockResult refreshLock(String token, LockTimeout timeout) throws NotAuthorizedException, PreConditionFailedException {
+        // TODO Auto-generated method stub
+        return null;
     }
+
+
 }

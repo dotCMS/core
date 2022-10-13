@@ -4,11 +4,7 @@
 package com.dotmarketing.webdav;
 
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.repackage.com.bradmcevoy.http.ApplicationConfig;
-import com.dotcms.repackage.com.bradmcevoy.http.HttpManager;
-import com.dotcms.repackage.com.bradmcevoy.http.Initable;
-import com.dotcms.repackage.com.bradmcevoy.http.Resource;
-import com.dotcms.repackage.com.bradmcevoy.http.ResourceFactory;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -19,6 +15,10 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import io.milton.http.HttpManager;
+import io.milton.http.ResourceFactory;
+import io.milton.resource.Resource;
+import io.milton.servlet.Initable;
 
 /**
  * @author Jason Tesser
@@ -39,7 +39,7 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 	}
 	
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.ResourceFactory#getResource(java.lang.String, java.lang.String)
+	 * @see io.milton.http.ResourceFactory#getResource(java.lang.String, java.lang.String)
 	 */
     @WrapInTransaction
 	public Resource getResource(String davHost, String url) {
@@ -211,19 +211,24 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.ResourceFactory#getSupportedLevels()
+	 * @see io.milton.http.ResourceFactory#getSupportedLevels()
 	 */
 	public String getSupportedLevels() {
-		return "1,2";
+		return "1";
 	}
 
-    public void init(ApplicationConfig config, HttpManager manager) {
-        manager.setEnableExpectContinue(false);
+    @Override
+    public void init(io.milton.servlet.Config config, HttpManager manager) {
+        // TODO Auto-generated method stub
+        
     }
 
+    @Override
     public void destroy(HttpManager manager) {
         // TODO Auto-generated method stub
         
     }
+
+
 
 }

@@ -16,14 +16,13 @@
 package com.dotcms.webdav;
 
 import java.io.File;
-
-import com.dotcms.repackage.com.bradmcevoy.common.Path;
-import com.dotcms.repackage.com.bradmcevoy.http.Resource;
-import com.dotcms.repackage.com.bradmcevoy.http.ResourceFactory;
-import com.dotcms.repackage.com.bradmcevoy.http.SecurityManager;
-import com.dotcms.repackage.com.ettrema.http.fs.LockManager;
-import com.dotcms.repackage.com.ettrema.http.fs.NullSecurityManager;
 import com.dotmarketing.util.Logger;
+import io.milton.common.Path;
+import io.milton.http.LockManager;
+import io.milton.http.ResourceFactory;
+import io.milton.http.SecurityManager;
+import io.milton.http.fs.NullSecurityManager;
+import io.milton.resource.Resource;
 
 
 /**

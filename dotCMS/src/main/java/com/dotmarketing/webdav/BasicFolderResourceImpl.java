@@ -1,25 +1,28 @@
 package com.dotmarketing.webdav;
 
-import com.dotcms.repackage.com.bradmcevoy.http.Auth;
-import com.dotcms.repackage.com.bradmcevoy.http.FolderResource;
-import com.dotcms.repackage.com.bradmcevoy.http.HttpManager;
-import com.dotcms.repackage.com.bradmcevoy.http.Range;
-import com.dotcms.repackage.com.bradmcevoy.http.Resource;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.BadRequestException;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotAuthorizedException;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotFoundException;
-import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
+
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import io.milton.http.Auth;
+import io.milton.http.HttpManager;
+import io.milton.http.Range;
+import io.milton.http.exceptions.BadRequestException;
+import io.milton.http.exceptions.NotAuthorizedException;
+import io.milton.http.exceptions.NotFoundException;
+import io.milton.resource.FolderResource;
+import io.milton.resource.Resource;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.Map;
+import org.apache.commons.io.IOUtils;
 
 public abstract class BasicFolderResourceImpl implements FolderResource {
     
@@ -87,20 +90,22 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
         }
     } // createNew.
 
-    private Resource createNewTemporalResource (final String newName, final InputStream in) {
+    private Resource createNewTemporalResource(final String newName, final InputStream in) {
 
         try {
 
-            this.originalPath = (!this.originalPath.endsWith("/"))? this.originalPath + "/":this.originalPath;
+            this.originalPath = (!this.originalPath.endsWith("/")) ? this.originalPath + "/" : this.originalPath;
             final File tempFile = this.dotDavHelper.createTempFile("/" + this.host.getHostname() + this.originalPath + newName);
-            FileUtils.copyStreamToFile(tempFile, in, null);
-            final Resource tempFileResource = new TempFileResourceImpl(tempFile, this.originalPath + newName, this.isAutoPub);
-            return tempFileResource;
-        } catch (Exception e){
+            IOUtils.copy(in, Files.newOutputStream(tempFile.toPath()));
+            return new TempFileResourceImpl(tempFile, this.originalPath + newName, this.isAutoPub);
+            
+        } catch (Exception e) {
 
             Logger.debug(this, "Error creating temp file", e);
             Logger.warn(this, "Error creating temp file", e);
             throw new DotRuntimeException(e.getMessage(), e);
+        }finally {
+            CloseUtils.closeQuietly(in);
         }
     }
 

@@ -3,21 +3,22 @@
  */
 package com.dotmarketing.webdav;
 
-import com.dotcms.repackage.com.bradmcevoy.http.Auth;
-import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
-import com.dotcms.repackage.com.bradmcevoy.http.FolderResource;
-import com.dotcms.repackage.com.bradmcevoy.http.HttpManager;
-import com.dotcms.repackage.com.bradmcevoy.http.LockInfo;
-import com.dotcms.repackage.com.bradmcevoy.http.LockResult;
-import com.dotcms.repackage.com.bradmcevoy.http.LockTimeout;
-import com.dotcms.repackage.com.bradmcevoy.http.LockToken;
-import com.dotcms.repackage.com.bradmcevoy.http.LockableResource;
-import com.dotcms.repackage.com.bradmcevoy.http.LockingCollectionResource;
-import com.dotcms.repackage.com.bradmcevoy.http.Range;
-import com.dotcms.repackage.com.bradmcevoy.http.Request;
-import com.dotcms.repackage.com.bradmcevoy.http.Request.Method;
-import com.dotcms.repackage.com.bradmcevoy.http.Resource;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotAuthorizedException;
+import io.milton.http.Auth;
+import io.milton.resource.CollectionResource;
+import io.milton.resource.FolderResource;
+import io.milton.http.HttpManager;
+import io.milton.http.LockInfo;
+import io.milton.http.LockResult;
+import io.milton.http.LockTimeout;
+import io.milton.http.LockToken;
+import io.milton.resource.LockableResource;
+import io.milton.resource.LockingCollectionResource;
+import io.milton.http.Range;
+import io.milton.http.Request;
+import io.milton.http.Request.Method;
+import io.milton.resource.Resource;
+import io.milton.http.exceptions.NotAuthorizedException;
+import io.milton.http.exceptions.PreConditionFailedException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -51,7 +52,7 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 	}
 	
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.MakeCollectionableResource#createCollection(java.lang.String)
+	 * @see io.milton.http.MakeCollectionableResource#createCollection(java.lang.String)
 	 */
 	public CollectionResource createCollection(String newName) {
 		dotDavHelper.createTempFolder(folder.getPath() + File.separator + newName);
@@ -61,7 +62,7 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.CollectionResource#child(java.lang.String)
+	 * @see io.milton.resource.CollectionResource#child(java.lang.String)
 	 */
 	public Resource child(String childName) {
 		List<? extends Resource> children = getChildren();
@@ -82,7 +83,7 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.CollectionResource#getChildren()
+	 * @see io.milton.resource.CollectionResource#getChildren()
 	 */
 	public List<? extends Resource> getChildren() {
 		File[] children = folder.listFiles();
@@ -100,7 +101,7 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#authenticate(java.lang.String, java.lang.String)
+	 * @see io.milton.resource.Resource#authenticate(java.lang.String, java.lang.String)
 	 */
 	public Object authenticate(String username, String password) {
 		try {
@@ -112,7 +113,7 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#authorise(com.dotcms.repackage.com.bradmcevoy.http.Request, com.dotcms.repackage.com.bradmcevoy.http.Request.Method, com.dotcms.repackage.com.bradmcevoy.http.Auth)
+	 * @see io.milton.resource.Resource#authorise(io.milton.http.Request, io.milton.http.Request.Method, io.milton.http.Auth)
 	 */
 	public boolean authorise(Request req, Method method, Auth auth) {
 		if(auth == null)
@@ -123,49 +124,49 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#checkRedirect(com.dotcms.repackage.com.bradmcevoy.http.Request)
+	 * @see io.milton.resource.Resource#checkRedirect(io.milton.http.Request)
 	 */
 	public String checkRedirect(Request req) {
 		return null;
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#getContentLength()
+	 * @see io.milton.resource.Resource#getContentLength()
 	 */
 	public Long getContentLength() {
 		return (long)0;
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#getContentType(java.lang.String)
+	 * @see io.milton.resource.Resource#getContentType(java.lang.String)
 	 */
 	public String getContentType(String arg0) {
 		return null;
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#getModifiedDate()
+	 * @see io.milton.resource.Resource#getModifiedDate()
 	 */
 	public Date getModifiedDate() {
 		return new Date(folder.lastModified());
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#getRealm()
+	 * @see io.milton.resource.Resource#getRealm()
 	 */
 	public String getRealm() {
 		return null;
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#getUniqueId()
+	 * @see io.milton.resource.Resource#getUniqueId()
 	 */
 	public String getUniqueId() {
 		return folder.hashCode() + "";
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.PutableResource#createNew(java.lang.String, java.io.InputStream, java.lang.Long, java.lang.String)
+	 * @see io.milton.http.PutableResource#createNew(java.lang.String, java.io.InputStream, java.lang.Long, java.lang.String)
 	 */
 	public Resource createNew(String newName, InputStream in, Long length, String contentType) throws IOException {
 		File f = new File(folder.getPath() + File.separator + newName);
@@ -187,7 +188,7 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.CopyableResource#copyTo(com.dotcms.repackage.com.bradmcevoy.http.CollectionResource, java.lang.String)
+	 * @see io.milton.http.CopyableResource#copyTo(io.milton.resource.CollectionResource, java.lang.String)
 	 */
 	public void copyTo(CollectionResource collRes, String name) {
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
@@ -217,28 +218,28 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.DeletableResource#delete()
+	 * @see io.milton.http.DeletableResource#delete()
 	 */
 	public void delete() {
 		folder.delete();
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.GetableResource#getMaxAgeSeconds()
+	 * @see io.milton.http.GetableResource#getMaxAgeSeconds()
 	 */
 	public Long getMaxAgeSeconds() {
 		return new Long(60);
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.GetableResource#sendContent(java.io.OutputStream, com.dotcms.repackage.com.bradmcevoy.http.Range, java.util.Map)
+	 * @see io.milton.http.GetableResource#sendContent(java.io.OutputStream, io.milton.http.Range, java.util.Map)
 	 */
 	public void sendContent(OutputStream arg0, Range arg1, Map<String, String> arg2, String arg3) throws IOException {
 		return;
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.MoveableResource#moveTo(com.dotcms.repackage.com.bradmcevoy.http.CollectionResource, java.lang.String)
+	 * @see io.milton.http.MoveableResource#moveTo(io.milton.resource.CollectionResource, java.lang.String)
 	 */
 	public void moveTo(CollectionResource collRes, String name) {
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
@@ -277,7 +278,7 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.PropFindableResource#getCreateDate()
+	 * @see io.milton.http.PropFindableResource#getCreateDate()
 	 */
 	public Date getCreateDate() {
 		 Date dt = new Date(folder.lastModified());
@@ -338,5 +339,11 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 		createCollection(name);
 		return lock(timeout, lockInfo).getLockToken();
 	}
+
+    @Override
+    public LockResult refreshLock(String token, LockTimeout timeout) throws NotAuthorizedException, PreConditionFailedException {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 }
