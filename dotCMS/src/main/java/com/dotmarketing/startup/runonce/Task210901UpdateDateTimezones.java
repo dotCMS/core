@@ -14,7 +14,9 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 import java.util.TimeZone;
 
 /**
@@ -25,6 +27,11 @@ import java.util.TimeZone;
  *
  */
 public class Task210901UpdateDateTimezones extends AbstractJDBCStartupTask {
+
+    /** The time offset in seconds between UTC and the Time Zone selected by the CMS Admin in the back-end */
+    protected int offsetFromUTCtoTimezone = 0;
+    /** The difference in seconds for the Daylight Savings Time, if applicable */
+    protected int dstOffset = 0;
 
     @Override
     public boolean forceRun() {
@@ -85,7 +92,7 @@ public class Task210901UpdateDateTimezones extends AbstractJDBCStartupTask {
             while (results.next()) {
                 if ("timestamp".equalsIgnoreCase(results.getString("TYPE_NAME"))) {
                     final String columnName = results.getString("COLUMN_NAME");
-                    Logger.info(this, "Updating " + tableName + "." + columnName + " column to timestamp with timezone");
+                    Logger.info(this, "Updating '" + tableName + "." + columnName + "' column to timestamp with timezone");
                     String statementString =
                                     "ALTER TABLE \"{0}\" ALTER COLUMN \"{1}\" TYPE TIMESTAMP WITH TIME ZONE USING \"{2}\"";
                     statementString = statementString.replace("{0}", tableName).replace("{1}", columnName).replace("{2}",
@@ -135,9 +142,15 @@ public class Task210901UpdateDateTimezones extends AbstractJDBCStartupTask {
     }
 
     /**
-     * Returns the time difference in seconds between the currently selected Time Zone and UTC.
+     * Returns the time difference in seconds between the currently selected Time Zone and UTC. This method will
+     * multiply the offset by -1 so that dates can be translated correctly into the expected Time Zone. For example, the
+     * offset between UTC and EST is -18000 seconds (-5 hours). So, in order to translate a date and time from UTC into
+     * EST, we now need to ADD 18000 seconds to the UTC date, which is why we need to multiply it by -1:
+     * {@code -18000 x -1 = 18000}
+     * <p>Additionally, if the user-selected Time Zone has Daylight Savings Time, such an offset will be calculated as
+     * well, at least in a generic way.</p>
      *
-     * @return The time difference in seconds.
+     * @return The time difference in seconds from UTC to the user-selected Time Zone.
      */
     @VisibleForTesting
     int calculateOffsetSeconds() {
@@ -147,7 +160,17 @@ public class Task210901UpdateDateTimezones extends AbstractJDBCStartupTask {
                 offset));
         // For existing non-time zone dates, the UTC offset must be multiplied by -1 in order to correctly add or
         // subtract it from every date, depending on the hemisphere that the dotCMS Time Zone is located in
-        return offset * -1;
+        offsetFromUTCtoTimezone = offset * -1;
+        dstOffset = fromMillisToSeconds(Calendar.getInstance(timeZone, Locale.ENGLISH).get(Calendar.DST_OFFSET));
+        if (dstOffset != 0) {
+            Logger.info(this, String.format("IMPORTANT! Time Zone '%s' has a DST Offset of %s seconds. Date " +
+                                                    "re-adjustment must be applied later.", timeZone.getDisplayName(),
+                    dstOffset));
+            // If the original Time Zone offset is negative, we need to multiply the DST offset by -1 in order to
+            // subtract it from existing dates. If not, we just add it
+            dstOffset = offset < 0 ? dstOffset * -1 : dstOffset;
+        }
+        return offsetFromUTCtoTimezone;
     }
 
     /**
@@ -157,17 +180,29 @@ public class Task210901UpdateDateTimezones extends AbstractJDBCStartupTask {
      */
     @VisibleForTesting
     void updateDateFieldsToUTC() throws DotDataException {
-        int offset = calculateOffsetSeconds();
+        calculateOffsetSeconds();
+        applyTimeOffsetToDates(offsetFromUTCtoTimezone);
+        if (dstOffset != 0) {
+            Logger.info(this, String.format("Re-adjusting dates belonging to DST:"));
+            applyTimeOffsetToDates(dstOffset, true);
+        }
+    }
+
+    private void applyTimeOffsetToDates(final int offsetFromUTCtoTimezone) throws DotDataException {
+        applyTimeOffsetToDates(offsetFromUTCtoTimezone, false);
+    }
+
+    private void applyTimeOffsetToDates(final int offsetFromUTCtoTimezone, final boolean considerDst) throws DotDataException {
         // Updating all 25 date values in the "contentlet" table
         for (int i = 1; i < 26; i++) {
-            updateDateValue("contentlet", "date" + i, offset);
+            updateDateValue("contentlet", "date" + i, offsetFromUTCtoTimezone, considerDst);
         }
         // Updating "mod_date" value in the "contentlet" table
-        updateDateValue("contentlet", "mod_date", offset);
+        updateDateValue("contentlet", "mod_date", offsetFromUTCtoTimezone, considerDst);
         // Updating date values in the "identifier" table
-        updateDateValue("identifier", "syspublish_date", offset);
-        updateDateValue("identifier", "sysexpire_date", offset);
-        updateDateValue("identifier", "create_date", offset);
+        updateDateValue("identifier", "syspublish_date", offsetFromUTCtoTimezone, considerDst);
+        updateDateValue("identifier", "sysexpire_date", offsetFromUTCtoTimezone, considerDst);
+        updateDateValue("identifier", "create_date", offsetFromUTCtoTimezone, considerDst);
     }
 
     /**
@@ -180,13 +215,38 @@ public class Task210901UpdateDateTimezones extends AbstractJDBCStartupTask {
      *
      * @throws DotDataException An error occurred when running the SQL query.
      */
-    private void updateDateValue(final String table, final String column, final int offset) throws DotDataException {
-        Logger.info(this, String.format("Updating existing %s.%s values to UTC time", table, column));
-        final String sql = "UPDATE {1} SET {2} = {2} + INTERVAL '{3}' SECOND WHERE {2} IS NOT NULL"
-                                   .replace("{1}", table)
-                                   .replace("{2}", column)
-                                   .replace("{3}", String.valueOf(offset));
-        new DotConnect().setSQL(sql).loadResult();
+    private void updateDateValue(final String table, final String column, final int offset, final boolean considerDst) throws DotDataException {
+        Logger.info(this, String.format("Adjusting current '%s.%s' values by %s seconds", table, column, offset));
+        String sql;
+        if (considerDst) {
+            sql = ("UPDATE {1} SET {2} = {2} + INTERVAL '{3}' SECOND WHERE {2} IS NOT NULL AND " +
+                                        "(DATE_PART('month',{2}) = '4' OR DATE_PART('month',{2}) = '5' OR " +
+                                        "DATE_PART('month',{2}) = '6' OR DATE_PART('month',{2}) = '7' OR " +
+                                        "DATE_PART('month',{2}) = '8' OR DATE_PART('month',{2}) = '9' OR " +
+                                        "DATE_PART('month',{2}) = '10')")
+                                       .replace("{1}", table)
+                                       .replace("{2}", column)
+                                       .replace("{3}", String.valueOf(offset));
+            new DotConnect().setSQL(sql).loadResult();
+            sql = ("UPDATE {1} SET {2} = {2} + INTERVAL '{3}' SECOND WHERE {2} IS NOT NULL AND " +
+                           "DATE_PART('month',{2}) = '3' AND DATE_PART('day',{2}) BETWEEN '01' and '13'")
+                          .replace("{1}", table)
+                          .replace("{2}", column)
+                          .replace("{3}", String.valueOf(offset));
+            new DotConnect().setSQL(sql).loadResult();
+            sql = ("UPDATE {1} SET {2} = {2} + INTERVAL '{3}' SECOND WHERE {2} IS NOT NULL AND " +
+                           "DATE_PART('month',{2}) = '11' AND DATE_PART('day',{2}) BETWEEN '01' and '05'")
+                          .replace("{1}", table)
+                          .replace("{2}", column)
+                          .replace("{3}", String.valueOf(offset));
+            new DotConnect().setSQL(sql).loadResult();
+        } else {
+            sql = "UPDATE {1} SET {2} = {2} + INTERVAL '{3}' SECOND WHERE {2} IS NOT NULL"
+                                       .replace("{1}", table)
+                                       .replace("{2}", column)
+                                       .replace("{3}", String.valueOf(offset));
+            new DotConnect().setSQL(sql).loadResult();
+        }
     }
 
     /**
