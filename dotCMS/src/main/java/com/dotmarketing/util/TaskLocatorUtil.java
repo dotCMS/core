@@ -225,6 +225,7 @@ import com.dotmarketing.startup.runonce.Task220825MakeSomeSystemFieldsRemovable;
 import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTable;
 import com.dotmarketing.startup.runonce.Task220912UpdateCorrectShowOnMenuProperty;
 import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExperiment;
+import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKey;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -525,6 +526,7 @@ public class TaskLocatorUtil {
 		.add(Task220912UpdateCorrectShowOnMenuProperty.class)
 		.add(Task220824CreateDefaultVariant.class)
 		.add(Task220928AddLookbackWindowColumnToExperiment.class)
+		.add(Task221007AddVariantIntoPrimaryKey.class)
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
