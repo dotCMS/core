@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -35,9 +37,24 @@ public class Task220825CreateVariantFieldTest {
     }
 
     @After
-    public void createPrimaryKeyAgain() throws Exception {
+    public void createPrimaryKeyWithTwoFields() throws Exception {
         new DotConnect().executeStatement("ALTER TABLE contentlet_version_info "
                 + " ADD CONSTRAINT contentlet_version_info_pkey PRIMARY KEY (identifier, lang)");
+    }
+
+    @AfterClass
+    public static void createPrimaryKeyWithThreeFields() throws Exception {
+
+        final Optional<String> mssqlPrimaryKeyName = DbConnectionFactory.isMsSql() ?
+                getMSSQLPrimaryKeyName() : Optional.of("contentlet_version_info_pkey");
+
+        if (mssqlPrimaryKeyName.isPresent()) {
+            new DotConnect().executeStatement("ALTER TABLE contentlet_version_info DROP CONSTRAINT "
+                    + mssqlPrimaryKeyName.get());
+        }
+
+        new DotConnect().executeStatement("ALTER TABLE contentlet_version_info "
+                + " ADD CONSTRAINT contentlet_version_info_pkey PRIMARY KEY (identifier, lang, variant_id)");
     }
 
     private static void checkIfVariantColumnExist() throws SQLException {
@@ -173,7 +190,7 @@ public class Task220825CreateVariantFieldTest {
                 dotConnect.executeStatement(
                         "ALTER TABLE contentlet_version_info DROP COLUMN variant_id");
             } catch (Exception e) {
-                //ignore
+                throw new RuntimeException(e);
             }
         }
     }
@@ -219,7 +236,7 @@ public class Task220825CreateVariantFieldTest {
         }
     }
 
-    private Optional<String> getMSSQLPrimaryKeyName()  {
+    private static Optional<String> getMSSQLPrimaryKeyName()  {
         try {
             final ArrayList arrayList = new DotConnect()
                     .setSQL("SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS T "

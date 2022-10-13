@@ -39,7 +39,7 @@ public class Task220825CreateVariantField extends AbstractJDBCStartupTask {
         final String dataBaseFieldType = DbConnectionFactory.isMsSql() ? "NVARCHAR" : "varchar";
 
         return String.format(
-                "ALTER TABLE contentlet_version_info ADD variant_id %s(255) default 'DEFAULT'",
+                "ALTER TABLE contentlet_version_info ADD variant_id %s(255) default 'DEFAULT' not null",
                 dataBaseFieldType);
     }
 
