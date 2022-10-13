@@ -34,24 +34,6 @@ interface PluginState {
     open: boolean;
 }
 
-export const getImagePosition = (node: HTMLElement, type: string): DOMRect => {
-    // If is a image Node, get the image position
-    if (type === ImageNode.name) {
-        const rect = node.getElementsByTagName('img')[0]?.getBoundingClientRect().toJSON();
-        const height = rect.height;
-
-        // height: 20 because some image are way too big.
-        // By default tippy only allow set the tippy above/below/next to an element.
-        // This trick it's going to help us to set the form inside the image bounderies.
-        const newRect = {
-            ...rect,
-            height: height > 80 ? 20 : height
-        };
-
-        return newRect as DOMRect;
-    }
-};
-
 export class BubbleFormView extends BubbleMenuView {
     public editor: Editor;
 
@@ -134,7 +116,7 @@ export class BubbleFormView extends BubbleMenuView {
                         this.node = doc.nodeAt(from);
                         const type = this.node.type.name;
 
-                        return getImagePosition(node, type) || getNodePosition(node, type);
+                        return this.tippyRect(node, type);
                     }
                 }
 
@@ -160,16 +142,17 @@ export class BubbleFormView extends BubbleMenuView {
             interactive: true,
             maxWidth: 'none',
             trigger: 'manual',
-            placement: 'bottom',
+            placement: 'bottom-start',
             hideOnClick: 'toggle',
             popperOptions: {
                 modifiers: [
                     {
                         name: 'flip',
-                        options: { fallbackPlacements: ['top'] }
+                        options: { fallbackPlacements: ['top-start'] }
                     }
                 ]
             },
+
             onShow: () => {
                 requestAnimationFrame(() =>
                     this.component.instance.inputs.first.nativeElement.focus()
@@ -211,8 +194,15 @@ export class BubbleFormView extends BubbleMenuView {
         }
 
         this.editor.commands.closeForm();
+
         // we use `setTimeout` to make sure `selection` is already updated
         setTimeout(() => this.update(this.editor.view));
+    }
+
+    private tippyRect(node, type) {
+        const domRect = document.querySelector('#bubble-menu')?.getBoundingClientRect();
+
+        return domRect || getNodePosition(node, type);
     }
 }
 
