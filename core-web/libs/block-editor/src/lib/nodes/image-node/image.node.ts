@@ -22,8 +22,21 @@ export const ImageNode = Image.extend({
 
     addAttributes() {
         return {
-            // Extend Attributes: https://tiptap.dev/guide/custom-extensions#extend-existing-attributes
-            ...this.parent?.(),
+            src: {
+                default: null,
+                parseHTML: (element) => element.getAttribute('src'),
+                renderHTML: (attributes) => ({ src: attributes.src || attributes.data.asset })
+            },
+            alt: {
+                default: null,
+                parseHTML: (element) => element.getAttribute('alt'),
+                renderHTML: (attributes) => ({ alt: attributes.alt || attributes.data?.title })
+            },
+            title: {
+                default: null,
+                parseHTML: (element) => element.getAttribute('title'),
+                renderHTML: (attributes) => ({ title: attributes.title || attributes.data?.title })
+            },
             style: {
                 default: null,
                 parseHTML: (element) => element.getAttribute('style'),

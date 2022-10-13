@@ -100,6 +100,9 @@ export class BubbleFormView extends BubbleMenuView {
         });
         this.element.addEventListener('mousedown', this.mousedownHandler, { capture: true });
         this.editor.on('focus', this.focusHandler);
+
+        // We need to also react to page scrolling.
+        document.body.addEventListener('scroll', this.hanlderScroll.bind(this), true);
     }
 
     update(view: EditorView, prevState?: EditorState): void {
@@ -182,8 +185,14 @@ export class BubbleFormView extends BubbleMenuView {
     };
 
     show() {
-        const { alt, src, title } = this.editor.getAttributes(ImageNode.name);
-        this.component.instance.setFormValues({ alt, src, title });
+        const { alt, src, title, data } = this.editor.getAttributes(ImageNode.name);
+        const { title: dotTitle = '', asset } = data || {};
+
+        this.component.instance.setFormValues({
+            alt: alt ?? dotTitle,
+            src: src ?? asset,
+            title: title ?? dotTitle
+        });
 
         this.tippy?.show();
     }
@@ -194,6 +203,16 @@ export class BubbleFormView extends BubbleMenuView {
         this.$destroy.next(true);
         this.component.destroy();
         this.component.instance.formValues.unsubscribe();
+    }
+
+    private hanlderScroll(e: Event) {
+        if (this.tippy?.popper && this.tippy?.popper.contains(e.target as HTMLElement)) {
+            return true;
+        }
+
+        this.editor.commands.closeForm();
+        // we use `setTimeout` to make sure `selection` is already updated
+        setTimeout(() => this.update(this.editor.view));
     }
 }
 
