@@ -7,7 +7,9 @@ import com.dotcms.model.contenttype.ContentType;
 import java.util.List;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
@@ -43,5 +45,22 @@ public interface ContentTypeAPI {
             @QueryParam("direction") String direction,
             @QueryParam("type") String type,
             @QueryParam("host") String host);
+
+    @GET
+    @Path("/id/{idOrVar}")
+    @Operation(
+            summary = "Get a specific Content-type for the given id or varName"
+    )
+    ResponseEntityView<ContentType> getContentType(@PathParam("idOrVar") final String idOrVar,
+            @QueryParam("languageId") final Long languageId,
+            @QueryParam("live") final Boolean paramLive);
+
+
+    @POST
+    @Operation(
+            summary = ""
+    )
+    ResponseEntityView<List<ContentType>> createContentTypes(final List<ContentType> contentTypes);
+
 
 }
