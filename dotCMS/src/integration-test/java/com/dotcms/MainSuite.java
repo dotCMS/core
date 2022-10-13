@@ -82,6 +82,7 @@ import com.dotcms.rest.api.v1.folder.FolderResourceTest;
 import com.dotcms.rest.api.v1.menu.MenuResourceTest;
 import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
 import com.dotcms.rest.api.v1.system.ConfigurationHelperTest;
+import com.dotcms.rest.api.v1.taillog.TailLogResourceTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
 import com.dotcms.saml.SamlConfigurationServiceTest;
@@ -184,6 +185,7 @@ import com.dotmarketing.startup.runonce.Task220825MakeSomeSystemFieldsRemovableT
 import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTableTest;
 
 import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExperimentTest;
+import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -202,6 +204,7 @@ import org.junit.runners.Suite.SuiteClasses;
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
         Task220825CreateVariantFieldTest.class,
+        Task221007AddVariantIntoPrimaryKeyTest.class,
         ContentletWebAPIImplIntegrationTest.class, // moved to top because of failures on GHA
         DependencyBundlerTest.class, // moved to top because of failures on GHA
         FolderCacheImplIntegrationTest.class,
@@ -593,6 +596,7 @@ import org.junit.runners.Suite.SuiteClasses;
         VariantCacheTest.class,
         VersionableFactoryImplTest.class,
         Task220928AddLookbackWindowColumnToExperimentTest.class,
+        TailLogResourceTest.class,
         BayesianAPIImplTest.class
 })
 public class MainSuite {

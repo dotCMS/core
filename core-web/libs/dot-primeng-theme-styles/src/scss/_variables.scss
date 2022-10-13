@@ -19,6 +19,7 @@ $gray-bg: #f1f3f4;
 $gray-hover: #eee;
 $deleted-content-color: #fdb8c0;
 $new-content-color: #ddffdd;
+$tr-hover-color: #e0e9f6;
 
 $white_rgb: var(--color-white_rgb);
 $brand-primary: var(--color-main);
@@ -66,6 +67,7 @@ $spacing-6: 2.5rem;
 $spacing-7: 3rem;
 $spacing-8: 4rem;
 $spacing-9: 4.5rem;
+$spacing-10: 7rem;
 
 $error: #d0021b;
 $warn: $orange;
@@ -74,6 +76,7 @@ $success: $green;
 
 // Basic stuffs
 $border-radius: 2px;
+$border-radius-md: 4px;
 $field-height: 36px;
 $field-tiny-height: 28px;
 $field-disabled-opacity: 0.7;
@@ -152,5 +155,7 @@ $form-width: 400px;
 
 // CONTENT TYPES
 $content-type-field-height: 74px;
-
 $dot-editor-size: 16px;
+
+// CONFIRM POPUP
+$confirm-popup-column-gap: 5px;

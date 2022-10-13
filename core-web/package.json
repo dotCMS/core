@@ -1,6 +1,6 @@
 {
   "name": "dotcms-ui",
-  "version": "22.11.0-next.258",
+  "version": "22.11.0-next.261",
   "license": "MIT",
   "engines": {
     "node": ">=16.13.2"
@@ -123,6 +123,7 @@
     "@compodoc/compodoc": "^1.1.11",
     "@materia-ui/ngx-monaco-editor": "^6.0.0",
     "@mdx-js/react": "^2.1.2",
+    "@ngneat/spectator": "^11.2.0",
     "@nrwl/cli": "14.6.3",
     "@nrwl/cypress": "14.6.3",
     "@nrwl/eslint-plugin-nx": "14.6.3",
@@ -147,11 +148,11 @@
     "@storybook/mdx2-csf": "^0.0.3",
     "@storybook/storybook-deployer": "^2.8.10",
     "@storybook/theming": "^6.5.10",
-    "@types/jest": "27.4.1",
     "@types/chart.js": "^2.9.32",
     "@types/googlemaps": "3.40.3",
     "@types/jasmine": "4.0.3",
     "@types/jasminewd2": "~2.0.8",
+    "@types/jest": "27.4.1",
     "@types/node": "18.7.1",
     "@types/puppeteer": "^5.4.2",
     "@types/webpack": "4.41.21",
