@@ -49,9 +49,9 @@ export class DotContainersService {
         version = 'working',
         includeContentType = false
     ): Observable<DotContainerEntity> {
-        const url = includeContentType
-            ? `${CONTAINER_API_URL}${version}?containerId=${id}&includeContentType=${includeContentType}`
-            : `${CONTAINER_API_URL}${version}?containerId=${id}`;
+        const url = `${CONTAINER_API_URL}${version}?containerId=${id}${
+            includeContentType ? `&includeContentType=${includeContentType}` : ''
+        }`;
 
         return this.request<DotContainerEntity>({
             url

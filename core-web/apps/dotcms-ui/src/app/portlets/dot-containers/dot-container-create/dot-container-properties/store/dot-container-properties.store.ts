@@ -114,7 +114,7 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
         }
     );
 
-    readonly updateContentTypeVisibilty = this.updater<boolean>(
+    readonly updateContentTypeVisibility = this.updater<boolean>(
         (state: DotContainerPropertiesState, isContentTypeVisible: boolean) => {
             return {
                 ...state,

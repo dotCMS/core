@@ -52,10 +52,16 @@ export class DotContainerPropertiesComponent implements OnInit {
                     maxContentlets: new FormControl(container?.maxContentlets ?? 0, [
                         Validators.required
                     ]),
-                    code: container?.code ?? '',
+                    code: new FormControl(
+                        container?.code ?? '',
+                        contentTypes.length === 0 ? [Validators.required] : null
+                    ),
                     preLoop: container?.preLoop ?? '',
                     postLoop: container?.postLoop ?? '',
-                    containerStructures: this.fb.array(contentTypes ?? [])
+                    containerStructures: this.fb.array(
+                        contentTypes ?? [],
+                        contentTypes.length ? [Validators.minLength(1)] : null
+                    )
                 });
             });
         this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((values) => {
@@ -79,7 +85,18 @@ export class DotContainerPropertiesComponent implements OnInit {
      * @memberof DotContainerPropertiesComponent
      */
     showContentTypeAndCode(): void {
-        this.store.updateContentTypeVisibilty(true);
+        this.store.updateContentTypeVisibility(true);
+        const values = this.form.value;
+        if (values.maxContentlets > 0) {
+            this.form.get('code').clearValidators();
+            this.form.get('code').reset();
+            this.form.get('containerStructures').setValidators(Validators.minLength(1));
+        } else {
+            this.form.get('code').setValidators(Validators.required);
+            this.form.get('containerStructures').clearValidators();
+        }
+
+        this.form.updateValueAndValidity();
     }
 
     /**
@@ -87,7 +104,6 @@ export class DotContainerPropertiesComponent implements OnInit {
      * @return void
      * @memberof DotContainerPropertiesComponent
      */
-
     save(): void {
         const formValues = this.form.value;
         if (formValues.identifier) {
@@ -112,11 +128,14 @@ export class DotContainerPropertiesComponent implements OnInit {
         containerStructures.forEach(({ state }: MenuItem) => {
             addInContainerStructure.push(
                 this.fb.group({
-                    structureId: state.contentType.variable,
-                    code: state?.code || ''
+                    structureId: new FormControl(state.contentType.variable ?? '', [
+                        Validators.required
+                    ]),
+                    code: new FormControl(state?.code || '', [Validators.required])
                 })
             );
         });
+        this.form.updateValueAndValidity();
     }
 
     /**
@@ -136,8 +155,14 @@ export class DotContainerPropertiesComponent implements OnInit {
     clearContent(): void {
         this.dotAlertConfirmService.confirm({
             accept: () => {
-                this.store.updateContentTypeVisibilty(false);
+                this.store.updateContentTypeVisibility(false);
                 this.form.reset();
+                this.form.get('containerStructures').clearValidators();
+                this.form.get('containerStructures').reset();
+                // clear containerStructures array
+                (this.form.get('containerStructures') as FormArray).clear();
+                this.form.get('code').addValidators(Validators.required);
+                this.form.updateValueAndValidity();
             },
             reject: () => {
                 //

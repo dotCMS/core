@@ -51,15 +51,20 @@ export class DotContentEditorStore extends ComponentStore<DotContentEditorState>
     });
 
     updateClosedTab = this.updater<number>((state, closedTabIndex) => {
-        const { selectedContentTypes } = this.get();
+        const { selectedContentTypes, contentTypesData } = this.get();
 
         const updatedSelectedContentTypes = selectedContentTypes.filter(
             (val, index) => index !== closedTabIndex
         );
 
+        const updatedContentTypesData = contentTypesData.filter(
+            (val, index) => index !== closedTabIndex
+        );
+
         return {
             ...state,
-            selectedContentTypes: updatedSelectedContentTypes
+            selectedContentTypes: updatedSelectedContentTypes,
+            contentTypesData: updatedContentTypesData
         };
     });
 
@@ -94,14 +99,19 @@ export class DotContentEditorStore extends ComponentStore<DotContentEditorState>
 
     updateRetrievedContentTypes = this.updater<DotContainerStructure[]>(
         (state, containerStructures) => {
-            const { contentTypes } = this.get();
-            const selectedContentTypes = [];
+            const { contentTypes, selectedContentTypes } = this.get();
+            const availableselectedContentTypes = [];
+            // if containerStructures strcuture available we don't need to add default contentType
+            if (containerStructures.length === 0) {
+                availableselectedContentTypes.push(...selectedContentTypes);
+            }
+
             contentTypes.forEach((contentType) => {
                 const foundSelectedContentType = containerStructures.find(
                     (content) => content.contentTypeVar === contentType.state.contentType.variable
                 );
                 if (foundSelectedContentType) {
-                    selectedContentTypes.push({
+                    availableselectedContentTypes.push({
                         ...contentType,
                         state: { ...contentType.state, ...foundSelectedContentType }
                     });
@@ -110,7 +120,8 @@ export class DotContentEditorStore extends ComponentStore<DotContentEditorState>
 
             return {
                 ...state,
-                selectedContentTypes
+                selectedContentTypes: availableselectedContentTypes,
+                contentTypesData: availableselectedContentTypes
             };
         }
     );

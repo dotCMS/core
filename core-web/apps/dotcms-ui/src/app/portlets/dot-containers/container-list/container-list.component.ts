@@ -106,7 +106,7 @@ export class ContainerListComponent implements OnDestroy {
                 fails: failsInfo,
                 action: message
             });
-        } else if (message) {
+        } else {
             this.showToastNotification(message);
         }
 
