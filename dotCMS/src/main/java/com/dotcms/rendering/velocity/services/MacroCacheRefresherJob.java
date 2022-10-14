@@ -106,8 +106,9 @@ public class MacroCacheRefresherJob implements Runnable, FileListener {
             VelocityUtil.getInstance().parseVelocity(velocityCode, com.dotmarketing.util.VelocityUtil.getBasicContext());
         } catch (IOException e) {
 
-            Logger.error(this, e.getMessage());
-            Logger.debug(this, e.getMessage(), e);
+            final String msg = "On rendering the macro file asset: " + fileAsset.getIdentifier() + ", msg: " + e.getMessage();
+            Logger.error(this,  msg);
+            Logger.debug(this, msg, e);
         }
     }
 
