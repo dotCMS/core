@@ -6565,7 +6565,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         } else if(FieldType.JSON_FIELD.toString().equals(field.getFieldType())) {
             if((value instanceof String) && (JsonUtil.isValidJSON((String)value))){
-                contentlet.setStringProperty(field.getVelocityVarName(), (String)value);
+                contentlet.setStringProperty(field.getVelocityVarName(), Try.of(
+                        ()->JsonUtil.JSON_MAPPER.readTree((String)value).toString()).getOrElse("{}"));
             } else if(value instanceof Map){
                 contentlet.setStringProperty(field.getVelocityVarName(),
                         Try.of(()->JsonUtil.getJsonAsString((Map<String, Object>) value))
