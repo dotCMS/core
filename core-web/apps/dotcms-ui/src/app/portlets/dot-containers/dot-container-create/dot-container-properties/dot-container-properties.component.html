@@ -2,14 +2,14 @@
     <form [formGroup]="form">
         <div class="dot-container-properties__button-container">
             <button
-                class="p-button-secondary"
+                class="p-button-secondary p-button-sm"
                 [label]="'Cancel' | dm"
                 (click)="cancel()"
                 pButton
                 type="button"
             ></button>
             <button
-                class="p-button-primary"
+                class="p-button-primary p-button-sm"
                 [disabled]="!form.valid || form.pristine"
                 [label]="'Save' | dm"
                 (click)="save()"
@@ -22,7 +22,13 @@
                 <ng-template pTemplate="content">
                     <span class="p-input-icon-right">
                         <i class="pi pi-times" (click)="editText.deactivate()"></i>
-                        <input type="text" pInputText formControlName="title" />
+                        <input
+                            class="dot-container-properties__title-input"
+                            [required]="true"
+                            type="text"
+                            pInputText
+                            formControlName="title"
+                        />
                     </span>
                 </ng-template>
                 <ng-template pTemplate="display">
@@ -39,16 +45,30 @@
             </p-inplace>
         </div>
         <div class="field">
-            <label class="block" for="description">{{
+            <label class="block p-label-input-required" for="description">{{
                 'message.containers.create.description' | dm
             }}</label>
-            <input id="description" type="text" formControlName="friendlyName" pInputText />
+            <input
+                class="dot-container-properties__description-input"
+                id="description"
+                [required]="true"
+                type="text"
+                formControlName="friendlyName"
+                pInputText
+            />
         </div>
         <div class="field">
-            <label class="block" for="max-contents">{{
+            <label class="block p-label-input-required" for="max-contents">{{
                 'message.containers.create.max_contents' | dm
             }}</label>
-            <input id="max-contents" type="text" formControlName="maxContentlets" pInputText />
+            <input
+                class="dot-container-properties__max-contents-input"
+                id="max-contents"
+                [required]="true"
+                type="text"
+                formControlName="maxContentlets"
+                pInputText
+            />
             <button
                 class="p-button-secondary"
                 *ngIf="vm.isContentTypeVisible"
