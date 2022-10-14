@@ -1,0 +1,5 @@
+
+ #set($contentMap = $dotcontent.find($request.getParameter('id'))
+ #set($contentlet = $contentMap.getContentletObject().getMap())
+ $contentlet.put("indexPolicy","FORCE")  
+ #set($publishResponse = $workflowtool.fire($contentlet, $workflowActionId))
