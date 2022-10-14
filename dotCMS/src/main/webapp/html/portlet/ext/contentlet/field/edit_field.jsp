@@ -42,7 +42,7 @@
     long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
     final Structure structure = Structure.class.cast(request.getAttribute("structure"));
     final Contentlet contentlet = Contentlet.class.cast(request.getAttribute("contentlet"));
-    long contentLanguage = contentlet.getLanguageId();
+    long contentLanguage = contentlet.getLanguageId() > 0 ? contentlet.getLanguageId() : APILocator.getLanguageAPI().getDefaultLanguage().getId();
     final Field field = Field.class.cast(request.getAttribute("field"));
     final com.dotcms.contenttype.model.field.Field newField = LegacyFieldTransformer.from(field);
 
