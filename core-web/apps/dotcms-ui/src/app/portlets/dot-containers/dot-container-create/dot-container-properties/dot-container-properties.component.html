@@ -88,7 +88,10 @@
         </div>
 
         <div class="dot-container-properties__code-container-outer">
-            <div *ngIf="vm.isContentTypeVisible">
+            <div
+                class="dot-container-properties__code-loop-container"
+                *ngIf="vm.isContentTypeVisible"
+            >
                 <dot-loop-editor
                     [isEditorVisible]="vm.showPrePostLoopInput"
                     [control]="$any(form).get('preLoop')"
@@ -104,8 +107,10 @@
                     (buttonClick)="showLoopInput()"
                 ></dot-loop-editor>
             </div>
-            <div *ngIf="!vm.isContentTypeVisible">
+            <div class="field" *ngIf="!vm.isContentTypeVisible">
+                <label class="block p-label-input-required" for="code">Code</label>
                 <dot-textarea-content
+                    id="code"
                     [show]="['code']"
                     formControlName="code"
                     language="html"

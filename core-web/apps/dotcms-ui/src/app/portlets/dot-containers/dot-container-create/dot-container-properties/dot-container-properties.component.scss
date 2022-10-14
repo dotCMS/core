@@ -11,7 +11,7 @@
 }
 
 .dot-container-properties__title-container {
-    padding: $spacing-4 0;
+    padding: $spacing-2 0;
 
     ::ng-deep .p-inplace-display {
         //padding-left: 0;
@@ -40,13 +40,16 @@
 }
 
 .dot-container-properties__code-container-outer {
-    background: $white;
     display: flex;
     flex-direction: column;
 
     dot-textarea-content {
         height: 40vh;
     }
+}
+
+.dot-container-properties__code-loop-container {
+    background: $white;
 }
 
 :host ::ng-deep {
