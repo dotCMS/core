@@ -177,7 +177,11 @@ import com.dotmarketing.startup.runonce.Task220606UpdatePushNowActionletNameTest
 import com.dotmarketing.startup.runonce.Task220824CreateDefaultVariantTest;
 
 import com.dotmarketing.startup.runonce.Task220822CreateVariantTableTest;
+
+import com.dotmarketing.startup.runonce.Task220825CreateVariantFieldTest;
+
 import com.dotmarketing.startup.runonce.Task220825MakeSomeSystemFieldsRemovableTest;
+
 import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTableTest;
 
 import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExperimentTest;
@@ -199,6 +203,7 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        Task220825CreateVariantFieldTest.class,
         Task221007AddVariantIntoPrimaryKeyTest.class,
         ContentletWebAPIImplIntegrationTest.class, // moved to top because of failures on GHA
         DependencyBundlerTest.class, // moved to top because of failures on GHA
