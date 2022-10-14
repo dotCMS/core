@@ -1,0 +1,121 @@
+package com.dotcms.analytics.helper;
+
+import com.dotcms.analytics.AnalyticsAPI;
+import com.dotcms.analytics.app.AnalyticsApp;
+import com.dotcms.analytics.model.AccessToken;
+import com.dotcms.analytics.model.AnalyticsKey;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.util.Logger;
+
+import javax.ws.rs.core.Response;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Objects;
+import java.util.Optional;
+
+
+/**
+ * Helper class for analytics matters.
+ *
+ * @author vico
+ */
+public class AnalyticsHelper {
+
+    /**
+     * Evaluates if a given {@link Response} instance has a http status within the SUCCESSFUL range.
+     *
+     * @param response http response representation
+     * @return true if the response http status is considered tobe successful, otherwise false
+     */
+    public static boolean isSuccessResponse(final Response response) {
+        return response.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL;
+    }
+
+    /**
+     * Given a {@link Response} instance, extracts JSON representing the token and deserializes to {@link AccessToken}.
+     *
+     * @param response http response representation
+     * @return an {@link Optional<AccessToken>} instance holding the access token data
+     */
+    public static Optional<AccessToken> extractToken(final Response response) {
+        return extractFromResponse(response, AccessToken.class, "Access token response is missing");
+    }
+
+    /**
+     * Given a {@link Response} instance, extracts JSON representing the token and deserializes to {@link AnalyticsKey}.
+     *
+     * @param response http response representation
+     * @return an {@link Optional<AnalyticsKey>} instance holding the analytics key data
+     */
+    public static Optional<AnalyticsKey> extractAnalyticsKey(final Response response) {
+        return extractFromResponse(response, AnalyticsKey.class, "Analytics keys response is missing");
+    }
+
+    /**
+     * Given an {@link AccessToken} evaluates if it's expired by comparing issue date to current date time.
+     * An offset can be provided to decrease the TTL window at the evaluation.
+     *
+     * @param accessToken provided access token
+     * @param minusOffset offset used to subtract to current date time
+     * @return true if current time is in the TTL window
+     */
+    public static boolean isExpired(final AccessToken accessToken, final int minusOffset) {
+        if (Objects.isNull(accessToken.issueDate())) {
+            Logger.warn(AnalyticsHelper.class, "Access token does not have a issued date, returning as expired");
+            return false;
+        }
+
+        final LocalDateTime issueDate = accessToken.issueDate()
+            .toInstant()
+            .atZone(ZoneId.systemDefault())
+            .toLocalDateTime();
+
+        // returning true if there
+        return Duration
+            .between(issueDate, LocalDateTime.now())
+            .toMinutes() >= (AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL_MINUTES - minusOffset);
+    }
+
+    /**
+     * Given an {@link AccessToken} evaluates if it's expired by comparing issue date to current date time.
+     * An offset zero is used.
+     *
+     * @param accessToken provided access token
+     * @return true if current time is in the TTL window
+     */
+    public static boolean isExpired(final AccessToken accessToken) {
+        return isExpired(accessToken, 0);
+    }
+
+    /**
+     * Extracts a deserialized JSON from a {@link Response} instance using a provided {@link Class<T>} in the
+     * deserialization process.
+     *
+     * @param response http response
+     * @param clazz class to use deserializing
+     * @param message message to use when throwing NPE
+     * @return {@link Optional<T>} instance wrapping the deserialized object
+     * @param <T> type to use when deserializing
+     */
+    private static <T> Optional<T> extractFromResponse(final Response response, final Class<T> clazz, final String message) {
+        Objects.requireNonNull(response, message);
+
+        if (!isSuccessResponse(response)) {
+            return Optional.empty();
+        }
+
+        return Optional.ofNullable(response.readEntity(clazz));
+    }
+
+    /**
+     * Creates a {@link AnalyticsApp} instance associated with provided host.
+     *
+     * @param host provided host
+     * @return associated host app
+     */
+    public static AnalyticsApp getHostApp(final Host host) {
+        return new AnalyticsApp(host);
+    }
+
+}

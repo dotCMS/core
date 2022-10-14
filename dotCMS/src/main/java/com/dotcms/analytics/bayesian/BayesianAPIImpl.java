@@ -104,9 +104,9 @@ public class BayesianAPIImpl implements BayesianAPI {
      * Given a {@link BetaDistribution} instance calculates density (pdf) elements.
      *
      * @param distribution provided beta distribution
-     * @return list of {@link AbstractSampleData} instances
+     * @return list of {@link SampleData} instances
      */
-    private List<AbstractSampleData> calcPdfElements(final BetaDistribution distribution) {
+    private List<SampleData> calcPdfElements(final BetaDistribution distribution) {
         return IntStream
                 .range(0, SAMPLE_SIZE)
                 .mapToObj(operand -> {
