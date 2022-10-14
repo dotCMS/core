@@ -253,10 +253,6 @@
 	<servlet>
 		<servlet-name>ShortyServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.ShortyServlet</servlet-class>
-	</servlet>    
-	<servlet>
-		<servlet-name>CategoriesServlet</servlet-name>
-		<servlet-class>com.dotmarketing.servlets.JSONCategoriesServlet</servlet-class>
 	</servlet>
     
     <servlet>
