@@ -39,6 +39,13 @@
     margin-right: $spacing-2;
 }
 
+.dot-container-properties__button-clear,
+dot-container-properties__button-clear:hover {
+    background-color: $gray;
+    color: $white;
+    border: none;
+}
+
 .dot-container-properties__code-container-outer {
     display: flex;
     flex-direction: column;
