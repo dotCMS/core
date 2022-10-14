@@ -371,12 +371,12 @@
          * @param data
          * @private
          */
-        function _updateView(data){
+        function _updateView(data) {
 
             const pageId = parseInt(data.pageId);
             //initialize var so we know what page we're on
 
-            if(currentPageIndex === 0){
+            if (currentPageIndex === 0) {
                 currentPageIndex = pageId;
                 pagesOnScreen = 0;
             } else {
@@ -386,10 +386,20 @@
                 }
             }
             const newContent = data.lines;
-            if (true === _isFiltering()) {
-                dest.insertAdjacentHTML('beforeend', _applyHighlight(newContent));
+
+            if (matchLinesOnlyView) {
+                const element = document.createElement('p');
+                element.innerHTML = newContent;
+                const matches = _matchingLines([element]);
+                matches.forEach(value => {
+                    dest.insertAdjacentHTML('beforeend', _applyHighlight(value));
+                });
             } else {
-                dest.insertAdjacentHTML('beforeend', newContent);
+                if (true === _isFiltering()) {
+                    dest.insertAdjacentHTML('beforeend', _applyHighlight(newContent));
+                } else {
+                    dest.insertAdjacentHTML('beforeend', newContent);
+                }
             }
 
         }
@@ -628,7 +638,7 @@
          * @private
          */
         function _matchingLines(nodes){
-            const regEx = new RegExp( keyword, "i");
+            const regEx = new RegExp(`(?!(class|style)+=\")(?!margin:0)${keyword}`, 'i');
             let matches = [];
             if(nodes && nodes.length > 0){
                 nodes.forEach(el => {

@@ -144,14 +144,12 @@ public class TailLogResource {
 
     static class MyTailerListener extends TailerListenerAdapter {
 
-        StringBuffer out = new StringBuffer();
+       private final StringBuilder out = new StringBuilder();
 
-        public void handle(String line) {
-            getOut().append(UtilMethods.xmlEscape(line)).append("<br/>");
-        }
-
-        StringBuffer getOut() {
-            return out;
+        public void handle(final String line) {
+            synchronized (this) {
+                out.append(UtilMethods.xmlEscape(line)).append("<br/>");
+            }
         }
 
         String getThenDispose() {
