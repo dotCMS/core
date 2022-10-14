@@ -18,7 +18,7 @@
             ></button>
         </div>
         <div class="dot-container-properties__title-container">
-            <p-inplace #editText>
+            <p-inplace #editText [active]="!form?.value?.identifier">
                 <ng-template pTemplate="content">
                     <span class="p-input-icon-right">
                         <i class="pi pi-times" (click)="editText.deactivate()"></i>
