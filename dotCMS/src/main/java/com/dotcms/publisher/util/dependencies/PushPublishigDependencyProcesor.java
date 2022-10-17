@@ -59,14 +59,14 @@ import java.util.stream.Collectors;
  */
 public class PushPublishigDependencyProcesor implements DependencyProcessor {
 
-    private PublisherFilter publisherFilter;
-    private PushPublisherConfig config;
-    private User user;
-    private ConcurrentDependencyProcessor dependencyProcessor;
-    private PushPublishigDependencyProvider pushPublishigDependencyProvider;
+    private final PublisherFilter publisherFilter;
+    private final PushPublisherConfig config;
+    private final User user;
+    private final ConcurrentDependencyProcessor dependencyProcessor;
+    private final PushPublishigDependencyProvider pushPublishigDependencyProvider;
 
-    private DependencyModDateUtil dependencyModDateUtil;
-    private PushedAssetUtil pushedAssetUtil;
+    private final DependencyModDateUtil dependencyModDateUtil;
+    private final PushedAssetUtil pushedAssetUtil;
 
     /**
      * Creates an instance of the Push Publishing Dependency Processor mechanism, and initializes all the different data
@@ -924,14 +924,24 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
     }
 
     private <T> boolean isExcludeByFilter(final PusheableAsset pusheableAsset) {
-
-        return (
-            !publisherFilter.isDependencies() ||
-            PusheableAsset.RELATIONSHIP == pusheableAsset && !publisherFilter.isRelationships()) ||
-            publisherFilter.doesExcludeDependencyClassesContainsType(pusheableAsset.getType()
-        );
+        return !isRelationshipObject(pusheableAsset) && (!publisherFilter.isDependencies() ||
+            publisherFilter.doesExcludeDependencyClassesContainsType(pusheableAsset.getType()));
     }
 
+    /**
+     * Checks whether the specified Pusheable Asset represents a {@link Relationship} object or not. Unless the
+     * {@code excludeDependencyClasses} attribute in the Filter Descriptor YAML file includes the {@link Relationship}
+     * class, we should <b>ALWAYS</b> send the Relationship object when a Contentlet with a relationship field is being
+     * pushed. Otherwise, shallow pushing a Contentlet with related content and then shallow pushing such a related
+     * content will result in the parent content not having its relationship set as expected.
+     *
+     * @param pusheableAsset The {@link PusheableAsset} that is being analyzed.
+     *
+     * @return If the Pusheable Asset is a {@link Relationship} object, return {@code true}.
+     */
+    private boolean isRelationshipObject(final PusheableAsset pusheableAsset) {
+        return (PusheableAsset.RELATIONSHIP == pusheableAsset && !publisherFilter.doesExcludeDependencyClassesContainsType(pusheableAsset.getType()));
+    }
 
     private <T> boolean shouldCheckModDate(T asset) {
         return !Language.class.isInstance(asset);
