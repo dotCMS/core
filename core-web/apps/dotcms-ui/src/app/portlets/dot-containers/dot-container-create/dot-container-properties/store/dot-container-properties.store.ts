@@ -21,6 +21,7 @@ export interface DotContainerPropertiesState {
     isContentTypeButtonEnabled: boolean;
     container: DotContainer;
     contentTypes: DotContainerStructure[];
+    apiLink: string;
 }
 
 @Injectable()
@@ -37,7 +38,8 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
             isContentTypeVisible: false,
             isContentTypeButtonEnabled: false,
             contentTypes: [],
-            container: null
+            container: null,
+            apiLink: ''
         });
         this.activatedRoute.data
             .pipe(pluck('container'), take(1))
@@ -54,6 +56,8 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
                     } else {
                         this.updateContainerState(containerEntity);
                     }
+
+                    this.updateApiLink(container.identifier);
                 }
             });
     }
@@ -133,6 +137,15 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
         }
     );
 
+    readonly updateApiLink = this.updater<string>(
+        (state: DotContainerPropertiesState, apiLink: string) => {
+            return {
+                ...state,
+                apiLink
+            };
+        }
+    );
+
     readonly saveContainer = this.effect((origin$: Observable<DotContainerRequest>) => {
         return origin$.pipe(
             switchMap((container: DotContainerRequest) => {
@@ -176,4 +189,13 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
             })
         );
     });
+
+    /**
+     * It returns a string that is the URL to the working directory of the container
+     * @param {string} identifier - The container identifier.
+     * @returns The API link for the container.
+     */
+    private getApiLink(identifier: string): string {
+        return identifier ? `/api/v1/containers/${identifier}/working` : '';
+    }
 }
