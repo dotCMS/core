@@ -41,7 +41,7 @@ import com.liferay.portal.model.User;
  * @author Jason Tesser
  * 
  */
-public class TemplateFolderResourceImpl implements LockableResource,
+public class TemplateFolderResourceImpl implements DotResource,
 		LockingCollectionResource, FolderResource, MakeCollectionableResource {
 
 	public static final String TEMPLATE_FOLDER="_TEMPLATE";

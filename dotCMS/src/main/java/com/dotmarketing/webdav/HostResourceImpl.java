@@ -199,7 +199,7 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
         	prePath += dotDavHelper.getLanguage();
         	prePath += "/";
         }
-		java.io.File tempDir = new java.io.File(dotDavHelper.getTempDir().getPath() + java.io.File.separator + host.getHostname());
+		java.io.File tempDir = dotDavHelper.getOrCreateTempFolder( host.getHostname());
 		if(tempDir.exists() && tempDir.isDirectory()){
 			java.io.File[] files = tempDir.listFiles();
 			for (java.io.File file : files) {
@@ -223,9 +223,7 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 		return host;
 	}
 
-	public void setHost(Host host) {
-		this.host = host;
-	}
+
 
 	private List<Folder> listFolders(){
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
@@ -254,13 +252,11 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 	public CollectionResource createCollection(String newName) throws DotRuntimeException {
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		if(dotDavHelper.isTempResource(newName)){
-			File f = dotDavHelper.createTempFolder(File.separator + host.getHostname() + File.separator + newName);
+			File f = dotDavHelper.getOrCreateTempFolder(File.separator + host.getHostname() + File.separator + newName);
 			TempFolderResourceImpl tr = new TempFolderResourceImpl(f.getPath(),f ,isAutoPub);
 			return tr;
 		}
-		if(!path.endsWith("/")){
-			path = path + "/";
-		}
+
 		try {
 			Folder f = dotDavHelper.createFolder(path + newName, user);
 			FolderResourceImpl fr = new FolderResourceImpl(f, path + newName + "/");

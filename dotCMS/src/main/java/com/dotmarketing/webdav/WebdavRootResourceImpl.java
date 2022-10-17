@@ -124,7 +124,6 @@ public class WebdavRootResourceImpl implements Resource, PropFindableResource, C
 		    String sep="/";
             if(path.endsWith(sep)) sep="";
 			HostResourceImpl hr = new HostResourceImpl(path + sep + host.getHostname());
-			hr.setHost(host);
 			hrs.add(hr);
 		}
 		try {		

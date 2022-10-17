@@ -86,6 +86,6 @@ public class WebDavCleanupJob implements Job {
 	}
 
 	private File getTempWebDavDir() throws IOException{
-		return davHelper.getTempDir();
+		return davHelper.getOrCreateTempFolder("/");
 	}
 }

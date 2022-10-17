@@ -3,26 +3,10 @@
  */
 package com.dotmarketing.webdav;
 
-import io.milton.http.Auth;
-import io.milton.resource.CollectionResource;
-
-import io.milton.http.HttpManager;
-import io.milton.http.LockInfo;
-import io.milton.http.LockResult;
-import io.milton.http.LockTimeout;
-import io.milton.http.LockToken;
-import io.milton.common.*;
-import io.milton.http.Auth;
-import io.milton.http.*;
-import io.milton.resource.*;
-
-import io.milton.http.Request;
-import io.milton.http.Request.Method;
-import io.milton.resource.Resource;
-import io.milton.http.exceptions.BadRequestException;
-import io.milton.http.exceptions.ConflictException;
-import io.milton.http.exceptions.NotAuthorizedException;
-import io.milton.http.exceptions.PreConditionFailedException;
+import java.io.File;
+import java.io.IOException;
+import java.util.Date;
+import java.util.List;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -35,16 +19,30 @@ import com.dotmarketing.util.CompanyUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import java.io.File;
-import java.io.IOException;
-import java.util.Date;
-import java.util.List;
+import io.milton.http.Auth;
+import io.milton.http.HttpManager;
+import io.milton.http.LockInfo;
+import io.milton.http.LockResult;
+import io.milton.http.LockTimeout;
+import io.milton.http.LockToken;
+import io.milton.http.Request;
+import io.milton.http.Request.Method;
+import io.milton.http.exceptions.BadRequestException;
+import io.milton.http.exceptions.ConflictException;
+import io.milton.http.exceptions.NotAuthorizedException;
+import io.milton.http.exceptions.PreConditionFailedException;
+import io.milton.resource.CollectionResource;
+import io.milton.resource.FolderResource;
+import io.milton.resource.LockableResource;
+import io.milton.resource.LockingCollectionResource;
+import io.milton.resource.MakeCollectionableResource;
+import io.milton.resource.Resource;
 
 /**
  * @author Jason Tesser
  *
  */
-public class FolderResourceImpl extends BasicFolderResourceImpl implements LockableResource, LockingCollectionResource, FolderResource , MakeCollectionableResource {
+public class FolderResourceImpl extends BasicFolderResourceImpl implements DotResource, LockingCollectionResource, FolderResource , MakeCollectionableResource {
 
 	private DotWebdavHelper dotDavHelper=new DotWebdavHelper();
 	private Folder folder;
@@ -66,29 +64,11 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		String folderPath ="";
 		if(dotDavHelper.isTempResource(newName)){
-			Host host;
-			try {
-				host = hostAPI.find(folder.getHostId(), user, false);
-				folderPath = APILocator.getIdentifierAPI().find(folder.getIdentifier()).getPath();
-			} catch (DotDataException e) {
-				Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-				throw new DotRuntimeException(e.getMessage(), e);
-			} catch (DotSecurityException e) {
-				Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-				throw new DotRuntimeException(e.getMessage(), e);
-			}
+			File tempFolder = dotDavHelper.getOrCreateTempFolder(path);
+			return new TempFolderResourceImpl(newName,tempFolder ,isAutoPub);
 
-            final String hostFolderPath = new StringBuilder(File.separator).append(host.getHostname())
-					.append(!folderPath.endsWith(File.separator)?folderPath + File.separator : folderPath).toString();
+		}
 
-            dotDavHelper.createTempFolder(hostFolderPath + newName);
-			File file = new File(File.separator + host.getHostname() + folderPath);
-			TempFolderResourceImpl tempFolderResource = new TempFolderResourceImpl(file.getPath(),file ,isAutoPub);
-			return tempFolderResource;
-		}
-		if(!path.endsWith("/")){
-			path = path + "/";
-		}
 		try {
 			Folder newfolder = dotDavHelper.createFolder(path + newName, user);
 			FolderResourceImpl folderResource = new FolderResourceImpl(newfolder, path + newName + "/");
@@ -158,17 +138,6 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 		return children;
 	}
 
-	/* (non-Javadoc)
-	 * @see io.milton.resource.Resource#authenticate(java.lang.String, java.lang.String)
-	 */
-	public Object authenticate(String username, String password) {
-		try {
-			return dotDavHelper.authorizePrincipal(username, password);
-		} catch (Exception e) {
-			Logger.error(this, e.getMessage(), e);
-			return null;
-		}
-	}
 
 	/* (non-Javadoc)
 	 * @see io.milton.resource.Resource#authorise(io.milton.http.Request, io.milton.http.Request.Method, io.milton.http.Auth)
@@ -321,7 +290,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 					Logger.error(FolderResourceImpl.class, e.getMessage(), e);
 					throw new DotRuntimeException(e.getMessage(), e);
 				}
-				dotDavHelper.createTempFolder(File.separator + host.getHostname() + folderPath + name);
+				dotDavHelper.getOrCreateTempFolder(File.separator + host.getHostname() + folderPath + name);
 				return;
 			}
 			try {
@@ -337,7 +306,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 			HostResourceImpl hr = (HostResourceImpl)collRes;
 			if(dotDavHelper.isTempResource(name)){
 				Host host = hr.getHost();
-				dotDavHelper.createTempFolder(File.separator + host.getHostname());
+				dotDavHelper.getOrCreateTempFolder(File.separator + host.getHostname());
 				return;
 			}
 			try {
@@ -372,13 +341,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 		return folder;
 	}
 
-	public void setFolder(Folder folder) {
-		this.folder = folder;
-	}
 
-	public void setPath(String path) {
-		this.path = path;
-	}
 
 	public LockResult lock(LockTimeout timeout, LockInfo lockInfo) {
 		return dotDavHelper.lock(timeout, lockInfo, getUniqueId());

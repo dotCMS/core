@@ -35,7 +35,7 @@ import java.util.Map;
  * 
  * @author Jason Tesser
  */
-public class TempFileResourceImpl implements FileResource, LockableResource {
+public class TempFileResourceImpl implements FileResource, DotResource {
     
 	private DotWebdavHelper dotDavHelper;
 	private final File file;
@@ -87,15 +87,6 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
         return file.getName();
     }
 
-    
-    public Object authenticate(String username, String password) {
-    	try {
-			return dotDavHelper.authorizePrincipal(username, password);
-		} catch (Exception e) {
-			Logger.error(this, e.getMessage(), e);
-			return null;
-		}
-    }
 
     
     public boolean authorise(Request request, Request.Method method, Auth auth) {

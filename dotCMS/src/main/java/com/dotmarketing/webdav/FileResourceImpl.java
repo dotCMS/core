@@ -1,20 +1,15 @@
 package com.dotmarketing.webdav;
 
-import io.milton.http.Auth;
-import io.milton.resource.CollectionResource;
-import io.milton.http.FileItem;
-import io.milton.resource.FileResource;
-import io.milton.http.HttpManager;
-import io.milton.http.LockInfo;
-import io.milton.http.LockResult;
-import io.milton.http.LockTimeout;
-import io.milton.http.LockToken;
-import io.milton.resource.LockableResource;
-import io.milton.http.Range;
-import io.milton.http.Request;
-import io.milton.http.Request.Method;
-import io.milton.http.exceptions.NotAuthorizedException;
-import io.milton.http.exceptions.PreConditionFailedException;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.util.Date;
+import java.util.Map;
+import org.apache.commons.io.IOUtils;
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
@@ -25,30 +20,34 @@ import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.util.Date;
-import java.util.Map;
+import io.milton.http.Auth;
+import io.milton.http.FileItem;
+import io.milton.http.HttpManager;
+import io.milton.http.LockInfo;
+import io.milton.http.LockResult;
+import io.milton.http.LockTimeout;
+import io.milton.http.LockToken;
+import io.milton.http.Range;
+import io.milton.http.Request;
+import io.milton.http.Request.Method;
+import io.milton.resource.CollectionResource;
+import io.milton.resource.FileResource;
 
-public class FileResourceImpl implements FileResource, LockableResource {
+public class FileResourceImpl implements FileResource, DotResource {
 
 	private static final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
-	private DotWebdavHelper dotDavHelper;
-	private IFileAsset file;
-	String path;
-	private boolean isAutoPub = false;
-	private PermissionAPI perAPI;
+	private final DotWebdavHelper dotDavHelper;
+	private final IFileAsset file;
+	private final DavParams params;
+	private final PermissionAPI perAPI;
 
-	public FileResourceImpl(IFileAsset file, String path) {
+	public FileResourceImpl(IFileAsset file, DavParams params) {
 		perAPI = APILocator.getPermissionAPI();
 		dotDavHelper = new DotWebdavHelper();
-		this.isAutoPub = dotDavHelper.isAutoPub(path);
-		this.path = path;
+		this.params = params;
 		this.file = file;
 
 	}
@@ -69,7 +68,7 @@ public class FileResourceImpl implements FileResource, LockableResource {
 				String p = fr.getPath();
 				if(!p.endsWith("/"))
 					p = p + "/";
-				dotDavHelper.copyResource(this.getPath(), p+name, user, isAutoPub);
+				dotDavHelper.copyResource(this.getPath(), p+name, user, params.autoPub);
 			} catch (Exception e) {
 				Logger.error(this, e.getMessage(), e);
 				throw new DotRuntimeException(e.getMessage(), e);
@@ -77,14 +76,6 @@ public class FileResourceImpl implements FileResource, LockableResource {
 		}
 	}
 
-	public Object authenticate(String username, String password) {
-		try {
-			return dotDavHelper.authorizePrincipal(username, password);
-		} catch (Exception e) {
-			Logger.error(this, e.getMessage(), e);
-			return null;
-		}
-	}
 
 	public boolean authorise(Request req, Method method, Auth auth) {
 		try {
@@ -93,9 +84,9 @@ public class FileResourceImpl implements FileResource, LockableResource {
 				return false;
 			else {
 			    User user=(User)auth.getTag();
-			    if(method.isWrite && isAutoPub){
+			    if(method.isWrite && this.params.autoPub){
     				return perAPI.doesUserHavePermission((Permissionable)file, PermissionAPI.PERMISSION_PUBLISH, user, false);
-    			}else if(method.isWrite && !isAutoPub){
+    			}else if(method.isWrite && !this.params.autoPub){
     				return perAPI.doesUserHavePermission((Permissionable)file, PermissionAPI.PERMISSION_EDIT, user, false);
     			}else if(!method.isWrite){
     				return perAPI.doesUserHavePermission((Permissionable)file, PermissionAPI.PERMISSION_READ, user, false);
@@ -158,22 +149,15 @@ public class FileResourceImpl implements FileResource, LockableResource {
 	}
 
 	public void sendContent(OutputStream out, Range arg1, Map<String, String> arg2, String arg3) throws IOException {
-		java.io.File f;
-		try {
-			f = ((Contentlet)file).getBinary(FileAssetAPI.BINARY_FIELD);
-		   try(InputStream fis = Files.newInputStream(f.toPath())){
-         BufferedInputStream bin = new BufferedInputStream(fis);
-         final byte[] buffer = new byte[ 1024 ];
-         int n = 0;
-         while( -1 != (n = bin.read( buffer )) ) {
-             out.write( buffer, 0, n );
-         }
-		   }
-			
-		} catch (IOException e) {
-			Logger.error(this, e.getMessage(), e);
-			return;
-		}
+	    File f = ((Contentlet)file).getBinary(FileAssetAPI.BINARY_FIELD);
+	    
+
+	    try (InputStream in = Files.newInputStream(f.toPath())){
+	        IOUtils.copy(in, out);
+	    }finally {
+	        CloseUtils.closeQuietly(out);
+	    }
+
 
 	}
 
@@ -228,17 +212,6 @@ public class FileResourceImpl implements FileResource, LockableResource {
 		return file;
 	}
 
-	public void setFile(FileAsset file) {
-		this.file = file;
-	}
-
-	public String getPath() {
-		return path;
-	}
-
-	public void setPath(String path) {
-		this.path = path;
-	}
 
 	public LockResult lock(LockTimeout timeout, LockInfo lockInfo) {
 		return dotDavHelper.lock(timeout, lockInfo, getUniqueId());
@@ -263,10 +236,6 @@ public class FileResourceImpl implements FileResource, LockableResource {
 		return (long)60;
 	}
 
-    @Override
-    public LockResult refreshLock(String token, LockTimeout timeout) throws NotAuthorizedException, PreConditionFailedException {
-        // TODO Auto-generated method stub
-        return null;
-    }
+
 
 }

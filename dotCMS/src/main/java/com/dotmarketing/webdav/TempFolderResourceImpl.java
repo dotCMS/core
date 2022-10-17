@@ -36,7 +36,7 @@ import java.util.Map;
  * @author jasontesser
  *
  */
-public class TempFolderResourceImpl implements FolderResource, LockableResource, LockingCollectionResource{
+public class TempFolderResourceImpl implements FolderResource, DotResource, LockingCollectionResource{
 
 	private DotWebdavHelper dotDavHelper;
 	private File folder;
@@ -55,7 +55,7 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 	 * @see io.milton.http.MakeCollectionableResource#createCollection(java.lang.String)
 	 */
 	public CollectionResource createCollection(String newName) {
-		dotDavHelper.createTempFolder(folder.getPath() + File.separator + newName);
+		dotDavHelper.getOrCreateTempFolder(folder.getPath() + File.separator + newName);
 		File f = new File(folder.getPath() + File.separator + newName);
 		TempFolderResourceImpl tr = new TempFolderResourceImpl(folder.getPath() + File.separator + newName,f, isAutoPub);
 		return tr;
@@ -340,10 +340,6 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 		return lock(timeout, lockInfo).getLockToken();
 	}
 
-    @Override
-    public LockResult refreshLock(String token, LockTimeout timeout) throws NotAuthorizedException, PreConditionFailedException {
-        // TODO Auto-generated method stub
-        return null;
-    }
+
 
 }

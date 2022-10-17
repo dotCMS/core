@@ -87,7 +87,7 @@ public class LanguageFolderResourceImpl implements FolderResource, LockingCollec
 	 */
 	public CollectionResource createCollection(String newName) {
 		if(dotDavHelper.isTempResource(newName) && isLanguageRoot){
-			dotDavHelper.createTempFolder(File.separator + "system" + File.separator + "languages" + File.separator + newName);
+			dotDavHelper.getOrCreateTempFolder(File.separator + "system" + File.separator + "languages" + File.separator + newName);
 			File f = new File(File.separator + "system" + File.separator + "languages");
 			TempFolderResourceImpl tr = new TempFolderResourceImpl(f.getPath(),f ,true);
 			return tr;
@@ -134,9 +134,8 @@ public class LanguageFolderResourceImpl implements FolderResource, LockingCollec
 				}
 			}
 		}
-		File tempDir = dotDavHelper.getTempDir();
-		File f = new File(tempDir.getPath() + File.separator + "system" + File.separator + "languages" + path);
-		File[] c = f.listFiles();
+		File tempDir = dotDavHelper.getOrCreateTempFolder( "system" + File.separator + "languages" + path);
+		File[] c = tempDir.listFiles();
 		if(c != null){
 			for (File file : c) {
 				String p = path;

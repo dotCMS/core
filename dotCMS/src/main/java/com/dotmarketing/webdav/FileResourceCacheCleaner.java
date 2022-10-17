@@ -5,6 +5,6 @@ import java.util.TimerTask;
 public class FileResourceCacheCleaner extends TimerTask {
 
     public void run() {
-    	DotWebdavHelper.getFileResourceCache().clearExpiredEntries();
+    	//DotWebdavHelper.getFileResourceCache().clearExpiredEntries();
     }
 }

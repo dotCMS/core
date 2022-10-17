@@ -38,7 +38,7 @@ import java.util.Map;
  * 
  * @author Jason Tesser
  */
-public class TemplateFileResourceImpl implements FileResource, LockableResource {
+public class TemplateFileResourceImpl implements FileResource, DotResource {
 
 	private DotWebdavHelper dotDavHelper;
 	private final Template template;
@@ -228,10 +228,6 @@ public class TemplateFileResourceImpl implements FileResource, LockableResource 
 		return (long) 60;
 	}
 
-    @Override
-    public LockResult refreshLock(String token, LockTimeout timeout) throws NotAuthorizedException, PreConditionFailedException {
-        // TODO Auto-generated method stub
-        return null;
-    }
+
 
 }

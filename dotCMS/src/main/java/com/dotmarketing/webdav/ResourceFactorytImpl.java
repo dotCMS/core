@@ -3,6 +3,7 @@
  */
 package com.dotmarketing.webdav;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 
 import com.dotmarketing.beans.Host;
@@ -13,6 +14,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import io.milton.http.HttpManager;
@@ -24,7 +26,7 @@ import io.milton.servlet.Initable;
  * @author Jason Tesser
  *
  */
-public class ResourceFactorytImpl implements ResourceFactory, Initable {
+public class ResourceFactorytImpl implements ResourceFactory {
 
 	private DotWebdavHelper dotDavHelper;
 	static final String AUTOPUB_PATH = "/webdav/autopub";
@@ -41,116 +43,59 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 	/* (non-Javadoc)
 	 * @see io.milton.http.ResourceFactory#getResource(java.lang.String, java.lang.String)
 	 */
-    @WrapInTransaction
+    @CloseDBIfOpened
 	public Resource getResource(String davHost, String url) {
 		return getResource(davHost, url, dotDavHelper, hostAPI);
 	}
 
-	public static Resource getResource(final String davHost, String url, final DotWebdavHelper dotDavHelper, final HostAPI hostAPI) {
-		url = url.toLowerCase();
-		Logger.debug(ResourceFactorytImpl.class, "WebDav ResourceFactory: Host is " + davHost + " and the url is " + url);
-		try{
-			dotDavHelper.stripMapping(url);//method also sets the language
-			boolean isFolder = false;
-			boolean isResource = false;
-			boolean isWebDavRoot = url.equals(AUTOPUB_PATH) || url.equals(NONPUB_PATH) || url.equals(LIVE_PATH + "/" +dotDavHelper.getLanguage()) || url.equals(WORKING_PATH + "/" +dotDavHelper.getLanguage())
-					|| url.equals(AUTOPUB_PATH + "/") || url.equals(NONPUB_PATH + "/") || url.equals(LIVE_PATH + "/" +dotDavHelper.getLanguage() + "/") || url.equals(WORKING_PATH + "/" +dotDavHelper.getLanguage() + "/") ;
-			boolean live = url.startsWith(AUTOPUB_PATH) || url.startsWith(LIVE_PATH);
-			boolean working = url.startsWith(NONPUB_PATH) || url.startsWith(WORKING_PATH);
-			Host host =null;
-			String actualPath = url;
-
-			// DAV ROOT
-			if(isWebDavRoot){
-				WebdavRootResourceImpl wr = new WebdavRootResourceImpl(url);
-				return wr;
-			}
+    @VisibleForTesting
+	Resource getResource(final String davHost, String url, final DotWebdavHelper dotDavHelper, final HostAPI hostAPI) {
+		
+        final DavParams davParams = new DavParams(url);
+	    
 
 
-			//SETUP
-			if(live){
-				actualPath = actualPath.replaceAll(AUTOPUB_PATH, "");
-				actualPath = actualPath.replaceAll(LIVE_PATH, "");
-				if(actualPath.startsWith("/")){
-					actualPath = actualPath.substring(1);
-				}
-			}else if(working){
-				actualPath = actualPath.replaceAll(NONPUB_PATH, "");
-				actualPath = actualPath.replaceAll(WORKING_PATH, "");
-				if(actualPath.startsWith("/")){
-					actualPath = actualPath.substring(1);
-				}
-			}else{
+		// DAV ROOT
+		if(davParams.isRoot()){
+		    return new WebdavRootResourceImpl(url);
+		}
+		
+        if(davParams.isSystem()){
+            return new SystemRootResourceImpl();
+        }
+        
+        if(davParams.isHost()) {
+            return new HostResourceImpl(url);
+        }
+
+
+
+
+		// handle crappy dav clients temp files
+		if(davParams.isTempFile()){
+			java.io.File tempFile = dotDavHelper.loadTempFile(davParams);
+			if(tempFile == null || !tempFile.exists()){
 				return null;
+			}else if(tempFile.isDirectory()){
+				TempFolderResourceImpl tr = new TempFolderResourceImpl(url,tempFile,dotDavHelper.isAutoPub(url));
+				return tr;
+			}else{
+				TempFileResourceImpl tr = new TempFileResourceImpl(tempFile,url,dotDavHelper.isAutoPub(url));
+				return tr;
 			}
+		}
 
-			if(!Config.getBooleanProperty("WEBDAV_LEGACY_PATHING", false)){
-				actualPath = actualPath.substring(String.valueOf(dotDavHelper.getLanguage()).length()+1);
-			}
-
-			String[] splitPath = actualPath.split("/");
-
-
-			User user=APILocator.getUserAPI().getSystemUser();
-
-
-			// Handle root SYSTEM or Root Host view
-			if(splitPath != null && splitPath.length == 1){
-				if(dotDavHelper.isTempResource(url)){
-					return null;
-				}
-				else {
-					host = hostAPI.findByName(splitPath[0], user, false);
-					if(splitPath[0].equalsIgnoreCase("system")){
-						SystemRootResourceImpl sys = new SystemRootResourceImpl();
-						return sys;
-					}else{
-						HostResourceImpl hr = new HostResourceImpl(url);
-						return hr;
-					}
-				}
-			}
-
-
-			// handle crappy dav clients temp files
-			if(dotDavHelper.isTempResource(url)){
-				java.io.File tempFile = dotDavHelper.loadTempFile(url);
-				if(tempFile == null || !tempFile.exists()){
-					return null;
-				}else if(tempFile.isDirectory()){
-					TempFolderResourceImpl tr = new TempFolderResourceImpl(url,tempFile,dotDavHelper.isAutoPub(url));
-					return tr;
-				}else{
-					TempFileResourceImpl tr = new TempFileResourceImpl(tempFile,url,dotDavHelper.isAutoPub(url));
-					return tr;
-				}
-			}
-
-
-			// handle language files
-			if(actualPath.endsWith("system/languages") || actualPath.endsWith("system/languages/")
-					|| actualPath.endsWith("system/languages/archived") || actualPath.endsWith("system/languages/archived/")){
+		/*
+		if(davParams.isLanguages()){
+		        String actualPath = davParams.path;
 				java.io.File file = new java.io.File(FileUtil.getRealPath("/assets/messages"));
-				if(file.exists() && file.isDirectory()){
-					if(actualPath.contains("/archived") && actualPath.endsWith("/")){
-						actualPath = actualPath.replace("system/languages/", "");
-						if(actualPath.endsWith("/")){
-							actualPath = actualPath.substring(0, actualPath.length()-1);
-						}
-						LanguageFolderResourceImpl lfr = new LanguageFolderResourceImpl(actualPath);
-						return lfr;
-					}else{
-						LanguageFolderResourceImpl lfr = new LanguageFolderResourceImpl("");
-						return lfr;
-					}
-				}
+				LanguageFolderResourceImpl lfr = new LanguageFolderResourceImpl(davParams.path);
+				return lfr;
+
+				
 			}
 
-			// handle the language files
-			if(actualPath.endsWith("/")){
-				actualPath = actualPath.substring(0, actualPath.length()-1);
-			}
-			if(actualPath.startsWith("system/languages") && (actualPath.endsWith(".properties") || actualPath.endsWith(".native"))){
+			if(davParams.name.endsWith(".properties") ){
 				String fileRelPath = actualPath;
 				if(actualPath.contains("system/languages/")){
 					fileRelPath = actualPath.replace("system/languages/", "");
@@ -174,7 +119,22 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 					return lfr;
 				}
 			}
-
+		 */
+	      // DAV ROOT
+		
+		User user=APILocator.getUserAPI().getSystemUser();
+		
+		
+        if(davParams.isFile()){
+            IFileAsset file = dotDavHelper.loadFile(davParams,user);
+            
+            
+            return new FileResourceImpl(file,davParams);
+        }
+        
+		
+		
+		
 			if(dotDavHelper.isResource(url,user)){
 				isResource = true;
 			}
@@ -210,24 +170,7 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 	}
 
 
-	/* (non-Javadoc)
-	 * @see io.milton.http.ResourceFactory#getSupportedLevels()
-	 */
-	public String getSupportedLevels() {
-		return "1";
-	}
 
-    @Override
-    public void init(io.milton.servlet.Config config, HttpManager manager) {
-        // TODO Auto-generated method stub
-        
-    }
-
-    @Override
-    public void destroy(HttpManager manager) {
-        // TODO Auto-generated method stub
-        
-    }
 
 
 
