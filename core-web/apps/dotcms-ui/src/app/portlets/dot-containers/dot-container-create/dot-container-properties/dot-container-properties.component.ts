@@ -131,7 +131,10 @@ export class DotContainerPropertiesComponent implements OnInit {
                     structureId: new FormControl(state.contentType.variable ?? '', [
                         Validators.required
                     ]),
-                    code: new FormControl(state?.code || '', [Validators.required])
+                    code: new FormControl(state?.code || '', [
+                        Validators.required,
+                        Validators.minLength(2)
+                    ])
                 })
             );
         });

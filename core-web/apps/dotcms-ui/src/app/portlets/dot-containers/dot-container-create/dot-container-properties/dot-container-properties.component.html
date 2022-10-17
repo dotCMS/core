@@ -10,7 +10,7 @@
             ></button>
             <button
                 class="p-button-primary"
-                [disabled]="!form.valid || form.pristine"
+                [disabled]="form.pristine || !form.valid"
                 [label]="'Save' | dm"
                 (click)="save()"
                 pButton
