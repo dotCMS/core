@@ -1,17 +1,24 @@
 package com.dotmarketing.db;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
 import com.liferay.util.SystemEnvironmentProperties;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import com.zaxxer.hikari.HikariDataSource;
-import javax.sql.DataSource;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.postgresql.jdbc.PgConnection;
+
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.TimeZone;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests for {@link DataSourceStrategyProvider}
@@ -185,6 +192,36 @@ public class DataSourceStrategyProviderTest {
         Mockito.verify(dockerSecretStrategy, Mockito.times(testCase.equals("DockerSecret")? 1: 0)).apply();
         Mockito.verify(tomcatDataSourceStrategy, Mockito.times(1)).apply();
 
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link DataSourceStrategyProvider#get()}</li>
+     *     <li><b>Given Scenario:</b> By default, all database connection objects must be created using the UTC Time
+     *     Zone, regardless of the current default or server Time Zone.</li>
+     *     <li><b>Expected Result:</b> If the default Time Zone is NOT in UTC, the {@link Connection} object generated
+     *     by our {@link DataSourceStrategyProvider} must always reference the UTC Time Zone.</li>
+     * </ul>
+     */
+    @Test
+    public void testConnectionObjectTimeZone() {
+        final TimeZone defaultTz = TimeZone.getDefault();
+        if ("UTC".equalsIgnoreCase(defaultTz.getID())) {
+            // If the default TimeZone is already set to UTC, this test can be ignored
+            return;
+        }
+        try {
+            final DataSource dataSource = DataSourceStrategyProvider.getInstance().get();
+            final Connection connection = dataSource.getConnection();
+            final PgConnection pgConn = connection.unwrap(PgConnection.class);
+            final TimeZone connectionTz = pgConn.getQueryExecutor().getTimeZone();
+            assertTrue("Connection object Time Zone must always be UTC", "UTC".equalsIgnoreCase(connectionTz.getID()));
+            assertFalse("TimeZone value from the Connection object must always be UTC!",
+                    connectionTz.getID().equals(defaultTz.getID()));
+        } catch (final ClassNotFoundException | IllegalAccessException | InstantiationException | SQLException e) {
+            throw new RuntimeException("An error occurred when checking the TimeZone value form the Connection " +
+                                               "object: " + e.getMessage(), e);
+        }
     }
 
 }
