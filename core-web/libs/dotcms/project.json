@@ -25,7 +25,7 @@
         },
         "test": {
             "executor": "@nrwl/jest:jest",
-            "outputs": ["coverage/libs/dotcms"],
+            "outputs": ["{workspaceRoot}/coverage/libs/dotcms"],
             "options": {
                 "jestConfig": "libs/dotcms/jest.config.ts",
                 "passWithNoTests": true
