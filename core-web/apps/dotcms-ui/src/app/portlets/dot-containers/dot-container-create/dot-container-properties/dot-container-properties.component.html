@@ -2,14 +2,14 @@
     <form [formGroup]="form">
         <div class="dot-container-properties__button-container">
             <button
-                class="p-button-secondary"
+                class="p-button-secondary p-button-sm"
                 [label]="'Cancel' | dm"
                 (click)="cancel()"
                 pButton
                 type="button"
             ></button>
             <button
-                class="p-button-primary"
+                class="p-button-primary p-button-sm"
                 [disabled]="form.pristine || !form.valid"
                 [label]="'Save' | dm"
                 (click)="save()"
@@ -18,11 +18,17 @@
             ></button>
         </div>
         <div class="dot-container-properties__title-container">
-            <p-inplace #editText>
+            <p-inplace #editText [active]="!form?.value?.identifier">
                 <ng-template pTemplate="content">
                     <span class="p-input-icon-right">
                         <i class="pi pi-times" (click)="editText.deactivate()"></i>
-                        <input type="text" pInputText formControlName="title" />
+                        <input
+                            class="dot-container-properties__title-input"
+                            [required]="true"
+                            type="text"
+                            pInputText
+                            formControlName="title"
+                        />
                     </span>
                 </ng-template>
                 <ng-template pTemplate="display">
@@ -39,18 +45,32 @@
             </p-inplace>
         </div>
         <div class="field">
-            <label class="block" for="description">{{
+            <label class="block p-label-input-required" for="description">{{
                 'message.containers.create.description' | dm
             }}</label>
-            <input id="description" type="text" formControlName="friendlyName" pInputText />
+            <input
+                class="dot-container-properties__description-input"
+                id="description"
+                [required]="true"
+                type="text"
+                formControlName="friendlyName"
+                pInputText
+            />
         </div>
         <div class="field">
-            <label class="block" for="max-contents">{{
+            <label class="block p-label-input-required" for="max-contents">{{
                 'message.containers.create.max_contents' | dm
             }}</label>
-            <input id="max-contents" type="text" formControlName="maxContentlets" pInputText />
+            <input
+                class="dot-container-properties__max-contents-input"
+                id="max-contents"
+                [required]="true"
+                type="text"
+                formControlName="maxContentlets"
+                pInputText
+            />
             <button
-                class="p-button-secondary"
+                class="p-button-secondary dot-container-properties__button-clear"
                 *ngIf="vm.isContentTypeVisible"
                 [label]="'message.containers.create.clear' | dm"
                 (click)="clearContent()"
@@ -68,7 +88,10 @@
         </div>
 
         <div class="dot-container-properties__code-container-outer">
-            <div *ngIf="vm.isContentTypeVisible">
+            <div
+                class="dot-container-properties__code-loop-container"
+                *ngIf="vm.isContentTypeVisible"
+            >
                 <dot-loop-editor
                     [isEditorVisible]="vm.showPrePostLoopInput"
                     [control]="$any(form).get('preLoop')"
@@ -84,8 +107,10 @@
                     (buttonClick)="showLoopInput()"
                 ></dot-loop-editor>
             </div>
-            <div *ngIf="!vm.isContentTypeVisible">
+            <div class="field" *ngIf="!vm.isContentTypeVisible">
+                <label class="block p-label-input-required" for="code">Code</label>
                 <dot-textarea-content
+                    id="code"
                     [show]="['code']"
                     formControlName="code"
                     language="html"

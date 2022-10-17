@@ -2,8 +2,8 @@
 
 .dot-container-properties__button-container {
     position: absolute;
-    top: 4.8rem;
-    right: $spacing-7;
+    top: 5rem;
+    right: $spacing-4;
 
     button {
         margin: 0 calc($spacing-1 / 2);
@@ -11,22 +11,52 @@
 }
 
 .dot-container-properties__title-container {
-    padding: $spacing-4 0;
+    padding: $spacing-2 0;
+
+    ::ng-deep .p-inplace-display {
+        //padding-left: 0;
+        padding-left: 0.8rem;
+    }
 }
 
 .dot-container-properties__title-text {
     display: inline-block;
     padding-right: $spacing-2;
+    padding-bottom: 1.35rem;
+    font-size: $font-size-large;
+}
+
+.dot-container-properties__title-input {
+    width: 20rem;
+}
+
+.dot-container-properties__description-input {
+    width: 20rem;
+}
+
+.dot-container-properties__max-contents-input {
+    width: 7rem;
+    margin-right: $spacing-2;
+}
+
+.dot-container-properties__button-clear,
+dot-container-properties__button-clear:hover {
+    background-color: $gray;
+    color: $white;
+    border: none;
 }
 
 .dot-container-properties__code-container-outer {
-    background: $white;
     display: flex;
     flex-direction: column;
 
     dot-textarea-content {
         height: 40vh;
     }
+}
+
+.dot-container-properties__code-loop-container {
+    background: $white;
 }
 
 :host ::ng-deep {
