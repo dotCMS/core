@@ -31,4 +31,5 @@ export interface DotCMSContentlet {
     text?: string;
     url: string;
     working: boolean;
+    [key: string]: any;
 }
