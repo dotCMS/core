@@ -1086,7 +1086,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
     private boolean isCategory(final String identifier) throws DotDataException {
         try {
             DotConnect dotConnect = new DotConnect();
-            final ArrayList arrayList = dotConnect.setSQL("SELECT * FROM category where inode = %s")
+            final ArrayList arrayList = dotConnect.setSQL("SELECT * FROM category where inode = ?")
                     .addParam(identifier)
                     .loadResults();
 
