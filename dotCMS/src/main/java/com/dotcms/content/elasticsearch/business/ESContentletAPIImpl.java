@@ -6572,7 +6572,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         Try.of(()->JsonUtil.getJsonAsString((Map<String, Object>) value))
                                 .getOrElse("{}"));
             } else {
-                throw new DotStateException("Invalid JSON field provided");
+                throw new DotContentletValidationException("Invalid JSON field provided");
             }
         } else{
             throw new DotContentletStateException("Unable to set value : Unknown field type");
