@@ -45,6 +45,9 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
     @Input()
     width: string;
 
+    @Input()
+    hideBorder: boolean;
+
     @Output()
     monacoInit = new EventEmitter<unknown>();
 
@@ -103,6 +106,10 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
             width: this.width || '100%',
             height: this.height || '21.42rem'
         };
+
+        if (this.hideBorder) {
+            this.styles['border'] = 'none';
+        }
     }
 
     /**

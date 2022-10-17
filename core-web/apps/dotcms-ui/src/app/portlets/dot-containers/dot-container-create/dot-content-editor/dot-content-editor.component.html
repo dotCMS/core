@@ -1,5 +1,7 @@
 <div class="dot-content-editor__content-tab-container" *ngIf="vm$ | async as vm">
-    <label>{{ 'message.containers.create.content_type_code' | dm }}</label>
+    <label class="block p-label-input-required pb-1">{{
+        'message.containers.create.content_type_code' | dm
+    }}</label>
     <p-tabView
         [scrollable]="true"
         [activeIndex]="vm.activeTabIndex"
@@ -10,7 +12,7 @@
         <p-tabPanel headerStyleClass="tab-panel-btn">
             <ng-template pTemplate="header">
                 <i
-                    class="pi pi-plus"
+                    class="pi pi-plus pr-4 pl-4"
                     (click)="handleChange($event); actionsMenu.toggle($event)"
                 ></i>
                 <p-menu
@@ -28,7 +30,7 @@
             closable="true"
         >
             <button
-                class="p-button-secondary dot-content-editor__variable-btn"
+                class="p-button-secondary dot-content-editor__variable-btn ml-3 mb-2 mt-2 p-button-sm"
                 [label]="'add-variable' | dm"
                 (click)="handleAddVariable(contentType.state.contentType, i)"
                 pButton
@@ -37,6 +39,7 @@
                 #body
                 [value]="contentType.state.code"
                 [show]="['code']"
+                [hideBorder]="true"
                 (monacoInit)="monacoInit($event)"
                 (valueChange)="updateContentTypeText($event)"
                 language="html"
