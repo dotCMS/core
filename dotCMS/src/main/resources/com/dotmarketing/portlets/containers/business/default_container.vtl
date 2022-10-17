@@ -1,12 +1,31 @@
-#set($contentlet = $dotcontent.find($!{ContentIdentifier}))
+#set($contentMap = $dotcontent.find($!{ContentIdentifier}))
+#set($contentlet = $contentMap.getContentObject())
+#set($contentType = $contentlet.getContentType())
+#set($language = $languagewebapi.getLanguage("$!{contentlet.languageId}"))
 
-<h1>$!contentlet.title</h1>
+<div class="card_container">
+    #if (
+        $UtilMethods.isImage("$contentlet.fileName") ||
+        $UtilMethods.isImage("$contentlet.asset") ||
+        $UtilMethods.isImage("$contentlet.title") ||
+        $UtilMethods.isImage("$contentlet.image") ||
+        $UtilMethods.isImage("$contentlet.profilePhoto")
+    )
+        <div class="card_logo">
+            <img src="/dA/$!{contentlet.inode}" />
+        </div>
+    #end
 
-#if (
-    $UtilMethods.isImage("$contentlet.fileName") ||
-    $UtilMethods.isImage("$contentlet.asset") ||
-    $UtilMethods.isImage("$contentlet.title") ||
-    $UtilMethods.isImage("$contentlet.image")
-)
-    <img src="/dA/$!{contentlet.inode}" />
-#end
+    <div class="card_body">
+        <div class="card_header">
+            <div class="card_title">
+                <h1>#if($title)$title#{else}$!contentlet.title#end</h1>
+            </div>
+            <span class="badge">#if($!{contentMap})$contentType.name()#{else}DRAFT#end</span>
+        </div>
+        <div class="card_footer">
+            <div class="status #if($contentlet.isLive())live#{else}working#end"></div>
+            #if($!{contentMap})<span class="lang">$!{language}</span>#end
+        </div>
+    </div>
+</div>
