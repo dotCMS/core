@@ -6,6 +6,7 @@ import com.dotcms.publisher.util.PusheableAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
@@ -83,6 +84,8 @@ public class PublishQueueElementTransformer {
             result = getMapForContentlet(id);
         } else if (isLanguage(type)) {
             result = getMapForLanguage(id);
+        } else if (isCategory(id)) {
+            result = getMapForCategory(id);
         } else {
 
             String title = PublishAuditUtil.getInstance().getTitle(type, id);
@@ -113,6 +116,10 @@ public class PublishQueueElementTransformer {
         return result;
     }
 
+    private static boolean isCategory(final String type) {
+        return type.equals(PusheableAsset.CATEGORY.getType());
+    }
+
     private static Map<String, Object> getMapForLanguage(final String id) {
 
         final Language language = APILocator.getLanguageAPI().getLanguage(id);
@@ -124,6 +131,20 @@ public class PublishQueueElementTransformer {
                     CONTENT_TYPE_NAME_KEY,  CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL,
                             PusheableAsset.LANGUAGE.getType())
             ) : map(TITLE_KEY, id);
+    }
+
+    private static Map<String, Object> getMapForCategory(final String id) {
+
+        try {
+            final Category category = APILocator.getCategoryAPI().find(id, APILocator.systemUser(), false);
+
+            return UtilMethods.isSet(category) ? map(
+                    TITLE_KEY, category.getTitle(),
+                    INODE_KEY, category.getInode())
+             : map(TITLE_KEY, id);
+        } catch (DotDataException | DotSecurityException e) {
+            return null;
+        }
     }
 
     private static Map<String, Object> getMapForContentlet(final String id) {

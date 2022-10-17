@@ -819,7 +819,7 @@
     }
 
     function addToBundle () {
-        pushHandler.showAddToBundleDialog('CAT', '<%=LanguageUtil.get(pageContext, "Add-To-Bundle")%>');
+        pushHandler.showAddToBundleDialog(grid.selection.getSelected().map(cat => cat.i.inode).join(','), '<%=LanguageUtil.get(pageContext, "Add-To-Bundle")%>');
     }
 
 </script>

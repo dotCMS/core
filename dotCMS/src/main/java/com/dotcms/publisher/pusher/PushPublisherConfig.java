@@ -134,6 +134,27 @@ public class PushPublisherConfig extends PublisherConfig {
 		return true;
 	}
 
+	/**
+	 * Return true if the {@link PushPublisherConfig#getAssets()} list is not empty and just
+	 * contains {@link com.dotmarketing.portlets.categories.model.Category}, otherwise return false.
+	 *
+	 * @return
+	 */
+	public boolean justIncludesCategories() {
+
+		if (!UtilMethods.isSet(this.getAssets())) {
+			return false;
+		}
+
+		for (PublishQueueElement asset : this.getAssets()) {
+			if (!PusheableAsset.CATEGORY.name().equalsIgnoreCase(asset.getType())) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	public List<PublishingEndPoint> getEndpoints() {
 		return endpoints;
 	}

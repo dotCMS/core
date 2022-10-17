@@ -311,6 +311,10 @@ public class DependencyManager {
 				final String userID = getUserID(asset);
 				final User user = APILocator.getUserAPI().loadUserById(userID);
 				config.add(user, PusheableAsset.USER, ManifestReason.INCLUDE_BY_USER.getMessage());
+			} else if (asset.getType().equals(PusheableAsset.CATEGORY.getType())) {
+				final Category category = APILocator.getCategoryAPI()
+						.find(asset.getAsset(), APILocator.systemUser(), false);
+				config.add(category, PusheableAsset.CATEGORY, ManifestReason.INCLUDE_BY_USER.getMessage());
 			}
 		}
 
