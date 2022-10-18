@@ -82,7 +82,7 @@ public class StoryBlockViewStrategy extends AbstractTransformStrategy<Contentlet
 
     private boolean needsRender () {
 
-        if (ThreadContextUtil.getOrCreateContext().hasContextMap()) {
+        if (ThreadContextUtil.hasContext() && ThreadContextUtil.getOrCreateContext().hasContextMap()) {
 
             return ThreadContextUtil.getOrCreateContext().getContextMap().containsKey("render")?
                     ConversionUtils.toBoolean(ThreadContextUtil.getOrCreateContext()

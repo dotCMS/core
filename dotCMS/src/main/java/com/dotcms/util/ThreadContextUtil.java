@@ -13,6 +13,9 @@ public class ThreadContextUtil {
 
     private static ThreadLocal<ThreadContext> contextLocal = new ThreadLocal<>();
 
+    public static boolean hasContext() {
+        return null != contextLocal.get();
+    }
     /**
      * Get the context from the current thread
      * @return {@link ThreadContext}
