@@ -316,7 +316,7 @@ public class DependencyManager {
 			} else if ("CAT".equals(asset.getAsset())) {
 				config.writeIncludeManifestItem((ManifestItem) () -> new ManifestInfoBuilder()
 						.objectType(PusheableAsset.CATEGORY.getType())
-						.title("Syncing All Categorie")
+						.title("Syncing All Categories")
 						.build(), ManifestReason.INCLUDE_BY_USER.getMessage());
 
 			}

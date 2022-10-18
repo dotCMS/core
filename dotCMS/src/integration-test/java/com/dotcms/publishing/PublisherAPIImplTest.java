@@ -453,7 +453,7 @@ public class PublisherAPIImplTest {
      * When: Add different assets into a bundle, and generate it
      * Should: Create all the files and the Manifest File correctly
      */
-    //@Test
+    @Test
     @UseDataProvider("publishers")
     public void generateBundle(final TestAsset testAsset) throws DotPublishingException, DotSecurityException, IOException, DotDataException {
         final Class<? extends Publisher> publisher = GenerateBundlePublisher.class;
@@ -648,7 +648,7 @@ public class PublisherAPIImplTest {
      * When: Add different assets into a bundle, and send it
      * Should: Create all the files
      */
-    //@Test
+    @Test
     @UseDataProvider("publishers")
     public void sendPushPublishBundle(final TestAsset testAsset)
             throws DotPublishingException, DotSecurityException, IOException, DotDataException, DotPublisherException {
@@ -1148,7 +1148,7 @@ public class PublisherAPIImplTest {
         final ManifestItemsMapTest manifestItemsMapTest = new ManifestItemsMapTest();
         final ManifestItem manifestItem = () -> new ManifestInfoBuilder()
                 .objectType(PusheableAsset.CATEGORY.getType())
-                .title("Syncing All Categorie")
+                .title("Syncing All Categories")
                 .build();
 
         manifestItemsMapTest.add(manifestItem, ManifestReason.INCLUDE_BY_USER.getMessage());
