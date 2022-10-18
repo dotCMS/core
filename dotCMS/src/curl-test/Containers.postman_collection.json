@@ -4405,7 +4405,7 @@
 					"basic": [
 						{
 							"key": "password",
-							"value": "admin123",
+							"value": "admin",
 							"type": "string"
 						},
 						{
