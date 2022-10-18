@@ -11,6 +11,8 @@ import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.PublisherFilter;
 import com.dotcms.publishing.manifest.CSVManifestBuilder;
+import com.dotcms.publishing.manifest.ManifestItem;
+import com.dotcms.publishing.manifest.ManifestItem.ManifestInfoBuilder;
 import com.dotcms.publishing.manifest.ManifestReason;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -311,10 +313,12 @@ public class DependencyManager {
 				final String userID = getUserID(asset);
 				final User user = APILocator.getUserAPI().loadUserById(userID);
 				config.add(user, PusheableAsset.USER, ManifestReason.INCLUDE_BY_USER.getMessage());
-			} else if (asset.getType().equals(PusheableAsset.CATEGORY.getType())) {
-				final Category category = APILocator.getCategoryAPI()
-						.find(asset.getAsset(), APILocator.systemUser(), false);
-				config.add(category, PusheableAsset.CATEGORY, ManifestReason.INCLUDE_BY_USER.getMessage());
+			} else if ("CAT".equals(asset.getAsset())) {
+				config.writeIncludeManifestItem((ManifestItem) () -> new ManifestInfoBuilder()
+						.objectType(PusheableAsset.CATEGORY.getType())
+						.title("Syncing All Categorie")
+						.build(), ManifestReason.INCLUDE_BY_USER.getMessage());
+
 			}
 		}
 

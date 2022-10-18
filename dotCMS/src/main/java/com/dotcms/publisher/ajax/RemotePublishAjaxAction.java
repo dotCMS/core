@@ -16,7 +16,6 @@ import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PublisherUtil;
-import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.FilterDescriptor;
@@ -29,8 +28,6 @@ import com.dotcms.publishing.manifest.CSVManifestReader;
 import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import com.dotcms.publishing.manifest.ManifestReaderFactory;
 import com.dotcms.publishing.manifest.ManifestReason;
-import com.dotmarketing.business.IdentifierFactoryImpl;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.util.DateUtil;
 import java.util.Collection;
 import java.util.TimeZone;
@@ -1014,6 +1011,10 @@ public class RemotePublishAjaxAction extends AjaxAction {
                     		ids.add( assetId );
                     	}
                     }
+                } else if ( assetId.equals( "CAT" ) ) {
+                	if(!UtilMethods.isSet(bundleId) || !isAssetInBundle(assetId, bundleId)){
+                		ids.add( assetId );
+                	}
                 } else if ( assetId.contains( ".jar" ) ) {//Check for OSGI jar bundles
                 	if(!UtilMethods.isSet(bundleId) || !isAssetInBundle(assetId, bundleId)){
                 		ids.add( assetId );
@@ -1028,10 +1029,6 @@ public class RemotePublishAjaxAction extends AjaxAction {
                         //If we don't find the Type in table identifier we try to hit table inode.
                         if(assetType == null) {
                             assetType = InodeUtils.getAssetTypeFromDB(assetId);
-                        }
-
-                        if(assetType == null && isCategory(assetId)) {
-                            assetType = PusheableAsset.CATEGORY.name();
                         }
 
                         // If we don't find the Type in Inode table, we try to 
@@ -1056,8 +1053,6 @@ public class RemotePublishAjaxAction extends AjaxAction {
                                     ids.add(assetId);
                                 }
                             }
-                        } if (PusheableAsset.CATEGORY.name().equals(assetType)) {
-                            ids.add(assetId);
                         } else { // if the asset is not a folder and has identifier, put it, if not, put the inode
                             Identifier iden = APILocator.getIdentifierAPI().findFromInode( assetId );
                             if ( !ids.contains( iden.getId() ) ) {//Multiples languages have the same identifier
@@ -1082,28 +1077,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
         return ids;
     }
-
-    private boolean isCategory(final String identifier) throws DotDataException {
-        try {
-            DotConnect dotConnect = new DotConnect();
-            final ArrayList arrayList = dotConnect.setSQL("SELECT * FROM category where inode = ?")
-                    .addParam(identifier)
-                    .loadResults();
-
-            if (!arrayList.isEmpty()) {
-                return true;
-            }
-        } catch (DotDataException e) {
-            Logger.error(IdentifierFactoryImpl.class, String
-                    .format("Error trying find the Asset Type from category=[%s]: %s", identifier,
-                            e.getMessage()));
-            throw new DotDataException(String
-                    .format("Error trying find the Asset Type from category=[%s]", identifier), e);
-        }
-
-        return false;
-    }
-
+    
     /**
      * Validate if the asset is already included in the bundle
      * @param assetId Asset identifier

@@ -819,7 +819,7 @@
     }
 
     function addToBundle () {
-        pushHandler.showAddToBundleDialog(grid.selection.getSelected().map(cat => cat.i.inode).join(','), '<%=LanguageUtil.get(pageContext, "Add-To-Bundle")%>');
+        pushHandler.showAddToBundleDialog('CAT', '<%=LanguageUtil.get(pageContext, "Add-To-Bundle")%>');
     }
 
 </script>
@@ -853,7 +853,7 @@
 				</div>
 				<%}%>
 				<div data-dojo-type="dijit/MenuItem" onClick="addToBundle();">
-					<%= LanguageUtil.get(pageContext,"Add-To-Bundle") %>
+					<%= LanguageUtil.get(pageContext,"Add-All-Categories-To-Bundle") %>
 				</div>
 				<%}%>
 			</div>

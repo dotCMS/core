@@ -23,8 +23,6 @@ import com.dotmarketing.common.db.Params;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -226,7 +224,7 @@ public class PublisherAPIImpl extends PublisherAPI{
                                   Folder folder;
 
                                   // check if it is a category
-                                  if ( !UtilMethods.isSet(type) && isCategory(identifier) ) {
+                                  if ( !UtilMethods.isSet(type) && CATEGORY.equals( identifier ) ) {
                                       type = PusheableAsset.CATEGORY.getType();
                                   } // check if it is a language
                                   else if(!UtilMethods.isSet(type) && APILocator.getLanguageAPI().isAssetTypeLanguage(identifier)) {
@@ -311,18 +309,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 		return resultMap;
     }
 
-	private boolean isCategory(final String identifier) {
-
-		try {
-			final Category  category = APILocator.getCategoryAPI()
-					.find(identifier, APILocator.systemUser(), false);
-			return UtilMethods.isSet(category);
-		} catch (DotDataException | DotSecurityException e) {
-			return false;
-		}
-	}
-
-	private void sendQueueElements (final String bundleId) {
+    private void sendQueueElements (final String bundleId) {
 
 		try {
 

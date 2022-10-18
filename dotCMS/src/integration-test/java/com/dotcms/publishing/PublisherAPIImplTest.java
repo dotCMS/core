@@ -44,9 +44,12 @@ import com.dotcms.publisher.endpoint.bean.impl.PushPublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publisher.util.dependencies.DependencyManager;
 import com.dotcms.publishing.manifest.ManifestBuilder;
 import com.dotcms.publishing.manifest.ManifestItem;
+import com.dotcms.publishing.manifest.ManifestItem.ManifestInfoBuilder;
+import com.dotcms.publishing.manifest.ManifestReason;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -105,6 +108,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -125,12 +129,10 @@ public class PublisherAPIImplTest {
         IntegrationTestInitService.getInstance().init();
     }
 
-    @AfterClass
     public static void removeLanguageVariable(){
         ContentletDataGen.remove(languageVariableCreated);
     }
 
-    @BeforeClass
     public static void createLanguageVariableIfNeeded() throws DotSecurityException, DotDataException {
         final User systemUser = APILocator.systemUser();
         final List<Contentlet> langVariables = getLanguageVariables();
@@ -177,8 +179,7 @@ public class PublisherAPIImplTest {
                 getLanguageWithDependencies(),
                 getRuleWithDependencies(),
                 getContentWithSeveralVersions(),
-                getUser(),
-                getCategory()
+                getUser()
         };
     }
 
@@ -233,13 +234,6 @@ public class PublisherAPIImplTest {
         return new TestAsset(user,
                 map(),
                 "/bundlers-test/user/user.user.xml", false);
-    }
-
-    private static TestAsset getCategory() {
-        final Category category = new CategoryDataGen().nextPersisted();
-        return new TestAsset(category,
-                map(),
-                "/bundlers-test/category/category.category.dpc.xml", false);
     }
 
     private static TestAsset getLanguageWithDependencies() {
@@ -459,7 +453,7 @@ public class PublisherAPIImplTest {
      * When: Add different assets into a bundle, and generate it
      * Should: Create all the files and the Manifest File correctly
      */
-    @Test
+    //@Test
     @UseDataProvider("publishers")
     public void generateBundle(final TestAsset testAsset) throws DotPublishingException, DotSecurityException, IOException, DotDataException {
         final Class<? extends Publisher> publisher = GenerateBundlePublisher.class;
@@ -770,13 +764,17 @@ public class PublisherAPIImplTest {
         return httpServer;
     }
 
+
     private void assertBundle(TestAsset testAsset, Collection<Object> dependencies, File bundleRoot)
-            throws IOException {
+        throws IOException {
         final Collection<File> filesExpected = new HashSet<>();
-        filesExpected.addAll(
-                FileTestUtil.assertBundleFile(bundleRoot, testAsset.asset,
-                        testAsset.fileExpectedPath)
-        );
+
+        if (testAsset != null) {
+            filesExpected.addAll(
+                    FileTestUtil.assertBundleFile(bundleRoot, testAsset.asset,
+                            testAsset.fileExpectedPath)
+            );
+        }
 
         for (Object assetToAssert : dependencies) {
             final Collection<File> files = FileTestUtil
@@ -1079,7 +1077,8 @@ public class PublisherAPIImplTest {
 
         public ManifestItemsMapTest manifestLines() {
             final ManifestItemsMapTest manifestItemsMap = new ManifestItemsMapTest();
-            final ManifestItem assetManifestItem = (ManifestItem) asset;
+            final ManifestItem assetManifestItem = "CAT".equals(asset) ? getCategoryManifestItem()
+                    : (ManifestItem) asset;
             manifestItemsMap.add(assetManifestItem, "Added directly by User");
 
             manifestItemsMap.addDependencies(dependencies);
@@ -1092,5 +1091,68 @@ public class PublisherAPIImplTest {
                     .flatMap(dependencies -> dependencies.stream())
                     .collect(Collectors.toList());
         }
+    }
+
+    @NotNull
+    private static ManifestItem getCategoryManifestItem() {
+        return (ManifestItem) () -> new ManifestInfoBuilder()
+                .objectType(PusheableAsset.CATEGORY.getType())
+                .title("Syncing All Categorie")
+                    .build();
+    }
+
+    /**
+     * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig)}
+     * When: Add a {@link Category} into a Bundle
+     * Should: Add all the {@link Category} into the Bundle
+     */
+    @Test
+    public void AddAllCategoryIntoBundle() throws Exception {
+        prepare();
+        final Class<? extends Publisher> publisher = GenerateBundlePublisher.class;
+
+        final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
+
+        final PublisherAPIImpl publisherAPI = new PublisherAPIImpl();
+
+        final PushPublisherConfig config = new PushPublisherConfig();
+        config.setPublishers(list(publisher));
+        config.setOperation(PublisherConfig.Operation.PUBLISH);
+        config.setLuceneQueries(list());
+        config.setId("PublisherAPIImplTest_" + System.currentTimeMillis());
+
+        new BundleDataGen()
+                .pushPublisherConfig(config)
+                .addAsset("CAT", PusheableAsset.CATEGORY)
+                .filter(filterDescriptor)
+                .operation(PublisherConfig.Operation.PUBLISH)
+                .setSavePublishQueueElements(true)
+                .nextPersisted();
+
+        final PublishStatus publish = publisherAPI.publish(config);
+
+        File bundleRoot = publish.getOutputFiles().get(0);
+
+        final File extractHere = new File(bundleRoot.getParent() + File.separator + config.getName());
+        extractTarArchive(bundleRoot, extractHere);
+
+        List topLevelCategories = APILocator.getCategoryAPI()
+                .findAll(APILocator.systemUser(), true);
+
+        assertBundle(null, topLevelCategories, extractHere);
+
+        final String manifestFilePath = extractHere.getAbsolutePath() + File.separator +
+                ManifestBuilder.MANIFEST_NAME;
+        final File manifestFile = new File(manifestFilePath);
+
+        final ManifestItemsMapTest manifestItemsMapTest = new ManifestItemsMapTest();
+        final ManifestItem manifestItem = () -> new ManifestInfoBuilder()
+                .objectType(PusheableAsset.CATEGORY.getType())
+                .title("Syncing All Categorie")
+                .build();
+
+        manifestItemsMapTest.add(manifestItem, ManifestReason.INCLUDE_BY_USER.getMessage());
+
+        assertManifestFile(manifestFile, manifestItemsMapTest);
     }
 }

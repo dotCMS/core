@@ -84,8 +84,8 @@ public class PublishQueueElementTransformer {
             result = getMapForContentlet(id);
         } else if (isLanguage(type)) {
             result = getMapForLanguage(id);
-        } else if (isCategory(id)) {
-            result = getMapForCategory(id);
+        } else if ("CAT".equals(id)) {
+            result = getMapForCategory();
         } else {
 
             String title = PublishAuditUtil.getInstance().getTitle(type, id);
@@ -133,18 +133,8 @@ public class PublishQueueElementTransformer {
             ) : map(TITLE_KEY, id);
     }
 
-    private static Map<String, Object> getMapForCategory(final String id) {
-
-        try {
-            final Category category = APILocator.getCategoryAPI().find(id, APILocator.systemUser(), false);
-
-            return UtilMethods.isSet(category) ? map(
-                    TITLE_KEY, category.getTitle(),
-                    INODE_KEY, category.getInode())
-             : map(TITLE_KEY, id);
-        } catch (DotDataException | DotSecurityException e) {
-            return null;
-        }
+    private static Map<String, Object> getMapForCategory(){
+        return map(TITLE_KEY, "Syncing All Categories");
     }
 
     private static Map<String, Object> getMapForContentlet(final String id) {

@@ -147,7 +147,7 @@ public class PushPublisherConfig extends PublisherConfig {
 		}
 
 		for (PublishQueueElement asset : this.getAssets()) {
-			if (!PusheableAsset.CATEGORY.name().equalsIgnoreCase(asset.getType())) {
+			if (!"CAT".equalsIgnoreCase(asset.getAsset())) {
 				return false;
 			}
 		}
@@ -308,7 +308,7 @@ public class PushPublisherConfig extends PublisherConfig {
 		}
 	}
 
-	private <T> void writeIncludeManifestItem(final T asset, final String reason) {
+	public <T> void writeIncludeManifestItem(final T asset, final String reason) {
 		if (ManifestItem.class.isAssignableFrom(asset.getClass())) {
 			if (UtilMethods.isSet(manifestBuilder)) {
 				manifestBuilder.include((ManifestItem) asset, reason);
