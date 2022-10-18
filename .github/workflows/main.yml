@@ -50,7 +50,7 @@ jobs:
             ./core-web/node_modules
           key: ${{ runner.os }}-modules-${{ hashFiles('./core-web/**/package-lock.json') }}
       - name: Configuring Node.js
-        uses: actions/setup-node@v2-beta
+        uses: actions/setup-node@v3
         with:
           node-version: "16.13.2"
       - name: Installing dependencies
@@ -92,7 +92,7 @@ jobs:
             ./core-web/node_modules
           key: ${{ runner.os }}-modules-${{ hashFiles('./core-web/**/package-lock.json') }}
       - name: Configuring Node.js
-        uses: actions/setup-node@v2-beta
+        uses: actions/setup-node@v3
         with:
           node-version: "16.13.2"
       - name: Installing dependencies
