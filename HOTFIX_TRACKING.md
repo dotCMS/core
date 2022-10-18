@@ -34,3 +34,5 @@ This maintenance release includes the following code fixes:
 
 24. https://github.com/dotCMS/core/issues/22692 : We replace the UserID with a hashed version of the UserID when creating SAML users #22692
 25. https://github.com/dotCMS/core/issues/22864 : Categories - $contentlet.categories can be slow #22864
+26. https://github.com/dotCMS/core/issues/23062 : PP queue breaks if push of a bundle fails #23062
+27. https://github.com/dotCMS/core/issues/22156 : SAML: Redirect is not working #22156
