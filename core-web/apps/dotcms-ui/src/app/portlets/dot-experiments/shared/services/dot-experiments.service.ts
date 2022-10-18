@@ -12,6 +12,22 @@ export class DotExperimentsService {
     constructor(private readonly http: HttpClient) {}
 
     /**
+     * Add a new experiment
+     * @param  experiment
+     * @returns Observable<DotExperiment[]>
+     * @memberof DotExperimentsService
+     */
+    add(
+        experiment: Pick<DotExperiment, 'pageId' | 'name' | 'description'>
+    ): Observable<DotExperiment[]> {
+        const URL = `/api/v1/experiments`;
+
+        return this.http
+            .post<DotCMSResponse<DotExperiment[]>>(URL, experiment)
+            .pipe(pluck('entity'));
+    }
+
+    /**
      * Get an array of experiments of a pageId
      * @param {string} pageId
      * @returns Observable<DotExperiment[]>
@@ -36,7 +52,7 @@ export class DotExperimentsService {
     }
 
     /**
-     * Delete an experiment with its experimenId
+     * Delete an experiment with its experimentId
      * @param {string} experimentId
      * @returns Observable<string | DotExperiment[]>
      * @memberof DotExperimentsService

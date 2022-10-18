@@ -27,6 +27,7 @@ import { DotExperimentsListRoutingModule } from '@portlets/dot-experiments/dot-e
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { DotExperimentsListStore } from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store.service';
+import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
 @NgModule({
     declarations: [
@@ -46,6 +47,8 @@ import { DotExperimentsListStore } from '@portlets/dot-experiments/dot-experimen
         DotActionMenuButtonModule,
         UiDotIconButtonModule,
         DotMessagePipeModule,
+
+        DotDynamicDirective,
 
         // PrimeNG
         SkeletonModule,

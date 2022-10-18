@@ -133,6 +133,7 @@ describe('ExperimentsListComponent', () => {
             experiments: [
                 {
                     id: '111',
+                    identifier: '1111-1111-1111-1111',
                     pageId: '456',
                     status: DotExperimentStatusList.DRAFT,
                     archived: false,

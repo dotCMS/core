@@ -6,6 +6,7 @@ import { DotPage } from '@models/dot-page/dot-page.model';
 
 export interface DotExperiment {
     id: string;
+    identifier: string;
     pageId: string;
     name: string;
     description: string;

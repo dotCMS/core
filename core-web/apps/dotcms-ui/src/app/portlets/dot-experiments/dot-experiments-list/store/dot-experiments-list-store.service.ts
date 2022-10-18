@@ -81,6 +81,12 @@ export class DotExperimentsListStore extends ComponentStore<DotExperimentsState>
         experiments
     }));
 
+    readonly addExperiment = this.updater((state, experiments: DotExperiment[]) => ({
+        ...state,
+        status: LoadingState.LOADED,
+        experiments: [...state.experiments, ...experiments]
+    }));
+
     readonly setFilterStatus = this.updater((state, filterStatus: Array<string>) => ({
         ...state,
         filterStatus

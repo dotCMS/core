@@ -38,6 +38,7 @@ const pageId = '12345-6789-9876-5432';
 const experimentsMock: DotExperiment[] = [
     {
         id: '111',
+        identifier: '1111-1111-1111-1111',
         pageId: '456',
         status: DotExperimentStatusList.DRAFT,
         archived: false,
@@ -55,6 +56,7 @@ const experimentsMock: DotExperiment[] = [
     },
     {
         id: '222',
+        identifier: '2222-2222-2222-2222',
         pageId: '456',
         status: DotExperimentStatusList.DRAFT,
         archived: false,
@@ -170,6 +172,7 @@ describe('DotExperimentsStore', () => {
         const endedExperiments: DotExperiment[] = [
             {
                 id: '111',
+                identifier: '1111-1111-1111-1111',
                 pageId: '456',
                 status: DotExperimentStatusList.ENDED,
                 archived: false,
@@ -188,7 +191,8 @@ describe('DotExperimentsStore', () => {
         ];
         const archivedExperiments: DotExperiment[] = [
             {
-                id: '111',
+                id: '222',
+                identifier: '2222-2222-2222-2222',
                 pageId: '456',
                 status: DotExperimentStatusList.ARCHIVED,
                 archived: false,

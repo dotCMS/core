@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
-import { Observable } from 'rxjs';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Observable, Subject } from 'rxjs';
 import { DotExperiment } from '../shared/models/dot-experiments.model';
 import { ExperimentsStatusList } from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
 import { DotMessagePipe } from '@dotcms/app/view/pipes';
@@ -8,6 +8,9 @@ import {
     DotExperimentsListStore,
     VmListExperiments
 } from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store.service';
+import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
+import { DotExperimentsCreateComponent } from '@portlets/dot-experiments/dot-experiments-create/dot-experiments-create.component';
+import { delay, filter, takeUntil } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-experiments-list',
@@ -16,12 +19,16 @@ import {
     providers: [DotMessagePipe],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotExperimentsListComponent implements OnInit {
+export class DotExperimentsListComponent implements OnInit, OnDestroy {
+    @ViewChild(DotDynamicDirective, { static: true }) dotDynamicHost!: DotDynamicDirective;
+
     vm$: Observable<VmListExperiments> = this.dotExperimentsListStore.vm$;
 
     statusOptionList = ExperimentsStatusList.map(({ label, value }) => {
         return { value, label: this.dotMessagePipe.transform(label) };
     });
+
+    private unsubscribe$ = new Subject<void>();
 
     constructor(
         private readonly dotExperimentsListStore: DotExperimentsListStore,
@@ -51,7 +58,18 @@ export class DotExperimentsListComponent implements OnInit {
      * @memberof DotExperimentsListComponent
      */
     addNewExperiment() {
-        // To implement
+        const viewContainerRef = this.dotDynamicHost.viewContainerRef;
+        viewContainerRef.clear();
+        const componentRef = viewContainerRef.createComponent<DotExperimentsCreateComponent>(
+            DotExperimentsCreateComponent
+        );
+        componentRef.instance.vm$
+            .pipe(
+                takeUntil(this.unsubscribe$),
+                filter(({ isOpenSidebar }) => !isOpenSidebar),
+                delay(500)
+            )
+            .subscribe(() => viewContainerRef.clear());
     }
 
     /**
@@ -72,5 +90,10 @@ export class DotExperimentsListComponent implements OnInit {
      */
     deleteExperiment(experiment: DotExperiment) {
         this.dotExperimentsListStore.deleteExperiment(experiment);
+    }
+
+    ngOnDestroy(): void {
+        this.unsubscribe$.next();
+        this.unsubscribe$.complete();
     }
 }
