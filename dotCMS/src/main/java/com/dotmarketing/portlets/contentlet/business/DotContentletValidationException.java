@@ -248,6 +248,7 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 		}
 		//Print the Field errors
 		Set<String> keys = notValidFields.keySet();
+		sb.append("Non valid fields:").append(keys).append("\n");
 		if(keys.size() > 0)
 		{
 			sb.append("List of non valid fields\n");

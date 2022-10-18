@@ -191,7 +191,7 @@ public class UsersCountryConditionletTest extends UnitTestBase {
         }
 
         TestCase withRequestIpAddress(String mockIpAddress) throws IOException, GeoIp2Exception {
-            when(request.getHeader("X-Forwarded-For")).thenReturn(mockIpAddress);
+            when(request.getRemoteAddr()).thenReturn(mockIpAddress);
             return this;
         }
 
