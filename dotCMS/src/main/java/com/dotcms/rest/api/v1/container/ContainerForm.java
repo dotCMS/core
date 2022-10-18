@@ -4,7 +4,6 @@ import com.dotcms.rest.api.Validated;
 import com.dotmarketing.beans.ContainerStructure;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-
 import java.util.List;
 
 /**
