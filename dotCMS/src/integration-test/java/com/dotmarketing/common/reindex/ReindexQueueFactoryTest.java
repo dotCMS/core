@@ -164,7 +164,7 @@ public class ReindexQueueFactoryTest {
     }
 
     /**
-     * Method to test: {@link ReindexQueueFactory#addStructureReindexEntries(String)}
+     * Method to test: {@link ReindexQueueFactory#addStructureReindexEntries(ContentType)}
      * Test Case: Every piece of content in a content type is added to the queue to be indexed
      * Expected Results: The reindex queue must be equals to 1
      * @throws DotDataException
@@ -181,7 +181,7 @@ public class ReindexQueueFactoryTest {
 
             dotConnect.setSQL("delete from dist_reindex_journal").loadResult();
 
-            factory.addStructureReindexEntries(type.inode());
+            factory.addStructureReindexEntries(type);
 
             assertEquals(1, factory.findContentToReindex(1).size());
         } finally {

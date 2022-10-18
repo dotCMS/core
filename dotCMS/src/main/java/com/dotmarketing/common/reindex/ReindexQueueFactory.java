@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
+
+import com.dotcms.contenttype.model.type.ContentType;
 import org.apache.commons.lang.StringUtils;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -98,14 +100,14 @@ public class ReindexQueueFactory {
         }
     }
 
-    protected void addStructureReindexEntries(String structureInode) throws DotDataException {
+    protected void addStructureReindexEntries(final ContentType contentType) throws DotDataException {
         DotConnect dc = new DotConnect();
         try {
             String sql = "insert into dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action, time_entered) "
-                    + " select distinct c.identifier,c.identifier," + Priority.STRUCTURE.dbValue() + "," + ReindexAction.REINDEX.ordinal()
-                    + "," + timestampSQL() + " from contentlet c " + " where c.structure_inode = ? and c.identifier is not null";
+                    + " select i.id,i.id," + Priority.STRUCTURE.dbValue() + "," + ReindexAction.REINDEX.ordinal()
+                    + "," + timestampSQL() + " from identifier i " + " where i.asset_subtype = ? and i.id is not null";
             dc.setSQL(sql);
-            dc.addParam(structureInode);
+            dc.addParam(contentType.variable());
             dc.loadResult();
 
         } catch (Exception ex) {

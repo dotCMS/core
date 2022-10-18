@@ -36,3 +36,4 @@ This maintenance release includes the following code fixes:
 25. https://github.com/dotCMS/core/issues/22864 : Categories - $contentlet.categories can be slow #22864
 26. https://github.com/dotCMS/core/issues/23062 : PP queue breaks if push of a bundle fails #23062
 27. https://github.com/dotCMS/core/issues/22156 : SAML: Redirect is not working #22156
+28. https://github.com/dotCMS/core/issues/19358 : Large amounts of content in structure can deadlock the DB when repermissioning #19358

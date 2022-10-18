@@ -84,6 +84,7 @@ import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
 import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotmarketing.beans.HostTest;
 import com.dotmarketing.business.DeterministicIdentifierAPITest;
+import com.dotmarketing.business.PermissionBitFactoryImplTest;
 import com.dotmarketing.business.helper.PermissionHelperTest;
 import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
 import com.dotmarketing.common.db.DBTimeZoneCheckTest;
@@ -518,7 +519,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rendering.velocity.viewtools.content.BinaryMapTest.class,
         Task220202RemoveFKStructureFolderConstraintTest.class,
         ContentBundlerTest.class,
-        URLMapBundlerTest.class
+        URLMapBundlerTest.class,
+        PermissionBitFactoryImplTest.class
 })
 public class MainSuite {
 
