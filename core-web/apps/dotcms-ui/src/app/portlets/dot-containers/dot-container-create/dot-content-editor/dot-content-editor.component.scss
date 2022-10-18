@@ -46,5 +46,12 @@
     }
 
     .p-tabview .p-tabview-nav li .p-tabview-nav-link {
+        padding-left: $spacing-4;
+        padding-right: $spacing-4;
+    }
+
+    .p-tabview-title {
+        display: inline-block;
+        margin-right: $spacing-2;
     }
 }

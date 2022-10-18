@@ -66,6 +66,7 @@ dot-container-properties__button-clear:hover {
 
 .dot-container-properties__code-loop-container {
     background: $white;
+    border: 1px solid $input-border-color;
 }
 
 :host ::ng-deep {
