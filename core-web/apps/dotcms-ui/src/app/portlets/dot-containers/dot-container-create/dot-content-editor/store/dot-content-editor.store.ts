@@ -69,15 +69,10 @@ export class DotContentEditorStore extends ComponentStore<DotContentEditorState>
     });
 
     updateSelectedContentType = this.updater<MenuItem>((state, selectedContentType) => {
-        const selected = [...state.selectedContentTypes];
-        const contentTypesData = [...state.contentTypesData];
-        selected.push(selectedContentType);
-        contentTypesData.push(selectedContentType);
-
         return {
             ...state,
-            contentTypesData,
-            selectedContentTypes: selected
+            contentTypesData: [...state.contentTypesData, selectedContentType],
+            selectedContentTypes: [...state.selectedContentTypes, selectedContentType]
         };
     });
 
