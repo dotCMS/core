@@ -1,9 +1,21 @@
 @use "variables" as *;
 
 :host {
-    background: $gray-bg;
+    background: $white;
     display: flex;
     height: 100%;
     overflow: auto;
-    padding: $spacing-4 $spacing-4 0;
+    padding: $spacing-4;
+
+    .dot-experiment {
+        display: flex;
+        gap: $spacing-3;
+        flex-direction: column;
+        width: 100%;
+
+        .dot-experiment__actions {
+            justify-content: space-between;
+            display: flex;
+        }
+    }
 }

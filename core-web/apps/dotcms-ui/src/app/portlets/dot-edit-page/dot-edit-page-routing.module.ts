@@ -47,6 +47,7 @@ const dotEditPage: Routes = [
                     import('@portlets/dot-rules/dot-rules.module').then((m) => m.DotRulesModule)
             },
 
+            // TODO: create a guard global of isEnterprise
             {
                 path: 'experiments/:pageId',
                 loadChildren: async () =>

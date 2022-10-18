@@ -1,1 +1,40 @@
-<p>{{ title | dm }}</p>
+<ng-container *ngIf="vm$ | async as vm">
+    <ng-container
+        *ngIf="vm.experiments.length; else vm.isLoading ? loadingExperiments : noExperiments"
+    >
+        <div class="dot-experiment">
+            <div class="dot-experiment__actions">
+                <dot-experiments-status-filter
+                    [options]="statusOptionList"
+                    [selectedItems]="vm.filterStatus"
+                    (switch)="selectedStatusFilter($event)"
+                ></dot-experiments-status-filter>
+
+                <button
+                    data-testId="add-experiment-button"
+                    disabled
+                    label="{{ 'experimentspage.add.new.experiment' | dm }}"
+                    pButton
+                    pRipple
+                    type="button"
+                ></button>
+            </div>
+
+            <dot-experiments-list-table
+                [experiments]="vm.experimentsFiltered"
+                (archiveItem)="archiveExperiment($event)"
+                (deleteItem)="deleteExperiment($event)"
+            ></dot-experiments-list-table>
+        </div>
+    </ng-container>
+</ng-container>
+
+<ng-template #noExperiments>
+    <dot-experiments-empty-experiments
+        (addNew)="addNewExperiment()"
+        description="{{ 'experimentspage.not.experiments.founds' | dm }}"
+    ></dot-experiments-empty-experiments>
+</ng-template>
+<ng-template #loadingExperiments>
+    <dot-experiments-list-skeleton></dot-experiments-list-skeleton>
+</ng-template>

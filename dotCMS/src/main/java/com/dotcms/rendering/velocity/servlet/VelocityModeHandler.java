@@ -1,9 +1,11 @@
 package com.dotcms.rendering.velocity.servlet;
 
+import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.security.ContentSecurityPolicyUtil;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.google.common.collect.ImmutableMap;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotmarketing.beans.Host;
@@ -150,8 +152,7 @@ public abstract class VelocityModeHandler {
 
     public final Template getTemplate(final IHTMLPage page, final PageMode mode) {
 
-        return VelocityUtil.getEngine().getTemplate(mode.name() + File.separator + page.getIdentifier() + "_"
-                + page.getLanguageId() + "." + VelocityType.HTMLPAGE.fileExtension);
+        return VelocityUtil.getEngine().getTemplate(VelocityResourceKey.getHTMLPageFilePath((HTMLPageAsset) page, mode, page.getLanguageId()));
     }
 
 }

@@ -2,7 +2,7 @@ package com.dotcms.publishing.manifest;
 
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.output.TarGzipBundleOutput;
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import org.apache.commons.io.IOUtils;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import java.io.BufferedInputStream;

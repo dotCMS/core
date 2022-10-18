@@ -1,5 +1,7 @@
 package com.dotmarketing.business;
 
+import com.dotcms.analytics.bayesian.BayesianAPI;
+import com.dotcms.analytics.bayesian.BayesianAPIImpl;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.SystemEventsFactory;
 import com.dotcms.api.tree.TreeableAPI;
@@ -1103,6 +1105,14 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
+	 * Creates a single instance of the {@link com.dotcms.analytics.bayesian.BayesianAPI} class.
+	 * @return
+	 */
+	public static BayesianAPI getBayesianAPI(){
+		return (BayesianAPI) getInstance(APIIndex.BAYESIAN_API);
+	}
+
+	/**
 	 * Generates a unique instance of the specified dotCMS API.
 	 *
 	 * @param index
@@ -1250,7 +1260,9 @@ enum APIIndex
 	DETERMINISTIC_IDENTIFIER_API,
 	CONTENTLET_JSON_API,
 	VARIANT_API,
-	EXPERIMENTS_API;
+	EXPERIMENTS_API,
+
+	BAYESIAN_API;
 
 	Object create() {
 		switch(this) {
@@ -1336,6 +1348,7 @@ enum APIIndex
 			case CONTENTLET_JSON_API: return new ContentletJsonAPIImpl();
 			case VARIANT_API: return new VariantAPIImpl();
 			case EXPERIMENTS_API: return new ExperimentsAPIImpl();
+			case BAYESIAN_API: return new BayesianAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
