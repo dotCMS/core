@@ -39,7 +39,7 @@ public class ThreadContext {
      * @return Map
      */
     public Map<String, Object> getContextMap() {
-        return hasContextMap()? newContextMap(): contextMap;
+        return hasContextMap()? contextMap: newContextMap();
     }
 
     /**
@@ -48,7 +48,7 @@ public class ThreadContext {
      */
     public boolean hasContextMap() {
 
-        return null == contextMap;
+        return null != contextMap;
     }
 
     private Map<String, Object> newContextMap() {
