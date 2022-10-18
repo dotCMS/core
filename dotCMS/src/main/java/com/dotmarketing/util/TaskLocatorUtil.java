@@ -346,10 +346,15 @@ public class TaskLocatorUtil {
 		//ret.add(Task00030ClusterInitialize.class);
 		ret.add(Task00040CheckAnonymousUser.class);
 		ret.add(Task00050LoadAppsSecrets.class);
-		//UT that were backported to LTS
+        return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
+	}
+
+	//UT that were backported to LTS
+	public static List<Class<?>> getBackportedUpgradeTaskClasses() {
+		final List<Class<?>> ret = new ArrayList<Class<?>>();
 		ret.add(Task220401CreateClusterLockTable.class);
 		ret.add(Task220402UpdateDateTimezones.class);
-        return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
+		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 
 }

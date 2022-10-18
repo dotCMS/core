@@ -38,3 +38,4 @@ This maintenance release includes the following code fixes:
 27. https://github.com/dotCMS/core/issues/22156 : SAML: Redirect is not working #22156
 28. https://github.com/dotCMS/core/issues/19358 : Large amounts of content in structure can deadlock the DB when repermissioning #19358
 29. https://github.com/dotCMS/core/issues/19569 : Rely on Tomcat's RemoteIpValve for dns resolution - was: External service interaction (DNS) #19569
+30. https://github.com/dotCMS/core/issues/22916 : Need a way to run UT in LTS Releases #22916
