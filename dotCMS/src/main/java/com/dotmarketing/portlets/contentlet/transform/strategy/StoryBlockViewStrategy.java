@@ -4,7 +4,10 @@ import com.dotcms.api.APIProvider;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.StoryBlockField;
+import com.dotcms.rendering.velocity.viewtools.content.StoryBlockMap;
+import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.JsonUtil;
+import com.dotcms.util.ThreadContextUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -66,6 +69,10 @@ public class StoryBlockViewStrategy extends AbstractTransformStrategy<Contentlet
                                 field.id(), e.getMessage()));
                     }
                     map.put(field.variable(), jsonAsMap);
+                    // if ThreadContext has a parameter or so we can render
+                    if (this.needsRender()) {
+                        map.put(field.variable() + "_render", new StoryBlockMap(fieldValue).toHtml());
+                    }
                 }
 
             });
@@ -73,4 +80,16 @@ public class StoryBlockViewStrategy extends AbstractTransformStrategy<Contentlet
         return map;
     }
 
+    private boolean needsRender () {
+
+        if (ThreadContextUtil.getOrCreateContext().hasContextMap()) {
+
+            return ThreadContextUtil.getOrCreateContext().getContextMap().containsKey("render")?
+                    ConversionUtils.toBoolean(ThreadContextUtil.getOrCreateContext()
+                            .getContextMap().get("render"), false):
+                    false;
+        }
+
+        return false;
+    }
 }

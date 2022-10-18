@@ -354,6 +354,25 @@ public class ConversionUtils implements Serializable {
 	}
 
 	/**
+	 * Converts the specified input into a {@code boolean}.
+	 *
+	 * @param aBool
+	 *            - The Object representation of the boolean.
+	 * @param defaultBool
+	 *            - The default value in case the input cannot be converted.
+	 * @return The input as {@code defaultBool}, or the default value.
+	 */
+	public static boolean toBoolean(final Object aBool, final boolean defaultBool) {
+		try {
+			return aBool instanceof Boolean?
+					Boolean.class.cast(aBool):
+					toBoolean(aBool.toString(), defaultBool);
+		} catch (final Exception e) {
+			return defaultBool;
+		}
+	}
+
+	/**
 	 * Based on a value obtained from database, if it is a boolean will return a cast.
 	 * Otherwise will use the {@link DbConnectionFactory} to determine the boolean value cross-db
 	 * @param objectBoolean {@link Object}

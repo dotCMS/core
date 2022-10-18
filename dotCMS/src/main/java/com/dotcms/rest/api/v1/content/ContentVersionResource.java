@@ -8,6 +8,8 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.util.HttpRequestMapWrapper;
+import com.dotcms.util.ThreadContextUtil;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotmarketing.beans.Identifier;
@@ -111,6 +113,8 @@ public class ContentVersionResource {
         try {
 
            final Identifier identifierObj = getIdentifier(identifier, user);
+           // this is included in case the render = true is included
+           ThreadContextUtil.getOrCreateContext().addContextMap(new HttpRequestMapWrapper(request));
 
            ResponseEntityView responseEntityView = null;
            if(null != identifier){
