@@ -96,11 +96,11 @@
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"Delete Category Check\", function () {",
-									"    pm.expect(jsonData.entity.successCount).to.be.eql(1);",
+									"    pm.expect(jsonData.entity.successCount).to.eql(1);",
 									"});",
 									"",
 									"pm.test(\"Failed To Delete Category Check\", function () {",
-									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
+									"    pm.expect(jsonData.entity.fails.length).to.eql(0);",
 									"});"
 								],
 								"type": "text/javascript"
