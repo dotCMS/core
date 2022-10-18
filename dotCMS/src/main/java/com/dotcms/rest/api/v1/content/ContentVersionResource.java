@@ -113,7 +113,7 @@ public class ContentVersionResource {
         try {
 
            final Identifier identifierObj = getIdentifier(identifier, user);
-           // this is included in case the render = true is included
+           // this is included in case the the query string ?render=true is included
            ThreadContextUtil.getOrCreateContext().addContextMap(new HttpRequestMapWrapper(request));
 
            ResponseEntityView responseEntityView = null;
