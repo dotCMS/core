@@ -141,6 +141,7 @@ describe('DotExperimentsCreateComponent', () => {
         expect(primeNgSidebar.showCloseIcon).toBe(
             SIDEBAR_CONFIG_BY_DOTSIDEBAR_DIRECTIVE.showCloseIcon
         );
+
     });
     it('should has DotSidebarHeaderComponent', () => {
         spectator.detectChanges();
