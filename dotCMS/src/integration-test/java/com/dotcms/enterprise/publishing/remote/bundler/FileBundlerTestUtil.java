@@ -25,6 +25,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import com.liferay.util.StringPool;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -121,7 +122,7 @@ public class FileBundlerTestUtil {
             throws DotSecurityException, DotDataException {
 
         final String bundleId = bundleRoot.getAbsolutePath()
-                .substring(bundleRoot.getPath().lastIndexOf("/") + 1);
+                .substring(bundleRoot.getPath().lastIndexOf(StringPool.FORWARD_SLASH) + 1);
         final Bundle bundle = APILocator.getBundleAPI().getBundleById(bundleId);
         bundle.setOperation(0);
         final PushPublisherConfig pushPublisherConfig = new PushPublisherConfig(bundle);

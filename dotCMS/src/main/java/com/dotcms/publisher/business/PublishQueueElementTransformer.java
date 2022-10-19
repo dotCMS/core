@@ -12,6 +12,8 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.base.CaseFormat;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.util.StringPool;
 import java.util.HashMap;
 import java.util.List;
@@ -116,10 +118,6 @@ public class PublishQueueElementTransformer {
         return result;
     }
 
-    private static boolean isCategory(final String type) {
-        return type.equals(PusheableAsset.CATEGORY.getType());
-    }
-
     private static Map<String, Object> getMapForLanguage(final String id) {
 
         final Language language = APILocator.getLanguageAPI().getLanguage(id);
@@ -134,7 +132,11 @@ public class PublishQueueElementTransformer {
     }
 
     private static Map<String, Object> getMapForCategory(){
-        return map(TITLE_KEY, "Syncing All Categories");
+        try {
+            return map(TITLE_KEY, LanguageUtil.get("Syncing_all_Categories"));
+        } catch (LanguageException e) {
+            return map(TITLE_KEY, "Syncing All Categories ");
+        }
     }
 
     private static Map<String, Object> getMapForContentlet(final String id) {

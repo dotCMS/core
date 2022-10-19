@@ -146,13 +146,7 @@ public class PushPublisherConfig extends PublisherConfig {
 			return false;
 		}
 
-		for (PublishQueueElement asset : this.getAssets()) {
-			if (!"CAT".equalsIgnoreCase(asset.getAsset())) {
-				return false;
-			}
-		}
-
-		return true;
+		return !this.getAssets().stream().anyMatch (asset -> !"CAT".equalsIgnoreCase(asset.getAsset()));
 	}
 
 	public List<PublishingEndPoint> getEndpoints() {

@@ -37,8 +37,11 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
+import com.liferay.util.StringPool;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.*;
@@ -46,6 +49,7 @@ import java.util.concurrent.*;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.felix.framework.OSGIUtil;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * The main purpose of this class is to determine all possible content
@@ -316,7 +320,7 @@ public class DependencyManager {
 			} else if ("CAT".equals(asset.getAsset())) {
 				config.writeIncludeManifestItem((ManifestItem) () -> new ManifestInfoBuilder()
 						.objectType(PusheableAsset.CATEGORY.getType())
-						.title("Syncing All Categories")
+						.title(getSyncingAllCategoriesTitle())
 						.build(), ManifestReason.INCLUDE_BY_USER.getMessage());
 
 			}
@@ -349,6 +353,18 @@ public class DependencyManager {
 				throw new DotBundleException(rootCause.getMessage(), (Exception) rootCause);
 			}
 		}
+	}
+
+	@NotNull
+	private String getSyncingAllCategoriesTitle() {
+		String syncingAllCategories = StringPool.BLANK;
+
+		try {
+			syncingAllCategories = LanguageUtil.get("Syncing_all_Categories");
+		} catch (LanguageException e) {
+			Logger.warn(DependencyManager.class, e.getMessage());
+		}
+		return syncingAllCategories;
 	}
 
 	private String getUserID(PublishQueueElement asset) {
