@@ -23,6 +23,7 @@ import { Highlight } from '@tiptap/extension-highlight';
 import { Link } from '@tiptap/extension-link';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
+import CharacterCount from '@tiptap/extension-character-count';
 
 function toTitleCase(str) {
     return str.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {
@@ -37,9 +38,11 @@ function toTitleCase(str) {
 })
 export class DotBlockEditorComponent implements OnInit {
     @Input() lang = DEFAULT_LANG_ID;
-    @Input() allowedContentTypes = '';
-    @Input() customStyles = '';
-    @Input() value: { [key: string]: string } | string = ''; // can be HTML or JSON, see https://www.tiptap.dev/api/editor#content
+    @Input() allowedContentTypes: string;
+    @Input() customStyles: string;
+    @Input() displayCountBar: boolean | string = true;
+    @Input() charLimit: number;
+    @Input() value: Content; // can be HTML or JSON, see https://www.tiptap.dev/api/editor#content
 
     @Input() set allowedBlocks(blocks: string) {
         this._allowedBlocks = [
@@ -56,6 +59,19 @@ export class DotBlockEditorComponent implements OnInit {
 
     _allowedBlocks = ['paragraph']; //paragraph should be always.
     editor: Editor;
+    time: number;
+
+    get characterCount() {
+        return this.editor.storage.characterCount;
+    }
+
+    get showCharData() {
+        try {
+            return JSON.parse(this.displayCountBar as string);
+        } catch (e) {
+            return true;
+        }
+    }
 
     constructor(private injector: Injector, public viewContainerRef: ViewContainerRef) {}
 
@@ -63,6 +79,15 @@ export class DotBlockEditorComponent implements OnInit {
         this.editor = new Editor({
             extensions: this.setEditorExtensions()
         });
+
+        this.editor.on('create', () => this.updateReadingTime());
+        this.editor.on('update', () => this.updateReadingTime());
+    }
+
+    private updateReadingTime(): void {
+        // The constant used by Medium for words an adult can read per minute is 265
+        // More Information here: https://help.medium.com/hc/en-us/articles/214991667-Read-time
+        this.time = Math.ceil(this.characterCount.words() / 265);
     }
 
     private setEditorExtensions(): AnyExtension[] {
@@ -80,6 +105,7 @@ export class DotBlockEditorComponent implements OnInit {
             BubbleFormExtension(this.viewContainerRef),
             // Marks Extensions
             Underline,
+            CharacterCount,
             TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'dotImage'] }),
             Highlight.configure({ HTMLAttributes: { style: 'background: #accef7;' } }),
             Link.configure({ autolink: false, openOnClick: false }),

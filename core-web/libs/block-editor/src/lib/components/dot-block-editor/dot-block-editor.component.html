@@ -1,3 +1,10 @@
 <div class="editor-wrapper" [style]="customStyles">
-    <tiptap-editor [editor]="editor" [(ngModel)]="value"></tiptap-editor>
+    <tiptap-editor [(ngModel)]="value" [editor]="editor"></tiptap-editor>
+</div>
+
+<div class="footer_container" *ngIf="showCharData">
+    <span [class.error-message]="charLimit && characterCount.characters() > charLimit">
+        {{ characterCount.characters() }}{{ charLimit ? '/' + charLimit : '' }} characters
+    </span>
+    <span *ngIf="time"> {{ time }} min read </span>
 </div>
