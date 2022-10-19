@@ -1,5 +1,6 @@
 package com.dotcms.publisher.business;
 
+import static com.dotcms.publisher.ajax.RemotePublishAjaxAction.ADD_ALL_CATEGORIES_TO_BUNDLE_KEY;
 import static com.dotcms.util.CollectionsUtils.map;
 
 import com.dotcms.publisher.util.PusheableAsset;
@@ -86,7 +87,7 @@ public class PublishQueueElementTransformer {
             result = getMapForContentlet(id);
         } else if (isLanguage(type)) {
             result = getMapForLanguage(id);
-        } else if ("CAT".equals(id)) {
+        } else if (ADD_ALL_CATEGORIES_TO_BUNDLE_KEY.equals(id)) {
             result = getMapForCategory();
         } else {
 

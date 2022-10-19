@@ -1,5 +1,6 @@
 package com.dotcms.publisher.util.dependencies;
 
+import static com.dotcms.publisher.ajax.RemotePublishAjaxAction.ADD_ALL_CATEGORIES_TO_BUNDLE_KEY;
 import static com.dotcms.util.CollectionsUtils.set;
 
 import com.dotcms.contenttype.model.type.ContentType;
@@ -317,7 +318,7 @@ public class DependencyManager {
 				final String userID = getUserID(asset);
 				final User user = APILocator.getUserAPI().loadUserById(userID);
 				config.add(user, PusheableAsset.USER, ManifestReason.INCLUDE_BY_USER.getMessage());
-			} else if ("CAT".equals(asset.getAsset())) {
+			} else if (ADD_ALL_CATEGORIES_TO_BUNDLE_KEY.equals(asset.getAsset())) {
 				config.writeIncludeManifestItem((ManifestItem) () -> new ManifestInfoBuilder()
 						.objectType(PusheableAsset.CATEGORY.getType())
 						.title(getSyncingAllCategoriesTitle())

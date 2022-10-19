@@ -1,6 +1,8 @@
 package com.dotcms.publisher.pusher;
 
 
+import static com.dotcms.publisher.ajax.RemotePublishAjaxAction.ADD_ALL_CATEGORIES_TO_BUNDLE_KEY;
+
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publisher.util.dependencies.DependencyManager;
 import com.dotcms.publisher.util.dependencies.DependencyProcessor;
@@ -146,7 +148,7 @@ public class PushPublisherConfig extends PublisherConfig {
 			return false;
 		}
 
-		return !this.getAssets().stream().anyMatch (asset -> !"CAT".equalsIgnoreCase(asset.getAsset()));
+		return !this.getAssets().stream().anyMatch (asset -> !ADD_ALL_CATEGORIES_TO_BUNDLE_KEY.equalsIgnoreCase(asset.getAsset()));
 	}
 
 	public List<PublishingEndPoint> getEndpoints() {
