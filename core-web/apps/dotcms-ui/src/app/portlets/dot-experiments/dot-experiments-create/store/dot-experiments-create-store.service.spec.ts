@@ -61,12 +61,14 @@ describe('DotExperimentsStore', () => {
             expect(state).toEqual(initialState);
         });
     });
+
     it('should update isSaving to the store', () => {
         spectator.service.setIsSaving();
         spectator.service.state$.subscribe(({ isSaving }) => {
             expect(isSaving).toBe(true);
         });
     });
+
     it('should update isOpenSlider and isSaving to the store', () => {
         spectator.service.setCloseSidebar();
         spectator.service.state$.subscribe(({ isOpenSidebar, isSaving }) => {
@@ -74,6 +76,7 @@ describe('DotExperimentsStore', () => {
             expect(isSaving).toBe(false);
         });
     });
+
     it('should save the experiment', () => {
         const isSavingStateChangesExpected = [false, true, false];
         const isSavingSatuses = [];
