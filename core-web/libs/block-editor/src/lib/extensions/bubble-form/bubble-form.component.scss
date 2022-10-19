@@ -33,3 +33,9 @@ form {
     width: 100%;
     gap: 0.625 * $dot-editor-size;
 }
+
+.error-message {
+    color: $red;
+    font-size: $font-size-x-small;
+    text-align: left;
+}
