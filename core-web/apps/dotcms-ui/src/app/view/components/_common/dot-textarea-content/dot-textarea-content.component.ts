@@ -48,6 +48,9 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
     @Input()
     hideBorder: boolean;
 
+    @Input()
+    editorName: string;
+
     @Output()
     monacoInit = new EventEmitter<unknown>();
 
@@ -133,7 +136,7 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
      * @memberof DotTextareaContentComponent
      */
     onInit(editor: unknown): void {
-        this.monacoInit.emit(editor);
+        this.monacoInit.emit({ name: this.editorName, editor });
     }
 
     /**

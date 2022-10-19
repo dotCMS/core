@@ -38,6 +38,7 @@
             <dot-textarea-content
                 #body
                 [value]="contentType.state.code"
+                [editorName]="contentType.label"
                 [show]="['code']"
                 [hideBorder]="true"
                 (monacoInit)="monacoInit($event)"

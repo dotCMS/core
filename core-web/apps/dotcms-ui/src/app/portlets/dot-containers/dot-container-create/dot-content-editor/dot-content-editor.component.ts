@@ -30,7 +30,7 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
     inputContainerStructures: DotContainerStructure[];
     vm$ = this.store.vm$;
     contentTypesData$ = this.store.contentTypeData$;
-    monacoEditors = [];
+    monacoEditors = {};
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
@@ -108,16 +108,17 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
      * @param {number} index - The index of the tab that was clicked.
      * @memberof DotContentEditorComponent
      */
-    handleAddVariable(contentType: DotCMSContentType, index: number) {
+    handleAddVariable(contentType: DotCMSContentType) {
         this.dialogService.open(DotAddVariableComponent, {
             header: this.dotMessageService.get('containers.properties.add.variable.title'),
             width: '50rem',
             data: {
                 contentTypeVariable: contentType.variable,
-                activeTabIndex: index,
-                onSave: (variable, idx) => {
-                    const editor = this.monacoEditors[idx].getModel();
-                    this.monacoEditors[idx].getModel().setValue(editor.getValue() + `${variable}`);
+                onSave: (variable) => {
+                    const editor = this.monacoEditors[contentType.name].getModel();
+                    this.monacoEditors[contentType.name]
+                        .getModel()
+                        .setValue(editor.getValue() + `${variable}`);
                 }
             }
         });
@@ -127,7 +128,7 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
      * It pushes the monaco instance into the monacoEditor array.
      * @param monacoInstance - The monaco instance that is created by the component.
      */
-    monacoInit(monacoInstance) {
-        this.monacoEditors.push(monacoInstance);
+    monacoInit(monacoEditor) {
+        this.monacoEditors[monacoEditor.name] = monacoEditor.editor;
     }
 }
