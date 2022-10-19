@@ -95,6 +95,21 @@ export class ContainerListComponent implements OnDestroy {
         return this.store.getContainerActions(container);
     }
 
+    /**
+     * Map table results to add the disableInteraction property.
+     * @param {DotContainer[]} containers
+     * @returns DotContainer[]
+     * @memberof DotContainerListComponent
+     */
+    mapTableItems(containers: DotContainer[]): DotContainer[] {
+        return containers.map((container) => {
+            container.disableInteraction =
+                container.identifier.includes('/') || container.identifier === 'SYSTEM_CONTAINER';
+
+            return container;
+        });
+    }
+
     private notifyResult(
         response: DotActionBulkResult | DotContainer,
         failsInfo: DotBulkFailItem[],

@@ -1,6 +1,7 @@
 <div class="container-listing">
     <dot-portlet-base *ngIf="vm$ | async as vm">
         <dot-portlet-toolbar title="Containers"></dot-portlet-toolbar>
+
         <dot-listing-data-table
             #listing
             *ngIf="vm.tableColumns && vm.actionHeaderOptions"
@@ -8,10 +9,56 @@
             [columns]="vm.tableColumns"
             [actions]="[]"
             [checkbox]="true"
+            [mapItems]="mapTableItems"
             (selectedItems)="updateSelectedContainers($event)"
             url="v1/containers?system=true"
             dataKey="inode"
         >
+            <div class="container-listing__header-options">
+                <div class="container-listing__filter-controls">
+                    <button
+                        class="p-button-secondary p-button"
+                        [label]="'Search' | dm"
+                        type="button"
+                        pButton
+                    ></button>
+                    <p-checkbox
+                        [label]="'Show-Archived' | dm"
+                        [binary]="true"
+                        (onChange)="handleArchivedFilter($event.checked)"
+                        data-testid="archiveCheckbox"
+                    ></p-checkbox>
+                </div>
+
+                <div>
+                    <button
+                        class="p-button-secondary p-button"
+                        [label]="'Actions' | dm"
+                        [disabled]="!vm.selectedContainers.length"
+                        (click)="actionsMenu.toggle($event)"
+                        type="button"
+                        pButton
+                        icon="pi pi-ellipsis-v"
+                        attr.data-testid="bulkActions"
+                    ></button>
+
+                    <p-menu
+                        #actionsMenu
+                        [popup]="true"
+                        [model]="vm.containerBulkActions"
+                        appendTo="body"
+                    ></p-menu>
+                </div>
+            </div>
+            <dot-empty-state
+                [rows]="10"
+                [colsTextWidth]="[60, 50, 60, 80]"
+                [title]="'message.container.empty.title' | dm"
+                [content]="'message.container.empty.content' | dm"
+                [buttonLabel]="'message.container.empty.button.label' | dm"
+                (buttonClick)="handleEmptyStateButtonClick()"
+                icon="web"
+            ></dot-empty-state>
             <div class="container-listing__header-options">
                 <div class="container-listing__filter-controls">
                     <button

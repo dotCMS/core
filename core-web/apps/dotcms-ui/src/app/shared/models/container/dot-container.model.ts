@@ -29,6 +29,7 @@ export interface DotContainer {
     parentPermissionable?: {
         hostname: string;
     };
+    disableInteraction?: boolean;
 }
 
 export interface DotContainerRequest {
