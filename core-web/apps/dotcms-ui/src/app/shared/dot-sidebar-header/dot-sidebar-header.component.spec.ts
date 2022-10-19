@@ -4,7 +4,7 @@ import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { UiDotIconButtonComponent } from '@components/_common/dot-icon-button/dot-icon-button.component';
 
-fdescribe('DotSidebarHeaderComponent', () => {
+describe('DotSidebarHeaderComponent', () => {
     let spectator: Spectator<DotSidebarHeaderComponent>;
     let uiDotIconButtonComponent: UiDotIconButtonComponent;
     const createComponent = createComponentFactory({

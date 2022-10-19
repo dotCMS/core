@@ -9,26 +9,26 @@
     margin-right: -$spacing-3;
     margin-top: -$spacing-3;
 
+    h2 {
+        font-size: $font-size-large;
+        margin: 0;
+        margin-left: $spacing-1;
+    }
+
     .dot-sidebar-header-wrapper {
         margin-left: $spacing-1;
         margin-right: $spacing-1;
         height: 100%;
+    }
 
-        .dot-sidebar-header {
-            min-height: $dot-secondary-toolbar-height;
-            align-content: center;
+    .dot-sidebar-header {
+        min-height: $dot-secondary-toolbar-height;
+        align-content: center;
+    }
 
-            h2 {
-                font-size: $font-size-large;
-                margin: 0;
-                margin-left: $spacing-1;
-            }
-
-            .col-fixed {
-                width: 150px;
-                text-align: right;
-                margin-right: $spacing-1;
-            }
-        }
+    .col-fixed {
+        width: 150px;
+        text-align: right;
+        margin-right: $spacing-1;
     }
 }

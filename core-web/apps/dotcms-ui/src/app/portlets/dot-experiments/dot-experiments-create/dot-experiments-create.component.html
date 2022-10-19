@@ -58,7 +58,7 @@
     <ng-template #actionHeaderBtnTpl>
         <button
             [disabled]="!form.valid"
-            [loading]="vm.isSaving"
+            [loading]="vm.isLoading"
             (click)="handleSubmit()"
             data-testId="add-experiment-button"
             form="new-experiment-form"

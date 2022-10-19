@@ -1,25 +1,24 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
-import { Observable, Subject } from 'rxjs';
+import { ChangeDetectionStrategy, Component, OnInit, ViewChild } from '@angular/core';
+import { Observable } from 'rxjs';
 import { DotExperiment } from '../shared/models/dot-experiments.model';
 import { ExperimentsStatusList } from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
 import { DotMessagePipe } from '@dotcms/app/view/pipes';
-import { ActivatedRoute } from '@angular/router';
 import {
     DotExperimentsListStore,
     VmListExperiments
 } from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store.service';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 import { DotExperimentsCreateComponent } from '@portlets/dot-experiments/dot-experiments-create/dot-experiments-create.component';
-import { delay, filter, takeUntil } from 'rxjs/operators';
+import { delay, take } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-experiments-list',
     templateUrl: './dot-experiments-list.component.html',
     styleUrls: ['./dot-experiments-list.component.scss'],
-    providers: [DotMessagePipe],
+    providers: [DotMessagePipe, DotExperimentsListStore],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotExperimentsListComponent implements OnInit, OnDestroy {
+export class DotExperimentsListComponent implements OnInit {
     @ViewChild(DotDynamicDirective, { static: true }) dotDynamicHost!: DotDynamicDirective;
 
     vm$: Observable<VmListExperiments> = this.dotExperimentsListStore.vm$;
@@ -28,17 +27,13 @@ export class DotExperimentsListComponent implements OnInit, OnDestroy {
         return { value, label: this.dotMessagePipe.transform(label) };
     });
 
-    private unsubscribe$ = new Subject<void>();
-
     constructor(
         private readonly dotExperimentsListStore: DotExperimentsListStore,
-        private readonly dotMessagePipe: DotMessagePipe,
-        private readonly route: ActivatedRoute
+        private readonly dotMessagePipe: DotMessagePipe
     ) {}
 
     ngOnInit() {
-        const pageId = this.route.parent?.parent?.parent.snapshot.params.pageId;
-        this.dotExperimentsListStore.loadExperiments(pageId);
+        this.dotExperimentsListStore.loadExperiments();
     }
 
     /**
@@ -63,13 +58,9 @@ export class DotExperimentsListComponent implements OnInit, OnDestroy {
         const componentRef = viewContainerRef.createComponent<DotExperimentsCreateComponent>(
             DotExperimentsCreateComponent
         );
-        componentRef.instance.vm$
-            .pipe(
-                takeUntil(this.unsubscribe$),
-                filter(({ isOpenSidebar }) => !isOpenSidebar),
-                delay(500)
-            )
-            .subscribe(() => viewContainerRef.clear());
+        componentRef.instance.closedSidebar.pipe(delay(500), take(1)).subscribe(() => {
+            viewContainerRef.clear();
+        });
     }
 
     /**
@@ -90,10 +81,5 @@ export class DotExperimentsListComponent implements OnInit, OnDestroy {
      */
     deleteExperiment(experiment: DotExperiment) {
         this.dotExperimentsListStore.deleteExperiment(experiment);
-    }
-
-    ngOnDestroy(): void {
-        this.unsubscribe$.next();
-        this.unsubscribe$.complete();
     }
 }

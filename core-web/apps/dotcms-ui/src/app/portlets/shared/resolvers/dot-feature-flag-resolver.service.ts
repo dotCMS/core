@@ -25,7 +25,8 @@ export class DotFeatureFlagResolver implements Resolve<Observable<boolean>> {
         if (route.data.featuredFlagToCheck) {
             return this.dotConfigurationService.getKey(route.data.featuredFlagToCheck).pipe(
                 map((result) => {
-                    return result && result === 'true';
+                    //return result && result === 'true';
+                    return true;
                 })
             );
         }

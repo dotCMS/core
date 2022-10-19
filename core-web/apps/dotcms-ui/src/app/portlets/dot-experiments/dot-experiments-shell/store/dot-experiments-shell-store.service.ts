@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { ComponentStore, OnStoreInit } from '@ngrx/component-store';
 import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models';
 import { ActivatedRoute } from '@angular/router';
+import { Observable } from 'rxjs';
 
 export interface DotExperimentsShellState {
     pageId: string;
@@ -18,6 +19,8 @@ export class DotExperimentsShellStore
     extends ComponentStore<DotExperimentsShellState>
     implements OnStoreInit
 {
+    readonly getPageId$: Observable<string> = this.select((state) => state.pageId);
+
     //Updater
     readonly setPageDetails = this.updater(
         (state, page: { pageId: string; pageTitle: string }) => ({

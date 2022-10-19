@@ -11,54 +11,61 @@ import { DotExperimentsListStore } from '@portlets/dot-experiments/dot-experimen
 
 export interface DotExperimentCreateStore {
     isOpenSidebar: boolean;
-    isSaving: boolean;
+    isLoading: boolean;
 }
 
 const initialState: DotExperimentCreateStore = {
-    isOpenSidebar: true,
-    isSaving: false
+    isOpenSidebar: false,
+    isLoading: false
 };
 
 @Injectable()
 export class DotExperimentsCreateStore extends ComponentStore<DotExperimentCreateStore> {
-    readonly isSaving$: Observable<boolean> = this.select(({ isSaving }) => isSaving);
+    readonly isSaving$: Observable<boolean> = this.select(({ isLoading }) => isLoading);
 
     // Updaters
     readonly setIsSaving = this.updater((state) => ({
         ...state,
-        isSaving: true
+        isLoading: true
+    }));
+    readonly setOpenSlider = this.updater((state) => ({
+        ...state,
+        isOpenSidebar: true
     }));
     readonly setCloseSidebar = this.updater((state) => ({
         ...state,
         isOpenSidebar: false,
-        isSaving: false
+        isLoading: false
     }));
 
     // Effects
     readonly addExperiments = this.effect(
         (experiment$: Observable<Pick<DotExperiment, 'pageId' | 'name' | 'description'>>) => {
-        return experiment$.pipe(
-            tap(() => this.setIsSaving()),
-            switchMap((experiment) => this.dotExperimentsService.add(experiment),
-            tapResponse(
-                (experiments) => {
-                    this.messageService.add({
-                        severity: 'info',
-                        summary: this.dotMessageService.get(
-                            'experiments.action.add.confirm-title'
-                        ),
-                        detail: this.dotMessageService.get(
-                            'experiments.action.add.confirm-message',
-                            experiment.name
+            return experiment$.pipe(
+                tap(() => this.setIsSaving()),
+                switchMap((experiment) =>
+                    this.dotExperimentsService.add(experiment).pipe(
+                        tapResponse(
+                            (experiments) => {
+                                this.messageService.add({
+                                    severity: 'info',
+                                    summary: this.dotMessageService.get(
+                                        'experiments.action.add.confirm-title'
+                                    ),
+                                    detail: this.dotMessageService.get(
+                                        'experiments.action.add.confirm-message',
+                                        experiment.name
+                                    )
+                                });
+                                // Todo: remove and redirect here to experiment/configure/:experimentId
+                                this.dotExperimentsListStore.addExperiment(experiments);
+                            },
+                            (error: HttpErrorResponse) => throwError(error),
+                            () => this.setCloseSidebar()
                         )
-                    });
-                    // Todo: remove and redirect here to experiment/configure/:experimentId
-                    this.dotExperimentsListStore.addExperiment(experiments);
-                },
-                (error: HttpErrorResponse) => throwError(error),
-                () => this.setCloseSidebar()
-            )
-        )
+                    )
+                )
+            );
         }
     );
 

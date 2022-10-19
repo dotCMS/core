@@ -23,7 +23,7 @@ const DotExperimentsListStoreMock = {
 
 const initialState: DotExperimentCreateStore = {
     isOpenSidebar: true,
-    isSaving: false
+    isLoading: false
 };
 
 const messageServiceMock = new MockDotMessageService({
@@ -64,16 +64,16 @@ describe('DotExperimentsStore', () => {
 
     it('should update isSaving to the store', () => {
         spectator.service.setIsSaving();
-        spectator.service.state$.subscribe(({ isSaving }) => {
-            expect(isSaving).toBe(true);
+        spectator.service.state$.subscribe(({ isLoading }) => {
+            expect(isLoading).toBe(true);
         });
     });
 
     it('should update isOpenSlider and isSaving to the store', () => {
         spectator.service.setCloseSidebar();
-        spectator.service.state$.subscribe(({ isOpenSidebar, isSaving }) => {
+        spectator.service.state$.subscribe(({ isOpenSidebar, isLoading }) => {
             expect(isOpenSidebar).toBe(false);
-            expect(isSaving).toBe(false);
+            expect(isLoading).toBe(false);
         });
     });
 

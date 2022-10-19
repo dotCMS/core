@@ -2,8 +2,8 @@ import { Injectable } from '@angular/core';
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { LoadingState } from '@portlets/shared/models/shared-models';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { catchError, switchMap, tap } from 'rxjs/operators';
-import { EMPTY, Observable, throwError } from 'rxjs';
+import { catchError, switchMap, tap, withLatestFrom } from 'rxjs/operators';
+import { EMPTY, Observable, pipe, throwError } from 'rxjs';
 import { MessageService } from 'primeng/api';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotExperimentStatusList } from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
@@ -12,6 +12,7 @@ import {
     DotExperiment,
     GroupedExperimentByStatus
 } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
+import { DotExperimentsShellStore } from '@portlets/dot-experiments/dot-experiments-shell/store/dot-experiments-shell-store.service';
 
 export interface DotExperimentsState {
     experiments: DotExperiment[];
@@ -105,10 +106,11 @@ export class DotExperimentsListStore extends ComponentStore<DotExperimentsState>
     }));
 
     // Effects
-    readonly loadExperiments = this.effect((pageId$: Observable<string>) => {
-        return pageId$.pipe(
+    readonly loadExperiments = this.effect<void>(
+        pipe(
             tap(() => this.setComponentStatus(LoadingState.LOADING)),
-            switchMap((pageId) =>
+            withLatestFrom(this.dotExperimentsShellStore.getPageId$),
+            switchMap(([, pageId]) =>
                 this.dotExperimentsService.get(pageId).pipe(
                     tap(() => this.setComponentStatus(LoadingState.LOADING)),
                     tapResponse(
@@ -120,8 +122,8 @@ export class DotExperimentsListStore extends ComponentStore<DotExperimentsState>
                     )
                 )
             )
-        );
-    });
+        )
+    );
 
     readonly deleteExperiment = this.effect((experiment$: Observable<DotExperiment>) => {
         return experiment$.pipe(
@@ -194,6 +196,7 @@ export class DotExperimentsListStore extends ComponentStore<DotExperimentsState>
 
     constructor(
         private readonly dotExperimentsService: DotExperimentsService,
+        private readonly dotExperimentsShellStore: DotExperimentsShellStore,
         private readonly dotMessageService: DotMessageService,
         private readonly messageService: MessageService
     ) {

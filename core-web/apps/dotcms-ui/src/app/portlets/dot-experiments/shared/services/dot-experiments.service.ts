@@ -20,10 +20,8 @@ export class DotExperimentsService {
     add(
         experiment: Pick<DotExperiment, 'pageId' | 'name' | 'description'>
     ): Observable<DotExperiment[]> {
-        const URL = `/api/v1/experiments`;
-
         return this.http
-            .post<DotCMSResponse<DotExperiment[]>>(URL, experiment)
+            .post<DotCMSResponse<DotExperiment[]>>(API_ENDPOINT, experiment)
             .pipe(pluck('entity'));
     }
 
@@ -34,9 +32,9 @@ export class DotExperimentsService {
      * @memberof DotExperimentsService
      */
     get(pageId: string): Observable<DotExperiment[]> {
-        const URL = `${API_ENDPOINT}?pageId=${pageId}`;
-
-        return this.http.get<DotCMSResponse<DotExperiment[]>>(URL).pipe(pluck('entity'));
+        return this.http
+            .get<DotCMSResponse<DotExperiment[]>>(`${API_ENDPOINT}?pageId=${pageId}`)
+            .pipe(pluck('entity'));
     }
 
     /**
@@ -46,9 +44,9 @@ export class DotExperimentsService {
      * @memberof DotExperimentsService
      */
     archive(experimentId: string): Observable<DotExperiment[]> {
-        const URL = `${API_ENDPOINT}/${experimentId}/_archive`;
-
-        return this.http.put<DotCMSResponse<DotExperiment[]>>(URL, {}).pipe(pluck('entity'));
+        return this.http
+            .put<DotCMSResponse<DotExperiment[]>>(`${API_ENDPOINT}/${experimentId}/_archive`, {})
+            .pipe(pluck('entity'));
     }
 
     /**
@@ -58,8 +56,8 @@ export class DotExperimentsService {
      * @memberof DotExperimentsService
      */
     delete(experimentId: string): Observable<string | DotExperiment[]> {
-        const URL = `${API_ENDPOINT}/${experimentId}`;
-
-        return this.http.delete<DotCMSResponse<DotExperiment[]>>(URL).pipe(pluck('entity'));
+        return this.http
+            .delete<DotCMSResponse<DotExperiment[]>>(`${API_ENDPOINT}/${experimentId}`)
+            .pipe(pluck('entity'));
     }
 }

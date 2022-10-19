@@ -1,12 +1,6 @@
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {
-    FormBuilder,
-    FormControl,
-    FormGroup,
-    ReactiveFormsModule,
-    Validators
-} from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { InputTextModule } from 'primeng/inputtext';
 import { SidebarModule } from 'primeng/sidebar';
@@ -15,7 +9,6 @@ import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sideba
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { ButtonModule } from 'primeng/button';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { ActivatedRoute } from '@angular/router';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { Observable } from 'rxjs';
 import {
@@ -23,6 +16,8 @@ import {
     DotExperimentsCreateStore
 } from '@portlets/dot-experiments/dot-experiments-create/store/dot-experiments-create-store.service';
 import { DotExperiment } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
+import { DotExperimentsShellStore } from '@portlets/dot-experiments/dot-experiments-shell/store/dot-experiments-shell-store.service';
+import { take } from 'rxjs/operators';
 
 interface CreateForm {
     pageId: FormControl<string>;
@@ -55,19 +50,28 @@ interface CreateForm {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsCreateComponent implements OnInit {
-    readonly pageId = this.route.parent?.parent?.parent.snapshot.params.pageId;
     vm$: Observable<DotExperimentCreateStore> = this.dotExperimentsCreateStore.state$;
 
     form: FormGroup<CreateForm>;
 
+    /**
+     * Emited when the sidebar is closed
+     */
+    @Output()
+    closedSidebar = new EventEmitter<void>();
+    private pageId: string;
+
     constructor(
         private readonly dotExperimentsCreateStore: DotExperimentsCreateStore,
-        private readonly fb: FormBuilder,
-        private readonly route: ActivatedRoute
+        private readonly dotExperimentsShellStore: DotExperimentsShellStore
     ) {}
 
     ngOnInit(): void {
         this.initForm();
+        this.dotExperimentsCreateStore.setOpenSlider();
+        this.dotExperimentsShellStore.getPageId$.pipe(take(1)).subscribe((pageId) => {
+            this.form.controls.pageId.setValue(pageId);
+        });
     }
 
     handleSubmit() {
@@ -80,6 +84,7 @@ export class DotExperimentsCreateComponent implements OnInit {
 
     closeSidebar() {
         this.dotExperimentsCreateStore.setCloseSidebar();
+        this.closedSidebar.emit();
     }
 
     private initForm() {
