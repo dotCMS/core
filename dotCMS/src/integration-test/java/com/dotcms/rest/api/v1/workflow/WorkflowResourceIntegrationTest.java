@@ -153,6 +153,7 @@ import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -2182,6 +2183,31 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             if (null != categoryContentType) {
                 contentTypeAPI.delete(categoryContentType);
             }
+        }
+    }
+
+    @Test
+    public void test_mapRoleId_No_Exist_Success() throws Exception {
+
+        final String invalidRole = "xxxx";
+        Assert.assertEquals(invalidRole, workflowResource.mapRoleId(invalidRole));
+    }
+
+    @Test
+    public void test_mapRoleId_Role_Id_Success() throws Exception {
+
+        final Optional<Role> roleOpt = APILocator.getRoleAPI().findAllAssignableRoles(false).stream().findFirst();
+        if (roleOpt.isPresent()) {
+            Assert.assertEquals(roleOpt.get().getId(), workflowResource.mapRoleId(roleOpt.get().getId()));
+        }
+    }
+
+    @Test
+    public void test_mapRoleId_Role_Key_Success() throws Exception {
+
+        final Optional<Role> roleOpt = APILocator.getRoleAPI().findAllAssignableRoles(true).stream().filter(role -> role.getRoleKey() != null).findFirst();
+        if (roleOpt.isPresent()) {
+            Assert.assertEquals(roleOpt.get().getId(), workflowResource.mapRoleId(roleOpt.get().getRoleKey()));
         }
     }
 

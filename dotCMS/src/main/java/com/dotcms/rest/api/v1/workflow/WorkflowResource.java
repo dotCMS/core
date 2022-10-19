@@ -1619,7 +1619,7 @@ public class WorkflowResource {
         }
     }
 
-    private String mapRoleId (final String roleIdOrKey) {
+    protected String mapRoleId (final String roleIdOrKey) {
 
         final Role role = Try.of(()-> APILocator.getRoleAPI().loadRoleByKey(roleIdOrKey)).getOrNull();
         return null != role? role.getId(): roleIdOrKey;
