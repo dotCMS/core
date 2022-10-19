@@ -17,7 +17,6 @@
     padding: $spacing-2 0;
 
     ::ng-deep .p-inplace-display {
-        //padding-left: 0;
         padding-left: 0.8rem;
     }
 
@@ -31,7 +30,8 @@
 .dot-container-properties__title-text {
     display: inline-block;
     padding-right: $spacing-2;
-    padding-bottom: 1.35rem;
+    padding-bottom: $spacing-2;
+    padding-top: calc($spacing-1 + 0.1rem);
     font-size: $font-size-large;
 }
 
@@ -79,7 +79,7 @@ dot-container-properties__button-clear:hover {
 
         i {
             color: $white;
-            padding: 1.2rem 2.5rem 1.35rem;
+            padding: 1.2rem $spacing-6 1.35rem;
         }
     }
 
