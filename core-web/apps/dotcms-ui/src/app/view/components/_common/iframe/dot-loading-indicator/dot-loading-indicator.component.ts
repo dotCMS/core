@@ -13,10 +13,12 @@ export class DotLoadingIndicatorComponent {
     fullscreen: boolean;
 
     @Input()
-    set show(loadingState: LoadingState) {
-        loadingState === LoadingState.LOADING
-            ? this.dotLoadingIndicatorService.show()
-            : this.dotLoadingIndicatorService.hide();
+    set show(status: LoadingState) {
+        if (status === LoadingState.LOADING || status === LoadingState.INIT) {
+            this.dotLoadingIndicatorService.show();
+        } else {
+            this.dotLoadingIndicatorService.hide();
+        }
     }
 
     constructor(public dotLoadingIndicatorService: DotLoadingIndicatorService) {}

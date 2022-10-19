@@ -10,6 +10,7 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -113,5 +114,11 @@ public class VariantAPIImpl implements VariantAPI {
         Logger.debug(this, ()-> "Getting Variant by Name: " + name);
 
         return variantFactory.get(name);
+    }
+
+    @Override
+    @CloseDBIfOpened
+    public List<Variant> getVariants() throws DotDataException {
+        return variantFactory.getVariants();
     }
 }

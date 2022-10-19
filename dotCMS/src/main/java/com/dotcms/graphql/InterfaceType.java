@@ -128,10 +128,23 @@ public enum InterfaceType {
         interfaceTypes.put("DOTASSET", createInterfaceType(DOTASSET_INTERFACE_NAME, dotAssetFields, new ContentResolver()));
     }
 
-    private static void addBaseTypeFields(Map<String, TypeFetcher> baseTypeFields,
-            List<Field> requiredFormFields) {
+    /**
+     * Adds the official list of fields to a given Base Content Type. Keep in mind that not all fields in the Content
+     * Type definition will be part of it, only the ones that meet at least one of the following criteria:
+     * <ol>
+     *     <li>The field is NOT removable (is fixed).</li>
+     *     <li>The field is forced to be included in the API response (i.e., {@link Field#forceIncludeInApi()}).</li>
+     * </ol>
+     *
+     * @param baseTypeFields     The {@link Map} containing the Base Types and their respective required fields.
+     * @param requiredFormFields The list of fields from a given Base Type.
+     */
+    private static void addBaseTypeFields(final Map<String, TypeFetcher> baseTypeFields,
+            final List<Field> requiredFormFields) {
         for (final Field formField : requiredFormFields) {
-            if(!formField.fixed()) continue;
+            if (!formField.fixed() && !formField.forceIncludeInApi()) {
+                continue;
+            }
             baseTypeFields.put(formField.variable(), new TypeFetcher(
                     ContentAPIGraphQLTypesProvider.INSTANCE
                             .getGraphqlTypeForFieldClass(formField.type(), formField)));

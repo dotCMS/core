@@ -2,6 +2,7 @@ package com.dotcms.variant;
 
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.exception.DotDataException;
+import java.util.List;
 import java.util.Optional;
 
 public interface VariantAPI {
@@ -57,4 +58,10 @@ public interface VariantAPI {
      * @return {@link Variant}
      */
     Optional<Variant> get(final String name) throws DotDataException;
+
+    /**
+     * Gets all persisted {@link Variant}
+     * @return the variants
+     */
+    List<Variant> getVariants() throws DotDataException;
 }
