@@ -37,31 +37,28 @@ export class DotExperimentsCreateStore extends ComponentStore<DotExperimentCreat
     // Effects
     readonly addExperiments = this.effect(
         (experiment$: Observable<Pick<DotExperiment, 'pageId' | 'name' | 'description'>>) => {
-            return experiment$.pipe(
-                tap(() => this.setIsSaving()),
-                switchMap((experiment) =>
-                    this.dotExperimentsService.add(experiment).pipe(
-                        tapResponse(
-                            (experiments) => {
-                                this.messageService.add({
-                                    severity: 'info',
-                                    summary: this.dotMessageService.get(
-                                        'experiments.action.add.confirm-title'
-                                    ),
-                                    detail: this.dotMessageService.get(
-                                        'experiments.action.add.confirm-message',
-                                        experiment.name
-                                    )
-                                });
-                                // Todo: remove and redirect here to experiment/configure/:experimentId
-                                this.dotExperimentsListStore.addExperiment(experiments);
-                            },
-                            (error: HttpErrorResponse) => throwError(error),
-                            () => this.setCloseSidebar()
+        return experiment$.pipe(
+            tap(() => this.setIsSaving()),
+            switchMap((experiment) => this.dotExperimentsService.add(experiment),
+            tapResponse(
+                (experiments) => {
+                    this.messageService.add({
+                        severity: 'info',
+                        summary: this.dotMessageService.get(
+                            'experiments.action.add.confirm-title'
+                        ),
+                        detail: this.dotMessageService.get(
+                            'experiments.action.add.confirm-message',
+                            experiment.name
                         )
-                    )
-                )
-            );
+                    });
+                    // Todo: remove and redirect here to experiment/configure/:experimentId
+                    this.dotExperimentsListStore.addExperiment(experiments);
+                },
+                (error: HttpErrorResponse) => throwError(error),
+                () => this.setCloseSidebar()
+            )
+        )
         }
     );
 
