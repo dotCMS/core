@@ -38,12 +38,11 @@ import com.dotcms.contenttype.model.type.PersonaContentType;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.contenttype.model.type.WidgetContentType;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
-import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -54,10 +53,73 @@ import javax.ws.rs.ext.ContextResolver;
 
 public class ClientObjectMapper implements ContextResolver<ObjectMapper> {
 
+    /**
+     * according to: <a href="https://lankydan.dev/providing-your-own-jackson-objectmapper-in-quarkus">...</a>
+     * this is how we customize the object mapper here we need to register GuavaModule as we use
+     * ImmutableList in the generated code so jackson needs to know how to Serialize/Deserialize it
+     * Other proposals can be found here <a href="https://stackoverflow.com/questions/61984336/how-to-configure-objectmapper-for-quarkus-rest-client">...</a>
+     */
     @Override
     public ObjectMapper getContext(Class<?> type) {
 
-        final ObjectMapper mapper = new ObjectMapper();
+        final ObjectMapper mapper = new ObjectMapper() {
+            /**
+             * Accessor for configured PolymorphicTypeValidator used for validating polymorphic subtypes used with explicit polymorphic types (annotation-based), but NOT one with "default typing"
+             * For default typing see (activateDefaultTyping(PolymorphicTypeValidator) .
+             * We can't have default typing since what it does is  filling the json with additional type-information see <a href="https://github.com/FasterXML/jackson-databind/issues/2838">...</a>
+             * By default object mapper will provide LaissezFaireSubTypeValidator but Rest-Easy doesn't like that, and it'll replace it with a WhiteListPolymorphicTypeValidatorBuilder
+             * It is hard to tell what the ideal point to inject a pre-configured validator is.  This will do, and it guarantees that no "default typing" is activated
+             * @return
+             */
+            @Override
+            public PolymorphicTypeValidator getPolymorphicTypeValidator() {
+                return BasicPolymorphicTypeValidator.builder()
+
+                        .allowIfBaseType(FileAssetContentType.class)
+                        .allowIfBaseType(DotAssetContentType.class)
+                        .allowIfBaseType(FormContentType.class)
+                        .allowIfBaseType(KeyValueContentType.class)
+                        .allowIfBaseType(PageContentType.class)
+                        .allowIfBaseType(PersonaContentType.class)
+                        .allowIfBaseType(SimpleContentType.class)
+                        .allowIfBaseType(VanityUrlContentType.class)
+                        .allowIfBaseType(WidgetContentType.class)
+
+                        .allowIfSubType(BinaryField.class)
+                        .allowIfSubType(CategoryField.class)
+                        .allowIfSubType(CheckboxField.class)
+                        .allowIfSubType(ColumnField.class)
+                        .allowIfSubType(ConstantField.class)
+                        .allowIfSubType(CustomField.class)
+                        .allowIfSubType(DateField.class)
+                        .allowIfSubType(DateTimeField.class)
+                        .allowIfSubType(EmptyField.class)
+                        .allowIfSubType(FileField.class)
+                        .allowIfSubType(HiddenField.class)
+                        .allowIfSubType(HostFolderField.class)
+                        .allowIfSubType(ImageField.class)
+                        .allowIfSubType(KeyValueField.class)
+                        .allowIfSubType(LineDividerField.class)
+                        .allowIfSubType(MultiSelectField.class)
+                        .allowIfSubType(PermissionTabField.class)
+                        .allowIfSubType(RadioField.class)
+                        .allowIfSubType(RelationshipField.class)
+                        .allowIfSubType(RelationshipsTabField.class)
+                        .allowIfSubType(RowField.class)
+                        .allowIfSubType(SelectField.class)
+                        .allowIfSubType(StoryBlockField.class)
+                        .allowIfSubType(TabDividerField.class)
+                        .allowIfSubType(TagField.class)
+                        .allowIfSubType(TextAreaField.class)
+                        .allowIfSubType(TextField.class)
+                        .allowIfSubType(TimeField.class)
+                        .allowIfSubType(WysiwygField.class)
+
+                        .allowIfSubType(Map.class)
+                        .allowIfSubType(List.class)
+                        .build();
+            }
+        };
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
         mapper.registerModule(new Jdk8Module());
         mapper.registerModule(new GuavaModule());
@@ -65,53 +127,8 @@ public class ClientObjectMapper implements ContextResolver<ObjectMapper> {
         mapper.registerModule(new VersioningModule());
         mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
 
-        mapper.activateDefaultTyping(BasicPolymorphicTypeValidator.builder()
-
-                .allowIfBaseType(FileAssetContentType.class)
-                .allowIfBaseType(DotAssetContentType.class)
-                .allowIfBaseType(FormContentType.class)
-                .allowIfBaseType(KeyValueContentType.class)
-                .allowIfBaseType(PageContentType.class)
-                .allowIfBaseType(PersonaContentType.class)
-                .allowIfBaseType(SimpleContentType.class)
-                .allowIfBaseType(VanityUrlContentType.class)
-                .allowIfBaseType(WidgetContentType.class)
-
-                .allowIfSubType(BinaryField.class)
-                .allowIfSubType(CategoryField.class)
-                .allowIfSubType(CheckboxField.class)
-                .allowIfSubType(ColumnField.class)
-                .allowIfSubType(ConstantField.class)
-                .allowIfSubType(CustomField.class)
-                .allowIfSubType(DateField.class)
-                .allowIfSubType(DateTimeField.class)
-                .allowIfSubType(EmptyField.class)
-                .allowIfSubType(FileField.class)
-                .allowIfSubType(HiddenField.class)
-                .allowIfSubType(HostFolderField.class)
-                .allowIfSubType(ImageField.class)
-                .allowIfSubType(KeyValueField.class)
-                .allowIfSubType(LineDividerField.class)
-                .allowIfSubType(MultiSelectField.class)
-                .allowIfSubType(PermissionTabField.class)
-                .allowIfSubType(RadioField.class)
-                .allowIfSubType(RelationshipField.class)
-                .allowIfSubType(RelationshipsTabField.class)
-                .allowIfSubType(RowField.class)
-                .allowIfSubType(SelectField.class)
-                .allowIfSubType(StoryBlockField.class)
-                .allowIfSubType(TabDividerField.class)
-                .allowIfSubType(TagField.class)
-                .allowIfSubType(TextAreaField.class)
-                .allowIfSubType(TextField.class)
-                .allowIfSubType(TimeField.class)
-                .allowIfSubType(WysiwygField.class)
-
-                .allowIfSubType(Map.class)
-                .allowIfSubType(List.class)
-                .build());
-
-        mapper.deactivateDefaultTyping();
+        //TODO: remove once the mode has been cleaned up including everything we need
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
         return mapper;
     }

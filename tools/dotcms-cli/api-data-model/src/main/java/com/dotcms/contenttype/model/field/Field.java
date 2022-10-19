@@ -93,4 +93,9 @@ public abstract class Field {
 
     public abstract boolean fixed();
 
+    @Nullable
+    public abstract String contentTypeId();
+
+
+
 }

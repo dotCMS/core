@@ -1,26 +1,17 @@
 package com.dotcms.api;
 
-
 import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.api.client.ServiceManager;
 import com.dotcms.contenttype.model.field.BinaryField;
-import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
-import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.config.ServiceBean;
-import com.dotcms.model.contenttype.ContentTypesResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
-import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -30,7 +21,6 @@ import io.quarkus.test.junit.QuarkusTest;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import javax.inject.Inject;
 import org.immutables.value.internal.$processor$.meta.$GsonMirrors.Ignore;
 import org.junit.jupiter.api.Assertions;
@@ -56,7 +46,7 @@ public class ContentTypeAPITest {
     }
 
     @Test
-    public void Test_Basic_Content_Type_Serialize() throws JsonProcessingException {
+    public void Test_Content_Type_Model_Serialization() throws JsonProcessingException {
 
         final ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
@@ -66,16 +56,6 @@ public class ContentTypeAPITest {
         objectMapper.registerModule(new VersioningModule());
         objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
 
-        BasicPolymorphicTypeValidator validator = BasicPolymorphicTypeValidator.builder()
-                .allowIfBaseType(ResponseEntityView.class)
-                .allowIfBaseType(SimpleContentType.class)
-                .allowIfBaseType(FileAssetContentType.class)
-                .allowIfBaseType(BinaryField.class)
-                .allowIfSubType(Map.class)
-                .allowIfSubType(List.class)
-                .build();
-
-        //objectMapper.activateDefaultTyping(validator);
         objectMapper.deactivateDefaultTyping();
 
         final ImmutableSimpleContentType contentType = ImmutableSimpleContentType.builder()
@@ -91,44 +71,40 @@ public class ContentTypeAPITest {
                         .fixed(false).listed(true).build()).build();
 
         final String ctAsString = objectMapper.writeValueAsString(contentType);
-        System.out.println(ctAsString);
-
-
-        ResponseEntityView<ImmutableSimpleContentType> responseEntityView = ResponseEntityView.<ImmutableSimpleContentType>builder().entity(contentType).build();
-        final String viewAsString = objectMapper.writeValueAsString(responseEntityView);
-        System.out.println(viewAsString);
-
-        /*
-        final TypeReference <ResponseEntityView<ImmutableSimpleContentType>> typeReference = new TypeReference<>() {};
-        ResponseEntityView<?> entityView = objectMapper.readValue(viewAsString, typeReference);
-        Assert.assertNotNull(entityView);
-        ImmutableSimpleContentType ct = (ImmutableSimpleContentType)entityView.entity();
-        */
+        //System.out.println(ctAsString);
 
         final ContentType ct = objectMapper.readValue(ctAsString, ContentType.class);
         Assert.assertNotNull(ct);
         Assert.assertTrue(
                 ct.fields().stream().anyMatch(field -> field instanceof BinaryField));
 
+        final ResponseEntityView<ImmutableSimpleContentType> responseEntityView = ResponseEntityView.<ImmutableSimpleContentType>builder().entity(contentType).build();
+        final String viewAsString = objectMapper.writeValueAsString(responseEntityView);
+        System.out.println(viewAsString);
+
+        /*
+         The following bits won't work as the generated json lacks of the class attribute within entity
+         ResponseEntityView takes the entity as a Parametrized type
+         Therefore the annotations on the entity we're passing are not present when ObjectMapper serialize EntityView
+         If we want to be able to rebuild the CT from within a generated json
+         We would need a concrete immutable class geerated from AbstractResponseEntityView making the type info available explicitly like this:
+          @Immutable
+          abstract class AbstractContentTypesResponse extends AbstractResponseEntityView <List<? extends ContentType>>{
+          }
+        */
+/*
+        final TypeReference <ResponseEntityView<ImmutableSimpleContentType>> typeReference = new TypeReference<>() {};
+        ResponseEntityView<?> entityView = objectMapper.readValue(viewAsString, typeReference);
+        Assert.assertNotNull(entityView);
+        final ImmutableSimpleContentType entity = (ImmutableSimpleContentType)entityView.entity();
+        Assert.assertNotNull(entity);
+ */
     }
 
-
-    @Test
-    public void Test_Content_Types() {
-
-        final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
-
-        final String user = "admin@dotcms.com";
-        final char[] passwd= "admin".toCharArray();
-        authenticationContext.login(user, passwd);
-
-        final  ResponseEntityView<List<ContentType>> response = client.getContentTypes(null, null, null, null, null, null, null );
-        Assertions.assertNotNull(response);
-    }
 
     @Ignore
     @Test
-    public void Test_Content_Type() {
+    public void Test_Get_ContentTypes() {
 
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
 
@@ -136,7 +112,20 @@ public class ContentTypeAPITest {
         final char[] passwd= "admin".toCharArray();
         authenticationContext.login(user, passwd);
 
-        final ResponseEntityView<ContentType> response = client.getContentType("FileAsset", 1L, true);
+        final ResponseEntityView<List<ContentType>> response = client.getContentTypes(null, null, null, null, null, null, null );
+        Assertions.assertNotNull(response);
+    }
+
+    @Test
+    public void Test_Get_Single_Content_Type() {
+
+        final String user = "admin@dotcms.com";
+        final char[] passwd= "admin".toCharArray();
+        authenticationContext.login(user, passwd);
+
+        final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
+        final ResponseEntityView<ContentType> response =
+                client.getContentType("FileAsset", 1L, true);
         Assertions.assertNotNull(response);
     }
 
