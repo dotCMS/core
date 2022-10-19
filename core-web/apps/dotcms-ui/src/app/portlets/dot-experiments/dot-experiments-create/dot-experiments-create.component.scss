@@ -1,9 +1,7 @@
 @use "variables" as *;
 
 :host {
-    .experiment-create {
-        &__form-wrapper {
-            padding: $spacing-5;
-        }
+    .experiment-create__form-wrapper {
+        padding: $spacing-5;
     }
 }
