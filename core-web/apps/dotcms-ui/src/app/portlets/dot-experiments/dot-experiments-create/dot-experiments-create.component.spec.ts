@@ -120,6 +120,7 @@ describe('DotExperimentsCreateComponent', () => {
             detectChanges: false
         });
     });
+
     it('should has Sidebar Component (PrimeNg) and DotSidebarDirective', () => {
         const SIDEBAR_CONFIG_BY_DOTSIDEBAR_DIRECTIVE = {
             position: SIDEBAR_PLACEMENT.RIGHT,
