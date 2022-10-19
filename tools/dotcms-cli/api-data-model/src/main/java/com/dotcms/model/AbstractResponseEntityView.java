@@ -14,7 +14,7 @@ import java.util.List;
 
 @ValueType
 @Value.Immutable
-@JsonDeserialize(builder = ResponseEntityView.Builder.class)
+@JsonDeserialize(as = ResponseEntityView.class)
 public interface AbstractResponseEntityView<T> {
     @Nullable
     T entity();

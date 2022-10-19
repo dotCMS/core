@@ -27,6 +27,7 @@ public class APIEndpoints {
     <T> T getClient(final Class<T> clazz) {
         return (T) registry.computeIfAbsent(clazz, c ->
                  RestClientBuilder.newBuilder()
+                        .register(ClientObjectMapper.class)
                         .baseUri(apiBaseUri)
                         .build(c)
                 );

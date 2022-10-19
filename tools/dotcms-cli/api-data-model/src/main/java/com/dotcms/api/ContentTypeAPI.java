@@ -2,8 +2,8 @@ package com.dotcms.api;
 
 import com.dotcms.api.provider.DefaultResponseExceptionMapper;
 import com.dotcms.api.provider.DotCMSClientHeaders;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.ResponseEntityView;
-import com.dotcms.model.contenttype.ContentType;
 import java.util.List;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;

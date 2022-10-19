@@ -1,4 +1,4 @@
-package com.dotcms.model.contenttype;
+package com.dotcms.contenttype.model.type;
 
 public enum BaseContentType {
 
