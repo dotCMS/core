@@ -68,6 +68,7 @@ class MockDotAppsImportExportDialogComponent {
     @Input() action: string;
     @Input() show: boolean;
     @Output() resolved = new EventEmitter<boolean>();
+    @Output() shutdown = new EventEmitter();
 }
 
 let canAccessPortletResponse = {
@@ -203,6 +204,14 @@ describe('DotAppsListComponent', () => {
             );
             importExportDialog.componentInstance.resolved.emit(true);
             expect(dotAppsService.get).toHaveBeenCalledTimes(1);
+        });
+
+        it('should set false to dialog state when closed Import/Export dialog', () => {
+            const importExportDialog = fixture.debugElement.query(
+                By.css('dot-apps-import-export-dialog')
+            );
+            importExportDialog.componentInstance.shutdown.emit();
+            expect(component.showDialog).toBe(false);
         });
 
         it('should redirect to detail configuration list page when app Card clicked', () => {

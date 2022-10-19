@@ -30,7 +30,7 @@ public class Task220912UpdateCorrectShowOnMenuProperty implements StartupTask {
 
     private static final String VELOCITY_VAR_NAME = "showOnMenu";
     private static final String FIND_CONTENT_TYPES_WITH_FIELD = "SELECT structure_inode, field_contentlet FROM field WHERE velocity_var_name = ?";
-    private static final String UPDATE_SHOW_ON_MENU_COLUMN = "UPDATE contentlet SET show_on_menu = " + getDBTrue() + " WHERE show_on_menu = " + getDBFalse() + " AND %s AND structure_inode = ?;";
+    private static final String UPDATE_SHOW_ON_MENU_COLUMN = "UPDATE contentlet SET show_on_menu = " + getDBTrue() + " WHERE show_on_menu = " + getDBFalse() + " AND %s AND structure_inode = ?";
 
     @Override
     public boolean forceRun() {
@@ -60,8 +60,7 @@ public class Task220912UpdateCorrectShowOnMenuProperty implements StartupTask {
             final String contentTypeId = contentTypeInfo.get("structure_inode").toString();
             Logger.info(this, String.format("Updating value of 'Show On Menu' field in all contents of type '%s'",
                     contentTypeId));
-            new DotConnect().setSQL(sqlQuery).addParam(DbConnectionFactory.getDBTrue())
-                    .addParam(contentTypeId).loadObjectResults();
+            new DotConnect().setSQL(sqlQuery).addParam(contentTypeId).loadObjectResults();
         }
     }
 
@@ -77,7 +76,7 @@ public class Task220912UpdateCorrectShowOnMenuProperty implements StartupTask {
      * @return The SQL code used to read the value of the existing 'Show On Menu' value.
      */
     private String getExpectedColumnReference(String columnName) {
-        String columnReference = columnName + " = ?";
+        String columnReference = columnName + " = " + getDBTrue();
         if (APILocator.getContentletJsonAPI().isJsonSupportedDatabase()) {
             if (isPostgres()) {
                 columnReference += " OR " + ContentletJsonAPI.CONTENTLET_AS_JSON + "->'fields'->'" + VELOCITY_VAR_NAME + "'->>'value' = 'true'";

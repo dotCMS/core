@@ -2,6 +2,7 @@ package com.dotcms.variant.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
+import java.util.Optional;
 import org.immutables.value.Value;
 
 /**
@@ -19,10 +20,16 @@ public interface AbstractVariant extends Serializable {
     @JsonProperty("name")
     String name();
 
+    @Value.Default
     @JsonProperty("description")
-    String description();
+    default Optional<String> description() {
+        return Optional.of("");
+    }
 
+    @Value.Default
     @JsonProperty("archived")
-    boolean archived();
+    default boolean archived() {
+        return false;
+    }
 
 }

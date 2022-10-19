@@ -52,6 +52,7 @@
             display: flex;
             gap: 0.2 * $dot-editor-size;
             min-width: 100%;
+            font-size: $dot-editor-size;
 
             .checkbox-container {
                 cursor: pointer;

@@ -2,15 +2,25 @@ package com.dotcms.experiments.business;
 
 import static com.dotcms.experiments.model.AbstractExperiment.Status.DRAFT;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.ENDED;
+import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME_PREFIX;
+import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME_SUFFIX;
 
 import com.dotcms.analytics.metrics.MetricsUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
+import com.dotcms.experiments.model.AbstractTrafficProportion.Type;
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.Scheduling;
+import com.dotcms.experiments.model.TargetingCondition;
+import com.dotcms.experiments.model.TrafficProportion;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.LicenseValiditySupplier;
+import com.dotcms.uuid.shorty.ShortyIdAPI;
+import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -23,22 +33,39 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.rules.model.Condition;
+import com.dotmarketing.portlets.rules.model.ConditionGroup;
+import com.dotmarketing.portlets.rules.model.LogicalOperator;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
+import com.dotmarketing.portlets.rules.model.Rule;
+import com.dotmarketing.portlets.rules.model.Rule.FireOn;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     final ExperimentsFactory factory = FactoryLocator.getExperimentsFactory();
     final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+    final VariantAPI variantAPI = APILocator.getVariantAPI();
+    final ShortyIdAPI shortyIdAPI = APILocator.getShortyAPI();
+    final RulesAPI rulesAPI = APILocator.getRulesAPI();
 
     private final LicenseValiditySupplier licenseValiditySupplierSupplier =
             new LicenseValiditySupplier() {};
@@ -79,9 +106,90 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             MetricsUtil.INSTANCE.validateGoals(experiment.goals().get());
         }
 
+        if(experiment.targetingConditions().isPresent()) {
+            saveTargetingConditions(experiment, user);
+        }
+
         final Experiment experimentToSave = builder.build();
 
-        return factory.save(experimentToSave);
+        factory.save(experimentToSave);
+
+        DotPreconditions.isTrue(experimentToSave.id().isPresent(), "Experiment doesn't have Id");
+
+        final Optional<Experiment> savedExperiment = find(experimentToSave.id().get(), user);
+
+        DotPreconditions.isTrue(savedExperiment.isPresent(), "Saved Experiment not found");
+
+        return savedExperiment.get();
+    }
+
+    private void saveTargetingConditions(final Experiment experiment, final User user)
+            throws DotDataException, DotSecurityException {
+        if(experiment.targetingConditions().isEmpty()) {
+            return;
+        }
+
+        List<Rule> rules = Try.of(()->rulesAPI
+                .getAllRulesByParent(experiment, user, false))
+                .getOrElse(Collections::emptyList);
+
+        Rule experimentRule;
+
+        if(UtilMethods.isSet(rules)) {
+            experimentRule = rules.get(0);
+        } else {
+            experimentRule = createRuleAndConditionGroup(experiment, user);
+        }
+
+        // transform and save TargetingConditions into conditions
+        experiment.targetingConditions().get().forEach(targetingCondition -> {
+            createAndSaveCondition(user, experimentRule, targetingCondition);
+        });
+
+    }
+
+    private void createAndSaveCondition(User user, Rule experimentRule,
+            TargetingCondition targetingCondition) {
+        Condition condition = targetingCondition.id().isPresent()
+            ? Try.of(()->rulesAPI.getConditionById(targetingCondition.id().get(), user, false))
+                .getOrElseThrow(()->new IllegalArgumentException("Invalid targeting Condition Id provided. Id: " + targetingCondition.id().get()))
+            : createCondition(experimentRule, targetingCondition);
+
+        condition.setOperator(targetingCondition.operator());
+        condition.setConditionletId(targetingCondition.conditionKey());
+        condition.setValues(new ArrayList<>());
+        targetingCondition.values().forEach(condition::addValue);
+
+        condition.checkValid();
+
+        Try.run(()->rulesAPI.saveCondition(condition, user, false))
+                .getOrElseThrow(()->new DotStateException("Error saving Condition: "
+                        + condition.getConditionletId()));
+    }
+
+    private Condition createCondition(final Rule experimentRule,
+            final TargetingCondition targetingCondition) {
+        final Condition condition = new Condition();
+        condition.setConditionGroup(experimentRule.getGroups().get(0).getId());
+        return condition;
+    }
+
+    private Rule createRuleAndConditionGroup(Experiment experiment, User user)
+            throws DotDataException, DotSecurityException {
+        DotPreconditions.isTrue(experiment.id().isPresent(), ()->"Error saving Experiment Targeting");
+
+        final Rule experimentRule = new Rule();
+        experimentRule.setParent(experiment.id().get());
+        experimentRule.setName(experiment.name());
+        experimentRule.setFireOn(FireOn.EVERY_PAGE);
+        experimentRule.setEnabled(true);
+        rulesAPI.saveRuleNoParentCheck(experimentRule, user, false);
+
+        final ConditionGroup conditionGroup = new ConditionGroup();
+        conditionGroup.setRuleId(experimentRule.getId());
+        conditionGroup.setOperator(LogicalOperator.AND);
+        rulesAPI.saveConditionGroup(conditionGroup, user, false);
+        return experimentRule;
     }
 
     @CloseDBIfOpened
@@ -92,15 +200,40 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 invalidLicenseMessageSupplier);
         DotPreconditions.checkArgument(UtilMethods.isSet(id), "Experiment Id is required");
 
-        final Optional<Experiment> experiment =  factory.find(id);
+        Optional<Experiment> experiment =  factory.find(id);
 
         if(experiment.isPresent()) {
             validatePermissions(user, experiment.get(),
                     "You don't have permission to get the Experiment. "
                             + "Experiment Id: " + experiment.get().id());
+
+            experiment = Optional.of(addTargetingConditions(experiment.get(), user));
         }
 
         return experiment;
+    }
+
+    private Experiment addTargetingConditions(final Experiment experiment, final User user) {
+        List<Rule> rules = Try.of(()->rulesAPI
+                        .getAllRulesByParent(experiment, user, false))
+                .getOrElse(Collections::emptyList);
+
+        if(!UtilMethods.isSet(rules)) {
+            return experiment;
+        }
+
+        final Rule experimentRule = rules.get(0);
+        final List<TargetingCondition> targetingConditions = new ArrayList<>();
+        experimentRule.getGroups().get(0).getConditions().forEach((condition -> {
+            targetingConditions.add(TargetingCondition.builder()
+                    .id(condition.getId())
+                    .conditionKey(condition.getConditionletId())
+                    .putAllValues(condition.getValues().stream().collect(Collectors.toMap(
+                            ParameterModel::getKey, ParameterModel::getValue)))
+                    .build());
+        }));
+
+        return experiment.withTargetingConditions(targetingConditions);
     }
 
     @Override
@@ -125,8 +258,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 DotStateException.class);
 
         final Experiment archived = persistedExperiment.get().withStatus(Status.ARCHIVED);
-        return factory.save(archived);
-
+        return save(archived, user);
     }
 
     @Override
@@ -204,7 +336,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         }
 
         final Experiment running = experimentToStart.withStatus(Status.RUNNING);
-        return factory.save(running);
+        return save(running, user);
 
     }
 
@@ -241,19 +373,140 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         final Experiment ended = persistedExperimentOpt.get().withStatus(ENDED)
                 .withScheduling(endedScheduling);
-        return factory.save(ended);
+        return save(ended, user);
+    }
+
+    @WrapInTransaction
+    @Override
+    public Experiment addVariant(final String experimentId, final String variantDescription,
+            final User user)
+            throws DotDataException, DotSecurityException {
+
+        final Experiment persistedExperiment = find(experimentId, user)
+                .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
+
+        final String variantNameBase = EXPERIMENT_VARIANT_NAME_PREFIX + shortyIdAPI.shortify(experimentId)
+                + EXPERIMENT_VARIANT_NAME_SUFFIX;
+
+        final int nextAvailableIndex = getNextAvailableIndex(variantNameBase);
+
+        final String variantName = variantNameBase + nextAvailableIndex;
+
+        variantAPI.save(Variant.builder().name(variantName)
+                .description(Optional.of(variantDescription)).build());
+
+        final ExperimentVariant experimentVariant = ExperimentVariant.builder().id(variantName)
+                .description(variantDescription).weight(0).build();
+
+        final TrafficProportion trafficProportion = persistedExperiment.trafficProportion();
+
+        final TreeSet<ExperimentVariant> variants = new TreeSet<>();
+        variants.addAll(trafficProportion.variants());
+        variants.add(experimentVariant);
+
+        TreeSet<ExperimentVariant> weightedVariants = trafficProportion.type() == Type.SPLIT_EVENLY
+                ? redistributeWeights(variants)
+                : variants;
+
+        final TrafficProportion weightedTrafficProportion = trafficProportion
+                .withVariants(weightedVariants);
+
+        final Experiment updatedExperiment = persistedExperiment
+                .withTrafficProportion(weightedTrafficProportion);
+
+        return save(updatedExperiment, user);
+    }
+
+    @Override
+    @WrapInTransaction
+    public Experiment deleteVariant(String experimentId, String variantName, User user)
+            throws DotDataException, DotSecurityException {
+        final Experiment persistedExperiment = find(experimentId, user)
+                .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
+
+        DotPreconditions.isTrue(variantName!= null &&
+                variantName.contains(shortyIdAPI.shortify(experimentId)), ()->"Invalid Variant provided",
+                IllegalArgumentException.class);
+
+        final Variant toDelete = variantAPI.get(variantName)
+                .orElseThrow(()->new DoesNotExistException("Provided Variant not found"));
+
+        final TreeSet<ExperimentVariant> updatedVariants =
+                new TreeSet<>(persistedExperiment.trafficProportion()
+                .variants().stream().filter((variant)->
+                        !Objects.equals(variant.id(), toDelete.name())).collect(
+                        Collectors.toSet()));
+
+        final SortedSet<ExperimentVariant> weightedVariants = redistributeWeights(updatedVariants);
+        final TrafficProportion weightedTraffic = persistedExperiment.trafficProportion()
+                .withVariants(weightedVariants);
+        final Experiment withUpdatedTraffic = persistedExperiment.withTrafficProportion(weightedTraffic);
+        final Experiment fromDB = save(withUpdatedTraffic, user);
+        variantAPI.archive(toDelete.name());
+        variantAPI.delete(toDelete.name());
+        return fromDB;
+
+    }
+
+    @Override
+    @WrapInTransaction
+    public Experiment deleteTargetingCondition(String experimentId, String conditionId, User user)
+            throws DotDataException, DotSecurityException {
+        final Experiment persistedExperiment = find(experimentId, user)
+                .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
+
+        DotPreconditions.isTrue(persistedExperiment.id().isPresent(), "Invalid Experiment");
+
+        DotPreconditions.isTrue(UtilMethods.isSet(conditionId), ()->"Invalid Variant provided",
+                IllegalArgumentException.class);
+
+        final Condition conditionToDelete = rulesAPI.getConditionById(conditionId, user, false);
+        rulesAPI.deleteCondition(conditionToDelete, user, false);
+
+        final Optional<Experiment> toReturn = find(persistedExperiment.id().get(), user);
+        DotPreconditions.isTrue(toReturn.isPresent(), "Experiment not found");
+
+        return toReturn.get();
+
+    }
+
+    private TreeSet<ExperimentVariant> redistributeWeights(final Set<ExperimentVariant> variants) {
+
+        final int count = variants.size();
+
+        final float weightPerEach = 100f / count;
+
+        Set<ExperimentVariant> weightedVariants = variants.stream()
+                .map((variant)-> variant.withWeight(weightPerEach))
+                .collect(Collectors.toSet());
+
+        return new TreeSet<>(weightedVariants);
+    }
+
+    private int getNextAvailableIndex(final String variantNameBase)
+            throws DotDataException {
+        int variantIndex = 1;
+        String variantNameToTry = variantNameBase
+                + variantIndex;
+
+        while(variantAPI.get(variantNameToTry).isPresent()) {
+            variantNameToTry = variantNameBase
+                    + (++variantIndex);
+        }
+
+        return variantIndex;
     }
 
     private Scheduling startNowScheduling(final Experiment experiment) {
         // Setting "now" with an additional minute to avoid failing validation
         final Instant now = Instant.now().plus(1, ChronoUnit.MINUTES);
         return Scheduling.builder().startDate(now)
-                .endDate(now.plus(EXPERIMENT_MAX_DURATION.get(), ChronoUnit.DAYS))
+                .endDate(now.plus(EXPERIMENTS_MAX_DURATION.get(), ChronoUnit.DAYS))
                 .build();
     }
 
     private boolean hasAtLeastOneVariant(final Experiment experiment) {
-        return !experiment.trafficProportion().variantsPercentagesMap().keySet().isEmpty();
+        return experiment.trafficProportion().variants().size()>1;
     }
 
     private void validatePermissions(final User user, final Experiment persistedExperiment,
@@ -279,15 +532,15 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     "Invalid Scheduling. Start date is in the past");
 
             toReturn = scheduling.withEndDate(scheduling.startDate().get()
-                    .plus(EXPERIMENT_MAX_DURATION.get(), ChronoUnit.DAYS));
+                    .plus(EXPERIMENTS_MAX_DURATION.get(), ChronoUnit.DAYS));
         } else if(scheduling.startDate().isEmpty() && scheduling.endDate().isPresent()) {
             DotPreconditions.checkState(scheduling.endDate().get().isAfter(NOW),
                     "Invalid Scheduling. End date is in the past");
             DotPreconditions.checkState(
-                    Instant.now().plus(EXPERIMENT_MAX_DURATION.get(), ChronoUnit.DAYS)
+                    Instant.now().plus(EXPERIMENTS_MAX_DURATION.get(), ChronoUnit.DAYS)
                             .isAfter(scheduling.endDate().get()),
                     "Experiment duration must be less than "
-                            + EXPERIMENT_MAX_DURATION.get() +" days. ");
+                            + EXPERIMENTS_MAX_DURATION.get() +" days. ");
 
             toReturn = scheduling.withStartDate(Instant.now());
         } else {
@@ -301,9 +554,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     "Invalid Scheduling. End date must be after the start date");
 
             DotPreconditions.checkState(Duration.between(scheduling.startDate().get(),
-                            scheduling.endDate().get()).toDays() <= EXPERIMENT_MAX_DURATION.get(),
+                            scheduling.endDate().get()).toDays() <= EXPERIMENTS_MAX_DURATION.get(),
                     "Experiment duration must be less than "
-                            + EXPERIMENT_MAX_DURATION.get() +" days. ");
+                            + EXPERIMENTS_MAX_DURATION.get() +" days. ");
         }
         return toReturn;
     }

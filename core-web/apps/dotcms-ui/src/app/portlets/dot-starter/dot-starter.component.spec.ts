@@ -37,8 +37,8 @@ const messages = {
     'starter.side.link.image.processing.description': 'Image Resizing and Processing description',
     'starter.side.link.page.layout.title': 'Page Layout API (Layout as a Service)',
     'starter.side.link.page.layout.description': 'Page Layout API description',
-    'starter.side.link.generate.key.title': 'Generate API Key',
-    'starter.side.link.generate.key.description': 'Generate API Key description',
+    'starter.side.link.generate.key.title': 'Generate API Token',
+    'starter.side.link.generate.key.description': 'Generate API Token description',
     'starter.footer.link.documentation.title': 'Documentation',
     'starter.footer.link.documentation.description': 'Documentation description',
     'starter.footer.link.examples.title': 'Examples',
@@ -92,31 +92,29 @@ describe('DotStarterComponent', () => {
     let dotAccountService: DotAccountService;
     let activatedRoute: ActivatedRoute;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [DotMessagePipeModule, CheckboxModule, HttpClientTestingModule],
-                declarations: [DotStarterComponent],
-                providers: [
-                    { provide: DotMessageService, useValue: messageServiceMock },
-                    {
-                        provide: ActivatedRoute,
-                        useClass: ActivatedRouteMock
-                    },
-                    { provide: CoreWebService, useClass: CoreWebServiceMock },
-                    { provide: DotRouterService, useClass: MockDotRouterService },
-                    DotStarterResolver,
-                    { provide: DotAccountService, useClass: DotAccountServiceMock }
-                ]
-            });
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [DotMessagePipeModule, CheckboxModule, HttpClientTestingModule],
+            declarations: [DotStarterComponent],
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                {
+                    provide: ActivatedRoute,
+                    useClass: ActivatedRouteMock
+                },
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                { provide: DotRouterService, useClass: MockDotRouterService },
+                DotStarterResolver,
+                { provide: DotAccountService, useClass: DotAccountServiceMock }
+            ]
+        });
 
-            fixture = TestBed.createComponent(DotStarterComponent);
+        fixture = TestBed.createComponent(DotStarterComponent);
 
-            de = fixture.debugElement;
-            dotAccountService = TestBed.inject(DotAccountService);
-            activatedRoute = TestBed.inject(ActivatedRoute);
-        })
-    );
+        de = fixture.debugElement;
+        dotAccountService = TestBed.inject(DotAccountService);
+        activatedRoute = TestBed.inject(ActivatedRoute);
+    }));
 
     describe('With user permissions', () => {
         beforeEach(() => {
