@@ -1,34 +1,40 @@
 <form *ngIf="form" [formGroup]="form" (ngSubmit)="onSubmit()">
-    <div *ngFor="let control of dynamicControls" class="form-row">
+    <div class="form-row" *ngFor="let control of dynamicControls">
         <label [for]="control.key">{{ control.label | titlecase }}</label>
         <ng-container [ngSwitch]="control.type">
             <input
-                *ngSwitchDefault
                 #group
-                pInputText
-                type="control.type"
+                *ngSwitchDefault
                 [formControlName]="control.key"
                 [id]="control.key"
                 [style]="{ width: '100%', fontSize: '14px', height: '40px' }"
+                pInputText
+                type="control.type"
             />
         </ng-container>
+        <span
+            class="error-message"
+            *ngIf="form.controls[control.key].invalid && form.controls[control.key].dirty"
+            >This field is required</span
+        >
     </div>
 
     <div class="form-action">
         <button
-            pButton
-            type="button"
-            label="CANCEL"
             class="p-button-outlined"
             [style]="{ width: '120px' }"
             (click)="hide.emit(true)"
+            pButton
+            type="button"
+            label="CANCEL"
         ></button>
         <button
+            class="p-button"
+            [disabled]="form.invalid"
+            [style]="{ padding: '11.5px 24px' }"
             pButton
             type="submit"
             label="APPLAY"
-            class="p-button"
-            [style]="{ padding: '11.5px 24px' }"
         ></button>
     </div>
 </form>
