@@ -253,10 +253,6 @@
 	<servlet>
 		<servlet-name>ShortyServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.ShortyServlet</servlet-class>
-	</servlet>    
-	<servlet>
-		<servlet-name>CategoriesServlet</servlet-name>
-		<servlet-class>com.dotmarketing.servlets.JSONCategoriesServlet</servlet-class>
 	</servlet>
     
     <servlet>
@@ -482,11 +478,6 @@
     <servlet-mapping>
 	    <servlet-name>BinaryExporterServlet</servlet-name>
 	    <url-pattern>/contentAsset/*</url-pattern>
-	</servlet-mapping>
-	
-	<servlet-mapping>
-		<servlet-name>CategoriesServlet</servlet-name>
-		<url-pattern>/categoriesServlet</url-pattern>
 	</servlet-mapping>
 	
 	<servlet-mapping>
