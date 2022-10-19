@@ -49,7 +49,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements DotRe
 	private PermissionAPI perAPI;
 	private HostAPI hostAPI;
 	
-	public FolderResourceImpl(Folder folder, String path) {
+	public FolderResourceImpl(Folder folder, DavParams davParams) {
 	    super(path);
 		this.perAPI = APILocator.getPermissionAPI();
 		this.folder = folder;

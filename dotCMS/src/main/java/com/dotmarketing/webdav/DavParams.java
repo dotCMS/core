@@ -1,10 +1,14 @@
 package com.dotmarketing.webdav;
 
+import java.util.Optional;
 import java.util.regex.Pattern;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.filters.CMSFilter.IAm;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.filters.CMSUrlUtil;
+import io.milton.http.HttpManager;
+import io.milton.http.Request;
 import io.vavr.control.Try;
 
 public class DavParams {
@@ -17,6 +21,7 @@ public class DavParams {
         HOST,
         FOLDER,
         FILE;
+
     }
     
     
@@ -37,8 +42,8 @@ public class DavParams {
 
     public DavParams(String urlIncoming) {
         urlIncoming=urlIncoming.replace("/webdav", "");
-        this.davUrl=urlIncoming.toLowerCase();
-        final String splitUrl = this.davUrl.substring((this.davUrl.startsWith("/")? 1 : 0), this.davUrl.endsWith("/")?this.davUrl.length()-1:this.davUrl.length());
+        this.davUrl=urlIncoming;
+        final String splitUrl = this.davUrl.substring((this.davUrl.startsWith("/")? 1 : 0), this.davUrl.endsWith("/") ? this.davUrl.length()-1 : this.davUrl.length());
         String[] params  = splitUrl.split("/", 4);
         this.autoPub= "live".equals(params[0]);
         this.languageId = Try.of(()-> APILocator.getLanguageAPI().getLanguage(params[1]).getId()).getOrElse(-1L);
@@ -63,12 +68,96 @@ public class DavParams {
         this.parentPath =  this.path.replaceAll(this.name , "");
         IAm iam =CMSUrlUtil.getInstance().resolveResourceType(null, path, host, languageId);
         
-        this.iam = (iam == IAm.FOLDER) ? DAV_RESOURCE.FOLDER
-            : (iam == IAm.FILE) ? DAV_RESOURCE.FILE
-                : DAV_RESOURCE.NOTHING;
+        this.iam = (iam == IAm.FOLDER) 
+                ? DAV_RESOURCE.FOLDER
+                : (iam == IAm.FILE) 
+                    ? DAV_RESOURCE.FILE
+                        : DAV_RESOURCE.NOTHING;
 
-        
     }
+
+   
+    
+    
+
+
+
+
+
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + (autoPub ? 1231 : 1237);
+        result = prime * result + ((davUrl == null) ? 0 : davUrl.hashCode());
+        result = prime * result + ((host == null) ? 0 : host.hashCode());
+        result = prime * result + ((iam == null) ? 0 : iam.hashCode());
+        result = prime * result + (int) (languageId ^ (languageId >>> 32));
+        result = prime * result + ((name == null) ? 0 : name.hashCode());
+        result = prime * result + ((parentPath == null) ? 0 : parentPath.hashCode());
+        result = prime * result + ((path == null) ? 0 : path.hashCode());
+        return result;
+    }
+
+
+
+
+
+
+
+
+
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        DavParams other = (DavParams) obj;
+        if (autoPub != other.autoPub)
+            return false;
+        if (davUrl == null) {
+            if (other.davUrl != null)
+                return false;
+        } else if (!davUrl.equals(other.davUrl))
+            return false;
+        if (host == null) {
+            if (other.host != null)
+                return false;
+        } else if (!host.equals(other.host))
+            return false;
+        if (iam != other.iam)
+            return false;
+        if (languageId != other.languageId)
+            return false;
+        if (name == null) {
+            if (other.name != null)
+                return false;
+        } else if (!name.equals(other.name))
+            return false;
+        if (parentPath == null) {
+            if (other.parentPath != null)
+                return false;
+        } else if (!parentPath.equals(other.parentPath))
+            return false;
+        if (path == null) {
+            if (other.path != null)
+                return false;
+        } else if (!path.equals(other.path))
+            return false;
+        return true;
+    }
+
+
+
+
+
+
+
 
 
 
@@ -104,6 +193,19 @@ public class DavParams {
     
     public boolean isTempFile() {
         return TEMP_RESOURCE.matcher(davUrl).find();
+    }
+    
+    
+    
+    public Optional<DavParams> getDestination(){
+        final Request request = HttpManager.request();
+        request.getMethod();
+        if(UtilMethods.isSet(request.getDestinationHeader())) {
+            return Optional.of(new DavParams(request.getDestinationHeader()));
+        }
+        return Optional.empty();
+        
+        
     }
     
     

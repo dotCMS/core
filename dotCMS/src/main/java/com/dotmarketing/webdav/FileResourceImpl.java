@@ -46,7 +46,7 @@ public class FileResourceImpl implements FileResource, DotResource {
 
 	public FileResourceImpl(IFileAsset file, DavParams params) {
 		perAPI = APILocator.getPermissionAPI();
-		dotDavHelper = new DotWebdavHelper();
+		dotDavHelper = new DotWebdavHelper(params);
 		this.params = params;
 		this.file = file;
 
@@ -137,7 +137,7 @@ public class FileResourceImpl implements FileResource, DotResource {
   public void delete() throws DotRuntimeException {
     User user = (User) HttpManager.request().getAuthorization().getTag();
     try {
-      dotDavHelper.removeObject(path, user);
+      dotDavHelper.removeObject(user);
     } catch (Exception e) {
       Logger.error(this, e.getMessage(), e);
       throw new DotRuntimeException(e.getMessage(), e);

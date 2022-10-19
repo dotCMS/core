@@ -1,5 +1,6 @@
 package com.dotmarketing.webdav;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -35,167 +36,165 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
-public class WebdavRootResourceImpl implements Resource, PropFindableResource, CollectionResource, LockableResource, GetableResource {
+public class WebdavRootResourceImpl
+                implements Resource, PropFindableResource, CollectionResource, LockableResource, GetableResource {
 
-	private DotWebdavHelper dotDavHelper;
-	private String path;
-	
-	public WebdavRootResourceImpl(String path) {
-		dotDavHelper = new DotWebdavHelper();
-		this.path=path;
-	}
-	
-	public Object authenticate(String username, String password) {
-		try {
-			return dotDavHelper.authorizePrincipal(username, password);
-		} catch (Exception e) {
-			Logger.error(this, e.getMessage(), e);
-			return null;
-		}
-	}
+    private DotWebdavHelper dotDavHelper;
+    private final DavParams davParams;
 
-	public boolean authorise(Request request, Method method, Auth auth) {
-		if(auth == null)
-			return false;
-		else{
-			return true;
-		}
-	}
+    public WebdavRootResourceImpl(DavParams davParams) {
+        dotDavHelper = new DotWebdavHelper(davParams);
+        this.davParams = davParams;
+    }
 
-	public String checkRedirect(Request request) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public Object authenticate(String username, String password) {
+        try {
+            return dotDavHelper.authorizePrincipal(username, password);
+        } catch (Exception e) {
+            Logger.error(this, e.getMessage(), e);
+            return null;
+        }
+    }
 
-	public Long getContentLength() {
-		// TODO Auto-generated method stub
-		return new Long(0);
-	}
+    public boolean authorise(Request request, Method method, Auth auth) {
+        if (auth == null)
+            return false;
+        else {
+            return true;
+        }
+    }
 
-	public String getContentType(String accepts) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public String checkRedirect(Request request) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	public Date getModifiedDate() {
-		return new Date();
-	}
+    public Long getContentLength() {
+        // TODO Auto-generated method stub
+        return new Long(0);
+    }
 
-	public String getName() {
-		// TODO Auto-generated method stub
-		return "davroot";
-	}
+    public String getContentType(String accepts) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	public String getRealm() {
-		return null;
-	}
+    public Date getModifiedDate() {
+        return new Date();
+    }
 
-	public String getUniqueId() {
-		return "0";
-	}
+    public String getName() {
+        // TODO Auto-generated method stub
+        return "davroot";
+    }
 
-	public int compareTo(Object o) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    public String getRealm() {
+        return null;
+    }
 
-	public Resource child(String childName) {
-		List<Host> hosts = listHosts();
-		SystemRootResourceImpl sys = new SystemRootResourceImpl();
-		if(childName.equalsIgnoreCase(sys.getName())){
-			return sys;
-		}
-		for (Host host : hosts) {
-			if(childName.equalsIgnoreCase(host.getHostname())){
-			    String sep="/";
-			    if(path.endsWith(sep)) sep="";
-				HostResourceImpl hr = new HostResourceImpl(path + sep + host.getHostname());
-				return hr;
-			}
-		}
-		return null;
-	}
+    public String getUniqueId() {
+        return "0";
+    }
 
-	public List<? extends Resource> getChildren() {
-	    User user=(User)HttpManager.request().getAuthorization().getTag();
-		List<Host> hosts = listHosts();
-		List<Resource> hrs = new ArrayList<Resource>();
-		for (Host host : hosts) {
-		    String sep="/";
-            if(path.endsWith(sep)) sep="";
-			HostResourceImpl hr = new HostResourceImpl(path + sep + host.getHostname());
-			hrs.add(hr);
-		}
-		try {		
-			Role adminRole = com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole();
-			if(com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,adminRole)){
-				hrs.add(new SystemRootResourceImpl());
-			}
-		} catch (DotDataException e) {
-			Logger.error(WebdavRootResourceImpl.class,e.getMessage(),e);
-		}
-		return hrs;
-	}
+    public int compareTo(Object o) {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 
-	private List<Host> listHosts(){
-	    User user=(User)HttpManager.request().getAuthorization().getTag();
-		HostAPI hostAPI = APILocator.getHostAPI();
-		List<Host> hosts;
-		try {
-			hosts = hostAPI.findAll(user, false);
-			hosts.remove(APILocator.getHostAPI().findSystemHost());
-		} catch (DotDataException e) {
-			Logger.error(WebdavRootResourceImpl.class, e.getMessage(), e);
-			throw new DotRuntimeException(e.getMessage(), e);
-		} catch (DotSecurityException e) {
-			Logger.error(WebdavRootResourceImpl.class, e.getMessage(), e);
-			throw new DotRuntimeException(e.getMessage(), e);
-		}
-		return hosts;
-	}
+    public Resource child(String childName) {
+        List<Host> hosts = listHosts();
+        SystemRootResourceImpl sys = new SystemRootResourceImpl();
+        if (childName.equalsIgnoreCase(sys.getName())) {
+            return sys;
+        }
+        
+        for (Host host : hosts) {
+            if (childName.equalsIgnoreCase(host.getHostname())) {
+                return new HostResourceImpl(new DavParams(davParams.davUrl + File.separator + host.getHostname()));
+            }
+        }
+        return null;
+    }
 
-	public Date getCreateDate() {
-		return new Date();
-	}
+    public List<? extends Resource> getChildren() {
+        User user = (User) HttpManager.request().getAuthorization().getTag();
+        List<Host> hosts = listHosts();
+        List<Resource> hrs = new ArrayList<Resource>();
+        for (Host host : hosts) {
+            String sep = "/";
+            if (path.endsWith(sep))
+                sep = "";
+            HostResourceImpl hr = new HostResourceImpl(path + sep + host.getHostname());
+            hrs.add(hr);
+        }
+        try {
+            Role adminRole = com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole();
+            if (com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user, adminRole)) {
+                hrs.add(new SystemRootResourceImpl());
+            }
+        } catch (DotDataException e) {
+            Logger.error(WebdavRootResourceImpl.class, e.getMessage(), e);
+        }
+        return hrs;
+    }
 
-	public Long getMaxAgeSeconds() {
-		return new Long(60);
-	}
+    private List<Host> listHosts() {
+        User user = (User) HttpManager.request().getAuthorization().getTag();
+        HostAPI hostAPI = APILocator.getHostAPI();
+        List<Host> hosts;
+        try {
+            hosts = hostAPI.findAll(user, false);
+            hosts.remove(APILocator.getHostAPI().findSystemHost());
+        } catch (DotDataException e) {
+            Logger.error(WebdavRootResourceImpl.class, e.getMessage(), e);
+            throw new DotRuntimeException(e.getMessage(), e);
+        } catch (DotSecurityException e) {
+            Logger.error(WebdavRootResourceImpl.class, e.getMessage(), e);
+            throw new DotRuntimeException(e.getMessage(), e);
+        }
+        return hosts;
+    }
 
-	public LockToken getCurrentLock() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public Date getCreateDate() {
+        return new Date();
+    }
 
-	public LockResult lock(LockTimeout arg0, LockInfo arg1)
-			throws NotAuthorizedException {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public Long getMaxAgeSeconds() {
+        return new Long(60);
+    }
 
-	public LockResult refreshLock(String arg0) throws NotAuthorizedException {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public LockToken getCurrentLock() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	public void unlock(String arg0) throws NotAuthorizedException {
-		// TODO Auto-generated method stub
-		
-	}
+    public LockResult lock(LockTimeout arg0, LockInfo arg1) throws NotAuthorizedException {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public Long getMaxAgeSeconds(Auth arg0) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public LockResult refreshLock(String arg0) throws NotAuthorizedException {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public void sendContent(OutputStream arg0, Range arg1,
-			Map<String, String> arg2, String arg3) throws IOException,
-			NotAuthorizedException, BadRequestException, NotFoundException {
-		// TODO Auto-generated method stub
-		
-	}
+    public void unlock(String arg0) throws NotAuthorizedException {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public Long getMaxAgeSeconds(Auth arg0) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public void sendContent(OutputStream arg0, Range arg1, Map<String, String> arg2, String arg3)
+                    throws IOException, NotAuthorizedException, BadRequestException, NotFoundException {
+        // TODO Auto-generated method stub
+
+    }
 
     @Override
     public LockResult refreshLock(String token, LockTimeout timeout) throws NotAuthorizedException, PreConditionFailedException {

@@ -38,14 +38,14 @@ import java.util.Map;
  */
 public class TempFolderResourceImpl implements FolderResource, DotResource, LockingCollectionResource{
 
-	private DotWebdavHelper dotDavHelper;
+
 	private File folder;
 	private String path;
 	private boolean isAutoPub = false;
 	
 	
-	public TempFolderResourceImpl(String path, File folder, boolean isAutoPub) {
-		dotDavHelper = new DotWebdavHelper();
+	public TempFolderResourceImpl(DavParams davParams, File folder) {
+
 		this.isAutoPub = isAutoPub;
 		this.path = path;
 		this.folder = folder;

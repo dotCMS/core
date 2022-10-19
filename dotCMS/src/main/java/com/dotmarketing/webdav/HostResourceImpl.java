@@ -42,7 +42,7 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 
 	private PermissionAPI perAPI;
 	
-	public HostResourceImpl(String path) {
+	public HostResourceImpl(DavParams davParams) {
 	    super(path);
 		perAPI = APILocator.getPermissionAPI();
 	}

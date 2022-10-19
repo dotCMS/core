@@ -28,16 +28,13 @@ import io.milton.servlet.Initable;
  */
 public class ResourceFactorytImpl implements ResourceFactory {
 
-	private DotWebdavHelper dotDavHelper;
-	static final String AUTOPUB_PATH = "/webdav/autopub";
-	static final String NONPUB_PATH = "/webdav/nonpub";
-	static final String LIVE_PATH = "/webdav/live";
-	static final String WORKING_PATH = "/webdav/working";
+
+
 	private HostAPI hostAPI = APILocator.getHostAPI();
 	
 	public ResourceFactorytImpl() {
 		super();
-		dotDavHelper = new DotWebdavHelper();
+
 	}
 	
 	/* (non-Javadoc)
@@ -57,7 +54,7 @@ public class ResourceFactorytImpl implements ResourceFactory {
 
 		// DAV ROOT
 		if(davParams.isRoot()){
-		    return new WebdavRootResourceImpl(url);
+		    return new WebdavRootResourceImpl(davParams);
 		}
 		
         if(davParams.isSystem()){
@@ -65,7 +62,7 @@ public class ResourceFactorytImpl implements ResourceFactory {
         }
         
         if(davParams.isHost()) {
-            return new HostResourceImpl(url);
+            return new HostResourceImpl(davParams);
         }
 
 
@@ -76,12 +73,11 @@ public class ResourceFactorytImpl implements ResourceFactory {
 			java.io.File tempFile = dotDavHelper.loadTempFile(davParams);
 			if(tempFile == null || !tempFile.exists()){
 				return null;
-			}else if(tempFile.isDirectory()){
-				TempFolderResourceImpl tr = new TempFolderResourceImpl(url,tempFile,dotDavHelper.isAutoPub(url));
-				return tr;
+			}
+			if(tempFile.isDirectory()){
+			    return new TempFolderResourceImpl(davParams,tempFile);
 			}else{
-				TempFileResourceImpl tr = new TempFileResourceImpl(tempFile,url,dotDavHelper.isAutoPub(url));
-				return tr;
+			    return new TempFileResourceImpl(davParams,tempFile);
 			}
 		}
 
@@ -134,7 +130,7 @@ public class ResourceFactorytImpl implements ResourceFactory {
         
 		
 		
-		
+		try {
 			if(dotDavHelper.isResource(url,user)){
 				isResource = true;
 			}

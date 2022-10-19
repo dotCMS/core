@@ -37,22 +37,18 @@ import java.util.Map;
  */
 public class TempFileResourceImpl implements FileResource, DotResource {
     
-	private DotWebdavHelper dotDavHelper;
+
 	private final File file;
-    private final String url;
-    private boolean isAutoPub = false;
     private PermissionAPI perAPI; 
-    
-    public TempFileResourceImpl(File file, String url, boolean isAutoPub) {
+    private final DavParams davParams;
+    public TempFileResourceImpl(DavParams davParams, File file) {
         if( file.isDirectory() ){
         	Logger.error(this, "Trying to get a temp file which is actually a directory!!!");
         	throw new IllegalArgumentException("Static resource must be a file, this is a directory: " + file.getAbsolutePath());
         }
-        dotDavHelper = new DotWebdavHelper();
         perAPI = APILocator.getPermissionAPI();
         this.file = file;
-        this.url = url;
-        this.isAutoPub = isAutoPub;
+        this.davParams=davParams;
     }
 
     
@@ -243,35 +239,5 @@ public class TempFileResourceImpl implements FileResource, DotResource {
 	}
 
 
-	public LockResult lock(LockTimeout timeout, LockInfo lockInfo) {
-		return dotDavHelper.lock(timeout, lockInfo, getUniqueId());
-//		return dotDavHelper.lock(lockInfo, user, file.getIdentifier() + "");
-	}
-
-	public LockResult refreshLock(String token) {
-		return dotDavHelper.refreshLock(getUniqueId());
-//		return dotDavHelper.refreshLock(token);
-	}
-
-	public void unlock(String tokenId) {
-		dotDavHelper.unlock(getUniqueId());
-//		dotDavHelper.unlock(tokenId);
-	}
-
-	public LockToken getCurrentLock() {
-		return dotDavHelper.getCurrentLock(getUniqueId());
-	}
-
-
-	public Long getMaxAgeSeconds(Auth arg0) {
-		return (long)60;
-	}
-
-
-    @Override
-    public LockResult refreshLock(String token, LockTimeout timeout) throws NotAuthorizedException, PreConditionFailedException {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
 }

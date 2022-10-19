@@ -26,34 +26,13 @@ import io.milton.resource.Resource;
 
 public abstract class BasicFolderResourceImpl implements FolderResource {
     
-    protected final String path;
-    protected final Host host;
-    protected final boolean isAutoPub;
-    protected final DotWebdavHelper dotDavHelper=new DotWebdavHelper();
-    protected final long lang ;
-    private final String originalPath;
-    
-    public BasicFolderResourceImpl(String path) {
-        this.originalPath = path;
-        this.path= ("/" + path + "/").replaceAll("//", "/");
 
-        
-        try {
-            this.host=APILocator.getHostAPI().findByName(
-                    dotDavHelper.getHostName(path),APILocator.getUserAPI().getSystemUser(),false);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        try {
-			dotDavHelper.stripMapping(path);
-		} catch (IOException e) {
-			Logger.error( this, "Error happened with uri: [" + path + "]", e);
-		}
-        
-        
-        
-        this.lang = dotDavHelper.getLanguage();
-        this.isAutoPub=dotDavHelper.isAutoPub(path);
+    protected final DotWebdavHelper dotDavHelper;
+
+    private final DavParams davParams;
+    public BasicFolderResourceImpl(DavParams davParams) {
+        this.davParams=davParams;
+        this.dotDavHelper=new DotWebdavHelper(davParams);
     }
     
     public Resource createNew(String newName, final InputStream in, final Long length, final String contentType) throws IOException, DotRuntimeException {
@@ -87,9 +66,9 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
         
 
 
-            this.dotDavHelper.setResourceContent(this.path + newName, tempFile, user, this.isAutoPub);
+            this.dotDavHelper.writeToFile(tempFile,davParams);
             final IFileAsset iFileAsset = this.dotDavHelper.loadFile(this.path + newName, user);
-            final Resource fileResource = new FileResourceImpl(iFileAsset, iFileAsset.getFileName());
+            final Resource fileResource = new FileResourceImpl(iFileAsset, davParams);
             return fileResource;
         } catch (Exception e) {
 
