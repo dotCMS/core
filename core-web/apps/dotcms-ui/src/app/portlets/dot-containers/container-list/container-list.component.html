@@ -8,6 +8,7 @@
         [columns]="vm.tableColumns"
         [actions]="[]"
         [checkbox]="true"
+        [mapItems]="mapTableItems"
         (selectedItems)="updateSelectedContainers($event)"
         url="v1/containers?system=true"
         dataKey="inode"
