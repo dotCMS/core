@@ -180,4 +180,13 @@ export class DotContainerPropertiesComponent implements OnInit {
             )
         });
     }
+
+    /**
+     * It returns the form control with the given name
+     * @param {string} controlName - The name of the control you want to get.
+     * @returns {FormControl} A FormControl
+     */
+    getFormControl(controlName: string): FormControl {
+        return this.form.get(controlName) as FormControl;
+    }
 }

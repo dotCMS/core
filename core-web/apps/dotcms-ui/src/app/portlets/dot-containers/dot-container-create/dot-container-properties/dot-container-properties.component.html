@@ -96,7 +96,7 @@
             >
                 <dot-loop-editor
                     [isEditorVisible]="vm.showPrePostLoopInput"
-                    [control]="$any(form).get('preLoop')"
+                    [control]="getFormControl('preLoop')"
                     (buttonClick)="showLoopInput()"
                 ></dot-loop-editor>
                 <dot-content-code-editor
@@ -105,7 +105,7 @@
                 ></dot-content-code-editor>
                 <dot-loop-editor
                     [isEditorVisible]="vm.showPrePostLoopInput"
-                    [control]="$any(form).get('postLoop')"
+                    [control]="getFormControl('postLoop')"
                     (buttonClick)="showLoopInput()"
                 ></dot-loop-editor>
             </div>
