@@ -33,7 +33,7 @@ export interface DotContainer {
 }
 
 export interface DotContainerRequest {
-    identifier?: string;
+    identifier: string;
     title: string;
     friendlyName: string;
     maxContentlets: number;
