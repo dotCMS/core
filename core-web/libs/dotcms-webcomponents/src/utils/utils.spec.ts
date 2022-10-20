@@ -1,12 +1,14 @@
 import {
+    decodeChars,
+    encodeChars,
     getClassNames,
     getDotOptionsFromFieldValue,
     getErrorClass,
     getHintId,
     getId,
+    getJsonStringFromDotKeyArray,
     getLabelId,
     getOriginalStatus,
-    getStringFromDotKeyArray,
     getTagError,
     getTagHint,
     isFileAllowed,
@@ -42,13 +44,19 @@ describe('getDotOptionsFromFieldValue', () => {
     it('should return label/value', () => {
         const items = getDotOptionsFromFieldValue('key1|A,key2|B');
         expect(items.length).toBe(2);
-        expect(items).toEqual([{ label: 'key1', value: 'A' }, { label: 'key2', value: 'B' }]);
+        expect(items).toEqual([
+            { label: 'key1', value: 'A' },
+            { label: 'key2', value: 'B' }
+        ]);
     });
 
     it('should support \r\n as option splitter', () => {
         const items = getDotOptionsFromFieldValue('key1|A\r\nkey2|B');
         expect(items.length).toBe(2);
-        expect(items).toEqual([{ label: 'key1', value: 'A' }, { label: 'key2', value: 'B' }]);
+        expect(items).toEqual([
+            { label: 'key1', value: 'A' },
+            { label: 'key2', value: 'B' }
+        ]);
     });
 
     it('should support \r\n and semicolon as option splitter', () => {
@@ -124,10 +132,22 @@ describe('getOriginalStatus', () => {
     });
 });
 
-describe('getStringFromDotKeyArray', () => {
+describe('encodeChars', () => {
+    it('should encode chars', () => {
+        expect(encodeChars('a"b\\c|d:e,')).toBe('a&#34;b&#92;c|d&#58;e&#44;');
+    });
+});
+
+describe('decodeChars', () => {
+    it('should decode chars', () => {
+        expect(decodeChars('a&#34;b&#92;c&#124;d&#58;e&#44;')).toBe('a"b\\c|d:e,');
+    });
+});
+
+describe('getJsonStringFromDotKeyArray', () => {
     it('should transform to string', () => {
         expect(
-            getStringFromDotKeyArray([
+            getJsonStringFromDotKeyArray([
                 {
                     key: 'some1',
                     value: 'val1'
@@ -137,7 +157,7 @@ describe('getStringFromDotKeyArray', () => {
                     value: 'val99'
                 }
             ])
-        ).toBe('some1|val1,some45|val99');
+        ).toBe('{"some1":"val1","some45":"val99"}');
     });
 });
 
@@ -195,7 +215,6 @@ describe('isFileAllowed', () => {
     it('should return true when types are the same', () => {
         expect(isFileAllowed('file.pdf', 'application/pdf', 'application/*')).toBe(true);
     });
-
 
     it('should return true when allowedExtensions are empty', () => {
         expect(isFileAllowed('file.pdf', 'application/pdf', '')).toBe(true);

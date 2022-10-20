@@ -2,6 +2,12 @@ package com.dotcms.contenttype.test;
 
 import com.dotcms.contenttype.util.KeyValueFieldUtil;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
+import javax.validation.constraints.AssertTrue;
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -100,7 +106,26 @@ public class KeyValueFieldUtilTest {
         assertThat("data2==test2", "test2".equals(value));
 
     }
-    
-    
+
+    /**
+     * This is here to demonstrate that Order matters
+     * Given scenario: if we feed this utility with a json with their keys in certain order
+     * Expected: The outcome should always preserve the order of the elements used to feed the utility
+     * @throws Exception
+     */
+    @Test
+    public void testJsonKeyValueOrderPreserved() throws Exception {
+        final String json1 = "{\"k1\":\"test1\", \"k2\":\"test2\", \"k3\":\"test3\", \"k4\":\"test3\", \"k5\":\"test5\", \"k6\":\"test6\" }";
+        final Map<String, Object> data1 = KeyValueFieldUtil.JSONValueToHashMap(json1);
+        final Set<String> orderedKeySet = data1.keySet();
+        List<String> list = new ArrayList<>(orderedKeySet);
+        Assert.assertEquals("k1",list.get(0));
+        Assert.assertEquals("k2",list.get(1));
+        Assert.assertEquals("k3",list.get(2));
+        Assert.assertEquals("k4",list.get(3));
+        Assert.assertEquals("k5",list.get(4));
+        Assert.assertEquals("k6",list.get(5));
+
+    }
     
 }

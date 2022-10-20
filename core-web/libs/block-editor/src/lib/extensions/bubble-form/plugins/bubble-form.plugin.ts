@@ -9,12 +9,13 @@ import { Node } from 'prosemirror-model';
 import { Editor, posToDOMRect } from '@tiptap/core';
 import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
 import tippy, { Instance, Props } from 'tippy.js';
+import { imageFormControls } from '../utils';
 
 import {
+    ImageNode,
     getNodePosition,
     BUBBLE_FORM_PLUGIN_KEY,
-    BubbleFormComponent,
-    DynamicControl
+    BubbleFormComponent
 } from '@dotcms/block-editor';
 
 export interface BubbleFormProps {
@@ -31,16 +32,21 @@ export type BubbleFormViewProps = BubbleFormProps & {
 
 interface PluginState {
     open: boolean;
-    form: DynamicControl<string | boolean>[];
 }
 
 export class BubbleFormView extends BubbleMenuView {
     public editor: Editor;
+
     public node: Node;
+
     public element: HTMLElement;
+
     public view: EditorView;
+
     public tippy: Instance | undefined;
+
     public tippyOptions?: Partial<Props>;
+
     public pluginKey: PluginKey;
 
     public component?: ComponentRef<BubbleFormComponent>;
@@ -63,8 +69,12 @@ export class BubbleFormView extends BubbleMenuView {
         this.pluginKey = pluginKey;
         this.component = component;
 
+        this.component.instance.buildForm(imageFormControls);
+
         this.component.instance.formValues.pipe(takeUntil(this.$destroy)).subscribe((data) => {
-            this.editor.commands.updateValue(data);
+            const attr = this.node.attrs;
+            this.editor.commands.setImage({ ...attr, ...data });
+            this.editor.commands.closeForm();
         });
 
         this.component.instance.hide.pipe(takeUntil(this.$destroy)).subscribe(() => {
@@ -72,6 +82,9 @@ export class BubbleFormView extends BubbleMenuView {
         });
         this.element.addEventListener('mousedown', this.mousedownHandler, { capture: true });
         this.editor.on('focus', this.focusHandler);
+
+        // We need to also react to page scrolling.
+        document.body.addEventListener('scroll', this.hanlderScroll.bind(this), true);
     }
 
     update(view: EditorView, prevState?: EditorState): void {
@@ -103,7 +116,7 @@ export class BubbleFormView extends BubbleMenuView {
                         this.node = doc.nodeAt(from);
                         const type = this.node.type.name;
 
-                        return getNodePosition(node, type);
+                        return this.tippyRect(node, type);
                     }
                 }
 
@@ -111,13 +124,7 @@ export class BubbleFormView extends BubbleMenuView {
             }
         });
 
-        if (next.open) {
-            this.component.instance.dynamicControls = next.form;
-            this.component.instance.buildForm();
-            this.show();
-        } else {
-            this.hide();
-        }
+        next.open ? this.show() : this.hide();
     }
 
     createTooltip() {
@@ -135,16 +142,17 @@ export class BubbleFormView extends BubbleMenuView {
             interactive: true,
             maxWidth: 'none',
             trigger: 'manual',
-            placement: 'bottom',
+            placement: 'bottom-start',
             hideOnClick: 'toggle',
             popperOptions: {
                 modifiers: [
                     {
                         name: 'flip',
-                        options: { fallbackPlacements: ['top'] }
+                        options: { fallbackPlacements: ['top-start'] }
                     }
                 ]
             },
+
             onShow: () => {
                 requestAnimationFrame(() =>
                     this.component.instance.inputs.first.nativeElement.focus()
@@ -160,8 +168,14 @@ export class BubbleFormView extends BubbleMenuView {
     };
 
     show() {
-        // const { alt, src, title } = this.editor.getAttributes(ImageNode.name);
-        //this.component.instance.setFormValues({ alt, src, title });
+        const { alt, src, title, data } = this.editor.getAttributes(ImageNode.name);
+        const { title: dotTitle = '', asset } = data || {};
+
+        this.component.instance.setFormValues({
+            alt: alt ?? dotTitle,
+            src: src ?? asset,
+            title: title ?? dotTitle
+        });
 
         this.tippy?.show();
     }
@@ -173,6 +187,23 @@ export class BubbleFormView extends BubbleMenuView {
         this.component.destroy();
         this.component.instance.formValues.unsubscribe();
     }
+
+    private hanlderScroll(e: Event) {
+        if (this.tippy?.popper && this.tippy?.popper.contains(e.target as HTMLElement)) {
+            return true;
+        }
+
+        this.editor.commands.closeForm();
+
+        // we use `setTimeout` to make sure `selection` is already updated
+        setTimeout(() => this.update(this.editor.view));
+    }
+
+    private tippyRect(node, type) {
+        const domRect = document.querySelector('#bubble-menu')?.getBoundingClientRect();
+
+        return domRect || getNodePosition(node, type);
+    }
 }
 
 export const bubbleFormPlugin = (options: BubbleFormProps) => {
@@ -182,8 +213,7 @@ export const bubbleFormPlugin = (options: BubbleFormProps) => {
         state: {
             init(): PluginState {
                 return {
-                    open: false,
-                    form: []
+                    open: false
                 };
             },
 
@@ -192,11 +222,11 @@ export const bubbleFormPlugin = (options: BubbleFormProps) => {
                 value: PluginState,
                 oldState: EditorState
             ): PluginState {
-                const { open, form } = transaction.getMeta(BUBBLE_FORM_PLUGIN_KEY) || {};
+                const { open } = transaction.getMeta(BUBBLE_FORM_PLUGIN_KEY) || {};
                 const state = BUBBLE_FORM_PLUGIN_KEY?.getState(oldState);
 
                 if (typeof open === 'boolean') {
-                    return { open, form };
+                    return { open };
                 }
 
                 // keep the old state in case we do not receive a new one.

@@ -15,6 +15,7 @@ import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models';
 import { DotIframePortletLegacyResolver } from './dot-iframe-porlet-legacy-resolver.service';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
+import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
 
 const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
     'toString'
@@ -30,38 +31,37 @@ describe('DotIframePorletLegacyResolver', () => {
     let resolver: DotIframePortletLegacyResolver;
     let dotLicenseService: DotLicenseService;
 
-    beforeEach(
-        waitForAsync(() => {
-            const testbed = DOTTestBed.configureTestingModule({
-                providers: [
-                    DotPageStateService,
-                    DotIframePortletLegacyResolver,
-                    DotPageRenderService,
-                    DotContentletLockerService,
-                    DotLicenseService,
-                    {
-                        provide: ActivatedRouteSnapshot,
-                        useValue: route
-                    },
-                    {
-                        provide: RouterStateSnapshot,
-                        useValue: state
-                    },
-                    {
-                        provide: LoginService,
-                        useClass: LoginServiceMock
-                    }
-                ],
-                imports: [RouterTestingModule]
-            });
+    beforeEach(waitForAsync(() => {
+        const testbed = DOTTestBed.configureTestingModule({
+            providers: [
+                DotPageStateService,
+                DotIframePortletLegacyResolver,
+                DotPageRenderService,
+                DotContentletLockerService,
+                DotLicenseService,
+                DotESContentService,
+                {
+                    provide: ActivatedRouteSnapshot,
+                    useValue: route
+                },
+                {
+                    provide: RouterStateSnapshot,
+                    useValue: state
+                },
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                }
+            ],
+            imports: [RouterTestingModule]
+        });
 
-            dotPageStateService = testbed.get(DotPageStateService);
-            dotPageStateServiceRequestPageSpy = spyOn(dotPageStateService, 'requestPage');
-            resolver = testbed.get(DotIframePortletLegacyResolver);
-            dotLicenseService = testbed.get(DotLicenseService);
-            state.url = '/rules';
-        })
-    );
+        dotPageStateService = testbed.get(DotPageStateService);
+        dotPageStateServiceRequestPageSpy = spyOn(dotPageStateService, 'requestPage');
+        resolver = testbed.get(DotIframePortletLegacyResolver);
+        dotLicenseService = testbed.get(DotLicenseService);
+        state.url = '/rules';
+    }));
 
     it('should return if user can access url to be rendered with current license', () => {
         const mock = new DotPageRenderState(mockUser(), new DotPageRender(mockDotRenderedPage()));

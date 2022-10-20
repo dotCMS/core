@@ -30,17 +30,16 @@ import {
     DragHandlerComponent,
     FormActionsComponent,
     LoaderComponent,
-    ImageBlockComponent,
     DotImageService,
     SuggestionPageComponent
 } from './extensions';
 
 // Shared
 import { SharedModule } from './shared/shared.module';
+import { BubbleFormComponent } from './extensions/bubble-form/bubble-form.component';
 
 //Editor
 import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
-import { BubbleFormComponent } from './extensions/bubble-form/bubble-form.component';
 
 @NgModule({
     imports: [
@@ -61,15 +60,14 @@ import { BubbleFormComponent } from './extensions/bubble-form/bubble-form.compon
         ContentletBlockComponent,
         ActionButtonComponent,
         DragHandlerComponent,
-        ImageBlockComponent,
         LoaderComponent,
         BubbleMenuComponent,
         BubbleMenuButtonComponent,
         BubbleLinkFormComponent,
         FormActionsComponent,
+        BubbleFormComponent,
         SuggestionPageComponent,
-        DotBlockEditorComponent,
-        BubbleFormComponent
+        DotBlockEditorComponent
     ],
     providers: [DotImageService, LoggerService, StringUtils],
     exports: [
@@ -82,8 +80,8 @@ import { BubbleFormComponent } from './extensions/bubble-form/bubble-form.compon
         ButtonModule,
         InputTextModule,
         SharedModule,
-        DotBlockEditorComponent,
-        BubbleFormComponent
+        BubbleFormComponent,
+        DotBlockEditorComponent
     ]
 })
 export class BlockEditorModule {}

@@ -2,12 +2,19 @@ package com.dotcms.variant;
 
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.exception.DotDataException;
+import java.util.List;
 import java.util.Optional;
 
 /**
  * Factory for {@link Variant}
  */
 public interface VariantFactory {
+
+    Variant VARIANT_404 = Variant.builder()
+            .description(Optional.of("Not found variant"))
+            .name("VARIANT_404")
+            .archived(false)
+            .build();
 
     /**
      * Save a new {@link Variant}.
@@ -35,22 +42,20 @@ public interface VariantFactory {
     /**
      * Delete a {@link Variant}
      *
-     * @param id Variant's id to be deleted
+     * @param name Variant's id to be deleted
      */
-    void delete(final String id) throws DotDataException;
-
-    /**
-     * Return a {@link Variant} by Identifier
-     * @param identifier {@link Variant}'s identifier
-     * @return {@link Variant}
-     */
-    Optional<Variant> get(final String identifier) throws DotDataException;
+    void delete(final String name) throws DotDataException;
 
     /**
      * Return a {@link Variant} by Name
      * @param name {@link Variant}'s name
      * @return {@link Variant}
      */
-    Optional<Variant> getByName(final String name) throws DotDataException;
+    Optional<Variant> get(final String name) throws DotDataException;
 
+    /**
+     * Gets all persisted {@link Variant}
+     * @return the variants
+     */
+    List<Variant> getVariants() throws DotDataException;
 }

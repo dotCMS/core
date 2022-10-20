@@ -43,6 +43,10 @@ export class DotPageRender {
         return this._params.containers;
     }
 
+    get site(): DotSite {
+        return this._params.site;
+    }
+
     get template(): DotTemplate {
         return this._params.template;
     }

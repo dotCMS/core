@@ -43,7 +43,8 @@ export interface ShouldShowProps {
 }
 
 export interface BubbleMenuItem {
-    icon: string;
+    icon?: string;
+    text?: string;
     markAction: string;
     active: boolean;
     divider?: boolean;

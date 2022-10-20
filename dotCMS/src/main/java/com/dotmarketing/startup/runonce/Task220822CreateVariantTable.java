@@ -12,8 +12,8 @@ import java.sql.SQLException;
 public class Task220822CreateVariantTable implements StartupTask {
 
     private final String POSTGRES_QUERY = "CREATE TABLE IF NOT EXISTS variant ("
-            + "  id varchar(255) primary key,"
-            + "  name varchar(255) not null UNIQUE,"
+            + "  name varchar(255) primary key,"
+            + "  description varchar(255) not null,"
             + "  archived boolean NOT NULL default false"
             + ")";
 
@@ -22,8 +22,8 @@ public class Task220822CreateVariantTable implements StartupTask {
             "WHERE name = 'variant'";
 
     private final String MSSQL_QUERY = "CREATE TABLE variant ("
-            + "  id NVARCHAR(255) primary key,"
-            + "  name NVARCHAR(255) not null UNIQUE,"
+            + "  name NVARCHAR(255) primary key,"
+            + "  description NVARCHAR(255) not null,"
             + "  archived tinyint not null"
             + ")";
 

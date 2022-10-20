@@ -17,6 +17,7 @@
         "paths": {
             "@components/*": ["apps/dotcms-ui/src/app/view/components/*"],
             "@directives/*": ["apps/dotcms-ui/src/app/view/directives/*"],
+            "@dotcms-ui/portlets/experiments": ["apps/dotcms-ui/src/app/portlets/dot-experiments"],
             "@dotcms/app/*": ["apps/dotcms-ui/src/app/*"],
             "@dotcms/block-editor": ["libs/block-editor/src/public-api.ts"],
             "@dotcms/block-editor/services": ["libs/block-editor/src/lib/shared/services/index.ts"],

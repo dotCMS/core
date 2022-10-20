@@ -17,15 +17,13 @@ form {
 }
 
 .form-row {
+    display: flex;
+    flex-direction: column;
     gap: 0.25 * $dot-editor-size;
 
     label {
         font-size: 0.75 * $dot-editor-size;
     }
-}
-
-p-checkbox {
-    margin-right: $dot-editor-size / 2;
 }
 
 .form-action {
@@ -34,4 +32,10 @@ p-checkbox {
     padding-top: $dot-editor-size;
     width: 100%;
     gap: 0.625 * $dot-editor-size;
+}
+
+.error-message {
+    color: $red;
+    font-size: $font-size-x-small;
+    text-align: left;
 }

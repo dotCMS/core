@@ -10,6 +10,8 @@ import { DotDirectivesModule } from '@shared/dot-directives.module';
 import { DotPageStateService } from './content/services/dot-page-state/dot-page-state.service';
 import { DotEditPageResolver } from './shared/services/dot-edit-page-resolver/dot-edit-page-resolver.service';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotFeatureFlagResolver } from '@portlets/shared/resolvers/dot-feature-flag-resolver.service';
+import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
 
 @NgModule({
     imports: [
@@ -24,9 +26,11 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
     providers: [
         DotContentletLockerService,
         DotEditPageResolver,
+        DotESContentService,
         DotPageStateService,
         DotPageRenderService,
-        DotPageLayoutService
+        DotPageLayoutService,
+        DotFeatureFlagResolver
     ]
 })
 export class DotEditPageModule {}
