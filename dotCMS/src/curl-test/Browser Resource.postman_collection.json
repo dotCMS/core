@@ -1,7 +1,8 @@
 {
 	"info": {
-		"_postman_id": "bc0cf41b-78ee-4803-a2c9-d02441e239bf",
+		"_postman_id": "916ccb43-f6fb-444d-9849-ea719559f6a5",
 		"name": "Browser Resource",
+		"description": "Provides test routines to verify the expected behavior or operations usually executed in the Site Browser portlet.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "5403727"
 	},
@@ -176,6 +177,71 @@
 			"response": []
 		},
 		{
+			"name": "Create Test Folder",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Response Status should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var entity = pm.response.json().entity;",
+							"",
+							"pm.test(\"Checking test folder's name is correct.\", function () {",
+							"    pm.expect(entity[0].path).to.equals(pm.collectionVariables.get(\"testFolderName\") + \"/\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "[\"{{testFolderName}}\"]",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/folder/createfolders/default",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"folder",
+						"createfolders",
+						"default"
+					]
+				},
+				"description": "Creates a test folder that will be used by several other requests in this collection."
+			},
+			"response": []
+		},
+		{
 			"name": "Set Selected Folder",
 			"event": [
 				{
@@ -213,7 +279,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{ \"path\":\"/application/containers/system\" }",
+					"raw": "{ \"path\":\"{{testFolderName}}\" }",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -366,8 +432,9 @@
 							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"",
-							""
+							"pm.test(\"Checking that no errors were found.\", function () {",
+							"    pm.expect(pm.response.json().errors).is.empty;",
+							"});"
 						],
 						"type": "text/javascript"
 					}
@@ -393,7 +460,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{ \"path\":\"//default/application/containers/\" }",
+					"raw": "{ \"path\":\"{{testFolderName}}\" }",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -414,6 +481,102 @@
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "Delete Test Folder",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Response Status should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var entity = pm.response.json().entity;",
+							"var folderName = pm.collectionVariables.get(\"testFolderName\");",
+							"",
+							"pm.test(\"Checking test folder's name is correct.\", function () {",
+							"    console.log(entity);",
+							"    pm.expect(entity[0]).to.contains(folderName);",
+							"});",
+							"",
+							"pm.test(\"Checking that no errors were found.\", function () {",
+							"    pm.expect(pm.response.json().errors).is.empty;",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "[\"/browser-resource-test-folder1\"]",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/folder/default",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"folder",
+						"default"
+					]
+				},
+				"description": "Deletes the test folder in order to avoid filling up dotCMS with unnecessary data."
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"pm.collectionVariables.set(\"testFolderName\", \"/browser-resource-test-folder1\");"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "testFolderName",
+			"value": ""
 		}
 	]
 }
