@@ -1,4 +1,8 @@
 import { Component, Injector, Input, OnInit, ViewContainerRef } from '@angular/core';
+
+import { Subject } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
+
 import { AnyExtension, Content, Editor } from '@tiptap/core';
 import { HeadingOptions, Level } from '@tiptap/extension-heading';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
@@ -15,6 +19,7 @@ import {
     DotConfigExtension,
     BubbleFormExtension,
     ImageNode,
+    SetDocAttrStep,
     formatHTML
 } from '@dotcms/block-editor';
 
@@ -42,7 +47,6 @@ export class DotBlockEditorComponent implements OnInit {
     @Input() customStyles: string;
     @Input() displayCountBar: boolean | string = true;
     @Input() charLimit: number;
-    @Input() value: Content; // can be HTML or JSON, see https://www.tiptap.dev/api/editor#content
 
     @Input() set allowedBlocks(blocks: string) {
         this._allowedBlocks = [
@@ -52,6 +56,7 @@ export class DotBlockEditorComponent implements OnInit {
     }
 
     @Input() set setValue(content: Content) {
+        // https://www.tiptap.dev/api/editor#content
         this.editor.commands.setContent(
             typeof content === 'string' ? formatHTML(content) : content
         );
@@ -59,6 +64,7 @@ export class DotBlockEditorComponent implements OnInit {
 
     _allowedBlocks = ['paragraph']; //paragraph should be always.
     editor: Editor;
+    subject = new Subject();
     time: number;
 
     get characterCount() {
@@ -80,8 +86,24 @@ export class DotBlockEditorComponent implements OnInit {
             extensions: this.setEditorExtensions()
         });
 
-        this.editor.on('create', () => this.updateReadingTime());
+        this.editor.on('create', () => {
+            this.updateReadingTime();
+            SetDocAttrStep.register();
+        });
         this.editor.on('update', () => this.updateReadingTime());
+
+        this.subject.pipe(debounceTime(300)).subscribe(() => this.updateChartCount());
+    }
+
+    onKeyup() {
+        this.subject.next();
+    }
+
+    private updateChartCount(): void {
+        const tr = this.editor.state.tr
+            .step(new SetDocAttrStep('chartCount', this.characterCount.characters()))
+            .step(new SetDocAttrStep('readTime', this.time));
+        this.editor.view.dispatch(tr);
     }
 
     private updateReadingTime(): void {
