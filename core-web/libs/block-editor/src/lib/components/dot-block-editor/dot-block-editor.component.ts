@@ -65,7 +65,6 @@ export class DotBlockEditorComponent implements OnInit {
     _allowedBlocks = ['paragraph']; //paragraph should be always.
     editor: Editor;
     subject = new Subject();
-    time: number;
 
     get characterCount() {
         return this.editor.storage.characterCount;
@@ -79,6 +78,12 @@ export class DotBlockEditorComponent implements OnInit {
         }
     }
 
+    get readingTime() {
+        // The constant used by Medium for words an adult can read per minute is 265
+        // More Information here: https://help.medium.com/hc/en-us/articles/214991667-Read-time
+        return Math.ceil(this.characterCount.words() / 265);
+    }
+
     constructor(private injector: Injector, public viewContainerRef: ViewContainerRef) {}
 
     ngOnInit() {
@@ -86,13 +91,10 @@ export class DotBlockEditorComponent implements OnInit {
             extensions: this.setEditorExtensions()
         });
 
-        this.editor.on('create', () => {
-            this.updateReadingTime();
-            SetDocAttrStep.register();
-        });
-        this.editor.on('update', () => this.updateReadingTime());
+        this.editor.on('create', () => this.updateChartCount());
 
-        this.subject.pipe(debounceTime(300)).subscribe(() => this.updateChartCount());
+        // https://stackoverflow.com/questions/42361485/how-long-should-you-debounce-text-input
+        this.subject.pipe(debounceTime(250)).subscribe(() => this.updateChartCount());
     }
 
     onKeyup() {
@@ -102,14 +104,8 @@ export class DotBlockEditorComponent implements OnInit {
     private updateChartCount(): void {
         const tr = this.editor.state.tr
             .step(new SetDocAttrStep('chartCount', this.characterCount.characters()))
-            .step(new SetDocAttrStep('readTime', this.time));
+            .step(new SetDocAttrStep('readingTime', this.readingTime));
         this.editor.view.dispatch(tr);
-    }
-
-    private updateReadingTime(): void {
-        // The constant used by Medium for words an adult can read per minute is 265
-        // More Information here: https://help.medium.com/hc/en-us/articles/214991667-Read-time
-        this.time = Math.ceil(this.characterCount.words() / 265);
     }
 
     private setEditorExtensions(): AnyExtension[] {

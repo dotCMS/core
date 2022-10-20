@@ -2,9 +2,9 @@
     <tiptap-editor [editor]="editor" (keyup)="onKeyup()"></tiptap-editor>
 </div>
 
-<div class="footer_container" *ngIf="showCharData">
+<div class="count-bar_container" *ngIf="showCharData">
     <span [class.error-message]="charLimit && characterCount.characters() > charLimit">
         {{ characterCount.characters() }}{{ charLimit ? '/' + charLimit : '' }} characters
     </span>
-    <span *ngIf="time"> {{ time }} min read </span>
+    <span *ngIf="readingTime"> {{ readingTime }} min read</span>
 </div>
