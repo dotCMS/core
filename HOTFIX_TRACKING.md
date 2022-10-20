@@ -40,3 +40,4 @@ This maintenance release includes the following code fixes:
 29. https://github.com/dotCMS/core/issues/19569 : Rely on Tomcat's RemoteIpValve for dns resolution - was: External service interaction (DNS) #19569
 30. https://github.com/dotCMS/core/issues/22916 : Need a way to run UT in LTS Releases #22916
 31. https://github.com/dotCMS/core/issues/21482 : [REST] : Updating one Binary Field is removing the value from the other Binary Field #21482
+32. https://github.com/dotCMS/core/issues/21885 : Template show archive not working #21885
