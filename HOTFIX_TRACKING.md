@@ -39,3 +39,4 @@ This maintenance release includes the following code fixes:
 28. https://github.com/dotCMS/core/issues/19358 : Large amounts of content in structure can deadlock the DB when repermissioning #19358
 29. https://github.com/dotCMS/core/issues/19569 : Rely on Tomcat's RemoteIpValve for dns resolution - was: External service interaction (DNS) #19569
 30. https://github.com/dotCMS/core/issues/22916 : Need a way to run UT in LTS Releases #22916
+31. https://github.com/dotCMS/core/issues/21482 : [REST] : Updating one Binary Field is removing the value from the other Binary Field #21482
