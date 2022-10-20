@@ -104,6 +104,7 @@ import com.dotmarketing.business.VersionableFactoryImplTest;
 import com.dotmarketing.business.helper.PermissionHelperTest;
 import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
 import com.dotmarketing.common.db.DBTimeZoneCheckTest;
+import com.dotmarketing.db.DataSourceStrategyProviderTest;
 import com.dotmarketing.filters.AutoLoginFilterTest;
 import com.dotmarketing.image.filter.ImageFilterAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
@@ -582,7 +583,8 @@ import org.junit.runners.Suite.SuiteClasses;
         StoryBlockTest.class,
         IdentifierCacheImplTest.class,
         VariantCacheTest.class,
-        VersionableFactoryImplTest.class
+        VersionableFactoryImplTest.class,
+        DataSourceStrategyProviderTest.class
 })
 public class MainSuite {
 
