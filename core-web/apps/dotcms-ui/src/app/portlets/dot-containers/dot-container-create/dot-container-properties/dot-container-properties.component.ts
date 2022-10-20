@@ -113,6 +113,7 @@ export class DotContainerPropertiesComponent implements OnInit {
         } else {
             delete formValues.identifier;
             this.store.saveContainer(formValues);
+            this.dotRouterService.goToURL('/containers');
         }
     }
 
@@ -149,7 +150,7 @@ export class DotContainerPropertiesComponent implements OnInit {
      * @memberof DotContainerPropertiesComponent
      */
     cancel(): void {
-        this.dotRouterService.goToPreviousUrl();
+        this.dotRouterService.goToURL('/containers');
     }
 
     /**
