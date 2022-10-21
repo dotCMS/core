@@ -380,9 +380,30 @@ public interface MultiTreeAPI {
      * @throws DotDataException
      */
     void overridesMultitreesByPersonalization(final String pageId,
-                                                     final String personalization,
-                                                     final List<MultiTree> multiTrees,
-                                                     final Optional<Long> languageIdOpt) throws DotDataException;
+            final String personalization,
+            final List<MultiTree> multiTrees,
+            final Optional<Long> languageIdOpt
+    ) throws DotDataException;
+
+    /**
+     * Save a collection of {@link MultiTree} and link them with a page, Also delete all the
+     * {@link MultiTree} linked previously with the page.
+     *
+     * @param pageId {@link String} Page's identifier
+     * @param personalization {@link String} personalization token
+     * @param multiTrees {@link List} of {@link MultiTree} to safe
+     * @param languageIdOpt {@link Optional} {@link Long}  optional language, if present will deletes only the contentlets that have a version on this language.
+     *                                      Since it is by identifier, when deleting for instance in spanish, will remove the english and any other lang version too.
+     * @param variantId {@link com.dotcms.variant.model.Variant}'s id
+     *
+     * @throws DotDataException
+     */
+    void overridesMultitreesByPersonalization(final String pageId,
+                                             final String personalization,
+                                             final List<MultiTree> multiTrees,
+                                             final Optional<Long> languageIdOpt,
+                                             final String variantId
+                                        ) throws DotDataException;
 
     /**
      * Updates the current personalization to a new personalization
