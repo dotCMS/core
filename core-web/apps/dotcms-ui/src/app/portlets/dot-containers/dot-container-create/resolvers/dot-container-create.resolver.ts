@@ -6,7 +6,7 @@ import { DotContainerEntity } from '@models/container/dot-container.model';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
 
 @Injectable()
-export class DotContainerCreateEditResolver implements Resolve<DotContainerEntity> {
+export class DotContainerEditResolver implements Resolve<DotContainerEntity> {
     constructor(private service: DotContainersService) {}
 
     resolve(

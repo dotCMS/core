@@ -2,19 +2,19 @@
 
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
-import { DotContainerCreateEditResolver } from './dot-container-create.resolver';
+import { DotContainerEditResolver } from './dot-container-create.resolver';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { DotContainersService } from '@dotcms/app/api/services/dot-containers/dot-containers.service';
 
 describe('DotContainerService', () => {
-    let service: DotContainerCreateEditResolver;
+    let service: DotContainerEditResolver;
     let containersService: DotContainersService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [
-                DotContainerCreateEditResolver,
+                DotContainerEditResolver,
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 {
                     provide: DotContainersService,
@@ -33,7 +33,7 @@ describe('DotContainerService', () => {
                 }
             ]
         });
-        service = TestBed.inject(DotContainerCreateEditResolver);
+        service = TestBed.inject(DotContainerEditResolver);
         containersService = TestBed.inject(DotContainersService);
     });
 

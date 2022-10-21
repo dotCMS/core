@@ -40,7 +40,7 @@
                 [value]="contentType.state.code"
                 [editorName]="contentType.label"
                 [show]="['code']"
-                [hideBorder]="true"
+                [customStyles]="{ border: 'none' }"
                 (monacoInit)="monacoInit($event)"
                 (valueChange)="updateContentTypeText($event)"
                 language="html"

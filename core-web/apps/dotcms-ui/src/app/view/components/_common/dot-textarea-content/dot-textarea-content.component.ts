@@ -46,7 +46,7 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
     width: string;
 
     @Input()
-    hideBorder: boolean;
+    customStyles: Record<string, unknown>;
 
     @Input()
     editorName: string;
@@ -110,8 +110,11 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
             height: this.height || '21.42rem'
         };
 
-        if (this.hideBorder) {
-            this.styles['border'] = 'none';
+        if (this.customStyles) {
+            this.styles = {
+                ...this.styles,
+                ...this.customStyles
+            };
         }
     }
 
