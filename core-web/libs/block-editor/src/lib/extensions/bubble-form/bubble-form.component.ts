@@ -6,7 +6,7 @@ import {
     ViewChildren,
     QueryList
 } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { DynamicControl } from './model';
 
 @Component({
@@ -37,7 +37,10 @@ export class BubbleFormComponent {
         this.dynamicControls = controls;
         this.form = this.fb.group({});
         this.dynamicControls.forEach((control) => {
-            this.form.addControl(control.key, this.fb.control(control.value || null));
+            this.form.addControl(
+                control.key,
+                this.fb.control(control.value || null, control.required ? Validators.required : [])
+            );
         });
     }
 }
