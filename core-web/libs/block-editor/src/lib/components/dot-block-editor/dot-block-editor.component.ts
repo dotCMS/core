@@ -92,13 +92,7 @@ export class DotBlockEditorComponent implements OnInit {
         });
 
         this.editor.on('create', () => this.updateChartCount());
-
-        // https://stackoverflow.com/questions/42361485/how-long-should-you-debounce-text-input
         this.subject.pipe(debounceTime(250)).subscribe(() => this.updateChartCount());
-    }
-
-    onKeyup() {
-        this.subject.next();
     }
 
     private updateChartCount(): void {
