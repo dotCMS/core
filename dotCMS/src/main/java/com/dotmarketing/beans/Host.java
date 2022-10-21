@@ -80,6 +80,7 @@ public class Host extends Contentlet implements Permissionable,Treeable,Parentab
 		return APILocator.getTreeableAPI().loadAssetsUnderHost(this,user,live,working, archived, respectFrontEndPermissions);
 	}
 
+	@JsonIgnore
 	public String getVersionType() {
 		return new String("host");
 	}
@@ -144,6 +145,7 @@ public class Host extends Contentlet implements Permissionable,Treeable,Parentab
 		// set by the constructor
 	}
 
+	@JsonIgnore
 	public Map<String, Object> getMap() {
 		Map<String, Object> hostMap = super.getMap();
 		// Legacy property referenced as 'hostname' while really is 'hostName'
@@ -157,6 +159,7 @@ public class Host extends Contentlet implements Permissionable,Treeable,Parentab
 	 * @author David H Torres
 	 */
 	@Override
+	@JsonIgnore
 	public List<PermissionSummary> acceptedPermissions() {
 		List<PermissionSummary> accepted = new ArrayList<PermissionSummary>();
 		accepted.add(new PermissionSummary("view", "view-permission-description", PermissionAPI.PERMISSION_READ));
