@@ -16,8 +16,8 @@ import {
     DotExperimentsCreateStore
 } from '@portlets/dot-experiments/dot-experiments-create/store/dot-experiments-create-store.service';
 import { DotExperiment } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
-import { DotExperimentsShellStore } from '@portlets/dot-experiments/dot-experiments-shell/store/dot-experiments-shell-store.service';
 import { take } from 'rxjs/operators';
+import { DotExperimentsListStore } from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store.service';
 
 interface CreateForm {
     pageId: FormControl<string>;
@@ -46,7 +46,7 @@ interface CreateForm {
     ],
     templateUrl: './dot-experiments-create.component.html',
     styleUrls: ['./dot-experiments-create.component.scss'],
-    providers: [DotExperimentsCreateStore],
+    providers: [DotExperimentsCreateStore, DotExperimentsListStore],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsCreateComponent implements OnInit {
@@ -63,13 +63,13 @@ export class DotExperimentsCreateComponent implements OnInit {
 
     constructor(
         private readonly dotExperimentsCreateStore: DotExperimentsCreateStore,
-        private readonly dotExperimentsShellStore: DotExperimentsShellStore
+        private readonly dotExperimentsListStore: DotExperimentsListStore
     ) {}
 
     ngOnInit(): void {
         this.initForm();
         this.dotExperimentsCreateStore.setOpenSlider();
-        this.dotExperimentsShellStore.getPageId$.pipe(take(1)).subscribe((pageId) => {
+        this.dotExperimentsListStore.getPageId$.pipe(take(1)).subscribe((pageId) => {
             this.form.controls.pageId.setValue(pageId);
         });
     }

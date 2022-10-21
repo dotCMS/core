@@ -24,10 +24,10 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotExperimentsListRoutingModule } from '@portlets/dot-experiments/dot-experiments-list/dot-experiments-list-routing.module';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { DotExperimentsListStore } from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store.service';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
 @NgModule({
     declarations: [
@@ -47,7 +47,6 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
         DotActionMenuButtonModule,
         UiDotIconButtonModule,
         DotMessagePipeModule,
-
         DotDynamicDirective,
 
         // PrimeNG

@@ -10,19 +10,17 @@ import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotExperimentsListStore } from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store.service';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { MessageService } from 'primeng/api';
+import {
+    DotExperimentsListStoreMock,
+    DotExperimentsServiceMock
+} from '@portlets/dot-experiments/test/mocks';
 
-const DotExperimentsServiceMock = {
-    add: (experiment) => of({ entity: experiment })
-};
 const MessageServiceMock = {
     add: () => of({})
 };
-const DotExperimentsListStoreMock = {
-    addExperiment: () => of({})
-};
 
 const initialState: DotExperimentCreateStore = {
-    isOpenSidebar: true,
+    isOpenSidebar: false,
     isLoading: false
 };
 
@@ -30,7 +28,7 @@ const messageServiceMock = new MockDotMessageService({
     'experimentspage.add.new.experiment': 'Add a new experiment'
 });
 
-describe('DotExperimentsStore', () => {
+describe('DotExperimentsCreateStore', () => {
     let spectator: SpectatorService<DotExperimentsCreateStore>;
     const createStoreService = createServiceFactory({
         service: DotExperimentsCreateStore,

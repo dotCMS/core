@@ -3,7 +3,6 @@ import { DotExperimentsCreateComponent } from '@portlets/dot-experiments/dot-exp
 import { DotExperimentsCreateStore } from '@portlets/dot-experiments/dot-experiments-create/store/dot-experiments-create-store.service';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { ActivatedRoute } from '@angular/router';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { DotExperimentsListStore } from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store.service';
 import { MessageService } from 'primeng/api';
@@ -19,6 +18,8 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
+import { DotExperimentsListStoreMock } from '@portlets/dot-experiments/test/mocks';
+import { ActivatedRoute } from '@angular/router';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.create.form.sidebar.header': 'Add a new experiment',
@@ -31,6 +32,8 @@ const messageServiceMock = new MockDotMessageService({
     'error.form.validator.required': 'required error'
 });
 
+const routerParamsPageId = '12345-6789-9876-5432';
+
 const dotExperimentsCreateStoreStub = {
     state$: () =>
         of({
@@ -41,33 +44,13 @@ const dotExperimentsCreateStoreStub = {
     addExperiments: () => of([])
 };
 
-class DotExperimentsListStoreMock {
-    addExperiments() {
-        return [];
+const ActivatedRouteMock = {
+    snapshot: {
+        params: {
+            pageId: routerParamsPageId
+        }
     }
-
-    setCloseSidebar() {
-        return [];
-    }
-}
-
-const pageId = '1111-222';
-
-class ActivatedRouteMock {
-    get parent() {
-        return {
-            parent: {
-                parent: {
-                    snapshot: {
-                        params: {
-                            pageId
-                        }
-                    }
-                }
-            }
-        };
-    }
-}
+};
 
 const dotExperimentsServiceMock = {
     add: (experiment) => of({ entity: experiment })
@@ -102,14 +85,12 @@ describe('DotExperimentsCreateComponent', () => {
                 provide: DotExperimentsListStore,
                 useValue: DotExperimentsListStoreMock
             },
-            {
-                provide: ActivatedRoute,
-                useValue: ActivatedRouteMock
-            },
+
             {
                 provide: DotExperimentsCreateStore,
                 useValue: dotExperimentsCreateStoreStub
             },
+            { provide: ActivatedRoute, useValue: ActivatedRouteMock },
 
             mockProvider(DotExperimentsService, dotExperimentsServiceMock)
         ]
@@ -141,7 +122,6 @@ describe('DotExperimentsCreateComponent', () => {
         expect(primeNgSidebar.showCloseIcon).toBe(
             SIDEBAR_CONFIG_BY_DOTSIDEBAR_DIRECTIVE.showCloseIcon
         );
-
     });
     it('should has DotSidebarHeaderComponent', () => {
         spectator.detectChanges();

@@ -171,9 +171,7 @@ describe('DotPushPublishFormComponent', () => {
     });
 
     it('should load filters on load', () => {
-        const filterDropDown = fixture.debugElement.query(
-            By.css('p-dropdown')
-        );
+        const filterDropDown = fixture.debugElement.query(By.css('p-dropdown'));
 
         expect(filterDropDown.attributes['ng-reflect-autofocus']).toBe('true');
         expect(filterDropDown.componentInstance.options).toEqual(optionsLabels);
@@ -350,10 +348,16 @@ describe('DotPushPublishFormComponent', () => {
         selectActionButtons[2].triggerEventHandler('click', {});
         pushPublishForm.form.get('environment').setValue(null);
         pushPublishForm.form.get('environment').markAsDirty();
+        pushPublishForm.form.get('environment').updateValueAndValidity();
+
         pushPublishForm.form.get('publishDate').setValue(null);
         pushPublishForm.form.get('publishDate').markAsDirty();
+        pushPublishForm.form.get('publishDate').updateValueAndValidity();
+
         pushPublishForm.form.get('expireDate').setValue(null);
         pushPublishForm.form.get('expireDate').markAsDirty();
+        pushPublishForm.form.get('expireDate').updateValueAndValidity();
+
         fixture.detectChanges();
         const errorMessages = fixture.debugElement.queryAll(By.css('.p-invalid'));
 

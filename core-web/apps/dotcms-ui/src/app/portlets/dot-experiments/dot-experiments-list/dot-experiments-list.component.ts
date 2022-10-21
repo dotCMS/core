@@ -15,7 +15,7 @@ import { delay, take } from 'rxjs/operators';
     selector: 'dot-experiments-list',
     templateUrl: './dot-experiments-list.component.html',
     styleUrls: ['./dot-experiments-list.component.scss'],
-    providers: [DotMessagePipe, DotExperimentsListStore],
+    providers: [DotExperimentsListStore, DotMessagePipe],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsListComponent implements OnInit {

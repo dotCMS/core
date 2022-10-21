@@ -12,15 +12,17 @@ import {
     DotExperiment,
     GroupedExperimentByStatus
 } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
-import { DotExperimentsShellStore } from '@portlets/dot-experiments/dot-experiments-shell/store/dot-experiments-shell-store.service';
+import { ActivatedRoute } from '@angular/router';
 
 export interface DotExperimentsState {
+    pageId: string;
     experiments: DotExperiment[];
     filterStatus: Array<string>;
     status: LoadingState;
 }
 
 const initialState: DotExperimentsState = {
+    pageId: '',
     experiments: [],
     filterStatus: [
         DotExperimentStatusList.DRAFT,
@@ -43,6 +45,7 @@ export interface VmListExperiments {
 @Injectable()
 export class DotExperimentsListStore extends ComponentStore<DotExperimentsState> {
     // Selectors
+    readonly getPageId$ = this.select((state) => state.pageId);
     readonly getStatus$ = this.select((state) => state.status);
 
     readonly getExperiments$ = this.select((state) => state.experiments);
@@ -69,6 +72,10 @@ export class DotExperimentsListStore extends ComponentStore<DotExperimentsState>
     readonly initStore = this.updater((state) => ({
         ...state,
         status: LoadingState.INIT
+    }));
+    readonly setPageId = this.updater((state, pageId: string) => ({
+        ...state,
+        pageId
     }));
 
     readonly setComponentStatus = this.updater((state, status: LoadingState) => ({
@@ -109,14 +116,11 @@ export class DotExperimentsListStore extends ComponentStore<DotExperimentsState>
     readonly loadExperiments = this.effect<void>(
         pipe(
             tap(() => this.setComponentStatus(LoadingState.LOADING)),
-            withLatestFrom(this.dotExperimentsShellStore.getPageId$),
+            withLatestFrom(this.getPageId$),
             switchMap(([, pageId]) =>
                 this.dotExperimentsService.get(pageId).pipe(
-                    tap(() => this.setComponentStatus(LoadingState.LOADING)),
                     tapResponse(
-                        (experiments) => {
-                            this.setExperiments(experiments);
-                        },
+                        (experiments) => this.setExperiments(experiments),
                         (error: HttpErrorResponse) => throwError(error),
                         () => this.setComponentStatus(LoadingState.LOADED)
                     )
@@ -196,10 +200,11 @@ export class DotExperimentsListStore extends ComponentStore<DotExperimentsState>
 
     constructor(
         private readonly dotExperimentsService: DotExperimentsService,
-        private readonly dotExperimentsShellStore: DotExperimentsShellStore,
         private readonly dotMessageService: DotMessageService,
-        private readonly messageService: MessageService
+        private readonly messageService: MessageService,
+        private readonly route: ActivatedRoute
     ) {
         super(initialState);
+        this.setPageId(route.snapshot.params.pageId);
     }
 }
