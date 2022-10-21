@@ -481,6 +481,8 @@ public class UtilMethods {
         if (x == null) {
             return "";
         }
+
+        DATE_TO_HTML_DATE.setTimeZone(APILocator.systemTimeZone());
         return DATE_TO_HTML_DATE.format(x);
     }
 
