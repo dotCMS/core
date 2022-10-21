@@ -11,7 +11,7 @@ import { of } from 'rxjs';
 import {
     CONTAINER_SOURCE,
     DotContainerEntity,
-    DotContainerRequest
+    DotContainerPayload
 } from '@models/container/dot-container.model';
 
 const mockBulkResponseSuccess: DotActionBulkResult = {
@@ -118,7 +118,7 @@ describe('DotContainersService', () => {
             .create({
                 title: '',
                 friendlyName: ''
-            } as DotContainerRequest)
+            } as DotContainerPayload)
             .subscribe((container: DotContainerEntity) => {
                 expect(container).toEqual(mockContainer);
             });
@@ -139,7 +139,7 @@ describe('DotContainersService', () => {
             .update({
                 title: '',
                 friendlyName: ''
-            } as DotContainerRequest)
+            } as DotContainerPayload)
             .subscribe((container) => {
                 expect(container).toEqual(mockContainer);
             });

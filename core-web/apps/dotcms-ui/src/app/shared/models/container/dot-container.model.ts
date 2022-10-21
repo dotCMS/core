@@ -32,7 +32,7 @@ export interface DotContainer {
     disableInteraction?: boolean;
 }
 
-export interface DotContainerRequest {
+export interface DotContainerPayload {
     identifier: string;
     title: string;
     friendlyName: string;

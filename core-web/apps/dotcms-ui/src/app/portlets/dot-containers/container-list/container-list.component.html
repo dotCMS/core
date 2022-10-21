@@ -50,15 +50,6 @@
                     ></p-menu>
                 </div>
             </div>
-            <dot-empty-state
-                [rows]="10"
-                [colsTextWidth]="[60, 50, 60, 80]"
-                [title]="'message.container.empty.title' | dm"
-                [content]="'message.container.empty.content' | dm"
-                [buttonLabel]="'message.container.empty.button.label' | dm"
-                (buttonClick)="handleEmptyStateButtonClick()"
-                icon="web"
-            ></dot-empty-state>
 
             <ng-template #beforeSearchTemplate>
                 <dot-base-type-selector></dot-base-type-selector>

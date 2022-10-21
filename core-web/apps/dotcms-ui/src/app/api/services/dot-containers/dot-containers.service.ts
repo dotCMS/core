@@ -10,7 +10,7 @@ import { DotActionBulkResult } from '@models/dot-action-bulk-result/dot-action-b
 import {
     DotContainer,
     DotContainerEntity,
-    DotContainerRequest
+    DotContainerPayload
 } from '@dotcms/app/shared/models/container/dot-container.model';
 
 export const CONTAINER_API_URL = '/api/v1/containers/';
@@ -80,7 +80,7 @@ export class DotContainersService {
      * @memberof DotContainersService
      */
 
-    create(values: DotContainerRequest): Observable<DotContainerEntity> {
+    create(values: DotContainerPayload): Observable<DotContainerEntity> {
         return this.request<DotContainerEntity>({
             method: 'POST',
             url: CONTAINER_API_URL,
@@ -91,11 +91,11 @@ export class DotContainersService {
     /**
      * Updates a container
      *
-     * @param {DotContainerRequest} values
+     * @param {DotContainerPayload} values
      * @returns Observable<DotContainer>
      * @memberof DotContainersService
      */
-    update(values: DotContainerRequest): Observable<DotContainerEntity> {
+    update(values: DotContainerPayload): Observable<DotContainerEntity> {
         return this.request<DotContainerEntity>({
             method: 'PUT',
             url: CONTAINER_API_URL,

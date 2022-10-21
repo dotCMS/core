@@ -16,9 +16,6 @@
 .container-listing ::ng-deep {
     overflow-y: auto;
     height: 100%;
-    .p-datatable .p-paginator-bottom {
-        border: none;
-    }
 }
 
 dot-base-type-selector {

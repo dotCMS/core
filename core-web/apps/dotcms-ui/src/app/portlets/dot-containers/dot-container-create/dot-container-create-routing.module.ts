@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { DotContainerCreateComponent } from './dot-container-create.component';
-import { DotContainerEditResolver } from './resolvers/dot-container-create.resolver';
+import { DotContainerEditResolver } from './resolvers/dot-container-edit.resolver';
 
 const routes: Routes = [
     {

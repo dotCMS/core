@@ -8,7 +8,7 @@ import { DotGlobalMessageService } from '@components/_common/dot-global-message/
 import {
     DotContainer,
     DotContainerEntity,
-    DotContainerRequest,
+    DotContainerPayload,
     DotContainerStructure
 } from '@dotcms/app/shared/models/container/dot-container.model';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
@@ -146,9 +146,9 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
         }
     );
 
-    readonly saveContainer = this.effect((origin$: Observable<DotContainerRequest>) => {
+    readonly saveContainer = this.effect((origin$: Observable<DotContainerPayload>) => {
         return origin$.pipe(
-            switchMap((container: DotContainerRequest) => {
+            switchMap((container: DotContainerPayload) => {
                 this.dotGlobalMessageService.loading(this.dotMessageService.get('publishing'));
 
                 return this.dotContainersService.create(container);
@@ -168,9 +168,9 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
         );
     });
 
-    readonly editContainer = this.effect((origin$: Observable<DotContainerRequest>) => {
+    readonly editContainer = this.effect((origin$: Observable<DotContainerPayload>) => {
         return origin$.pipe(
-            switchMap((container: DotContainerRequest) => {
+            switchMap((container: DotContainerPayload) => {
                 this.dotGlobalMessageService.loading(this.dotMessageService.get('update'));
 
                 return this.dotContainersService.update(container);
