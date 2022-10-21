@@ -5,6 +5,9 @@ import { Editor } from '@tiptap/core';
 
 import { NodeTypes, CustomNodeTypes } from '@dotcms/block-editor';
 
+const aTagRex = new RegExp(/<a(|\s+[^>]*)>(\s|\n|<img[^>]*src="[^"]*"[^>]*>)*?<\/a>/gm);
+const imgTagRex = new RegExp(/<img[^>]*src="[^"]*"[^>]*>/gm);
+
 /**
  * Get the parent node of the ResolvedPos sent
  * @param selectionStart ResolvedPos
@@ -137,4 +140,40 @@ export const deleteSelectionNode = (editor: Editor, selectionRange: SelectionRan
             editor.chain().deleteNode(selectionParentNode.type).blur().run();
             break;
     }
+};
+
+export const formatHTML = (html: string) => {
+    const pRex = new RegExp(/<p(|\s+[^>]*)>(.|\n)*?<\/p>/gm);
+    const liRex = new RegExp(/<li(|\s+[^>]*)>(.|\n)*?<\/li>/gm);
+    const listRex = new RegExp(/<(ul|ol)(|\s+[^>]*)>(.|\n)*?<\/(ul|ol)>/gm);
+
+    return html
+        .replace(pRex, (content) => replaceInlineContent(content))
+        .replace(liRex, (content) => replaceInlineContent(content))
+        .replace(listRex, (content) => replaceInlineContent(content));
+};
+
+export const replaceInlineContent = (content) => {
+    // Get Images inside <a> Tag
+    const inlineContent = content.replace(aTagRex, (content) => {
+        const container = document.createElement('div');
+        container.innerHTML = content;
+        const href = container.querySelector('a').getAttribute('href');
+
+        return content
+            .replace(/<a(|\s+[^>]*)>/gm, '')
+            .replace(/<a\/>/gm, '')
+            .replace('src="', `href="${href}" src="`);
+    });
+
+    const images = inlineContent.match(imgTagRex) || [];
+
+    // Check that after removing the images, it's not empty
+    const text = new DOMParser().parseFromString(inlineContent, 'text/html').documentElement
+        .textContent;
+
+    // Move the <img/> tag to the end of the <p> tag.
+    return text.trim().length > 0
+        ? inlineContent.replace(imgTagRex, '') + images.join('')
+        : images.join('');
 };

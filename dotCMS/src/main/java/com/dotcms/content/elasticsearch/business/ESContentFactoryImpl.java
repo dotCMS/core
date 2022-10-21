@@ -16,16 +16,14 @@ import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
-import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FileUtils;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.system.SimpleMapAppContext;
 import com.dotcms.util.CollectionsUtils;
@@ -73,7 +71,6 @@ import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.NumberUtil;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
@@ -1038,7 +1035,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	@Override
 	protected Contentlet findContentletByIdentifier(String identifier, Boolean live, Long languageId) throws DotDataException {
-        return findContentletByIdentifier(identifier, live, languageId, VariantAPI.DEFAULT_VARIANT.identifier());
+        return findContentletByIdentifier(identifier, live, languageId, VariantAPI.DEFAULT_VARIANT.name());
     }
 
     @Override

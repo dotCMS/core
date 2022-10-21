@@ -19,45 +19,7 @@ public class VariantCacheTest {
     }
 
     /**
-     * Method to test: {@link VariantCacheImpl#put(Variant)} and {@link VariantCacheImpl#getById(String)}
-     * When: Add a Variant
-     * Should: be able to get it by ID
-     */
-    @Test
-    public void getVariantById(){
-        final Variant variant = new VariantDataGen().nextPersisted();
-
-        CacheLocator.getVariantCache().put(variant);
-
-        final Variant variantById = CacheLocator.getVariantCache()
-                .getById(variant.identifier());
-
-        assertEquals(variant.identifier(), variantById.identifier());
-        assertEquals(variant.name(), variantById.name());
-        assertEquals(variant.archived(), variantById.archived());
-    }
-
-    /**
-     * Method to test: {@link VariantCacheImpl#putById(String, Variant)} (Variant)} and {@link VariantCacheImpl#getById(String)}
-     * When: Put a Variant by ID
-     * Should: be able to get it by the same ID
-     */
-    @Test
-    public void putVariantById(){
-        final Variant variant = new VariantDataGen().nextPersisted();
-
-        CacheLocator.getVariantCache().putById("ANY_ID", variant);
-
-        final Variant variantById = CacheLocator.getVariantCache()
-                .getById("ANY_ID");
-
-        assertEquals(variant.identifier(), variantById.identifier());
-        assertEquals(variant.name(), variantById.name());
-        assertEquals(variant.archived(), variantById.archived());
-    }
-
-    /**
-     * Method to test: {@link VariantCacheImpl#put(Variant)} and {@link VariantCacheImpl#getByName(String)} (String)}
+     * Method to test: {@link VariantCacheImpl#put(Variant)} and {@link VariantCacheImpl#get(String)} (String)}
      * When: Add a Variant
      * Should: be able to get it by Name
      */
@@ -68,15 +30,15 @@ public class VariantCacheTest {
         CacheLocator.getVariantCache().put(variant);
 
         final Variant variantById = CacheLocator.getVariantCache()
-                .getByName(variant.name());
+                .get(variant.name());
 
-        assertEquals(variant.identifier(), variantById.identifier());
+        assertEquals(variant.name(), variantById.name());
         assertEquals(variant.name(), variantById.name());
         assertEquals(variant.archived(), variantById.archived());
     }
 
     /**
-     * Method to test: {@link VariantCacheImpl#putByName(String, Variant)} (Variant)} and {@link VariantCacheImpl#getByName(String)} (String)}
+     * Method to test: {@link VariantCacheImpl#put(String, Variant)} (Variant)} and {@link VariantCacheImpl#get(String)} (String)}
      * When: Add a Variant by name
      * Should: be able to get it by the same Name
      */
@@ -84,60 +46,41 @@ public class VariantCacheTest {
     public void putVariantByName(){
         final Variant variant = new VariantDataGen().nextPersisted();
 
-        CacheLocator.getVariantCache().putByName("ANY_NAME", variant);
+        CacheLocator.getVariantCache().put("ANY_NAME", variant);
 
         final Variant variantById = CacheLocator.getVariantCache()
-                .getByName("ANY_NAME");
+                .get("ANY_NAME");
 
-        assertEquals(variant.identifier(), variantById.identifier());
+        assertEquals(variant.name(), variantById.name());
         assertEquals(variant.name(), variantById.name());
         assertEquals(variant.archived(), variantById.archived());
     }
 
     /**
-     * Method to test: {@link VariantCacheImpl#getById(String)}
-     * When: Call the method with an id that not was put before
-     * Should: return null
-     */
-    @Test
-    public void getVariantByIdNotExists(){
-        assertNull(CacheLocator.getVariantCache().getById("NotExists"));
-    }
-
-    /**
-     * Method to test: {@link VariantCacheImpl#getByName(String)}
+     * Method to test: {@link VariantCacheImpl#get(String)}
      * When: Call the method with a Name that not was put before
      * Should: return null
      */
     @Test
     public void getVariantByNameNotExists(){
-        assertNull(CacheLocator.getVariantCache().getById("NotExists"));
+        assertNull(CacheLocator.getVariantCache().get("NotExists"));
     }
 
-    /**
-     * Method to test: {@link VariantCacheImpl#getById(String)}
-     * When: Call the method with null
-     * Should: throw a {@link NullPointerException}
-     */
-    @Test(expected = NullPointerException.class)
-    public void getVariantByIdWithNull(){
-        assertNull(CacheLocator.getVariantCache().getById(null));
-    }
 
     /**
-     * Method to test: {@link VariantCacheImpl#getByName(String)}
+     * Method to test: {@link VariantCacheImpl#get(String)}
      * When: Call the method with null
      * Should: throw a {@link NullPointerException}
      */
     @Test(expected = NullPointerException.class)
     public void getVariantByNameWithNull(){
-        assertNull(CacheLocator.getVariantCache().getByName(null));
+        assertNull(CacheLocator.getVariantCache().get(null));
     }
 
     /**
      * Method to test: {@link VariantCacheImpl#remove(Variant)}
      * When: Remove a Variant from cache
-     * Should: get Null when call {@link VariantCacheImpl#getByName(String)} or  {@link VariantCacheImpl#getById(String)} (String)}
+     * Should: get Null when call {@link VariantCacheImpl#get(String)}
      */
     @Test
     public void remove(){
@@ -152,7 +95,6 @@ public class VariantCacheTest {
 
         CacheLocator.getVariantCache().remove(variant);
         checkFromCacheNull(variant);
-
         checkFromCacheNotNull(variant_2);
     }
 
@@ -179,22 +121,14 @@ public class VariantCacheTest {
     }
 
     private void checkFromCacheNull(final Variant variant) {
-        final Variant variantById = CacheLocator.getVariantCache()
-                .getById(variant.identifier());
-        assertNull(variantById);
-
         final Variant variantByName = CacheLocator.getVariantCache()
-                .getByName(variant.name());
+                .get(variant.name());
         assertNull(variantByName);
     }
 
     private void checkFromCacheNotNull(final Variant variant) {
-        final Variant variantById = CacheLocator.getVariantCache()
-                .getById(variant.identifier());
-        assertNotNull(variantById);
-
         final Variant variantByName = CacheLocator.getVariantCache()
-                .getByName(variant.name());
+                .get(variant.name());
         assertNotNull(variantByName);
     }
 }

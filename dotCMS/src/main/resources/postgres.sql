@@ -2486,8 +2486,8 @@ CREATE TABLE shedlock(name VARCHAR(64) NOT NULL, lock_until timestamptz NOT NULL
 
 
 create table variant (
-     id varchar(255) primary key,
-     name varchar(255) not null UNIQUE,
+     name varchar(255) primary key,
+     description varchar(255) not null,
      archived boolean NOT NULL default false
 );
 
@@ -2504,7 +2504,8 @@ create table experiment (
      creation_date timestamptz not null,
      created_by varchar(255) not null,
      last_modified_by varchar(255) not null,
-     goals jsonb
+     goals jsonb,
+     lookback_window integer not null
 );
 
 CREATE INDEX idx_exp_pageid ON experiment (page_id);

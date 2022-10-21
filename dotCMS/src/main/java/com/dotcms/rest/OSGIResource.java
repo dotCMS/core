@@ -25,7 +25,7 @@ import org.apache.felix.framework.OSGIUtil;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.server.JSONP;
 import org.osgi.framework.Bundle;
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import org.apache.commons.io.IOUtils;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.MultiPartUtils;
 import com.dotmarketing.util.Logger;

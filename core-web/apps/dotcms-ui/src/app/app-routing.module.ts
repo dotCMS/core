@@ -17,7 +17,7 @@ import { DotCustomReuseStrategyService } from '@shared/dot-custom-reuse-strategy
 
 const PORTLETS_ANGULAR = [
     {
-        path: 'container-new',
+        path: 'containers',
         loadChildren: () =>
             import('@dotcms/app/portlets/dot-containers/dot-containers.module').then(
                 (m) => m.DotContainersModule
@@ -31,16 +31,16 @@ const PORTLETS_ANGULAR = [
             )
     },
     {
+        path: 'templates',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
-        path: 'templates',
         loadChildren: () =>
             import('@portlets/dot-templates/dot-templates.module').then((m) => m.DotTemplatesModule)
     },
     {
+        path: 'content-types-angular',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
-        path: 'content-types-angular',
         data: {
             reuseRoute: false
         },
@@ -50,9 +50,9 @@ const PORTLETS_ANGULAR = [
             )
     },
     {
+        path: 'forms',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
-        path: 'forms',
         loadChildren: () =>
             import('@portlets/dot-form-builder/dot-form-builder.module').then(
                 (m) => m.DotFormBuilderModule
@@ -62,9 +62,9 @@ const PORTLETS_ANGULAR = [
         }
     },
     {
+        path: 'rules',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
-        path: 'rules',
         loadChildren: () =>
             import('@portlets/dot-rules/dot-rules.module').then((m) => m.DotRulesModule)
     },
@@ -93,8 +93,8 @@ const PORTLETS_ANGULAR = [
             import('@portlets/dot-edit-page/dot-edit-page.module').then((m) => m.DotEditPageModule)
     },
     {
-        canActivate: [MenuGuardService],
         path: '',
+        canActivate: [MenuGuardService],
         children: []
     }
 ];
@@ -153,8 +153,8 @@ const PORTLETS_IFRAME = [
 
 const appRoutes: Routes = [
     {
-        canActivate: [PublicAuthGuardService],
         path: 'public',
+        canActivate: [PublicAuthGuardService],
         component: DotLoginPageComponent,
         resolve: {
             loginFormInfo: DotLoginPageResolver
@@ -163,6 +163,7 @@ const appRoutes: Routes = [
             import('@components/login/dot-login-page.module').then((m) => m.DotLoginPageModule)
     },
     {
+        path: 'fromCore',
         canActivate: [AuthGuardService],
         children: [
             {
@@ -172,18 +173,17 @@ const appRoutes: Routes = [
                 canActivate: [AuthGuardService]
             }
         ],
-        component: MainCoreLegacyComponent,
-        path: 'fromCore'
+        component: MainCoreLegacyComponent
     },
     {
-        component: DotLogOutContainerComponent,
-        path: 'logout'
+        path: 'logout',
+        component: DotLogOutContainerComponent
     },
     {
+        path: '',
         canActivate: [AuthGuardService],
         component: MainComponentLegacyComponent,
-        children: [...PORTLETS_IFRAME, ...PORTLETS_ANGULAR],
-        path: ''
+        children: [...PORTLETS_IFRAME, ...PORTLETS_ANGULAR]
     },
     {
         canActivate: [DefaultGuardService],

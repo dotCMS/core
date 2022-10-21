@@ -253,21 +253,12 @@
 	<servlet>
 		<servlet-name>ShortyServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.ShortyServlet</servlet-class>
-	</servlet>    
-	<servlet>
-		<servlet-name>CategoriesServlet</servlet-name>
-		<servlet-class>com.dotmarketing.servlets.JSONCategoriesServlet</servlet-class>
 	</servlet>
     
     <servlet>
         <servlet-name>login_edit_mode</servlet-name>
         <servlet-class>com.dotmarketing.servlets.LoginEditModeServlet</servlet-class>
     </servlet>
-	
-	<servlet>
-		<servlet-name>TailLogServlet</servlet-name>
-		<servlet-class>com.dotmarketing.servlets.taillog.TailLogServlet</servlet-class>
-	</servlet>
 	
 	<servlet>
 	  <servlet-name>dwr-invoker</servlet-name>
@@ -440,11 +431,7 @@
         <servlet-name>login_edit_mode</servlet-name>
         <url-pattern>/admin</url-pattern>
     </servlet-mapping>
-	
-	<servlet-mapping>
-		<servlet-name>TailLogServlet</servlet-name>
-		<url-pattern>/dotTailLogServlet/*</url-pattern>
-	</servlet-mapping>
+
 	<servlet-mapping>
 		<servlet-name>WebDav</servlet-name>
 		<url-pattern>/webdav/autopub/*</url-pattern>
@@ -491,11 +478,6 @@
     <servlet-mapping>
 	    <servlet-name>BinaryExporterServlet</servlet-name>
 	    <url-pattern>/contentAsset/*</url-pattern>
-	</servlet-mapping>
-	
-	<servlet-mapping>
-		<servlet-name>CategoriesServlet</servlet-name>
-		<url-pattern>/categoriesServlet</url-pattern>
 	</servlet-mapping>
 	
 	<servlet-mapping>

@@ -26,7 +26,7 @@ import java.util.Set;
  */
 public class ContentTypeInitializer implements DotInitializer {
 
-    private static final String FAVORITE_PAGE_VAR_NAME = "favoritePage";
+    private static final String FAVORITE_PAGE_VAR_NAME = "dotFavoritePage";
 
     @Override
     public void init() {
@@ -38,12 +38,23 @@ public class ContentTypeInitializer implements DotInitializer {
 
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
 
-        final ContentType contentType = Try.of(()->contentTypeAPI.find(FAVORITE_PAGE_VAR_NAME)).getOrNull();
+        //I'll try to remove the existing content type using the legacy var name (favoritePage), as it was renamed to dotFavoritePage
+        //By the time it was created as `favoritePage`, this feature had not been released, so I don't need to worry about existing pieces of content
+        ContentType contentType = Try.of(()->contentTypeAPI.find("favoritePage")).getOrNull();
+        if (null != contentType){
+            try {
+                contentTypeAPI.delete(contentType);
+            } catch (DotSecurityException | DotDataException e) {
+                Logger.warnAndDebug(this.getClass(), e);
+            }
+        }
+
+        contentType = Try.of(()->contentTypeAPI.find(FAVORITE_PAGE_VAR_NAME)).getOrNull();
         if (null == contentType) {
 
             Logger.info(this, "Creating the Favorite Page Content Type...");
             final ImmutableSimpleContentType.Builder builder = ImmutableSimpleContentType.builder();
-            builder.name("Favorite Page");
+            builder.name("Dot Favorite Page");
             builder.variable(FAVORITE_PAGE_VAR_NAME);
             final SimpleContentType simpleContentType = builder.build();
 
@@ -52,7 +63,7 @@ public class ContentTypeInitializer implements DotInitializer {
                 final List<Field> newFields = new ArrayList<>();
                 final ImmutableBinaryField screenshotField = ImmutableBinaryField.builder().name("Screenshot").variable("screenshot").build();
                 final ImmutableTextField   titleField      = ImmutableTextField.builder().name("title").variable("title").build();
-                final ImmutableTextField   urlField        = ImmutableTextField.builder().name("url").variable("url").required(true).indexed(true).build();
+                final ImmutableTextField   urlField        = ImmutableTextField.builder().name("url").variable("url").unique(true).required(true).indexed(true).build();
                 final ImmutableTextField   orderField      = ImmutableTextField.builder().name("order").dataType(DataTypes.INTEGER).variable("order").build();
 
                 newFields.add(screenshotField);

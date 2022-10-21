@@ -4,15 +4,20 @@ export enum CONTAINER_SOURCE {
 }
 
 export interface DotContainer {
+    archived?: boolean;
     categoryId?: string;
     deleted?: boolean;
+    live?: boolean;
+    working?: boolean;
+    locked?: boolean;
     friendlyName?: string;
     path?: string;
-    identifier: string;
-    name: string;
-    type: string;
-    source: CONTAINER_SOURCE;
-    parentPermissionable: {
+    identifier?: string;
+    name?: string;
+    type?: string;
+    title?: string;
+    source?: CONTAINER_SOURCE;
+    parentPermissionable?: {
         hostname: string;
     };
 }

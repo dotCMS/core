@@ -15,16 +15,17 @@ import com.dotcms.rest.api.FailedResultView;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.DotPreconditions;
+import com.dotcms.util.JsonUtil;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.ContainerPaginator;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -48,19 +49,21 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.liferay.portal.model.User;
+import java.io.IOException;
+import java.io.Serializable;
+import java.io.StringWriter;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
-import org.apache.commons.io.IOUtils;
-import org.apache.velocity.exception.MethodInvocationException;
-import org.apache.velocity.exception.ResourceNotFoundException;
-import org.glassfish.jersey.server.JSONP;
-
+import java.util.Map;
+import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -76,14 +79,10 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.IOException;
-import java.io.Serializable;
-import java.io.StringWriter;
-import java.lang.reflect.InvocationTargetException;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import org.apache.commons.io.IOUtils;
+import org.apache.velocity.exception.MethodInvocationException;
+import org.apache.velocity.exception.ResourceNotFoundException;
+import org.glassfish.jersey.server.JSONP;
 
 /**
  * This resource provides all the different end-points associated to information and actions that
@@ -656,8 +655,9 @@ public class ContainerResource implements Serializable {
         final PageMode pageMode = PageMode.get(request);
         Container container     = new Container();
 
-        ActivityLogger.logInfo(this.getClass(), "Save Container",
-                "User " + user.getPrimaryKey() + " saved " + container.getTitle(), host.getHostname());
+
+        Logger.debug(this,
+                () -> "Adding container. Request payload is : " + JsonUtil.getJsonStringFromObject(containerForm));
 
         container.setMaxContentlets(containerForm.getMaxContentlets());
         container.setNotes(containerForm.getNotes());
@@ -673,7 +673,14 @@ public class ContainerResource implements Serializable {
         container.setShowOnMenu(containerForm.isShowOnMenu());
         container.setTitle(containerForm.getTitle());
 
+        if(containerForm.getMaxContentlets() == 0){
+            container.setCode(containerForm.getCode());
+        }
+
         this.containerAPI.save(container, containerForm.getContainerStructures(), host, user, pageMode.respectAnonPerms);
+
+        ActivityLogger.logInfo(this.getClass(), "Save Container",
+                "User " + user.getPrimaryKey() + " saved " + container.getTitle(), host.getHostname());
 
         Logger.debug(this, ()-> "The container: " + container.getIdentifier() + " has been saved");
 
@@ -728,6 +735,10 @@ public class ContainerResource implements Serializable {
         container.setShowOnMenu(containerForm.isShowOnMenu());
         container.setTitle(containerForm.getTitle());
 
+        if(containerForm.getMaxContentlets() == 0){
+            container.setCode(containerForm.getCode());
+        }
+
         this.containerAPI.save(container, containerForm.getContainerStructures(), host, user, pageMode.respectAnonPerms);
 
         Logger.error(this, "The container: " + container.getIdentifier() + " has been updated");
@@ -753,7 +764,8 @@ public class ContainerResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response getLiveById(@Context final HttpServletRequest  httpRequest,
                                       @Context final HttpServletResponse httpResponse,
-                                      @QueryParam("containerId")  final String containerId) throws DotSecurityException, DotDataException {
+                                      @QueryParam("containerId")  final String containerId,
+                                      @QueryParam("includeContentType")  final boolean includeContentType) throws DotSecurityException, DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
@@ -766,6 +778,11 @@ public class ContainerResource implements Serializable {
 
             Logger.error(this, "Live Version of the Container with Id: " + containerId + " does not exist");
             throw new DoesNotExistException("Live Version of the Container with Id: " + containerId + " does not exist");
+        }
+
+        if(includeContentType){
+            List<ContainerStructure> structures = this.containerAPI.getContainerStructures(container);
+            return Response.ok(new ResponseEntityView(ContainerResourceHelper.getInstance().toResponseEntityContainerWithContentTypesView(container, structures))).build();
         }
 
         return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
@@ -789,7 +806,8 @@ public class ContainerResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response getWorkingById(@Context final HttpServletRequest  request,
                                          @Context final HttpServletResponse httpResponse,
-                                         @QueryParam("containerId") final String containerId) throws DotSecurityException, DotDataException {
+                                         @QueryParam("containerId") final String containerId,
+                                         @QueryParam("includeContentType")  final boolean includeContentType) throws DotSecurityException, DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, httpResponse).rejectWhenNoUser(true).init();
@@ -803,6 +821,11 @@ public class ContainerResource implements Serializable {
 
             Logger.error(this, "Working Version of the Container with Id: " + containerId + " does not exist");
             throw new DoesNotExistException("Working Version of the Container with Id: " + containerId + " does not exist");
+        }
+
+        if(includeContentType){
+            List<ContainerStructure> structures = this.containerAPI.getContainerStructures(container);
+            return Response.ok(new ResponseEntityView(ContainerResourceHelper.getInstance().toResponseEntityContainerWithContentTypesView(container, structures))).build();
         }
 
         return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
@@ -1139,7 +1162,7 @@ public class ContainerResource implements Serializable {
      * @throws DotSecurityException
      */
     @DELETE
-    @Path("bulkdelete")
+    @Path("_bulkdelete")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -1153,6 +1176,9 @@ public class ContainerResource implements Serializable {
         final PageMode pageMode = PageMode.get(request);
         Long deletedContainersCount  = 0L;
         final List<FailedResultView> failedToDelete  = new ArrayList<>();
+
+        Logger.debug(this,
+                () -> "Deleting containers in bulk. Request payload is : {" + String.join(",", containersToDelete) + "}");
 
         DotPreconditions.checkArgument(UtilMethods.isSet(containersToDelete),
                 "The body must send a collection of container identifier such as: " +
@@ -1213,11 +1239,12 @@ public class ContainerResource implements Serializable {
         Long publishedContainersCount = 0L;
         final List<FailedResultView> failedToPublish    = new ArrayList<>();
 
-        if (!UtilMethods.isSet(containersToPublish)) {
+        Logger.debug(this,
+                () -> "Publishing containers in bulk. Request payload is : {" + String.join(",", containersToPublish) + "}");
 
-            throw new IllegalArgumentException("The body must send a collection of container identifiers such as: " +
-                    "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
-        }
+        DotPreconditions.checkArgument(UtilMethods.isSet(containersToPublish),
+                "The body must send a collection of container identifier such as: " +
+                        "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
 
         for (final String containerId : containersToPublish) {
             try{
@@ -1272,11 +1299,12 @@ public class ContainerResource implements Serializable {
         Long unpublishedContainersCount = 0L;
         final List<FailedResultView> failedToUnpublish    = new ArrayList<>();
 
-        if (!UtilMethods.isSet(containersToUnpublish)) {
+        Logger.debug(this,
+                () -> "Unpublishing containers in bulk. Request payload is : {" + String.join(",", containersToUnpublish) + "}");
 
-            throw new IllegalArgumentException("The body must send a collection of container identifiers such as: " +
-                    "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
-        }
+        DotPreconditions.checkArgument(UtilMethods.isSet(containersToUnpublish),
+                "The body must send a collection of container identifier such as: " +
+                        "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
 
         for (final String containerId : containersToUnpublish) {
             try{
@@ -1331,11 +1359,13 @@ public class ContainerResource implements Serializable {
         Long archivedContainersCount = 0L;
         final List<FailedResultView> failedToArchive    = new ArrayList<>();
 
-        if (!UtilMethods.isSet(containersToArchive)) {
+        Logger.debug(this,
+                () -> "Archiving containers in bulk. Request payload is : {" + String.join(",", containersToArchive) + "}");
 
-            throw new IllegalArgumentException("The body must send a collection of container identifier such as: " +
-                    "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
-        }
+        DotPreconditions.checkArgument(UtilMethods.isSet(containersToArchive),
+                "The body must send a collection of container identifier such as: " +
+                        "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
+
 
         for(final String containerId : containersToArchive){
             try{
@@ -1391,11 +1421,12 @@ public class ContainerResource implements Serializable {
         Long unarchivedContainersCount = 0L;
         final List<FailedResultView> failedToUnarchive    = new ArrayList<>();
 
-        if (!UtilMethods.isSet(containersToUnarchive)) {
+        Logger.debug(this,
+                () -> "Unarchiving containers in bulk. Request payload is : {" + String.join(",", containersToUnarchive) + "}");
 
-            throw new IllegalArgumentException("The body must send a collection of container identifier such as: " +
-                    "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
-        }
+        DotPreconditions.checkArgument(UtilMethods.isSet(containersToUnarchive),
+                "The body must send a collection of container identifier such as: " +
+                        "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
 
         for(final String containerId : containersToUnarchive){
             try{

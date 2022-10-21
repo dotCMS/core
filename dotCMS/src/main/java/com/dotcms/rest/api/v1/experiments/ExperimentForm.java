@@ -1,13 +1,15 @@
 package com.dotcms.rest.api.v1.experiments;
 
-import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Goals;
 import com.dotcms.experiments.model.Scheduling;
+import com.dotcms.experiments.model.TargetingCondition;
 import com.dotcms.experiments.model.TrafficProportion;
 import com.dotcms.repackage.javax.validation.constraints.Size;
 import com.dotcms.rest.api.Validated;
 import com.dotmarketing.business.APILocator;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * From to create/update an {@link com.dotcms.experiments.model.Experiment} from REST
@@ -24,6 +26,8 @@ public class ExperimentForm extends Validated {
     private final TrafficProportion trafficProportion;
     private final Scheduling scheduling;
     private final Goals goals;
+    private final List<TargetingCondition> targetingConditions;
+    private final int lookbackWindow;
 
     private ExperimentForm(final Builder builder) {
         this.name = builder.name;
@@ -33,6 +37,8 @@ public class ExperimentForm extends Validated {
         this.trafficProportion = builder.trafficProportion;
         this.scheduling = builder.scheduling;
         this.goals = builder.goals;
+        this.targetingConditions = builder.targetingConditions;
+        this.lookbackWindow = builder.lookbackWindow;
         checkValid();
     }
 
@@ -69,6 +75,14 @@ public class ExperimentForm extends Validated {
         return goals;
     }
 
+    public List<TargetingCondition> getTargetingConditions() {
+        return targetingConditions;
+    }
+
+    public int getLookbackWindow() {
+        return lookbackWindow;
+    }
+
     public static final class Builder {
         private String name;
         private String description;
@@ -77,6 +91,8 @@ public class ExperimentForm extends Validated {
         private TrafficProportion trafficProportion;
         private Scheduling scheduling;
         private Goals goals;
+        private List<TargetingCondition> targetingConditions = new ArrayList<>();
+        private int lookbackWindow =-1;
 
         private Builder() {
         }
@@ -112,6 +128,16 @@ public class ExperimentForm extends Validated {
 
         public Builder withScheduling(Scheduling scheduling) {
             this.scheduling = scheduling;
+            return this;
+        }
+
+        public Builder withLookbackWindow(int lookbackWindow) {
+            this.lookbackWindow = lookbackWindow;
+            return this;
+        }
+
+        public Builder withTargetingConditions(List<TargetingCondition> targetingConditions) {
+            this.targetingConditions = targetingConditions;
             return this;
         }
 

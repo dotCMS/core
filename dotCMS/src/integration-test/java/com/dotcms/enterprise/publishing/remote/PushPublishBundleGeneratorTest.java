@@ -578,11 +578,11 @@ public class PushPublishBundleGeneratorTest extends IntegrationTestBase {
         Assert.assertNotNull(listOfAssetsWithNewFilter);
         Assert.assertFalse(listOfAssetsWithNewFilter.getStructures().isEmpty());
         Assert.assertTrue(listOfAssetsWithNewFilter.getStructures().contains(parentContentType.id()));
-        Assert.assertFalse(listOfAssetsWithNewFilter.getStructures().contains(childContentType.id()));
+        Assert.assertTrue(listOfAssetsWithNewFilter.getStructures().contains(childContentType.id()));
         Assert.assertFalse(listOfAssetsWithNewFilter.getContentlets().isEmpty());
         Assert.assertTrue(listOfAssetsWithNewFilter.getContentlets().contains(parentContentlet.getIdentifier()));
         Assert.assertFalse(listOfAssetsWithNewFilter.getContentlets().contains(childContentlet.getIdentifier()));
-        Assert.assertTrue(listOfAssetsWithNewFilter.getRelationships().isEmpty());
+        Assert.assertFalse(listOfAssetsWithNewFilter.getRelationships().isEmpty());
     }
 
     /**

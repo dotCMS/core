@@ -4,6 +4,7 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import io.vavr.control.Try;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -31,8 +32,10 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
     public void test_content_type_init() throws Exception {
         // make sure its cached. see https://github.com/dotCMS/dotCMS/issues/2465
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
-        ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
-                .find("favoritePage");
+
+        ContentType contentType = Try.of(()-> APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find("dotFavoritePage")).getOrNull();
+
         if (null != contentType) {
 
             contentTypeAPI.delete(contentType);
@@ -40,10 +43,16 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
 
         new ContentTypeInitializer().init();
 
-        contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
-                .find("favoritePage");
+        contentType = Try.of(()->APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find("dotFavoritePage")).getOrNull();
 
-        Assert.assertNotNull("The content type favoritePage should be not null", contentType);
+        Assert.assertNotNull("The content type dotFavoritePage should be not null", contentType);
 
+        //we make sure the url field is unique
+        Assert.assertTrue(contentType.fieldMap().get("url").unique());
+
+        //we make sure there is no content type using the legacy name
+        Assert.assertNull(Try.of(()->APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find("favoritePage")).getOrNull());
     }
 }

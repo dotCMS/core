@@ -2,9 +2,7 @@ package com.dotmarketing.business;
 
 import static com.dotcms.util.CollectionsUtils.set;
 
-import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Identifier;
@@ -325,25 +323,25 @@ public class VersionableFactoryImpl extends VersionableFactory {
     @Override
     protected Optional<ContentletVersionInfo> getContentletVersionInfo(final String identifier,
 			final long lang) throws DotDataException, DotStateException {
-        return getContentletVersionInfo(identifier, lang, VariantAPI.DEFAULT_VARIANT.identifier());
+        return getContentletVersionInfo(identifier, lang, VariantAPI.DEFAULT_VARIANT.name());
     }
 
 	@Override
 	public Optional<ContentletVersionInfo> getContentletVersionInfo(
-			final String identifier, final long lang, final String variantId) throws DotDataException, DotStateException{
+			final String identifier, final long lang, final String variantName) throws DotDataException, DotStateException{
 
 		if (DbConnectionFactory.inTransaction()) {
-			return findContentletVersionInfoInDB(identifier, lang, variantId);
+			return findContentletVersionInfoInDB(identifier, lang, variantName);
 		}
 
-		ContentletVersionInfo contentVersionInfo = this.icache.getContentVersionInfo(identifier, lang, variantId);
+		ContentletVersionInfo contentVersionInfo = this.icache.getContentVersionInfo(identifier, lang, variantName);
 		if(contentVersionInfo!=null && fourOhFour.equals(contentVersionInfo.getWorkingInode())) {
 			return Optional.empty();
 		}else if(contentVersionInfo!=null ){
 			return Optional.of(contentVersionInfo);
 		}
 
-		final Optional<ContentletVersionInfo> optionalInfo = findContentletVersionInfoInDB(identifier, lang, variantId);
+		final Optional<ContentletVersionInfo> optionalInfo = findContentletVersionInfoInDB(identifier, lang, variantName);
 		if(optionalInfo.isPresent()){
 			this.icache.addContentletVersionInfoToCache(optionalInfo.get());
 		}else{
@@ -351,6 +349,8 @@ public class VersionableFactoryImpl extends VersionableFactory {
 			contentVersionInfo.setIdentifier(identifier);
 			contentVersionInfo.setLang(lang);
 			contentVersionInfo.setWorkingInode(fourOhFour);
+			contentVersionInfo.setVariant(variantName);
+
 			this.icache.addContentletVersionInfoToCache(contentVersionInfo);
 			return Optional.empty();
 		}
@@ -375,7 +375,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
     @Override
     protected Optional<ContentletVersionInfo> findContentletVersionInfoInDB(String identifier, long lang)throws DotDataException, DotStateException {
-		return findContentletVersionInfoInDB(identifier, lang, VariantAPI.DEFAULT_VARIANT.identifier());
+		return findContentletVersionInfoInDB(identifier, lang, VariantAPI.DEFAULT_VARIANT.name());
     }
 
 	@Override
@@ -415,7 +415,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		if (UtilMethods.isSet(cvInfo.getIdentifier())) {
 			try {
 				final Optional<ContentletVersionInfo> fromDB =
-						findContentletVersionInfoInDB(cvInfo.getIdentifier(), cvInfo.getLang());
+						findContentletVersionInfoInDB(cvInfo.getIdentifier(), cvInfo.getLang(), cvInfo.getVariant());
 				if (fromDB.isPresent()) {
 					isNew = false;
 				}
@@ -457,12 +457,12 @@ public class VersionableFactoryImpl extends VersionableFactory {
 			dotConnect.addParam(cvInfo.getVariant());
 			dotConnect.loadResult();
         }
-    	this.icache.removeContentletVersionInfoToCache(cvInfo.getIdentifier(),cvInfo.getLang());
+    	this.icache.removeContentletVersionInfoToCache(cvInfo.getIdentifier(), cvInfo.getLang(), cvInfo.getVariant());
     }
 
     @Override
     protected ContentletVersionInfo createContentletVersionInfo(Identifier identifier, long lang, String workingInode) throws DotStateException, DotDataException {
-		return createContentletVersionInfo(identifier, lang, workingInode, VariantAPI.DEFAULT_VARIANT.identifier());
+		return createContentletVersionInfo(identifier, lang, workingInode, VariantAPI.DEFAULT_VARIANT.name());
     }
 
 	@Override

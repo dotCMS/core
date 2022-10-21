@@ -189,7 +189,23 @@ public interface ContentletAPI {
 	 */
 	public Contentlet findContentletByIdentifier(String identifier, boolean live, long languageId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
 
-    /**
+	/**
+	 * Retrieves a contentlet from the Lucene index + cache first, then falls back
+	 * to the database if not found based on its identifier
+	 * @param identifier
+	 * @param live Retrieves the live version. If false retrieves the working version
+	 * @param languageId languageId The LanguageId of the content version we'd like to retrieve
+	 * @param variantId The Variant's id of the content version we'd like to retrieve
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return Contentlet Object
+	 * @throws DotSecurityException
+	 * @throws DotContentletStateException
+	 * @throws DotDataException
+	 */
+	public Contentlet findContentletByIdentifier(String identifier, boolean live, long languageId, String variantId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
+
+	/**
      * Retrieves a contentlet from the database by its identifier and the working version.
      * It includes archive content if includeDeleted is true
      * @param identifier

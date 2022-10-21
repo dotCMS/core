@@ -13,7 +13,7 @@ public interface ExperimentsFactory {
     /**
      * Saves the provided Experiment in the persistence layer
      */
-    Experiment save(final Experiment experiment) throws DotDataException;
+    void save(final Experiment experiment) throws DotDataException;
 
     /**
      * Deletes the provided Experiment from the persistence layer

@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+import { DotContainerCreateEditResolver } from './dot-container-create/resolvers/dot-container-create.resolver';
 
 const routes: Routes = [
     {
@@ -10,15 +11,26 @@ const routes: Routes = [
     {
         path: 'create',
         loadChildren: () =>
-            import('./container-create/container-create.module').then(
-                (m) => m.ContainerCreateModule
+            import('./dot-container-create/dot-container-create.module').then(
+                (m) => m.DotContainerCreateModule
             )
+    },
+    {
+        path: 'edit/:id',
+        loadChildren: () =>
+            import('./dot-container-create/dot-container-create.module').then(
+                (m) => m.DotContainerCreateModule
+            ),
+        resolve: {
+            container: DotContainerCreateEditResolver
+        }
     }
 ];
 
 @NgModule({
     declarations: [],
     imports: [RouterModule.forChild(routes)],
-    exports: [RouterModule]
+    exports: [RouterModule],
+    providers: [DotContainerCreateEditResolver]
 })
 export class DotContainersRoutingModule {}

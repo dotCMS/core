@@ -21,7 +21,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.BeforeClass;
@@ -92,11 +91,11 @@ public class VersionableFactoryImplTest {
 
         final ContentletVersionInfo contentletVersionInfo = FactoryLocator.getVersionableFactory()
                 .createContentletVersionInfo(identifier, language.getId(), contentlet.getInode(),
-                        variant.identifier());
+                        variant.name());
 
         assertEquals(contentlet.getIdentifier(), contentletVersionInfo.getIdentifier());
         assertEquals(language.getId(), contentletVersionInfo.getLang());
-        assertEquals(variant.identifier(), contentletVersionInfo.getVariant());
+        assertEquals(variant.name(), contentletVersionInfo.getVariant());
 
         final ArrayList results = new DotConnect().setSQL(
                         "select * from contentlet_version_info where identifier =? AND lang = ?")
@@ -108,7 +107,7 @@ public class VersionableFactoryImplTest {
 
         assertEquals(contentlet.getIdentifier(), ((Map) results.get(0)).get("identifier"));
         assertEquals(language.getId(), Long.parseLong(((Map) results.get(0)).get("lang").toString()));
-        assertEquals(variant.identifier(), ((Map) results.get(0)).get("variant_id"));
+        assertEquals(variant.name(), ((Map) results.get(0)).get("variant_id"));
         assertEquals(contentlet.getInode(), ((Map) results.get(0)).get("working_inode"));
     }
 
@@ -136,16 +135,16 @@ public class VersionableFactoryImplTest {
 
         assertEquals(contentlet.getIdentifier(), contentletVersionInfo.get().getIdentifier());
         assertEquals(language.getId(), contentletVersionInfo.get().getLang());
-        assertEquals(VariantAPI.DEFAULT_VARIANT.identifier(), contentletVersionInfo.get().getVariant());
+        assertEquals(VariantAPI.DEFAULT_VARIANT.name(), contentletVersionInfo.get().getVariant());
         assertEquals(contentlet.getInode(), contentletVersionInfo.get().getWorkingInode());
 
         final ContentletVersionInfo contentletVersionInfoFromCache = CacheLocator.getIdentifierCache()
                 .getContentVersionInfo(contentlet.getIdentifier(),
-                        language.getId(), VariantAPI.DEFAULT_VARIANT.identifier());
+                        language.getId(), VariantAPI.DEFAULT_VARIANT.name());
 
         assertEquals(contentlet.getIdentifier(), contentletVersionInfoFromCache.getIdentifier());
         assertEquals(language.getId(), contentletVersionInfoFromCache.getLang());
-        assertEquals(VariantAPI.DEFAULT_VARIANT.identifier(), contentletVersionInfoFromCache.getVariant());
+        assertEquals(VariantAPI.DEFAULT_VARIANT.name(), contentletVersionInfoFromCache.getVariant());
 
 
         final ContentletVersionInfo contentletVersionInfoFromCache_2 = CacheLocator.getIdentifierCache()
@@ -153,7 +152,7 @@ public class VersionableFactoryImplTest {
 
         assertEquals(contentlet.getIdentifier(), contentletVersionInfoFromCache_2.getIdentifier());
         assertEquals(language.getId(), contentletVersionInfoFromCache_2.getLang());
-        assertEquals(VariantAPI.DEFAULT_VARIANT.identifier(), contentletVersionInfoFromCache_2.getVariant());
+        assertEquals(VariantAPI.DEFAULT_VARIANT.name(), contentletVersionInfoFromCache_2.getVariant());
     }
 
     /**
@@ -180,7 +179,7 @@ public class VersionableFactoryImplTest {
 
         assertEquals(contentlet.getIdentifier(), contentletVersionInfo.get().getIdentifier());
         assertEquals(language.getId(), contentletVersionInfo.get().getLang());
-        assertEquals(VariantAPI.DEFAULT_VARIANT.identifier(), contentletVersionInfo.get().getVariant());
+        assertEquals(VariantAPI.DEFAULT_VARIANT.name(), contentletVersionInfo.get().getVariant());
         assertEquals(contentlet.getInode(), contentletVersionInfo.get().getWorkingInode());
     }
 
@@ -200,29 +199,29 @@ public class VersionableFactoryImplTest {
                 .find(contentlet.getIdentifier());
 
         FactoryLocator.getVersionableFactory()
-                .createContentletVersionInfo(identifier, language.getId(), contentlet.getInode(), VariantAPI.DEFAULT_VARIANT.identifier());
+                .createContentletVersionInfo(identifier, language.getId(), contentlet.getInode(), VariantAPI.DEFAULT_VARIANT.name());
 
         FactoryLocator.getVersionableFactory()
-                .createContentletVersionInfo(identifier, language.getId(), contentlet.getInode(), variant.identifier());
+                .createContentletVersionInfo(identifier, language.getId(), contentlet.getInode(), variant.name());
 
         final Optional<ContentletVersionInfo> contentletVersionInfo = FactoryLocator.getVersionableFactory()
-                .getContentletVersionInfo(contentlet.getIdentifier(), language.getId(), variant.identifier());
+                .getContentletVersionInfo(contentlet.getIdentifier(), language.getId(), variant.name());
 
         assertTrue(contentletVersionInfo.isPresent());
 
         assertEquals(contentlet.getIdentifier(), contentletVersionInfo.get().getIdentifier());
         assertEquals(language.getId(), contentletVersionInfo.get().getLang());
-        assertEquals(variant.identifier(), contentletVersionInfo.get().getVariant());
+        assertEquals(variant.name(), contentletVersionInfo.get().getVariant());
         assertEquals(contentlet.getInode(), contentletVersionInfo.get().getWorkingInode());
 
 
         final ContentletVersionInfo contentletVersionInfoFromCache = CacheLocator.getIdentifierCache()
                 .getContentVersionInfo(contentlet.getIdentifier(),
-                        language.getId(), variant.identifier());
+                        language.getId(), variant.name());
 
         assertEquals(contentlet.getIdentifier(), contentletVersionInfoFromCache.getIdentifier());
         assertEquals(language.getId(), contentletVersionInfoFromCache.getLang());
-        assertEquals(variant.identifier(), contentletVersionInfoFromCache.getVariant());
+        assertEquals(variant.name(), contentletVersionInfoFromCache.getVariant());
     }
 
     /**
@@ -241,20 +240,20 @@ public class VersionableFactoryImplTest {
                 .find(contentlet.getIdentifier());
 
         FactoryLocator.getVersionableFactory().createContentletVersionInfo(identifier,
-                language.getId(), contentlet.getInode(), variant.identifier());
+                language.getId(), contentlet.getInode(), variant.name());
 
 
         FactoryLocator.getVersionableFactory()
-                .createContentletVersionInfo(identifier, language.getId(), contentlet.getInode(), VariantAPI.DEFAULT_VARIANT.identifier());
+                .createContentletVersionInfo(identifier, language.getId(), contentlet.getInode(), VariantAPI.DEFAULT_VARIANT.name());
 
         final Optional<ContentletVersionInfo> contentletVersionInfo = FactoryLocator.getVersionableFactory()
-                .findContentletVersionInfoInDB(contentlet.getIdentifier(), language.getId(), variant.identifier());
+                .findContentletVersionInfoInDB(contentlet.getIdentifier(), language.getId(), variant.name());
 
         assertTrue(contentletVersionInfo.isPresent());
 
         assertEquals(contentlet.getIdentifier(), contentletVersionInfo.get().getIdentifier());
         assertEquals(language.getId(), contentletVersionInfo.get().getLang());
-        assertEquals(variant.identifier(), contentletVersionInfo.get().getVariant());
+        assertEquals(variant.name(), contentletVersionInfo.get().getVariant());
         assertEquals(contentlet.getInode(), contentletVersionInfo.get().getWorkingInode());
     }
 
@@ -285,7 +284,7 @@ public class VersionableFactoryImplTest {
                 .setSQL("UPDATE contentlet_version_info SET deleted = ? WHERE identifier = ? AND variant_id = ? AND lang = ?")
                 .addParam(true)
                 .addParam(contentlet.getIdentifier())
-                .addParam(VariantAPI.DEFAULT_VARIANT.identifier())
+                .addParam(VariantAPI.DEFAULT_VARIANT.name())
                 .addParam(language.getId())
                 .loadResult();
 
@@ -298,7 +297,7 @@ public class VersionableFactoryImplTest {
         final ArrayList<Map> results = new DotConnect()
                 .setSQL("SELECT deleted FROM contentlet_version_info WHERE identifier = ? AND variant_id = ? AND lang = ?")
                 .addParam(contentlet.getIdentifier())
-                .addParam(VariantAPI.DEFAULT_VARIANT.identifier())
+                .addParam(VariantAPI.DEFAULT_VARIANT.name())
                 .addParam(language.getId())
                 .loadResults();
 
@@ -325,11 +324,11 @@ public class VersionableFactoryImplTest {
                 .find(contentlet.getIdentifier());
 
         FactoryLocator.getVersionableFactory()
-                .createContentletVersionInfo(identifier, language.getId(), contentlet.getInode(), variant.identifier());
+                .createContentletVersionInfo(identifier, language.getId(), contentlet.getInode(), variant.name());
 
         final ContentletVersionInfo contentletVersionInfoBefore = FactoryLocator.getVersionableFactory()
                 .getContentletVersionInfo(contentlet.getIdentifier(), language.getId(),
-                        variant.identifier())
+                        variant.name())
                 .orElseThrow(() -> new AssertionError("ContentletVersioNinfo expected"));
 
         assertFalse(contentletVersionInfoBefore.isDeleted());
@@ -338,12 +337,12 @@ public class VersionableFactoryImplTest {
                 .setSQL("UPDATE contentlet_version_info SET deleted = ? WHERE identifier = ? AND variant_id = ? AND lang = ?")
                 .addParam(true)
                 .addParam(contentlet.getIdentifier())
-                .addParam(variant.identifier())
+                .addParam(variant.name())
                 .addParam(language.getId())
                 .loadResult();
 
         final ContentletVersionInfo contentletVersionInfoAfter = FactoryLocator.getVersionableFactory()
-                .getContentletVersionInfo(contentlet.getIdentifier(), language.getId(), variant.identifier())
+                .getContentletVersionInfo(contentlet.getIdentifier(), language.getId(), variant.name())
                 .orElseThrow(() -> new AssertionError("ContentletVersioNinfo expected"));
 
         assertFalse(contentletVersionInfoAfter.isDeleted());
@@ -351,7 +350,7 @@ public class VersionableFactoryImplTest {
         final ArrayList<Map> results = new DotConnect()
                 .setSQL("SELECT deleted FROM contentlet_version_info WHERE identifier = ? AND variant_id = ? AND lang = ?")
                 .addParam(contentlet.getIdentifier())
-                .addParam(variant.identifier())
+                .addParam(variant.name())
                 .addParam(language.getId())
                 .loadResults();
 

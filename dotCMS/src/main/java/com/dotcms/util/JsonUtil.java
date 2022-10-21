@@ -1,8 +1,11 @@
 package com.dotcms.util;
 
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -54,4 +57,10 @@ public class JsonUtil {
         return true;
     }
 
+    public static String getJsonStringFromObject(final Object object) {
+        final String json = Try.of(
+                () -> JSON_MAPPER.writeValueAsString(object)).getOrElse(StringPool.BLANK);
+
+        return json;
+    }
 }

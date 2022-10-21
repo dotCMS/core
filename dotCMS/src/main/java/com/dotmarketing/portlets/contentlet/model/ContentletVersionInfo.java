@@ -13,7 +13,7 @@ public class ContentletVersionInfo extends VersionInfo implements Serializable {
     private String variant;
 
     public String getVariant() {
-        return UtilMethods.isSet(variant) ? variant : VariantAPI.DEFAULT_VARIANT.identifier();
+        return UtilMethods.isSet(variant) ? variant : VariantAPI.DEFAULT_VARIANT.name();
     }
 
     public void setVariant(final String variant) {

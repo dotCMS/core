@@ -1,7 +1,0 @@
-<a *ngIf="href; else noLink" [href]="href" target="_blank" rel="noreferrer">
-    <img [src]="data.asset" [alt]="data.name" />
-</a>
-
-<ng-template #noLink>
-    <img [src]="data.asset" [alt]="data.name" loading="lazy" />
-</ng-template>
