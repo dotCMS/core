@@ -51,7 +51,12 @@
             "inputs": ["production", "^production"]
         },
         "test": {
-            "inputs": ["default", "^production", "{workspaceRoot}/karma.conf.js"]
+            "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/karma.conf.js",
+                "{workspaceRoot}/jest.config.js"
+            ]
         },
         "e2e": {
             "inputs": ["default", "^production"]
@@ -66,7 +71,6 @@
     "namedInputs": {
         "default": ["{projectRoot}/**/*", "sharedGlobals"],
         "sharedGlobals": [
-            "{workspaceRoot}/angular.json",
             "{workspaceRoot}/tsconfig.base.json",
             "{workspaceRoot}/tslint.json",
             "{workspaceRoot}/nx.json"
