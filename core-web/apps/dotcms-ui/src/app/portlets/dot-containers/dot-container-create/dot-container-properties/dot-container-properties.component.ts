@@ -48,9 +48,7 @@ export class DotContainerPropertiesComponent implements OnInit {
                 this.form = this.fb.group({
                     identifier: new FormControl(container?.identifier ?? ''),
                     title: new FormControl(container?.title ?? '', [Validators.required]),
-                    friendlyName: new FormControl(container?.friendlyName ?? '', [
-                        Validators.required
-                    ]),
+                    friendlyName: new FormControl(container?.friendlyName ?? ''),
                     maxContentlets: new FormControl(container?.maxContentlets ?? 0, [
                         Validators.required
                     ]),

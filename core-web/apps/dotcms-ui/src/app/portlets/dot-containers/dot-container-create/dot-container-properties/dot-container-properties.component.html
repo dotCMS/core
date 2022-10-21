@@ -47,13 +47,12 @@
             <dot-api-link [href]="vm.apiLink"></dot-api-link>
         </div>
         <div class="field">
-            <label class="block p-label-input-required" for="description">{{
+            <label class="block" for="description">{{
                 'message.containers.create.description' | dm
             }}</label>
             <input
                 class="dot-container-properties__description-input"
                 id="description"
-                [required]="true"
                 type="text"
                 formControlName="friendlyName"
                 pInputText
