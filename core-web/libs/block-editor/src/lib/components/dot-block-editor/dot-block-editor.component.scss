@@ -38,6 +38,10 @@
         .error-message {
             color: $error;
         }
+
+        .hidden {
+            visibility: hidden;
+        }
     }
 
     // If a child is focused, set this style to the parent
