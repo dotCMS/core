@@ -73,10 +73,6 @@ export class DotExperimentsListStore extends ComponentStore<DotExperimentsState>
         ...state,
         status: LoadingState.INIT
     }));
-    readonly setPageId = this.updater((state, pageId: string) => ({
-        ...state,
-        pageId
-    }));
 
     readonly setComponentStatus = this.updater((state, status: LoadingState) => ({
         ...state,
@@ -204,7 +200,6 @@ export class DotExperimentsListStore extends ComponentStore<DotExperimentsState>
         private readonly messageService: MessageService,
         private readonly route: ActivatedRoute
     ) {
-        super(initialState);
-        this.setPageId(route.snapshot.params.pageId);
+        super({ ...initialState, pageId: route.snapshot.params.pageId });
     }
 }

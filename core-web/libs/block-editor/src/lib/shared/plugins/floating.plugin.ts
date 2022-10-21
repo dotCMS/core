@@ -229,8 +229,6 @@ export const FloatingActionsPlugin = (options: FloatingActionsPluginProps) => {
              * @return {*}
              */
             handleKeyDown(view: EditorView, event: KeyboardEvent) {
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
                 const { open, range } = this.getState(view.state);
                 if (!open) {
                     return false;
