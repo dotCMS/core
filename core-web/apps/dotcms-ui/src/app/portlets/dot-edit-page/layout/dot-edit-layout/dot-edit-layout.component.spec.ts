@@ -60,66 +60,64 @@ describe('DotEditLayoutComponent', () => {
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let dotEditLayoutService: DotEditLayoutService;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [MockDotEditLayoutDesignerComponent, DotEditLayoutComponent],
-                providers: [
-                    DotEditLayoutService,
-                    {
-                        provide: DotHttpErrorManagerService,
-                        useValue: {
-                            handle: jasmine.createSpy().and.returnValue(of({}))
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [MockDotEditLayoutDesignerComponent, DotEditLayoutComponent],
+            providers: [
+                DotEditLayoutService,
+                {
+                    provide: DotHttpErrorManagerService,
+                    useValue: {
+                        handle: jasmine.createSpy().and.returnValue(of({}))
+                    }
+                },
+                {
+                    provide: DotMessageService,
+                    useValue: messageServiceMock
+                },
+                {
+                    provide: DotGlobalMessageService,
+                    useValue: {
+                        loading: jasmine.createSpy(),
+                        success: jasmine.createSpy(),
+                        error: jasmine.createSpy()
+                    }
+                },
+                {
+                    provide: DotPageLayoutService,
+                    useValue: {
+                        save() {
+                            //
                         }
-                    },
-                    {
-                        provide: DotMessageService,
-                        useValue: messageServiceMock
-                    },
-                    {
-                        provide: DotGlobalMessageService,
-                        useValue: {
-                            loading: jasmine.createSpy(),
-                            success: jasmine.createSpy(),
-                            error: jasmine.createSpy()
-                        }
-                    },
-                    {
-                        provide: DotPageLayoutService,
-                        useValue: {
-                            save() {
-                                //
-                            }
-                        }
-                    },
-                    {
-                        provide: DotTemplateContainersCacheService,
-                        useValue: {
-                            set: jasmine.createSpy()
-                        }
-                    },
-                    {
-                        provide: DotRouterService,
-                        useValue: {
-                            goToEditPage: jasmine.createSpy()
-                        }
-                    },
-                    {
-                        provide: ActivatedRoute,
-                        useValue: {
+                    }
+                },
+                {
+                    provide: DotTemplateContainersCacheService,
+                    useValue: {
+                        set: jasmine.createSpy()
+                    }
+                },
+                {
+                    provide: DotRouterService,
+                    useValue: {
+                        goToEditPage: jasmine.createSpy()
+                    }
+                },
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        parent: {
                             parent: {
-                                parent: {
-                                    data: of({
-                                        content: new DotPageRender(mockDotRenderedPage())
-                                    })
-                                }
+                                data: of({
+                                    content: new DotPageRender(mockDotRenderedPage())
+                                })
                             }
                         }
                     }
-                ]
-            });
-        })
-    );
+                }
+            ]
+        });
+    }));
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotEditLayoutComponent);
@@ -225,7 +223,9 @@ describe('DotEditLayoutComponent', () => {
         it('should handle error when save fail', (done) => {
             spyOn(dotPageLayoutService, 'save').and.returnValue(
                 throwError(
-                    new ResponseView(new HttpResponse(mockResponseView(HttpCode.BAD_REQUEST)))
+                    new ResponseView<DotPageRender>(
+                        new HttpResponse(mockResponseView(HttpCode.BAD_REQUEST))
+                    )
                 )
             );
 
