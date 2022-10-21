@@ -1,6 +1,8 @@
 package com.dotcms.contenttype.model.type;
 
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldLayoutRow;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -16,17 +18,19 @@ import javax.annotation.Nullable;
 )
 @JsonSubTypes({
         @Type(value = FileAssetContentType.class, name = "FileAssetContentType"),
-        @Type(value = FormContentType.class),
-        @Type(value = PageContentType.class),
-        @Type(value = PersonaContentType.class),
-        @Type(value = SimpleContentType.class),
-        @Type(value = WidgetContentType.class),
-        @Type(value = VanityUrlContentType.class),
-        @Type(value = KeyValueContentType.class),
-        @Type(value = DotAssetContentType.class)
+        @Type(value = FormContentType.class, name = "FormContentType"),
+        @Type(value = PageContentType.class, name = "PageContentType"),
+        @Type(value = PersonaContentType.class, name = "PersonaContentType"),
+        @Type(value = SimpleContentType.class, name = "SimpleContentType"),
+        @Type(value = WidgetContentType.class, name = "WidgetContentType"),
+        @Type(value = VanityUrlContentType.class, name = "VanityUrlContentType"),
+        @Type(value = KeyValueContentType.class, name = "KeyValueContentType"),
+        @Type(value = DotAssetContentType.class, name = "DotAssetContentType")
 })
+@JsonIgnoreProperties(value = { "systemActionMappings","workflows","nEntries" })
 public abstract class ContentType {
 
+    @Nullable
     public abstract String id();
 
     @Nullable
@@ -78,5 +82,14 @@ public abstract class ContentType {
     public abstract Boolean multilingualable();
 
     public abstract List<Field> fields();
+
+    @Nullable
+    public abstract List<FieldLayoutRow> layout();
+
+    @Nullable
+    public abstract String detailPage();
+
+    @Nullable
+    public abstract String urlMapPattern();
 
 }

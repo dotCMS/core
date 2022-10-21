@@ -6,8 +6,10 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.ResponseEntityView;
 import java.util.List;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -58,9 +60,23 @@ public interface ContentTypeAPI {
 
     @POST
     @Operation(
-            summary = ""
+            summary = "Create a brand new CT instance"
     )
     ResponseEntityView<List<ContentType>> createContentTypes(final List<ContentType> contentTypes);
 
 
+    @PUT
+    @Path("/id/{idOrVar}")
+    @Operation(
+            summary = "Save/Update a CT instance"
+    )
+    ResponseEntityView<ContentType> updateContentTypes(@PathParam("idOrVar") final String idOrVar, final ContentType contentType);
+
+
+    @DELETE
+    @Path("/id/{idOrVar}")
+    @Operation(
+            summary = "Save/Update a CT instance"
+    )
+    ResponseEntityView<String> delete(@PathParam("idOrVar") final String idOrVar);
 }

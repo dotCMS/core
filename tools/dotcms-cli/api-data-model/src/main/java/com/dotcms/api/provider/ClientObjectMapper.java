@@ -1,4 +1,4 @@
-package com.dotcms.api.client;
+package com.dotcms.api.provider;
 
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -38,7 +38,9 @@ import com.dotcms.contenttype.model.type.PersonaContentType;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.contenttype.model.type.WidgetContentType;
-import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonInclude.Value;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
@@ -47,6 +49,7 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.jonpeterson.jackson.module.versioning.VersioningModule;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import javax.ws.rs.ext.ContextResolver;
@@ -127,9 +130,41 @@ public class ClientObjectMapper implements ContextResolver<ObjectMapper> {
         mapper.registerModule(new VersioningModule());
         mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
 
-        //TODO: remove once the mode has been cleaned up including everything we need
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        mapper.setDefaultPropertyInclusion(
+                Value.construct(Include.NON_EMPTY, Include.CUSTOM, null,
+                        ExcludeEmptyObjects.class)
+        );
         return mapper;
     }
+
+    /**
+     * Custom exclusion class
+     * We're supposed empty and defaults values
+     */
+    private static class ExcludeEmptyObjects {
+
+        @Override
+        public boolean equals(Object o) {
+
+            if (o instanceof Boolean) {
+                return (Boolean) o;
+            }
+
+            if (o instanceof Number) {
+                return ((Number) o).floatValue() == 0;
+            }
+
+            if (o instanceof Map) {
+                return ((Map<?, ?>) o).isEmpty();
+            }
+            if (o instanceof Collection) {
+                return ((Collection<?>) o).isEmpty();
+            }
+            return false;
+        }
+
+    }
+
+
 }

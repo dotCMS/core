@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.util.Date;
+import java.util.List;
 import javax.annotation.Nullable;
 
 @JsonTypeInfo(
@@ -93,9 +94,24 @@ public abstract class Field {
 
     public abstract boolean fixed();
 
+    public abstract DataTypes dataType();
+
     @Nullable
     public abstract String contentTypeId();
 
+    @Nullable
+    public abstract String fieldType();
 
+    @Nullable
+    public abstract String fieldTypeLabel();
+
+    @Nullable
+    public abstract List<FieldVariable> fieldVariables();
+
+    @Nullable
+    public abstract Date iDate();
+
+    @Nullable
+    public abstract List<ContentTypeFieldProperties> fieldContentTypeProperties();
 
 }
