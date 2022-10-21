@@ -306,7 +306,7 @@ public class Container extends WebAsset implements Serializable, ManifestItem {
 		return accepted;
 	}
 
-	@JsonIgnore
+
 	public Permissionable getParentPermissionable() throws DotDataException {
 
 		try {
