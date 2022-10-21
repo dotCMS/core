@@ -37,7 +37,7 @@ public class EventLogWebInterceptor implements WebInterceptor {
     final EventLogSubmitter submitter;
 
     final Lazy<String> jitsuLib = Lazy.of(() -> {
-        try (InputStream in = this.getClass().getResourceAsStream("/lib.js")) {
+        try (InputStream in = this.getClass().getResourceAsStream("/jitsu/lib.js")) {
             return new BufferedReader(
                     new InputStreamReader(in, StandardCharsets.UTF_8))
                     .lines()
