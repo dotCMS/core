@@ -181,7 +181,7 @@ public class CSVManifestBuilderTest {
     private static TestCase getCategoryTestCase() {
         final Category category = new CategoryDataGen().nextPersisted();
         final String line = list(PusheableAsset.CATEGORY.getType(), category.getInode(), StringPool.BLANK,
-                 category.getTitle(), "", "")
+                 category.getCategoryName(), StringPool.BLANK, StringPool.BLANK)
                 .stream().collect(Collectors.joining(","));
         return new TestCase(category, line);
     }

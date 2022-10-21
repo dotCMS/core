@@ -191,6 +191,7 @@ import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
 import com.dotmarketing.util.ResourceCollectorUtilTest;
 import com.dotmarketing.util.TestConfig;
+import com.dotmarketing.util.UtilMethodsITest;
 import com.dotmarketing.util.contentlet.pagination.PaginatedContentletsIntegrationTest;
 import com.liferay.portal.language.LanguageUtilTest;
 import org.apache.velocity.tools.view.tools.CookieToolTest;
@@ -597,7 +598,8 @@ import org.junit.runners.Suite.SuiteClasses;
         VersionableFactoryImplTest.class,
         Task220928AddLookbackWindowColumnToExperimentTest.class,
         TailLogResourceTest.class,
-        BayesianAPIImplTest.class
+        BayesianAPIImplTest.class,
+        UtilMethodsITest.class
 })
 public class MainSuite {
 

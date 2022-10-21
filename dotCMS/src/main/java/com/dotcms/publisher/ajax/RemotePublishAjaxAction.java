@@ -106,8 +106,9 @@ public class RemotePublishAjaxAction extends AjaxAction {
 	public static final String DIALOG_ACTION_EXPIRE="expire";
 	public static final String DIALOG_ACTION_PUBLISH="publish";
 	public static final String DIALOG_ACTION_PUBLISH_AND_EXPIRE="publishexpire";
+    public static final String ADD_ALL_CATEGORIES_TO_BUNDLE_KEY = "CAT";
 
-	@Override
+    @Override
 	public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		return;
 	}
@@ -1011,7 +1012,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
                     		ids.add( assetId );
                     	}
                     }
-                } else if ( assetId.equals( "CAT" ) ) {
+                } else if ( assetId.equals(ADD_ALL_CATEGORIES_TO_BUNDLE_KEY) ) {
                 	if(!UtilMethods.isSet(bundleId) || !isAssetInBundle(assetId, bundleId)){
                 		ids.add( assetId );
                 	}
