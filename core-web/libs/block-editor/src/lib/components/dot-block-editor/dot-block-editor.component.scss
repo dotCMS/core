@@ -26,24 +26,6 @@
         outline: $gray-light solid 1px;
     }
 
-    .count-bar_container {
-        display: flex;
-        justify-content: flex-end;
-        align-items: flex-end;
-        color: #868e96;
-        margin-top: 1rem;
-        gap: 0.65rem;
-        flex-direction: column;
-
-        .error-message {
-            color: $error;
-        }
-
-        .hidden {
-            visibility: hidden;
-        }
-    }
-
     // If a child is focused, set this style to the parent
     &:focus-within {
         outline-color: $brand-primary;

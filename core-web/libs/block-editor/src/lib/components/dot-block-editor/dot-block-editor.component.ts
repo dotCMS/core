@@ -1,7 +1,7 @@
-import { Component, Injector, Input, OnInit, ViewContainerRef } from '@angular/core';
+import { Component, Injector, Input, OnInit, ViewContainerRef, OnDestroy } from '@angular/core';
 
 import { Subject } from 'rxjs';
-import { debounceTime } from 'rxjs/operators';
+import { debounceTime, takeUntil } from 'rxjs/operators';
 
 import { AnyExtension, Content, Editor } from '@tiptap/core';
 import { HeadingOptions, Level } from '@tiptap/extension-heading';
@@ -28,7 +28,7 @@ import { Highlight } from '@tiptap/extension-highlight';
 import { Link } from '@tiptap/extension-link';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
-import CharacterCount from '@tiptap/extension-character-count';
+import CharacterCount, { CharacterCountStorage } from '@tiptap/extension-character-count';
 
 function toTitleCase(str) {
     return str.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {
@@ -41,7 +41,7 @@ function toTitleCase(str) {
     templateUrl: './dot-block-editor.component.html',
     styleUrls: ['./dot-block-editor.component.scss']
 })
-export class DotBlockEditorComponent implements OnInit {
+export class DotBlockEditorComponent implements OnInit, OnDestroy {
     @Input() lang = DEFAULT_LANG_ID;
     @Input() allowedContentTypes: string;
     @Input() customStyles: string;
@@ -62,11 +62,13 @@ export class DotBlockEditorComponent implements OnInit {
         );
     }
 
-    _allowedBlocks = ['paragraph']; //paragraph should be always.
     editor: Editor;
     subject = new Subject();
 
-    get characterCount() {
+    private _allowedBlocks = ['paragraph']; //paragraph should be always.
+    private destroy$: Subject<boolean> = new Subject<boolean>();
+
+    get characterCount(): CharacterCountStorage {
         return this.editor.storage.characterCount;
     }
 
@@ -92,12 +94,20 @@ export class DotBlockEditorComponent implements OnInit {
         });
 
         this.editor.on('create', () => this.updateChartCount());
-        this.subject.pipe(debounceTime(250)).subscribe(() => this.updateChartCount());
+        this.subject
+            .pipe(takeUntil(this.destroy$), debounceTime(250))
+            .subscribe(() => this.updateChartCount());
+    }
+
+    ngOnDestroy() {
+        this.destroy$.next(true);
+        this.destroy$.complete();
     }
 
     private updateChartCount(): void {
         const tr = this.editor.state.tr
             .step(new SetDocAttrStep('chartCount', this.characterCount.characters()))
+            .step(new SetDocAttrStep('wordCount', this.characterCount.words()))
             .step(new SetDocAttrStep('readingTime', this.readingTime));
         this.editor.view.dispatch(tr);
     }
