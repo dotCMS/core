@@ -48,7 +48,8 @@ public class DotObjectMapperProvider {
         result.registerModule(new Jdk8Module());
         result.registerModule(new JavaTimeModule());
         result.registerModule(new GuavaModule());
-        result.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        //commented by now
+        //result.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         return result;
     }
 
