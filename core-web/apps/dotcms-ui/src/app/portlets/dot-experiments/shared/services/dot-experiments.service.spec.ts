@@ -11,6 +11,7 @@ import {
 const experimentsMock: DotExperiment[] = [
     {
         id: '111',
+        identifier: '1111-11111-11111-11111',
         pageId: '456',
         status: DotExperimentStatusList.DRAFT,
         archived: false,
@@ -28,6 +29,7 @@ const experimentsMock: DotExperiment[] = [
     },
     {
         id: '222',
+        identifier: '2222-2222-2222-2222',
         pageId: '456',
         status: DotExperimentStatusList.DRAFT,
         archived: false,
