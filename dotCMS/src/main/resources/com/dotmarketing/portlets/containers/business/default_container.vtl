@@ -3,7 +3,8 @@
 #set($contentType = $contentlet.getContentType())
 #set($language = $languagewebapi.getLanguage("$!{contentlet.languageId}"))
 
-<div class="card_container">
+#if($!{contentMap})
+<div class="system_container">
     #if (
         $UtilMethods.isImage("$contentlet.fileName") ||
         $UtilMethods.isImage("$contentlet.asset") ||
@@ -21,11 +22,17 @@
             <div class="card_title">
                 <h1>#if($title)$title#{else}$!contentlet.title#end</h1>
             </div>
-            <span class="badge">#if($!{contentMap})$contentType.name()#{else}DRAFT#end</span>
+           <span class="content_type">$contentType.name()</span>
         </div>
         <div class="card_footer">
             <div class="status #if($contentlet.isLive())live#{else}working#end"></div>
-            #if($!{contentMap})<span class="lang">$!{language}</span>#end
+            <span class="lang">$!{language}</span>
         </div>
     </div>
 </div>
+#else
+<div style="width: auto; overflow-wrap: break-word;">
+<h1>$text.get('message.contentlet.not.have.live.version')</h1>
+<h2>Contentlet Identifier: $!{ContentIdentifier}</h2>
+</div>
+#end

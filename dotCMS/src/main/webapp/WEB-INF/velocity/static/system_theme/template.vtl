@@ -56,7 +56,7 @@ body {
     flex-grow: 1;
 }
 
-.card_container {
+.system_container {
     border: 1px solid #b3b1b8;
     gap: 20px;
     padding: 10px;
@@ -66,39 +66,39 @@ body {
     max-width: 800px;
 }
 
-.card_container .card_logo {
+.system_container .card_logo {
     width: 150px;
     height: 150px;
     overflow: hidden;
 }
 
-.card_container .card_logo img {
+.system_container .card_logo img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     object-position: center;
 }
 
-.card_container .card_body {
+.system_container .card_body {
     width: calc(100% - 150px);
     flex-grow: 1;
     display: flex;
     flex-direction: column;
 }
 
-.card_header {
+.system_container .card_header {
     flex-grow: 1;
     overflow: hidden;
     margin-bottom: 15px;
 }
 
-.card_footer {
+.system_container .card_footer {
     display: flex;
     align-items: center;
     gap: 10px;
 }
 
-.card_title h1 {
+.system_container .card_title h1 {
     overflow: hidden;
     font-size: 40px;
     margin: 0;
@@ -107,7 +107,7 @@ body {
     white-space: nowrap;
 }
 
-.badge {
+.system_container .content_type {
     background-color: #b3b1b8;
     display: inline-block;
     color: white;
@@ -117,7 +117,7 @@ body {
     font-size: .75rem;
 }
 
-.lang {
+.system_container .lang {
     border-radius: 2px;
     font-size: 12px;
     padding: 0 0.25em;
@@ -127,7 +127,7 @@ body {
     color: #6f5fa3;
 }
 
-.status {
+.system_container .status {
     border-radius: 50%;
     border: solid 2px;
     box-sizing: border-box;
@@ -135,16 +135,16 @@ body {
     width: 20px;
 }
 
-.live {
+.system_container .status.live {
     background: #27b970;
 }
 
-.working {
+.system_container .status.working {
     background: transparent;
 }
 
 @media (max-width: 640px) {
-    .card_container {
+    .system_container {
         flex-direction: column;
         max-width: 250px;
         gap: 5px;
@@ -152,19 +152,19 @@ body {
         margin: 20px auto;
     }
     
-    .card_container .card_logo {
+    .system_container .card_logo {
         width: 100%;
         height: auto;
         min-height: 200px;
         overflow: hidden;
     }
     
-    .card_container .card_body {
+    .system_container .card_body {
         padding: 10px;
         width: 100%;
     }
     
-    .card_title {
+    .system_container .card_title {
         width: calc(100% - 20px);
         font-size: 40px;
     }
