@@ -48,7 +48,7 @@ public class DotObjectMapperProvider {
         result.registerModule(new Jdk8Module());
         result.registerModule(new JavaTimeModule());
         result.registerModule(new GuavaModule());
-        //commented by now
+        //TODO: commented by now to fix bug with date format in Templates 'Last Edit Date' field
         //result.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         return result;
     }
