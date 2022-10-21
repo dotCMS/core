@@ -64,7 +64,7 @@ public class SaveContentAsDraftActionletTest extends BaseWorkflowIntegrationTest
         final WorkflowProcessor processor = new WorkflowProcessor(contentlet, APILocator.systemUser());
         processor.setContentletDependencies(contentletDependencies);
         new SaveContentAsDraftActionlet().executeAction(processor, null);
-        DateUtil.sleep(DateUtil.SECOND_MILLIS*2);
+        DateUtil.sleep(DateUtil.SECOND_MILLIS*2); // we need to wait for the commit listener that saves the permissions
 
         final List<Permission> permissionsRecovery = APILocator.getPermissionAPI().getPermissions(contentlet);
         Assert.assertNotNull(permissionsRecovery);

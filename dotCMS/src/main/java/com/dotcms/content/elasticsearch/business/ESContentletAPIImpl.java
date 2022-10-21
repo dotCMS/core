@@ -8920,7 +8920,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                     Logger.debug(this, ()-> "Adding permission: " + permission);
                                     this.permissionAPI.save(permission, contentlet, user, respectFrontendRoles);
                                 } catch (Exception e) {
-                                    Logger.error(this, e.getMessage());
+                                    Logger.error(this, "contentletId: " + contentlet.getIdentifier() +
+                                            "roleId: " + permission.getRoleId() +
+                                            "permissionId: " + contentlet.getPermissionId() +
+                                            ", msg:" + e.getMessage());
                                 }
                             });
 
