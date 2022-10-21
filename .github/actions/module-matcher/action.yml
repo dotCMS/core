@@ -20,7 +20,8 @@ inputs:
                 "main": true
               },
               {
-                "module": "core-web"
+                "module": "core-web",
+                "parent": "core"
               },
               {
                 "module": "ui"

@@ -16,7 +16,7 @@ import com.dotcms.repackage.org.apache.commons.httpclient.methods.InputStreamReq
 import com.dotcms.repackage.org.apache.commons.httpclient.methods.PutMethod;
 import com.dotcms.repackage.org.apache.commons.httpclient.methods.RequestEntity;
 import com.dotcms.repackage.org.apache.commons.httpclient.params.HttpMethodParams;
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.slf4j.Logger;
 import com.dotcms.repackage.org.slf4j.LoggerFactory;
 

@@ -19,6 +19,11 @@
 
 .dot-key-value-table-row td:nth-child(-n + 2) {
     padding-right: $spacing-4;
+    width: 37%;
+}
+
+.dot-key-value-table-row__value-label {
+    word-break: break-word;
 }
 
 .dot-key-value-table-row td,

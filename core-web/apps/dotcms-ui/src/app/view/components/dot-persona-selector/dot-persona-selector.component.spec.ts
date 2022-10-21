@@ -156,6 +156,14 @@ describe('DotPersonaSelectorComponent', () => {
         expect(dropdown.componentInstance.toggleOverlayPanel).toHaveBeenCalled();
     });
 
+    it('should have highlighted persona option once the dropdown in loaded', async () => {
+        await hostFixture.whenStable();
+
+        openOverlay();
+        const personaOption = hostFixture.debugElement.query(By.css('dot-persona-selector-option'));
+        expect(personaOption.classes['highlight']).toEqual(true);
+    });
+
     // TODO: this test fails ramdomly when all tests are ran, a fix needs to be done
     it('should dot-persona-selector-option template with right params', async () => {
         await hostFixture.whenStable();
@@ -226,7 +234,7 @@ describe('DotPersonaSelectorComponent', () => {
         });
     });
 
-    describe('Ifram Overlay Service', () => {
+    describe('Iframe Overlay Service', () => {
         let iframeOverlayService: IframeOverlayService;
 
         beforeEach(() => {

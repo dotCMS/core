@@ -29,8 +29,8 @@ import com.dotcms.repackage.org.apache.commons.httpclient.methods.*;
 import com.dotcms.repackage.org.apache.commons.httpclient.methods.multipart.MultipartRequestEntity;
 import com.dotcms.repackage.org.apache.commons.httpclient.methods.multipart.Part;
 import com.dotcms.repackage.org.apache.commons.httpclient.params.HttpMethodParams;
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.slf4j.Logger;
 import com.dotcms.repackage.org.slf4j.LoggerFactory;
 

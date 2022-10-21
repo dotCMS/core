@@ -663,7 +663,61 @@ public class TestDataUtils {
 
         return richTextLike;
     }
-    
+
+    /**
+     * Creates a simple Content Type similar to the Rich Text type with the following fields:
+     * <ol>
+     *     <li>Site or Folder.</li>
+     *     <li>Title, of type "text".</li>
+     *     <li>Description, of type "WYSIWYG".</li>
+     * </ol>
+     *
+     * @param contentTypeName The name of the test Content Type.
+     * @param site            The Site where this Content Type will live in.
+     * @param workflowIds     The workflows assigned to this type. This can be null.
+     *
+     * @return The new test Content Type.
+     */
+    @WrapInTransaction
+    public static ContentType getWysiwygLikeContentType(final String contentTypeName, final Host site,
+                                                        final Set<String> workflowIds) {
+        ContentType wysiwygType = Try.of(() -> APILocator.getContentTypeAPI(APILocator.systemUser())
+                                                       .find(contentTypeName)).getOrNull();
+        try {
+            if (wysiwygType == null) {
+                final List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
+                if (null != site) {
+                    fields.add(new FieldDataGen()
+                                       .sortOrder(1)
+                                       .name("Site or Folder")
+                                       .velocityVarName("hostfolder")
+                                       .required(Boolean.TRUE)
+                                       .type(HostFolderField.class).next());
+                }
+                fields.add(new FieldDataGen()
+                                   .sortOrder(2)
+                                   .name("Title")
+                                   .velocityVarName("title").next());
+                fields.add(new FieldDataGen()
+                                   .sortOrder(3)
+                                   .name("Description")
+                                   .velocityVarName("description")
+                                   .type(WysiwygField.class).next());
+                final ContentTypeDataGen contentTypeDataGen = new ContentTypeDataGen()
+                                                                .name(contentTypeName)
+                                                                .velocityVarName(contentTypeName)
+                                                                .workflowId(workflowIds)
+                                                                .fields(fields);
+                if (null != site) {
+                    contentTypeDataGen.host(site);
+                }
+                wysiwygType = contentTypeDataGen.nextPersisted();
+            }
+        } catch (final Exception e) {
+            throw new DotRuntimeException(String.format("Error creating test type '%s'", contentTypeName), e);
+        }
+        return wysiwygType;
+    }
     
     public static ContentType getWikiLikeContentType() {
         return getWikiLikeContentType("Wiki" + System.currentTimeMillis(), null);
@@ -2273,6 +2327,70 @@ public class TestDataUtils {
                             .velocityVarName("categoryField")
                             .type(CategoryField.class)
                             .values(parent.getInode()).next());
+                }
+
+                contentType = new ContentTypeDataGen()
+                        .baseContentType(BaseContentType.CONTENT)
+                        .name(contentTypeName)
+                        .velocityVarName(contentTypeName)
+                        .fields(fields)
+                        .workflowId(collectedWorkflowIds)
+                        .nextPersisted();
+            }
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+
+        return contentType;
+    }
+
+    public static ContentType newContentTypeWithMultipleCategoryFields(final String contentTypeName,
+            final Set<String> workflowIds) {
+        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+        final List<Category> categories = Try.of(
+                        () -> categoryAPI.findTopLevelCategories(APILocator.systemUser(), false))
+                .getOrElseThrow(DotRuntimeException::new);
+        return newContentTypeWithMultipleCategoryFields(contentTypeName, workflowIds, categories);
+    }
+
+    @WrapInTransaction
+    public static ContentType newContentTypeWithMultipleCategoryFields(final String contentTypeName, Set<String> workflowIds, final List<Category> parents) {
+
+        ContentType contentType;
+        try {
+
+            contentType = Try.of(()->APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentTypeName)).getOrNull();
+
+            if (contentType == null) {
+
+                final WorkflowScheme systemWorkflow = TestWorkflowUtils.getSystemWorkflow();
+                final Set<String> collectedWorkflowIds = new HashSet<>();
+                collectedWorkflowIds.add(systemWorkflow.getId());
+                if(null != workflowIds){
+                    collectedWorkflowIds.addAll(workflowIds);
+                }
+
+                List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("title")
+                                .velocityVarName("title")
+                                .type(TextField.class)
+                                .dataType(DataTypes.TEXT)
+                                .next()
+                );
+
+                //Category field
+                int i = 0;
+                for(Category parent:parents){
+                    final String name = "categoryField"+i;
+                    fields.add(new FieldDataGen()
+                          .name(name)
+                          .velocityVarName(name)
+                          .type(CategoryField.class)
+                          .values(parent.getInode()).next());
+                    i++;
                 }
 
                 contentType = new ContentTypeDataGen()

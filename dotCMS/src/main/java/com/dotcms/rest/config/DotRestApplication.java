@@ -24,6 +24,7 @@ import com.dotcms.rest.api.v1.contenttype.ContentTypeResource;
 import com.dotcms.rest.api.v1.contenttype.FieldResource;
 import com.dotcms.rest.api.v1.contenttype.FieldVariableResource;
 import com.dotcms.rest.api.v1.event.EventsResource;
+import com.dotcms.rest.api.v1.experiments.ExperimentsResource;
 import com.dotcms.rest.api.v1.fileasset.FileAssetsResource;
 import com.dotcms.rest.api.v1.folder.FolderResource;
 import com.dotcms.rest.api.v1.form.FormResource;
@@ -57,6 +58,7 @@ import com.dotcms.rest.api.v1.system.redis.RedisResource;
 import com.dotcms.rest.api.v1.system.role.RoleResource;
 import com.dotcms.rest.api.v1.system.ruleengine.actionlets.ActionletsResource;
 import com.dotcms.rest.api.v1.system.ruleengine.conditionlets.ConditionletsResource;
+import com.dotcms.rest.api.v1.taillog.TailLogResource;
 import com.dotcms.rest.api.v1.temp.TempFileResource;
 import com.dotcms.rest.api.v1.template.TemplateResource;
 import com.dotcms.rest.api.v1.theme.ThemeResource;
@@ -109,7 +111,8 @@ import java.util.concurrent.ConcurrentHashMap;
 				@Tag(name = "Content Type"),
 				@Tag(name = "Content Delivery"),
 				@Tag(name = "Bundle"),
-				@Tag(name = "Navigation")
+				@Tag(name = "Navigation"),
+				@Tag(name = "Experiment")
 		}
 )
 
@@ -209,6 +212,8 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 			.add(FormResource.class)
 			.add(OpenApiResource.class)
 			.add(AcceptHeaderOpenApiResource.class)
+			.add(ExperimentsResource.class)
+			.add(TailLogResource.class)
 			.build();
 
 

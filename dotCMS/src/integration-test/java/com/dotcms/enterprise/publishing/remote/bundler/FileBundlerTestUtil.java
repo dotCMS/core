@@ -1,6 +1,9 @@
 package com.dotcms.enterprise.publishing.remote.bundler;
 
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.publisher.bundle.bean.Bundle;
+import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.util.PusheableAsset;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -22,6 +25,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import com.liferay.util.StringPool;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -117,6 +121,14 @@ public class FileBundlerTestUtil {
     public static File getCategoryPath(final Category category, final File bundleRoot)
             throws DotSecurityException, DotDataException {
 
+        final String bundleId = bundleRoot.getAbsolutePath()
+                .substring(bundleRoot.getPath().lastIndexOf(StringPool.FORWARD_SLASH) + 1);
+        final Bundle bundle = APILocator.getBundleAPI().getBundleById(bundleId);
+        bundle.setOperation(0);
+        final PushPublisherConfig pushPublisherConfig = new PushPublisherConfig(bundle);
+        final boolean categoryAddDirectly = pushPublisherConfig.getAssets().stream()
+                .anyMatch(asset -> asset.getType().equals(PusheableAsset.CATEGORY.getType()));
+
         final String liveWorking = hasLiveVersion(category.getIdentifier()) ? "live" : "working";
 
         final String categoryFilePath = bundleRoot.getPath()
@@ -124,7 +136,7 @@ public class FileBundlerTestUtil {
                 + liveWorking + File.separator
                 + APILocator.getHostAPI().findSystemHost().getHostname()
                 + File.separator
-                + category.getInode() + ".category.dpc.xml";
+                + category.getInode() + (categoryAddDirectly ? ".category.xml" : ".category.dpc.xml");
 
         return new File(categoryFilePath);
     }

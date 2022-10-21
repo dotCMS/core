@@ -9,8 +9,9 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import com.dotcms.util.JsonUtil;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
@@ -1077,49 +1078,60 @@ public class ContentResource {
     }
 
     /**
-     * Creates a json object (as string) of a list of contentlets
-     * @param cons
-     * @param request
-     * @param response
-     * @param render
-     * @param user
-     * @param depth
-     * @param respectFrontendRoles
-     * @param language
-     * @param live
-     * @param allCategoriesInfo
-     * @return
-     * @throws IOException
-     * @throws DotDataException
+     * Creates a JSON Object off of a list of Contentlets. Their representation will be set to the {@code contentlets}
+     * attribute in the JSON response. In case dotCMS cannot transform a piece of Content into a valid JSON Object, it
+     * will just not be included in the result object.
+     *
+     * @param contentletList       The list of {@link Contentlet} objects that will be transformed into JSON.
+     * @param request              The current {@link HttpServletRequest} object.
+     * @param response             The current {@link HttpServletResponse} object.
+     * @param render               If the rendered HTML version must be included in the response, set to {@code true}.
+     * @param user                 The {@link User} performing this action.
+     * @param depth                The required depth for related Contentlets, in case they're required.
+     * @param respectFrontendRoles If front-end Roles for the specified User must be validated, set this to {@code
+     *                             true}.
+     * @param language             The Language ID for the related Contentlets -- required only if the {@code depth}
+     *                             parameter is specified.
+     * @param live                 If the live version of the specified Contentlets must be retrieved, set this to
+     *                             {@code true}.
+     * @param allCategoriesInfo    If information about Categories must be included, set this to {@code true}.
+     *
+     * @return The JSON representation as {@link JSONArray} of the specified Contentlets.
+     *
+     * @throws IOException      An error occurred when generating the printable Contentlet map.
+     * @throws DotDataException An error occurred when interacting with the data source.
      */
-    private JSONObject getJSONObject(final List<Contentlet> cons, final HttpServletRequest request,
+    private JSONObject getJSONObject(final List<Contentlet> contentletList, final HttpServletRequest request,
                            final HttpServletResponse response, final String render, final User user,
                            final int depth, final boolean respectFrontendRoles, final long language,
                            final boolean live, final boolean allCategoriesInfo){
         final JSONObject json = new JSONObject();
-        final JSONArray jsonCons = new JSONArray();
+        final JSONArray jsonContentlets = new JSONArray();
 
-        for (Contentlet c : cons) {
+        for (final Contentlet contentlet : contentletList) {
             try {
-                final JSONObject jo = contentletToJSON(c, request, response, render, user, allCategoriesInfo);
-
-                jsonCons.put(jo);
+                final JSONObject contentAsJson = contentletToJSON(contentlet, request, response, render, user, allCategoriesInfo);
+                jsonContentlets.put(contentAsJson);
                 //we need to add relationships fields
                 if (depth != -1){
                     addRelationshipsToJSON(request, response, render, user, depth,
-                            respectFrontendRoles, c, jo, null, language, live, allCategoriesInfo);
+                            respectFrontendRoles, contentlet, contentAsJson, null, language, live, allCategoriesInfo);
                 }
-            } catch (Exception e) {
-                Logger.warn(this.getClass(), "unable to get JSON contentlet " + c.getIdentifier());
-                Logger.debug(this.getClass(), "unable to find contentlet", e);
+            } catch (final Exception e) {
+                final String errorMsg = String.format("An error occurred when converting Contentlet '%s' into JSON: " +
+                                                              "%s", contentlet.getIdentifier(), e.getMessage());
+                Logger.warn(this.getClass(), errorMsg);
+                Logger.debug(this.getClass(), errorMsg, e);
             }
         }
 
         try {
-            json.put("contentlets", jsonCons);
-        } catch (JSONException e) {
-            Logger.warn(this.getClass(), "unable to create JSONObject");
-            Logger.debug(this.getClass(), "unable to create JSONObject", e);
+            json.put("contentlets", jsonContentlets);
+        } catch (final JSONException e) {
+            final String errorMsg = String.format("An error occurred when adding Contentlets to the result JSON " +
+                                                          "object: %s", e.getMessage());
+            Logger.warn(this.getClass(), errorMsg);
+            Logger.debug(this.getClass(), errorMsg, e);
         }
 
         return json;
@@ -1404,7 +1416,6 @@ public class ContentResource {
         }
 
         final Map<String, Object> map = ContentletUtil.getContentPrintableMap(user, contentlet, allCategoriesInfo);
-
         final Set<String> jsonFields = getJSONFields(type);
 
         for (final String key : map.keySet()) {
@@ -1423,7 +1434,8 @@ public class ContentResource {
                         jsonObject.put(key, new JSONArray(tags));
                         // this might be coming from transformers views, so let's try to make them JSONObjects
                 } else if (isStoryBlockField(type, key)) {
-                    jsonObject.put(key, new JSONObject(String.class.cast(map.get(key))));
+                    final String fieldValue = String.class.cast(map.get(key));
+                    jsonObject.put(key, JsonUtil.isValidJSON(fieldValue) ? new JSONObject(fieldValue) : fieldValue);
                 } else if(hydrateRelated) {
                     if(map.get(key) instanceof Map) {
                         jsonObject.put(key, new JSONObject((Map) map.get(key)));
@@ -1884,7 +1896,7 @@ public class ContentResource {
             HibernateUtil.startTransaction();
 
             // preparing categories
-            List<Category> categories = MapToContentletPopulator.INSTANCE.getCategories
+            final Optional<List<Category>> categories = MapToContentletPopulator.INSTANCE.fetchCategories
                     (contentlet, init.getUser(), mode.respectAnonPerms);
             // running a workflow action?
             final ContentWorkflowResult contentWorkflowResult = processWorkflowAction(contentlet, init, live);
@@ -1892,14 +1904,12 @@ public class ContentResource {
                     .get(RELATIONSHIP_KEY);
             live = contentWorkflowResult.publish;
 
-            categories = UtilMethods.isSet(categories)?categories:null;
-
             // if one of the actions does not have save, so call the checkin
             if (!contentWorkflowResult.save) {
 
                 contentlet.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
                 contentlet = APILocator.getContentletAPI()
-                        .checkin(contentlet, relationships, categories, null, init.getUser(), mode.respectAnonPerms);
+                        .checkin(contentlet, relationships, categories.orElse(null), null, init.getUser(), mode.respectAnonPerms);
                 if (live) {
                     APILocator.getContentletAPI()
                             .publish(contentlet, init.getUser(), mode.respectAnonPerms);
@@ -1909,7 +1919,7 @@ public class ContentResource {
                 contentlet = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet,
                         new ContentletDependencies.Builder()
                         .respectAnonymousPermissions(mode.respectAnonPerms)
-                        .modUser(init.getUser()).categories(categories)
+                        .modUser(init.getUser()).categories(categories.orElse(null))
                         .relationships(relationships)
                         .indexPolicy(IndexPolicyProvider.getInstance().forSingleContent())
                         .build());

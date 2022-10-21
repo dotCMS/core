@@ -9,6 +9,7 @@ import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 
 export const SEARCHABLE_NGFACES_MODULES = [
     ButtonModule,
@@ -25,6 +26,7 @@ export const SEARCHABLE_NGFACES_MODULES = [
     imports: [
         CommonModule,
         FormsModule,
+        DotAutofocusModule,
         ...SEARCHABLE_NGFACES_MODULES,
         DotIconModule,
         UiDotIconButtonModule,

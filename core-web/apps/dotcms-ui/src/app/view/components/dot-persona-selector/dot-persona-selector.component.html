@@ -25,11 +25,12 @@
             (click)="!disabled && searchableDropdown.toggleOverlayPanel($event)"
         ></dot-persona-selected-item>
     </ng-template>
-    <ng-template let-personaData="item" pTemplate="listItem">
+    <ng-template let-personaData="item" let-selectedOptionValue="selectedOptionValue" pTemplate="listItem">
         <dot-persona-selector-option
             [canDespersonalize]="canDespersonalize"
             [persona]="value && value.identifier === personaData.identifier ? value : personaData"
             [selected]="value && value.identifier === personaData.identifier"
+            [class.highlight]="personaData.name === selectedOptionValue"
             (switch)="personaChange($event)"
             (delete)="delete.emit(personaData)"
         ></dot-persona-selector-option>

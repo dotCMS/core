@@ -1,5 +1,11 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
+import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
+
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
@@ -16,7 +22,15 @@ import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategyResolver;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.ConstantField;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.JSONField;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
@@ -35,13 +49,13 @@ import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
-import com.dotcms.util.*;
-import com.dotmarketing.beans.*;
-import com.dotmarketing.business.*;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DotPreconditions;
+import com.dotcms.util.FunctionUtils;
+import com.dotcms.util.JsonUtil;
 import com.dotcms.util.ThreadContextUtil;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -70,7 +84,12 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
-import com.dotmarketing.exception.*;
+import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.TreeFactory;
@@ -78,7 +97,14 @@ import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.business.*;
+import com.dotmarketing.portlets.contentlet.business.BinaryFileFilter;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.ContentletCache;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
+import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
+import com.dotmarketing.portlets.contentlet.business.DotLockException;
+import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -114,8 +140,25 @@ import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.HostUtil;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.RegExMatch;
+import com.dotmarketing.util.TrashUtils;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.dotmarketing.util.contentet.pagination.PaginatedContentletBuilder;
+import com.dotmarketing.util.contentet.pagination.PaginatedContentlets;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -134,6 +177,36 @@ import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.activation.MimeType;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -143,30 +216,6 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import javax.activation.MimeType;
-import javax.servlet.http.HttpServletRequest;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
-import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
-import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -179,29 +228,30 @@ import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PER
 public class ESContentletAPIImpl implements ContentletAPI {
 
     private static final String CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT = "Can't change state of checked out content or where inode is not set. Use Search or Find then use method";
-    private static final String CANT_GET_LOCK_ON_CONTENT                  = "Only the CMS Admin or the user who locked the contentlet can lock/unlock it";
-    private static final String FAILED_TO_DELETE_UNARCHIVED_CONTENT       = "Failed to delete unarchived content. Content must be archived first before it can be deleted.";
-    private static final String NEVER_EXPIRE                              = "NeverExpire";
-    private static final String CHECKIN_IN_PROGRESS                      = "__checkin_in_progress__";
+    private static final String CANT_GET_LOCK_ON_CONTENT = "Only the CMS Admin or the user who locked the contentlet can lock/unlock it";
+    private static final String FAILED_TO_DELETE_UNARCHIVED_CONTENT = "Failed to delete unarchived content. Content must be archived first before it can be deleted.";
+    private static final String NEVER_EXPIRE = "NeverExpire";
+    private static final String CHECKIN_IN_PROGRESS = "__checkin_in_progress__";
 
-    private final ContentletIndexAPIImpl  indexAPI;
-    private final ESContentFactoryImpl  contentFactory;
-    private final PermissionAPI         permissionAPI;
-    private final CategoryAPI           categoryAPI;
-    private final RelationshipAPI       relationshipAPI;
-    private final FieldAPI              fieldAPI;
-    private final LanguageAPI           languageAPI;
-    private final ReindexQueueAPI       reindexQueueAPI;
-    private final TagAPI                tagAPI;
+    private final ContentletIndexAPIImpl indexAPI;
+    private final ESContentFactoryImpl contentFactory;
+    private final PermissionAPI permissionAPI;
+    private final CategoryAPI categoryAPI;
+    private final RelationshipAPI relationshipAPI;
+    private final FieldAPI fieldAPI;
+    private final LanguageAPI languageAPI;
+    private final ReindexQueueAPI reindexQueueAPI;
+    private final TagAPI tagAPI;
     private final IdentifierStripedLock lockManager;
-    private final TempFileAPI           tempApi ;
-    private final FileMetadataAPI       fileMetadataAPI;
+    private final TempFileAPI tempApi;
+    private final FileMetadataAPI fileMetadataAPI;
     public static final int MAX_LIMIT = 10000;
     private static final boolean INCLUDE_DEPENDENCIES = true;
 
-    private static final String backupPath = ConfigUtils.getBackupPath() + File.separator + "contentlets";
+    private static final String backupPath =
+            ConfigUtils.getBackupPath() + File.separator + "contentlets";
 
-    public final static String  UNIQUE_PER_SITE_FIELD_VARIABLE_NAME = "uniquePerSite";
+    public final static String UNIQUE_PER_SITE_FIELD_VARIABLE_NAME = "uniquePerSite";
 
 
     /**
@@ -212,22 +262,24 @@ public class ESContentletAPIImpl implements ContentletAPI {
             .getBooleanProperty("GET_RELATED_CONTENT_FROM_DB", true);
 
     private final ContentletSystemEventUtil contentletSystemEventUtil;
-    private final LocalSystemEventsAPI      localSystemEventsAPI;
+    private final LocalSystemEventsAPI localSystemEventsAPI;
     private final BaseTypeToContentTypeStrategyResolver baseTypeToContentTypeStrategyResolver =
             BaseTypeToContentTypeStrategyResolver.getInstance();
 
     public static enum QueryType {
         search, suggest, moreLike, Facets
-    };
+    }
 
-    private static final Supplier<String> ND_SUPPLIER = ()->"N/D";
+    ;
+
+    private static final Supplier<String> ND_SUPPLIER = () -> "N/D";
     private ElasticReadOnlyCommand elasticReadOnlyCommand;
 
     /**
      * Default class constructor.
      */
     @VisibleForTesting
-    public ESContentletAPIImpl (final ElasticReadOnlyCommand readOnlyCommand) {
+    public ESContentletAPIImpl(final ElasticReadOnlyCommand readOnlyCommand) {
         indexAPI = new ContentletIndexAPIImpl();
         fieldAPI = APILocator.getFieldAPI();
         contentFactory = new ESContentFactoryImpl();
@@ -238,25 +290,27 @@ public class ESContentletAPIImpl implements ContentletAPI {
         reindexQueueAPI = APILocator.getReindexQueueAPI();
         tagAPI = APILocator.getTagAPI();
         contentletSystemEventUtil = ContentletSystemEventUtil.getInstance();
-        localSystemEventsAPI      = APILocator.getLocalSystemEventsAPI();
+        localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
         lockManager = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
-        tempApi=  APILocator.getTempFileAPI();
+        tempApi = APILocator.getTempFileAPI();
         this.elasticReadOnlyCommand = readOnlyCommand;
         fileMetadataAPI = APILocator.getFileMetadataAPI();
     }
 
-    public ESContentletAPIImpl () {
+    public ESContentletAPIImpl() {
         this(ElasticReadOnlyCommand.getInstance());
     }
 
 
     @Override
-    public SearchResponse esSearchRaw ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException {
+    public SearchResponse esSearchRaw(String esQuery, boolean live, User user,
+            boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
         return APILocator.getEsSearchAPI().esSearchRaw(esQuery, live, user, respectFrontendRoles);
     }
 
     @Override
-    public ESSearchResults esSearch ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException {
+    public ESSearchResults esSearch(String esQuery, boolean live, User user,
+            boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
         return APILocator.getEsSearchAPI().esSearch(esQuery, live, user, respectFrontendRoles);
     }
 
@@ -267,35 +321,36 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @CloseDBIfOpened
-    public Object loadField(final String inode, final com.dotcms.contenttype.model.field.Field field) throws DotDataException{
-        if(APILocator.getContentletJsonAPI().isPersistContentAsJson()){
-          final Object value = contentFactory.loadJsonField(inode, field);
-          if(null != value){
-              return value;
-          }
+    public Object loadField(final String inode,
+            final com.dotcms.contenttype.model.field.Field field) throws DotDataException {
+        if (APILocator.getContentletJsonAPI().isPersistContentAsJson()) {
+            final Object value = contentFactory.loadJsonField(inode, field);
+            if (null != value) {
+                return value;
+            }
         }
         return contentFactory.loadField(inode, field.dbColumn());
     }
 
     @CloseDBIfOpened
     @Override
-    public List<Contentlet> findAllContent(int offset, int limit) throws DotDataException{
+    public List<Contentlet> findAllContent(int offset, int limit) throws DotDataException {
         return contentFactory.findAllCurrent(offset, limit);
     }
 
     @Override
     public boolean isContentlet(String inode) throws DotDataException, DotRuntimeException {
         Contentlet contentlet = new Contentlet();
-        try{
+        try {
             contentlet = find(inode, APILocator.getUserAPI().getSystemUser(), true);
-        }catch (DotSecurityException dse) {
+        } catch (DotSecurityException dse) {
             throw new DotRuntimeException("Unable to use system user : ", dse);
-        }catch (Exception e) {
-            Logger.debug(this,"Inode unable to load as contentlet.  Asssuming it is not content");
+        } catch (Exception e) {
+            Logger.debug(this, "Inode unable to load as contentlet.  Asssuming it is not content");
             return false;
         }
-        if(contentlet!=null){
-            if(InodeUtils.isSet(contentlet.getInode())){
+        if (contentlet != null) {
+            if (InodeUtils.isSet(contentlet.getInode())) {
                 return true;
             }
         }
@@ -304,61 +359,75 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public Contentlet find(final String inode, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+    public Contentlet find(final String inode, final User user, final boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException {
         final Contentlet contentlet = contentFactory.find(inode);
         if (contentlet == null) {
             return null;
         }
 
-        if (this.permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user,
+        if (this.permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ,
+                user,
                 respectFrontendRoles)) {
             return contentlet;
         } else {
             final String userId = (user == null) ? "Unknown" : user.getUserId();
-            throw new DotSecurityException(String.format("User '%s' does not have READ permissions on %s", userId, ContentletUtil
-                    .toShortString(contentlet)));
+            throw new DotSecurityException(
+                    String.format("User '%s' does not have READ permissions on %s", userId,
+                            ContentletUtil
+                                    .toShortString(contentlet)));
         }
     }
 
     @Override
-    public Contentlet move(final Contentlet contentlet, final User user, final String hostAndFolderPath,
+    public Contentlet move(final Contentlet contentlet, final User user,
+            final String hostAndFolderPath,
             final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
-        Logger.debug(this, ()->"Moving contentlet: " + contentlet.getIdentifier() + " to: " + hostAndFolderPath);
+        Logger.debug(this, () -> "Moving contentlet: " + contentlet.getIdentifier() + " to: "
+                + hostAndFolderPath);
 
-        if (UtilMethods.isNotSet(hostAndFolderPath) || !hostAndFolderPath.startsWith(HostUtil.HOST_INDICATOR)) {
+        if (UtilMethods.isNotSet(hostAndFolderPath) || !hostAndFolderPath.startsWith(
+                HostUtil.HOST_INDICATOR)) {
 
             throw new IllegalArgumentException("The host path is not valid: " + hostAndFolderPath);
         }
 
-        final Tuple2<String, Host> hostPathTuple = Try.of(()->HostUtil.splitPathHost(hostAndFolderPath, user,
-                StringPool.FORWARD_SLASH)).getOrElseThrow(e -> new DotRuntimeException(e));
+        final Tuple2<String, Host> hostPathTuple = Try.of(
+                () -> HostUtil.splitPathHost(hostAndFolderPath, user,
+                        StringPool.FORWARD_SLASH)).getOrElseThrow(e -> new DotRuntimeException(e));
 
-        return this.move(contentlet, user, hostPathTuple._2(), hostPathTuple._1(), respectFrontendRoles);
+        return this.move(contentlet, user, hostPathTuple._2(), hostPathTuple._1(),
+                respectFrontendRoles);
     }
 
     @Override
-    public Contentlet move(final Contentlet contentlet, final User user, final Host host, final String folderPathParam,
+    public Contentlet move(final Contentlet contentlet, final User user, final Host host,
+            final String folderPathParam,
             final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
-        Logger.debug(this, ()->"Moving contentlet: " + contentlet.getIdentifier() + " to: " + folderPathParam);
+        Logger.debug(this, () -> "Moving contentlet: " + contentlet.getIdentifier() + " to: "
+                + folderPathParam);
 
-        if (UtilMethods.isNotSet(folderPathParam) || !folderPathParam.startsWith(StringPool.SLASH)) {
+        if (UtilMethods.isNotSet(folderPathParam) || !folderPathParam.startsWith(
+                StringPool.SLASH)) {
 
             throw new IllegalArgumentException("The folder is not valid: " + folderPathParam);
         }
 
         // we need a / at the end to check if exits
-        final String folderPath = folderPathParam.endsWith(StringPool.SLASH)?folderPathParam: folderPathParam + StringPool.SLASH;
+        final String folderPath = folderPathParam.endsWith(StringPool.SLASH) ? folderPathParam
+                : folderPathParam + StringPool.SLASH;
 
         //Check if the folder exists via Admin user, b/c user couldn't have VIEW Permissions over the folder
-        Folder folder = Try.of(()-> APILocator.getFolderAPI()
-                .findFolderByPath(folderPath, host, APILocator.systemUser(), respectFrontendRoles)).getOrNull();
+        Folder folder = Try.of(() -> APILocator.getFolderAPI()
+                        .findFolderByPath(folderPath, host, APILocator.systemUser(), respectFrontendRoles))
+                .getOrNull();
 
         if (null == folder || !UtilMethods.isSet(folder.getInode())) {
 
             // if the folder does not exists try, let's see if the current user can create it.
-            Logger.debug(this, ()->"On Moving Contentlet, creating the Folders: " + folderPath);
+            Logger.debug(this, () -> "On Moving Contentlet, creating the Folders: " + folderPath);
 
             try {
                 // multiple contentlets on a bulk action may require to create the same folder
@@ -367,26 +436,32 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 folder = lockManager.tryLock(lockKey,
                         () -> {
 
-                            Folder testFolder = Try.of(()-> APILocator.getFolderAPI()
-                                    .findFolderByPath(folderPath, host, user, respectFrontendRoles)).getOrNull();
+                            Folder testFolder = Try.of(() -> APILocator.getFolderAPI()
+                                            .findFolderByPath(folderPath, host, user, respectFrontendRoles))
+                                    .getOrNull();
 
                             if (null == testFolder || !UtilMethods.isSet(testFolder.getInode())) {
 
-                                Logger.debug(this, ()->"Creating folders: " + folderPath + ", contentlet: " + contentlet.getIdentifier());
-                                testFolder = DotConcurrentFactory.getInstance().getSingleSubmitter() // we need to run this in a separated thread, to use a diff conn.
-                                        .submit(()->this.createFolder(folderPath, contentlet, host, user, respectFrontendRoles)).get(); // b.c the folder is a pre-requisites
+                                Logger.debug(this,
+                                        () -> "Creating folders: " + folderPath + ", contentlet: "
+                                                + contentlet.getIdentifier());
+                                testFolder = DotConcurrentFactory.getInstance()
+                                        .getSingleSubmitter() // we need to run this in a separated thread, to use a diff conn.
+                                        .submit(() -> this.createFolder(folderPath, contentlet,
+                                                host, user, respectFrontendRoles))
+                                        .get(); // b.c the folder is a pre-requisites
                             }
 
                             return testFolder;
                         });
             } catch (final Throwable t) {
-                Logger.warn(getClass(),t.getMessage(),t);
+                Logger.warn(getClass(), t.getMessage(), t);
                 folder = null;
             }
 
-
             if (null == folder || !UtilMethods.isSet(folder.getInode())) {
-                throw new IllegalArgumentException("The folder does not exists: " + folderPath + " and could not be created");
+                throw new IllegalArgumentException(
+                        "The folder does not exists: " + folderPath + " and could not be created");
             }
         }
 
@@ -394,52 +469,67 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @WrapInTransaction
-    private Folder createFolder (final String folderPath, final Contentlet contentlet, final Host host,
-            final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+    private Folder createFolder(final String folderPath, final Contentlet contentlet,
+            final Host host,
+            final User user, final boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException {
 
-        Logger.debug(this, ()->"Creating folders: " + folderPath + ", contentlet: " + contentlet.getIdentifier());
-        return APILocator.getFolderAPI().createFolders(folderPath, host, user, respectFrontendRoles);
+        Logger.debug(this, () -> "Creating folders: " + folderPath + ", contentlet: "
+                + contentlet.getIdentifier());
+        return APILocator.getFolderAPI()
+                .createFolders(folderPath, host, user, respectFrontendRoles);
     }
 
     @WrapInTransaction
     @Override
-    public Contentlet move(final Contentlet contentlet, final User incomingUser, final Host host, final Folder folder,
+    public Contentlet move(final Contentlet contentlet, final User incomingUser, final Host host,
+            final Folder folder,
             final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
-        Logger.debug(this, ()-> "Moving contentlet: " + contentlet.getIdentifier()
-                + " to host: " + host.getHostname() + " and path: " + folder.getPath() + ", id: " + folder.getIdentifier());
+        Logger.debug(this, () -> "Moving contentlet: " + contentlet.getIdentifier()
+                + " to host: " + host.getHostname() + " and path: " + folder.getPath() + ", id: "
+                + folder.getIdentifier());
 
-        final User user = incomingUser!=null ? incomingUser: APILocator.getUserAPI().getAnonymousUser();
+        final User user =
+                incomingUser != null ? incomingUser : APILocator.getUserAPI().getAnonymousUser();
 
-        if(user.isAnonymousUser() && AnonymousAccess.systemSetting() != AnonymousAccess.WRITE) {
-            throw new DotSecurityException("CONTENT_APIS_ALLOW_ANONYMOUS setting does not allow anonymous content WRITEs");
+        if (user.isAnonymousUser() && AnonymousAccess.systemSetting() != AnonymousAccess.WRITE) {
+            throw new DotSecurityException(
+                    "CONTENT_APIS_ALLOW_ANONYMOUS setting does not allow anonymous content WRITEs");
         }
 
         // if the user can write and add a children to the folder
-        if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles) ||
+        if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user,
+                respectFrontendRoles) ||
                 !permissionAPI.doesUserHavePermission(folder, PERMISSION_CAN_ADD_CHILDREN, user)) {
 
             this.throwSecurityException(contentlet, user);
         }
 
-        final Identifier identifier = APILocator.getIdentifierAPI().loadFromDb(contentlet.getIdentifier());
+        final Identifier identifier = APILocator.getIdentifierAPI()
+                .loadFromDb(contentlet.getIdentifier());
 
         // if id exists
         if (null == identifier || !UtilMethods.isSet(identifier.getId())) {
 
-            throw new DoesNotExistException("The identifier does not exists: " + contentlet.getIdentifier());
+            throw new DoesNotExistException(
+                    "The identifier does not exists: " + contentlet.getIdentifier());
         }
 
         //Check if another content with the same name already exists in the new folder
-        if(APILocator.getFileAssetAPI().fileNameExists(host, folder, identifier.getAssetName(), contentlet.getIdentifier())){
-            throw new IllegalArgumentException("Content with the same name: '" + identifier.getAssetName() + "' already exists at the new path: " + host.getHostname() + folder.getPath());
+        if (APILocator.getFileAssetAPI().fileNameExists(host, folder, identifier.getAssetName(),
+                contentlet.getIdentifier())) {
+            throw new IllegalArgumentException(
+                    "Content with the same name: '" + identifier.getAssetName()
+                            + "' already exists at the new path: " + host.getHostname()
+                            + folder.getPath());
         }
 
         // update with the new host and path
         identifier.setHostId(host.getIdentifier());
         identifier.setParentPath(folder.getPath());
 
-        Logger.debug(this, ()->"Updating the identifier: " + identifier);
+        Logger.debug(this, () -> "Updating the identifier: " + identifier);
         // changing the host and path will move the contentlet
         APILocator.getIdentifierAPI().save(identifier);
 
@@ -479,38 +569,47 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public List<Contentlet> findByStructure(String structureInode, User user,   boolean respectFrontendRoles, int limit, int offset) throws DotDataException,DotSecurityException {
-        List<Contentlet> contentlets = contentFactory.findByStructure(structureInode, limit, offset);
-        return permissionAPI.filterCollection(contentlets, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+    public List<Contentlet> findByStructure(String structureInode, User user,
+            boolean respectFrontendRoles, int limit, int offset)
+            throws DotDataException, DotSecurityException {
+        List<Contentlet> contentlets = contentFactory.findByStructure(structureInode, limit,
+                offset);
+        return permissionAPI.filterCollection(contentlets, PermissionAPI.PERMISSION_READ,
+                respectFrontendRoles, user);
     }
 
     @Override
-    public List<Contentlet> findByStructure(Structure structure, User user, boolean respectFrontendRoles, int limit, int offset) throws DotDataException,DotSecurityException {
+    public List<Contentlet> findByStructure(Structure structure, User user,
+            boolean respectFrontendRoles, int limit, int offset)
+            throws DotDataException, DotSecurityException {
         return findByStructure(structure.getInode(), user, respectFrontendRoles, limit, offset);
     }
 
     @CloseDBIfOpened
     @Override
-    public Contentlet findContentletForLanguage(long languageId, Identifier contentletId) throws DotDataException, DotSecurityException {
+    public Contentlet findContentletForLanguage(long languageId, Identifier contentletId)
+            throws DotDataException, DotSecurityException {
         try {
-            return findContentletByIdentifier(contentletId.getId(), false, languageId, APILocator.systemUser(), false);
+            return findContentletByIdentifier(contentletId.getId(), false, languageId,
+                    APILocator.systemUser(), false);
         } catch (DotContentletStateException dcs) {
-            Logger.debug(this, ()->String.format("No working contentlet found for language: %d and identifier: %s ", languageId, null != contentletId ? contentletId.getId() : "Unkown"));
+            Logger.debug(this, () -> String.format(
+                    "No working contentlet found for language: %d and identifier: %s ", languageId,
+                    null != contentletId ? contentletId.getId() : "Unkown"));
         }
         return null;
     }
 
 
-
-    @CloseDBIfOpened
-    @Override
-    public Contentlet findContentletByIdentifier(String identifier, boolean live, long languageId, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException, DotContentletStateException {
+    public Contentlet findContentletByIdentifier(String identifier, boolean live, long languageId,
+            String variantId, User user, boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException, DotContentletStateException {
         if(languageId<=0) {
             languageId=APILocator.getLanguageAPI().getDefaultLanguage().getId();
         }
 
         try {
-            Optional<ContentletVersionInfo> clvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, languageId);
+            Optional<ContentletVersionInfo> clvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, languageId, variantId);
             String liveInode = null;
             String workingInode = null;
 
@@ -529,6 +628,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }catch (Exception e) {
             throw new DotContentletStateException("Can't find contentlet: " + identifier + " lang:" + languageId + " live:" + live,e);
         }
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public Contentlet findContentletByIdentifier(String identifier, boolean live, long languageId, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException, DotContentletStateException {
+        return findContentletByIdentifier(identifier, live, languageId, VariantAPI.DEFAULT_VARIANT.name(), user, respectFrontendRoles);
 
     }
 
@@ -649,26 +754,56 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
+    public PaginatedContentlets findContentletsPaginatedByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        return findContentletsPaginatedByHost(parentHost, null, null, user, respectFrontendRoles);
+    }
+
+
+    public PaginatedContentlets findContentletsPaginatedByHost(final Host parentHost,
+            final List<Integer> includingContentTypes,
+            final List<Integer> excludingContentTypes,
+            final User user,
+            final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+        final String query = getContentletByHostQuery(parentHost, includingContentTypes,
+                excludingContentTypes);
+
+        return new PaginatedContentletBuilder()
+                .setLuceneQuery(query)
+                .setUser(user)
+                .setRespectFrontendRoles(respectFrontendRoles)
+                .build();
+    }
+
+    @CloseDBIfOpened
+    @Override
     public List<Contentlet> findContentletsByHost(Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         try {
-            StringBuilder query = new StringBuilder();
-            query.append("+conHost:").append(parentHost.getIdentifier()).append(" +working:true");
+            final String query = getContentletByHostQuery(parentHost, includingContentTypes,
+                    excludingContentTypes);
 
-            // Including content types
-            if(includingContentTypes != null && !includingContentTypes.isEmpty()) {
-                query.append(" +structureType:(").append(StringUtils.join(includingContentTypes, " ")).append(")");
-            }
-
-            // Excluding content types
-            if(excludingContentTypes != null && !excludingContentTypes.isEmpty()) {
-                query.append(" -structureType:(").append(StringUtils.join(excludingContentTypes, " ")).append(")");
-            }
-
-            return permissionAPI.filterCollection(search(query.toString(), -1, 0, null , user, respectFrontendRoles), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+            return permissionAPI.filterCollection(search(query, -1, 0, null , user, respectFrontendRoles), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         } catch (Exception e) {
             Logger.error(this.getClass(), e.getMessage(), e);
             throw new DotRuntimeException(e.getMessage(), e);
         }
+    }
+
+    private String getContentletByHostQuery(Host parentHost, List<Integer> includingContentTypes,
+            List<Integer> excludingContentTypes) {
+        final StringBuilder query = new StringBuilder();
+        query.append("+conHost:").append(parentHost.getIdentifier()).append(" +working:true");
+
+        // Including content types
+        if(includingContentTypes != null && !includingContentTypes.isEmpty()) {
+            query.append(" +structureType:(").append(StringUtils.join(includingContentTypes, " ")).append(")");
+        }
+
+        // Excluding content types
+        if(excludingContentTypes != null && !excludingContentTypes.isEmpty()) {
+            query.append(" -structureType:(").append(StringUtils.join(excludingContentTypes, " ")).append(")");
+        }
+        return query.toString();
     }
 
     @CloseDBIfOpened
@@ -3451,6 +3586,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             APILocator.getVanityUrlAPI().invalidateVanityUrl(contentlet);
         }
         publishRelatedHtmlPages(contentlet);
+        if(contentlet.isHTMLPage()){
+            CacheLocator.getNavToolCache().removeNav(
+                    contentlet.getHost(), contentlet.getFolder(),
+                    contentlet.getLanguageId());
+        }
     }
 
     private void cleanFileAssetCache(final Contentlet contentlet, final User user,
@@ -6171,6 +6311,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet.setFolder((String)value);
                 }else if(isSetPropertyVariable(conVariable)){
                     contentlet.setProperty(conVariable, value);
+                } else if(conVariable.equals(Contentlet.VARIANT_ID)) {
+                    contentlet.setVariantId(value.toString());
                 } else if(velFieldmap.get(conVariable) != null){
                     Field field = velFieldmap.get(conVariable);
                     if(isFieldTypeString(field))
@@ -6317,7 +6459,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         }else if(fieldAPI.isElementConstant(field)){
             Logger.debug(this, "Cannot set contentlet field value on field type constant. Value is saved to the field not the contentlet");
-        }else if(field.getFieldContentlet().startsWith("text")){
+        }else if(field.getFieldContentlet().startsWith("text") &&
+                !FieldType.JSON_FIELD.toString().equals(field.getFieldType())){
             try{
                 contentlet.setStringProperty(field.getVelocityVarName(), (String)value);
             }catch (Exception e) {
@@ -6412,15 +6555,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }catch (IOException e) {
                 throw new DotContentletStateException("Unable to set binary file Object: " + e.getMessage(),e);
             }
-        }else if(field.getFieldContentlet().startsWith("system_field")){
-            if(value.getClass()==java.lang.String.class){
-                try{
-                    contentlet.setStringProperty(field.getVelocityVarName(), (String)value);
-                }catch (Exception e) {
-                    contentlet.setStringProperty(field.getVelocityVarName(),value.toString());
+        }else if(field.getFieldContentlet().startsWith("system_field")) {
+            if (value.getClass() == java.lang.String.class) {
+                try {
+                    contentlet.setStringProperty(field.getVelocityVarName(), (String) value);
+                } catch (Exception e) {
+                    contentlet.setStringProperty(field.getVelocityVarName(), value.toString());
                 }
             }
-        }else{
+        } else if(FieldType.JSON_FIELD.toString().equals(field.getFieldType())) {
+                if(value instanceof Map){
+                    contentlet.setStringProperty(field.getVelocityVarName(),
+                            Try.of(()->JsonUtil.getJsonAsString((Map<String, Object>) value))
+                                    .getOrElse("{}"));
+                }
+        } else{
             throw new DotContentletStateException("Unable to set value : Unknown field type");
         }
     }
@@ -6493,9 +6642,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final Set<String> nullValueProperties = contentlet.getNullProperties();
         for (final Field field : fields) {
             final Object fieldValue = (nullValueProperties.contains(field.getVelocityVarName()) ? null : contentletMap.get(field.getVelocityVarName()));
+            final com.dotcms.contenttype.model.field.Field newField = LegacyFieldTransformer.from(field);
             // Validate Field Type
             if(fieldValue != null){
-                if(isFieldTypeString(field)){
+                if(isFieldTypeString(field) && !(newField instanceof JSONField)){
 
                     if(fieldValue instanceof Map && FieldType.KEY_VALUE.toString().equals(field.getFieldType())){
                         //That's fine we're handling now keyValues directly as maps
@@ -6544,6 +6694,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         hasError = true;
                         continue;
                     }
+                }else if(newField instanceof JSONField) {
+                    if(!(fieldValue instanceof String) || !(JsonUtil.isValidJSON(fieldValue.toString()))){
+                        cve.addBadTypeField(field);
+                        Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type JSON");
+                        hasError = true;
+                        continue;
+                    }
+                    //  binary field validation
                 }else if(isFieldTypeSystem(field) || isFieldTypeConstant(field)){
                     // Do not validate system or constant field values
                 }else{
@@ -8372,7 +8530,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             //get the latest and greatest from db
             final Contentlet working = contentFactory
                     .findContentletByIdentifier(contentlet.getIdentifier(), false,
-                            contentlet.getLanguageId());
+                            contentlet.getLanguageId(), contentlet.getVariantId());
 
             /*
              * Only draft if there is a working version that is not live

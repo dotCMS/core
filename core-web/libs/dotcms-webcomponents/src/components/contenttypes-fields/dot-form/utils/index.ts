@@ -1,5 +1,5 @@
 import { DotFormFields } from './fields';
-import { getStringFromDotKeyArray, isStringType } from '../../../../utils';
+import { getJsonStringFromDotKeyArray, isStringType } from '../../../../utils';
 import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
@@ -137,7 +137,7 @@ const fieldParamsConversionFromBE = {
             const valuesArray = Object.keys(field.defaultValue).map((key: string) => {
                 return { key: key, value: field.defaultValue[key] };
             });
-            field.defaultValue = getStringFromDotKeyArray(valuesArray);
+            field.defaultValue = getJsonStringFromDotKeyArray(valuesArray);
         }
         return DotFormFields['Key-Value'](field);
     }

@@ -5,6 +5,8 @@ import com.dotcms.personalization.web.PersonalizationWebAPI;
 import com.dotcms.personalization.web.PersonalizationWebAPIImpl;
 import com.dotcms.prerender.PreRenderSEOWebAPI;
 import com.dotcms.prerender.PreRenderSEOWebAPIImpl;
+import com.dotcms.variant.business.web.VariantWebAPI;
+import com.dotcms.variant.business.web.VariantWebAPIImpl;
 import com.dotmarketing.business.Locator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPI;
@@ -48,6 +50,10 @@ public class WebAPILocator extends Locator<WebAPIIndex>{
 	public static LanguageWebAPI getLanguageWebAPI() {
         return (LanguageWebAPI)getInstance(WebAPIIndex.LANGUAGE_WEB_API);
     }
+
+	public static VariantWebAPI getVariantWebAPI() {
+		return (VariantWebAPI) getInstance(WebAPIIndex.VARIANT_WEB_API);
+	}
 
 	public static HostWebAPI getHostWebAPI() {
         return (HostWebAPI)getInstance(WebAPIIndex.HOST_WEB_API);
@@ -96,6 +102,7 @@ enum WebAPIIndex
 	USER_WEB_API,
 	CONTENTLET_WEB_API,
 	LANGUAGE_WEB_API,
+	VARIANT_WEB_API,
 	PERMISSION_WEB_API,
 	HOST_WEB_API,
 	PERSONALIZATION_WEB_API,
@@ -121,6 +128,8 @@ enum WebAPIIndex
 			case PRERENDER_API:
 				return new PreRenderSEOWebAPIImpl();
 
+			case VARIANT_WEB_API:
+				return new VariantWebAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

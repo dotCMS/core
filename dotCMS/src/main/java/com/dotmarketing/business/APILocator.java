@@ -1,5 +1,7 @@
 package com.dotmarketing.business;
 
+import com.dotcms.analytics.bayesian.BayesianAPI;
+import com.dotcms.analytics.bayesian.BayesianAPIImpl;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.SystemEventsFactory;
 import com.dotcms.api.tree.TreeableAPI;
@@ -42,6 +44,8 @@ import com.dotcms.enterprise.linkchecker.LinkCheckerAPIImpl;
 import com.dotcms.enterprise.priv.ESSearchProxy;
 import com.dotcms.enterprise.publishing.sitesearch.ESSiteSearchAPI;
 import com.dotcms.enterprise.rules.RulesAPI;
+import com.dotcms.experiments.business.ExperimentsAPI;
+import com.dotcms.experiments.business.ExperimentsAPIImpl;
 import com.dotcms.graphql.business.GraphqlAPI;
 import com.dotcms.graphql.business.GraphqlAPIImpl;
 import com.dotcms.keyvalue.business.KeyValueAPI;
@@ -137,6 +141,8 @@ import com.dotmarketing.portlets.structure.business.StructureAPI;
 import com.dotmarketing.portlets.structure.business.StructureAPIImpl;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.business.TemplateAPIImpl;
+import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.VariantAPIImpl;
 import com.dotmarketing.portlets.widget.business.WidgetAPI;
 import com.dotmarketing.portlets.widget.business.WidgetAPIImpl;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -1083,6 +1089,30 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
+	 * Creates a single instance of the {@link VariantAPI} class.
+	 * @return the instance
+	 */
+	public static VariantAPI getVariantAPI() {
+		return (VariantAPI) getInstance(APIIndex.VARIANT_API);
+	}
+
+	/**
+	 * Creates a single instance of the {@link com.dotcms.experiments.business.ExperimentsAPI} class.
+	 * @return the instance
+	 */
+	public static ExperimentsAPI getExperimentsAPI(){
+		return (ExperimentsAPI) getInstance(APIIndex.EXPERIMENTS_API);
+	}
+
+	/**
+	 * Creates a single instance of the {@link com.dotcms.analytics.bayesian.BayesianAPI} class.
+	 * @return
+	 */
+	public static BayesianAPI getBayesianAPI(){
+		return (BayesianAPI) getInstance(APIIndex.BAYESIAN_API);
+	}
+
+	/**
 	 * Generates a unique instance of the specified dotCMS API.
 	 *
 	 * @param index
@@ -1228,10 +1258,11 @@ enum APIIndex
 	CONTENTLET_METADATA_API,
 	DEVICE_API,
 	DETERMINISTIC_IDENTIFIER_API,
-	CONTENTLET_JSON_API;
+	CONTENTLET_JSON_API,
+	VARIANT_API,
+	EXPERIMENTS_API,
 
-
-
+	BAYESIAN_API;
 
 	Object create() {
 		switch(this) {
@@ -1315,6 +1346,9 @@ enum APIIndex
 			case DEVICE_API: return new DeviceAPIImpl();
 			case DETERMINISTIC_IDENTIFIER_API: return new DeterministicIdentifierAPIImpl();
 			case CONTENTLET_JSON_API: return new ContentletJsonAPIImpl();
+			case VARIANT_API: return new VariantAPIImpl();
+			case EXPERIMENTS_API: return new ExperimentsAPIImpl();
+			case BAYESIAN_API: return new BayesianAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

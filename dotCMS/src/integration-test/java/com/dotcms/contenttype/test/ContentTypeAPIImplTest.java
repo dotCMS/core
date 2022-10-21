@@ -2034,10 +2034,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
 	    
 	    List<Field> fields = newType.fields(BinaryField.class);
-	    assert(fields.size()==1);
-	    
-	    fields = newType.fields(TextField.class);
-	    assert(fields.size()==3);
+		 assertTrue("There must be only one Binary Field in this test File Asset sub-type", fields.size() == 1);
 	     
       //Add Field.
       fields = new ArrayList<>( newType.fields() );
@@ -2057,7 +2054,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 	    
 	    
       fields = newType.fields(TextField.class);
-      assert(fields.size()==4);
+	  assertTrue("There must be only two Text Field in this test File Asset sub-type", fields.size() == 2);
 	     
       fields = newType.fields(SelectField.class);
       assert(fields.size()==0);

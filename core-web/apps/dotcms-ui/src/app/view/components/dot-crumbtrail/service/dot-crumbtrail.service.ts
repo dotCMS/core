@@ -64,10 +64,12 @@ export class DotCrumbtrailService {
                             res = [
                                 {
                                     label: menu.name,
+                                    target: '_self',
                                     url: `#/${menu.menuItems[0].menuLink}`
                                 },
                                 {
                                     label: menuItem.label,
+                                    target: '_self',
                                     url: `#/${menuItem.menuLink}`
                                 }
                             ];
@@ -124,6 +126,7 @@ export class DotCrumbtrailService {
 
                     crumbTrail.push({
                         label: sectionLabel ? sectionLabel : sections[1],
+                        target: '_self',
                         url: ''
                     });
                 }
@@ -146,5 +149,6 @@ export class DotCrumbtrailService {
 
 export interface DotCrumb {
     label: string;
+    target?: string;
     url: string;
 }

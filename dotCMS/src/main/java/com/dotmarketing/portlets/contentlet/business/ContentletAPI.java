@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
@@ -25,6 +24,7 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships.Content
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.contentet.pagination.PaginatedContentlets;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import java.io.Serializable;
@@ -189,7 +189,23 @@ public interface ContentletAPI {
 	 */
 	public Contentlet findContentletByIdentifier(String identifier, boolean live, long languageId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
 
-    /**
+	/**
+	 * Retrieves a contentlet from the Lucene index + cache first, then falls back
+	 * to the database if not found based on its identifier
+	 * @param identifier
+	 * @param live Retrieves the live version. If false retrieves the working version
+	 * @param languageId languageId The LanguageId of the content version we'd like to retrieve
+	 * @param variantId The Variant's id of the content version we'd like to retrieve
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return Contentlet Object
+	 * @throws DotSecurityException
+	 * @throws DotContentletStateException
+	 * @throws DotDataException
+	 */
+	public Contentlet findContentletByIdentifier(String identifier, boolean live, long languageId, String variantId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
+
+	/**
      * Retrieves a contentlet from the database by its identifier and the working version.
      * It includes archive content if includeDeleted is true
      * @param identifier
@@ -248,6 +264,17 @@ public interface ContentletAPI {
 	public List<Contentlet> findContentletsByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
+	 * Gets a list of paginated {@link Contentlet} from a given parent host, retrieves the working version of content
+	 * The {@link Contentlet} are got using pagination, it means that it is going to do multiple request
+	 * to Elasticserach it depends on the amount of {@link Contentlet}
+	 *
+	 * @param parentHost
+	 * @return PaginatedContentlets
+	 * @throws DotSecurityException
+	 */
+	public PaginatedContentlets findContentletsPaginatedByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	/**
 	 * Gets a list of Contentlets from a given parent host, retrieves the working version of content. The difference between this method and the other one
 	 * is that the user can specify which content type want to include and exclude.
 	 * NOTE: If the parameters includingContentTypes and excludingContentTypes are empty if will return all the contentlets.
@@ -263,6 +290,27 @@ public interface ContentletAPI {
 	public List<Contentlet> findContentletsByHost(Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
+	 * Gets a list of {@link Contentlet} from a given parent host, retrieves the working version of content.
+	 * The difference between this method and the other one is that the user can specify which content type want to include and exclude.
+	 * NOTE: If the parameters includingContentTypes and excludingContentTypes are empty it will return all the contentlets.
+	 *
+	 * The {@link Contentlet} are got using pagination, it means that it is going to do multiple request
+	 * to Elasticserach it depends on the amount of {@link Contentlet}
+	 *
+	 * @param parentHost
+	 * @param includingContentTypes this is a list of content types that you would like to include in the results
+	 * @param excludingContentTypes this is a list of content types that you would like to exclude in the results
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return PaginatedContentlets {@link Iterable} of contentlets
+	 *
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public PaginatedContentlets findContentletsPaginatedByHost(Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	/**
+	 *
 	 * Returns a list of {@link Contentlet} whose parent host matches the given host and whose base-type
 	 * (See {@link Structure.Type}) matches any of the given base types. .
 	 *
