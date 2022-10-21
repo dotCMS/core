@@ -11,7 +11,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 /**
- * Encapsulates the configuration for the Object Mapper on the Resources.
+ * Encapsulates the configuration for the Object Mapper on the Resources. 
  * @author jsanca
  */
 public class DotObjectMapperProvider {
