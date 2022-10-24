@@ -50,6 +50,10 @@
         padding-right: $spacing-4;
     }
 
+    .p-tabview .tab-panel-btn a.p-tabview-nav-link {
+        padding: 0;
+    }
+
     .p-tabview-title {
         display: inline-block;
         margin-right: $spacing-2;

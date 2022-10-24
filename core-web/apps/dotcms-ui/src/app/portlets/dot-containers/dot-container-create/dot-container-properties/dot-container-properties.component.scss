@@ -2,7 +2,7 @@
 
 .dot-container-properties__button-container {
     position: absolute;
-    top: 5rem;
+    top: 5.1rem;
     right: $spacing-4;
 
     button {
@@ -18,12 +18,6 @@
 
     ::ng-deep .p-inplace-display {
         padding-left: 0.8rem;
-    }
-
-    dot-api-link {
-        ::ng-deep a {
-            padding: 0 $spacing-3;
-        }
     }
 }
 
@@ -48,25 +42,17 @@
     margin-right: $spacing-2;
 }
 
-.dot-container-properties__button-clear,
-dot-container-properties__button-clear:hover {
+.p-button-info.dot-container-properties__button-clear,
+.p-button-info.dot-container-properties__button-clear:hover {
     background-color: $gray;
     color: $white;
-    border: none;
-}
-
-.dot-container-properties__code-container-outer {
-    display: flex;
-    flex-direction: column;
-
-    dot-textarea-content {
-        height: 40vh;
-    }
+    padding: 0.82rem $spacing-3;
 }
 
 .dot-container-properties__code-loop-container {
     background: $white;
     border: 1px solid $input-border-color;
+    padding-bottom: 4rem;
 }
 
 :host ::ng-deep {

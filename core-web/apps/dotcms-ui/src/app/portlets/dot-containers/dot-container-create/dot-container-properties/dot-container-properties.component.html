@@ -71,7 +71,7 @@
                 pInputText
             />
             <button
-                class="p-button-secondary dot-container-properties__button-clear"
+                class="p-button-info dot-container-properties__button-clear"
                 *ngIf="vm.isContentTypeVisible"
                 [label]="'message.containers.create.clear' | dm"
                 (click)="clearContent()"
@@ -88,35 +88,30 @@
             ></button>
         </div>
 
-        <div class="dot-container-properties__code-container-outer">
-            <div
-                class="dot-container-properties__code-loop-container"
-                *ngIf="vm.isContentTypeVisible"
-            >
-                <dot-loop-editor
-                    [isEditorVisible]="vm.showPrePostLoopInput"
-                    [control]="getFormControl('preLoop')"
-                    (buttonClick)="showLoopInput()"
-                ></dot-loop-editor>
-                <dot-content-code-editor
-                    [containerStructures]="vm.contentTypes"
-                    (updateContainerStructure)="updateContainerStructure($event)"
-                ></dot-content-code-editor>
-                <dot-loop-editor
-                    [isEditorVisible]="vm.showPrePostLoopInput"
-                    [control]="getFormControl('postLoop')"
-                    (buttonClick)="showLoopInput()"
-                ></dot-loop-editor>
-            </div>
-            <div class="field" *ngIf="!vm.isContentTypeVisible">
-                <label class="block p-label-input-required" for="code">Code</label>
-                <dot-textarea-content
-                    id="code"
-                    [show]="['code']"
-                    formControlName="code"
-                    language="html"
-                ></dot-textarea-content>
-            </div>
+        <div class="dot-container-properties__code-loop-container" *ngIf="vm.isContentTypeVisible">
+            <dot-loop-editor
+                [isEditorVisible]="vm.showPrePostLoopInput"
+                [control]="getFormControl('preLoop')"
+                (buttonClick)="showLoopInput()"
+            ></dot-loop-editor>
+            <dot-content-code-editor
+                [containerStructures]="vm.contentTypes"
+                (updateContainerStructure)="updateContainerStructure($event)"
+            ></dot-content-code-editor>
+            <dot-loop-editor
+                [isEditorVisible]="vm.showPrePostLoopInput"
+                [control]="getFormControl('postLoop')"
+                (buttonClick)="showLoopInput()"
+            ></dot-loop-editor>
+        </div>
+        <div class="field" *ngIf="!vm.isContentTypeVisible">
+            <label class="block p-label-input-required" for="code">Code</label>
+            <dot-textarea-content
+                id="code"
+                [show]="['code']"
+                formControlName="code"
+                language="html"
+            ></dot-textarea-content>
         </div>
     </form>
 </ng-container>

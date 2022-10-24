@@ -1,4 +1,4 @@
-<div class="dot-loop-editor__pre-post-loop mb-8">
+<div class="dot-loop-editor__pre-post-loop">
     <div class="dot-loop-editor__pre-post-loop-inplace" *ngIf="!isEditorVisible">
         <button
             class="p-button-outlined p-button-secondary"
@@ -9,7 +9,7 @@
         ></button>
     </div>
     <div *ngIf="isEditorVisible">
-        <label>{{ 'message.containers.create.pre_loop' | dm }}</label>
+        <label class="block field">{{ 'message.containers.create.pre_loop' | dm }}</label>
         <dot-textarea-content
             [formControl]="control"
             [show]="['code']"
