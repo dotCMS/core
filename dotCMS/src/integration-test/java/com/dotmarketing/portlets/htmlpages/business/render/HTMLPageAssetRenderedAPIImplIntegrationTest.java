@@ -19,6 +19,7 @@ import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.MultiTreeDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
@@ -981,6 +982,54 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                         + "</div>", html);
     }
 
+    @Test
+    public void renderPageWithDifferentVariantsVersion2() throws WebAssetException, DotDataException, DotSecurityException {
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = createContentType();
+        final Container container = createAndPublishContainer(host, contentType);
+        final HTMLPageAsset page = createHtmlPageAsset(language, host, container, variant);
+        final Contentlet contentlet = createContentlet(language, host, contentType);
+        createNewVersion(contentlet, language, variant);
+
+        addToPage(container, page, contentlet);
+
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType)
+                .languageId(language.getId())
+                .host(host)
+                .setProperty("title", "DEFAULT second-content-default-" + language.getId())
+                .variant(variant)
+                .nextPersistedAndPublish();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContentlet(contentlet_2)
+                .setInstanceID(ContainerUUID.UUID_START_VALUE)
+                .setTreeOrder(0)
+                .setContainer(container)
+                .nextPersisted();
+
+        final HttpServletRequest mockRequest = createHttpServletRequest(language, host,
+                variant, page);
+
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        final HttpSession session = createHttpSession(mockRequest);
+        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(APILocator.systemUser())
+                        .setPageUri(page.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+        Assert.assertEquals(
+                "<div>" + variant.name() + " second-content-default-" + language.getId()
+                        + "</div>", html);
+    }
+
     /**
      * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
      * When: Try to render a page with a specific {@link Variant}} and a specific {@link Language}
@@ -1074,11 +1123,6 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         Assert.assertEquals("<div>DEFAULT content-default-" + language.getId() + "</div>", html);
     }
 
-    //WIDGET y FORM con variant
-    //Variant que no existe
-
-    // URL Map
-
     private HttpServletRequest createHttpServletRequest(Language language, Host host, Variant variant,
             HTMLPageAsset page) throws DotDataException {
         final HttpServletRequest mockRequest = mock(HttpServletRequest.class);
@@ -1109,12 +1153,14 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         return createHtmlPageAsset(language, folder, template, variant);
     }
 
-    private void addToPage(Container container, HTMLPageAsset page, Contentlet contentlet)
-            throws DotDataException {
-        MultiTree multiTree_1 = new MultiTree(page.getIdentifier(),
-                container.getIdentifier(), contentlet.getIdentifier(), ContainerUUID.UUID_START_VALUE,0);
-
-        APILocator.getMultiTreeAPI().saveMultiTree(multiTree_1);
+    private void addToPage(Container container, HTMLPageAsset page, Contentlet contentlet) {
+         new MultiTreeDataGen()
+            .setPage(page)
+            .setContentlet(contentlet)
+            .setInstanceID(ContainerUUID.UUID_START_VALUE)
+            .setTreeOrder(0)
+            .setContainer(container)
+            .nextPersisted();
     }
 
     private Contentlet createContentlet(final Language language, final Host host, final ContentType contentType)

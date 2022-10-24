@@ -1915,7 +1915,7 @@ public class ContentletAjax {
 							APILocator.getTemplateAPI().delete(previousTemplate, systemUser, false);
 						}
 
-						CacheLocator.getMultiTreeCache().removePageMultiTrees(contentlet.getIdentifier());
+						CacheLocator.getMultiTreeCache().removePageMultiTrees(contentlet.getIdentifier(), contentlet.getVariantId());
 					}
                 }
 
