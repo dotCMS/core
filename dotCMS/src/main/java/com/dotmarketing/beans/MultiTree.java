@@ -102,8 +102,9 @@ public class MultiTree implements Serializable {
         return variantId != null ? variantId : VariantAPI.DEFAULT_VARIANT.name();
     }
 
-    public void setVariantId(final String variantId) {
+    public MultiTree setVariantId(final String variantId) {
         this.variantId = variantId;
+        return new MultiTree(this);
     }
 
     /**

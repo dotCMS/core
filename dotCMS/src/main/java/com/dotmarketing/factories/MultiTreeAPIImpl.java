@@ -89,7 +89,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             "select distinct contentlet.identifier from contentlet,multi_tree where multi_tree.child = contentlet.identifier and multi_tree.parent1 = ? and language_id = ? and variant_id = ?";
 
     private static final String UPDATE_MULTI_TREE_PERSONALIZATION = "update multi_tree set personalization = ? where personalization = ?";
-    private static final String SELECT_SQL = "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ? and personalization = ? and variant_id = 'DEFAULT'";
+    private static final String SELECT_SQL = "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ? and personalization = ? and variant_id = ?";
 
     private static final String INSERT_SQL = "insert into multi_tree (parent1, parent2, child, relation_type, tree_order, personalization, variant_id) values (?,?,?,?,?,?,?)  ";
 
@@ -189,13 +189,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                                   final String containerInstance, final String personalization)
             throws DotDataException {
 
-        final DotConnect db =
-                new DotConnect().setSQL(SELECT_SQL).addParam(htmlPage).addParam(container)
-                        .addParam(childContent).addParam(containerInstance)
-                        .addParam(personalization);
-        db.loadResult();
-
-        return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).findFirst();
+        return this.getMultiTree(htmlPage, container, childContent, containerInstance, personalization, VariantAPI.DEFAULT_VARIANT.name());
 
     }
 
@@ -203,7 +197,21 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     public MultiTree getMultiTree(final String htmlPage, final String container, final String childContent, final String containerInstance)
             throws DotDataException {
 
-        return this.getMultiTree(htmlPage, container, childContent, containerInstance, MultiTree.DOT_PERSONALIZATION_DEFAULT);
+        return this.getMultiTree(htmlPage, container, childContent, containerInstance, MultiTree.DOT_PERSONALIZATION_DEFAULT, VariantAPI.DEFAULT_VARIANT.name());
+    }
+
+    @Override
+    public MultiTree getMultiTree(final String htmlPage, final String container, final String childContent,
+            final String containerInstance,  final String personalization, final String variantId)
+            throws DotDataException {
+        final DotConnect db =
+                new DotConnect().setSQL(SELECT_SQL).addParam(htmlPage).addParam(container)
+                        .addParam(childContent).addParam(containerInstance)
+                        .addParam(personalization).addParam(variantId);
+        db.loadResult();
+
+        return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).findFirst();
+
     }
 
     /**
@@ -716,7 +724,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             for (final MultiTree tree : mTrees) {
                 insertParams
                         .add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(),
-                                tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization()));
+                                tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization(), tree.getVariantId()));
                 newContainers.add(tree.getContainer());
             }
 

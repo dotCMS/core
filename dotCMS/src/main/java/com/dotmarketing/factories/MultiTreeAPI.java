@@ -261,6 +261,18 @@ public interface MultiTreeAPI {
      * @param container
      * @param childContent
      * @param containerInstance
+     * @return
+     * @throws DotDataException
+     */
+    MultiTree getMultiTree(String htmlPage, String container, String childContent, String containerInstance, String personalization, String variantId) throws DotDataException;
+
+    /**
+     * Gets a specific MultiTree entry
+     *
+     * @param htmlPage
+     * @param container
+     * @param childContent
+     * @param containerInstance
      * @param personalization
      * @return MultiTree
      * @throws DotDataException
