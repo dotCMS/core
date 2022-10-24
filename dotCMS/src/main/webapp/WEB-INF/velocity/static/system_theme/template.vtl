@@ -55,6 +55,121 @@ body {
 .body-wrapper {
     flex-grow: 1;
 }
+
+.system_container {
+    border: 1px solid #b3b1b8;
+    gap: 20px;
+    padding: 10px;
+    display: flex;
+    background: white;
+    margin: 20px;
+    max-width: 800px;
+}
+
+.system_container .card_logo {
+    width: 150px;
+    height: 150px;
+    overflow: hidden;
+}
+
+.system_container .card_logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.system_container .card_body {
+    width: calc(100% - 150px);
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.system_container .card_header {
+    flex-grow: 1;
+    overflow: hidden;
+    margin-bottom: 15px;
+}
+
+.system_container .card_footer {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.system_container .card_title h1 {
+    overflow: hidden;
+    font-size: 40px;
+    margin: 0;
+    margin-bottom: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.system_container .content_type {
+    background-color: #b3b1b8;
+    display: inline-block;
+    color: white;
+    padding: 4px 6px;
+    text-align: center;
+    border-radius: 5px;
+    font-size: .75rem;
+}
+
+.system_container .lang {
+    border-radius: 2px;
+    font-size: 12px;
+    padding: 0 0.25em;
+    display: inline-block;
+    background-color: transparent;
+    border: solid 1px #6f5fa3;
+    color: #6f5fa3;
+}
+
+.system_container .status {
+    border-radius: 50%;
+    border: solid 2px;
+    box-sizing: border-box;
+    height: 20px;
+    width: 20px;
+}
+
+.system_container .status.live {
+    background: #27b970;
+}
+
+.system_container .status.working {
+    background: transparent;
+}
+
+@media (max-width: 640px) {
+    .system_container {
+        flex-direction: column;
+        max-width: 250px;
+        gap: 5px;
+        padding: 0;
+        margin: 20px auto;
+    }
+    
+    .system_container .card_logo {
+        width: 100%;
+        height: auto;
+        min-height: 200px;
+        overflow: hidden;
+    }
+    
+    .system_container .card_body {
+        padding: 10px;
+        width: 100%;
+    }
+    
+    .system_container .card_title {
+        width: calc(100% - 20px);
+        font-size: 40px;
+    }
+}
+
 </style>
 </head>
 ## Head - END
