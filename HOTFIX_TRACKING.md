@@ -41,3 +41,4 @@ This maintenance release includes the following code fixes:
 30. https://github.com/dotCMS/core/issues/22916 : Need a way to run UT in LTS Releases #22916
 31. https://github.com/dotCMS/core/issues/21482 : [REST] : Updating one Binary Field is removing the value from the other Binary Field #21482
 32. https://github.com/dotCMS/core/issues/21885 : Template show archive not working #21885
+33. https://github.com/dotCMS/core/issues/21619 : ContentTypeFactoryImpl Getting Config values cause unneeded load #21619
