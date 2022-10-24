@@ -172,6 +172,12 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         assertTrue("multiTree reorders", list.get(4).getContentlet().equals("CONTENTLET4"));
     }
 
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#saveMultiTreeAndReorder(MultiTree)}
+     * When: A {@link MultiTree} is saved with not the last treeorder expected with a specific {@link Variant}
+     * Should: Save it and reorder all the {@link MultiTree} that already exists to this {@link Variant}
+     * @throws Exception
+     */
     @Test
     public  void testReorderWithVariant() throws Exception {
         final Variant variant = new VariantDataGen().nextPersisted();

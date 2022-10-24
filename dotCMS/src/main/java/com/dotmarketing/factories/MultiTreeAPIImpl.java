@@ -645,7 +645,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private void deleteMultiTreeToMySQL(
             final String pageId,
             final String personalization,
-            final Optional<Long> languageIdOpt, String variantId) throws DotDataException {
+            final Optional<Long> languageIdOpt, final String variantId) throws DotDataException {
         final DotConnect db = new DotConnect();
 
         final List<String> multiTreesId = db.setSQL(SELECT_MULTI_TREE_BY_LANG)
