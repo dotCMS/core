@@ -46,7 +46,7 @@ interface CreateForm {
     ],
     templateUrl: './dot-experiments-create.component.html',
     styleUrls: ['./dot-experiments-create.component.scss'],
-    providers: [DotExperimentsCreateStore, DotExperimentsListStore],
+    providers: [DotExperimentsCreateStore],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsCreateComponent implements OnInit {
