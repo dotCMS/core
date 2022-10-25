@@ -91,8 +91,8 @@
         <div class="dot-container-properties__code-loop-container" *ngIf="vm.isContentTypeVisible">
             <dot-loop-editor
                 [isEditorVisible]="vm.showPrePostLoopInput"
-                [control]="getFormControl('preLoop')"
                 (buttonClick)="showLoopInput()"
+                formControlName="preLoop"
             ></dot-loop-editor>
             <dot-content-code-editor
                 [containerStructures]="vm.contentTypes"
@@ -100,8 +100,8 @@
             ></dot-content-code-editor>
             <dot-loop-editor
                 [isEditorVisible]="vm.showPrePostLoopInput"
-                [control]="getFormControl('postLoop')"
                 (buttonClick)="showLoopInput()"
+                formControlName="postLoop"
             ></dot-loop-editor>
         </div>
         <div class="field" *ngIf="!vm.isContentTypeVisible">

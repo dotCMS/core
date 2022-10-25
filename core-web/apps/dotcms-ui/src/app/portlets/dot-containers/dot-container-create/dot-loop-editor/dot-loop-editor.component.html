@@ -11,8 +11,10 @@
     <div *ngIf="isEditorVisible">
         <label class="block field">{{ 'message.containers.create.pre_loop' | dm }}</label>
         <dot-textarea-content
-            [formControl]="control"
+            [formControl]="loopControl"
             [show]="['code']"
+            (blur)="onTouched()"
+            (input)="onTouched()"
             language="html"
         ></dot-textarea-content>
     </div>
