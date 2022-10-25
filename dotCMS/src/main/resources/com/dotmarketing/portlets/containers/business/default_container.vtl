@@ -1,5 +1,38 @@
-<h1>$!{title}</h1>
-#set($contentlet = $dotcontent.find($!{ContentIdentifier}))
-#if ("TITLE_IMAGE_NOT_FOUND" != $!{contentlet.titleImage})
-<img src="/contentAsset/raw-data/$!{ContentIdentifier}/$!{contentlet.titleImage}">
+#set($contentMap = $dotcontent.find($!{ContentIdentifier}))
+#set($contentlet = $contentMap.getContentObject())
+#set($contentType = $contentlet.getContentType())
+#set($language = $languagewebapi.getLanguage("$!{contentlet.languageId}"))
+
+#if($!{contentMap})
+<div class="system_container">
+    #if (
+        $UtilMethods.isImage("$contentlet.fileName") ||
+        $UtilMethods.isImage("$contentlet.asset") ||
+        $UtilMethods.isImage("$contentlet.title") ||
+        $UtilMethods.isImage("$contentlet.image") ||
+        $UtilMethods.isImage("$contentlet.profilePhoto")
+    )
+        <div class="card_logo">
+            <img src="/dA/$!{contentlet.inode}" />
+        </div>
+    #end
+
+    <div class="card_body">
+        <div class="card_header">
+            <div class="card_title">
+                <h1>#if($title)$title#{else}$!contentlet.title#end</h1>
+            </div>
+           <span class="content_type">$contentType.name()</span>
+        </div>
+        <div class="card_footer">
+            <div class="status #if($contentlet.isLive())live#{else}working#end"></div>
+            <span class="lang">$!{language}</span>
+        </div>
+    </div>
+</div>
+#else
+<div style="width: auto; overflow-wrap: break-word;">
+<h1>$text.get('message.contentlet.not.have.live.version')</h1>
+<h2>Contentlet Identifier: $!{ContentIdentifier}</h2>
+</div>
 #end

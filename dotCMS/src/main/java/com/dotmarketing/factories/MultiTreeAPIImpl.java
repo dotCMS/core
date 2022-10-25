@@ -2,6 +2,7 @@ package com.dotmarketing.factories;
 
 
 import com.dotcms.variant.VariantAPI;
+
 import com.dotmarketing.business.web.WebAPILocator;
 import java.sql.SQLException;
 import java.util.Date;
@@ -98,10 +99,12 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String SELECT_BY_PAGE = "select * from multi_tree where parent1 = ? order by tree_order";
     private static final String SELECT_BY_PAGE_AND_PERSONALIZATION = "select * from multi_tree where parent1 = ? and personalization = ? and variant_id = 'DEFAULT' order by tree_order";
     private static final String SELECT_UNIQUE_PERSONALIZATION = "select distinct(personalization) from multi_tree";
-    private static final String SELECT_BY_ONE_PARENT = "select * from multi_tree where (parent1 = ? or parent2 = ?) and variant_id = ? order by tree_order"; // search by page id or container id
+
+    private static final String SELECT_BY_ONE_PARENT = "select * from multi_tree where parent1 = ? or parent2 = ? and variant_id = 'DEFAULT' order by tree_order"; // search by page id or container id
     private static final String SELECT_BY_TWO_PARENTS = "select * from multi_tree where parent1 = ? and parent2 = ? and variant_id = 'DEFAULT'  order by tree_order";
     private static final String SELECT_ALL = "select * from multi_tree  ";
-    private static final String SELECT_BY_CHILD = "select * from multi_tree where child = ? and variant_id = 'DEFAULT' order by parent1, parent2, relation_type ";
+    private static final String SELECT_BY_CHILD = "select * from multi_tree where child = ? order by parent1, parent2, relation_type ";
+
     private static final String SELECT_BY_PARENTS_AND_RELATIONS =
             " select * from multi_tree where parent1 = ? and parent2 = ? and relation_type = ? and personalization = ? and variant_id = 'DEFAULT' order by tree_order";
 
@@ -667,6 +670,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             final String pageId,
             final String personalization,
             final Optional<Long> languageIdOpt, String variantId) throws DotDataException {
+
         final DotConnect db = new DotConnect();
 
         final List<String> multiTreesId = db.setSQL(SELECT_MULTI_TREE_BY_LANG)

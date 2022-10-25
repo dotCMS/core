@@ -222,11 +222,13 @@ describe('DotLoginComponent', () => {
             loginControl.setValue('');
             loginControl.markAsTouched();
             loginControl.markAsDirty();
+            loginControl.updateValueAndValidity();
 
             const passwordControl = component.loginForm.get('password');
             passwordControl.setValue('');
             passwordControl.markAsTouched();
             passwordControl.markAsDirty();
+            passwordControl.updateValueAndValidity();
 
             fixture.detectChanges();
 

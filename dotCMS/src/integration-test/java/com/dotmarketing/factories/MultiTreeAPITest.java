@@ -37,8 +37,10 @@ import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
 import graphql.AssertException;
 import java.util.ArrayList;
+
 import java.util.Collection;
 import org.jetbrains.annotations.NotNull;
+
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -175,6 +177,12 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         assertTrue("multiTree reorders", list.get(4).getContentlet().equals("CONTENTLET4"));
     }
 
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#saveMultiTreeAndReorder(MultiTree)}
+     * When: A {@link MultiTree} is saved with not the last treeorder expected with a specific {@link Variant}
+     * Should: Save it and reorder all the {@link MultiTree} that already exists to this {@link Variant}
+     * @throws Exception
+     */
     @Test
     public  void testReorderWithVariant() throws Exception {
         final Variant variant = new VariantDataGen().nextPersisted();
@@ -823,6 +831,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         assertEquals(variantA.name(), multiTrees_2.get(1).getVariantId());
     }
 
+
     private List<MultiTree> getMultiTrees(final String pageId) throws DotDataException {
         final ArrayList arrayList = new DotConnect()
                 .setSQL("select * from multi_tree where parent1 = ? order by tree_order")
@@ -943,6 +952,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 Optional.of(defaultLanguage.getId()),
                 variantA.name()
         );
+
 
         final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTreesByVariant(page.getIdentifier(), variantA.name());
 

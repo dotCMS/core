@@ -45,6 +45,15 @@ public class MultiTree implements Serializable {
 
     private String variantId;
 
+    /**
+     * @param htmlPage page's id
+     * @param container container's id
+     * @param child contentlet's id
+     * @param instanceId container UI ID
+     * @param treeOrder order to be show into the page
+     * @param personalization persona's tag
+     * @param variantId variant's name
+     */
     /** full constructor */
     public MultiTree(final String htmlPage,
                      final String container,

@@ -2,8 +2,8 @@ import { Injectable } from '@angular/core';
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { LoadingState } from '@portlets/shared/models/shared-models';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { catchError, switchMap, tap } from 'rxjs/operators';
-import { EMPTY, Observable, throwError } from 'rxjs';
+import { catchError, switchMap, tap, withLatestFrom } from 'rxjs/operators';
+import { EMPTY, Observable, pipe, throwError } from 'rxjs';
 import { MessageService } from 'primeng/api';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotExperimentStatusList } from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
@@ -12,14 +12,17 @@ import {
     DotExperiment,
     GroupedExperimentByStatus
 } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
+import { ActivatedRoute } from '@angular/router';
 
 export interface DotExperimentsState {
+    pageId: string;
     experiments: DotExperiment[];
     filterStatus: Array<string>;
     status: LoadingState;
 }
 
 const initialState: DotExperimentsState = {
+    pageId: '',
     experiments: [],
     filterStatus: [
         DotExperimentStatusList.DRAFT,
@@ -42,6 +45,7 @@ export interface VmListExperiments {
 @Injectable()
 export class DotExperimentsListStore extends ComponentStore<DotExperimentsState> {
     // Selectors
+    readonly getPageId$ = this.select((state) => state.pageId);
     readonly getStatus$ = this.select((state) => state.status);
 
     readonly getExperiments$ = this.select((state) => state.experiments);
@@ -81,6 +85,12 @@ export class DotExperimentsListStore extends ComponentStore<DotExperimentsState>
         experiments
     }));
 
+    readonly addExperiment = this.updater((state, experiments: DotExperiment[]) => ({
+        ...state,
+        status: LoadingState.LOADED,
+        experiments: [...state.experiments, ...experiments]
+    }));
+
     readonly setFilterStatus = this.updater((state, filterStatus: Array<string>) => ({
         ...state,
         filterStatus
@@ -99,23 +109,21 @@ export class DotExperimentsListStore extends ComponentStore<DotExperimentsState>
     }));
 
     // Effects
-    readonly loadExperiments = this.effect((pageId$: Observable<string>) => {
-        return pageId$.pipe(
+    readonly loadExperiments = this.effect<void>(
+        pipe(
             tap(() => this.setComponentStatus(LoadingState.LOADING)),
-            switchMap((pageId) =>
+            withLatestFrom(this.getPageId$),
+            switchMap(([, pageId]) =>
                 this.dotExperimentsService.get(pageId).pipe(
-                    tap(() => this.setComponentStatus(LoadingState.LOADING)),
                     tapResponse(
-                        (experiments) => {
-                            this.setExperiments(experiments);
-                        },
+                        (experiments) => this.setExperiments(experiments),
                         (error: HttpErrorResponse) => throwError(error),
                         () => this.setComponentStatus(LoadingState.LOADED)
                     )
                 )
             )
-        );
-    });
+        )
+    );
 
     readonly deleteExperiment = this.effect((experiment$: Observable<DotExperiment>) => {
         return experiment$.pipe(
@@ -189,8 +197,9 @@ export class DotExperimentsListStore extends ComponentStore<DotExperimentsState>
     constructor(
         private readonly dotExperimentsService: DotExperimentsService,
         private readonly dotMessageService: DotMessageService,
-        private readonly messageService: MessageService
+        private readonly messageService: MessageService,
+        private readonly route: ActivatedRoute
     ) {
-        super(initialState);
+        super({ ...initialState, pageId: route.snapshot.params.pageId });
     }
 }
