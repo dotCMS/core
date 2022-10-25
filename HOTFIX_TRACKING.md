@@ -51,5 +51,6 @@ This maintenance release includes the following code fixes:
 40. https://github.com/dotCMS/core/issues/22349 : Missing database migration tasks when migrating from <=5.1.6 #22349
 41. https://github.com/dotCMS/core/issues/22603 : missing locales for velocity #22603
 42. https://github.com/dotCMS/core/issues/22852 : Update java version of java-base #22852
-43. 
+43. https://github.com/dotCMS/core/issues/22605 : Execution of Task211020CreateHostIntegrityCheckerResultTables Fails on MSSQL #22605
+44. 
 
