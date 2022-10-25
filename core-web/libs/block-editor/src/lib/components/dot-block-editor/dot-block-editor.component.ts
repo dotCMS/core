@@ -26,7 +26,6 @@ import { Underline } from '@tiptap/extension-underline';
 import { TableCell } from '@tiptap/extension-table-cell';
 import { TableRow } from '@tiptap/extension-table-row';
 import { TableHeader } from '@tiptap/extension-table-header';
-import { BubbleFormExtension } from '../../extensions/bubble-form/bubble-form.extension';
 import { Dropcursor } from '@tiptap/extension-dropcursor';
 import { DotTableExtension } from '../../extensions/dot-table/dot-table.extension';
 
@@ -104,8 +103,7 @@ export class DotBlockEditorComponent implements OnInit {
             TableCell,
             TableRow,
             TableHeader,
-            DotTableExtension(),
-            BubbleFormExtension(this.viewContainerRef)
+            DotTableExtension()
         ];
         const customExtensions: Map<string, AnyExtension> = new Map([
             ['contentlets', ContentletBlock(this.injector)],

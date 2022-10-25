@@ -1,6 +1,6 @@
 import { ComponentRef } from '@angular/core';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { Observable, Subject } from 'rxjs';
+import { take, takeUntil } from 'rxjs/operators';
 
 import { EditorState, Plugin, PluginKey, Transaction, NodeSelection } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
@@ -9,14 +9,8 @@ import { Node } from 'prosemirror-model';
 import { Editor, posToDOMRect } from '@tiptap/core';
 import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
 import tippy, { Instance, Props } from 'tippy.js';
-import { imageFormControls } from '../utils';
 
-import {
-    ImageNode,
-    getNodePosition,
-    BUBBLE_FORM_PLUGIN_KEY,
-    BubbleFormComponent
-} from '@dotcms/block-editor';
+import { getNodePosition, BUBBLE_FORM_PLUGIN_KEY, BubbleFormComponent } from '@dotcms/block-editor';
 
 export interface BubbleFormProps {
     pluginKey: PluginKey;
@@ -24,6 +18,7 @@ export interface BubbleFormProps {
     element: HTMLElement;
     tippyOptions?: Partial<Props>;
     component?: ComponentRef<BubbleFormComponent>;
+    form$: Observable<{ [key: string]: string }>;
 }
 
 export type BubbleFormViewProps = BubbleFormProps & {
@@ -32,6 +27,7 @@ export type BubbleFormViewProps = BubbleFormProps & {
 
 interface PluginState {
     open: boolean;
+    form: [];
 }
 
 export class BubbleFormView extends BubbleMenuView {
@@ -69,14 +65,6 @@ export class BubbleFormView extends BubbleMenuView {
         this.pluginKey = pluginKey;
         this.component = component;
 
-        this.component.instance.buildForm(imageFormControls);
-
-        this.component.instance.formValues.pipe(takeUntil(this.$destroy)).subscribe((data) => {
-            const attr = this.node.attrs;
-            this.editor.commands.setImage({ ...attr, ...data });
-            this.editor.commands.closeForm();
-        });
-
         this.component.instance.hide.pipe(takeUntil(this.$destroy)).subscribe(() => {
             this.editor.commands.closeForm();
         });
@@ -103,6 +91,12 @@ export class BubbleFormView extends BubbleMenuView {
             this.tippy?.popperInstance?.forceUpdate();
 
             return;
+        }
+
+        if (next.open && next.form) {
+            this.component.instance.buildForm(next.form);
+        } else {
+            this.component.instance.cleanForm();
         }
 
         this.createTooltip();
@@ -154,9 +148,15 @@ export class BubbleFormView extends BubbleMenuView {
             },
 
             onShow: () => {
-                requestAnimationFrame(() =>
-                    this.component.instance.inputs.first.nativeElement.focus()
-                );
+                requestAnimationFrame(() => {
+                    this.component.instance.inputs.first.nativeElement.focus();
+                    this.component.instance.formValues.pipe(take(1)).subscribe((data) => {
+                        this.editor.commands.updateValue(data);
+                    });
+                });
+            },
+            onHide: () => {
+                this.editor.commands.updateValue(null);
             }
         });
     }
@@ -168,15 +168,6 @@ export class BubbleFormView extends BubbleMenuView {
     };
 
     show() {
-        const { alt, src, title, data } = this.editor.getAttributes(ImageNode.name);
-        const { title: dotTitle = '', asset } = data || {};
-
-        this.component.instance.setFormValues({
-            alt: alt ?? dotTitle,
-            src: src ?? asset,
-            title: title ?? dotTitle
-        });
-
         this.tippy?.show();
     }
 
@@ -213,7 +204,8 @@ export const bubbleFormPlugin = (options: BubbleFormProps) => {
         state: {
             init(): PluginState {
                 return {
-                    open: false
+                    open: false,
+                    form: []
                 };
             },
 
@@ -222,11 +214,11 @@ export const bubbleFormPlugin = (options: BubbleFormProps) => {
                 value: PluginState,
                 oldState: EditorState
             ): PluginState {
-                const { open } = transaction.getMeta(BUBBLE_FORM_PLUGIN_KEY) || {};
+                const { open, form } = transaction.getMeta(BUBBLE_FORM_PLUGIN_KEY) || {};
                 const state = BUBBLE_FORM_PLUGIN_KEY?.getState(oldState);
 
                 if (typeof open === 'boolean') {
-                    return { open };
+                    return { open, form };
                 }
 
                 // keep the old state in case we do not receive a new one.

@@ -1,6 +1,6 @@
 import { ComponentRef, ViewContainerRef } from '@angular/core';
 import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { take, takeUntil } from 'rxjs/operators';
 
 import { PluginKey } from 'prosemirror-state';
 import { Editor, Extension, Range } from '@tiptap/core';
@@ -97,40 +97,45 @@ function execCommand({
             editor.chain().addHeading({ range, type: props.type }).run();
         },
         table: () => {
-            editor.chain().insertTable().focus().run();
-            // editor.commands
-            //     .openForm([
-            //         {
-            //             key: 'rows',
-            //             label: 'Rows',
-            //             required: true,
-            //             controlType: 'text',
-            //             type: 'text'
-            //         },
-            //         {
-            //             key: 'columns',
-            //             label: 'Columns',
-            //             required: true,
-            //             controlType: 'text',
-            //             type: 'text'
-            //         },
-            //         {
-            //             key: 'header',
-            //             label: 'Add Row Header',
-            //             required: true,
-            //             controlType: 'text',
-            //             type: 'checkbox'
-            //         }
-            //     ])
-            //     .pipe(take(1))
-            //     .subscribe((value) => {
-            //         editor.commands.insertTable({
-            //             rows: value.rows,
-            //             cols: value.columns,
-            //             withHeaderRow: !!value.header
-            //         });
-            //
-            //     });
+            editor.commands
+                .openForm([
+                    {
+                        key: 'rows',
+                        label: 'Rows',
+                        required: true,
+                        value: '3',
+                        controlType: 'number',
+                        type: 'number',
+                        min: 1
+                    },
+                    {
+                        key: 'columns',
+                        label: 'Columns',
+                        required: true,
+                        value: '3',
+                        controlType: 'number',
+                        type: 'number',
+                        min: 1
+                    },
+                    {
+                        key: 'header',
+                        label: 'Add Row Header',
+                        required: false,
+                        value: true,
+                        controlType: 'text',
+                        type: 'checkbox'
+                    }
+                ])
+                .pipe(take(1))
+                .subscribe((value) => {
+                    requestAnimationFrame(() => {
+                        editor.commands.insertTable({
+                            rows: value.rows,
+                            cols: value.columns,
+                            withHeaderRow: !!value.header
+                        });
+                    });
+                });
         },
         orderedList: () => {
             editor.chain().deleteRange(range).toggleOrderedList().focus().run();

@@ -43,4 +43,8 @@ export class BubbleFormComponent {
             );
         });
     }
+
+    cleanForm() {
+        this.form = null;
+    }
 }

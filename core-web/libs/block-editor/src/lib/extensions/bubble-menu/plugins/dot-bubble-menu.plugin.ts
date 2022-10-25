@@ -13,6 +13,7 @@ import {
     DotBubbleMenuViewProps,
     // Suggestions
     suggestionOptions,
+    changeToItems,
     SuggestionsComponent,
     // Utils
     getNodePosition,
@@ -330,9 +331,39 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                 break;
 
             case 'properties':
-                // eslint-disable-next-line
+                /*eslint-disable */
                 const { open } = BUBBLE_FORM_PLUGIN_KEY.getState(this.editor.state);
-                open ? this.editor.commands.closeForm() : this.editor.commands.openForm();
+                const { alt, src, title, data } = this.editor.getAttributes(ImageNode.name);
+                const { title: dotTitle = '', asset } = data || {};
+                /*eslint-enable */
+                open
+                    ? this.editor.commands.closeForm()
+                    : this.editor.commands
+                          .openForm([
+                              {
+                                  value: src || asset,
+                                  key: 'src',
+                                  label: 'path',
+                                  required: true,
+                                  controlType: 'text',
+                                  type: 'text'
+                              },
+                              {
+                                  value: alt || dotTitle,
+                                  key: 'alt',
+                                  label: 'alt',
+                                  controlType: 'text',
+                                  type: 'text'
+                              },
+                              {
+                                  value: title || dotTitle,
+                                  key: 'title',
+                                  label: 'caption',
+                                  controlType: 'text',
+                                  type: 'text'
+                              }
+                          ])
+                          .pipe();
                 break;
 
             case 'deleteNode':
@@ -364,7 +395,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         const changeToOptions =
             allowedBlocks.length > 1
                 ? suggestionOptions.filter((item) => allowedBlocks.includes(item.id))
-                : suggestionOptions.filter((item) => item.id != 'horizontalLine');
+                : changeToItems;
         const changeTopCommands = {
             heading1: () => {
                 this.editor.chain().focus().clearNodes().setHeading({ level: 1 }).run();
