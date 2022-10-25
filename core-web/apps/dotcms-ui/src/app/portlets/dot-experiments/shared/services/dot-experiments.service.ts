@@ -12,15 +12,29 @@ export class DotExperimentsService {
     constructor(private readonly http: HttpClient) {}
 
     /**
+     * Add a new experiment
+     * @param  experiment
+     * @returns Observable<DotExperiment[]>
+     * @memberof DotExperimentsService
+     */
+    add(
+        experiment: Pick<DotExperiment, 'pageId' | 'name' | 'description'>
+    ): Observable<DotExperiment[]> {
+        return this.http
+            .post<DotCMSResponse<DotExperiment[]>>(API_ENDPOINT, experiment)
+            .pipe(pluck('entity'));
+    }
+
+    /**
      * Get an array of experiments of a pageId
      * @param {string} pageId
      * @returns Observable<DotExperiment[]>
      * @memberof DotExperimentsService
      */
     get(pageId: string): Observable<DotExperiment[]> {
-        const URL = `${API_ENDPOINT}?pageId=${pageId}`;
-
-        return this.http.get<DotCMSResponse<DotExperiment[]>>(URL).pipe(pluck('entity'));
+        return this.http
+            .get<DotCMSResponse<DotExperiment[]>>(`${API_ENDPOINT}?pageId=${pageId}`)
+            .pipe(pluck('entity'));
     }
 
     /**
@@ -30,20 +44,20 @@ export class DotExperimentsService {
      * @memberof DotExperimentsService
      */
     archive(experimentId: string): Observable<DotExperiment[]> {
-        const URL = `${API_ENDPOINT}/${experimentId}/_archive`;
-
-        return this.http.put<DotCMSResponse<DotExperiment[]>>(URL, {}).pipe(pluck('entity'));
+        return this.http
+            .put<DotCMSResponse<DotExperiment[]>>(`${API_ENDPOINT}/${experimentId}/_archive`, {})
+            .pipe(pluck('entity'));
     }
 
     /**
-     * Delete an experiment with its experimenId
+     * Delete an experiment with its experimentId
      * @param {string} experimentId
      * @returns Observable<string | DotExperiment[]>
      * @memberof DotExperimentsService
      */
     delete(experimentId: string): Observable<string | DotExperiment[]> {
-        const URL = `${API_ENDPOINT}/${experimentId}`;
-
-        return this.http.delete<DotCMSResponse<DotExperiment[]>>(URL).pipe(pluck('entity'));
+        return this.http
+            .delete<DotCMSResponse<DotExperiment[]>>(`${API_ENDPOINT}/${experimentId}`)
+            .pipe(pluck('entity'));
     }
 }
