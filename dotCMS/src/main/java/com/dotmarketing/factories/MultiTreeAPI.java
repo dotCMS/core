@@ -93,7 +93,10 @@ public interface MultiTreeAPI {
     /**
      * This method returns ALL MultiTree entries (in all languages) for a given page and variant. It is up to what
      * ever page renderer to properly choose which MultiTree children to show for example, show an
-     * english content on a spanish page when language fallback=true
+     * english content on a spanish page when language fallback=true.
+     *
+     * If the page does not have any {@link MultiTree} to the specific variant then this method return the
+     * Page's {@link MultiTree} for the DEFAULT variant.
      *
      * @param page
      * @param liveMode
