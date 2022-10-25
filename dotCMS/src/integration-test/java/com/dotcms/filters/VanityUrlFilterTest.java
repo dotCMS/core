@@ -151,7 +151,7 @@ public class VanityUrlFilterTest {
         String title = "VanityURL"  + System.currentTimeMillis();
         String site = defaultHost.getIdentifier();
         String uri = "/testing_forward" + System.currentTimeMillis();
-        String forwardTo = "https://dotcms.com";
+        String forwardTo = "https://www.dotcms.com";
         int action = 200;
         int order = 1;
 
@@ -176,7 +176,7 @@ public class VanityUrlFilterTest {
             String content = FileUtil.read(tmp);
             assert (content != null);
             assert (content.contains("All rights reserved"));
-            assert (content.contains("<meta property=\"og:url\" content=\"https://dotcms.com/\">"));
+            assert (content.contains("<meta property=\"og:url\" content=\"https://www.dotcms.com/\">"));
         }
     }
 
