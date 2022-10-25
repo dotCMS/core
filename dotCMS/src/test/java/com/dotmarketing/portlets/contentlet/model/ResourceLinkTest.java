@@ -4,6 +4,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap.Builder;
+import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -116,6 +117,10 @@ public class ResourceLinkTest {
                 return Tuple.of("/dA/" + APILocator.getShortyAPI().shortify(contentlet.getInode()) + "/" + velocityVarName + "/" + binary.getName(),
                         "/dA/" + APILocator.getShortyAPI().shortify(contentlet.getIdentifier()) + "/" + velocityVarName + "/" + binary.getName());
             }
+            @Override
+            String replaceUrlPattern(final String pattern, final Contentlet contentlet, final Identifier identifier, final Metadata metadata, final Host site) {
+                return String.format("/dA/%s/%s", contentlet.getInode(), htmlFileName);
+            }
         };
         return resourceLinkBuilder;
     }
@@ -183,7 +188,7 @@ public class ResourceLinkTest {
         final long languageId = 1L;
         final boolean isSecure = false;
 
-        final File file = FileUtil.createTemporaryFile("comments-list", "html", "This is a test temporal file");
+        final File file = FileUtil.createTemporaryFile(TempFileAPI.TEMP_RESOURCE_PREFIX + "comments-list", "html", "This is a test temporal file");
 
         final String htmlFileName = file.getName();
 
