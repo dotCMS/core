@@ -2,6 +2,7 @@ package com.dotmarketing.factories;
 
 
 import com.dotcms.variant.VariantAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.HashSet;
@@ -100,7 +101,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String SELECT_BY_ONE_PARENT = "select * from multi_tree where (parent1 = ? or parent2 = ?) and variant_id = ? order by tree_order"; // search by page id or container id
     private static final String SELECT_BY_TWO_PARENTS = "select * from multi_tree where parent1 = ? and parent2 = ? and variant_id = 'DEFAULT'  order by tree_order";
     private static final String SELECT_ALL = "select * from multi_tree  ";
-    private static final String SELECT_BY_CHILD = "select * from multi_tree where child = ? order by parent1, parent2, relation_type ";
+    private static final String SELECT_BY_CHILD = "select * from multi_tree where child = ? and variant_id = 'DEFAULT' order by parent1, parent2, relation_type ";
     private static final String SELECT_BY_PARENTS_AND_RELATIONS =
             " select * from multi_tree where parent1 = ? and parent2 = ? and relation_type = ? and personalization = ? and variant_id = 'DEFAULT' order by tree_order";
 
@@ -250,12 +251,23 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     @CloseDBIfOpened
     public List<MultiTree> getMultiTreesByVariant(final String parentId, final String variantName) throws DotDataException {
 
-        final DotConnect db = new DotConnect().setSQL(SELECT_BY_ONE_PARENT)
+        List<Map<String, Object>> loadObjectResults = new DotConnect().setSQL(SELECT_BY_ONE_PARENT)
                 .addParam(parentId)
                 .addParam(parentId)
-                .addParam(variantName);
+                .addParam(variantName)
+                .loadObjectResults();
 
-        return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).asList();
+        if (!UtilMethods.isSet(loadObjectResults)) {
+            if (!VariantAPI.DEFAULT_VARIANT.name().equals(variantName)) {
+                loadObjectResults = new DotConnect().setSQL(SELECT_BY_ONE_PARENT)
+                        .addParam(parentId)
+                        .addParam(parentId)
+                        .addParam(VariantAPI.DEFAULT_VARIANT.name())
+                        .loadObjectResults();
+            }
+        }
+
+        return TransformerLocator.createMultiTreeTransformer(loadObjectResults).asList();
     }
 
     @CloseDBIfOpened
@@ -346,7 +358,6 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         return multiTrees;
     } // copyPersonalizationForPage.
-
 
     @WrapInTransaction
     @Override

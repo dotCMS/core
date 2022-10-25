@@ -897,7 +897,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * @throws DotSecurityException
      */
     @Test
-    public void fallbackToDefaultVariantDefaultLanguageWitoutSpecificVariantVersion() throws WebAssetException, DotDataException, DotSecurityException {
+    public void fallbackToDefaultVariantDefaultLanguageWithoutSpecificVariantVersion() throws WebAssetException, DotDataException, DotSecurityException {
         final boolean defaultContentToDefaultLanguage = Config.getBooleanProperty(
                 "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
         Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", true);
@@ -982,8 +982,17 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                         + "</div>", html);
     }
 
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: The page has different content for different {@link Variant}
+     * should: render de page with the cotentlet for the specific {@link Variant}
+     *
+     * @throws WebAssetException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Test
-    public void renderPageWithDifferentVariantsVersion2() throws WebAssetException, DotDataException, DotSecurityException {
+    public void renderPageWithDifferentVariantsVersionAndContentlet() throws WebAssetException, DotDataException, DotSecurityException {
         final Language language = new LanguageDataGen().nextPersisted();
         final Variant variant = new VariantDataGen().nextPersisted();
         final Host host = new SiteDataGen().nextPersisted();
@@ -1000,8 +1009,10 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 .languageId(language.getId())
                 .host(host)
                 .setProperty("title", "DEFAULT second-content-default-" + language.getId())
-                .variant(variant)
+                .variant(VariantAPI.DEFAULT_VARIANT)
                 .nextPersistedAndPublish();
+        createNewVersion(contentlet_2, language, variant, "title",
+                variant.name() + " second-content-default-" + language.getId());
 
         new MultiTreeDataGen()
                 .setPage(page)
@@ -1009,6 +1020,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 .setInstanceID(ContainerUUID.UUID_START_VALUE)
                 .setTreeOrder(0)
                 .setContainer(container)
+                .setVariant(variant)
                 .nextPersisted();
 
         final HttpServletRequest mockRequest = createHttpServletRequest(language, host,
@@ -1017,6 +1029,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
         final HttpSession session = createHttpSession(mockRequest);
         when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
 
         String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
                 PageContextBuilder.builder()
@@ -1183,15 +1196,20 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
     private Contentlet createNewVersion(final Contentlet contentlet, final Language language,
             final Variant variant) {
-        return createNewVersion(contentlet, language, variant, "title");
+        return createNewVersion(contentlet, language, variant, "title" );
+    }
+
+    private Contentlet createNewVersion(final Contentlet contentlet, final Language language, final Variant variant,
+            final String fieldName) {
+        return createNewVersion(contentlet, language, variant, fieldName, variant.name() + " content-default-" + language.getId());
     }
 
     private Contentlet createNewVersion(final Contentlet contentlet, final Language language,
-        final Variant variant, final String fieldName) {
+        final Variant variant, final String fieldName, final String fieldContent) {
 
         final Contentlet checkout = ContentletDataGen.checkout(contentlet);
         checkout.setVariantId(variant.name());
-        checkout.setProperty(fieldName, variant.name() + " content-default-" + language.getId());
+        checkout.setProperty(fieldName, fieldContent);
         checkout.setLanguageId(language.getId());
 
         final Contentlet checkin = ContentletDataGen.checkin(checkout);
