@@ -19,7 +19,7 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.Date;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -44,11 +44,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
     }
 
     /**
-     * Fetches an {@link Optional<AccessToken>} instance from cache falling back to get the access token
-     * from analytics IDP. It also saves it in cache.
-     *
-     * @param host host to associate app's data with
-     * @return the access token if found, otherwise empty
+     * {@inheritDoc}
      */
     @Override
     public AccessToken fetchAccessToken(final Host host) throws DotDataException {
@@ -56,10 +52,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
     }
 
     /**
-     * Reset analytics key to the app storage by requesting it again to the configuration server.
-     *
-     * @param analyticsApp resolved analytics app
-     * @throws DotDataException if analytics key cannot be extracted from response or when saving to app storage
+     * {@inheritDoc}
      */
     @Override
     public void resetAnalyticsKey(final AnalyticsApp analyticsApp) throws DotDataException {
@@ -70,10 +63,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
     }
 
     /**
-     * Fetches the analytics key to be used to capture analytics data.
-     *
-     * @param host host associated with analytics app governing analytics key
-     * @return an {@link Optional<String>} with analytics key when found, otherwise empty
+     * {@inheritDoc}
      */
     @Override
     public AnalyticsKey fetchAnalyticsKey(final Host host) throws DotDataException {
@@ -103,7 +93,8 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
     private AccessToken fetchAccessToken(final AnalyticsApp analyticsApp) throws DotDataException {
         // check for token at cache and not expired
         final Optional<AccessToken> accessToken = analyticsCache
-            .getAccessToken()
+            // Where does `audience` come from? Using null in the meantime
+            .getAccessToken(analyticsApp.getAnalyticsProperties().clientId(), null)
             .filter(token -> !AnalyticsHelper.isExpired(token));
         if (accessToken.isPresent()) {
             return accessToken.get();
@@ -196,9 +187,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
         final Response response = ClientBuilder.newClient()
             .target(analyticsIdpUrl)
             .request(MediaType.APPLICATION_FORM_URLENCODED)
-            .header(
-                HttpHeaders.AUTHORIZATION,
-                String.format("Basic %s", analyticsApp.clientIdAndSecret()))
+            .header(HttpHeaders.AUTHORIZATION, String.format("Basic %s", analyticsApp.clientIdAndSecret()))
             .post(Entity.entity("grant_type=client_credentials", MediaType.APPLICATION_JSON_TYPE));
         logResponse(response);
         return response;
@@ -216,10 +205,13 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
         return AnalyticsHelper.extractToken(response)
             .map(accessToken -> {
                 Logger.info(this, "Saving access token to cache");
-                analyticsCache.putAccessToken(accessToken.withIssueDate(new Date()));
+                analyticsCache.putAccessToken(
+                    accessToken
+                        .withClientId(analyticsApp.getAnalyticsProperties().clientId())
+                        .withIssueDate(Instant.now()));
                 return accessToken;
             })
-            .orElseThrow(() -> new DotDataException("Could not extract access token from response, saving aborted"));
+            .orElseThrow(() -> new DotDataException("Could not extract access token from response"));
     }
 
     /**
@@ -232,12 +224,10 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
         final AccessToken accessToken = fetchAccessToken(analyticsApp);
         final Response response = ClientBuilder.newClient()
             .target(analyticsApp.getAnalyticsProperties().analyticsConfigUrl())
-            .request(MediaType.APPLICATION_FORM_URLENCODED)
+            .request(MediaType.APPLICATION_JSON_TYPE)
             .header(HttpHeaders.AUTHORIZATION, String.format("Bearer %s", accessToken.accessToken()))
-            .post(Entity.entity("", MediaType.TEXT_PLAIN_TYPE));
-
+            .get();
         logResponse(response);
-
         return response;
     }
 

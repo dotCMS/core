@@ -1,13 +1,18 @@
 package com.dotcms.analytics.cache;
 
 import com.dotcms.analytics.model.AccessToken;
+import com.dotcms.rest.validation.Preconditions;
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Logger;
+import org.apache.commons.lang3.StringUtils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 
@@ -20,9 +25,19 @@ public class AnalyticsCache implements Cachable {
 
     private static final String CACHE_GROUP = AnalyticsCache.class.getSimpleName().toLowerCase();
     private static final String[] GROUPS = { CACHE_GROUP };
-    private static final String ANALYTICS_ACCESS_TOKEN_KEY = "ANALYTICS_ACCESS_TOKEN";
+    private static final String ANALYTICS_ACCESS_TOKEN_KEY_PREFIX = "ANALYTICS_ACCESS_TOKEN";
 
     private final DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+
+    /**
+     * Adds an {@link AccessToken} instance to cache identified by default cache.
+     *
+     * @param accessToken access token to cache
+     */
+    public void putAccessToken(final AccessToken accessToken) {
+        Preconditions.checkNotNull(accessToken, DotStateException.class, "Access token is missing");
+        cache.put(resolveKey(accessToken), accessToken, getPrimaryGroup());
+    }
 
     /**
      * Finds a cached {@link AccessToken} instance.
@@ -40,31 +55,33 @@ public class AnalyticsCache implements Cachable {
     }
 
     /**
-     * Finds a cached {@link AccessToken} instance using default key.
+     * Finds a cached {@link AccessToken} instance using a key created with provided client id and audience.
      *
+     * @param clientId token client id
+     * @param audience token audience
      * @return a {@link Optional<AccessToken>} instance with token if found, otherwise empty
      */
-    public Optional<AccessToken> getAccessToken() {
-        return getAccessToken(ANALYTICS_ACCESS_TOKEN_KEY);
+    public Optional<AccessToken> getAccessToken(final String clientId, final String audience) {
+        return getAccessToken(resolveKey(clientId, audience));
     }
 
     /**
-     * Adds an {@link AccessToken} instance to cache identified by provided key.
+     * Removes cache entry associated with provided token client id and audience.
      *
-     * @param key key access token is mapped to
-     * @param accessToken access token to cache
+     * @param clientId token client id
+     * @param audience token audience
      */
-    public void putAccessToken(final String key, final AccessToken accessToken) {
-        cache.put(key, accessToken, getPrimaryGroup());
+    public void removeAccessToken(final String clientId, final String audience) {
+        cache.remove(resolveKey(clientId, audience), getPrimaryGroup());
     }
 
     /**
-     * Adds an {@link AccessToken} instance to cache identified by default cache.
+     * Removes cache entry associated with provided {@link AccessToken}.
      *
-     * @param accessToken access token to cache
+     * @param accessToken access token
      */
-    public void putAccessToken(final AccessToken accessToken) {
-        putAccessToken(ANALYTICS_ACCESS_TOKEN_KEY, accessToken);
+    public void removeAccessToken(final AccessToken accessToken) {
+        removeAccessToken(accessToken.clientId(), accessToken.aud());
     }
 
     /**
@@ -89,6 +106,38 @@ public class AnalyticsCache implements Cachable {
     @Override
     public void clearCache() {
         Arrays.asList(getGroups()).forEach(cache::flushGroup);
+    }
+
+    /**
+     * Resolves a cache key from token client id and audience.
+     *
+     * @param clientId token client id
+     * @param audience token audience
+     * @return key to use as key to cache for a specific access token
+     */
+    private String resolveKey(final String clientId, final String audience) {
+        final List<String> keyChunks = new ArrayList<>();
+        keyChunks.add(ANALYTICS_ACCESS_TOKEN_KEY_PREFIX);
+
+        if (StringUtils.isNotBlank(clientId)) {
+            keyChunks.add(clientId);
+        }
+
+        if (StringUtils.isNotBlank(audience)) {
+            keyChunks.add(audience);
+        }
+
+        return String.join("_", keyChunks);
+    }
+
+    /**
+     * Creates a cache key from given {@link AccessToken} evaluating several conditions.
+     *
+     * @param accessToken provided access token
+     * @return key to use as key to cache for a specific access token
+     */
+    private String resolveKey(final AccessToken accessToken) {
+        return resolveKey(accessToken.clientId(), accessToken.aud());
     }
 
 }

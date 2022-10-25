@@ -4,7 +4,8 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.immutables.value.Value;
 
-import java.util.Date;
+import javax.annotation.Nullable;
+import java.time.Instant;
 
 
 /**
@@ -22,17 +23,27 @@ public interface AbstractAccessToken {
     @JsonProperty("tokenType")
     String tokenType();
 
+    @Nullable
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd hh:mm:ss.SSS")
     @JsonProperty("issueDate")
-    Date issueDate();
+    Instant issueDate();
 
     @JsonProperty("expiresIn")
     Integer expiresIn();
 
+    @Nullable
     @JsonProperty("refreshToken")
     String refreshToken();
 
     @JsonProperty("scope")
     String scope();
+
+    @Nullable
+    @JsonProperty("clientId")
+    String clientId();
+
+    @Nullable
+    @JsonProperty("aud")
+    String aud();
 
 }

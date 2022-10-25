@@ -8,9 +8,12 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.util.Logger;
 
 import javax.ws.rs.core.Response;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Base64;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -57,24 +60,36 @@ public class AnalyticsHelper {
      * An offset can be provided to decrease the TTL window at the evaluation.
      *
      * @param accessToken provided access token
-     * @param minusOffset offset used to subtract to current date time
+     * @param offset offset used to subtract to current date time
      * @return true if current time is in the TTL window
      */
-    public static boolean isExpired(final AccessToken accessToken, final int minusOffset) {
+    public static boolean isExpired(final AccessToken accessToken, final int offset) {
         if (Objects.isNull(accessToken.issueDate())) {
             Logger.warn(AnalyticsHelper.class, "Access token does not have a issued date, returning as expired");
-            return false;
+            return true;
         }
 
-        final LocalDateTime issueDate = accessToken.issueDate()
-            .toInstant()
-            .atZone(ZoneId.systemDefault())
-            .toLocalDateTime();
-
-        // returning true if there
         return Duration
-            .between(issueDate, LocalDateTime.now())
-            .toMinutes() >= (AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL_MINUTES - minusOffset);
+            .between(accessToken.issueDate(), Instant.now())
+            .toMinutes() >= (AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL_MINUTES + offset);
+    }
+
+    /**
+     * Gets a an Base 64 encoded version of `clientId:clientSecret`.
+     *
+     * @param clientId client id
+     * @param clientSecret client secret
+     * @return String representation of base 64 bytes
+     */
+    public static String encodeClientIdAndSecret(final String clientId, final String clientSecret) {
+        return Base64.getEncoder()
+            .encodeToString(
+                String
+                    .format(
+                        "%s:%s",
+                        clientId,
+                        clientSecret)
+                    .getBytes(StandardCharsets.UTF_8));
     }
 
     /**
@@ -98,7 +113,9 @@ public class AnalyticsHelper {
      * @return {@link Optional<T>} instance wrapping the deserialized object
      * @param <T> type to use when deserializing
      */
-    private static <T> Optional<T> extractFromResponse(final Response response, final Class<T> clazz, final String message) {
+    private static <T> Optional<T> extractFromResponse(final Response response,
+                                                       final Class<T> clazz,
+                                                       final String message) {
         Objects.requireNonNull(response, message);
 
         if (!isSuccessResponse(response)) {

@@ -1,5 +1,6 @@
 package com.dotcms.analytics.app;
 
+import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.analytics.model.AnalyticsKey;
 import com.dotcms.analytics.model.AnalyticsProperties;
 import com.dotcms.analytics.model.AnalyticsAppProperty;
@@ -34,6 +35,7 @@ public class AnalyticsApp {
     public static final String ANALYTICS_APP_CONFIG_URL_KEY = "analytics.app.config.url";
     public static final String ANALYTICS_APP_WRITE_URL_KEY = "analytics.app.write.url";
     public static final String ANALYTICS_APP_READ_URL_KEY = "analytics.app.read.url";
+    public static final String ANALYTICS_APP_OVERRIDE_NOT_ALLOWED_KEY = "analytics.app.override.not.allowed";
 
     private final Host host;
     private final AppsAPI appsAPI;
@@ -66,13 +68,9 @@ public class AnalyticsApp {
      * @return encoded representation of clientId:clientSecret
      */
     public String clientIdAndSecret() {
-        return Base64.getEncoder()
-            .encodeToString(
-                String.format(
-                    "%s:%s",
-                    analyticsProperties.clientId(),
-                    analyticsProperties.clientSecret())
-                    .getBytes(StandardCharsets.UTF_8));
+        return AnalyticsHelper.encodeClientIdAndSecret(
+            getAnalyticsProperties().clientId(),
+            getAnalyticsProperties().clientSecret());
     }
 
     /**

@@ -68,6 +68,7 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
         APILocator.getLocalSystemEventsAPI().subscribe(APILocator.getContainerAPI());
 
         APILocator.getLocalSystemEventsAPI().subscribe(AppSecretSavedEvent.class, AnalyticsAppListener.INSTANCE.get());
+        APILocator.getLocalSystemEventsAPI().subscribe(AppSecretSavedEvent.class, AnalyticsAppListener.Instance.get());
 
         this.initDotVelocityMacrosVtlFiles();
     }

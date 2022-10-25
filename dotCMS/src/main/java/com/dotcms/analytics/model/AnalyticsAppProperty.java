@@ -5,8 +5,10 @@ import com.dotmarketing.util.Config;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 
 /**
@@ -34,35 +36,40 @@ public enum AnalyticsAppProperty {
             return builder -> builder.analyticsKey(AnalyticsKey.builder().jsKey(value).build());
         }
     },
-    ANALYTICS_CONFIG_URL("analyticsConfigUrl") {
+    ANALYTICS_CONFIG_URL("analyticsConfigUrl", AnalyticsApp.ANALYTICS_APP_CONFIG_URL_KEY) {
         @Override
         public Consumer<AnalyticsProperties.Builder> setter(String value) {
-            return builder -> builder.analyticsConfigUrl(StringUtils.defaultIfBlank(
-                value,
-                Config.getStringProperty(AnalyticsApp.ANALYTICS_APP_CONFIG_URL_KEY, null)));
+            return builder -> builder.analyticsConfigUrl(AnalyticsAppProperty.resolveEnvVarValue(this, value));
         }
     },
-    ANALYTICS_WRITE_URL("analyticsWriteUrl") {
+    ANALYTICS_WRITE_URL("analyticsWriteUrl", AnalyticsApp.ANALYTICS_APP_WRITE_URL_KEY) {
         @Override
         public Consumer<AnalyticsProperties.Builder> setter(String value) {
-            return builder -> builder.analyticsWriteUrl(StringUtils.defaultIfBlank(
-                value,
-                Config.getStringProperty(AnalyticsApp.ANALYTICS_APP_WRITE_URL_KEY, null)));
+            return builder -> builder.analyticsWriteUrl(AnalyticsAppProperty.resolveEnvVarValue(this, value));
         }
     },
-    ANALYTICS_READ_URL("analyticsReadUrl") {
+    ANALYTICS_READ_URL("analyticsReadUrl", AnalyticsApp.ANALYTICS_APP_READ_URL_KEY) {
         @Override
         public Consumer<AnalyticsProperties.Builder> setter(String value) {
-            return builder -> builder.analyticsReadUrl(StringUtils.defaultIfBlank(
-                value,
-                Config.getStringProperty(AnalyticsApp.ANALYTICS_APP_READ_URL_KEY, null)));
+            return builder -> builder.analyticsReadUrl(AnalyticsAppProperty.resolveEnvVarValue(this, value));
         }
     };
 
+    public static final List<AnalyticsAppProperty> ENV_VAR_PROPERTIES = Arrays
+        .stream(values())
+        .filter(property -> StringUtils.isNotBlank(property.envVarName))
+        .collect(Collectors.toList());
+
     private final String propertyName;
+    private final String envVarName;
+
+    AnalyticsAppProperty(final String propertyName, final String envVarName) {
+        this.propertyName = propertyName;
+        this.envVarName = envVarName;
+    }
 
     AnalyticsAppProperty(final String propertyName) {
-        this.propertyName = propertyName;
+        this(propertyName, null);
     }
 
     /**
@@ -81,6 +88,13 @@ public enum AnalyticsAppProperty {
     }
 
     /**
+     * @return the env-var name associated
+     */
+    public String getEnvVarName() {
+        return envVarName;
+    }
+
+    /**
      * Finds a property based on a provided property name among these enum's defined values.
      *
      * @param propertyName property name
@@ -92,4 +106,16 @@ public enum AnalyticsAppProperty {
             .findFirst();
     }
 
+    /**
+     * Resolves the value that will be set at the property when building it.
+     *
+     * @param property property in matter
+     * @param value fallback value when the there is no env-var property detected
+     * @return the resolved value
+     */
+    private static String resolveEnvVarValue(final AnalyticsAppProperty property, final String value) {
+        return StringUtils.defaultIfBlank(
+            Config.getStringProperty(property.getEnvVarName(), null),
+            value);
+    }
 }

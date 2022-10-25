@@ -3,6 +3,8 @@ package com.dotcms.analytics.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.immutables.value.Value;
 
+import javax.annotation.Nullable;
+
 
 /**
  * POJO class to encapsulate analytics app properties.
@@ -19,6 +21,7 @@ public interface AbstractAnalyticsProperties {
     @JsonProperty("clientSecret")
     String clientSecret();
 
+    @Nullable
     @JsonProperty("analyticsKey")
     AnalyticsKey analyticsKey();
 
