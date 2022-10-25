@@ -48,4 +48,5 @@ This maintenance release includes the following code fixes:
 37. https://github.com/dotCMS/core/issues/22124 : When logged in to front end, automatically redirect to back-end edit mode #22124
 38. https://github.com/dotCMS/core/issues/22149 : The push publish button in the expansion menu on the users portlet doesn't just push the selected user, it pushes all users #22149
 39. https://github.com/dotCMS/core/issues/22204 : We are not notifying the UI about the bad request error changing password #22204
+40. https://github.com/dotCMS/core/issues/22349 : Missing database migration tasks when migrating from <=5.1.6 #22349
 
