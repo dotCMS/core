@@ -8089,7 +8089,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                     multitree.getContentlet(),
                                     multitree.getRelationType(),
                                     multitree.getTreeOrder(),
-                                    multitree.getPersonalization()));
+                                    multitree.getPersonalization(),
+                                    multitree.getVariantId()));
                 }
             }
         }

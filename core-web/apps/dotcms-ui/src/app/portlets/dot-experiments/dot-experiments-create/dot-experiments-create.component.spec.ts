@@ -1,11 +1,6 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator';
 import { DotExperimentsCreateComponent } from '@portlets/dot-experiments/dot-experiments-create/dot-experiments-create.component';
-import { DotExperimentsCreateStore } from '@portlets/dot-experiments/dot-experiments-create/store/dot-experiments-create-store.service';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { DotExperimentsListStore } from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store.service';
-import { MessageService } from 'primeng/api';
 import { Sidebar, SidebarModule } from 'primeng/sidebar';
 import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
 import {
@@ -14,12 +9,19 @@ import {
     SIDEBAR_SIZES
 } from '@portlets/shared/directives/dot-sidebar.directive';
 import { of } from 'rxjs';
+import { DotExperimentsListStore } from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store.service';
+import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
+import {
+    dotExperimentsCreateStoreStub,
+    DotExperimentsListStoreMock
+} from '@portlets/dot-experiments/test/mocks';
+import { DotExperimentsCreateStore } from '@portlets/dot-experiments/dot-experiments-create/store/dot-experiments-create-store.service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { DotExperimentsListStoreMock } from '@portlets/dot-experiments/test/mocks';
-import { ActivatedRoute } from '@angular/router';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.create.form.sidebar.header': 'Add a new experiment',
@@ -31,26 +33,6 @@ const messageServiceMock = new MockDotMessageService({
     'error.form.validator.maxlength': 'maxlength error',
     'error.form.validator.required': 'required error'
 });
-
-const routerParamsPageId = '12345-6789-9876-5432';
-
-const dotExperimentsCreateStoreStub = {
-    state$: () =>
-        of({
-            isSaving: false,
-            isOpenSidebar: false
-        }),
-    setCloseSidebar: () => of({}),
-    addExperiments: () => of([])
-};
-
-const ActivatedRouteMock = {
-    snapshot: {
-        params: {
-            pageId: routerParamsPageId
-        }
-    }
-};
 
 const dotExperimentsServiceMock = {
     add: (experiment) => of({ entity: experiment })
@@ -90,16 +72,13 @@ describe('DotExperimentsCreateComponent', () => {
                 provide: DotExperimentsCreateStore,
                 useValue: dotExperimentsCreateStoreStub
             },
-            { provide: ActivatedRoute, useValue: ActivatedRouteMock },
 
             mockProvider(DotExperimentsService, dotExperimentsServiceMock)
         ]
     });
 
     beforeEach(() => {
-        spectator = createComponent({
-            detectChanges: false
-        });
+        spectator = createComponent();
     });
 
     it('should has Sidebar Component (PrimeNg) and DotSidebarDirective', () => {
@@ -124,19 +103,16 @@ describe('DotExperimentsCreateComponent', () => {
         );
     });
     it('should has DotSidebarHeaderComponent', () => {
-        spectator.detectChanges();
         dotSidebarHeaderComponent = spectator.query(DotSidebarHeaderComponent);
         expect(dotSidebarHeaderComponent).toExist();
     });
 
     it('should open the sidebar', () => {
-        spectator.detectChanges();
         primeNgSidebar = spectator.query(Sidebar);
         expect(primeNgSidebar.visible).toBe(true);
     });
 
     it('submit should call handleSubmit()', () => {
-        spectator.detectChanges();
         const submitButton = spectator.query<HTMLButtonElement>(byTestId('add-experiment-button'));
         spyOn(spectator.component, 'handleSubmit');
 
@@ -148,7 +124,6 @@ describe('DotExperimentsCreateComponent', () => {
 
     describe('Form', () => {
         it('should have a form', () => {
-            spectator.detectChanges();
             expect(spectator.query(byTestId('new-experiment-form'))).toExist();
         });
         it('should call handleSubmit() on Add button click and form valid', () => {
