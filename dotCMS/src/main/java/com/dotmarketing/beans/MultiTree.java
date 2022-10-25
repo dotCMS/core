@@ -1,6 +1,7 @@
 package com.dotmarketing.beans;
 
 
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -42,13 +43,25 @@ public class MultiTree implements Serializable {
 
     private String personalization;
 
+    private String variantId;
+
+    /**
+     * @param htmlPage page's id
+     * @param container container's id
+     * @param child contentlet's id
+     * @param instanceId container UI ID
+     * @param treeOrder order to be show into the page
+     * @param personalization persona's tag
+     * @param variantId variant's name
+     */
     /** full constructor */
     public MultiTree(final String htmlPage,
                      final String container,
                      final String child,
                      final String instanceId,
                      final int treeOrder,
-                     final String personalization) {
+                     final String personalization,
+                     final String variantId) {
 
         this.parent1      = htmlPage;
         this.parent2      = container;
@@ -56,6 +69,7 @@ public class MultiTree implements Serializable {
         this.relationType = (instanceId == null) ? LEGACY_INSTANCE_ID : instanceId;
         this.treeOrder    = (treeOrder < 0) ? 0 : treeOrder;
         this.personalization = personalization;
+        this.variantId = variantId;
     }
 
     /** full constructor */
@@ -65,7 +79,18 @@ public class MultiTree implements Serializable {
                      final String instanceId,
                      final int treeOrder) {
 
-        this(htmlPage, container, child, instanceId, treeOrder, DOT_PERSONALIZATION_DEFAULT);
+        this(htmlPage, container, child, instanceId, treeOrder, DOT_PERSONALIZATION_DEFAULT,
+                VariantAPI.DEFAULT_VARIANT.name());
+    }
+
+    public MultiTree(final String htmlPage,
+            final String container,
+            final String child,
+            final String instanceId,
+            final int treeOrder,
+            final String personalization) {
+
+        this (htmlPage, container, child, instanceId, treeOrder, personalization, VariantAPI.DEFAULT_VARIANT.name());
     }
 
     /** default constructor */
@@ -79,7 +104,16 @@ public class MultiTree implements Serializable {
     }
 
     private MultiTree(MultiTree tree) {
-        this(tree.parent1, tree.parent2, tree.child, tree.relationType, tree.treeOrder, tree.getPersonalization());
+        this(tree.parent1, tree.parent2, tree.child, tree.relationType, tree.treeOrder, tree.getPersonalization(), tree.getVariantId());
+    }
+
+    public String getVariantId() {
+        return variantId != null ? variantId : VariantAPI.DEFAULT_VARIANT.name();
+    }
+
+    public MultiTree setVariantId(final String variantId) {
+        this.variantId = variantId;
+        return new MultiTree(this);
     }
 
     /**

@@ -4,6 +4,7 @@ import com.dotcms.util.CloseUtils;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.DbType;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -699,6 +700,60 @@ public class DotDatabaseMetaData {
         return indexMeta.stream().map(map -> map.get("index_name").toString()).collect(Collectors.toList());
     }
 
+    /**
+     * Return a list of the fields that make up the table primary key
+     *
+     * @param tableName
+     * @return
+     */
+    public static List<String> getPrimaryKeysFields(final String tableName)  {
+        try {
+            final Connection connection = DbConnectionFactory.getConnection();
+            final ResultSet pkColumns = connection.getMetaData()
+                    .getPrimaryKeys(null, null, tableName);
+
+            List<String> primaryKeysFields = new ArrayList();
+
+            while (pkColumns.next()) {
+                primaryKeysFields.add(pkColumns.getString("COLUMN_NAME"));
+            }
+
+            return primaryKeysFields;
+        }catch (SQLException e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
+    public static void dropPrimaryKey(final String tableName){
+        final Optional<String> constraintNameOptional = getPrimaryKeyName(tableName);
+
+        if (constraintNameOptional.isPresent()) {
+            try {
+                new DotConnect().executeStatement(
+                        String.format("ALTER TABLE %s DROP CONSTRAINT %s", tableName,
+                                constraintNameOptional.get()));
+
+            } catch (Exception e) {
+                throw new DotRuntimeException(e);
+            }
+        }
+    }
+
+    public static Optional<String> getPrimaryKeyName(final String tableName)  {
+        try {
+            final ArrayList arrayList = new DotConnect()
+                    .setSQL("SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS T "
+                            + "WHERE table_name = ? "
+                            + "AND constraint_type = 'PRIMARY KEY'")
+                    .addParam(tableName)
+                    .loadResults();
+
+            return arrayList.isEmpty() ? Optional.empty() :
+                    Optional.of((((Map) arrayList.get(0))).get("constraint_name").toString());
+        } catch (DotDataException e) {
+            return Optional.empty();
+        }
+    }
 
 } // E:O:F:DotDatabaseMetaData.
 

@@ -1,7 +1,11 @@
 package com.dotmarketing.common.db;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
@@ -9,8 +13,10 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -34,7 +40,7 @@ public class DotDatabaseMetaDataTest extends BaseWorkflowIntegrationTest {
                         Arrays.asList("structure_inode"), Arrays.asList("inode"));
 
         Assert.assertNotNull(foreignKey);
-        Assert.assertEquals("FK_structure_inode".toLowerCase(), foreignKey.getForeignKeyName().toLowerCase());
+        assertEquals("FK_structure_inode".toLowerCase(), foreignKey.getForeignKeyName().toLowerCase());
     }
 
     @Test
@@ -83,4 +89,34 @@ public class DotDatabaseMetaDataTest extends BaseWorkflowIntegrationTest {
         }
     }
 
+    /**
+     * Method to test: {@link DotDatabaseMetaData#getPrimaryKeysFields(String)}
+     * When: Call the method with templates table
+     * Should: return a list with 'inode'
+     *
+     * @throws SQLException
+     */
+    @Test
+    public void getPrimaryKeyFields() {
+        final List<String> primaryKeysFields = DotDatabaseMetaData.getPrimaryKeysFields("template");
+        assertEquals(1, primaryKeysFields.size());
+
+        assertTrue(primaryKeysFields.contains("inode"));
+    }
+
+    /**
+     * Method to test: {@link DotDatabaseMetaData#getPrimaryKeysFields(String)}
+     * When: Call the method with contentlet_version_info table
+     * Should: return a list with 'inode'
+     *
+     * @throws SQLException
+     */
+    @Test
+    public void getContentletVersionInfoPrimaryKeyFields() {
+        final List<String> primaryKeysFields = DotDatabaseMetaData.getPrimaryKeysFields("contentlet_version_info");
+        assertEquals(3, primaryKeysFields.size());
+        assertTrue(primaryKeysFields.contains("lang"));
+        assertTrue(primaryKeysFields.contains("identifier"));
+        assertTrue(primaryKeysFields.contains("variant_id"));
+    }
 }
