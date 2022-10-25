@@ -367,39 +367,39 @@ public class ShortyServlet extends HttpServlet {
                             final int resampleOpt,
                             final String[] filters) {
         if (isImage) {
-            for(String filter : filters){
+            for(String filter : filters) {
                 filter = StringPool.FORWARD_SLASH + filter;
-                if(widthPattern.matcher(filter).find()){
+                if (widthPattern.matcher(filter).find()) {
                     pathBuilder.append(width > 0 ? "/resize_w/" + width : StringPool.BLANK);
                     continue;
                 }
-                if(heightPattern.matcher(filter).find()){
+                if (heightPattern.matcher(filter).find()) {
                     pathBuilder.append(height > 0 ? "/resize_h/" + height : StringPool.BLANK);
                     continue;
                 }
-                if(cropWidthPattern.matcher(filter).find()){
+                if (cropWidthPattern.matcher(filter).find()) {
                     pathBuilder.append(cropWidth > 0 ? "/crop_w/" + cropWidth : StringPool.BLANK);
                     continue;
                 }
-                if(cropHeightPattern.matcher(filter).find()){
+                if (cropHeightPattern.matcher(filter).find()) {
                     pathBuilder.append(cropHeight > 0 ? "/crop_h/" + cropHeight : StringPool.BLANK);
                     continue;
                 }
-                if(filter.contains("fp")){
+                if (filter.contains("fp")) {
                     pathBuilder.append(focalPoint.isPresent() ? "/fp/" + focalPoint.get() : StringPool.BLANK);
                     continue;
                 }
-                if(resampleOptsPattern.matcher(filter).find()){
+                if (resampleOptsPattern.matcher(filter).find()) {
                     pathBuilder.append(resampleOpt > 0 ? "/resize_ro/" + resampleOpt : StringPool.BLANK);
                     continue;
                 }
-                if (quality > 0) {
-                    pathBuilder.append("/quality_q/" + quality);
-                } else {
-                    pathBuilder.append(jpeg ? "/jpeg_q/75" : StringPool.BLANK);
-                    pathBuilder.append(webp ? "/webp_q/75" : StringPool.BLANK);
-                    pathBuilder.append(jpeg && jpegp ? "/jpeg_p/1" : StringPool.BLANK);
-                }
+            }
+            if (quality > 0) {
+                pathBuilder.append("/quality_q/" + quality);
+            } else {
+                pathBuilder.append(jpeg ? "/jpeg_q/75" : StringPool.BLANK);
+                pathBuilder.append(webp ? "/webp_q/75" : StringPool.BLANK);
+                pathBuilder.append(jpeg && jpegp ? "/jpeg_p/1" : StringPool.BLANK);
             }
         }
   }
