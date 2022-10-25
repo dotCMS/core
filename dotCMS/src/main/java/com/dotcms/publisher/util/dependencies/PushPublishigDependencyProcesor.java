@@ -1,5 +1,6 @@
 package com.dotcms.publisher.util.dependencies;
 
+import com.dotcms.contenttype.business.StoryBlockAPI;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
@@ -11,7 +12,11 @@ import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.publishing.manifest.ManifestReason;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -39,10 +44,16 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -67,6 +78,8 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
 
     private final DependencyModDateUtil dependencyModDateUtil;
     private final PushedAssetUtil pushedAssetUtil;
+    private final Lazy<StoryBlockAPI> storyBlockAPI = Lazy.of(APILocator::getStoryBlockAPI);
+    private final Lazy<ContentletAPI> contentletAPI = Lazy.of(APILocator::getContentletAPI);
 
     /**
      * Creates an instance of the Push Publishing Dependency Processor mechanism, and initializes all the different data
@@ -414,9 +427,10 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
     }
 
     /**
+     * Takes the specified {@link Contentlet} object and analyzes the different object dependencies it may have.
      *
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The {@link User} accessing the APIs doesn't have the required permissions to do so.
      */
     private void processContentDependency(final Contentlet contentlet)
             throws  DotBundleException {
@@ -427,13 +441,29 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
             final List<Contentlet> contentList =
                     APILocator.getContentletAPI().findAllVersions(ident, false, user, false);
 
-            final Set<Contentlet> contentsToProcess = new HashSet<Contentlet>();
-            final Set<Contentlet> contentsWithDependenciesToProcess = new HashSet<Contentlet>();
+            final Set<Contentlet> contentsToProcess = new HashSet<>();
+            final Set<Contentlet> contentsWithDependenciesToProcess = new HashSet<>();
 
             for (final Contentlet contentletVersion : contentList) {
 
                 if (contentletVersion.isHTMLPage()) {
                     processHTMLPagesDependency(contentletVersion.getIdentifier());
+                }
+                // Contentlet Dependencies in Story Block fields, if applicable
+                if (contentlet.getContentType().hasStoryBlockFields()) {
+                    this.storyBlockAPI.get().getDependencies(contentletVersion).forEach(contentletId -> {
+                        try {
+                            final Contentlet contentInStoryBlock =
+                                    this.contentletAPI.get().findContentletByIdentifier(contentletId,
+                                            contentletVersion.isLive(), contentletVersion.getLanguageId(),
+                                            APILocator.systemUser(), false);
+                            tryToAddAndProcessDependencies(PusheableAsset.CONTENTLET, contentInStoryBlock,
+                                    ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(contentletVersion));
+                        } catch (final DotDataException | DotSecurityException e) {
+                            Logger.warn(this,
+                                    String.format("Could not analyze dependent Contentlet '%s' referenced " + "in " + "Story Block field from Contentlet Inode " + "'%s': %s", contentletId, contentletVersion.getInode(), e.getMessage()));
+                        }
+                    });
                 }
 
                 // Site Dependency
@@ -818,6 +848,13 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                 ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(from));
     }
 
+    /**
+     * 
+     * @param pusheableAsset
+     * @param asset
+     * @param reason
+     * @param <T>
+     */
     private <T> void tryToAddAndProcessDependencies(final PusheableAsset pusheableAsset,
             final T asset, final String reason) {
         if (UtilMethods.isSet(asset)) {
@@ -878,10 +915,6 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
     private synchronized <T> TryToAddResult tryToAdd(final PusheableAsset pusheableAsset, final T asset,
             final String reason)
             throws AssetExcludeException {
-        if (null == asset) {
-            return new TryToAddResult(TryToAddResult.Result.EXCLUDE);
-        }
-
         if (config.contains(asset, pusheableAsset)) {
             return new TryToAddResult(TryToAddResult.Result.ALREADY_INCLUDE);
         }
