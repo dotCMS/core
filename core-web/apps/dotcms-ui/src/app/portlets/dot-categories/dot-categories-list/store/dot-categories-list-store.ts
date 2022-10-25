@@ -5,10 +5,12 @@ import { DataTableColumn } from '@models/data-table';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
 import { PaginatorService } from '@dotcms/app/api/services/paginator';
-import { take } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 import { DotActionMenuItem } from '@dotcms/app/shared/models/dot-action-menu/dot-action-menu-item.model';
+import { DotCategoriesService } from '@dotcms/app/api/services/dot-categories/dot-categories.service';
+import { Observable } from 'rxjs';
 
-export interface DotCategoriescTableState {
+export interface DotCategoriesListState {
     categoriesBulkActions: MenuItem[];
     categoriesActions: DotActionMenuItem[];
     selectedCategories: DotCategory[];
@@ -21,14 +23,13 @@ export interface DotCategoriescTableState {
 }
 
 @Injectable()
-export class DotCategoriesTableStore extends ComponentStore<DotCategoriescTableState> {
+export class DotCategoriesListStore extends ComponentStore<DotCategoriesListState> {
     constructor(
         private dotMessageService: DotMessageService,
-        public paginatorService: PaginatorService
+        public categoryService: DotCategoriesService
     ) {
         super(null);
-        this.paginatorService.url = 'v1/categories';
-        this.paginatorService
+        this.categoryService
             .get()
             .pipe(take(1))
             .subscribe((items: DotCategory[]) => {
@@ -39,13 +40,13 @@ export class DotCategoriesTableStore extends ComponentStore<DotCategoriescTableS
                     addToBundleIdentifier: '',
                     selectedCategories: [],
                     categories: items,
-                    currentPage: this.paginatorService.currentPage,
-                    paginationPerPage: this.paginatorService.paginationPerPage,
-                    totalRecords: this.paginatorService.totalRecords
+                    currentPage: this.categoryService.currentPage,
+                    paginationPerPage: this.categoryService.paginationPerPage,
+                    totalRecords: this.categoryService.totalRecords
                 });
             });
     }
-    readonly vm$ = this.select((state: DotCategoriescTableState) => state);
+    readonly vm$ = this.select((state: DotCategoriesListState) => state);
 
     /**
      * A function that updates the state of the store.
@@ -53,7 +54,7 @@ export class DotCategoriesTableStore extends ComponentStore<DotCategoriescTableS
      * @param selectedCategories DotCategory[]
      */
     readonly updateSelectedCategories = this.updater<DotCategory[]>(
-        (state: DotCategoriescTableState, selectedCategories: DotCategory[]) => {
+        (state: DotCategoriesListState, selectedCategories: DotCategory[]) => {
             return {
                 ...state,
                 selectedCategories
@@ -66,7 +67,7 @@ export class DotCategoriesTableStore extends ComponentStore<DotCategoriescTableS
      * @param categories DotCategory[]
      */
     readonly setCategories = this.updater<DotCategory[]>(
-        (state: DotCategoriescTableState, categories: DotCategory[]) => {
+        (state: DotCategoriesListState, categories: DotCategory[]) => {
             return {
                 ...state,
                 categories
@@ -74,20 +75,34 @@ export class DotCategoriesTableStore extends ComponentStore<DotCategoriescTableS
         }
     );
 
+    // EFFECTS
+
     /**
      * > This function returns an observable of an array of DotCategory objects
      * @returns Observable<DotCategory[]>
      */
-    public getCategories(filter?: string, currentPage?: number): void {
-        this.paginatorService.filter = filter || '';
-        if (currentPage) this.paginatorService.setExtraParams('page', currentPage);
-        this.paginatorService
-            .get()
-            .pipe(take(1))
-            .subscribe((items: DotCategory[]) => {
-                this.setCategories(items);
-            });
-    }
+
+    readonly getCategories = this.effect((filters: Observable<Record<string, unknown>>) => {
+        return filters.pipe(
+            map((filters: Record<string, unknown>) => {
+                console.log(filters, 'filters filters');
+                this.categoryService
+                    .getCategories(filters)
+                    .pipe(take(1))
+                    .subscribe((items: DotCategory[]) => {
+                        this.setCategories(items);
+                    });
+            })
+        );
+    });
+    // public getCategories(filter?: string, currentPage?: number): void {
+    //     this.categoryService
+    //         .getCategories(filter, currentPage)
+    //         .pipe(take(1))
+    //         .subscribe((items: DotCategory[]) => {
+    //             this.setCategories(items);
+    //         });
+    // }
 
     /**
      * It returns an array of objects with a label property

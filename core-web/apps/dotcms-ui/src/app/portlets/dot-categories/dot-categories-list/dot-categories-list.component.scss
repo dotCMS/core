@@ -1,23 +1,5 @@
 @use "variables" as *;
 
-:host {
-    ::ng-deep {
-        .action-header__global-search {
-            flex-wrap: wrap;
-        }
-    }
-    .dot-category-link-button,
-    .dot-category-link-button:hover,
-    .dot-category-link-button:enabled,
-    .dot-category-link-button:enabled:hover {
-        color: var(--color-sec);
-    }
-    .container-listing__header-options,
-    .dot-category-line-break {
-        width: 100%;
-    }
-}
-
-dot-base-type-selector {
-    margin-right: $spacing-3;
+dot-portlet-base {
+    overflow-x: scroll;
 }
