@@ -4,7 +4,6 @@ import { MenuItem } from 'primeng/api';
 import { DataTableColumn } from '@models/data-table';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
-import { PaginatorService } from '@dotcms/app/api/services/paginator';
 import { map, take } from 'rxjs/operators';
 import { DotActionMenuItem } from '@dotcms/app/shared/models/dot-action-menu/dot-action-menu-item.model';
 import { DotCategoriesService } from '@dotcms/app/api/services/dot-categories/dot-categories.service';
@@ -85,7 +84,6 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
     readonly getCategories = this.effect((filters: Observable<Record<string, unknown>>) => {
         return filters.pipe(
             map((filters: Record<string, unknown>) => {
-                console.log(filters, 'filters filters');
                 this.categoryService
                     .getCategories(filters)
                     .pipe(take(1))
