@@ -20,3 +20,4 @@ services:
       - "15080:8080"
     volumes:
       - ./setup/db/oracle:/u01/app/oracle
+
