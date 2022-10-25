@@ -46,4 +46,5 @@ This maintenance release includes the following code fixes:
 35. https://github.com/dotCMS/core/issues/21694 : [WebP] : Default quality for WebP filter is breaking image file #21694
 36. https://github.com/dotCMS/core/issues/22116 : DB Exporter does not stream output #22116
 37. https://github.com/dotCMS/core/issues/22124 : When logged in to front end, automatically redirect to back-end edit mode #22124
+38. https://github.com/dotCMS/core/issues/22149 : The push publish button in the expansion menu on the users portlet doesn't just push the selected user, it pushes all users #22149
 
