@@ -5,6 +5,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.SystemEnvironmentProperties;
+
 import javax.sql.DataSource;
 import java.util.TimeZone;
 
@@ -68,9 +69,7 @@ public class DataSourceStrategyProvider {
         final SystemEnvironmentProperties systemEnvironmentProperties = getSystemEnvironmentProperties();
 
         final String providerClassName = getCustomDataSourceProvider();
-        final TimeZone defaultTz = TimeZone.getDefault();
         try {
-            TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
             if (!UtilMethods.isSet(providerClassName)) {
                 if (getDBPropertiesInstance()
                         .existsDBPropertiesFile()) {
@@ -104,7 +103,6 @@ public class DataSourceStrategyProvider {
                     "Error initializing datasource. Reason: " + e.getMessage()
                             + "Trying to load datasource from context.xml ...", e);
         } finally {
-            TimeZone.setDefault(defaultTz);
             if (null == defaultDataSource) {
                 defaultDataSource = getTomcatDataSourceInstance()
                         .apply();

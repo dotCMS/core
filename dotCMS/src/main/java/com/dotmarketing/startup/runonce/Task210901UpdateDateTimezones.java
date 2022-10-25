@@ -1,16 +1,23 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.util.DataSourceAttributes;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
+import com.dotmarketing.db.DataSourceStrategyProvider;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.URLEncoder;
 import com.google.common.annotations.VisibleForTesting;
+import com.zaxxer.hikari.HikariDataSource;
+import io.vavr.control.Try;
 
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -85,9 +92,9 @@ public class Task210901UpdateDateTimezones extends AbstractJDBCStartupTask {
      *
      * @throws SQLException An error occurred when accessing the database metadata.
      */
-    boolean updateTable(final String tableName) throws SQLException {
+    boolean updateTable(final String tableName) throws Exception {
         boolean tableUpdated = false;
-        try (Connection conn = DbConnectionFactory.getConnection()) {
+        try (Connection conn = this.getDbConnection()) {
             final ResultSet results = DotDatabaseMetaData.getColumnsMetaData(conn, tableName);
             while (results.next()) {
                 if ("timestamp".equalsIgnoreCase(results.getString("TYPE_NAME"))) {
@@ -120,11 +127,14 @@ public class Task210901UpdateDateTimezones extends AbstractJDBCStartupTask {
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
         tablesCount = 0;
         try {
+            final TimeZone defaultTz = TimeZone.getDefault();
+            TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
             for (final String table : findAllTables()) {
                 if(this.updateTable(table)){
                   tablesCount++;
                 }
             }
+            TimeZone.setDefault(defaultTz);
             updateDateFieldsToUTC();
         } catch (final Exception e) {
             throw new DotRuntimeException(e);
@@ -258,6 +268,24 @@ public class Task210901UpdateDateTimezones extends AbstractJDBCStartupTask {
      */
     private int fromMillisToSeconds(final int millis) {
         return 0 == millis ? millis : millis / 1000;
+    }
+
+    /**
+     * Gets the current datasource to get DB connection info. We need this in order to force dotCMS into creating a
+     * DataSource object using the UTC Time Zone.
+     *
+     * @return DB connection info
+     */
+    private Connection getDbConnection() {
+        try {
+            Class dbDriver = Class.forName("org.postgresql.Driver");
+            final HikariDataSource hds = (HikariDataSource) DbConnectionFactory.getDataSource();
+            return DriverManager.getConnection(hds.getJdbcUrl(), hds.getUsername(), hds.getPassword());
+        } catch (final Exception e) {
+            Logger.error(this.getClass(), String.format("DataSource object could not be retrieved: %s",
+                    e.getMessage()), e);
+            throw new DotRuntimeException(e);
+        }
     }
 
 }
