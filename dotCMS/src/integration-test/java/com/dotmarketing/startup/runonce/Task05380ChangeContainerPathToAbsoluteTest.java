@@ -479,7 +479,7 @@ public class Task05380ChangeContainerPathToAbsoluteTest {
         final Host host = new SiteDataGen().nextPersisted();
         final Host anotherHost = new SiteDataGen().nextPersisted();
 
-        final String layout = String.format(legacyHTMLLayout, "//" + anotherHost.getHostname());
+        final String layout = String.format(legacyHTMLLayout, "//" + anotherHost.getHostname() + "/application/containers/default/");
         final String testBody = String.format(body, "//" + anotherHost.getHostname());
 
         final Contentlet theme = new ThemeDataGen().nextPersisted();

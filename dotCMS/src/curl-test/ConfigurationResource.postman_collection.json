@@ -1,8 +1,9 @@
 {
 	"info": {
-		"_postman_id": "10d4ab84-0ccf-45ea-95d9-fd197ec91835",
+		"_postman_id": "66911d52-aa8a-45d5-a649-06bb38803d11",
 		"name": "Configuration Resource",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "6484944"
 	},
 	"item": [
 		{
@@ -48,13 +49,12 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api//v1/configuration",
+					"raw": "{{serverURL}}/api/v1/configuration",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
-						"",
 						"v1",
 						"configuration"
 					]
@@ -120,13 +120,12 @@
 					"raw": "{ \n\t \"senderAndEmail\":\"broken-email\"\n}\n"
 				},
 				"url": {
-					"raw": "{{serverURL}}/api//v1/configuration/_validateCompanyEmail",
+					"raw": "{{serverURL}}/api/v1/configuration/_validateCompanyEmail",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
-						"",
 						"v1",
 						"configuration",
 						"_validateCompanyEmail"
@@ -190,13 +189,12 @@
 					"raw": "{ \n\t \"senderAndEmail\":\"ok-email@dotcms.com\"\n}\n"
 				},
 				"url": {
-					"raw": "{{serverURL}}/api//v1/configuration/_validateCompanyEmail",
+					"raw": "{{serverURL}}/api/v1/configuration/_validateCompanyEmail",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
-						"",
 						"v1",
 						"configuration",
 						"_validateCompanyEmail"
@@ -260,13 +258,12 @@
 					"raw": "{ \n\t \"senderAndEmail\":\" Sender Name <ok-email@dotcms.com>\"\n}\n"
 				},
 				"url": {
-					"raw": "{{serverURL}}/api//v1/configuration/_validateCompanyEmail",
+					"raw": "{{serverURL}}/api/v1/configuration/_validateCompanyEmail",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
-						"",
 						"v1",
 						"configuration",
 						"_validateCompanyEmail"

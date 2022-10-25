@@ -459,7 +459,7 @@ public class VanityUrlAPITest {
             contentletAPI.checkin(vanityURLContentletUpdated, user, false);
             fail("Using an invalid 600 action code, the checking method should fail...");
         } catch (Exception e) {
-            assertEquals(e.getMessage(),"The action code of the Vanity URL is not valid");
+            assertTrue(e.getMessage().contains("The action code of the Vanity URL is not valid"));
         }
     }
 
