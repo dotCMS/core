@@ -55,7 +55,7 @@ services:
       - db_net_sender
       - opensearch-net_sender
     ports:
-      - "8080:8080"
+      - "8082:8082"
       - "8443:8443"
 
   db-sender:

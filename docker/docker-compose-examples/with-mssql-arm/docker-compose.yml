@@ -52,7 +52,7 @@ services:
       - db_net
       - opensearch-net
     ports:
-      - "8080:8080"
+      - "8082:8082"
       - "8000:8000"
 
   db-dev:

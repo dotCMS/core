@@ -17,7 +17,7 @@ services:
       ORACLE_PWD: oracle
     ports:
       - "${SERVICE_HOST_PORT_PREFIX}1521:1521"
-      - "15080:8080"
+      - "15080:8082"
     volumes:
       - ./setup/db/oracle:/u01/app/oracle
 

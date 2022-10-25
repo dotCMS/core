@@ -55,7 +55,7 @@ services:
       - db_net_receiver
       - opensearch-net_receiver
     ports:
-      - "8081:8080"
+      - "8081:8082"
       - "8444:8443"
 
   db-receiver:
