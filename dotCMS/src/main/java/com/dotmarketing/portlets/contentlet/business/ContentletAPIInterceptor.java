@@ -4,6 +4,7 @@ import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.enterprise.license.LicenseManager;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -825,6 +826,11 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
 	@Override
 	public Contentlet findContentletByIdentifier(String identifier, boolean live, long languageId, User user, boolean respectFrontendRoles)	throws DotDataException, DotSecurityException,	DotContentletStateException {
+		return findContentletByIdentifier(identifier, live, languageId, VariantAPI.DEFAULT_VARIANT.name(), user, respectFrontendRoles);
+	}
+
+	@Override
+	public Contentlet findContentletByIdentifier(String identifier, boolean live, long languageId, String variantId, User user, boolean respectFrontendRoles)	throws DotDataException, DotSecurityException,	DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findContentletByIdentifier(identifier, live, languageId, user, respectFrontendRoles);
 			if(!preResult){
@@ -832,7 +838,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
 			}
 		}
-		Contentlet c = conAPI.findContentletByIdentifier(identifier, live, languageId, user, respectFrontendRoles);
+		Contentlet c = conAPI.findContentletByIdentifier(identifier, live, languageId, variantId, user, respectFrontendRoles);
 		for(ContentletAPIPostHook post : postHooks){
 			post.findContentletByIdentifier(identifier, live, languageId, user, respectFrontendRoles,c);
 		}

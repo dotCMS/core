@@ -102,6 +102,17 @@ public abstract class Field implements FieldIf, Serializable {
     return false;
   }
 
+  /**
+   * Determines whether the field must be returned by the API (for instance, the GraphQL API) or not, even if the field
+   * is removable.
+   *
+   * @return If the field must be returned by the API, set it to {@code true}.
+   */
+  @Value.Default
+  public boolean forceIncludeInApi() {
+    return false;
+  }
+
   @Nullable
   public abstract String owner();
 

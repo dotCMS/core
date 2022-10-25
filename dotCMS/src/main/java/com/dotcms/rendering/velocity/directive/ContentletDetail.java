@@ -4,7 +4,9 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rendering.velocity.services.VelocityType;
 
+import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.util.PageMode;
@@ -31,56 +33,12 @@ public class ContentletDetail extends DotDirective {
         return "contentDetail";
     }
 
-
-    private long resolveLang(final String identifier, final RenderParams params) {
-        Optional<ContentletVersionInfo> versionInfo;
-        long tryingLang = params.language.getId();
-        long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-        if(tryingLang==defaultLang) {
-            return tryingLang;
-        }
-        try {
-            versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, tryingLang);
-            if (versionInfo.isPresent()) {
-                return tryingLang;
-            }
-            else {
-                versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, defaultLang);
-
-                if(!versionInfo.isPresent()) {
-                    throw new ResourceNotFoundException("cannnot find contentlet id " + identifier + " lang:" + defaultLang);
-                }
-
-                String inode = params.mode.showLive ? versionInfo.get().getLiveInode() : versionInfo.get().getWorkingInode();
-                Contentlet test = APILocator.getContentletAPI().find(inode, params.user, params.mode.respectAnonPerms);
-                ContentType type = test.getContentType();
-                if (type.baseType() == BaseContentType.FORM || type.baseType() == BaseContentType.PERSONA
-                        || "Host".equalsIgnoreCase(type.variable())) {
-                    return defaultLang;
-                } else if (type.baseType() == BaseContentType.CONTENT
-                        && APILocator.getLanguageAPI().canDefaultContentToDefaultLanguage()) {
-                    return defaultLang;
-                } else if (type.baseType() == BaseContentType.WIDGET
-                        && APILocator.getLanguageAPI().canDefaultWidgetToDefaultLanguage()) {
-                    return defaultLang;
-                }
-
-            }
-        } catch (Exception e) {
-
-            throw new ResourceNotFoundException("cannnot find contentlet id " + identifier + " lang:" + tryingLang, e);
-        }
-        throw new ResourceNotFoundException("cannnot find contentlet id " + identifier + " lang:" + tryingLang);
-
-    }
-
     @Override
     String resolveTemplatePath(final Context context, final Writer writer, final RenderParams params, final String[] arguments) {
 
         final String identifier = arguments[0];
-        long lang = resolveLang(identifier, params);
-
-
+        final RenderContext renderContext = WebAPILocator.getVariantWebAPI()
+                .getRenderContext(params.language.getId(), identifier, params.mode, params.user);
 
         final boolean showWorking = (context.get("_show_working_") != null && (boolean) context.get("_show_working_"));
 
@@ -91,7 +49,9 @@ public class ContentletDetail extends DotDirective {
             .append(StringPool.FORWARD_SLASH)
             .append(identifier)
             .append(StringPool.UNDERLINE)
-            .append(lang)
+            .append(renderContext.getCurrentLanguageId())
+            .append(StringPool.UNDERLINE)
+            .append(renderContext.getCurrentVariantKey())
             .append(StringPool.PERIOD)
             .append(EXTENSION);
 

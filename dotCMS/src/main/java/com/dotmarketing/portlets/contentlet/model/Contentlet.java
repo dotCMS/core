@@ -1622,6 +1622,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public void setVariantId(final String variantId) {
 		map.put(VARIANT_ID, variantId);
     }
+
 	public String getVariantId() {
 		return map.getOrDefault(VARIANT_ID, VariantAPI.DEFAULT_VARIANT.name()).toString();
 	}

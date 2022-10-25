@@ -5,5 +5,5 @@ export const enum LoadingState {
 }
 
 export const enum FeaturedFlags {
-    LOAD_FRONTEND_EXPERIMENTS = 'EXPERIMENTS_FEATURE_ENABLE'
+    LOAD_FRONTEND_EXPERIMENTS = 'FEATURE_FLAG_EXPERIMENTS'
 }

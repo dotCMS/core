@@ -5,8 +5,8 @@
     #end
         <img
             src="#if($!item.attrs.src && $!item.attrs.src != "null")$!item.attrs.src#{else}$!item.attrs.data.asset#end"
-            alt="$!item.attrs.alt"
-            title="$!item.attrs.title"
+            alt="#if($!item.attrs.alt && $!item.attrs.alt != "null")$!item.attrs.alt#{else}$!item.attrs.data.title#end"
+            title="#if($!item.attrs.title && $!item.attrs.title != "null")$!item.attrs.title#{else}$!item.attrs.data.title#end"
         />
     #if ($!item.attrs.href != "null")
     </a>

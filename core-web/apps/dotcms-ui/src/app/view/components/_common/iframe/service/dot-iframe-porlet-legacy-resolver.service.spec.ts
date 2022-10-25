@@ -15,6 +15,7 @@ import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models';
 import { DotIframePortletLegacyResolver } from './dot-iframe-porlet-legacy-resolver.service';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
+import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
 
 const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
     'toString'
@@ -39,6 +40,7 @@ describe('DotIframePorletLegacyResolver', () => {
                     DotPageRenderService,
                     DotContentletLockerService,
                     DotLicenseService,
+                    DotESContentService,
                     {
                         provide: ActivatedRouteSnapshot,
                         useValue: route

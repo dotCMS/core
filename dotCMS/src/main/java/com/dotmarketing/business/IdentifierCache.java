@@ -45,6 +45,8 @@ public abstract class IdentifierCache implements Cachable {
     
     abstract public void removeContentletVersionInfoToCache(String identifier, long lang);
 
+	abstract public void removeContentletVersionInfoToCache(String identifier, long lang, String variantId);
+
 	abstract public void clearCache();
 
 	public String[] getGroups() {

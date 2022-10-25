@@ -1,6 +1,7 @@
 package com.dotmarketing.factories;
 
 
+import com.dotcms.variant.VariantAPI;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.HashSet;
@@ -71,37 +72,36 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     private static final String DELETE_ALL_MULTI_TREE_RELATED_TO_IDENTIFIER_SQL =
             "delete from multi_tree where child = ? or parent1 = ? or parent2 = ?";
-    private static final String DELETE_SQL = "delete from multi_tree where parent1=? and parent2=? and child=? and  relation_type = ? and personalization = ?";
+    private static final String DELETE_SQL = "delete from multi_tree where parent1=? and parent2=? and child=? and  relation_type = ? and personalization = ? and variant_id = ?";
     private static final String DELETE_SQL_PERSONALIZATION_PER_PAGE = "delete from multi_tree where parent1=? and personalization = ?";
     private static final String DELETE_ALL_MULTI_TREE_SQL = "delete from multi_tree where parent1=? AND relation_type != ?";
-    private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION = "delete from multi_tree where parent1=? AND relation_type != ? and personalization = ?";
+    private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION = "delete from multi_tree where parent1=? AND relation_type != ? and personalization = ? and variant_id = ?";
     private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE_NOT_SQL =
-            "delete from multi_tree where relation_type != ? and personalization = ? and multi_tree.parent1 = ?  and " +
+            "delete from multi_tree where variant_id = ? and relation_type != ? and personalization = ? and multi_tree.parent1 = ?  and " +
                     "child in (select distinct identifier from contentlet,multi_tree where multi_tree.child = contentlet.identifier and multi_tree.parent1 = ? and language_id = ?)";
     private static final String SELECT_COUNT_MULTI_TREE_BY_RELATION_PERSONALIZATION_PAGE_CONTAINER_AND_CHILD =
             "select count(*) cc from multi_tree where relation_type = ? and personalization = ? and " +
-                    "multi_tree.parent1 = ? and multi_tree.parent2 = ? and multi_tree.child = ?";
+                    "multi_tree.parent1 = ? and multi_tree.parent2 = ? and multi_tree.child = ? and variant_id = ?";
 
     private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE_SQL =
             "delete from multi_tree where relation_type != ? and personalization = ? and multi_tree.parent1 = ?  and child in (%s)";
     private static final String SELECT_MULTI_TREE_BY_LANG =
-            "select distinct contentlet.identifier from contentlet,multi_tree where multi_tree.child = contentlet.identifier and multi_tree.parent1 = ? and language_id = ?";
+            "select distinct contentlet.identifier from contentlet,multi_tree where multi_tree.child = contentlet.identifier and multi_tree.parent1 = ? and language_id = ? and variant_id = ?";
 
     private static final String UPDATE_MULTI_TREE_PERSONALIZATION = "update multi_tree set personalization = ? where personalization = ?";
-    private static final String SELECT_SQL = "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ? and personalization = ?";
+    private static final String SELECT_SQL = "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ? and personalization = ? and variant_id = ?";
 
-    private static final String INSERT_SQL = "insert into multi_tree (parent1, parent2, child, relation_type, tree_order, personalization) values (?,?,?,?,?,?)  ";
+    private static final String INSERT_SQL = "insert into multi_tree (parent1, parent2, child, relation_type, tree_order, personalization, variant_id) values (?,?,?,?,?,?,?)  ";
 
     private static final String SELECT_BY_PAGE = "select * from multi_tree where parent1 = ? order by tree_order";
-    private static final String SELECT_BY_PAGE_AND_PERSONALIZATION = "select * from multi_tree where parent1 = ? and personalization = ? order by tree_order";
-    private static final String SELECT_UNIQUE_PERSONALIZATION_PER_PAGE = "select distinct(personalization) from multi_tree where parent1 = ?";
+    private static final String SELECT_BY_PAGE_AND_PERSONALIZATION = "select * from multi_tree where parent1 = ? and personalization = ? and variant_id = 'DEFAULT' order by tree_order";
     private static final String SELECT_UNIQUE_PERSONALIZATION = "select distinct(personalization) from multi_tree";
-    private static final String SELECT_BY_ONE_PARENT = "select * from multi_tree where parent1 = ? or parent2 = ? order by tree_order"; // search by page id or container id
-    private static final String SELECT_BY_TWO_PARENTS = "select * from multi_tree where parent1 = ? and parent2 = ?  order by tree_order";
+    private static final String SELECT_BY_ONE_PARENT = "select * from multi_tree where parent1 = ? or parent2 = ? and variant_id = 'DEFAULT' order by tree_order"; // search by page id or container id
+    private static final String SELECT_BY_TWO_PARENTS = "select * from multi_tree where parent1 = ? and parent2 = ? and variant_id = 'DEFAULT'  order by tree_order";
     private static final String SELECT_ALL = "select * from multi_tree  ";
-    private static final String SELECT_BY_CHILD = "select * from multi_tree where child = ?  order by parent1, parent2, relation_type ";
+    private static final String SELECT_BY_CHILD = "select * from multi_tree where child = ? order by parent1, parent2, relation_type ";
     private static final String SELECT_BY_PARENTS_AND_RELATIONS =
-            " select * from multi_tree where parent1 = ? and parent2 = ? and relation_type = ? and personalization = ? order by tree_order";
+            " select * from multi_tree where parent1 = ? and parent2 = ? and relation_type = ? and personalization = ? and variant_id = 'DEFAULT' order by tree_order";
 
     private static final String SELECT_BY_CONTAINER_AND_STRUCTURE = "SELECT mt.* FROM multi_tree mt JOIN contentlet c "
             + " ON c.identifier = mt.child WHERE mt.parent2 = ? AND c.structure_inode = ? ";
@@ -171,6 +171,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 .addParam(multiTree.getContentlet())
                 .addParam(multiTree.getRelationType())
                 .addObject(multiTree.getPersonalization())
+                .addParam(multiTree.getVariantId())
                 .loadResult();
     }
 
@@ -188,13 +189,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                                   final String containerInstance, final String personalization)
             throws DotDataException {
 
-        final DotConnect db =
-                new DotConnect().setSQL(SELECT_SQL).addParam(htmlPage).addParam(container)
-                        .addParam(childContent).addParam(containerInstance)
-                        .addParam(personalization);
-        db.loadResult();
-
-        return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).findFirst();
+        return this.getMultiTree(htmlPage, container, childContent, containerInstance, personalization, VariantAPI.DEFAULT_VARIANT.name());
 
     }
 
@@ -202,7 +197,21 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     public MultiTree getMultiTree(final String htmlPage, final String container, final String childContent, final String containerInstance)
             throws DotDataException {
 
-        return this.getMultiTree(htmlPage, container, childContent, containerInstance, MultiTree.DOT_PERSONALIZATION_DEFAULT);
+        return this.getMultiTree(htmlPage, container, childContent, containerInstance, MultiTree.DOT_PERSONALIZATION_DEFAULT, VariantAPI.DEFAULT_VARIANT.name());
+    }
+
+    @Override
+    public MultiTree getMultiTree(final String htmlPage, final String container, final String childContent,
+            final String containerInstance,  final String personalization, final String variantId)
+            throws DotDataException {
+        final DotConnect db =
+                new DotConnect().setSQL(SELECT_SQL).addParam(htmlPage).addParam(container)
+                        .addParam(childContent).addParam(containerInstance)
+                        .addParam(personalization).addParam(variantId);
+        db.loadResult();
+
+        return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).findFirst();
+
     }
 
     /**
@@ -533,7 +542,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                                                      final List<MultiTree> multiTrees) throws DotDataException {
 
         this.overridesMultitreesByPersonalization(pageId, personalization, multiTrees,
-                Optional.empty());  // no lang passed, will deletes everything
+                Optional.empty(), VariantAPI.DEFAULT_VARIANT.name());  // no lang passed, will deletes everything
     }
 
     /**
@@ -552,7 +561,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     public void overridesMultitreesByPersonalization(final String pageId,
                                                     final String personalization,
                                                     final List<MultiTree> multiTrees,
-                                                     final Optional<Long> languageIdOpt) throws DotDataException {
+                                                    final Optional<Long> languageIdOpt,
+                                                    final String variantId) throws DotDataException {
 
         Logger.info(this, String.format(
                 "Overriding MutiTrees: pageId -> %s personalization -> %s multiTrees-> %s ",
@@ -568,9 +578,10 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         final DotConnect db = new DotConnect();
         if (languageIdOpt.isPresent()) {
             if (DbConnectionFactory.isMySql()) {
-                deleteMultiTreeToMySQL(pageId, personalization, languageIdOpt);
+                deleteMultiTreeToMySQL(pageId, personalization, languageIdOpt, variantId);
            } else {
                 db.setSQL(DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE_NOT_SQL)
+                        .addParam(variantId)
                         .addParam(ContainerUUID.UUID_DEFAULT_VALUE)
                         .addParam(personalization)
                         .addParam(pageId)
@@ -583,7 +594,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             db.setSQL(DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION)
                     .addParam(pageId)
                     .addParam(ContainerUUID.UUID_DEFAULT_VALUE)
-                    .addParam(personalization).loadResult();
+                    .addParam(personalization)
+                    .addParam(variantId)
+                    .loadResult();
         }
 
         if (!multiTrees.isEmpty()) {
@@ -598,7 +611,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                         .addParam(tree.getPersonalization())
                         .addParam(pageId)
                         .addParam(tree.getContainerAsID())
-                        .addParam(tree.getContentlet());
+                        .addParam(tree.getContentlet())
+                        .addParam(tree.getVariantId());
                 final int contentExist = Integer.parseInt(db.loadObjectResults().get(0).get("cc").toString());
                 if(contentExist != 0){
                     final String contentletTitle = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(tree.getContentlet()).getTitle();
@@ -609,7 +623,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
                 insertParams
                         .add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(),
-                                tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization()));
+                                tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization(), tree.getVariantId()));
                 newContainers.add(tree.getContainer());
             }
 
@@ -620,15 +634,24 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         refreshPageInCache(pageId);
     }
 
+    @Override
+    public void overridesMultitreesByPersonalization(String pageId,
+            String personalization, List<MultiTree> multiTrees,
+            Optional<Long> languageIdOpt) throws DotDataException {
+        overridesMultitreesByPersonalization(pageId, personalization, multiTrees,
+                languageIdOpt, VariantAPI.DEFAULT_VARIANT.name());
+    }
+
     private void deleteMultiTreeToMySQL(
             final String pageId,
             final String personalization,
-            final Optional<Long> languageIdOpt) throws DotDataException {
+            final Optional<Long> languageIdOpt, final String variantId) throws DotDataException {
         final DotConnect db = new DotConnect();
 
         final List<String> multiTreesId = db.setSQL(SELECT_MULTI_TREE_BY_LANG)
             .addParam(pageId)
             .addParam(languageIdOpt.get())
+            .addParam(variantId)
             .loadObjectResults()
             .stream()
             .map(map -> String.format("'%s'", map.get("identifier")))
@@ -701,7 +724,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             for (final MultiTree tree : mTrees) {
                 insertParams
                         .add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(),
-                                tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization()));
+                                tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization(), tree.getVariantId()));
                 newContainers.add(tree.getContainer());
             }
 
@@ -747,7 +770,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         Logger.debug(this, () -> String.format("_dbInsert -> Saving MutiTree: %s", multiTree));
 
         new DotConnect().setSQL(INSERT_SQL).addParam(multiTree.getHtmlPage()).addParam(multiTree.getContainerAsID()).addParam(multiTree.getContentlet())
-                .addParam(multiTree.getRelationType()).addParam(multiTree.getTreeOrder()).addObject(multiTree.getPersonalization()).loadResult();
+                .addParam(multiTree.getRelationType()).addParam(multiTree.getTreeOrder()).addObject(multiTree.getPersonalization()).addParam(multiTree.getVariantId()).loadResult();
     }
 
 

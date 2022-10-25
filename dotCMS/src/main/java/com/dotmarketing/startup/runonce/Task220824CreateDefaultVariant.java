@@ -9,7 +9,9 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
+import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 
 /**
@@ -36,8 +38,6 @@ public class Task220824CreateDefaultVariant implements StartupTask  {
         final DotConnect dotConnect = new DotConnect();
 
         createDefaultVariant(dotConnect);
-        createVariantDataBaseField(dotConnect);
-
     }
 
     private void createDefaultVariant(DotConnect dotConnect) throws DotDataException {
@@ -55,28 +55,5 @@ public class Task220824CreateDefaultVariant implements StartupTask  {
                 .addParam(VariantAPI.DEFAULT_VARIANT.name())
                 .loadResults()
                 .isEmpty();
-    }
-
-    private void createVariantDataBaseField(DotConnect dotConnect) throws DotDataException {
-        final DotDatabaseMetaData databaseMetaData = new DotDatabaseMetaData();
-
-        try {
-            if (!databaseMetaData.hasColumn("contentlet_version_info", "variant_id")) {
-                final String dataBaseFieldType = DbConnectionFactory.isMsSql() ? "NVARCHAR" : "varchar";
-
-                final String alterTableQuery = String.format(
-                        "ALTER TABLE contentlet_version_info ADD variant_id %s(255) default 'DEFAULT'",
-                        dataBaseFieldType);
-
-                dotConnect
-                        .setSQL(alterTableQuery)
-                        .loadResult();
-
-                dotConnect.setSQL("UPDATE contentlet_version_info SET variant_id = 'DEFAULT'")
-                        .loadResult();
-            }
-        } catch (SQLException e) {
-            throw new DotRuntimeException(e);
-        }
     }
 }

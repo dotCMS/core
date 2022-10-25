@@ -265,11 +265,6 @@
     </servlet>
 	
 	<servlet>
-		<servlet-name>TailLogServlet</servlet-name>
-		<servlet-class>com.dotmarketing.servlets.taillog.TailLogServlet</servlet-class>
-	</servlet>
-	
-	<servlet>
 	  <servlet-name>dwr-invoker</servlet-name>
 	  <servlet-class>com.dotmarketing.servlets.DwrWrapperServlet</servlet-class>
       <init-param>
@@ -440,11 +435,7 @@
         <servlet-name>login_edit_mode</servlet-name>
         <url-pattern>/admin</url-pattern>
     </servlet-mapping>
-	
-	<servlet-mapping>
-		<servlet-name>TailLogServlet</servlet-name>
-		<url-pattern>/dotTailLogServlet/*</url-pattern>
-	</servlet-mapping>
+
 	<servlet-mapping>
 		<servlet-name>WebDav</servlet-name>
 		<url-pattern>/webdav/autopub/*</url-pattern>

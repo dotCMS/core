@@ -106,6 +106,7 @@ describe('ForgotPasswordComponent', () => {
         control.setValue('');
         control.markAsTouched();
         control.markAsDirty();
+        control.updateValueAndValidity();
 
         fixture.detectChanges();
 

@@ -278,5 +278,31 @@ public class ContentletDependencies {
             return this;
         }
 
+        public ContentletDependencies.Builder from (final ContentletDependencies contentletDependencies) {
+
+            this.indexPolicyDependencies = contentletDependencies.indexPolicyDependencies;
+            this.categories = contentletDependencies.categories;
+            this.modUser = contentletDependencies.modUser;
+            this.relationships = contentletDependencies.relationships;
+            this.workflowActionId = contentletDependencies.workflowActionId;
+            this.workflowActionComments = contentletDependencies.workflowActionComments;
+            this.workflowAssignKey = contentletDependencies.workflowAssignKey;
+            this.workflowPublishDate  = contentletDependencies.workflowPublishDate;
+            this.workflowPublishTime  = contentletDependencies.workflowPublishTime;
+            this.workflowExpireDate = contentletDependencies.workflowExpireDate;
+            this.workflowExpireTime = contentletDependencies.workflowExpireTime;
+            this.workflowNeverExpire = contentletDependencies.workflowNeverExpire;
+            this.workflowWhereToSend = contentletDependencies.workflowWhereToSend;
+            this.workflowFilterKey = contentletDependencies.workflowFilterKey;
+            this.workflowIWantTo = contentletDependencies.workflowIWantTo;
+            this.workflowPathToMove = contentletDependencies.workflowPathToMove;
+            this.workflowTimezoneId = contentletDependencies.workflowTimezoneId;
+            this.respectAnonymousPermissions = contentletDependencies.respectAnonymousPermissions;
+            this.generateSystemEvent = contentletDependencies.generateSystemEvent;
+            this.indexPolicy = contentletDependencies.indexPolicy;
+            this.permissions  = contentletDependencies.permissions;
+            return this;
+        }
+
     }
 }

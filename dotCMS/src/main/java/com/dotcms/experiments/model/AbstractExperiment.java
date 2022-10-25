@@ -7,7 +7,6 @@ import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.business.Ruleable;
-import com.dotmarketing.exception.DotDataException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.vavr.control.Try;
