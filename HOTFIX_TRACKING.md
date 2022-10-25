@@ -44,3 +44,4 @@ This maintenance release includes the following code fixes:
 33. https://github.com/dotCMS/core/issues/21619 : ContentTypeFactoryImpl Getting Config values cause unneeded load #21619
 34. https://github.com/dotCMS/core/issues/21612 : Template Publish UI Suggestion #21612
 35. https://github.com/dotCMS/core/issues/21694 : [WebP] : Default quality for WebP filter is breaking image file #21694
+36. https://github.com/dotCMS/core/issues/22116 : DB Exporter does not stream output #22116

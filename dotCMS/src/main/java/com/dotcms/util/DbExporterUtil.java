@@ -247,7 +247,7 @@ public class DbExporterUtil {
      * @return input stream with commands output
      * @throws IOException
      */
-    static InputStream exportSql() throws IOException {
+    public static InputStream exportSql() throws IOException {
         return RuntimeUtils.getRunProcessStream(getCommandAndArgs(PG_DUMP_PATH.get(), getDatasource().getDbUrl()));
     }
 
