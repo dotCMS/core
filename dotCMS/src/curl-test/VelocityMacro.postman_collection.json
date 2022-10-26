@@ -262,12 +262,17 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"var jsonData = pm.response.json();",
 							"pm.test(\"Status code should be ok 200\", function () {",
-							"    pm.response.to.have.status(200);",
+							"    pm.expect(pm.response.text()).to.include(\"Hello, template msg 1.1\");",
 							"});",
 							"",
-							"pm.collectionVariables.set(\"fileAssetIdentifier\", jsonData.entity.identifier);",
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"dotcms\");",
+							"});",
+							"",
+							"",
+							"",
+							"",
 							""
 						],
 						"type": "text/javascript"
@@ -293,34 +298,24 @@
 				"method": "PUT",
 				"header": [],
 				"body": {
-					"mode": "formdata",
-					"formdata": [
-						{
-							"key": "body",
-							"value": "  {\n     \"contentlet\": {\n        \"contentType\":\"FileAsset\",\n        \"hostFolder\":\":/test-macros\",\n        \"fileName\":\"dot_velocity_macros.vtl\",\n        \"title\":\"dot_velocity_macros.vtl\"\n        }\n    }",
-							"contentType": "application/json",
-							"type": "text"
-						},
-						{
-							"key": "file",
-							"type": "file",
-							"src": "resources/dot_velocity_macros.vtl"
+					"mode": "raw",
+					"raw": "#macroMessage(\"dotcms\")",
+					"options": {
+						"raw": {
+							"language": "text"
 						}
-					]
+					}
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+					"raw": "{{serverURL}}/api/vtl/dynamic/",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
-						"v1",
-						"workflow",
-						"actions",
-						"default",
-						"fire",
-						"PUBLISH"
+						"vtl",
+						"dynamic",
+						""
 					],
 					"query": [
 						{
@@ -432,12 +427,17 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"var jsonData = pm.response.json();",
 							"pm.test(\"Status code should be ok 200\", function () {",
-							"    pm.response.to.have.status(200);",
+							"    pm.expect(pm.response.text()).to.include(\"Hello, template msg 1.2\");",
 							"});",
 							"",
-							"pm.collectionVariables.set(\"fileAssetIdentifier\", jsonData.entity.identifier);",
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"dotCMS\");",
+							"});",
+							"",
+							"",
+							"",
+							"",
 							""
 						],
 						"type": "text/javascript"
@@ -463,34 +463,19 @@
 				"method": "PUT",
 				"header": [],
 				"body": {
-					"mode": "formdata",
-					"formdata": [
-						{
-							"key": "body",
-							"value": "  {\n     \"contentlet\": {\n        \"contentType\":\"FileAsset\",\n        \"hostFolder\":\":/test-macros\",\n        \"fileName\":\"dot_velocity_macros.vtl\",\n        \"title\":\"dot_velocity_macros.vtl\"\n        }\n    }",
-							"contentType": "application/json",
-							"type": "text"
-						},
-						{
-							"key": "file",
-							"type": "file",
-							"src": "resources/dot_velocity_macros.vtl"
-						}
-					]
+					"mode": "raw",
+					"raw": "#macroMessage(\"dotCMS\")"
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+					"raw": "{{serverURL}}/api/vtl/dynamic/",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
-						"v1",
-						"workflow",
-						"actions",
-						"default",
-						"fire",
-						"PUBLISH"
+						"vtl",
+						"dynamic",
+						""
 					],
 					"query": [
 						{
