@@ -11,16 +11,17 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.config.ServiceBean;
+import com.dotcms.model.contenttype.FilterContentTypesRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.quarkus.test.junit.QuarkusTest;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,6 +55,11 @@ public class ContentTypeAPITest {
         authenticationContext.login(user, passwd);
     }
 
+    /**
+     * Generate a CT using our classes model
+     * Then test we can go back and forth using serialization and test our fields actually get translated properly using polymorphism
+     * @throws JsonProcessingException
+     */
     @Test
     public void Test_Content_Type_Model_Serialization() throws JsonProcessingException {
 
@@ -103,8 +109,11 @@ public class ContentTypeAPITest {
  */
     }
 
+    /**
+     * Test that we can hit
+     */
     @Test
-    public void Test_Get_ContentTypes() {
+    public void Test_Get_All_ContentTypes() {
 
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
 
@@ -112,6 +121,30 @@ public class ContentTypeAPITest {
                 null, null, null, null, null);
         Assertions.assertNotNull(response);
         Assertions.assertFalse(response.entity().isEmpty());
+    }
+
+    @Test
+    public void Test_Get_Filtered_Paginated_ContentTypes() {
+
+        final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
+
+        final ResponseEntityView<List<ContentType>> response = client.getContentTypes("file", 1,
+                10, null, null, null, null);
+        Assertions.assertNotNull(response);
+        Assertions.assertEquals(1,response.entity().size());
+    }
+
+    @Test
+    public void Test_Post_Filtered_Paginated_ContentTypes() {
+        final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
+        final ResponseEntityView<List<ContentType>> response = client.filterContentTypes(FilterContentTypesRequest.builder()
+                .filter(ImmutableMap.of("types",
+                        "calendarEvent,VanityUrl,webPageContent,htmlpageasset,FileAsset"
+                        )
+                ).page(1)
+                .perPage(3).build());
+        Assertions.assertNotNull(response);
+        Assertions.assertEquals(3, response.entity().size());
     }
 
     @Test
@@ -184,6 +217,43 @@ public class ContentTypeAPITest {
         }catch(javax.ws.rs.NotFoundException e){
             // Not relevant here
         }
+
+    }
+
+
+    public void Test_Load_Minimalistic_File() throws JsonProcessingException {
+       final String in = "{\n"
+                + "  \"clazz\" : \"SimpleContentType\",\n"
+                + "  \"name\" : \"name\",\n"
+                + "  \"variable\" : \"__var__1666727954809\",\n"
+                + "  \"modDate\" : \"2022-10-25T19:59:14.818+00:00\",\n"
+                + "  \"fixed\" : true,\n"
+                + "  \"iDate\" : \"2022-10-25T19:59:14.818+00:00\",\n"
+                + "  \"host\" : \"SYSTEM_HOST\",\n"
+                + "  \"folder\" : \"SYSTEM_FOLDER\",\n"
+                + "  \"sortOrder\" : 1,\n"
+                + "  \"description\" : \"ct for testing.\",\n"
+                + "  \"baseType\" : \"CONTENT\",\n"
+                + "  \"fields\" : [ {\n"
+                + "    \"clazz\" : \"BinaryField\",\n"
+                + "    \"searchable\" : true,\n"
+                + "    \"unique\" : false,\n"
+                + "    \"indexed\" : true,\n"
+                + "    \"listed\" : true,\n"
+                + "    \"readOnly\" : false,\n"
+                + "    \"forceIncludeInApi\" : false,\n"
+                + "    \"modDate\" : \"2022-10-25T19:59:14.820+00:00\",\n"
+                + "    \"name\" : \"__bin_var__1666727954809\",\n"
+                + "    \"required\" : false,\n"
+                + "    \"variable\" : \"lol\",\n"
+                + "    \"sortOrder\" : 1,\n"
+                + "    \"fixed\" : false,\n"
+                + "    \"dataType\" : \"SYSTEM\"\n"
+                + "  } ]\n"
+                + "}";
+        final ObjectMapper objectMapper = new ClientObjectMapper().getContext(null);
+        final ContentType contentType = objectMapper.readValue(in, ContentType.class);
+        Assertions.assertNotNull(contentType);
 
     }
 

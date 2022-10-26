@@ -4,6 +4,7 @@ import com.dotcms.api.provider.DefaultResponseExceptionMapper;
 import com.dotcms.api.provider.DotCMSClientHeaders;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.ResponseEntityView;
+import com.dotcms.model.contenttype.FilterContentTypesRequest;
 import java.util.List;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -38,7 +39,7 @@ public interface ContentTypeAPI {
 
     @GET
     @Operation(
-            summary = "Get a list of Content-types for a given set of param"
+            summary = "Get a list of Content-types for a given set of params"
     )
     ResponseEntityView<List<ContentType>> getContentTypes(@QueryParam("filter") String filter,
             @QueryParam("page") Integer page,
@@ -79,4 +80,13 @@ public interface ContentTypeAPI {
             summary = "Save/Update a CT instance"
     )
     ResponseEntityView<String> delete(@PathParam("idOrVar") final String idOrVar);
+
+
+    @POST
+    @Path("/_filter")
+    @Operation(
+            summary = "Get a list of Content-types for a given set of param"
+    )
+    ResponseEntityView<List<ContentType>> filterContentTypes(final FilterContentTypesRequest request);
+
 }

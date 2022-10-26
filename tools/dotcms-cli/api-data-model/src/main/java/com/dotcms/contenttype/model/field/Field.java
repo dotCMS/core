@@ -15,7 +15,7 @@ import javax.annotation.Nullable;
 )
 @JsonSubTypes({
         @Type(value = StoryBlockField.class),
-        @Type(value = BinaryField.class),
+        @Type(value = BinaryField.class,name = "BinaryField"),
         @Type(value = CategoryField.class),
         @Type(value = CheckboxField.class),
         @Type(value = ConstantField.class),
