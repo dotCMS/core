@@ -849,11 +849,15 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
     }
 
     /**
-     * 
-     * @param pusheableAsset
-     * @param asset
-     * @param reason
-     * @param <T>
+     * This method tries to add the specified dotCMS asset by dependency. If it cannot be added to the bundle, then a
+     * new entry will be added to the bundle's MANIFEST file indicating the reason why.
+     * <p>Additionally, the very same asset will be added to the Dependency Processor queue in order to determine what
+     * other dependent assets might need to be added to the bundle as well.</p>
+     *
+     * @param pusheableAsset The type of asset that is being added to the bundle.
+     * @param asset          The actual dotCMS object that is being added.
+     * @param reason         The reason why this asset is being added to the bundle. Refer to {@link ManifestReason} for
+     *                       more details.
      */
     private <T> void tryToAddAndProcessDependencies(final PusheableAsset pusheableAsset,
             final T asset, final String reason) {
