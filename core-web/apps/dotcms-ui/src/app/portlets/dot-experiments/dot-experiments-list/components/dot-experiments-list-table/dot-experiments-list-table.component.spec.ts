@@ -24,6 +24,7 @@ import { MockDotMessageService } from '@tests/dot-message-service.mock';
 const draftExperiments: DotExperiment[] = [
     {
         id: '111',
+        identifier: '1111-1111-1111-1111',
         pageId: '456',
         status: DotExperimentStatusList.DRAFT,
         archived: false,
@@ -42,7 +43,8 @@ const draftExperiments: DotExperiment[] = [
 ];
 const endedExperiments: DotExperiment[] = [
     {
-        id: '111',
+        id: '222',
+        identifier: '2222-2222-2222-2222',
         pageId: '456',
         status: DotExperimentStatusList.ENDED,
         archived: false,
@@ -61,7 +63,8 @@ const endedExperiments: DotExperiment[] = [
 ];
 const archivedExperiments: DotExperiment[] = [
     {
-        id: '111',
+        id: '333',
+        identifier: '3333-3333-3333-3333',
         pageId: '456',
         status: DotExperimentStatusList.ARCHIVED,
         archived: false,
@@ -80,7 +83,8 @@ const archivedExperiments: DotExperiment[] = [
 ];
 const scheduledExperiments: DotExperiment[] = [
     {
-        id: '111',
+        id: '444',
+        identifier: '4444-4444-4444-4444',
         pageId: '456',
         status: DotExperimentStatusList.SCHEDULED,
         archived: false,
@@ -97,13 +101,6 @@ const scheduledExperiments: DotExperiment[] = [
         modDate: new Date('2022-08-21 18:50:03')
     }
 ];
-
-@Pipe({ name: 'dm' })
-class MockDmPipe implements PipeTransform {
-    transform(value: string): string {
-        return value;
-    }
-}
 
 @Pipe({ name: 'date' })
 class MockDatePipe implements PipeTransform {
@@ -137,7 +134,7 @@ describe('DotExperimentsListTableComponent', () => {
         ],
         component: DotExperimentsListTableComponent,
         componentMocks: [ConfirmPopup],
-        declarations: [MockDmPipe, MockDatePipe, DotExperimentsEmptyExperimentsComponent],
+        declarations: [MockDatePipe, DotExperimentsEmptyExperimentsComponent],
         providers: [
             {
                 provide: DotMessageService,

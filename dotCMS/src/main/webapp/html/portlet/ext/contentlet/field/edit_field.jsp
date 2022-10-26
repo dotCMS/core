@@ -160,6 +160,9 @@
             String customClassName = "";
             String allowedContentTypes = "";
             String allowedBlocks = "";
+            String displayCountBar = "";
+            String charLimit = "";
+
             // By default this is an empty JSON `{}`.
             JSONObject JSONValue = new JSONObject();
             try {
@@ -181,6 +184,12 @@
                 if("allowedBlocks".equalsIgnoreCase(fv.getKey())){
                     allowedBlocks = fv.getValue().replaceAll("[^a-zA-Z0-9,]", "");
                 }
+                if("displayCountBar".equalsIgnoreCase(fv.getKey())){
+                    displayCountBar = fv.getValue();
+                }
+                if("charLimit".equalsIgnoreCase(fv.getKey())){
+                    charLimit = fv.getValue();
+                }
             }
             %>
 
@@ -189,6 +198,8 @@
                 allowed-content-types="<%=allowedContentTypes%>"
                 allowed-blocks="<%=allowedBlocks%>"
                 custom-styles="<%=customStyles%>"
+                display-count-bar="<%=displayCountBar%>"
+                char-limit="<%=charLimit%>"
                 lang="<%=contentLanguage%>">
             </dotcms-block-editor>
             <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"/>

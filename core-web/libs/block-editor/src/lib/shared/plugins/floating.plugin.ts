@@ -7,6 +7,7 @@ import { SuggestionsCommandProps } from '@dotcms/block-editor';
 
 interface PluginState {
     open: boolean;
+    range?: Range;
 }
 
 export interface FloatingActionsPluginProps {

@@ -1,0 +1,7 @@
+<span [class.error-message]="charLimit && characterCount.characters() > charLimit">
+    {{ characterCount.characters() }}{{ charLimit ? '/' + charLimit : '' }} chars
+</span>
+<span>&#9679;</span>
+{{ characterCount.words() }} words
+<span>&#9679;</span>
+{{ readingTime }}m read
