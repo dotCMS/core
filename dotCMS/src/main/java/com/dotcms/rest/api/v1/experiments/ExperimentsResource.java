@@ -184,13 +184,9 @@ public class ExperimentsResource {
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
 
-        final Optional<Experiment> experiment =  experimentsAPI.find(id, user);
-
-        if(experiment.isEmpty()) {
-            throw new NotFoundException("Experiment with id: " + id + " not found.");
-        }
-
-        return new ResponseEntityExperimentView(Collections.singletonList(experiment.get()));
+        return experimentsAPI.find(id, user)
+                .map(experiment -> new ResponseEntityExperimentView(Collections.singletonList(experiment)))
+                .orElseThrow(() -> new NotFoundException("Experiment with id: " + id + " not found."));
     }
 
     /**
