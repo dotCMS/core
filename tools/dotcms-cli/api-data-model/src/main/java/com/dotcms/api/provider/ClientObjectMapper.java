@@ -140,7 +140,7 @@ public class ClientObjectMapper implements ContextResolver<ObjectMapper> {
 
     /**
      * Custom exclusion class
-     * We're supposed empty and defaults values
+     * We're supposed to exclude empty and defaults values
      */
     private static class ExcludeEmptyObjects {
 
@@ -148,7 +148,7 @@ public class ClientObjectMapper implements ContextResolver<ObjectMapper> {
         public boolean equals(Object o) {
 
             if (o instanceof Boolean) {
-                return (Boolean) o;
+                return !((Boolean) o);
             }
 
             if (o instanceof Number) {
