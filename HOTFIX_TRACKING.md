@@ -53,4 +53,5 @@ This maintenance release includes the following code fixes:
 42. https://github.com/dotCMS/core/issues/22852 : Update java version of java-base #22852
 43. https://github.com/dotCMS/core/issues/22605 : Execution of Task211020CreateHostIntegrityCheckerResultTables Fails on MSSQL #22605
 44. https://github.com/dotCMS/core/issues/22696 : Can't save changes in Work Flow if user with special characters or new user is added. #22696
+45. https://github.com/dotCMS/core/issues/23041 : PublisherQueueJob gets stuck waiting for dependencies #23041
 
