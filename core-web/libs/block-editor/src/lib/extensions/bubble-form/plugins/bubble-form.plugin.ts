@@ -34,24 +34,6 @@ interface PluginState {
     open: boolean;
 }
 
-export const getImagePosition = (node: HTMLElement, type: string): DOMRect => {
-    // If is a image Node, get the image position
-    if (type === ImageNode.name) {
-        const rect = node.getElementsByTagName('img')[0]?.getBoundingClientRect().toJSON();
-        const height = rect.height;
-
-        // height: 20 because some image are way too big.
-        // By default tippy only allow set the tippy above/below/next to an element.
-        // This trick it's going to help us to set the form inside the image bounderies.
-        const newRect = {
-            ...rect,
-            height: height > 80 ? 20 : height
-        };
-
-        return newRect as DOMRect;
-    }
-};
-
 export class BubbleFormView extends BubbleMenuView {
     public editor: Editor;
 
@@ -100,6 +82,9 @@ export class BubbleFormView extends BubbleMenuView {
         });
         this.element.addEventListener('mousedown', this.mousedownHandler, { capture: true });
         this.editor.on('focus', this.focusHandler);
+
+        // We need to also react to page scrolling.
+        document.body.addEventListener('scroll', this.hanlderScroll.bind(this), true);
     }
 
     update(view: EditorView, prevState?: EditorState): void {
@@ -131,7 +116,7 @@ export class BubbleFormView extends BubbleMenuView {
                         this.node = doc.nodeAt(from);
                         const type = this.node.type.name;
 
-                        return getImagePosition(node, type) || getNodePosition(node, type);
+                        return this.tippyRect(node, type);
                     }
                 }
 
@@ -157,16 +142,17 @@ export class BubbleFormView extends BubbleMenuView {
             interactive: true,
             maxWidth: 'none',
             trigger: 'manual',
-            placement: 'bottom',
+            placement: 'bottom-start',
             hideOnClick: 'toggle',
             popperOptions: {
                 modifiers: [
                     {
                         name: 'flip',
-                        options: { fallbackPlacements: ['top'] }
+                        options: { fallbackPlacements: ['top-start'] }
                     }
                 ]
             },
+
             onShow: () => {
                 requestAnimationFrame(() =>
                     this.component.instance.inputs.first.nativeElement.focus()
@@ -182,8 +168,14 @@ export class BubbleFormView extends BubbleMenuView {
     };
 
     show() {
-        const { alt, src, title } = this.editor.getAttributes(ImageNode.name);
-        this.component.instance.setFormValues({ alt, src, title });
+        const { alt, src, title, data } = this.editor.getAttributes(ImageNode.name);
+        const { title: dotTitle = '', asset } = data || {};
+
+        this.component.instance.setFormValues({
+            alt: alt ?? dotTitle,
+            src: src ?? asset,
+            title: title ?? dotTitle
+        });
 
         this.tippy?.show();
     }
@@ -194,6 +186,23 @@ export class BubbleFormView extends BubbleMenuView {
         this.$destroy.next(true);
         this.component.destroy();
         this.component.instance.formValues.unsubscribe();
+    }
+
+    private hanlderScroll(e: Event) {
+        if (this.tippy?.popper && this.tippy?.popper.contains(e.target as HTMLElement)) {
+            return true;
+        }
+
+        this.editor.commands.closeForm();
+
+        // we use `setTimeout` to make sure `selection` is already updated
+        setTimeout(() => this.update(this.editor.view));
+    }
+
+    private tippyRect(node, type) {
+        const domRect = document.querySelector('#bubble-menu')?.getBoundingClientRect();
+
+        return domRect || getNodePosition(node, type);
     }
 }
 

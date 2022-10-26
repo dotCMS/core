@@ -328,20 +328,20 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
 	@Override
 	public Optional<ContentletVersionInfo> getContentletVersionInfo(
-			final String identifier, final long lang, final String variantId) throws DotDataException, DotStateException{
+			final String identifier, final long lang, final String variantName) throws DotDataException, DotStateException{
 
 		if (DbConnectionFactory.inTransaction()) {
-			return findContentletVersionInfoInDB(identifier, lang, variantId);
+			return findContentletVersionInfoInDB(identifier, lang, variantName);
 		}
 
-		ContentletVersionInfo contentVersionInfo = this.icache.getContentVersionInfo(identifier, lang, variantId);
+		ContentletVersionInfo contentVersionInfo = this.icache.getContentVersionInfo(identifier, lang, variantName);
 		if(contentVersionInfo!=null && fourOhFour.equals(contentVersionInfo.getWorkingInode())) {
 			return Optional.empty();
 		}else if(contentVersionInfo!=null ){
 			return Optional.of(contentVersionInfo);
 		}
 
-		final Optional<ContentletVersionInfo> optionalInfo = findContentletVersionInfoInDB(identifier, lang, variantId);
+		final Optional<ContentletVersionInfo> optionalInfo = findContentletVersionInfoInDB(identifier, lang, variantName);
 		if(optionalInfo.isPresent()){
 			this.icache.addContentletVersionInfoToCache(optionalInfo.get());
 		}else{
@@ -349,6 +349,8 @@ public class VersionableFactoryImpl extends VersionableFactory {
 			contentVersionInfo.setIdentifier(identifier);
 			contentVersionInfo.setLang(lang);
 			contentVersionInfo.setWorkingInode(fourOhFour);
+			contentVersionInfo.setVariant(variantName);
+
 			this.icache.addContentletVersionInfoToCache(contentVersionInfo);
 			return Optional.empty();
 		}
@@ -413,7 +415,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		if (UtilMethods.isSet(cvInfo.getIdentifier())) {
 			try {
 				final Optional<ContentletVersionInfo> fromDB =
-						findContentletVersionInfoInDB(cvInfo.getIdentifier(), cvInfo.getLang());
+						findContentletVersionInfoInDB(cvInfo.getIdentifier(), cvInfo.getLang(), cvInfo.getVariant());
 				if (fromDB.isPresent()) {
 					isNew = false;
 				}
@@ -455,7 +457,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 			dotConnect.addParam(cvInfo.getVariant());
 			dotConnect.loadResult();
         }
-    	this.icache.removeContentletVersionInfoToCache(cvInfo.getIdentifier(),cvInfo.getLang());
+    	this.icache.removeContentletVersionInfoToCache(cvInfo.getIdentifier(), cvInfo.getLang(), cvInfo.getVariant());
     }
 
     @Override

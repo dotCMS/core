@@ -1298,7 +1298,8 @@ create table multi_tree (
    relation_type NVARCHAR(64) not null,
    tree_order int null,
    personalization NVARCHAR(255) not null  default 'dot:default',
-   primary key (child, parent1, parent2, relation_type, personalization)
+   variant_id NVARCHAR(255) default 'DEFAULT' not null,
+   primary key (child, parent1, parent2, relation_type, personalization, variant_id)
 );
 create table workflow_task (
    id NVARCHAR(36) not null,
@@ -2705,7 +2706,8 @@ create table experiment (
     creation_date datetimeoffset(3) not null,
     created_by NVARCHAR(255) not null,
     last_modified_by NVARCHAR(255) not null,
-    goals NVARCHAR(MAX)
+    goals NVARCHAR(MAX),
+    lookback_window numeric(19,0) not null
 );
 
 CREATE INDEX idx_exp_pageid ON experiment (page_id);

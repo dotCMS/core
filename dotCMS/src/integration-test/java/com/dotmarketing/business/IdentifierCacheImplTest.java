@@ -69,6 +69,7 @@ public class IdentifierCacheImplTest {
 
         final ContentletVersionInfo contentletVersionInfoFromCache = CacheLocator.getIdentifierCache()
                 .getContentVersionInfo(id, language.getId(), variant.name());
+
         assertNotNull(contentletVersionInfoFromCache);
         assertEquals(contentletVersionInfo, contentletVersionInfoFromCache);
     }

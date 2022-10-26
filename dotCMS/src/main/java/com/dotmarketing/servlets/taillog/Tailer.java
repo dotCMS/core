@@ -21,11 +21,12 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.org.apache.commons.io.input.TailerListener;
 
 import com.dotmarketing.util.Logger;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.TailerListener;
+import org.apache.commons.io.input.TailerListenerAdapter;
 
 /**
  * Simple implementation of the unix "tail -f" functionality.
@@ -107,7 +108,7 @@ import com.dotmarketing.util.Logger;
  * @version $Id$
  * @since Commons IO 2.0
  */
-public class Tailer extends com.dotcms.repackage.org.apache.commons.io.input.Tailer {
+public class Tailer extends org.apache.commons.io.input.Tailer {
 
     /**
      * The file which will be tailed.
@@ -123,6 +124,10 @@ public class Tailer extends com.dotcms.repackage.org.apache.commons.io.input.Tai
      * Whether to tail from the end or start of file
      */
     private final boolean end;
+
+    public TailerListener getListener() {
+        return listener;
+    }
 
     /**
      * The listener to notify of events when tailing.
@@ -155,7 +160,7 @@ public class Tailer extends com.dotcms.repackage.org.apache.commons.io.input.Tai
      * @param delay the delay between checks of the file for new content in milliseconds.
      */
     public Tailer(File file, TailerListener listener, long delay) {
-        this(file, listener, 1000, false);
+        this(file, listener, delay, false);
     }
 
     /**
@@ -240,6 +245,10 @@ public class Tailer extends com.dotcms.repackage.org.apache.commons.io.input.Tai
      * Follows changes in the file, calling the TailerListener's handle method for each new line.
      */
     public void run() {
+        processFile();
+    }
+
+    public void processFile(){
         RandomAccessFile reader = null;
         try {
             long last = 0; // The last time the file was checked for changes
@@ -261,7 +270,7 @@ public class Tailer extends com.dotcms.repackage.org.apache.commons.io.input.Tai
                     // The current position in the file
                     position = end ? file.length() : startPosition;
                     last = System.currentTimeMillis();
-                    reader.seek(position);                    
+                    reader.seek(position);
                     readLine(reader);
                     position = reader.getFilePointer();
                 }
@@ -327,14 +336,14 @@ public class Tailer extends com.dotcms.repackage.org.apache.commons.io.input.Tai
             listener.handle(e);
 
         } finally {
-			try{
-				reader.close();
-			}
-			catch(Exception e){
-				Logger.error(this.getClass(), "Unable to close: " + e.getMessage());
-			}
-        	
-         
+            try{
+                reader.close();
+            }
+            catch(Exception e){
+                Logger.error(this.getClass(), "Unable to close: " + e.getMessage());
+            }
+
+
         }
     }
 

@@ -130,7 +130,7 @@
 .p-multiselect-panel .p-multiselect-items .p-multiselect-item:focus {
     outline: 0 none;
     outline-offset: 0;
-    box-shadow: none;
+    box-shadow: $input-inset-shadow;
 }
 
 .p-multiselect-panel .p-multiselect-items .p-multiselect-item .p-checkbox {

@@ -55,6 +55,7 @@ public final class ESMappingConstants {
     public static final String LOCKED = "locked";
     public static final String DELETED = "deleted";
     public static final String LANGUAGE_ID = "languageId";
+    public static final String VARIANT = "variant";
     public static final String IDENTIFIER = "identifier";
     public static final String CONTENTLET_HOST = "conHost";
     public static final String CONTENTLET_HOSTNAME = "conHostName";

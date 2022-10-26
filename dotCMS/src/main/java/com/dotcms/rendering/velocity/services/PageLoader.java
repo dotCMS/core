@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.services;
 
+import com.dotcms.util.ConversionUtils;
 import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -201,9 +202,9 @@ public class PageLoader implements DotLoader {
     public InputStream writeObject(final VelocityResourceKey key) throws DotDataException, DotSecurityException {
 
         HTMLPageAsset page = APILocator.getHTMLPageAssetAPI()
-            .fromContentlet(APILocator.getContentletAPI()
-                .findContentletByIdentifier(key.id1, key.mode.showLive, Long.parseLong(key.language), sysUser(), true));
-
+                .fromContentlet(APILocator.getContentletAPI()
+                .findContentletByIdentifier(key.id1, key.mode.showLive, ConversionUtils.toLong(key.language),
+                        key.variant, sysUser(), true));
 
         return buildStream(page, key.mode, key.path);
 

@@ -1,6 +1,7 @@
+/* eslint-disable no-console */
 import { of, Observable, Subject, BehaviorSubject } from 'rxjs';
 
-import { pluck, take, map, catchError, tap } from 'rxjs/operators';
+import { pluck, take, map, catchError, tap, switchMap } from 'rxjs/operators';
 import { LoginService, User, HttpCode } from '@dotcms/dotcms-js';
 import { DotPageRenderState } from '../../../shared/models/dot-rendered-page-state.model';
 import {
@@ -19,6 +20,9 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { PageModelChangeEvent, PageModelChangeEventType } from '../dot-edit-content-html/models';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DotPageRenderParameters } from '@models/dot-page/dot-rendered-page.model';
+import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
+import { ESContent } from '@dotcms/app/shared/models/dot-es-content/dot-es-content.model';
+import { generateDotFavoritePageUrl } from '@dotcms/app/shared/dot-utils';
 
 @Injectable()
 export class DotPageStateService {
@@ -30,6 +34,7 @@ export class DotPageStateService {
 
     constructor(
         private dotContentletLockerService: DotContentletLockerService,
+        private dotESContentService: DotESContentService,
         private dotHttpErrorManagerService: DotHttpErrorManagerService,
         private dotPageRenderService: DotPageRenderService,
         private dotRouterService: DotRouterService,
@@ -159,6 +164,17 @@ export class DotPageStateService {
     }
 
     /**
+     * Set the FavoritePageHighlight flag status
+     *
+     * @param {boolean} highlight
+     * @memberof DotPageStateService
+     */
+    setFavoritePageHighlight(highlight: boolean): void {
+        this.currentState.favoritePage = highlight;
+        this.state$.next(this.currentState);
+    }
+
+    /**
      * Update page content status
      *
      * @param {PageModelChangeEvent} event
@@ -186,15 +202,34 @@ export class DotPageStateService {
         return this.dotPageRenderService.get(options, extraParams).pipe(
             catchError((err) => this.handleSetPageStateFailed(err)),
             take(1),
-            map((page: DotPageRenderParameters) => {
+            switchMap((page: DotPageRenderParameters) => {
                 if (page) {
-                    const pageState = new DotPageRenderState(this.getCurrentUser(), page);
-                    this.setCurrentState(pageState);
+                    const urlParam = generateDotFavoritePageUrl(page);
 
-                    return pageState;
+                    return this.dotESContentService
+                        .get({
+                            itemsPerPage: 10,
+                            offset: '0',
+                            query: `+contentType:DotFavoritePage +DotFavoritePage.url_dotraw:${urlParam}`
+                        })
+                        .pipe(
+                            take(1),
+                            switchMap((response: ESContent) => {
+                                const favoritePage = response.resultsSize > 0;
+                                const pageState = new DotPageRenderState(
+                                    this.getCurrentUser(),
+                                    page,
+                                    favoritePage
+                                );
+
+                                this.setCurrentState(pageState);
+
+                                return of(pageState);
+                            })
+                        );
                 }
 
-                return this.currentState;
+                return of(this.currentState);
             })
         );
     }

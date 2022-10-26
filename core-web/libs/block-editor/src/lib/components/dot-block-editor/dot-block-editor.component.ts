@@ -1,4 +1,8 @@
-import { Component, Injector, Input, OnInit, ViewContainerRef } from '@angular/core';
+import { Component, Injector, Input, OnInit, ViewContainerRef, OnDestroy } from '@angular/core';
+
+import { Subject } from 'rxjs';
+import { debounceTime, takeUntil } from 'rxjs/operators';
+
 import { AnyExtension, Content, Editor } from '@tiptap/core';
 import { HeadingOptions, Level } from '@tiptap/extension-heading';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
@@ -15,6 +19,7 @@ import {
     DotConfigExtension,
     BubbleFormExtension,
     ImageNode,
+    SetDocAttrStep,
     formatHTML
 } from '@dotcms/block-editor';
 
@@ -23,6 +28,7 @@ import { Highlight } from '@tiptap/extension-highlight';
 import { Link } from '@tiptap/extension-link';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
+import CharacterCount, { CharacterCountStorage } from '@tiptap/extension-character-count';
 
 function toTitleCase(str) {
     return str.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {
@@ -35,11 +41,12 @@ function toTitleCase(str) {
     templateUrl: './dot-block-editor.component.html',
     styleUrls: ['./dot-block-editor.component.scss']
 })
-export class DotBlockEditorComponent implements OnInit {
+export class DotBlockEditorComponent implements OnInit, OnDestroy {
     @Input() lang = DEFAULT_LANG_ID;
-    @Input() allowedContentTypes = '';
-    @Input() customStyles = '';
-    @Input() value: { [key: string]: string } | string = ''; // can be HTML or JSON, see https://www.tiptap.dev/api/editor#content
+    @Input() allowedContentTypes: string;
+    @Input() customStyles: string;
+    @Input() displayCountBar: boolean | string = true;
+    @Input() charLimit: number;
 
     @Input() set allowedBlocks(blocks: string) {
         this._allowedBlocks = [
@@ -49,63 +56,68 @@ export class DotBlockEditorComponent implements OnInit {
     }
 
     @Input() set setValue(content: Content) {
+        // https://www.tiptap.dev/api/editor#content
         this.editor.commands.setContent(
             typeof content === 'string' ? formatHTML(content) : content
         );
     }
 
-    _allowedBlocks = ['paragraph']; //paragraph should be always.
     editor: Editor;
+    subject = new Subject();
+
+    private _allowedBlocks = ['paragraph']; //paragraph should be always.
+    private destroy$: Subject<boolean> = new Subject<boolean>();
+
+    get characterCount(): CharacterCountStorage {
+        return this.editor.storage.characterCount;
+    }
+
+    get showCharData() {
+        try {
+            return JSON.parse(this.displayCountBar as string);
+        } catch (e) {
+            return true;
+        }
+    }
+
+    get readingTime() {
+        // The constant used by Medium for words an adult can read per minute is 265
+        // More Information here: https://help.medium.com/hc/en-us/articles/214991667-Read-time
+        return Math.ceil(this.characterCount.words() / 265);
+    }
 
     constructor(private injector: Injector, public viewContainerRef: ViewContainerRef) {}
 
     ngOnInit() {
         this.editor = new Editor({
-            extensions: this.setEditorExtensions()
+            extensions: [...this.dotExtentsions(), ...this.setEditorExtensions()]
         });
+
+        this.editor.on('create', () => this.updateChartCount());
+        this.subject
+            .pipe(takeUntil(this.destroy$), debounceTime(250))
+            .subscribe(() => this.updateChartCount());
+    }
+
+    ngOnDestroy() {
+        this.destroy$.next(true);
+        this.destroy$.complete();
+    }
+
+    private updateChartCount(): void {
+        const tr = this.editor.state.tr
+            .step(new SetDocAttrStep('chartCount', this.characterCount.characters()))
+            .step(new SetDocAttrStep('wordCount', this.characterCount.words()))
+            .step(new SetDocAttrStep('readingTime', this.readingTime));
+        this.editor.view.dispatch(tr);
     }
 
     private setEditorExtensions(): AnyExtension[] {
-        const defaultExtensions: AnyExtension[] = [
-            DotConfigExtension({
-                lang: this.lang,
-                allowedContentTypes: this.allowedContentTypes,
-                allowedBlocks: this._allowedBlocks
-            }),
-            ActionsMenu(this.viewContainerRef),
-            DragHandler(this.viewContainerRef),
-            ImageUpload(this.injector, this.viewContainerRef),
-            BubbleLinkFormExtension(this.viewContainerRef),
-            DotBubbleMenuExtension(this.viewContainerRef),
-            BubbleFormExtension(this.viewContainerRef),
-            // Marks Extensions
-            Underline,
-            TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'dotImage'] }),
-            Highlight.configure({ HTMLAttributes: { style: 'background: #accef7;' } }),
-            Link.configure({ autolink: false, openOnClick: false }),
-            Placeholder.configure({
-                placeholder: ({ node }) => {
-                    if (node.type.name === 'heading') {
-                        return `${toTitleCase(node.type.name)} ${node.attrs.level}`;
-                    }
-
-                    return 'Type "/" for commmands';
-                }
-            })
-        ];
-        const customExtensions: Map<string, AnyExtension> = new Map([
-            ['contentlets', ContentletBlock(this.injector)],
-            ['image', ImageNode]
-        ]);
-
         return [
-            ...defaultExtensions,
-            ...(this._allowedBlocks.length > 1
-                ? [
-                      StarterKit.configure(this.setStarterKitOptions()),
-                      ...this.setCustomExtensions(customExtensions)
-                  ]
-                : [StarterKit, ...customExtensions.values()])
+            ...this.setCustomExtensions(),
+            this._allowedBlocks.length > 1
+                ? StarterKit.configure(this.setStarterKitOptions())
+                : StarterKit
         ];
     }
 
@@ -147,12 +159,55 @@ export class DotBlockEditorComponent implements OnInit {
         };
     }
 
-    private setCustomExtensions(customExtensions: Map<string, AnyExtension>): AnyExtension[] {
+    private setCustomExtensions() {
+        const customExtensions: Map<string, AnyExtension> = new Map([
+            ['contentlets', ContentletBlock(this.injector)],
+            ['image', ImageNode]
+        ]);
+
+        if (!this._allowedBlocks.length) {
+            return customExtensions.values();
+        }
+
+        const newExtension = [];
+
+        for (const [key, value] of customExtensions) {
+            if (this._allowedBlocks.includes(key)) {
+                newExtension.push(value);
+            }
+        }
+
+        return newExtension;
+    }
+
+    private dotExtentsions(): AnyExtension[] {
         return [
-            ...(this._allowedBlocks.includes('contentlets')
-                ? [customExtensions.get('contentlets')]
-                : []),
-            ...(this._allowedBlocks.includes('dotImage') ? [customExtensions.get('dotImage')] : [])
+            DotConfigExtension({
+                lang: this.lang,
+                allowedContentTypes: this.allowedContentTypes,
+                allowedBlocks: this._allowedBlocks
+            }),
+            ActionsMenu(this.viewContainerRef),
+            DragHandler(this.viewContainerRef),
+            ImageUpload(this.injector, this.viewContainerRef),
+            BubbleLinkFormExtension(this.viewContainerRef),
+            DotBubbleMenuExtension(this.viewContainerRef),
+            BubbleFormExtension(this.viewContainerRef),
+            // Marks Extensions
+            Underline,
+            CharacterCount,
+            TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'dotImage'] }),
+            Highlight.configure({ HTMLAttributes: { style: 'background: #accef7;' } }),
+            Link.configure({ autolink: false, openOnClick: false }),
+            Placeholder.configure({
+                placeholder: ({ node }) => {
+                    if (node.type.name === 'heading') {
+                        return `${toTitleCase(node.type.name)} ${node.attrs.level}`;
+                    }
+
+                    return 'Type "/" for commmands';
+                }
+            })
         ];
     }
 }

@@ -17,7 +17,7 @@ import { mockDotRenderedPage } from '@dotcms/app/test/dot-page-render.mock';
 import { mockUser } from '@dotcms/app/test/login-service.mock';
 import { Observable, of } from 'rxjs';
 import { DotPageRenderState } from '../../../shared/models';
-import { DotFavoritePageStore } from './dot-favorite-page.store';
+import { DotFavoritePageActionState, DotFavoritePageStore } from './dot-favorite-page.store';
 
 @Injectable()
 class MockDotRolesService {
@@ -117,7 +117,8 @@ describe('DotFavoritePageStore', () => {
             imgHeight: 768.192048012003,
             loading: false,
             pageRenderedHtml: '<p>test</p>',
-            closeDialog: false
+            closeDialog: false,
+            actionState: null
         };
 
         dotFavoritePageStore.state$.subscribe((state) => {
@@ -168,7 +169,7 @@ describe('DotFavoritePageStore', () => {
         expect(dotTempFileUploadService.upload).toHaveBeenCalledWith(file);
 
         expect(dotWorkflowActionsFireService.publishContentletAndWaitForIndex).toHaveBeenCalledWith(
-            'Screenshot',
+            'dotFavoritePage',
             {
                 screenshot: 'temp-file_123',
                 title: 'A title',
@@ -180,6 +181,7 @@ describe('DotFavoritePageStore', () => {
 
         dotFavoritePageStore.state$.subscribe((state) => {
             expect(state.closeDialog).toEqual(true);
+            expect(state.actionState).toEqual(DotFavoritePageActionState.SAVED);
             done();
         });
     });
@@ -202,7 +204,7 @@ describe('DotFavoritePageStore', () => {
         });
 
         expect(dotWorkflowActionsFireService.publishContentletAndWaitForIndex).toHaveBeenCalledWith(
-            'Screenshot',
+            'dotFavoritePage',
             {
                 screenshot: 'temp-file_123',
                 title: 'A title',

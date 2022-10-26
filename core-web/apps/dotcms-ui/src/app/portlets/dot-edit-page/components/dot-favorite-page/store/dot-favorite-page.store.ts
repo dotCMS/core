@@ -14,6 +14,11 @@ import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DotCurrentUserService } from '@dotcms/app/api/services/dot-current-user/dot-current-user.service';
 import { DotCurrentUser } from '@dotcms/app/shared/models/dot-current-user/dot-current-user';
 
+export const enum DotFavoritePageActionState {
+    SAVED = 'SAVED',
+    DELETED = 'DELETED'
+}
+
 export interface DotFavoritePageState {
     roleOptions: DotRole[];
     currentUserRoleId: string;
@@ -23,6 +28,7 @@ export interface DotFavoritePageState {
     imgHeight: number;
     loading: boolean;
     closeDialog: boolean;
+    actionState: DotFavoritePageActionState;
 }
 
 interface DotFavoritePageInitialProps {
@@ -41,6 +47,7 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
     readonly vm$ = this.state$;
 
     // SELECTORS
+    public readonly actionState$ = this.select(({ actionState }) => actionState);
     public readonly closeDialog$ = this.select(({ closeDialog }) => closeDialog);
     public readonly currentUserRoleId$ = this.select(({ currentUserRoleId }) => currentUserRoleId);
 
@@ -70,7 +77,7 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
                         }
 
                         return this.dotWorkflowActionsFireService.publishContentletAndWaitForIndex<DotCMSContentlet>(
-                            'Screenshot',
+                            'dotFavoritePage',
                             {
                                 screenshot: id,
                                 title: formData.title,
@@ -83,7 +90,11 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
                     take(1),
                     tapResponse(
                         () => {
-                            this.patchState({ closeDialog: true, loading: false });
+                            this.patchState({
+                                closeDialog: true,
+                                loading: false,
+                                actionState: DotFavoritePageActionState.SAVED
+                            });
                         },
                         (error: HttpErrorResponse) => {
                             this.dotHttpErrorManagerService.handle(error);
@@ -130,7 +141,8 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
             imgHeight: propsData.imgHeight,
             loading: true,
             closeDialog: false,
-            pageRenderedHtml: props.pageRenderedHtml
+            pageRenderedHtml: props.pageRenderedHtml,
+            actionState: null
         });
 
         forkJoin([this.dotRolesService.search(), this.dotCurrentUser.getCurrentUser()])

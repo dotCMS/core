@@ -8,6 +8,7 @@ import { DotPage } from '@models/dot-page/dot-page.model';
 import { DotPageRender, DotPageRenderParameters } from '@models/dot-page/dot-rendered-page.model';
 
 interface DotPageState {
+    favoritePage?: boolean;
     locked?: boolean;
     lockedByAnotherUser?: boolean;
     mode: DotPageMode;
@@ -16,12 +17,17 @@ interface DotPageState {
 export class DotPageRenderState extends DotPageRender {
     private _state: DotPageState;
 
-    constructor(private _user: User, private dotRenderedPage: DotPageRenderParameters) {
+    constructor(
+        private _user: User,
+        private dotRenderedPage: DotPageRenderParameters,
+        _favoritePage?: boolean
+    ) {
         super(dotRenderedPage);
         const locked = !!dotRenderedPage.page.lockedBy;
         const lockedByAnotherUser = locked ? dotRenderedPage.page.lockedBy !== _user.userId : false;
 
         this._state = {
+            favoritePage: _favoritePage || false,
             locked: locked,
             lockedByAnotherUser: lockedByAnotherUser,
             mode: dotRenderedPage.viewAs.mode
@@ -62,6 +68,14 @@ export class DotPageRenderState extends DotPageRender {
 
     get user(): User {
         return this._user;
+    }
+
+    get favoritePage(): boolean {
+        return this._state.favoritePage;
+    }
+
+    set favoritePage(status: boolean) {
+        this._state.favoritePage = status;
     }
 
     set dotRenderedPageState(dotRenderedPageState: DotPageRender) {
