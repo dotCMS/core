@@ -136,7 +136,6 @@ public class ContentTypeCommandTest extends CommandTest{
                 .fixed(true)
                 .iDate(new Date())
                 .host("SYSTEM_HOST")
-                .sortOrder(1)
                 .folder("SYSTEM_FOLDER")
                 .addFields(
                         ImmutableBinaryField.builder()

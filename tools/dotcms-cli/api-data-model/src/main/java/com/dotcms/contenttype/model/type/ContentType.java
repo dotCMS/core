@@ -27,7 +27,7 @@ import javax.annotation.Nullable;
         @Type(value = KeyValueContentType.class, name = "KeyValueContentType"),
         @Type(value = DotAssetContentType.class, name = "DotAssetContentType")
 })
-@JsonIgnoreProperties(value = { "systemActionMappings","workflows","nEntries" })
+@JsonIgnoreProperties(value = { "systemActionMappings", "workflows", "nEntries", "sortOrder", "versionable", "multilingualable" })
 public abstract class ContentType {
 
     @Nullable
@@ -59,8 +59,6 @@ public abstract class ContentType {
     @Nullable
     public abstract String icon();
 
-    public abstract int sortOrder();
-
     @Nullable
     public abstract String description();
 
@@ -70,16 +68,10 @@ public abstract class ContentType {
     public abstract BaseContentType baseType();
 
     @Nullable
-    public abstract Boolean versionable();
-
-    @Nullable
     public abstract Boolean system();
 
     @Nullable
     public abstract String owner();
-
-    @Nullable
-    public abstract Boolean multilingualable();
 
     public abstract List<Field> fields();
 
