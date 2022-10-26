@@ -69,7 +69,7 @@ public class AnalyticsHelper {
 
         return Duration
             .between(accessToken.issueDate(), Instant.now())
-            .toMinutes() >= (AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL_MINUTES + offset);
+            .toSeconds() >= (AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL + offset);
     }
 
     /**

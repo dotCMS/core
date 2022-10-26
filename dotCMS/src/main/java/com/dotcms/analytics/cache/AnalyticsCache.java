@@ -8,6 +8,7 @@ import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Logger;
+import com.liferay.util.StringPool;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
@@ -127,7 +128,7 @@ public class AnalyticsCache implements Cachable {
             keyChunks.add(audience);
         }
 
-        return String.join("_", keyChunks);
+        return String.join(StringPool.UNDERLINE, keyChunks);
     }
 
     /**

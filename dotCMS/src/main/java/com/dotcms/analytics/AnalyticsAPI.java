@@ -6,6 +6,8 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 
+import java.util.concurrent.TimeUnit;
+
 
 /**
  * Analytics functionality interface.
@@ -15,8 +17,10 @@ import com.dotmarketing.util.Config;
 public interface AnalyticsAPI {
 
     String ANALYTICS_IDP_URL_KEY = "analytics.idp.url";
-    String ANALYTICS_ACCESS_TOKEN_TTL_MINUTES_KEY = "analytics.access.token.ttl.minutes";
-    int ANALYTICS_ACCESS_TOKEN_TTL_MINUTES = Config.getIntProperty(ANALYTICS_ACCESS_TOKEN_TTL_MINUTES_KEY, 2) * 60;
+    String ANALYTICS_ACCESS_TOKEN_TTL_KEY = "analytics.access.token.ttl";
+    int ANALYTICS_ACCESS_TOKEN_TTL = Config.getIntProperty(
+        ANALYTICS_ACCESS_TOKEN_TTL_KEY,
+        (int) TimeUnit.HOURS.toSeconds(2));
 
     /**
      * Fetches an {@link java.util.Optional <AccessToken>} instance from cache falling back to get the access token

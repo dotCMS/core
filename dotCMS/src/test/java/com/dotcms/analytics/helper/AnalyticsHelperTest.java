@@ -13,7 +13,7 @@ import javax.ws.rs.core.Response;
 import java.time.Instant;
 import java.util.Base64;
 
-import static com.dotcms.analytics.AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL_MINUTES;
+import static com.dotcms.analytics.AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -125,10 +125,10 @@ public class AnalyticsHelperTest {
         AccessToken accessToken = createAccessToken().withIssueDate(Instant.now());
         assertFalse(AnalyticsHelper.isExpired(accessToken));
 
-        accessToken = accessToken.withIssueDate(Instant.now().minusSeconds(ANALYTICS_ACCESS_TOKEN_TTL_MINUTES * 60L));
+        accessToken = accessToken.withIssueDate(Instant.now().minusSeconds(ANALYTICS_ACCESS_TOKEN_TTL));
         assertTrue(AnalyticsHelper.isExpired(accessToken));
 
-        accessToken = accessToken.withIssueDate(Instant.now().minusSeconds(ANALYTICS_ACCESS_TOKEN_TTL_MINUTES * 60L));
+        accessToken = accessToken.withIssueDate(Instant.now().minusSeconds(ANALYTICS_ACCESS_TOKEN_TTL));
         assertFalse(AnalyticsHelper.isExpired(accessToken, 2));
     }
 
@@ -158,7 +158,7 @@ public class AnalyticsHelperTest {
             "some-audience",
             "some-scope",
             "some-token-type")
-            .withExpiresIn(ANALYTICS_ACCESS_TOKEN_TTL_MINUTES * 60);
+            .withExpiresIn(ANALYTICS_ACCESS_TOKEN_TTL);
     }
 
 }
