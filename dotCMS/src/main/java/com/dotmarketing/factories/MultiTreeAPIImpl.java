@@ -100,7 +100,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String SELECT_BY_PAGE_AND_PERSONALIZATION = "select * from multi_tree where parent1 = ? and personalization = ? and variant_id = 'DEFAULT' order by tree_order";
     private static final String SELECT_UNIQUE_PERSONALIZATION = "select distinct(personalization) from multi_tree";
 
-    private static final String SELECT_BY_ONE_PARENT = "select * from multi_tree where parent1 = ? or parent2 = ? and variant_id = 'DEFAULT' order by tree_order"; // search by page id or container id
+    private static final String SELECT_BY_ONE_PARENT = "select * from multi_tree where (parent1 = ? or parent2 = ?) and variant_id = ? order by tree_order"; // search by page id or container id
     private static final String SELECT_BY_TWO_PARENTS = "select * from multi_tree where parent1 = ? and parent2 = ? and variant_id = 'DEFAULT'  order by tree_order";
     private static final String SELECT_ALL = "select * from multi_tree  ";
     private static final String SELECT_BY_CHILD = "select * from multi_tree where child = ? order by parent1, parent2, relation_type ";
