@@ -11,8 +11,6 @@ import javax.ws.rs.core.Response;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Base64;
 import java.util.Objects;
 import java.util.Optional;
@@ -42,7 +40,7 @@ public class AnalyticsHelper {
      * @return an {@link Optional<AccessToken>} instance holding the access token data
      */
     public static Optional<AccessToken> extractToken(final Response response) {
-        return extractFromResponse(response, AccessToken.class, "Access token response is missing");
+        return extractFromResponse(response, AccessToken.class, "ACCESS_TOKEN response is missing");
     }
 
     /**
@@ -52,7 +50,7 @@ public class AnalyticsHelper {
      * @return an {@link Optional<AnalyticsKey>} instance holding the analytics key data
      */
     public static Optional<AnalyticsKey> extractAnalyticsKey(final Response response) {
-        return extractFromResponse(response, AnalyticsKey.class, "Analytics keys response is missing");
+        return extractFromResponse(response, AnalyticsKey.class, "ANALYTICS_KEY response is missing");
     }
 
     /**
@@ -65,7 +63,7 @@ public class AnalyticsHelper {
      */
     public static boolean isExpired(final AccessToken accessToken, final int offset) {
         if (Objects.isNull(accessToken.issueDate())) {
-            Logger.warn(AnalyticsHelper.class, "Access token does not have a issued date, returning as expired");
+            Logger.warn(AnalyticsHelper.class, "ACCESS_TOKEN does not have a issued date, returning as expired");
             return true;
         }
 
@@ -104,6 +102,16 @@ public class AnalyticsHelper {
     }
 
     /**
+     * Creates a {@link AnalyticsApp} instance associated with provided host.
+     *
+     * @param host provided host
+     * @return associated host app
+     */
+    public static AnalyticsApp getHostApp(final Host host) {
+        return new AnalyticsApp(host);
+    }
+
+    /**
      * Extracts a deserialized JSON from a {@link Response} instance using a provided {@link Class<T>} in the
      * deserialization process.
      *
@@ -123,16 +131,6 @@ public class AnalyticsHelper {
         }
 
         return Optional.ofNullable(response.readEntity(clazz));
-    }
-
-    /**
-     * Creates a {@link AnalyticsApp} instance associated with provided host.
-     *
-     * @param host provided host
-     * @return associated host app
-     */
-    public static AnalyticsApp getHostApp(final Host host) {
-        return new AnalyticsApp(host);
     }
 
 }

@@ -17,8 +17,6 @@ import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.StringUtils;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -81,7 +79,7 @@ public class AnalyticsApp {
     public void saveAnalyticsKey(final AnalyticsKey analyticsKey) throws DotDataException, DotSecurityException {
         final AppSecrets appSecrets = getSecrets();
         if (appSecrets.getSecrets().isEmpty()) {
-            Logger.warn(this, "Resolved secrets is empty, not storing the analytics key");
+            Logger.warn(this, "Resolved secrets is empty, not storing the ANALYTICS_KEY");
             return;
         }
 
@@ -107,7 +105,7 @@ public class AnalyticsApp {
             .forEach((key, secret) ->
                 AnalyticsAppProperty.findProperty(key)
                     .ifPresentOrElse(
-                        property -> property.setter(secret.getString()),
+                        property -> property.setter(secret.getString()).accept(propertiesBuilder),
                         () -> Logger.warn(this, String.format("Analytics app property %s cannot be found", key))));
 
         return propertiesBuilder.build();

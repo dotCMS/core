@@ -33,7 +33,7 @@ public enum AnalyticsAppProperty {
     ANALYTICS_KEY("analyticsKey") {
         @Override
         public Consumer<AnalyticsProperties.Builder> setter(String value) {
-            return builder -> builder.analyticsKey(AnalyticsKey.builder().jsKey(value).build());
+            return builder -> builder.analyticsKey(value);
         }
     },
     ANALYTICS_CONFIG_URL("analyticsConfigUrl", AnalyticsApp.ANALYTICS_APP_CONFIG_URL_KEY) {

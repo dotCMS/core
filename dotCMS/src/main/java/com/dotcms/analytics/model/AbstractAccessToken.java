@@ -1,7 +1,9 @@
 package com.dotcms.analytics.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.immutables.value.Value;
 
 import javax.annotation.Nullable;
@@ -15,12 +17,14 @@ import java.time.Instant;
  */
 @Value.Style(typeImmutable="*", typeAbstract="Abstract*")
 @Value.Immutable
+@JsonDeserialize(as = AccessToken.class)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public interface AbstractAccessToken {
 
-    @JsonProperty("accessToken")
+    @JsonProperty("access_token")
     String accessToken();
 
-    @JsonProperty("tokenType")
+    @JsonProperty("token_type")
     String tokenType();
 
     @Nullable
@@ -28,11 +32,15 @@ public interface AbstractAccessToken {
     @JsonProperty("issueDate")
     Instant issueDate();
 
-    @JsonProperty("expiresIn")
+    @JsonProperty("expires_in")
     Integer expiresIn();
 
     @Nullable
-    @JsonProperty("refreshToken")
+    @JsonProperty("refresh_expires_in")
+    Integer refreshExpiresIn();
+
+    @Nullable
+    @JsonProperty("refresh_token")
     String refreshToken();
 
     @JsonProperty("scope")

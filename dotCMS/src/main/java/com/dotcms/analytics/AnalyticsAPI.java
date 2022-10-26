@@ -2,7 +2,6 @@ package com.dotcms.analytics;
 
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.model.AccessToken;
-import com.dotcms.analytics.model.AnalyticsKey;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
@@ -29,19 +28,19 @@ public interface AnalyticsAPI {
     AccessToken fetchAccessToken(Host host) throws DotDataException;
 
     /**
+     * Fetches the analytics key to be used to capture analytics data.
+     *
+     * @param host host associated with analytics app governing analytics key
+     * @return an {@link String} with analytics key when found, otherwise empty
+     */
+    String fetchAnalyticsKey(Host host) throws DotDataException;
+
+    /**
      * Reset analytics key to the app storage by requesting it again to the configuration server.
      *
      * @param analyticsApp resolved analytics app
      * @throws DotDataException if analytics key cannot be extracted from response or when saving to app storage
      */
     void resetAnalyticsKey(AnalyticsApp analyticsApp) throws DotDataException;
-
-    /**
-     * Fetches the analytics key to be used to capture analytics data.
-     *
-     * @param host host associated with analytics app governing analytics key
-     * @return an {@link String} with analytics key when found, otherwise empty
-     */
-    AnalyticsKey fetchAnalyticsKey(Host host) throws DotDataException;
 
 }

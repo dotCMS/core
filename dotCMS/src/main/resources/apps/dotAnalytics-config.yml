@@ -31,18 +31,18 @@ params:
     type: "STRING"
     label: "Analytics Config URL"
     hint: "Analytics configurator server URL"
-    required: false
+    required: true
   analyticsWriteUrl:
     value: true
     hidden: false
     type: "STRING"
     label: "Analytics Write URL"
     hint: "Analytics write URL"
-    required: false
+    required: true
   analyticsReadUrl:
     value: true
     hidden: false
     type: "STRING"
     label: "Analytics Read URL"
     hint: "Analytics read URL"
-    required: false
+    required: true

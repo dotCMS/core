@@ -23,7 +23,7 @@ public interface AbstractAnalyticsProperties {
 
     @Nullable
     @JsonProperty("analyticsKey")
-    AnalyticsKey analyticsKey();
+    String analyticsKey();
 
     @JsonProperty("analyticsConfigUrl")
     String analyticsConfigUrl();

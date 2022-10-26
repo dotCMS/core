@@ -35,7 +35,7 @@ public class AnalyticsCache implements Cachable {
      * @param accessToken access token to cache
      */
     public void putAccessToken(final AccessToken accessToken) {
-        Preconditions.checkNotNull(accessToken, DotStateException.class, "Access token is missing");
+        Preconditions.checkNotNull(accessToken, DotStateException.class, "ACCESS_TOKEN is missing");
         cache.put(resolveKey(accessToken), accessToken, getPrimaryGroup());
     }
 
@@ -49,7 +49,7 @@ public class AnalyticsCache implements Cachable {
         try {
             return Optional.ofNullable((AccessToken) cache.get(key, getPrimaryGroup()));
         } catch (DotCacheException e) {
-            Logger.error(this, "Error while trying to get from cache the access token", e);
+            Logger.error(this, "Error while trying to get from cache the ACCESS_TOKEN", e);
             return Optional.empty();
         }
     }

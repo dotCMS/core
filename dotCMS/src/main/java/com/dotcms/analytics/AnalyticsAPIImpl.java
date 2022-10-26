@@ -14,6 +14,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import org.apache.commons.lang.StringUtils;
 
+import javax.ws.rs.ProcessingException;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.HttpHeaders;
@@ -55,32 +56,32 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
      * {@inheritDoc}
      */
     @Override
-    public void resetAnalyticsKey(final AnalyticsApp analyticsApp) throws DotDataException {
-        // validates app
-        validateAnalyticsApp(analyticsApp);
-
-        _resetAnalyticsKey(analyticsApp);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public AnalyticsKey fetchAnalyticsKey(final Host host) throws DotDataException {
+    public String fetchAnalyticsKey(final Host host) throws DotDataException {
         final AnalyticsApp analyticsApp = AnalyticsHelper.getHostApp(host);
         validateAnalyticsApp(analyticsApp);
 
-        final AnalyticsKey analyticsKey = analyticsApp.getAnalyticsProperties().analyticsKey();
+        final String analyticsKey = analyticsApp.getAnalyticsProperties().analyticsKey();
 
         // check if it found and the return it
-        if (isAnalyticsKeyValid(analyticsKey)) {
-            Logger.info(this, String.format("Analytics key found: %s", analyticsKey.toString()));
+        if (StringUtils.isNotBlank(analyticsKey)) {
+            Logger.info(this, String.format("ANALYTICS_KEY found: %s", analyticsKey));
             return analyticsKey;
         }
 
         _resetAnalyticsKey(analyticsApp);
 
         return AnalyticsHelper.getHostApp(host).getAnalyticsProperties().analyticsKey();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void resetAnalyticsKey(final AnalyticsApp analyticsApp) throws DotDataException {
+        // validates app
+        validateAnalyticsApp(analyticsApp);
+
+        _resetAnalyticsKey(analyticsApp);
     }
 
     /**
@@ -115,29 +116,23 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
      */
     private void _resetAnalyticsKey(final AnalyticsApp analyticsApp) throws DotDataException {
         // fetches access token and if not found than throw exception
-        final Response response = requestAnalyticsKey(analyticsApp);
+        try {
+            final Response response = requestAnalyticsKey(analyticsApp);
 
-        AnalyticsHelper.extractAnalyticsKey(response)
-            .map(key -> {
-                try {
-                    analyticsApp.saveAnalyticsKey(key);
-                } catch (Exception e) {
-                    Logger.error(this, String.format("Could not save analytics key %s at app", key));
-                    return null;
-                }
-                return key;
-            })
-            .orElseThrow(() -> new DotStateException("Could not fetch analytics key"));
-    }
-
-    /**
-     * Validates if {@link AnalyticsKey} instance is not null and has non-blank key.
-     *
-     * @param analyticsKey provided analytics key
-     * @return true if is valid, otherwise false
-     */
-    private boolean isAnalyticsKeyValid(final AnalyticsKey analyticsKey) {
-        return Objects.nonNull(analyticsKey) && StringUtils.isNotBlank(analyticsKey.jsKey());
+            AnalyticsHelper.extractAnalyticsKey(response)
+                .map(key -> {
+                    try {
+                        analyticsApp.saveAnalyticsKey(key);
+                    } catch (Exception e) {
+                        Logger.error(this, String.format("Could not save ANALYTICS_KEY %s at app", key));
+                        return null;
+                    }
+                    return key;
+                })
+                .orElseThrow(() -> new DotStateException("Could not fetch ANALYTICS_KEY"));
+        } catch (ProcessingException e) {
+            throw new DotDataException("Could not request ANALYTICS_KEY", e);
+        }
     }
 
     /**
@@ -167,7 +162,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
      */
     private void logResponse(final Response response) {
         if (AnalyticsHelper.isSuccessResponse(response)) {
-            Logger.info(this, "Access Token requested and fetched correctly");
+            Logger.info(this, "ACCESS_TOKEN requested and fetched correctly");
         } else {
             Logger.error(this, String.format(
                 "Error requesting access token from IDP server %s due to: %s (status code: %d)",
@@ -186,9 +181,9 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
     private Response requestAccessToken(final AnalyticsApp analyticsApp) {
         final Response response = ClientBuilder.newClient()
             .target(analyticsIdpUrl)
-            .request(MediaType.APPLICATION_FORM_URLENCODED)
+            .request()
             .header(HttpHeaders.AUTHORIZATION, String.format("Basic %s", analyticsApp.clientIdAndSecret()))
-            .post(Entity.entity("grant_type=client_credentials", MediaType.APPLICATION_JSON_TYPE));
+            .post(Entity.entity("grant_type=client_credentials", MediaType.APPLICATION_FORM_URLENCODED));
         logResponse(response);
         return response;
     }
@@ -200,18 +195,22 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
      * @return {@link Optional<AccessToken>} with value when a not expired token is found, otherwise empty\
      */
     private AccessToken refreshAccessToken(final AnalyticsApp analyticsApp) throws DotDataException {
-        final Response response = requestAccessToken(analyticsApp);
+        try {
+            final Response response = requestAccessToken(analyticsApp);
 
-        return AnalyticsHelper.extractToken(response)
-            .map(accessToken -> {
-                Logger.info(this, "Saving access token to cache");
-                analyticsCache.putAccessToken(
-                    accessToken
+            return AnalyticsHelper.extractToken(response)
+                .map(accessToken -> {
+                    Logger.info(this, "Saving ACCESS_TOKEN to cache");
+                    final AccessToken enriched = accessToken
                         .withClientId(analyticsApp.getAnalyticsProperties().clientId())
-                        .withIssueDate(Instant.now()));
-                return accessToken;
-            })
-            .orElseThrow(() -> new DotDataException("Could not extract access token from response"));
+                        .withIssueDate(Instant.now());
+                    analyticsCache.putAccessToken(enriched);
+                    return enriched;
+                })
+                .orElseThrow(() -> new DotDataException("Could not extract ACCESS_TOKEN from response"));
+        } catch (ProcessingException e) {
+            throw new DotDataException("Could not request ACCESS_TOKEN", e);
+        }
     }
 
     /**

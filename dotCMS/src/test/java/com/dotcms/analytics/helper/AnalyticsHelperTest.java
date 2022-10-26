@@ -39,11 +39,19 @@ public class AnalyticsHelperTest {
         when(statusType.getFamily()).thenReturn(Response.Status.Family.SUCCESSFUL);
     }
 
+    /**
+     * Given a {@link Response}
+     * Then evaluate it does have a SUCCESS http status
+     */
     @Test
     public void test_isSuccessResponse() {
         assertTrue(AnalyticsHelper.isSuccessResponse(response));
     }
 
+    /**
+     * Given a {@link Response}
+     * Then evaluate it does not have a SUCCESS http status
+     */
     @Test
     public void test_isSuccessResponse_not() {
         when(statusType.getFamily()).thenReturn(Response.Status.Family.CLIENT_ERROR);
@@ -52,6 +60,10 @@ public class AnalyticsHelperTest {
         assertFalse(AnalyticsHelper.isSuccessResponse(response));
     }
 
+    /**
+     * Given an {@link Response}
+     * Then verify that an {@link AccessToken} can be extracted as an entity
+     */
     @Test
     public void test_extractToken() {
         final AccessToken accessToken = createAccessToken();
@@ -60,12 +72,20 @@ public class AnalyticsHelperTest {
             .ifPresentOrElse(token -> assertEquals(accessToken, token), Assert::fail);
     }
 
+    /**
+     * Given an {@link Response}
+     * Then verify that an {@link AccessToken} cannot be extracted as an entity
+     */
     @Test
     public void test_extractToken_empty() {
         when(statusType.getFamily()).thenReturn(Response.Status.Family.CLIENT_ERROR);
         AnalyticsHelper.extractToken(response).ifPresent(token -> fail());
     }
 
+    /**
+     * Given an {@link Response}
+     * Then verify that an {@link AnalyticsKey} can be extracted as an entity
+     */
     @Test
     public void test_extractAnalyticsKey() {
         final AnalyticsKey analyticsKey = createAnalyticsKey();
@@ -74,18 +94,32 @@ public class AnalyticsHelperTest {
             .ifPresentOrElse(key -> assertEquals(analyticsKey, key), Assert::fail);
     }
 
+    /**
+     * Given an {@link Response}
+     * Then verify that an {@link AnalyticsKey} cannot be extracted as an entity
+     */
     @Test
     public void test_extractAnalyticsKey_empty() {
         when(statusType.getFamily()).thenReturn(Response.Status.Family.CLIENT_ERROR);
         AnalyticsHelper.extractAnalyticsKey(response).ifPresent(key -> fail());
     }
 
+    /**
+     * Given an {@link AccessToken}
+     * When it does have a issue data set
+     * Then verify it is expired
+     */
     @Test
     public void test_isExpired_noIssueDate() {
         final AccessToken accessToken = createAccessToken();
         assertTrue(AnalyticsHelper.isExpired(accessToken));
     }
 
+    /**
+     * Given an {@link AccessToken}
+     * When the issue date is set with different values
+     * Then verify it is evaluated as expired according to the instant it's representing
+     */
     @Test
     public void test_isExpired() {
         AccessToken accessToken = createAccessToken().withIssueDate(Instant.now());
@@ -98,6 +132,10 @@ public class AnalyticsHelperTest {
         assertFalse(AnalyticsHelper.isExpired(accessToken, 2));
     }
 
+    /**
+     * Given client id and client secret strings
+     * Then verify the concatenation is the same as the decoded value of client id and client secret Base64 encoding
+     */
     @Test
     public void test_encodeClientIdAndSecret() {
         final String clientId = "some-client-id";
