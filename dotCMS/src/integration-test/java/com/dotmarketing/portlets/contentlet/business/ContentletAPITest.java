@@ -7610,7 +7610,6 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
     }
 
-<<<<<<< HEAD
     @DataProvider
     public static Object[] testCasesJSON() {
         final Tuple2<String, String> case1 = new Tuple2<>("{} {}", "{}");
@@ -7644,7 +7643,8 @@ public class ContentletAPITest extends ContentletBaseTest {
         contentletWithJSON = contentletAPI.checkin(contentletWithJSON, user, Boolean.TRUE);
 
         assertEquals(testCase._2, contentletWithJSON.getStringProperty(jsonField.variable()));
-=======
+    }
+
     /**
      * Method to test: checkIn content
      * Given scenario: given indexed content in different variants
@@ -7707,7 +7707,6 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals(contentNewVariant.getIdentifier() + "_"
                         + contentNewVariant.getLanguageId() + "_" + contentNewVariant.getVariantId(),
                 responseNewVariant.getHits().iterator().next().getId());
->>>>>>> origin/master
     }
 
 }
