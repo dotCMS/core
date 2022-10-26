@@ -45,11 +45,13 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
                 this.updateContainerStructure.emit(contentTypesData);
             });
     }
+
     ngOnInit(): void {
         this.store.contentTypes$.pipe(takeUntil(this.destroy$)).subscribe(() => {
             this.store.updateRetrievedContentTypes(this.containerStructures ?? []);
         });
     }
+
     ngOnChanges(changes: { [property: string]: SimpleChange }) {
         const change: SimpleChange = changes['containerStructures'];
 

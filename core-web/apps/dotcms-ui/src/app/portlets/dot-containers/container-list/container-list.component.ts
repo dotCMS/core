@@ -129,10 +129,6 @@ export class ContainerListComponent implements OnDestroy {
         this.listing?.loadCurrentPage();
     }
 
-    handleEmptyStateButtonClick(): void {
-        this.dotRouterService.goToCreateContainer();
-    }
-
     private showToastNotification(message: string): void {
         this.dotMessageDisplayService.push({
             life: 3000,

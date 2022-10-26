@@ -1,18 +1,19 @@
 import { Injectable } from '@angular/core';
 import { ComponentStore } from '@ngrx/component-store';
 import { Observable, of } from 'rxjs';
-import { catchError, pluck, switchMap, take, tap } from 'rxjs/operators';
+import { catchError, filter, pluck, switchMap, take, tap } from 'rxjs/operators';
 import { HttpErrorResponse } from '@angular/common/http';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import {
     DotContainer,
     DotContainerEntity,
     DotContainerPayload,
     DotContainerStructure
 } from '@dotcms/app/shared/models/container/dot-container.model';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { ActivatedRoute } from '@angular/router';
 
 export interface DotContainerPropertiesState {
@@ -31,7 +32,8 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
         private dotGlobalMessageService: DotGlobalMessageService,
         private dotContainersService: DotContainersService,
         private dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private activatedRoute: ActivatedRoute
+        private activatedRoute: ActivatedRoute,
+        private dotRouterService: DotRouterService
     ) {
         super({
             showPrePostLoopInput: false,
@@ -42,23 +44,25 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
             apiLink: ''
         });
         this.activatedRoute.data
-            .pipe(pluck('container'), take(1))
+            .pipe(
+                pluck('container'),
+                take(1),
+                filter((containerEntity) => !!containerEntity)
+            )
             .subscribe((containerEntity: DotContainerEntity) => {
-                if (containerEntity) {
-                    const { container, contentTypes } = containerEntity;
-                    if (container && (container.preLoop || container.postLoop)) {
-                        this.updatePrePostLoopAndContentTypeVisibility({
-                            showPrePostLoopInput: true,
-                            isContentTypeVisible: true,
-                            container: container,
-                            contentTypes: contentTypes ?? []
-                        });
-                    } else {
-                        this.updateContainerState(containerEntity);
-                    }
-
-                    this.updateApiLink(container.identifier);
+                const { container, contentTypes } = containerEntity;
+                if (container && (container.preLoop || container.postLoop)) {
+                    this.updatePrePostLoopAndContentTypeVisibility({
+                        showPrePostLoopInput: true,
+                        isContentTypeVisible: true,
+                        container: container,
+                        contentTypes: contentTypes ?? []
+                    });
+                } else {
+                    this.updateContainerState(containerEntity);
                 }
+
+                this.updateApiLink(container.identifier);
             });
     }
 
@@ -158,6 +162,7 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
                     this.dotMessageService.get('message.container.published')
                 );
                 this.updateContainerState(container);
+                this.dotRouterService.goToURL('/containers');
             }),
             catchError((err: HttpErrorResponse) => {
                 this.dotGlobalMessageService.error(err.statusText);

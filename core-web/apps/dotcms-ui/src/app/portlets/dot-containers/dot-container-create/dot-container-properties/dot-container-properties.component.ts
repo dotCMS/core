@@ -111,7 +111,6 @@ export class DotContainerPropertiesComponent implements OnInit {
         } else {
             delete formValues.identifier;
             this.store.saveContainer(formValues);
-            this.dotRouterService.goToURL('/containers');
         }
     }
 
