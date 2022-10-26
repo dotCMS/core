@@ -11,11 +11,12 @@ import com.google.common.collect.ImmutableMap;
 public class EventLogRunnable implements Runnable {
 
     final String POST_URL = Config.getStringProperty("EVENT_LOG_POSTING_URL",
-            "https://analytics.dotcms.site/api/v1/event");
+            "http://localhost:8081/api/v1/event");
 
     final Map<String, String> POSTING_HEADERS = ImmutableMap.of("content-type", "application/json");
 
-    final String token = Config.getStringProperty("EVENT_LOG_TOKEN");
+    final String token = Config.getStringProperty("EVENT_LOG_TOKEN",
+            "js.cluster1.customer1.3c7ftd589dwax9eqpz");
     final String log;
 
     EventLogRunnable(final String log) {
