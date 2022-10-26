@@ -1,5 +1,6 @@
 package com.dotmarketing.cache;
 
+import com.dotcms.variant.VariantAPI;
 import com.liferay.util.StringPool;
 import java.util.Arrays;
 import java.util.Optional;
@@ -51,6 +52,11 @@ public class MultiTreeCache implements Cachable {
     public void removePageMultiTrees(final String pageIdentifier, final String variantName, final boolean live) {
         final String group = (live) ? LIVE_GROUP : WORKING_GROUP;
         removePageMultiTrees(pageIdentifier, variantName, group);
+    }
+
+    public void removePageMultiTrees(final String pageIdentifier) {
+        Arrays.asList(getGroups()).forEach(group -> removePageMultiTrees(pageIdentifier,
+                VariantAPI.DEFAULT_VARIANT.name(), group));
     }
 
     public void removePageMultiTrees(final String pageIdentifier, final String variantName) {
