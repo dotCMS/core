@@ -350,7 +350,6 @@
 									"    pm.expect(page[\"sortOrder\"]).equal(0);",
 									"    pm.expect(page[\"stInode\"]).equal(\"91812c8b-0441-4139-8d4d-7423cfb0e979\");",
 									"    pm.expect(page[\"statusIcons\"]).equal(\"<span class='greyDotIcon' style='opacity:.4'></span><span class='liveIcon'></span>\");",
-									"    pm.expect(page[\"tags\"]).equal(\"diving\");",
 									"    pm.expect(page[\"template\"]).equal(\"0c556e37-99e0-4458-a2cd-d42cc7a11045\");",
 									"    pm.expect(page[\"title\"]).equal(\"Costa Rica Rain Forest\");",
 									"    pm.expect(page[\"titleImage\"]).equal(\"image\");",
@@ -864,7 +863,6 @@
 									"    pm.expect(page[\"sortOrder\"]).equal(0);",
 									"    pm.expect(page[\"stInode\"]).equal(\"91812c8b-0441-4139-8d4d-7423cfb0e979\");",
 									"    pm.expect(page[\"statusIcons\"]).equal(\"<span class='greyDotIcon' style='opacity:.4'></span><span class='liveIcon'></span>\");",
-									"    pm.expect(page[\"tags\"]).equal(\"diving\");",
 									"    pm.expect(page[\"template\"]).equal(\"0c556e37-99e0-4458-a2cd-d42cc7a11045\");",
 									"    pm.expect(page[\"title\"]).equal(\"Costa Rica Rain Forest\");",
 									"    pm.expect(page[\"titleImage\"]).equal(\"image\");",
@@ -2987,7 +2985,7 @@
 							"var jsonData = pm.response.json();",
 							"",
 							"pm.test(\"Identifier must contains path\", function () {",
-							"    pm.expect(jsonData.entity.template).eq(\"SYSTEM_TEMPLATE\");",
+							"    pm.expect(jsonData.entity.template).eq(\"7acdb856-4bbc-41c5-8695-a39c2e4a913f\");",
 							"});"
 						],
 						"type": "text/javascript"
@@ -3023,7 +3021,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"contentlet\":{\n\t\t\"stName\": \"htmlpageasset\",\n\t\t\"title\": \"PageAsset SystemTemplate\",\n        \"url\": \"pageassetsystemtemplate\",\n        \"friendlyName\":\"pageassetsystemtemplate\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"sortOrder\": \"0\",\n        \"cachettl\": \"100\",\n        \"hostFolder\":\"48190c8c-42c4-46af-8d1a-0cd5db894797\"\n\t}\n}",
+					"raw": "{\n\t\"contentlet\":{\n\t\t\"stName\": \"htmlpageasset\",\n\t\t\"title\": \"PageAsset SystemTemplate\",\n        \"url\": \"pageassetsystemtemplate\",\n        \"friendlyName\":\"pageassetsystemtemplate\",\n        \"template\": \"7acdb856-4bbc-41c5-8695-a39c2e4a913f\",\n        \"sortOrder\": \"0\",\n        \"cachettl\": \"100\",\n        \"hostFolder\":\"48190c8c-42c4-46af-8d1a-0cd5db894797\"\n\t}\n}",
 					"options": {
 						"raw": {
 							"language": "json"
