@@ -1,7 +1,7 @@
-import { DotPageContainerStructure } from './dot-container.model';
+import { DotPageContainer } from './dot-page-container.model';
 
 export interface DotLayoutColumn {
-    containers: DotPageContainerStructure[];
+    containers: DotPageContainer[];
     leftOffset: number;
     width: number;
     styleClass?: string;

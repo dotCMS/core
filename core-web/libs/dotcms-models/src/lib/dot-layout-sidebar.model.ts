@@ -1,8 +1,8 @@
-import { DotPageContainerStructure } from './dot-container.model';
+import { DotPageContainer } from './dot-page-container.model';
 
 export interface DotLayoutSideBar {
     location?: string;
-    containers?: DotPageContainerStructure[];
+    containers?: DotPageContainer[];
     width?: string;
     widthPercent?: number;
     preview?: boolean;

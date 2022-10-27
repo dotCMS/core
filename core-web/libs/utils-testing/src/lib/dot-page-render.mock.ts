@@ -6,8 +6,8 @@ import {
     DotPageRenderParameters,
     DotPageMode,
     CONTAINER_SOURCE,
-    DotPageContainer,
-    DotTemplate
+    DotTemplate,
+    DotPageContainerStructure
 } from '@dotcms/dotcms-models';
 
 export const mockDotPage = (): DotPage => {
@@ -68,7 +68,7 @@ export const mockDotLayout = (): DotLayout => {
     };
 };
 
-export const mockDotContainers = (): DotPageContainer => {
+export const mockDotContainers = (): DotPageContainerStructure => {
     return {
         '/default/': {
             container: processedContainers[0].container,
