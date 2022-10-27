@@ -1,5 +1,6 @@
 package com.dotcms.api.client;
 
+import com.dotcms.api.provider.ClientObjectMapper;
 import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,6 +28,7 @@ public class APIEndpoints {
     <T> T getClient(final Class<T> clazz) {
         return (T) registry.computeIfAbsent(clazz, c ->
                  RestClientBuilder.newBuilder()
+                        .register(ClientObjectMapper.class)
                         .baseUri(apiBaseUri)
                         .build(c)
                 );
