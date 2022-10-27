@@ -20,7 +20,8 @@ import { DotRouterService } from '../dot-router/dot-router.service';
 import { DotFormatDateService } from '../dot-format-date-service';
 import { DotAlertConfirmService } from '@dotcms/data-access';
 
-import * as dotUtils from '@dotcms/utils';
+// INFO: needs to import this way so we can spy on.
+import * as dotUtils from '@dotcms/utils/lib/dot-utils';
 
 const mockDotApps = [
     {
