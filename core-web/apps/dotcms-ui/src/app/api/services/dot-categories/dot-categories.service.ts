@@ -13,34 +13,18 @@ export class DotCategoriesService extends PaginatorService {
     }
 
     /**
-     * load data configuration
-     * @param {number} offset
-     * @param {string} [sortField]
-     * @param {OrderDirection} [sortOrder]
-     * @return {*}  {Observable<DotCategory[]>}
-     * @memberof DotCategoriesService
-     */
-    loadData(
-        offset: number,
-        sortField?: string,
-        sortOrder?: OrderDirection
-    ): Observable<DotCategory[]> {
-        this.sortField = sortField;
-        this.sortOrder = sortOrder === 1 ? OrderDirection.ASC : OrderDirection.DESC;
-
-        return this.getPage(offset);
-    }
-
-    /**
-     * get categories according to pagination and search
+     * Get categories according to pagination and search
      * @param {LazyLoadEvent} [filters]
      * @return {*}  {Observable<DotCategory[]>}
      * @memberof DotCategoriesService
      */
     getCategories(filters?: LazyLoadEvent): Observable<DotCategory[]> {
+        const { sortField, sortOrder } = filters;
         const page = parseInt(String(filters.first / this.paginationPerPage), 10) + 1;
         this.filter = filters?.filters?.global?.value || '';
+        this.sortField = sortField;
+        this.sortOrder = sortOrder === 1 ? OrderDirection.ASC : OrderDirection.DESC;
 
-        return this.loadData(page, filters.sortField, filters.sortOrder);
+        return this.getPage(page);
     }
 }

@@ -15,7 +15,7 @@ export class DotCategoriesListComponent {
     constructor(private store: DotCategoriesListStore) {}
 
     /**
-     * update selected categories in store
+     * Update selected categories in store
      * @memberof DotCategoriesListComponent
      */
     handleRowCheck(): void {

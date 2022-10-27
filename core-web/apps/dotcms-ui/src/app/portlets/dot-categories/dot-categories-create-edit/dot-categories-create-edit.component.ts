@@ -14,7 +14,8 @@ export class DotCategoriesCreateEditComponent {
     /**
      * The function takes a category object as a parameter, and then calls the updateCategory function
      * in the store service, passing the category object as a parameter
-     * @param {MenuItem} category - MenuItem - The category object that is being updated.
+     * @param {MenuItem} category
+     * @memberof DotCategoriesCreateEditComponent
      */
     updateCategory(category: MenuItem) {
         this.store.updateCategory(category);
