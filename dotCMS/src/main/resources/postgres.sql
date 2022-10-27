@@ -1947,7 +1947,7 @@ CREATE OR REPLACE FUNCTION identifier_parent_path_check() RETURNS trigger AS '
       IF FOUND THEN
         RETURN NEW;
       ELSE
-        RAISE EXCEPTION ''Cannot insert/update for this path does not exist for the given host'';
+        RAISE EXCEPTION ''Cannot % folder % [%] in path % as one or more parent folders do not exist in Site %'', tg_op, NEW.asset_name, NEW.id, NEW.parent_path, NEW.host_inode;
         RETURN NULL;
       END IF;
      END IF;
