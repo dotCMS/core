@@ -240,6 +240,7 @@ public class NavTool implements ViewTool {
         if (!menuItems.isEmpty()) {
             final List<Versionable> nonLive = menuItems.stream()
                     .filter(o -> o instanceof Versionable)
+                    .filter(o -> !(o instanceof Folder))
                     .map(o -> (Versionable) o)
                     .filter(versionable -> Try.of(() -> !versionable.isLive()).getOrElse(false))
                     .collect(Collectors.toList());
