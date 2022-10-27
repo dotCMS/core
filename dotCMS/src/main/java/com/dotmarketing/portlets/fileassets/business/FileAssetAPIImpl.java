@@ -2,6 +2,11 @@ package com.dotmarketing.portlets.fileassets.business;
 
 import com.dotcms.api.tree.Parentable;
 import com.dotcms.browser.BrowserQuery;
+import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
+import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.system.event.local.model.EventSubscriber;
+import com.dotmarketing.portlets.folders.business.FolderAPIImpl;
 import com.dotmarketing.portlets.structure.model.Field.DataType;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -12,6 +17,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
@@ -19,6 +25,8 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.MimeTypeUtils;
 import com.dotmarketing.business.*;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
+import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.UUIDUtil;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
@@ -71,6 +79,8 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	private final IdentifierAPI identifierAPI;
 	private final FileAssetFactory fileAssetFactory;
 	private final ContentletCache contentletCache;
+
+	private final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
 
 	public FileAssetAPIImpl() {
 	    this(
@@ -822,4 +832,46 @@ public class FileAssetAPIImpl implements FileAssetAPI {
                 folderId, e.getMessage());
     }
 
+	@Override
+	public void subscribeFileListener(final FileListener fileListener, final String fileNamePattern) {
+
+		this.subscribeFileListener(fileListener, fileAsset -> RegEX.containsCaseInsensitive(fileAsset.getFileName(), fileNamePattern.trim()));
+	}
+
+	@Override
+	public void subscribeFileListener(final FileListener fileListener, final Predicate<FileAsset> fileAssetFilter) {
+		this.localSystemEventsAPI.subscribe(ContentletCheckinEvent.class, new EventSubscriber<ContentletCheckinEvent>() {
+
+			@Override
+			public String getId() {
+
+				return fileListener.getId() + StringPool.FORWARD_SLASH + ContentletCheckinEvent.class.getName();
+			}
+
+			@Override
+			public void notify(final ContentletCheckinEvent event) {
+
+				FileAssetAPIImpl.this.triggerModifiedEvent(event, fileListener, fileAssetFilter);
+			}
+		});
+	}
+
+	private void triggerModifiedEvent(ContentletCheckinEvent event, FileListener fileListener, Predicate<FileAsset> fileAssetFilter) {
+
+		try {
+
+			final Contentlet contentletEvent = event.getContentlet();
+			if (null != contentletEvent && isFileAsset(contentletEvent)) {
+
+				final FileAsset fileAsset = fromContentlet(contentletEvent);
+				if (fileAssetFilter.test(fileAsset)) {
+
+					fileListener.fileModify(new FileEvent(UUIDUtil.uuid(), event.getUser(), fileAsset, event.getDate()));
+				}
+			}
+		} catch (Throwable e) {
+			Logger.error(this, e.getMessage());
+			Logger.debug(this, e.getMessage(), e);
+		}
+	}
 }
