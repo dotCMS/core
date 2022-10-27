@@ -1318,7 +1318,7 @@
 							"});",
 							"",
 							"pm.test(\"All returned experiments should have the pageId in the filter\", function () {",
-							"    pm.expect(jsonData.entity.length).to.be.eq(1);",
+							"    pm.expect(jsonData.entity.length).to.be.eq(2);",
 							"    for(let i in jsonData.entity) {",
 							"        let experiment = jsonData.entity[i]",
 							"        pm.expect(experiment.pageId).to.be.eq('e424abd7e2e7a9031c5a0a3c18182f1b');",
