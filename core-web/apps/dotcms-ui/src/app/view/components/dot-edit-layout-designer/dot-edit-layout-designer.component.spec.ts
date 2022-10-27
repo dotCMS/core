@@ -16,7 +16,7 @@ import * as _ from 'lodash';
 
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotEditLayoutDesignerComponent } from './dot-edit-layout-designer.component';
-import { DotEditLayoutService } from '@dotcms/data-access';
+
 import { DotEditPageInfoModule } from '@portlets/dot-edit-page/components/dot-edit-page-info/dot-edit-page-info.module';
 import { DotEventsService } from '@dotcms/data-access';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
@@ -28,10 +28,10 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotThemesService } from '@dotcms/data-access';
-import { DotTemplateContainersCacheService } from '@dotcms/data-access';
+import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
 
-import cleanUpDialog from '@dotcms/utils-testing';
-import { DotThemesServiceMock } from '@dotcms/utils-testing';
+import { cleanUpDialog, DotThemesServiceMock } from '@dotcms/utils-testing';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { mockDotLayout, mockDotRenderedPage } from '@dotcms/utils-testing';
 import { mockDotThemes } from '@dotcms/utils-testing';

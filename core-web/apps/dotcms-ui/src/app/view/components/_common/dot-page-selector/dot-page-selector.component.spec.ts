@@ -18,10 +18,10 @@ import {
     DotPageSelectorItem
 } from '@components/_common/dot-page-selector/models/dot-page-selector.models';
 import { LoginService } from '@dotcms/dotcms-js';
-import { LoginServiceMock } from '../../../../test/login-service.mock';
+
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { LoginServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { CommonModule } from '@angular/common';
 import {

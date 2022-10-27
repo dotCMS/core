@@ -31,3 +31,5 @@ export * from './lib/login-service.mock';
 export * from './lib/response-view.mock';
 export * from './lib/site-service.mock';
 export * from './lib/field-util';
+export * from './lib/clean-up-dialog';
+export * from './lib/dot-roles.mock';

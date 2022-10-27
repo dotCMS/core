@@ -15,11 +15,11 @@ import { DotAppsConfigurationDetailResolver } from './dot-apps-configuration-det
 import { ButtonModule } from 'primeng/button';
 import { DotAppsConfigurationDetailComponent } from './dot-apps-configuration-detail.component';
 import { By } from '@angular/platform-browser';
-import { DotAppsSaveData, DotAppsSecrets } from '@shared/models/dot-apps/dot-apps.model';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
 import { DotAppsConfigurationHeaderModule } from '../dot-apps-configuration-header/dot-apps-configuration-header.module';
 import { MarkdownModule } from 'ngx-markdown';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotAppsSaveData, DotAppsSecrets } from '@dotcms/dotcms-models';
 
 const messages = {
     'apps.key': 'Key',

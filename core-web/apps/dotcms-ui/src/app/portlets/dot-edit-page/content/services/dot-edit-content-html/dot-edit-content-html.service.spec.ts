@@ -17,24 +17,23 @@ import { DotContainerContentletService } from '../dot-container-contentlet.servi
 import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
 import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
 import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { MockDotMessageService, mockResponseView } from '@dotcms/utils-testing';
 import { LoggerService, StringUtils, CoreWebService, HttpCode } from '@dotcms/dotcms-js';
 import { DotAlertConfirmService } from '@dotcms/data-access';
 import { mockDotLayout, mockDotRenderedPage, mockDotPage } from '@dotcms/utils-testing';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotCMSContentType, DotPageRenderState } from '@dotcms/dotcms-models';
 import { DotLicenseService } from '@dotcms/data-access';
-import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
+
 import { mockUser } from '@dotcms/utils-testing';
 import { PageModelChangeEventType } from './models';
 import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
 import { DotPageContent } from '@portlets/dot-edit-page/shared/models';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { DotPageContainer } from '@dotcms/dotcms-models';
-import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
+import { DotPageRender } from '@dotcms/dotcms-models';
 import { DotGlobalMessageService } from '@dotcms/app/view/components/_common/dot-global-message/dot-global-message.service';
 import { DotEventsService } from '@dotcms/data-access';
 import { DotWorkflowActionsFireService } from '@dotcms/data-access';
-import { mockResponseView } from '@dotcms/app/test/response-view.mock';
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 

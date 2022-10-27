@@ -16,23 +16,23 @@ import {
 import { FieldService } from './components/fields/service';
 import { Location } from '@angular/common';
 import { LoginService, SiteService, CoreWebService } from '@dotcms/dotcms-js';
-import { LoginServiceMock } from '../../../test/login-service.mock';
+import { LoginServiceMock, mockResponseView, SiteServiceMock } from '@dotcms/utils-testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { waitForAsync } from '@angular/core/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { MockDotMessageService } from '../../../test/dot-message-service.mock';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotContentTypesInfoService } from '@dotcms/data-access';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { mockResponseView } from '../../../test/response-view.mock';
+
 import { DotIconModule } from '@dotcms/ui';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { MenuItem, ConfirmationService } from 'primeng/api';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 // eslint-disable-next-line max-len
 import { DotEditContentTypeCacheService } from './components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
-import { SiteServiceMock } from '@dotcms/app/test/site-service.mock';
+
 import * as _ from 'lodash';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
@@ -42,7 +42,7 @@ import { DotEventsService } from '@dotcms/data-access';
 import { dotcmsContentTypeFieldBasicMock, dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
-import cleanUpDialog from '@dotcms/utils-testing';
+import { cleanUpDialog } from '@dotcms/utils-testing';
 
 @Component({
     selector: 'dot-content-type-fields-drop-zone',

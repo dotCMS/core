@@ -5,11 +5,7 @@ import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Observable, of } from 'rxjs';
-import {
-    DotPermissionsType,
-    PermissionsType,
-    UserPermissions
-} from '@models/dot-current-user/dot-current-user';
+import { DotPermissionsType, UserPermissions, PermissionsType } from '@dotcms/dotcms-models';
 
 export const CurrentUserDataMock = {
     email: 'admin@dotcms.com',

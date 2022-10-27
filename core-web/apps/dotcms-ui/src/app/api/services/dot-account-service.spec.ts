@@ -2,9 +2,9 @@ import { TestBed, waitForAsync } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { DotAccountUser, DotAccountService } from './dot-account-service';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import { CoreWebServiceMock, mockResponseView } from '@dotcms/utils-testing';
 import { LoginServiceMock } from '@dotcms/utils-testing';
-import { mockResponseView } from '@dotcms/app/test/response-view.mock';
+import { DotFormatDateServiceMock } from '@dotcms/utils-testing';
 import { throwError } from 'rxjs';
 import { DotHttpErrorManagerService } from './dot-http-error-manager/dot-http-error-manager.service';
 import { DotAlertConfirmService } from '@dotcms/data-access';
@@ -12,7 +12,6 @@ import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router
 import { MockDotRouterService } from '@dotcms/utils-testing';
 import { ConfirmationService } from 'primeng/api';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { DotFormatDateServiceMock } from '@dotcms/app/test/format-date-service.mock';
 
 describe('DotAccountService', () => {
     let service: DotAccountService;

@@ -1,6 +1,6 @@
 import { ComponentFixture } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
-import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessageService } from '@dotcms/data-access';
 import { By } from '@angular/platform-browser';
 import { DotSidebarPropertiesComponent } from './dot-sidebar-properties.component';

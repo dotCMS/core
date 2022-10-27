@@ -7,12 +7,14 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotDeviceSelectorComponent } from './dot-device-selector.component';
 import { Component, CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
 import { DotDevicesService } from '@dotcms/data-access';
-import { DotDevicesServiceMock } from '../../../test/dot-device-service.mock';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '../../../test/dot-message-service.mock';
+import {
+    DotDevicesServiceMock,
+    mockDotDevices,
+    MockDotMessageService
+} from '@dotcms/utils-testing';
 import { By } from '@angular/platform-browser';
-import { mockDotDevices } from '../../../test/dot-device.mock';
 import { DotDevice } from '@dotcms/dotcms-models';
 import { DotIconModule } from '@dotcms/ui';
 import { DotMessagePipe } from '@dotcms/app/view/pipes';

@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { DotFieldVariablesService } from './dot-field-variables.service';
-import { DotFieldVariable } from '../models/dot-field-variable.interface';
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
 import { dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed, getTestBed } from '@angular/core/testing';

@@ -1,5 +1,5 @@
 import { waitForAsync, ComponentFixture } from '@angular/core/testing';
-import { DOTTestBed } from '@dotcms/utils-testing';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DebugElement } from '@angular/core';
 import { ContentTypesFieldDragabbleItemComponent } from './content-type-field-dragabble-item.component';
 import { By } from '@angular/platform-browser';

@@ -9,12 +9,11 @@ import { InputTextareaModule } from 'primeng/inputtextarea';
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import { CoreWebServiceMock, mockProcessedRoles } from '@dotcms/utils-testing';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { Component, DebugElement, Input } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { of } from 'rxjs';
-import { mockProcessedRoles } from '@dotcms/data-access';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 @Component({

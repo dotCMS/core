@@ -9,12 +9,13 @@ import { INotification } from '@shared/models/notifications';
 import { DotMessageService } from '@dotcms/data-access';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
-import { NotificationsService } from '@dotcms/data-access';
+
 import { Observable, Subject } from 'rxjs';
 import { of as observableOf } from 'rxjs';
-import { MockDotMessageService } from '@dotcms/app/test/dot-message-service.mock';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { ButtonModule } from 'primeng/button';
+import { NotificationsService } from '@dotcms/app/api/services/notifications-service';
 
 @Component({
     selector: 'dot-dropdown-component',

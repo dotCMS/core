@@ -6,12 +6,12 @@ import {
     of as observableOf,
     from as observableFrom
 } from 'rxjs';
-import { mockUser, LoginServiceMock } from '../../../../../test/login-service.mock';
+
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { DebugElement, Component, Input, forwardRef, Output, EventEmitter } from '@angular/core';
 import { DotLoginAsComponent } from './dot-login-as.component';
-import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
+import { LoginServiceMock, MockDotMessageService, mockUser } from '@dotcms/utils-testing';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { SEARCHABLE_NGFACES_MODULES } from '../../../_common/searchable-dropdown/searchable-dropdown.module';
 import { DotMessageService } from '@dotcms/data-access';

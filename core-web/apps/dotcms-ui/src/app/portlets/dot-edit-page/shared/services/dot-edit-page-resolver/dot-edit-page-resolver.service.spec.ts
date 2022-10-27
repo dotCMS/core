@@ -5,8 +5,6 @@ import { DotContentletLockerService } from '@dotcms/data-access';
 import { DotEditPageResolver } from './dot-edit-page-resolver.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotPageRenderService } from '@dotcms/data-access';
-import { DotPageRenderState } from '../../models/dot-rendered-page-state.model';
-import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { LoginService, CoreWebService, HttpCode } from '@dotcms/dotcms-js';
 import { LoginServiceMock, mockUser } from '@dotcms/utils-testing';
@@ -21,8 +19,9 @@ import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-s
 import { MockDotRouterService } from '@dotcms/utils-testing';
 import { mockResponseView } from '@dotcms/utils-testing';
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
-import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
+import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 import { DotESContentService } from '@dotcms/data-access';
+import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
 
 const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
     'toString'

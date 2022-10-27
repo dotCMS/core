@@ -3,14 +3,13 @@ import { TestBed } from '@angular/core/testing';
 import { DotEditLayoutService } from './dot-edit-layout.service';
 import { DotTemplateContainersCacheService } from '@services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { mockDotContainers, processedContainers } from '@dotcms/utils-testing';
-import { CONTAINER_SOURCE } from '@models/container/dot-container.model';
 import {
-    DotLayoutBody,
     DotLayoutGrid,
     DotLayoutGridBox,
     DotContainerColumnBox
 } from '@models/dot-edit-layout-designer';
 import { dotContainerMapMock } from '@dotcms/utils-testing';
+import { CONTAINER_SOURCE, DotLayoutBody } from '@dotcms/dotcms-models';
 
 describe('DotEditLayoutService', () => {
     const containers = dotContainerMapMock();

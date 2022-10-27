@@ -7,7 +7,7 @@ import { DotGravatarService } from '@dotcms/app/api/services/dot-gravatar-servic
 import { DotAvatarModule } from '../../../_common/dot-avatar/dot-avatar.module';
 import { CommonModule } from '@angular/common';
 import { Observable, of } from 'rxjs';
-import { DOTTestBed } from '@dotcms/utils-testing';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import * as md5 from 'md5';
 
 @Component({

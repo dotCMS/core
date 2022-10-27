@@ -10,12 +10,13 @@ import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
-import { SiteServiceMock, mockSites } from '../../../test/site-service.mock';
+
 import { RouterTestingModule } from '@angular/router/testing';
 import { ActivatedRoute } from '@angular/router';
 import { UiDotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
 import { DotIconModule } from '@dotcms/ui';
-import { DotNavLogoService } from '@dotcms/data-access';
+import { mockSites, SiteServiceMock } from '@dotcms/utils-testing';
+import { DotNavLogoService } from '@dotcms/app/api/services/dot-nav-logo/dot-nav-logo.service';
 
 @Injectable()
 class MockDotNavigationService {

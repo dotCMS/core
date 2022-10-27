@@ -4,7 +4,7 @@ import { TestBed, waitForAsync } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Router, NavigationEnd } from '@angular/router';
 
-import { LoginServiceMock } from '@dotcms/app/test/login-service.mock';
+import { LoginServiceMock } from '@dotcms/utils-testing';
 import { DotEventsService } from '@dotcms/data-access';
 import { DotMenu } from '@models/navigation';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';

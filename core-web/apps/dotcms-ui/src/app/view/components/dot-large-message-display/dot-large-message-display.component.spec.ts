@@ -7,7 +7,7 @@ import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotcmsEventsServiceMock } from '@dotcms/utils-testing';
 
 import { DotLargeMessageDisplayComponent } from './dot-large-message-display.component';
-import { DotParseHtmlService } from '@dotcms/data-access';
+import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
 
 @Component({
     selector: 'dot-test-host-component',

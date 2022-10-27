@@ -4,7 +4,7 @@
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { DotPersonaSelectorComponent } from './dot-persona-selector.component';
 import { DebugElement, Component, Input } from '@angular/core';
-import { MockDotMessageService } from '../../../test/dot-message-service.mock';
+import { cleanUpDialog, MockDotMessageService } from '@dotcms/utils-testing';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotMessageService } from '@dotcms/data-access';
@@ -24,7 +24,6 @@ import { DotAddPersonaDialogComponent } from '@components/dot-add-persona-dialog
 import { SiteServiceMock } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { TooltipModule } from 'primeng/tooltip';
-import cleanUpDialog from '@dotcms/utils-testing';
 
 @Component({
     selector: 'dot-host-component',

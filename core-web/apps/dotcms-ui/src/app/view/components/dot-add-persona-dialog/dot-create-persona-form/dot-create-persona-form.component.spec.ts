@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotCreatePersonaFormComponent } from './dot-create-persona-form.component';
 import { DebugElement } from '@angular/core';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DOTTestBed } from '@dotcms/utils-testing';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
 import { mockSites, SiteServiceMock } from '@dotcms/utils-testing';
 import { By } from '@angular/platform-browser';

@@ -4,15 +4,20 @@ import { DotThemeSelectorComponent } from './dot-theme-selector.component';
 import { Component, DebugElement, Input } from '@angular/core';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotThemesService } from '@dotcms/data-access';
-import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
+import {
+    DotThemesServiceMock,
+    MockDotMessageService,
+    mockDotThemes,
+    mockSites,
+    SiteServiceMock
+} from '@dotcms/utils-testing';
 import { By } from '@angular/platform-browser';
-import { mockDotThemes } from '../../../../../test/dot-themes.mock';
 import { DataViewModule } from 'primeng/dataview';
-import { mockSites, SiteServiceMock } from '../../../../../test/site-service.mock';
+
 import { CoreWebService, Site, SiteService } from '@dotcms/dotcms-js';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { PaginatorService } from '@dotcms/data-access';
-import { DotThemesServiceMock } from '../../../../../test/dot-themes-service.mock';
+
 import { DotIconModule } from '@dotcms/ui';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';

@@ -2,7 +2,11 @@
 
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotPushPublishFormComponent } from './dot-push-publish-form.component';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import {
+    DotcmsConfigServiceMock,
+    MockDotMessageService,
+    mockDotTimeZones
+} from '@dotcms/utils-testing';
 import { Component, DebugElement, Input } from '@angular/core';
 import { PushPublishServiceMock } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
 import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
@@ -15,7 +19,6 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotPushPublishFilter, DotPushPublishFiltersService } from '@dotcms/data-access';
 import { CoreWebService, DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
-import { DotParseHtmlService } from '@dotcms/data-access';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotAlertConfirmService } from '@dotcms/data-access';
 import { LoginServiceMock } from '@dotcms/utils-testing';
@@ -30,11 +33,9 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
 import { CalendarModule } from 'primeng/calendar';
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
-import {
-    DotcmsConfigServiceMock,
-    mockDotTimeZones
-} from '@dotcms/app/test/dot-timezone-service.mock';
+
 import { AutoFocusModule } from 'primeng/autofocus';
+import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
 
 const messageServiceMock = new MockDotMessageService({
     'contenttypes.content.push_publish.action.push': 'Push',

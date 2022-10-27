@@ -3,7 +3,7 @@
 import { of as observableOf, Observable } from 'rxjs';
 import { ComponentFixture, async } from '@angular/core/testing';
 import { DebugElement, Component } from '@angular/core';
-import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
+
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -11,6 +11,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotFieldValidationMessageModule } from '../dot-field-validation-message/dot-file-validation-message.module';
 import { DotAddToBundleComponent } from './dot-add-to-bundle.component';
 import { AddToBundleService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 class AddToBundleServiceMock {
     getBundles(): Observable<any> {

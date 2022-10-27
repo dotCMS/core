@@ -3,7 +3,7 @@
 import { DotRelationshipsPropertyComponent } from './dot-relationships-property.component';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/core';
-import { MockDotMessageService } from '@dotcms/app/test/dot-message-service.mock';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { NgControl, UntypedFormGroup, UntypedFormControl } from '@angular/forms';
 import { DotMessageService } from '@dotcms/data-access';

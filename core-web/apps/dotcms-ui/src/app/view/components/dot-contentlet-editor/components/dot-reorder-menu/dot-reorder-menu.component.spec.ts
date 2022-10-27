@@ -5,10 +5,10 @@ import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DotReorderMenuComponent } from './dot-reorder-menu.component';
 import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
 import { LoginService } from '@dotcms/dotcms-js';
-import { LoginServiceMock } from '../../../../../test/login-service.mock';
+import { LoginServiceMock } from '@dotcms/utils-testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { RouterTestingModule } from '@angular/router/testing';
 
 describe('DotReorderMenuComponent', () => {

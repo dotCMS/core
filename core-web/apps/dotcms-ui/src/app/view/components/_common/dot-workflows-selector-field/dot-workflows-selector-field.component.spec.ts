@@ -5,14 +5,13 @@ import { waitForAsync } from '@angular/core/testing';
 
 import { DotWorkflowsSelectorFieldComponent } from './dot-workflows-selector-field.component';
 
-import { DotWorkflowService } from './../../../../api/services/dot-workflow/dot-workflow.service';
 import { MultiSelect } from 'primeng/multiselect';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotWorkflowService } from '@dotcms/data-access';
 import { UntypedFormGroup, UntypedFormBuilder } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { mockWorkflows, DotWorkflowServiceMock } from '@dotcms/utils-testing';
-import { DOTTestBed } from '@dotcms/utils-testing';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 
 const messageServiceMock = new MockDotMessageService({
     'dot.common.select.workflows': 'Pick it up',

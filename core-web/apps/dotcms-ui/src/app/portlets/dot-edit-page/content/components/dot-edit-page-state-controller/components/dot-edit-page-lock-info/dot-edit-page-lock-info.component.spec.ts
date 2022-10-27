@@ -7,9 +7,9 @@ import { mockUser } from '@dotcms/utils-testing';
 
 import { DotEditPageLockInfoComponent } from './dot-edit-page-lock-info.component';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotPageRenderState } from '@dotcms/dotcms-models';
 
 const messageServiceMock = new MockDotMessageService({
     'editpage.toolbar.page.cant.edit': 'No permissions...',

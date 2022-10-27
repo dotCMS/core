@@ -2,7 +2,7 @@ import { of as observableOf } from 'rxjs';
 import { ComponentFixture } from '@angular/core/testing';
 import { DotBaseTypeSelectorComponent } from './dot-base-type-selector.component';
 import { DebugElement, Injectable } from '@angular/core';
-import { MockDotMessageService } from '../../../test/dot-message-service.mock';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotMessageService } from '@dotcms/data-access';

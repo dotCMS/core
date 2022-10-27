@@ -23,8 +23,8 @@ import { DotContentletWrapperComponent } from './dot-contentlet-wrapper.componen
 import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotMessageService } from '@dotcms/data-access';
-import { LoginServiceMock } from '../../../../../test/login-service.mock';
-import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
+import { LoginServiceMock } from '@dotcms/utils-testing';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotAlertConfirmService } from '@dotcms/data-access';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
@@ -34,7 +34,7 @@ import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-er
 import { ConfirmationService } from 'primeng/api';
 import { MockDotRouterService } from '@dotcms/utils-testing';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/utils-testing';
+import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
 
 const messageServiceMock = new MockDotMessageService({
     'editcontentlet.lose.dialog.header': 'Header',

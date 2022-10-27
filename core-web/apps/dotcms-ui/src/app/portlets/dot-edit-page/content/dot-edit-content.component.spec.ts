@@ -25,7 +25,7 @@ import {
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { ConfirmationService } from 'primeng/api';
-import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentType, DotPageRenderState } from '@dotcms/dotcms-models';
 
 import { DotAlertConfirmService } from '@dotcms/data-access';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
@@ -33,11 +33,10 @@ import { DotEditPageService } from '@dotcms/data-access';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
 import { DotWorkflowService } from '@dotcms/data-access';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
+import { DotPageRender } from '@dotcms/dotcms-models';
 import {
     DotEditContentComponent,
     EDIT_BLOCK_EDITOR_CUSTOM_EVENT
@@ -53,13 +52,12 @@ import { DotContainerContentletService } from './services/dot-container-contentl
 import { DotDragDropAPIHtmlService } from './services/html/dot-drag-drop-api-html.service';
 import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service';
 import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-content-toolbar-html.service';
-import { SiteServiceMock } from '@dotcms/utils-testing';
+import { mockDotLanguage, mockDotRenderedPageState, SiteServiceMock } from '@dotcms/utils-testing';
 import { LoginServiceMock, mockUser } from '@dotcms/utils-testing';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotWorkflowServiceMock } from '@dotcms/utils-testing';
 import { mockDotRenderedPage, processedContainers } from '@dotcms/utils-testing';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
-import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
 import { DotPageContent } from '../shared/models';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { dotcmsContentletMock } from '@dotcms/utils-testing';
@@ -70,7 +68,7 @@ import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { DotEventsService } from '@dotcms/data-access';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { MockDotRouterService } from '@dotcms/utils-testing';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/utils-testing';
+import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotDownloadBundleDialogService } from '@dotcms/app/api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotLicenseService } from '@dotcms/data-access';
@@ -82,10 +80,9 @@ import { DotGenerateSecurePasswordService } from '@dotcms/data-access';
 import { DotPropertiesService } from '@dotcms/data-access';
 import { PageModelChangeEventType } from './services/dot-edit-content-html/models';
 import { DotESContentService } from '@dotcms/data-access';
-import { mockDotLanguage } from '@dotcms/app/test/dot-language.mock';
-import { mockDotRenderedPageState } from '@dotcms/app/test/dot-rendered-page-state.mock';
 import { DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DialogService } from 'primeng/dynamicdialog';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 @Component({
     selector: 'dot-global-message',

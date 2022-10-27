@@ -1,14 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement, Component, Input, Injectable } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { MockDotMessageService, mockDotRenderedPage } from '@dotcms/utils-testing';
 import { mockDotRenderedPageState } from '@dotcms/utils-testing';
 import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
 import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
 import { DotLicenseService } from '@dotcms/data-access';
 import { DotMessageService } from '@dotcms/data-access';
 
-import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Observable, of } from 'rxjs';
@@ -36,7 +35,6 @@ import { mockDotPersona } from '@dotcms/utils-testing';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotEventsService } from '@dotcms/data-access';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { dotEventSocketURLFactory } from '@dotcms/utils-testing';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { MockDotRouterService } from '@dotcms/utils-testing';
@@ -50,16 +48,14 @@ import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ToolbarModule } from 'primeng/toolbar';
 import { ConfirmationService } from 'primeng/api';
-import { DotPageMode } from '@dotcms/dotcms-models';
+import { DotPageMode, DotPageRender, DotPageRenderState, ESContent } from '@dotcms/dotcms-models';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { DotFormatDateServiceMock } from '@dotcms/app/test/format-date-service.mock';
+import { DotFormatDateServiceMock } from '@dotcms/utils-testing';
 import { DialogService } from 'primeng/dynamicdialog';
 import { DotESContentService } from '@dotcms/data-access';
 import { TooltipModule } from 'primeng/tooltip';
-import { ESContent } from '@dotcms/app/shared/models/dot-es-content/dot-es-content.model';
-import { DotPageRender } from '@dotcms/app/shared/models/dot-page/dot-rendered-page.model';
-import { mockDotRenderedPage } from '@dotcms/app/test/dot-page-render.mock';
 import { DotPropertiesService } from '@dotcms/data-access';
+import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 
 @Component({
     selector: 'dot-test-host-component',

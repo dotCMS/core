@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotAddPersonaDialogComponent } from './dot-add-persona-dialog.component';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DOTTestBed } from '@dotcms/utils-testing';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';

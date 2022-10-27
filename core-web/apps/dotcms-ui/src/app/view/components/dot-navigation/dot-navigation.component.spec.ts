@@ -15,13 +15,14 @@ import { DotSubNavComponent } from './components/dot-sub-nav/dot-sub-nav.compone
 import { DotNavItemComponent } from './components/dot-nav-item/dot-nav-item.component';
 import { DotIconModule } from '@dotcms/ui';
 import { LoginService } from '@dotcms/dotcms-js';
-import { LoginServiceMock } from '../../../test/login-service.mock';
+
 import { DotMenu } from '@models/navigation';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { skip } from 'rxjs/operators';
 import { dotMenuMock, dotMenuMock1 } from './services/dot-navigation.service.spec';
 import { TooltipModule } from 'primeng/tooltip';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
+import { LoginServiceMock } from '@dotcms/utils-testing';
 
 class FakeNavigationService {
     _routeEvents: BehaviorSubject<NavigationEnd> = new BehaviorSubject(

@@ -9,7 +9,7 @@ import { DotContentTypesInfoService } from '@dotcms/data-access';
 import { DotCrudService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { ActivatedRouteSnapshot } from '@angular/router';
-import { LoginServiceMock } from '../../../test/login-service.mock';
+import { LoginServiceMock } from '@dotcms/utils-testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DOTTestBed } from '../../../test/dot-test-bed';

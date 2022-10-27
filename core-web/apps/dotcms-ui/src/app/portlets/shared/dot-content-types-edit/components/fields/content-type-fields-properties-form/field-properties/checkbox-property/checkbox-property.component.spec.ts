@@ -1,7 +1,7 @@
 import { CheckboxPropertyComponent } from '.';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
-import { DOTTestBed } from '@dotcms/utils-testing';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
 import { By } from '@angular/platform-browser';
 import { MockDotMessageService } from '@dotcms/utils-testing';

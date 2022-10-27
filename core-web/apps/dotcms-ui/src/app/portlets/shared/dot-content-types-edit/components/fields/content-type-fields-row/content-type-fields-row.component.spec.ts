@@ -1,5 +1,5 @@
 import { waitForAsync, ComponentFixture } from '@angular/core/testing';
-import { DOTTestBed } from '@dotcms/utils-testing';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/core';
 import { ContentTypeFieldsRowComponent } from '.';
 import { By } from '@angular/platform-browser';

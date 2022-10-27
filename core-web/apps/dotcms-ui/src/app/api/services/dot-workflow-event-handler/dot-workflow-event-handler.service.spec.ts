@@ -5,7 +5,7 @@ import { TestBed } from '@angular/core/testing';
 import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotWizardService } from '@dotcms/data-access';
+import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotWorkflowActionsFireService } from '@dotcms/data-access';
@@ -30,7 +30,6 @@ import {
     LoginService,
     StringUtils
 } from '@dotcms/dotcms-js';
-import { dotEventSocketURLFactory } from '@dotcms/utils-testing';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -38,13 +37,17 @@ import { DotAlertConfirmService } from '@dotcms/data-access';
 import { ConfirmationService } from 'primeng/api';
 import { LoginServiceMock } from '@dotcms/utils-testing';
 import { DotEventsService } from '@dotcms/data-access';
-import { DotCMSWorkflowAction, DotCMSWorkflowActionEvent } from '@dotcms/dotcms-models';
+import {
+    DotActionBulkRequestOptions,
+    DotCMSWorkflowAction,
+    DotCMSWorkflowActionEvent
+} from '@dotcms/dotcms-models';
 import { DotActionBulkResult } from '@dotcms/dotcms-models';
-import { DotActionBulkRequestOptions } from '@models/dot-action-bulk-request-options/dot-action-bulk-request-options.model';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { DotFormatDateServiceMock } from '@dotcms/app/test/format-date-service.mock';
+import { DotFormatDateServiceMock } from '@dotcms/utils-testing';
 import { DotWorkflowPayload, DotProcessedWorkflowPayload } from '@dotcms/dotcms-models';
+import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 
 const mockWAEvent: DotCMSWorkflowActionEvent = {
     workflow: mockWorkflowsActions[0],

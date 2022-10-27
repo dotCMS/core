@@ -13,7 +13,7 @@ import { Component, DebugElement, Input } from '@angular/core';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotListingDataTableComponent } from './dot-listing-data-table.component';
 import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '../../../test/dot-message-service.mock';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { ActionHeaderComponent } from './action-header/action-header.component';
 import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';

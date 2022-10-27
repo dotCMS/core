@@ -12,10 +12,8 @@ import { NgGridModule } from '@dotcms/dot-layout-grid';
 import { DotEditLayoutGridComponent } from './dot-edit-layout-grid.component';
 import { DotAutofocusModule } from '@dotcms/dot-rules';
 
-import { DotLayoutBody } from '@models/dot-edit-layout-designer';
 import { DotContainerSelectorLayoutModule } from '@components/dot-container-selector-layout/dot-container-selector-layout.module';
-import { DotTemplateContainersCacheService } from '@dotcms/data-access';
-import { DotEditLayoutService } from '@dotcms/data-access';
+import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 
@@ -24,8 +22,10 @@ import { DotEventsService } from '@dotcms/data-access';
 import { DotMessageService } from '@dotcms/data-access';
 import { PaginatorService } from '@dotcms/data-access';
 
-import { DOTTestBed } from '@dotcms/utils-testing';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotLayoutBody } from '@dotcms/dotcms-models';
+import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
 
 let fakeValue: DotLayoutBody;
 

@@ -4,7 +4,7 @@ import { DotGlobalMessageService } from './dot-global-message.service';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotEventsService } from '@dotcms/data-access';
 import { DotEvent } from '@dotcms/dotcms-models';
-import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { Observable } from 'rxjs';
 import { DotGlobalMessage } from '@models/dot-global-message/dot-global-message.model';
 

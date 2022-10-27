@@ -9,7 +9,7 @@ import { DotWorkflowTaskDetailModule } from '@components/dot-workflow-task-detai
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '../../../test/dot-message-service.mock';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
@@ -25,19 +25,19 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { LoginServiceMock } from '@dotcms/app/test/login-service.mock';
+import { LoginServiceMock } from '@dotcms/utils-testing';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { MockDotRouterService } from '@dotcms/utils-testing';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/utils-testing';
+import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
 import { DotDownloadBundleDialogService } from '@dotcms/app/api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
-import { CoreWebServiceMock } from '../../../test/core-web.service.mock';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { DotCurrentUserService } from '@dotcms/data-access';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotWizardService } from '@dotcms/data-access';
+import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotAlertConfirmService } from '@dotcms/data-access';
 import { ConfirmationService } from 'primeng/api';

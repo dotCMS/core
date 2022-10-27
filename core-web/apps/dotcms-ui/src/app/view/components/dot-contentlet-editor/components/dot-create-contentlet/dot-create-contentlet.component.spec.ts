@@ -7,7 +7,7 @@ import { DotContentletEditorService } from '../../services/dot-contentlet-editor
 import { DotCreateContentletComponent } from './dot-create-contentlet.component';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
-import { LoginServiceMock } from '../../../../../test/login-service.mock';
+import { LoginServiceMock } from '@dotcms/utils-testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { MockDotRouterService } from '@dotcms/utils-testing';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';

@@ -4,7 +4,7 @@ import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angul
 import { DotWizardComponent } from './dot-wizard.component';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotWizardService } from '@dotcms/data-access';
+import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotPushPublishDialogData } from '@dotcms/dotcms-models';

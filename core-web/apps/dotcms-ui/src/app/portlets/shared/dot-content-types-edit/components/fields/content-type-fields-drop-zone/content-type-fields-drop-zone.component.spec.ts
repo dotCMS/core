@@ -40,7 +40,7 @@ import * as _ from 'lodash';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { TableModule } from 'primeng/table';
 import { DotContentTypeFieldsVariablesModule } from '../dot-content-type-fields-variables/dot-content-type-fields-variables.module';
-import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
+
 import { FieldUtil } from '@dotcms/utils-testing';
 import { DotEventsService } from '@dotcms/data-access';
 import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
@@ -51,7 +51,7 @@ import {
     dotcmsContentTypeBasicMock
 } from '@dotcms/utils-testing';
 
-import cleanUpDialog from '@dotcms/utils-testing';
+import { cleanUpDialog } from '@dotcms/utils-testing';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
@@ -61,6 +61,7 @@ import { DotMessageDisplayService } from '@components/dot-message-display/servic
 import { DotConvertToBlockInfoComponent } from '../../dot-convert-to-block-info/dot-convert-to-block-info.component';
 import { DotConvertWysiwygToBlockComponent } from '../../dot-convert-wysiwyg-to-block/dot-convert-wysiwyg-to-block.component';
 import { CheckboxModule } from 'primeng/checkbox';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 const COLUMN_BREAK_FIELD = FieldUtil.createColumnBreak();
 

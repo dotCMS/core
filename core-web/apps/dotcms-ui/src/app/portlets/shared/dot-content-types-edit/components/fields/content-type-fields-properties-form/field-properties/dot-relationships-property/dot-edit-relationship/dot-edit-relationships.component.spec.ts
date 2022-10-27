@@ -6,7 +6,7 @@ import { DotEditRelationshipsComponent } from './dot-edit-relationships.componen
 import { Component, Input, Output, EventEmitter, Injectable, DebugElement } from '@angular/core';
 import { DotMessageService } from '@dotcms/data-access';
 import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
-import { MockDotMessageService } from '@dotcms/app/test/dot-message-service.mock';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotEditContentTypeCacheService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
 import { PaginatorService } from '@dotcms/data-access';
 import { DotRelationshipService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';

@@ -16,8 +16,8 @@ import {
 } from '@dotcms/dotcms-js';
 import { of } from 'rxjs';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotNavLogoService } from '@dotcms/data-access';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { DotNavLogoService } from './api/services/dot-nav-logo/dot-nav-logo.service';
 
 describe('AppComponent', () => {
     let fixture: ComponentFixture<AppComponent>;

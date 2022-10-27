@@ -4,7 +4,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotPaletteComponent } from './dot-palette.component';
 import { Component, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { dotcmsContentTypeBasicMock } from '@dotcms/app/test/dot-content-types.mock';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
@@ -14,6 +13,7 @@ import { PaginatorService } from '@dotcms/data-access';
 import { DotPaletteStore } from './store/dot-palette.store';
 import { contentletProductDataMock } from './dot-palette-contentlets/dot-palette-contentlets.component.spec';
 import { LoadingState } from '@portlets/shared/models/shared-models';
+import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
 
 @Component({
     selector: 'dot-palette-content-type',

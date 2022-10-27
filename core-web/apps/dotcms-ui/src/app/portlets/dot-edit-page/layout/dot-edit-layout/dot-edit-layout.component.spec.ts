@@ -13,12 +13,11 @@ import { DotGlobalMessageService } from '@components/_common/dot-global-message/
 import { DotPageLayoutService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotTemplateContainersCacheService } from '@dotcms/data-access';
-import { DotLayout } from '@models/dot-edit-layout-designer';
-import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
+import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { DotLayout, DotPageRender } from '@dotcms/dotcms-models';
 import { HttpResponse } from '@angular/common/http';
 import { mockResponseView } from '@dotcms/utils-testing';
-import { DotEditLayoutService } from '@dotcms/data-access';
+import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 
 @Component({

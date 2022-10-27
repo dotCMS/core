@@ -2,7 +2,7 @@ import { of as observableOf, Observable } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
 import { DotEditContentToolbarHtmlService } from './dot-edit-content-toolbar-html.service';
 import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
 import { DotLicenseService } from '@dotcms/data-access';
 import { Injectable } from '@angular/core';

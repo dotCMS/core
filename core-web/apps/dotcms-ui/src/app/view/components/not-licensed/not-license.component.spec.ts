@@ -2,7 +2,7 @@ import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
 
-import { DOTTestBed } from '@dotcms/utils-testing';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotMessageService } from '@dotcms/data-access';

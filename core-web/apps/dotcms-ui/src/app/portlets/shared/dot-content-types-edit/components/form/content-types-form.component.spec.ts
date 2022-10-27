@@ -13,7 +13,7 @@ import {
 } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DOTTestBed } from '@dotcms/utils-testing';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { LoginServiceMock } from '@dotcms/utils-testing';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { SiteServiceMock } from '@dotcms/utils-testing';

@@ -5,18 +5,15 @@ import { DotEditPageNavComponent } from './dot-edit-page-nav.component';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotLicenseService } from '@dotcms/data-access';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { TooltipModule } from 'primeng/tooltip';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { mockDotRenderedPage } from '../../../../test/dot-page-render.mock';
-import { mockUser } from './../../../../test/login-service.mock';
 import { ActivatedRoute } from '@angular/router';
 import { DotIconModule } from '@dotcms/ui';
-import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
-import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
+import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotPropertiesService } from '@dotcms/data-access';
+import { MockDotMessageService, mockUser, mockDotRenderedPage } from '@dotcms/utils-testing';
 
 class ActivatedRouteMock {
     get snapshot() {

@@ -18,21 +18,20 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { LoginServiceMock } from '../../../../../test/login-service.mock';
+
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 import { DotAlertConfirmService } from '@dotcms/data-access';
 import { ConfirmationService } from 'primeng/api';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import { cleanUpDialog, CoreWebServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { MockDotRouterService } from '@dotcms/utils-testing';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/utils-testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import cleanUpDialog from '@dotcms/utils-testing';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { MockDotUiColorsService, dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 
 describe('DotAddContentletComponent', () => {
     let component: DotAddContentletComponent;

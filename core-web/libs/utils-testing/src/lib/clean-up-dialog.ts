@@ -1,4 +1,4 @@
-export default function (fixture) {
+export function cleanUpDialog(fixture) {
     try {
         (fixture.nativeElement as HTMLElement).remove();
     } catch {

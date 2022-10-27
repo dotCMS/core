@@ -13,7 +13,7 @@ import {
     forwardRef
 } from '@angular/core';
 import { PaginatorService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/app/test/dot-message-service.mock';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
 import { DotMessageService } from '@dotcms/data-access';

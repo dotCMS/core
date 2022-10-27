@@ -5,7 +5,12 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement, Injectable } from '@angular/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { CoreWebService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
-import { LoginServiceMock, mockLoginFormResponse, mockUser } from '@dotcms/utils-testing';
+import {
+    DotFormatDateServiceMock,
+    LoginServiceMock,
+    mockLoginFormResponse,
+    mockUser
+} from '@dotcms/utils-testing';
 import { By } from '@angular/platform-browser';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -14,17 +19,17 @@ import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loadin
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { RouterTestingModule } from '@angular/router/testing';
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
-import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { Checkbox, CheckboxModule } from 'primeng/checkbox';
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
 import { BehaviorSubject, of, throwError } from 'rxjs';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { DotFormatDateServiceMock } from '@dotcms/app/test/format-date-service.mock';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ActivatedRoute, Params } from '@angular/router';
 import { DotLoginInformation } from '@dotcms/dotcms-models';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 const mockLoginInfo = {
     ...mockLoginFormResponse,

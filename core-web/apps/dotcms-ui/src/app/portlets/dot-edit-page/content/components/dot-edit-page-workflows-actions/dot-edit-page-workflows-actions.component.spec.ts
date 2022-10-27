@@ -25,13 +25,12 @@ import { DotEditPageWorkflowsActionsComponent } from './dot-edit-page-workflows-
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotPage } from '@shared/models/dot-page/dot-page.model';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotWorkflowService } from '@dotcms/data-access';
 import { DotWorkflowsActionsService } from '@dotcms/data-access';
 import { DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { dotcmsContentletMock } from '@dotcms/utils-testing';
-import { DotWizardService } from '@dotcms/data-access';
+import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
 import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import { MockPushPublishService } from '@portlets/shared/dot-content-types-listing/dot-content-types.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
@@ -39,7 +38,6 @@ import { DotMessageSeverity, DotMessageType } from '@components/dot-message-disp
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { DotAlertConfirmService } from '@dotcms/data-access';
 import { DotEventsService } from '@dotcms/data-access';
-import { dotEventSocketURLFactory } from '@dotcms/utils-testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
@@ -47,6 +45,8 @@ import { Menu, MenuModule } from 'primeng/menu';
 import { ConfirmationService } from 'primeng/api';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotPage } from '@dotcms/dotcms-models';
+import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 
 @Component({
     selector: 'dot-test-host-component',

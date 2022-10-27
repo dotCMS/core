@@ -7,8 +7,8 @@ import { DotSiteSelectorComponent } from './dot-site-selector.component';
 import { By } from '@angular/platform-browser';
 import { SearchableDropDownModule } from '../searchable-dropdown/searchable-dropdown.module';
 import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
-import { SiteServiceMock, mockSites } from '../../../../test/site-service.mock';
+import { MockDotMessageService, mockSites, SiteServiceMock } from '@dotcms/utils-testing';
+
 import { CoreWebService, Site, SiteService } from '@dotcms/dotcms-js';
 import { SearchableDropdownComponent } from '../searchable-dropdown/component/searchable-dropdown.component';
 import { PaginatorService } from '@dotcms/data-access';

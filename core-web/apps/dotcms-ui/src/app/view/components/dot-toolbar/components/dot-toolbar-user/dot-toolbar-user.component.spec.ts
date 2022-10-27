@@ -19,7 +19,7 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { LoginServiceMock, mockAuth, mockUser } from '../../../../../test/login-service.mock';
+
 import { DotToolbarUserComponent } from './dot-toolbar-user.component';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotIconModule } from '@dotcms/ui';
@@ -38,12 +38,13 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { DotEventsService } from '@dotcms/data-access';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import { CoreWebServiceMock, LoginServiceMock, mockAuth, mockUser } from '@dotcms/utils-testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/utils-testing';
+
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { of } from 'rxjs';
+import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
 
 describe('DotToolbarUserComponent', () => {
     let comp: DotToolbarUserComponent;

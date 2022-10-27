@@ -4,7 +4,7 @@ import { By } from '@angular/platform-browser';
 import { Component, DebugElement } from '@angular/core';
 import { waitForAsync, ComponentFixture } from '@angular/core/testing';
 
-import { DOTTestBed } from '@dotcms/utils-testing';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPageStateServiceMock } from '@dotcms/utils-testing';
 import { DotPersonalizeServiceMock } from '@dotcms/utils-testing';
@@ -25,7 +25,7 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TooltipModule } from 'primeng/tooltip';
-import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
+import { DotPageRender } from '@dotcms/dotcms-models';
 import { DotPageMode } from '@dotcms/dotcms-models';
 
 const mockDotMessageService = new MockDotMessageService({

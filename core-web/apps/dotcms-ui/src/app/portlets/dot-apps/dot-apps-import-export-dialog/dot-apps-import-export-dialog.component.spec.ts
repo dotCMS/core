@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { MockDotMessageService } from '@dotcms/app/test/dot-message-service.mock';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -11,14 +11,15 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotAppsImportExportDialogComponent } from './dot-apps-import-export-dialog.component';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
-import {
-    DotApps,
-    DotAppsExportConfiguration,
-    DotAppsImportConfiguration,
-    DotAppsSites
-} from '@shared/models/dot-apps/dot-apps.model';
+
 import { By } from '@angular/platform-browser';
 import { Observable, of } from 'rxjs';
+import {
+    DotAppsExportConfiguration,
+    DotAppsImportConfiguration,
+    DotApps,
+    DotAppsSites
+} from '@dotcms/dotcms-models';
 
 export class DotAppsServiceMock {
     exportConfiguration(_configuration: DotAppsExportConfiguration): Promise<string> {

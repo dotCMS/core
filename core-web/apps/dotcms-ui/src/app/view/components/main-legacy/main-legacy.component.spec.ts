@@ -16,7 +16,7 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { LoginServiceMock } from '../../../test/login-service.mock';
+import { LoginServiceMock } from '@dotcms/utils-testing';
 import { By } from '@angular/platform-browser';
 import { DotIframeService } from '../_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotContentletEditorModule } from '../dot-contentlet-editor/dot-contentlet-editor.module';
@@ -27,7 +27,7 @@ import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-
 import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
 import { MockDotRouterService } from '@dotcms/utils-testing';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/utils-testing';
+import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { DotAlertConfirmService } from '@dotcms/data-access';
 import { ConfirmationService } from 'primeng/api';

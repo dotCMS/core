@@ -22,7 +22,7 @@ export class DotCrudService {
      */
     public postData<T, K>(baseUrl: string, data: K): Observable<T> {
         return this.coreWebService
-            .requestView({
+            .requestView<T>({
                 body: data,
                 method: 'POST',
                 url: `${baseUrl}`

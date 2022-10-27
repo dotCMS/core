@@ -5,7 +5,11 @@ import { CoreWebService } from '@dotcms/dotcms-js';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotRole } from '@dotcms/dotcms-models';
 import { DotMessageService } from '../dot-messages/dot-messages.service';
-import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
+import {
+    CoreWebServiceMock,
+    MockDotMessageService,
+    mockProcessedRoles
+} from '@dotcms/utils-testing';
 
 const mockRoles: DotRole[] = [
     {
@@ -16,16 +20,6 @@ const mockRoles: DotRole[] = [
     },
     { id: '2', name: 'Test Name', user: true, roleKey: 'anonymous' },
     { id: '2', name: 'Some Role', user: true, roleKey: 'roleKey1' }
-];
-
-export const mockProcessedRoles: DotRole[] = [
-    {
-        id: '1',
-        name: 'Current User',
-        user: false,
-        roleKey: 'CMS Anonymous'
-    },
-    { id: '2', name: 'Some Role (User)', user: true, roleKey: 'roleKey1' }
 ];
 
 describe('DotRolesService', () => {

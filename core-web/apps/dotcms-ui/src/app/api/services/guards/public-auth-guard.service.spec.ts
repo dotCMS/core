@@ -1,5 +1,5 @@
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DOTTestBed } from '@dotcms/utils-testing';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { of as observableOf, Observable } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
 import { Injectable } from '@angular/core';

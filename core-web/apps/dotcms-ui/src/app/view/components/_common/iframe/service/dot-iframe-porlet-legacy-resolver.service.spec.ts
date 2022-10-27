@@ -8,13 +8,12 @@ import { mockDotRenderedPage } from '@dotcms/utils-testing';
 import { of } from 'rxjs';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
-import { DOTTestBed } from '@dotcms/utils-testing';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotPageRenderService } from '@dotcms/data-access';
 import { DotContentletLockerService } from '@dotcms/data-access';
-import { DotPageRenderState } from '@dotcms/dotcms-models';
+import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 import { DotIframePortletLegacyResolver } from './dot-iframe-porlet-legacy-resolver.service';
 import { DotLicenseService } from '@dotcms/data-access';
-import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
 import { DotESContentService } from '@dotcms/data-access';
 
 const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [

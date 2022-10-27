@@ -2,7 +2,7 @@
 
 import { RouterTestingModule } from '@angular/router/testing';
 import { IframeOverlayService } from './../service/iframe-overlay.service';
-import { DotLoadingIndicatorService } from './../dot-loading-indicator/dot-loading-indicator.service';
+
 import { ComponentFixture, waitForAsync, fakeAsync, tick } from '@angular/core/testing';
 import { Component, DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
@@ -18,6 +18,7 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { MockDotRouterService } from '@dotcms/utils-testing';
 import { LoginServiceMock } from '@dotcms/utils-testing';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 const fakeHtmlEl = {
     hello: 'html'

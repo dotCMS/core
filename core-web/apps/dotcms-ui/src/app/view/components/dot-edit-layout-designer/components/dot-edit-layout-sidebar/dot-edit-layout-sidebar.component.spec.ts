@@ -4,16 +4,16 @@ import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
 import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 
-import { DOTTestBed } from '@dotcms/utils-testing';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotContainerSelectorLayoutModule } from '@components/dot-container-selector-layout/dot-container-selector-layout.module';
 import { DotEditLayoutSidebarComponent } from './dot-edit-layout-sidebar.component';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotTemplateContainersCacheService } from '@dotcms/data-access';
+import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotSidebarPropertiesModule } from '../dot-sidebar-properties/dot-sidebar-properties.module';
 import { mockDotContainers, processedContainers } from '@dotcms/utils-testing';
-import { DotEditLayoutService } from '@dotcms/data-access';
-import { DotLayoutSideBar } from '@models/dot-edit-layout-designer';
+import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
+import { DotLayoutSideBar } from '@dotcms/dotcms-models';
 
 let fakeValue: DotLayoutSideBar;
 

@@ -2,7 +2,7 @@
 
 import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { DotDownloadBundleDialogComponent } from './dot-download-bundle-dialog.component';
-import { DOTTestBed } from '@dotcms/utils-testing';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotDownloadBundleDialogService } from '@dotcms/app/api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotPushPublishFilter, DotPushPublishFiltersService } from '@dotcms/data-access';
@@ -12,7 +12,7 @@ import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component'
 import { By } from '@angular/platform-browser';
 import { of, throwError } from 'rxjs';
 import { DebugElement } from '@angular/core';
-import * as dotUtils from '@shared/dot-utils';
+import * as dotUtils from '@dotcms/utils';
 import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
 
@@ -235,6 +235,7 @@ describe('DotDownloadBundleDialogComponent', () => {
                         },
                         body: '{"bundleId":"XXZC4","operation":"0","filterKey":"2"}'
                     });
+
                     expect(dotUtils.getDownloadLink).toHaveBeenCalledWith(blobMock, fileName);
                     expect(anchor.click).toHaveBeenCalledTimes(1);
                     expect(dotDialogComponent.visible).toEqual(false);

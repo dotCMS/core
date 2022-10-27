@@ -13,7 +13,7 @@ import { DotContentTypesInfoService } from '@dotcms/data-access';
 import { DotContentTypesPortletComponent } from './dot-content-types.component';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '../../../test/dot-message-service.mock';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import { DotLicenseService } from '@dotcms/data-access';
@@ -26,7 +26,6 @@ import {
     ResponseView,
     StringUtils
 } from '@dotcms/dotcms-js';
-import { DotHttpErrorHandled, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotCMSContentType, DotCopyContentTypeDialogFormFields } from '@dotcms/dotcms-models';
 import { DotContentTypeService } from '@dotcms/data-access';
 import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
@@ -35,6 +34,10 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { DotContentTypeStore } from '@portlets/shared/dot-content-types-listing/dot-content-type.store';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import {
+    DotHttpErrorHandled,
+    DotHttpErrorManagerService
+} from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 
 const DELETE_MENU_ITEM_INDEX = 4;
 const ADD_TO_MENU_INDEX = 2;

@@ -10,7 +10,7 @@ import { DotEditContentletComponent } from './dot-edit-contentlet.component';
 import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { LoginService } from '@dotcms/dotcms-js';
-import { LoginServiceMock } from '../../../../../test/login-service.mock';
+import { LoginServiceMock } from '@dotcms/utils-testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
