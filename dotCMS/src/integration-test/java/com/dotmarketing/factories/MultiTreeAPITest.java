@@ -1149,9 +1149,9 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         }
 
         assertEquals(3, contentsID.size());
-        assertTrue("multiTree reorders", contentsID.get(0).equals(contentlet_1.getIdentifier()));
-        assertTrue("multiTree reorders", contentsID.get(1).equals(contentlet_2.getIdentifier()));
-        assertTrue("multiTree reorders", contentsID.get(2).equals(contentlet_3.getIdentifier()));
+        assertTrue("multiTree reorders", contentsID.contains(contentlet_1.getIdentifier()));
+        assertTrue("multiTree reorders", contentsID.contains(contentlet_2.getIdentifier()));
+        assertTrue("multiTree reorders", contentsID.contains(contentlet_3.getIdentifier()));
     }
 
     private List<String> getContentsId(final HTMLPageAsset page, final String variantName)
