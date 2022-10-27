@@ -1,8 +1,8 @@
 import { Component, forwardRef, ViewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { DotLayoutSideBar } from '@dotcms/dotcms-models';
 
 import { DotLayoutPropertiesItemComponent } from '../dot-layout-properties-item/dot-layout-properties-item.component';
-import { DotLayoutSideBar } from '@models/dot-edit-layout-designer';
 
 @Component({
     selector: 'dot-layout-property-sidebar',

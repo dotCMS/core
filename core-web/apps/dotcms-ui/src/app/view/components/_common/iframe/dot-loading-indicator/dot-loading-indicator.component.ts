@@ -1,5 +1,5 @@
 import { Component, Input, ViewEncapsulation } from '@angular/core';
-import { DotLoadingIndicatorService } from './dot-loading-indicator.service';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
 import { LoadingState } from '@portlets/shared/models/shared-models';
 
 @Component({

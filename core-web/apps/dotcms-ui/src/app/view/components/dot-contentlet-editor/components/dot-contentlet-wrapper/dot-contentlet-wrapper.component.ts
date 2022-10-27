@@ -1,10 +1,10 @@
 import { Component, Input, EventEmitter, Output } from '@angular/core';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotAlertConfirmService } from '@dotcms/data-access';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { Title } from '@angular/platform-browser';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 
 export interface DotCMSEditPageEvent {
     name: string;

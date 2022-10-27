@@ -1,7 +1,7 @@
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
-import { DotDevicesService } from '@services/dot-devices/dot-devices.service';
-import { DotLanguagesService } from '@services/dot-languages/dot-languages.service';
-import { DotPersonasService } from '@services/dot-personas/dot-personas.service';
+import { DotDevicesService } from '@dotcms/data-access';
+import { DotLanguagesService } from '@dotcms/data-access';
+import { DotPersonasService } from '@dotcms/data-access';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -10,9 +10,9 @@ import { DotDevicesServiceMock } from '../../../../../test/dot-device-service.mo
 import { DotLanguagesServiceMock } from '../../../../../test/dot-languages-service.mock';
 import { DotPersonasServiceMock } from '../../../../../test/dot-personas-service.mock';
 import { mockDotDevices } from '../../../../../test/dot-device.mock';
-import { DotPersona } from '@models/dot-persona/dot-persona.model';
-import { DotDevice } from '@models/dot-device/dot-device.model';
-import { DotLanguage } from '@models/dot-language/dot-language.model';
+import { DotPersona } from '@dotcms/dotcms-models';
+import { DotDevice } from '@dotcms/dotcms-models';
+import { DotLanguage } from '@dotcms/dotcms-models';
 import { mockDotEditPageViewAs } from '../../../../../test/dot-edit-page-view-as.mock';
 import { mockDotPersona } from '../../../../../test/dot-persona.mock';
 import { mockUser, LoginServiceMock } from '../../../../../test/login-service.mock';
@@ -21,17 +21,17 @@ import { DotDeviceSelectorComponent } from '@components/dot-device-selector/dot-
 import { DotPersonaSelectorComponent } from '@components/dot-persona-selector/dot-persona-selector.component';
 import { DotLanguageSelectorComponent } from '@components/dot-language-selector/dot-language-selector.component';
 import { LoginService } from '@dotcms/dotcms-js';
-import { DotLicenseService } from '@services/dot-license/dot-license.service';
+import { DotLicenseService } from '@dotcms/data-access';
 import { of } from 'rxjs';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 import { DotEditPageViewAsControllerComponent } from './dot-edit-page-view-as-controller.component';
 import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
 import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
-import { DotPageStateServiceMock } from '@tests/dot-page-state.service.mock';
-import { DotPersonalizeService } from '@services/dot-personalize/dot-personalize.service';
-import { DotPersonalizeServiceMock } from '@tests/dot-personalize-service.mock';
+import { DotPageStateServiceMock } from '@dotcms/utils-testing';
+import { DotPersonalizeService } from '@dotcms/data-access';
+import { DotPersonalizeServiceMock } from '@dotcms/utils-testing';
 import { TooltipModule } from 'primeng/tooltip';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -104,51 +104,49 @@ describe('DotEditPageViewAsControllerComponent', () => {
     let personaSelector: DotPersonaSelectorComponent;
     let dotLicenseService: DotLicenseService;
 
-    beforeEach(
-        waitForAsync(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [
-                    DotTestHostComponent,
-                    DotEditPageViewAsControllerComponent,
-                    MockDotPersonaSelectorComponent,
-                    MockDotDeviceSelectorComponent,
-                    MockDotLanguageSelectorComponent
-                ],
-                imports: [BrowserAnimationsModule, TooltipModule, DotPipesModule],
-                providers: [
-                    DotLicenseService,
-                    {
-                        provide: DotMessageService,
-                        useValue: messageServiceMock
-                    },
-                    {
-                        provide: DotDevicesService,
-                        useClass: DotDevicesServiceMock
-                    },
-                    {
-                        provide: DotPersonasService,
-                        useClass: DotPersonasServiceMock
-                    },
-                    {
-                        provide: DotLanguagesService,
-                        useClass: DotLanguagesServiceMock
-                    },
-                    {
-                        provide: LoginService,
-                        useClass: LoginServiceMock
-                    },
-                    {
-                        provide: DotPageStateService,
-                        useClass: DotPageStateServiceMock
-                    },
-                    {
-                        provide: DotPersonalizeService,
-                        useClass: DotPersonalizeServiceMock
-                    }
-                ]
-            });
-        })
-    );
+    beforeEach(waitForAsync(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [
+                DotTestHostComponent,
+                DotEditPageViewAsControllerComponent,
+                MockDotPersonaSelectorComponent,
+                MockDotDeviceSelectorComponent,
+                MockDotLanguageSelectorComponent
+            ],
+            imports: [BrowserAnimationsModule, TooltipModule, DotPipesModule],
+            providers: [
+                DotLicenseService,
+                {
+                    provide: DotMessageService,
+                    useValue: messageServiceMock
+                },
+                {
+                    provide: DotDevicesService,
+                    useClass: DotDevicesServiceMock
+                },
+                {
+                    provide: DotPersonasService,
+                    useClass: DotPersonasServiceMock
+                },
+                {
+                    provide: DotLanguagesService,
+                    useClass: DotLanguagesServiceMock
+                },
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                },
+                {
+                    provide: DotPageStateService,
+                    useClass: DotPageStateServiceMock
+                },
+                {
+                    provide: DotPersonalizeService,
+                    useClass: DotPersonalizeServiceMock
+                }
+            ]
+        });
+    }));
 
     beforeEach(() => {
         fixtureHost = DOTTestBed.createComponent(DotTestHostComponent);

@@ -1,5 +1,5 @@
 import { Component, forwardRef, Input, OnInit, ViewChild } from '@angular/core';
-import { DotTagsService } from '@services/dot-tags/dot-tags.service';
+import { DotTagsService } from '@dotcms/data-access';
 import { DotTag } from '@models/dot-tag';
 import { take } from 'rxjs/operators';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';

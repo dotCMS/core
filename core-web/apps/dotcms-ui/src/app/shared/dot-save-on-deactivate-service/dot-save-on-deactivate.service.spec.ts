@@ -1,6 +1,6 @@
 import { of as observableOf, Observable } from 'rxjs';
 import { DotSaveOnDeactivateService } from './dot-save-on-deactivate.service';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
+import { DotAlertConfirmService } from '@dotcms/data-access';
 import { DOTTestBed } from '../../test/dot-test-bed';
 import { LoginService } from '@dotcms/dotcms-js';
 import { LoginServiceMock } from '../../test/login-service.mock';

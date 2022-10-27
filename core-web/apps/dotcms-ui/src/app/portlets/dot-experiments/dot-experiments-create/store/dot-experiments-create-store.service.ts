@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { MessageService } from 'primeng/api';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { Observable, throwError } from 'rxjs';
 import { DotExperiment } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
 import { switchMap, tap } from 'rxjs/operators';

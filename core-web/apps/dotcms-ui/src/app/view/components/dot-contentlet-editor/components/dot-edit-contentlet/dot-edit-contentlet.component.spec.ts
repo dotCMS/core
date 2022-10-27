@@ -8,7 +8,7 @@ import { DotContentletEditorService } from '../../services/dot-contentlet-editor
 import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
 import { DotEditContentletComponent } from './dot-edit-contentlet.component';
 import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
-import { DotMenuService } from '@services/dot-menu.service';
+import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { LoginService } from '@dotcms/dotcms-js';
 import { LoginServiceMock } from '../../../../../test/login-service.mock';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -22,29 +22,27 @@ describe('DotEditContentletComponent', () => {
     let dotEditContentletWrapperComponent: DotContentletWrapperComponent;
     let dotContentletEditorService: DotContentletEditorService;
 
-    beforeEach(
-        waitForAsync(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [DotEditContentletComponent, DotContentletWrapperComponent],
-                providers: [
-                    DotContentletEditorService,
-                    {
-                        provide: DotMenuService,
-                        useValue: {
-                            getDotMenuId() {
-                                return observableOf('999');
-                            }
+    beforeEach(waitForAsync(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [DotEditContentletComponent, DotContentletWrapperComponent],
+            providers: [
+                DotContentletEditorService,
+                {
+                    provide: DotMenuService,
+                    useValue: {
+                        getDotMenuId() {
+                            return observableOf('999');
                         }
-                    },
-                    {
-                        provide: LoginService,
-                        useClass: LoginServiceMock
                     }
-                ],
-                imports: [DotIframeDialogModule, BrowserAnimationsModule, RouterTestingModule]
-            });
-        })
-    );
+                },
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                }
+            ],
+            imports: [DotIframeDialogModule, BrowserAnimationsModule, RouterTestingModule]
+        });
+    }));
 
     beforeEach(() => {
         fixture = DOTTestBed.createComponent(DotEditContentletComponent);

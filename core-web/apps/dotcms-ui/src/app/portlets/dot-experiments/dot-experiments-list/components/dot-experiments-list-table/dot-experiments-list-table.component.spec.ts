@@ -1,7 +1,7 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 import { Pipe, PipeTransform } from '@angular/core';
 import { DotExperimentsListTableComponent } from './dot-experiments-list-table.component';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmPopup, ConfirmPopupModule } from 'primeng/confirmpopup';
 import { DotExperimentsEmptyExperimentsComponent } from '../dot-experiments-empty-experiments/dot-experiments-empty-experiments.component';
@@ -19,7 +19,7 @@ import {
     TrafficProportionTypes
 } from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 const draftExperiments: DotExperiment[] = [
     {

@@ -1,8 +1,8 @@
 import { Component, OnInit, ViewChild, forwardRef, Output, EventEmitter } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
-import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { DotLayoutSideBar } from '@models/dot-edit-layout-designer';
+import { DotEventsService } from '@dotcms/data-access';
+import { DotLayoutSideBar } from '@dotcms/dotcms-models';
 import { OverlayPanel } from 'primeng/overlaypanel';
 
 @Component({

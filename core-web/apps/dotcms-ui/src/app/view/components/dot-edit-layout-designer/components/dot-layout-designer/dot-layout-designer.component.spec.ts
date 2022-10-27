@@ -14,9 +14,9 @@ import { By } from '@angular/platform-browser';
 import { Component, DebugElement, forwardRef, Input, OnInit } from '@angular/core';
 
 import { DotLayoutDesignerComponent } from './dot-layout-designer.component';
-import { mockDotLayout } from '@tests/dot-page-render.mock';
+import { mockDotLayout } from '@dotcms/utils-testing';
 import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotLayout } from '@models/dot-edit-layout-designer';
 
 @Component({

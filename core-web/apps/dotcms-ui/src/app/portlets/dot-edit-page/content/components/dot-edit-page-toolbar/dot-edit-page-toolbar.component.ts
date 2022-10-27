@@ -8,11 +8,10 @@ import {
     OnDestroy
 } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
-import { DotLicenseService } from '@services/dot-license/dot-license.service';
-import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models';
-import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
+import { DotLicenseService } from '@dotcms/data-access';
+import { DotPageMode, DotPageRenderState } from '@dotcms/dotcms-models';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotPropertiesService } from '@dotcms/app/api/services/dot-properties/dot-properties.service';
+import { DotPropertiesService } from '@dotcms/data-access';
 import { take } from 'rxjs/operators';
 @Component({
     selector: 'dot-edit-page-toolbar',

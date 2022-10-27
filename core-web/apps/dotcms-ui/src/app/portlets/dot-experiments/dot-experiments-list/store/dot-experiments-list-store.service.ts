@@ -5,7 +5,7 @@ import { DotExperimentsService } from '@portlets/dot-experiments/shared/services
 import { catchError, switchMap, tap, withLatestFrom } from 'rxjs/operators';
 import { EMPTY, Observable, pipe, throwError } from 'rxjs';
 import { MessageService } from 'primeng/api';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatusList } from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
 import { HttpErrorResponse } from '@angular/common/http';
 import {

@@ -2,7 +2,7 @@
 import { Meta, Story } from '@storybook/angular/types-6-0';
 import { moduleMetadata } from '@storybook/angular';
 import { DotEmptyStateModule } from './dot-empty-state.module';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 

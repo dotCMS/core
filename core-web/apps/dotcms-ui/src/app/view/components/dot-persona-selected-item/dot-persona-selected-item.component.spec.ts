@@ -5,12 +5,12 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotIconModule } from '@dotcms/ui';
 import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
 import { By } from '@angular/platform-browser';
-import { mockDotPersona } from '@tests/dot-persona.mock';
+import { mockDotPersona } from '@dotcms/utils-testing';
 import { TooltipModule } from 'primeng/tooltip';
 import { LoginService } from '@dotcms/dotcms-js';
-import { LoginServiceMock } from '@tests/login-service.mock';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { LoginServiceMock } from '@dotcms/utils-testing';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 const messageServiceMock = new MockDotMessageService({

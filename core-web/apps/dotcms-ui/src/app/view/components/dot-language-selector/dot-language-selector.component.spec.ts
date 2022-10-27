@@ -1,14 +1,14 @@
 import { ComponentFixture } from '@angular/core/testing';
 import { DotLanguageSelectorComponent } from './dot-language-selector.component';
-import { DotLanguagesService } from '@services/dot-languages/dot-languages.service';
+import { DotLanguagesService } from '@dotcms/data-access';
 import { DotLanguagesServiceMock } from '../../../test/dot-languages-service.mock';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DebugElement, Component } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { mockDotLanguage } from '../../../test/dot-language.mock';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotIconModule } from '@dotcms/ui';
 import { of } from 'rxjs';
 import { DotLanguage } from '@shared/models/dot-language/dot-language.model';

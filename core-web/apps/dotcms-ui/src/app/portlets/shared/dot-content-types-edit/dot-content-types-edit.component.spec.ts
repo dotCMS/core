@@ -6,7 +6,7 @@ import { ActivatedRoute } from '@angular/router';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotContentTypesEditComponent } from './dot-content-types-edit.component';
-import { DotCrudService } from '@services/dot-crud/dot-crud.service';
+import { DotCrudService } from '@dotcms/data-access';
 import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/core';
 import {
     DotCMSContentTypeField,
@@ -21,10 +21,10 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { waitForAsync } from '@angular/core/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotContentTypesInfoService } from '@services/dot-content-types-info';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { DotMenuService } from '@services/dot-menu.service';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotContentTypesInfoService } from '@dotcms/data-access';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { mockResponseView } from '../../../test/response-view.mock';
 import { DotIconModule } from '@dotcms/ui';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
@@ -34,18 +34,15 @@ import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotEditContentTypeCacheService } from './components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
 import { SiteServiceMock } from '@dotcms/app/test/site-service.mock';
 import * as _ from 'lodash';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { MockDotRouterService } from '@tests/dot-router-service.mock';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
-import {
-    dotcmsContentTypeFieldBasicMock,
-    dotcmsContentTypeBasicMock
-} from '@tests/dot-content-types.mock';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotAlertConfirmService } from '@dotcms/data-access';
+import { MockDotRouterService } from '@dotcms/utils-testing';
+import { DotEventsService } from '@dotcms/data-access';
+import { dotcmsContentTypeFieldBasicMock, dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
-import cleanUpDialog from '@tests/clean-up-dialog';
+import cleanUpDialog from '@dotcms/utils-testing';
 
 @Component({
     selector: 'dot-content-type-fields-drop-zone',

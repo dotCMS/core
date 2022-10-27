@@ -2,10 +2,7 @@ import { Injectable } from '@angular/core';
 import { differenceInCalendarDays, isValid, format, formatDistanceStrict, parse } from 'date-fns';
 import { utcToZonedTime, format as formatTZ } from 'date-fns-tz';
 import { DotcmsConfigService, DotTimeZone } from '@dotcms/dotcms-js';
-
-export interface DotLocaleOptions {
-    locale: Locale;
-}
+import { DotLocaleOptions } from '@dotcms/dotcms-models';
 
 // Created outside of the service so it can be used on date.validator.ts
 export function _isValid(date: string, formatPattern: string) {

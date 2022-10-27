@@ -1,8 +1,8 @@
+import { DotPage } from '@dotcms/dotcms-models';
 import {
     DotExperimentStatusList,
     TrafficProportionTypes
 } from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
-import { DotPage } from '@models/dot-page/dot-page.model';
 
 export interface DotExperiment {
     id: string;

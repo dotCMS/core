@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { DotExperiment } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
 import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DotExperimentStatusList } from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
 

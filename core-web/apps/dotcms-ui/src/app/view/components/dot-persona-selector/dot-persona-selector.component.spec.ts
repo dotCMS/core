@@ -7,24 +7,24 @@ import { DebugElement, Component, Input } from '@angular/core';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { By } from '@angular/platform-browser';
-import { DotPersona } from '@models/dot-persona/dot-persona.model';
-import { mockDotPersona } from '@tests/dot-persona.mock';
+import { DotPersona } from '@dotcms/dotcms-models';
+import { mockDotPersona } from '@dotcms/utils-testing';
 import { DotPersonaSelectedItemModule } from '@components/dot-persona-selected-item/dot-persona-selected-item.module';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotPersonaSelectorOptionModule } from '@components/dot-persona-selector-option/dot-persona-selector-option.module';
 import { of } from 'rxjs';
-import { PaginatorService } from '@services/paginator';
+import { PaginatorService } from '@dotcms/data-access';
 import { DotAddPersonaDialogModule } from '@components/dot-add-persona-dialog/dot-add-persona-dialog.module';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
-import { LoginServiceMock } from '@tests/login-service.mock';
+import { LoginServiceMock } from '@dotcms/utils-testing';
 import { LoginService, SiteService } from '@dotcms/dotcms-js';
 import { DotAddPersonaDialogComponent } from '@components/dot-add-persona-dialog/dot-add-persona-dialog.component';
-import { SiteServiceMock } from '@tests/site-service.mock';
+import { SiteServiceMock } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { TooltipModule } from 'primeng/tooltip';
-import cleanUpDialog from '@tests/clean-up-dialog';
+import cleanUpDialog from '@dotcms/utils-testing';
 
 @Component({
     selector: 'dot-host-component',
@@ -79,32 +79,30 @@ describe('DotPersonaSelectorComponent', () => {
 
     const siteServiceMock = new SiteServiceMock();
 
-    beforeEach(
-        waitForAsync(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [DotPersonaSelectorComponent, HostTestComponent],
-                imports: [
-                    BrowserAnimationsModule,
-                    SearchableDropDownModule,
-                    DotPersonaSelectedItemModule,
-                    DotPersonaSelectorOptionModule,
-                    DotAddPersonaDialogModule,
-                    TooltipModule,
-                    DotPipesModule
-                ],
-                providers: [
-                    IframeOverlayService,
-                    {
-                        provide: DotMessageService,
-                        useValue: messageServiceMock
-                    },
-                    { provide: PaginatorService, useClass: TestPaginatorService },
-                    { provide: LoginService, useClass: LoginServiceMock },
-                    { provide: SiteService, useValue: siteServiceMock }
-                ]
-            });
-        })
-    );
+    beforeEach(waitForAsync(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [DotPersonaSelectorComponent, HostTestComponent],
+            imports: [
+                BrowserAnimationsModule,
+                SearchableDropDownModule,
+                DotPersonaSelectedItemModule,
+                DotPersonaSelectorOptionModule,
+                DotAddPersonaDialogModule,
+                TooltipModule,
+                DotPipesModule
+            ],
+            providers: [
+                IframeOverlayService,
+                {
+                    provide: DotMessageService,
+                    useValue: messageServiceMock
+                },
+                { provide: PaginatorService, useClass: TestPaginatorService },
+                { provide: LoginService, useClass: LoginServiceMock },
+                { provide: SiteService, useValue: siteServiceMock }
+            ]
+        });
+    }));
 
     beforeEach(() => {
         hostFixture = DOTTestBed.createComponent(HostTestComponent);

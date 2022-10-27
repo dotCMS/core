@@ -4,7 +4,7 @@ import { Injectable } from '@angular/core';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { ContentletGuardService } from './contentlet-guard.service';
-import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
+import { DotContentTypeService } from '@dotcms/data-access';
 
 @Injectable()
 class MockDotContentTypeService {

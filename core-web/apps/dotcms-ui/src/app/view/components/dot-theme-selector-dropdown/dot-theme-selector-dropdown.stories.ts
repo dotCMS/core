@@ -2,10 +2,10 @@
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotThemesService } from '@services/dot-themes/dot-themes.service';
-import { DotFormatDateService } from '@services/dot-format-date-service';
-import { PaginatorService } from '@services/paginator';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotThemesService } from '@dotcms/data-access';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { PaginatorService } from '@dotcms/data-access';
 import { Meta, moduleMetadata } from '@storybook/angular';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { SiteService } from '@dotcms/dotcms-js';

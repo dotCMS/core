@@ -3,14 +3,19 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { of, throwError } from 'rxjs';
 
-import { DotCrudService } from '@services/dot-crud';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotTempFileUploadService } from '@services/dot-temp-file-upload/dot-temp-file-upload.service';
-import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { dotcmsContentletMock } from '@tests/dotcms-contentlet.mock';
+import { DotCrudService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
+import { DotWorkflowActionsFireService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { dotcmsContentletMock } from '@dotcms/utils-testing';
 import { DotTemplateThumbnailFieldComponent } from './dot-template-thumbnail-field.component';
-import { UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import {
+    UntypedFormBuilder,
+    UntypedFormGroup,
+    FormsModule,
+    ReactiveFormsModule
+} from '@angular/forms';
 
 const messageServiceMock = new MockDotMessageService({
     'templates.properties.form.thumbnail.error.invalid.url': 'Invalid url',

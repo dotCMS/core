@@ -7,12 +7,12 @@ import { DotWorkflowsSelectorFieldComponent } from './dot-workflows-selector-fie
 
 import { DotWorkflowService } from './../../../../api/services/dot-workflow/dot-workflow.service';
 import { MultiSelect } from 'primeng/multiselect';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { UntypedFormGroup, UntypedFormBuilder } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { mockWorkflows, DotWorkflowServiceMock } from '@tests/dot-workflow-service.mock';
-import { DOTTestBed } from '@tests/dot-test-bed';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { mockWorkflows, DotWorkflowServiceMock } from '@dotcms/utils-testing';
+import { DOTTestBed } from '@dotcms/utils-testing';
 
 const messageServiceMock = new MockDotMessageService({
     'dot.common.select.workflows': 'Pick it up',
@@ -52,31 +52,29 @@ describe('DotWorkflowsSelectorFieldComponent', () => {
     let multiselect: MultiSelect;
 
     describe('basic', () => {
-        beforeEach(
-            waitForAsync(() => {
-                DOTTestBed.configureTestingModule({
-                    declarations: [DotWorkflowsSelectorFieldComponent],
-                    providers: [
-                        {
-                            provide: DotWorkflowService,
-                            useClass: DotWorkflowServiceMock
-                        },
-                        {
-                            provide: DotMessageService,
-                            useValue: messageServiceMock
-                        }
-                    ],
-                    imports: [BrowserAnimationsModule]
-                });
+        beforeEach(waitForAsync(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [DotWorkflowsSelectorFieldComponent],
+                providers: [
+                    {
+                        provide: DotWorkflowService,
+                        useClass: DotWorkflowServiceMock
+                    },
+                    {
+                        provide: DotMessageService,
+                        useValue: messageServiceMock
+                    }
+                ],
+                imports: [BrowserAnimationsModule]
+            });
 
-                fixture = DOTTestBed.createComponent(DotWorkflowsSelectorFieldComponent);
-                component = fixture.componentInstance;
-                de = fixture.debugElement;
-                dotWorkflowService = de.injector.get(DotWorkflowService);
-                spyOn(dotWorkflowService, 'get').and.callThrough();
-                spyOn(component, 'propagateChange');
-            })
-        );
+            fixture = DOTTestBed.createComponent(DotWorkflowsSelectorFieldComponent);
+            component = fixture.componentInstance;
+            de = fixture.debugElement;
+            dotWorkflowService = de.injector.get(DotWorkflowService);
+            spyOn(dotWorkflowService, 'get').and.callThrough();
+            spyOn(component, 'propagateChange');
+        }));
 
         describe('no params', () => {
             beforeEach(() => {
@@ -138,31 +136,29 @@ describe('DotWorkflowsSelectorFieldComponent', () => {
         let deHost: DebugElement;
         let innerMultiselect: DebugElement;
 
-        beforeEach(
-            waitForAsync(() => {
-                DOTTestBed.configureTestingModule({
-                    declarations: [FakeFormComponent, DotWorkflowsSelectorFieldComponent],
-                    providers: [
-                        {
-                            provide: DotWorkflowService,
-                            useClass: DotWorkflowServiceMock
-                        },
-                        {
-                            provide: DotMessageService,
-                            useValue: messageServiceMock
-                        }
-                    ],
-                    imports: []
-                });
+        beforeEach(waitForAsync(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [FakeFormComponent, DotWorkflowsSelectorFieldComponent],
+                providers: [
+                    {
+                        provide: DotWorkflowService,
+                        useClass: DotWorkflowServiceMock
+                    },
+                    {
+                        provide: DotMessageService,
+                        useValue: messageServiceMock
+                    }
+                ],
+                imports: []
+            });
 
-                fixtureHost = DOTTestBed.createComponent(FakeFormComponent);
-                deHost = fixtureHost.debugElement;
-                component = deHost.query(By.css('dot-workflows-selector-field')).componentInstance;
-                innerMultiselect = deHost
-                    .query(By.css('dot-workflows-selector-field'))
-                    .query(By.css('p-multiSelect'));
-            })
-        );
+            fixtureHost = DOTTestBed.createComponent(FakeFormComponent);
+            deHost = fixtureHost.debugElement;
+            component = deHost.query(By.css('dot-workflows-selector-field')).componentInstance;
+            innerMultiselect = deHost
+                .query(By.css('dot-workflows-selector-field'))
+                .query(By.css('p-multiSelect'));
+        }));
 
         it('should get value', () => {
             fixtureHost.detectChanges();

@@ -1,5 +1,5 @@
 import { DOTTestBed } from '../../../../../../test/dot-test-bed';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '../../../../../../test/dot-message-service.mock';
 import { DotLayoutSidebarComponent } from './dot-layout-property-sidebar.component';
 import { UntypedFormGroup, UntypedFormControl } from '@angular/forms';

@@ -5,9 +5,9 @@ import { DebugElement, Injectable } from '@angular/core';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { By } from '@angular/platform-browser';
-import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
+import { DotContentTypeService } from '@dotcms/data-access';
 import { SelectItem } from 'primeng/api';
 import { Dropdown } from 'primeng/dropdown';
 

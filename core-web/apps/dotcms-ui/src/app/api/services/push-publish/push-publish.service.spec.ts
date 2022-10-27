@@ -7,9 +7,9 @@ import { DotCurrentUserService } from '../dot-current-user/dot-current-user.serv
 import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
 import { ApiRoot, CoreWebService, LoggerService, StringUtils, UserModel } from '@dotcms/dotcms-js';
 import { format } from 'date-fns';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { DotFormatDateService } from '@services/dot-format-date-service';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotFormatDateServiceMock } from '@dotcms/app/test/format-date-service.mock';
 
 const mockResponse = {
@@ -147,7 +147,7 @@ describe('PushPublishService', () => {
 
     it('should do a post with the correct URL when is a bundle', () => {
         const currentDateStr = new Date().toISOString().split('T')[0];
-        const currentTimeStr = format(new Date(), "HH-mm");
+        const currentTimeStr = format(new Date(), 'HH-mm');
 
         pushPublishService
             .pushPublishContent('1234567890', mockFormValue, true)

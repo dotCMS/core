@@ -10,7 +10,7 @@ import { NavigationEnd } from '@angular/router';
 import { DotNavigationComponent } from './dot-navigation.component';
 import { DotNavIconModule } from './components/dot-nav-icon/dot-nav-icon.module';
 import { DotNavigationService } from './services/dot-navigation.service';
-import { DotMenuService } from '@services/dot-menu.service';
+import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotSubNavComponent } from './components/dot-sub-nav/dot-sub-nav.component';
 import { DotNavItemComponent } from './components/dot-nav-item/dot-nav-item.component';
 import { DotIconModule } from '@dotcms/ui';

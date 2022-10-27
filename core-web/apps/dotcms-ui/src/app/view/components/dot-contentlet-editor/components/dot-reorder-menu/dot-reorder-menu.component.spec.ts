@@ -7,7 +7,7 @@ import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dia
 import { LoginService } from '@dotcms/dotcms-js';
 import { LoginServiceMock } from '../../../../../test/login-service.mock';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 
