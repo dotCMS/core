@@ -10,7 +10,6 @@ import {
 import {
     CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
-    dotcmsContentTypeBasicMock,
     mockDotContentlet
 } from '@dotcms/utils-testing';
 
