@@ -387,8 +387,14 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
 	private List<ContentletVersionInfo> findContentletVersionInfos(final String identifier,
 			final int maxResults) throws DotDataException, DotStateException {
+		return 	findContentletVersionInfos(identifier, VariantAPI.DEFAULT_VARIANT.name(), maxResults);
+	}
+
+	private List<ContentletVersionInfo> findContentletVersionInfos(final String identifier, final String variantName,
+			final int maxResults) throws DotDataException, DotStateException {
 		final DotConnect dotConnect = new DotConnect()
-				.setSQL("SELECT * FROM contentlet_version_info WHERE identifier=?")
+				.setSQL("SELECT * FROM contentlet_version_info WHERE identifier=? AND variant_id = ?")
+				.addParam(variantName)
 				.addParam(identifier);
 
 		if (maxResults > 0) {
@@ -407,6 +413,12 @@ public class VersionableFactoryImpl extends VersionableFactory {
 	protected List<ContentletVersionInfo> findAllContentletVersionInfos(final String identifier)
 			throws DotDataException, DotStateException {
 		return findContentletVersionInfos(identifier, -1);
+	}
+
+	@Override
+	protected List<ContentletVersionInfo> findAllContentletVersionInfos(final String identifier, final String variantName)
+			throws DotDataException, DotStateException {
+		return findContentletVersionInfos(identifier, variantName, -1);
 	}
 
     @Override

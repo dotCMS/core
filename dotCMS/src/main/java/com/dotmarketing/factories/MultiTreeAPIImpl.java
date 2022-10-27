@@ -3,6 +3,7 @@ package com.dotmarketing.factories;
 
 import com.dotcms.variant.VariantAPI;
 
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.business.web.WebAPILocator;
 import java.sql.SQLException;
 import java.util.Date;
@@ -117,7 +118,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     public void deleteMultiTree(final MultiTree mTree) throws DotDataException {
         Logger.info(this, String.format("Deleting MutiTree: %s", mTree));
         _dbDelete(mTree);
-        updateHTMLPageVersionTS(mTree.getHtmlPage());
+        updateHTMLPageVersionTS(mTree.getHtmlPage(), mTree.getVariantId());
         refreshPageInCache(mTree.getHtmlPage(), mTree.getVariantId());
     }
 
@@ -254,22 +255,24 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     @CloseDBIfOpened
     public List<MultiTree> getMultiTreesByVariant(final String parentId, final String variantName) throws DotDataException {
 
+        List<MultiTree> loadObjectResults = getMultiTreeByVariantWithoutFallback(parentId, variantName);
+
+        if (!UtilMethods.isSet(loadObjectResults)) {
+            if (!VariantAPI.DEFAULT_VARIANT.name().equals(variantName)) {
+                loadObjectResults = getMultiTreeByVariantWithoutFallback(parentId, VariantAPI.DEFAULT_VARIANT.name());
+            }
+        }
+
+        return loadObjectResults;
+    }
+
+    private List<MultiTree> getMultiTreeByVariantWithoutFallback(String parentId, String variantName)
+            throws DotDataException {
         List<Map<String, Object>> loadObjectResults = new DotConnect().setSQL(SELECT_BY_ONE_PARENT)
                 .addParam(parentId)
                 .addParam(parentId)
                 .addParam(variantName)
                 .loadObjectResults();
-
-        if (!UtilMethods.isSet(loadObjectResults)) {
-            if (!VariantAPI.DEFAULT_VARIANT.name().equals(variantName)) {
-                loadObjectResults = new DotConnect().setSQL(SELECT_BY_ONE_PARENT)
-                        .addParam(parentId)
-                        .addParam(parentId)
-                        .addParam(VariantAPI.DEFAULT_VARIANT.name())
-                        .loadObjectResults();
-            }
-        }
-
         return TransformerLocator.createMultiTreeTransformer(loadObjectResults).asList();
     }
 
@@ -361,6 +364,23 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         return multiTrees;
     } // copyPersonalizationForPage.
+
+    @Override
+    public List<MultiTree> copyVariantForPage (String pageId, String baseVariant, String newVariant) throws DotDataException{
+
+        List<MultiTree> multiTrees = this.getMultiTreeByVariantWithoutFallback(
+                pageId, baseVariant);
+
+        if (UtilMethods.isSet(multiTrees)) {
+
+            multiTrees = multiTrees.stream()
+                    .map(multiTree -> MultiTree.vary(multiTree, newVariant))
+                    .collect(Collectors.toList());
+            this.saveMultiTrees(multiTrees);
+        }
+
+        return multiTrees;
+    }
 
     @WrapInTransaction
     @Override
@@ -506,7 +526,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     public void saveMultiTree(final MultiTree mTree) throws DotDataException {
         Logger.debug(this, () -> String.format("Saving MutiTree: %s", mTree));
         _dbUpsert(mTree);
-        updateHTMLPageVersionTS(mTree.getHtmlPage());
+        updateHTMLPageVersionTS(mTree.getHtmlPage(), mTree.getVariantId());
         refreshPageInCache(mTree.getHtmlPage(), mTree.getVariantId());
 
     }
@@ -516,7 +536,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     public void saveMultiTreeAndReorder(final MultiTree mTree) throws DotDataException {
         Logger.debug(this, () -> String.format("Saving MutiTree and Reordering: %s", mTree));
         _reorder(mTree);
-        updateHTMLPageVersionTS(mTree.getHtmlPage());
+        updateHTMLPageVersionTS(mTree.getHtmlPage(), mTree.getVariantId());
         refreshPageInCache(mTree.getHtmlPage(), mTree.getVariantId());
 
     }
@@ -547,7 +567,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
 
         final MultiTree mTree = mTrees.get(0);
-        updateHTMLPageVersionTS(mTree.getHtmlPage());
+        updateHTMLPageVersionTS(mTree.getHtmlPage(), mTree.getVariantId());
         refreshPageInCache(mTree.getHtmlPage(), mTree.getVariantId());
     }
 
@@ -654,7 +674,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             db.executeBatch(INSERT_SQL, insertParams);
         }
 
-        updateHTMLPageVersionTS(pageId);
+        updateHTMLPageVersionTS(pageId, variantId);
         refreshPageInCache(pageId, variantId);
     }
 
@@ -759,9 +779,10 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             db.executeBatch(INSERT_SQL, insertParams);
         }
 
-        updateHTMLPageVersionTS(pageId);
+
 
         for (String variantId : variants) {
+            updateHTMLPageVersionTS(pageId, variantId);
             refreshPageInCache(pageId,variantId );
         }
 
@@ -817,9 +838,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      * @throws DotSecurityException
      * 
      */
-    private void updateHTMLPageVersionTS(final String pageId) throws DotDataException {
+    private void updateHTMLPageVersionTS(final String pageId, final String variantName) throws DotDataException {
         final List<ContentletVersionInfo> contentletVersionInfos =
-                APILocator.getVersionableAPI().findContentletVersionInfos(pageId);
+                APILocator.getVersionableAPI().findContentletVersionInfos(pageId, variantName);
         for (final ContentletVersionInfo versionInfo : contentletVersionInfos) {
             if (versionInfo != null) {
                 versionInfo.setVersionTs(new Date());
@@ -828,6 +849,13 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
     }
 
+    private void updateHTMLPageVersionTS(final String pageId) throws DotDataException {
+        final List<Variant> variants = APILocator.getVariantAPI().getVariants();
+
+        for (Variant variant : variants) {
+            updateHTMLPageVersionTS(pageId, variant.name());
+        }
+    }
 
     private void refreshPageInCache(final String pageIdentifier, final String variantName) throws DotDataException {
 
@@ -836,7 +864,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         final Set<String> inodeSet = new HashSet<>();
         final List<ContentletVersionInfo> contentletVersionInfos = APILocator.getVersionableAPI()
-                .findContentletVersionInfos(pageIdentifier);
+                .findContentletVersionInfos(pageIdentifier, variantName);
 
         for (final ContentletVersionInfo versionInfo : contentletVersionInfos) {
 

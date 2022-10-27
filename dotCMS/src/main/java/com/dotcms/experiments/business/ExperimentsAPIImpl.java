@@ -57,6 +57,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 
 public class ExperimentsAPIImpl implements ExperimentsAPI {
 
@@ -385,18 +386,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final Experiment persistedExperiment = find(experimentId, user)
                 .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
 
-        final String variantNameBase = EXPERIMENT_VARIANT_NAME_PREFIX + shortyIdAPI.shortify(experimentId)
-                + EXPERIMENT_VARIANT_NAME_SUFFIX;
-
-        final int nextAvailableIndex = getNextAvailableIndex(variantNameBase);
-
-        final String variantName = variantNameBase + nextAvailableIndex;
-
-        variantAPI.save(Variant.builder().name(variantName)
-                .description(Optional.of(variantDescription)).build());
-
-        final ExperimentVariant experimentVariant = ExperimentVariant.builder().id(variantName)
-                .description(variantDescription).weight(0).build();
+        final ExperimentVariant experimentVariant = createExperimentVariant(
+                persistedExperiment, variantDescription);
 
         final TrafficProportion trafficProportion = persistedExperiment.trafficProportion();
 
@@ -415,6 +406,35 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 .withTrafficProportion(weightedTrafficProportion);
 
         return save(updatedExperiment, user);
+    }
+
+    private ExperimentVariant createExperimentVariant(final Experiment experiment, final String variantDescription)
+            throws DotDataException {
+
+        final String experimentId = experiment.getIdentifier();
+        final String variantName = getVariantName(experimentId);
+
+        variantAPI.save(Variant.builder().name(variantName)
+                .description(Optional.of(variantDescription)).build());
+
+        APILocator.getMultiTreeAPI().copyVariantForPage(experiment.pageId(),
+                VariantAPI.DEFAULT_VARIANT.name(), variantName);
+
+        final ExperimentVariant experimentVariant = ExperimentVariant.builder().id(variantName)
+                .description(variantDescription).weight(0).build();
+        return experimentVariant;
+    }
+
+    @NotNull
+    private String getVariantName(final String experimentId) throws DotDataException {
+        final String variantNameBase = EXPERIMENT_VARIANT_NAME_PREFIX + shortyIdAPI.shortify(
+                experimentId)
+                + EXPERIMENT_VARIANT_NAME_SUFFIX;
+
+        final int nextAvailableIndex = getNextAvailableIndex(variantNameBase);
+
+        final String variantName = variantNameBase + nextAvailableIndex;
+        return variantName;
     }
 
     @Override

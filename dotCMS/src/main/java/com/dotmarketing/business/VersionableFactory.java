@@ -220,4 +220,6 @@ public abstract class VersionableFactory {
     protected abstract List<ContentletVersionInfo> findAllContentletVersionInfos(String identifier)
         throws DotDataException, DotStateException ;
 
+	protected abstract List<ContentletVersionInfo> findAllContentletVersionInfos(String identifier, String variantName)
+			throws DotDataException, DotStateException ;
 }
