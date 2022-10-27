@@ -171,18 +171,26 @@ public class DotSamlResource implements Serializable {
 					if (null == session) {
 
 						throw new DotSamlException("No session has been created.");
+					} else {
+
+						Logger.debug(this, ()-> "HttpSession: " + session);
 					}
 
 					// Extracts data from the assertion - if it can't process a DotSamlException is thrown
-					final Attributes attributes = this.samlAuthenticationService.resolveAttributes(httpServletRequest,
-							httpServletResponse, identityProviderConfiguration);
+					Logger.debug(this, ()-> "Calling the resolve attributes...");
+					final Attributes attributes = Try.of(()->this.samlAuthenticationService.resolveAttributes(httpServletRequest,
+							httpServletResponse, identityProviderConfiguration)).getOrNull();
 
+					Logger.debug(this, ()-> "Calling the resolve attributes DONE, attributes: " + attributes);
 					if (null == attributes) {
 
 						throw new DotSamlException("User cannot be extracted from Assertion!");
 					}
+
+					Logger.debug(this, ()-> "Resolving the user");
 					// Creates the user object and adds a user if it doesn't already exist
-					final User user = this.samlHelper.resolveUser(attributes, identityProviderConfiguration);
+					final User user = Try.of(()->this.samlHelper.resolveUser(attributes, identityProviderConfiguration)).getOrNull();
+					Logger.debug(this, ()-> "Resolving the user, DONE, user: " + user);
 					if (null == user) {
 
 						throw new DotSamlException("User cannot be extracted from Assertion!");
@@ -201,6 +209,8 @@ public class DotSamlResource implements Serializable {
 						session.setAttribute(samlNameIdKey,  attributes.getNameID());
 						Logger.debug(this, ()->"Session index with key: " + sessionIndexKey + " and value: " + session.getAttribute(sessionIndexKey) + " is already set.");
 						Logger.debug(this, ()->"NameID with key: " + samlNameIdKey + " and value: " + session.getAttribute(samlNameIdKey) + " is already set.");
+					} else {
+						Logger.debug(this, ()-> "SAML Session Index is coming null");
 					}
 
 					// Add session based user ID to be used on the redirect.
@@ -210,6 +220,7 @@ public class DotSamlResource implements Serializable {
 					session.setAttribute(WebKeys.CMS_USER, user);
 
 					String loginPath = (String) session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
+					Logger.debug(this, "SAML loginPath, redirect after login: " + loginPath);
 					if (null == loginPath) {
 						// At this stage we cannot determine whether this was a front
 						// end or back end request since we cannot determine
@@ -224,6 +235,7 @@ public class DotSamlResource implements Serializable {
 						session.removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
 					}
 
+					Logger.debug(this, "SAML final loginPath: " + loginPath);
 					RedirectUtil.sendRedirectHTML(httpServletResponse, loginPath);
 					return;
 				}
