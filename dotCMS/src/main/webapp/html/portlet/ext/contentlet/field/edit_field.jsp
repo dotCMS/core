@@ -42,7 +42,7 @@
     long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
     final Structure structure = Structure.class.cast(request.getAttribute("structure"));
     final Contentlet contentlet = Contentlet.class.cast(request.getAttribute("contentlet"));
-    long contentLanguage = contentlet.getLanguageId();
+    long contentLanguage = contentlet.getLanguageId() > 0 ? contentlet.getLanguageId() : APILocator.getLanguageAPI().getDefaultLanguage().getId();
     final Field field = Field.class.cast(request.getAttribute("field"));
     final com.dotcms.contenttype.model.field.Field newField = LegacyFieldTransformer.from(field);
 
@@ -195,6 +195,7 @@
 
             <script src="/html/dotcms-block-editor.js"></script>
             <dotcms-block-editor
+                id="block-editor-<%=field.getVelocityVarName()%>"
                 allowed-content-types="<%=allowedContentTypes%>"
                 allowed-blocks="<%=allowedBlocks%>"
                 custom-styles="<%=customStyles%>"
@@ -206,38 +207,42 @@
 
             <script>
 
-                /**
-                 * "JSONValue" is by default an empty Object.
-                 *  If that's the case we set "JSONValue" as null.
-                 *  Otherwise, we set "JSONValue" equals to "JSONValue".
-                 */
-                const JSONValue = JSON.stringify(<%=JSONValue%>) !== JSON.stringify({}) ? <%=JSONValue%> : null;
-                let content;
- 
-                /**
-                 * Try/catch will tell us if the content in the DB is html string (WYSIWYG)  
-                 * or JSON (block editor)
-                 */
-                try {
-                    // If JSONValue is an valid Object, we use it as the Block Editor Content.
-                    // Otherwise, we try to parse the "textValue".
-                    content = JSONValue || JSON.parse(<%=textValue%>);
-                } catch (error) {
-                    content = <%=textValue%>;
-                }
+                // Create a new scope so that variables defined here can have the same name without being overwritten.
+                (function autoexecute() {
+                    /**
+                     * "JSONValue" is by default an empty Object.
+                     *  If that's the case we set "JSONValue" as null.
+                     *  Otherwise, we set "JSONValue" equals to "JSONValue".
+                     */
+                    const JSONValue = JSON.stringify(<%=JSONValue%>) !== JSON.stringify({}) ? <%=JSONValue%> : null;
+                    let content;
+    
+                    /**
+                     * Try/catch will tell us if the content in the DB is html string (WYSIWYG)  
+                     * or JSON (block editor)
+                     */
+                    try {
+                        // If JSONValue is an valid Object, we use it as the Block Editor Content.
+                        // Otherwise, we try to parse the "textValue".
+                        content = JSONValue || JSON.parse(<%=textValue%>);
+                    } catch (error) {
+                        content = <%=textValue%>;
+                    }
 
-                const blockEditor = document.querySelector('dotcms-block-editor');
-                const block = document.querySelector('dotcms-block-editor .ProseMirror');
-                const field = document.querySelector('#<%=field.getVelocityVarName()%>');
+                    const blockEditor = document.getElementById("block-editor-<%=field.getVelocityVarName()%>");
+                    const block = blockEditor.querySelector('.ProseMirror');
+                    const field = document.querySelector('#<%=field.getVelocityVarName()%>');
 
-                if (content) {
-                    blockEditor.setValue = content;
-                    field.value = JSON.stringify(block.editor.getJSON());
-                }
+                    if (content) {
+                        blockEditor.setValue = content;
+                        field.value = JSON.stringify(block.editor.getJSON());
+                    }
 
-                block.editor.on('update', ({ editor }) => {
-                    field.value = JSON.stringify(editor.getJSON());
-                })
+                    block.editor.on('update', ({ editor }) => {
+                        field.value = JSON.stringify(editor.getJSON());
+                    })
+                })();
+
             </script>
         <% }
 

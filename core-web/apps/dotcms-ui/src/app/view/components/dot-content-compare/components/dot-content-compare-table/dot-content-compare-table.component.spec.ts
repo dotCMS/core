@@ -62,7 +62,8 @@ export const dotContentCompareTableDataMock: DotContentCompareTableData = {
         title: '2970221a3a51990039a81976db3b137f',
         titleImage: 'binary',
         url: '/content.dcd47b31-0682-448f-8ffb-c40350caab41',
-        working: true
+        working: true,
+        json: { name: 'John' }
     },
     compare: {
         archived: false,
@@ -92,7 +93,8 @@ export const dotContentCompareTableDataMock: DotContentCompareTableData = {
         title: '2970221a3a51990039a81976db3b137f',
         titleImage: 'binary',
         url: '/content.dcd47b31-0682-448f-8ffb-c40350caab41',
-        working: false
+        working: false,
+        json: { name: 'David' }
     },
     versions: [
         {
@@ -123,7 +125,8 @@ export const dotContentCompareTableDataMock: DotContentCompareTableData = {
             title: '2970221a3a51990039a81976db3b137f',
             titleImage: 'binary',
             url: '/content.dcd47b31-0682-448f-8ffb-c40350caab41',
-            working: false
+            working: false,
+            json: { name: 'John' }
         },
         {
             archived: false,
@@ -153,7 +156,8 @@ export const dotContentCompareTableDataMock: DotContentCompareTableData = {
             title: '2970221a3a51990039a81976db3b137f',
             titleImage: 'binary',
             url: '/content.dcd47b31-0682-448f-8ffb-c40350caab41',
-            working: false
+            working: false,
+            json: { name: 'David' }
         }
     ],
     fields: [
@@ -240,6 +244,27 @@ export const dotContentCompareTableDataMock: DotContentCompareTableData = {
             sortOrder: 5,
             unique: false,
             variable: 'text'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableJSONField',
+            contentTypeId: '61226fd915b7f025da020fc1f5856ab7',
+            dataType: 'LONG_TEXT',
+            fieldType: 'JSON-Field',
+            fieldTypeLabel: 'JSON Field',
+            fieldVariables: [],
+            fixed: false,
+            iDate: 1666028511000,
+            id: 'b577e8c1842949797350b735659beb40',
+            indexed: false,
+            listed: false,
+            modDate: 1666028511000,
+            name: 'test',
+            readOnly: false,
+            required: false,
+            searchable: false,
+            sortOrder: 2,
+            unique: false,
+            variable: 'json'
         }
     ]
 };
@@ -379,6 +404,20 @@ describe('DotContentCompareTableComponent', () => {
                 '/dA/<del class="diffmod">21ae95f9</del><ins class="diffmod">d094b42f</ins>-<del class="diffmod">357d</del><ins class="diffmod">5ef8</ins>-<del class="diffmod">4f1e</del><ins class="diffmod">4bcc</ins>-<del class="diffmod">b677</del><ins class="diffmod">8783</ins>-<del class="diffmod">1fc23ccde394</del><ins class="diffmod">73ff39a4c6e6</ins>/binary/<del class="diffmod">costarica</del><ins class="diffmod">leon</ins>.png'
             );
         });
+        it('should show json field', () => {
+            const workingJson = de.query(By.css('[data-testId="table-json-working"]')).nativeElement
+                .innerHTML;
+            const compareJson = de.query(By.css('[data-testId="table-json-compare"]')).nativeElement
+                .innerHTML;
+
+            expect(workingJson).toContain('{\n' + '  "name": "John"\n' + '}');
+            expect(compareJson).toEqual(
+                '{\n' +
+                    '  "name": "<del class="diffmod">John</del><ins class="diffmod">David</ins>"\n' +
+                    '}'
+            );
+        });
+
         it('should show others fields', () => {
             const workingField = de.query(By.css('[data-testId="table-field-working"]'))
                 .nativeElement.innerHTML;

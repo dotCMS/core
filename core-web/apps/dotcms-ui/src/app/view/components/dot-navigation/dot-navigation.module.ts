@@ -10,6 +10,7 @@ import { DotSubNavComponent } from './components/dot-sub-nav/dot-sub-nav.compone
 import { DotNavItemComponent } from './components/dot-nav-item/dot-nav-item.component';
 import { TooltipModule } from 'primeng/tooltip';
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
+import { DotRandomIconPipeModule } from '@pipes/dot-radom-icon/dot-random-icon.pipe.module';
 
 @NgModule({
     imports: [
@@ -18,7 +19,8 @@ import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-o
         DotNavIconModule,
         DotIconModule,
         TooltipModule,
-        DotOverlayMaskModule
+        DotOverlayMaskModule,
+        DotRandomIconPipeModule
     ],
     declarations: [DotNavigationComponent, DotSubNavComponent, DotNavItemComponent],
     providers: [DotNavigationService],

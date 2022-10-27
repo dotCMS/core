@@ -42,7 +42,7 @@ public class Task221018CreateVariantFieldInMultiTreeTest {
         final DotDatabaseMetaData databaseMetaData = new DotDatabaseMetaData();
 
         assertFalse(databaseMetaData
-                .hasColumn("multi_tree", "variantId"));
+                .hasColumn("multi_tree", "variant_id"));
         assertEquals(5, DotDatabaseMetaData.getPrimaryKeysFields("multi_tree").size());
 
         final Task221018CreateVariantFieldInMultiTree task221018CreateMultiTreeField = new Task221018CreateVariantFieldInMultiTree();
@@ -69,7 +69,7 @@ public class Task221018CreateVariantFieldInMultiTreeTest {
         final DotDatabaseMetaData databaseMetaData = new DotDatabaseMetaData();
 
         assertFalse(databaseMetaData
-                .hasColumn("multi_tree", "variantId"));
+                .hasColumn("multi_tree", "variant_id"));
         assertEquals(5, DotDatabaseMetaData.getPrimaryKeysFields("multi_tree").size());
 
         final Task221018CreateVariantFieldInMultiTree task221018CreateMultiTreeField = new Task221018CreateVariantFieldInMultiTree();
@@ -95,7 +95,7 @@ public class Task221018CreateVariantFieldInMultiTreeTest {
 
         try {
             new DotConnect().executeStatement(
-                    "ALTER TABLE multi_tree DROP COLUMN variantId");
+                    "ALTER TABLE multi_tree DROP COLUMN variant_id");
         } catch (SQLException e) {
             //ignore
         }
