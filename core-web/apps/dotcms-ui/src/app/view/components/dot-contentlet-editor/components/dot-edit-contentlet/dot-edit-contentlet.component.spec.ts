@@ -3,7 +3,7 @@ import { By } from '@angular/platform-browser';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
 
-import { DOTTestBed } from '../../../../../test/dot-test-bed';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
 import { DotEditContentletComponent } from './dot-edit-contentlet.component';

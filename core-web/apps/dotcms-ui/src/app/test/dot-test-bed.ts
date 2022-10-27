@@ -14,7 +14,6 @@ import {
     DotEventsSocket,
     DotEventsSocketURL,
     DotPushPublishDialogService,
-    DotRouterService,
     LoggerService,
     StringUtils,
     UserModel
@@ -37,6 +36,7 @@ import { DotUiColorsService } from '../api/services/dot-ui-colors/dot-ui-colors.
 import { NGFACES_MODULES } from '../modules';
 import { DotPipesModule } from '../view/pipes/dot-pipes.module';
 import { MockDotRouterService } from '@dotcms/utils-testing';
+import { DotRouterService } from '../api/services/dot-router/dot-router.service';
 
 export class MockDotUiColorsService {
     setColors() {
@@ -69,7 +69,13 @@ export class DOTTestBed {
             { provide: DotUiColorsService, useClass: MockDotUiColorsService },
             { provide: LOCALE_ID, useValue: {} },
             { provide: CoreWebService, useClass: CoreWebServiceMock },
-            { provide: DotRouterService, useClass: MockDotRouterService },
+            {
+                /* A service that provides a way to navigate between pages. */
+                provide:
+                    /* A service that provides a way to navigate between pages. */
+                    DotRouterService,
+                useClass: MockDotRouterService
+            },
             ApiRoot,
             BrowserUtil,
             ConfirmationService,
