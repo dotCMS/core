@@ -58,4 +58,4 @@ This maintenance release includes the following code fixes:
 47. https://github.com/dotCMS/core/issues/22673 : What's Changed UI issues #22673
 48. https://github.com/dotCMS/core/issues/22338 : Content Palette not showing all available content types #22338
 49. https://github.com/dotCMS/core/issues/22425 : NavTool method getNav must return only published pages. #22425
-50. 
+50. https://github.com/dotCMS/core/issues/22809 : Missing Nav items when upgrading #22809

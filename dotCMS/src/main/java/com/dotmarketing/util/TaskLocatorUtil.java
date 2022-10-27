@@ -354,6 +354,7 @@ public class TaskLocatorUtil {
 		final List<Class<?>> ret = new ArrayList<Class<?>>();
 		ret.add(Task220401CreateClusterLockTable.class);
 		ret.add(Task220402UpdateDateTimezones.class);
+		ret.add(Task220912UpdateCorrectShowOnMenuProperty.class);
 		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 
