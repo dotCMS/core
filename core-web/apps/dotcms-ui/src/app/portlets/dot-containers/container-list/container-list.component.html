@@ -2,41 +2,41 @@
     <dot-portlet-toolbar title="Containers"></dot-portlet-toolbar>
 
     <dot-listing-data-table
-        *ngIf="vm.tableColumns && vm.actionHeaderOptions"
         #listing
+        *ngIf="vm.tableColumns && vm.actionHeaderOptions"
         [actionHeaderOptions]="vm.actionHeaderOptions"
         [columns]="vm.tableColumns"
-        url="v1/containers"
         [actions]="[]"
         [checkbox]="true"
         (selectedItems)="updateSelectedContainers($event)"
+        url="v1/containers"
         dataKey="inode"
     >
         <div class="container-listing__header-options">
             <div class="container-listing__filter-controls">
                 <button
-                    type="button"
                     class="p-button-secondary p-button"
-                    pButton
                     [label]="'Search' | dm"
+                    type="button"
+                    pButton
                 ></button>
                 <p-checkbox
-                    data-testid="archiveCheckbox"
                     [label]="'Show-Archived' | dm"
                     [binary]="true"
                     (onChange)="handleArchivedFilter($event.checked)"
+                    data-testid="archiveCheckbox"
                 ></p-checkbox>
             </div>
 
             <div>
                 <button
-                    type="button"
-                    pButton
                     class="p-button-secondary p-button"
-                    icon="pi pi-ellipsis-v"
                     [label]="'Actions' | dm"
                     [disabled]="!vm.selectedContainers.length"
                     (click)="actionsMenu.toggle($event)"
+                    type="button"
+                    pButton
+                    icon="pi pi-ellipsis-v"
                     attr.data-testid="bulkActions"
                 ></button>
 
@@ -51,10 +51,10 @@
         <dot-empty-state
             [rows]="10"
             [colsTextWidth]="[60, 50, 60, 80]"
-            icon="web"
             [title]="'message.template.empty.title' | dm"
             [content]="'message.template.empty.content' | dm"
             [buttonLabel]="'message.template.empty.button.label' | dm"
+            icon="web"
         >
         </dot-empty-state>
 
@@ -62,7 +62,7 @@
             <dot-base-type-selector></dot-base-type-selector>
         </ng-template>
 
-        <ng-template #rowTemplate let-rowData="rowData" *ngIf="vm.tableColumns as tableColumns">
+        <ng-template #rowTemplate *ngIf="vm.tableColumns as tableColumns" let-rowData="rowData">
             <td [ngStyle]="{ 'text-align': tableColumns[0].textAlign }">
                 {{ rowData.name }}
             </td>
@@ -82,9 +82,9 @@
             </td>
             <td style="width: 5%; height: 3.85rem">
                 <dot-action-menu-button
+                    class="listing-datatable__action-button"
                     *ngIf="!rowData.disableInteraction"
                     [attr.data-testid]="rowData.identifier"
-                    class="listing-datatable__action-button"
                     [actions]="setContainerActions(rowData)"
                     [item]="rowData"
                 >

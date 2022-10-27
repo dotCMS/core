@@ -24,6 +24,13 @@ const PORTLETS_ANGULAR = [
             )
     },
     {
+        path: 'categories',
+        loadChildren: () =>
+            import('@dotcms/app/portlets/dot-categories/dot-categories.module').then(
+                (m) => m.DotCategoriesModule
+            )
+    },
+    {
         path: 'templates',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],

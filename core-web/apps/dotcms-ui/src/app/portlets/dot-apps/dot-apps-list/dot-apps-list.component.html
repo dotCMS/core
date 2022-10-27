@@ -3,10 +3,10 @@
     ><div class="dot-apps__container">
         <div class="dot-apps__header">
             <input
-                pInputText
                 #searchInput
-                type="text"
                 [placeholder]="('apps.search.placeholder' | dm) || ''"
+                pInputText
+                type="text"
             />
             <div class="dot-apps__header-actions">
                 <div class="dot-apps__header-info">
@@ -16,21 +16,21 @@
                     }}</a>
                 </div>
                 <button
-                    pButton
-                    link
-                    icon="pi pi-upload"
                     class="dot-apps-configuration__action_import_button"
                     [label]="'apps.confirmation.import.button' | dm"
                     (click)="confirmImportExport('Import')"
-                ></button>
-                <button
                     pButton
                     link
-                    icon="pi pi-download"
+                    icon="pi pi-upload"
+                ></button>
+                <button
                     class="dot-apps-configuration__action_export_button"
                     [label]="'apps.confirmation.export.all.button' | dm"
                     [disabled]="!isExportButtonDisabled()"
                     (click)="confirmImportExport('Export')"
+                    pButton
+                    link
+                    icon="pi pi-download"
                 ></button>
             </div>
         </div>

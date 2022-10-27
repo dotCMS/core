@@ -1,0 +1,140 @@
+<dot-portlet-base *ngIf="vm$ | async as vm">
+    <div class="category_listing">
+        <p-table
+            #dataTable
+            [(selection)]="selectedCategories"
+            [value]="vm.categories"
+            [lazy]="true"
+            [rows]="vm.paginationPerPage"
+            [totalRecords]="vm.totalRecords"
+            [paginator]="true"
+            [metaKeySelection]="true"
+            [reorderableColumns]="true"
+            [columns]="vm.tableColumns"
+            (onLazyLoad)="loadCategories($event)"
+            (onRowSelect)="handleRowCheck()"
+            (onRowUnselect)="handleRowCheck()"
+            (onHeaderCheckboxToggle)="handleRowCheck()"
+            selectionMode="checkbox"
+            loadingIcon="fa fa-circle-o-notch fa-spin"
+            dataKey="categoryId"
+        >
+            <ng-template pTemplate="caption">
+                <div class="flex justify-content-between p-3">
+                    <div>
+                        <button
+                            class="p-button-secondary p-button"
+                            [disabled]="vm.selectedCategories.length === 0"
+                            [label]="'Actions' | dm"
+                            (click)="actionsMenu.toggle($event)"
+                            type="button"
+                            pButton
+                            icon="pi pi-ellipsis-v"
+                            attr.data-testid="actions"
+                        ></button>
+                        <p-menu
+                            #actionsMenu
+                            [popup]="true"
+                            [model]="vm.categoriesBulkActions"
+                            appendTo="body"
+                        ></p-menu>
+                    </div>
+                    <div class="w-2">
+                        <div class="p-inputgroup searchBox">
+                            <span class="p-inputgroup-addon"><i class="pi pi-search"></i></span>
+                            <input
+                                (input)="dataTable.filterGlobal($event.target.value, 'contains')"
+                                type="text"
+                                pInputText
+                                placeholder="Type to filter"
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <button
+                            class="p-button-outlined"
+                            pButton
+                            pRipple
+                            type="button"
+                            label="IMPORT"
+                            icon="pi pi-upload"
+                        ></button>
+                        <button
+                            class="p-button-outlined mx-4"
+                            pButton
+                            pRipple
+                            type="button"
+                            label="EXPORT"
+                            icon="pi pi-download"
+                        ></button>
+                        <button
+                            class="p-button-raised p-button-rounded text-white"
+                            pButton
+                            pRipple
+                            type="button"
+                            icon="pi pi-plus"
+                        ></button>
+                    </div>
+                </div>
+            </ng-template>
+            <ng-template pTemplate="header" let-columns>
+                <tr>
+                    <th class="tableHeader" style="width: 3rem"></th>
+                    <th class="tableHeader" style="width: 3rem">
+                        <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+                    </th>
+                    <th
+                        class="tableHeader"
+                        *ngFor="let col of columns"
+                        [pSortableColumn]="col.fieldName"
+                    >
+                        {{ col.header }}
+                        <p-sortIcon *ngIf="col.sortable" [field]="col.fieldName"></p-sortIcon>
+                    </th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-category let-index="rowIndex" let-columns="columns">
+                <tr [pReorderableRow]="index" [pSelectableRow]="category">
+                    <td>
+                        <span class="pi pi-bars" pReorderableRowHandle></span>
+                    </td>
+                    <td style="width: 3rem">
+                        <p-tableCheckbox [value]="category"></p-tableCheckbox>
+                    </td>
+                    <td *ngFor="let col of columns">
+                        <ng-container *ngIf="col.fieldName === 'sortOrder'; else Actions">
+                            <p-inplace #editText styleClass="listing__categories__sortOrder">
+                                <ng-template pTemplate="content">
+                                    <span class="p-input-icon-right">
+                                        <i class="pi pi-times" (click)="editText.deactivate()"></i>
+                                        <p-inputNumber
+                                            [ngModel]="category.sortOrder"
+                                        ></p-inputNumber>
+                                    </span>
+                                </ng-template>
+                                <ng-template pTemplate="display">
+                                    {{ category.sortOrder }}
+                                    <i class="pi pi-pencil"></i>
+                                </ng-template>
+                            </p-inplace>
+                        </ng-container>
+                        <ng-template #Actions>
+                            <ng-container *ngIf="col.fieldName === 'Actions'; else third">
+                                <dot-action-menu-button
+                                    class="listing-categories__action-button"
+                                    [attr.data-testid]="category.categoryId"
+                                    [actions]="vm.categoriesActions"
+                                    [item]="category"
+                                >
+                                </dot-action-menu-button>
+                            </ng-container>
+                        </ng-template>
+                        <ng-template #third>
+                            {{ category[col.fieldName] }}
+                        </ng-template>
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </div>
+</dot-portlet-base>
