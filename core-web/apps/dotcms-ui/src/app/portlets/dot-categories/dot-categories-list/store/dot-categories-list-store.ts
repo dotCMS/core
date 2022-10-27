@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ComponentStore } from '@ngrx/component-store';
-import { MenuItem } from 'primeng/api';
+import { LazyLoadEvent, MenuItem } from 'primeng/api';
 import { DataTableColumn } from '@models/data-table';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
@@ -8,17 +8,19 @@ import { map, take } from 'rxjs/operators';
 import { DotActionMenuItem } from '@dotcms/app/shared/models/dot-action-menu/dot-action-menu-item.model';
 import { DotCategoriesService } from '@dotcms/app/api/services/dot-categories/dot-categories.service';
 import { Observable } from 'rxjs';
+import { OrderDirection } from '@dotcms/app/api/services/paginator';
 
 export interface DotCategoriesListState {
     categoriesBulkActions: MenuItem[];
     categoriesActions: DotActionMenuItem[];
     selectedCategories: DotCategory[];
-    addToBundleIdentifier: string;
     tableColumns: DataTableColumn[];
     categories: DotCategory[];
     paginationPerPage: number;
     currentPage: number;
     totalRecords: number;
+    sortField: string;
+    sortOrder: OrderDirection;
 }
 
 @Injectable()
@@ -27,23 +29,19 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
         private dotMessageService: DotMessageService,
         public categoryService: DotCategoriesService
     ) {
-        super(null);
-        this.categoryService
-            .get()
-            .pipe(take(1))
-            .subscribe((items: DotCategory[]) => {
-                this.setState({
-                    categoriesBulkActions: this.getCategoriesBulkActions(),
-                    categoriesActions: this.getCategoriesActions(),
-                    tableColumns: this.getCategoriesColumns(),
-                    addToBundleIdentifier: '',
-                    selectedCategories: [],
-                    categories: items,
-                    currentPage: this.categoryService.currentPage,
-                    paginationPerPage: this.categoryService.paginationPerPage,
-                    totalRecords: this.categoryService.totalRecords
-                });
-            });
+        super();
+        this.setState({
+            categoriesBulkActions: this.getCategoriesBulkActions(),
+            categoriesActions: this.getCategoriesActions(),
+            tableColumns: this.getCategoriesColumns(),
+            selectedCategories: [],
+            categories: [],
+            currentPage: this.categoryService.currentPage,
+            paginationPerPage: this.categoryService.paginationPerPage,
+            totalRecords: this.categoryService.totalRecords,
+            sortField: null,
+            sortOrder: OrderDirection.ASC
+        });
     }
     readonly vm$ = this.select((state: DotCategoriesListState) => state);
 
@@ -69,6 +67,11 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
         (state: DotCategoriesListState, categories: DotCategory[]) => {
             return {
                 ...state,
+                paginationPerPage: this.categoryService.paginationPerPage,
+                currentPage: this.categoryService.currentPage,
+                totalRecords: this.categoryService.totalRecords,
+                sortField: this.categoryService.sortField,
+                sortOrder: this.categoryService.sortOrder,
                 categories
             };
         }
@@ -81,9 +84,9 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
      * @returns Observable<DotCategory[]>
      */
 
-    readonly getCategories = this.effect((filters: Observable<Record<string, unknown>>) => {
+    readonly getCategories = this.effect((filters: Observable<LazyLoadEvent>) => {
         return filters.pipe(
-            map((filters: Record<string, unknown>) => {
+            map((filters: LazyLoadEvent) => {
                 this.categoryService
                     .getCategories(filters)
                     .pipe(take(1))
@@ -93,14 +96,6 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
             })
         );
     });
-    // public getCategories(filter?: string, currentPage?: number): void {
-    //     this.categoryService
-    //         .getCategories(filter, currentPage)
-    //         .pipe(take(1))
-    //         .subscribe((items: DotCategory[]) => {
-    //             this.setCategories(items);
-    //         });
-    // }
 
     /**
      * It returns an array of objects with a label property
@@ -109,16 +104,10 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
     private getCategoriesBulkActions(): { label: string }[] {
         return [
             {
-                label: this.dotMessageService.get('Add')
+                label: this.dotMessageService.get('Add-To-Bundle')
             },
             {
                 label: this.dotMessageService.get('Delete')
-            },
-            {
-                label: this.dotMessageService.get('Import')
-            },
-            {
-                label: this.dotMessageService.get('Export')
             }
         ];
     }
@@ -142,7 +131,7 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
             },
             {
                 menuItem: {
-                    label: this.dotMessageService.get('Add To Bundle')
+                    label: this.dotMessageService.get('Add-To-Bundle')
                 }
             },
             {
@@ -194,8 +183,7 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
             {
                 fieldName: 'Actions',
                 width: '5%',
-                header: '',
-                sortable: true
+                header: ''
             }
         ];
     }

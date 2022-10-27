@@ -1,77 +1,95 @@
 <dot-portlet-base *ngIf="vm$ | async as vm">
-    <div class="flex justify-content-between p-3">
-        <div>
-            <button
-                class="p-button-secondary p-button"
-                [label]="'Actions' | dm"
-                (click)="actionsMenu.toggle($event)"
-                type="button"
-                pButton
-                icon="pi pi-ellipsis-v"
-                attr.data-testid="actions"
-            ></button>
-            <p-menu
-                #actionsMenu
-                [popup]="true"
-                [model]="vm.categoriesBulkActions"
-                appendTo="body"
-            ></p-menu>
-        </div>
-        <div class="w-3">
-            <div class="p-inputgroup">
-                <span class="p-inputgroup-addon"><i class="pi pi-search"></i></span>
-                <input
-                    (input)="onChange($event)"
-                    type="text"
-                    pInputText
-                    placeholder="Type to filter"
-                />
-            </div>
-        </div>
-        <div>
-            <button
-                class="p-button-outlined"
-                pButton
-                pRipple
-                type="button"
-                label="IMPORT"
-                icon="pi pi-upload"
-            ></button>
-            <button
-                class="p-button-outlined mx-2"
-                pButton
-                pRipple
-                type="button"
-                label="EXPORT"
-                icon="pi pi-download"
-            ></button>
-            <button
-                class="p-button-raised p-button-rounded text-white"
-                pButton
-                pRipple
-                type="button"
-                icon="pi pi-plus"
-            ></button>
-        </div>
-    </div>
-    <div class="p-3">
+    <div class="category_listing">
         <p-table
+            #dataTable
             [(selection)]="selectedCategories"
             [value]="vm.categories"
+            [lazy]="true"
+            [rows]="vm.paginationPerPage"
+            [totalRecords]="vm.totalRecords"
+            [paginator]="true"
             [metaKeySelection]="true"
             [reorderableColumns]="true"
             [columns]="vm.tableColumns"
-            selectionMode="multiple"
+            (onLazyLoad)="loadCategories($event)"
+            (onRowSelect)="handleRowCheck()"
+            (onRowUnselect)="handleRowCheck()"
+            (onHeaderCheckboxToggle)="handleRowCheck()"
+            selectionMode="checkbox"
+            loadingIcon="fa fa-circle-o-notch fa-spin"
             dataKey="categoryId"
         >
+            <ng-template pTemplate="caption">
+                <div class="flex justify-content-between p-3">
+                    <div>
+                        <button
+                            class="p-button-secondary p-button"
+                            [disabled]="vm.selectedCategories.length === 0"
+                            [label]="'Actions' | dm"
+                            (click)="actionsMenu.toggle($event)"
+                            type="button"
+                            pButton
+                            icon="pi pi-ellipsis-v"
+                            attr.data-testid="actions"
+                        ></button>
+                        <p-menu
+                            #actionsMenu
+                            [popup]="true"
+                            [model]="vm.categoriesBulkActions"
+                            appendTo="body"
+                        ></p-menu>
+                    </div>
+                    <div class="w-2">
+                        <div class="p-inputgroup searchBox">
+                            <span class="p-inputgroup-addon"><i class="pi pi-search"></i></span>
+                            <input
+                                (input)="dataTable.filterGlobal($event.target.value, 'contains')"
+                                type="text"
+                                pInputText
+                                placeholder="Type to filter"
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <button
+                            class="p-button-outlined"
+                            pButton
+                            pRipple
+                            type="button"
+                            label="IMPORT"
+                            icon="pi pi-upload"
+                        ></button>
+                        <button
+                            class="p-button-outlined mx-4"
+                            pButton
+                            pRipple
+                            type="button"
+                            label="EXPORT"
+                            icon="pi pi-download"
+                        ></button>
+                        <button
+                            class="p-button-raised p-button-rounded text-white"
+                            pButton
+                            pRipple
+                            type="button"
+                            icon="pi pi-plus"
+                        ></button>
+                    </div>
+                </div>
+            </ng-template>
             <ng-template pTemplate="header" let-columns>
                 <tr>
-                    <th style="width: 3rem"></th>
-                    <th style="width: 3rem">
+                    <th class="tableHeader" style="width: 3rem"></th>
+                    <th class="tableHeader" style="width: 3rem">
                         <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
                     </th>
-                    <th *ngFor="let col of columns">
+                    <th
+                        class="tableHeader"
+                        *ngFor="let col of columns"
+                        [pSortableColumn]="col.fieldName"
+                    >
                         {{ col.header }}
+                        <p-sortIcon *ngIf="col.sortable" [field]="col.fieldName"></p-sortIcon>
                     </th>
                 </tr>
             </ng-template>
@@ -89,7 +107,9 @@
                                 <ng-template pTemplate="content">
                                     <span class="p-input-icon-right">
                                         <i class="pi pi-times" (click)="editText.deactivate()"></i>
-                                        <p-inputNumber [value]="category.sortOrder"></p-inputNumber>
+                                        <p-inputNumber
+                                            [ngModel]="category.sortOrder"
+                                        ></p-inputNumber>
                                     </span>
                                 </ng-template>
                                 <ng-template pTemplate="display">
@@ -116,10 +136,5 @@
                 </tr>
             </ng-template>
         </p-table>
-        <p-paginator
-            [rows]="vm.paginationPerPage"
-            [totalRecords]="vm.totalRecords"
-            (onPageChange)="paginate($event)"
-        ></p-paginator>
     </div>
 </dot-portlet-base>

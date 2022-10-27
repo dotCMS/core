@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
+import { LazyLoadEvent } from 'primeng/api';
 import { Observable } from 'rxjs';
 import { DotCategoriesListStore, DotCategoriesListState } from './store/dot-categories-list-store';
 @Component({
@@ -14,20 +15,19 @@ export class DotCategoriesListComponent {
     constructor(private store: DotCategoriesListStore) {}
 
     /**
-     * Search Categories when user type in search field
-     * @param {*} event
+     * update selected categories in store
      * @memberof DotCategoriesListComponent
      */
-    onChange(event) {
-        this.store.getCategories({ filter: event.target.value });
+    handleRowCheck(): void {
+        this.store.updateSelectedCategories(this.selectedCategories);
     }
 
     /**
-     * get categories according to pagination
-     * @param {*} event
+     * get records according to pagination
+     * @param {LazyLoadEvent} event
      * @memberof DotCategoriesListComponent
      */
-    paginate(event) {
-        this.store.getCategories({ currentPage: event.page + 1 });
+    loadCategories(event: LazyLoadEvent) {
+        this.store.getCategories(event);
     }
 }
