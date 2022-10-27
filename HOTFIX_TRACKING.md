@@ -54,4 +54,6 @@ This maintenance release includes the following code fixes:
 43. https://github.com/dotCMS/core/issues/22605 : Execution of Task211020CreateHostIntegrityCheckerResultTables Fails on MSSQL #22605
 44. https://github.com/dotCMS/core/issues/22696 : Can't save changes in Work Flow if user with special characters or new user is added. #22696
 45. https://github.com/dotCMS/core/issues/23041 : PublisherQueueJob gets stuck waiting for dependencies #23041
-
+46. https://github.com/dotCMS/core/issues/22951 : Disable submit button after submitting form #22951
+47. https://github.com/dotCMS/core/issues/22673 : What's Changed UI issues #22673
+48. https://github.com/dotCMS/core/issues/22338 : Content Palette not showing all available content types #22338
