@@ -808,7 +808,7 @@ public class PageResource {
      * @param copyContentletForm {@link CopyContentletForm}
      * @return Contentlet Map
      */
-    @POST
+    @PUT
     @JSONP
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
