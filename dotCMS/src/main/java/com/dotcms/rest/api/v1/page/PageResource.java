@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.page;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -20,6 +21,7 @@ import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -29,6 +31,8 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
+import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
@@ -51,6 +55,7 @@ import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.collections.keyvalue.MultiKey;
 import org.glassfish.jersey.server.JSONP;
+import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -796,4 +801,76 @@ public class PageResource {
         return includeRenderedAttr;
     }
 
+    /**
+     * Copy the contentlet sent over the CopyContentletForm
+     * @param request {@link HttpServletRequest}
+     * @param response {@link HttpServletResponse}
+     * @param copyContentletForm {@link CopyContentletForm}
+     * @return Contentlet Map
+     */
+    @POST
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/copyContent")
+    public final  Map<String, Object> copyContent(
+                                      @Context final HttpServletRequest request,
+                                      @Context final HttpServletResponse response,
+                                      final CopyContentletForm copyContentletForm)
+            throws DotSecurityException, DotDataException {
+
+        Logger.debug(this, ()-> "Copying the contentlet: " + copyContentletForm);
+
+        if (copyContentletForm == null) {
+
+            throw new BadRequestException("Form is required");
+        }
+
+        final InitDataObject initData = webResource.init(request, response,true);
+        final PageMode pageMode       = PageMode.get(request);
+        final User user               = initData.getUser();
+        final Language language       = WebAPILocator.getLanguageWebAPI().getLanguage(request); // todo: not sure if this should be received on the form.
+        final Contentlet copiedContentlet = this.copyContentlet(copyContentletForm, user, pageMode, language);
+
+        return new DotTransformerBuilder().defaultOptions().content(copiedContentlet).build()
+                .toMaps().stream().findFirst().orElse(Collections.emptyMap());
+    }
+
+    @WrapInTransaction
+    private Contentlet copyContentlet(final CopyContentletForm copyContentletForm, final User user,
+                                      final PageMode pageMode, final Language language)
+            throws DotDataException, DotSecurityException {
+
+        final Contentlet copiedContentlet = this.copyContent(copyContentletForm, user, pageMode, language.getId());
+
+        final String htmlPage   = copyContentletForm.getPageId();
+        final String container  = copyContentletForm.getContainerId();
+        final String contentId  = copyContentletForm.getContentId();
+        final String instanceId = copyContentletForm.getContainerUUID();
+        final String personalization = copyContentletForm.getPersonalizationKey();
+
+        final MultiTree currentMultitree = new MultiTree(htmlPage, container, contentId, instanceId, 0, personalization);
+        Logger.debug(this, ()-> "Deleting current contentlet multi true: " + currentMultitree);
+        APILocator.getMultiTreeAPI().deleteMultiTree(currentMultitree);
+
+        final MultiTree newMultitree = new MultiTree(htmlPage, container, copiedContentlet.getIdentifier(), instanceId, 0, personalization);
+        Logger.debug(this, ()-> "Saving current contentlet multi true: " + currentMultitree);
+        APILocator.getMultiTreeAPI().saveMultiTree(newMultitree);
+
+        return copiedContentlet;
+    }
+
+    private Contentlet copyContent(final CopyContentletForm copyContentletForm, final User user,
+                                   final PageMode pageMode, final long languageId) throws DotDataException, DotSecurityException {
+
+        Logger.debug(this, ()-> "Copying the contenlet: " + copyContentletForm.getContentId());
+        final Contentlet currentContentlet = this.esapi.findContentletByIdentifier(
+                copyContentletForm.getContentId(), pageMode.showLive, languageId, user, pageMode.respectAnonPerms);
+
+        final Contentlet copiedContentlet  = this.esapi.copyContentlet(currentContentlet, user, pageMode.respectAnonPerms);
+        Logger.debug(this, ()-> "Copied the contenlet: " + copiedContentlet.getIdentifier());
+
+        return copiedContentlet;
+    }
 }
