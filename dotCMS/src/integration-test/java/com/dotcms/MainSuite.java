@@ -117,11 +117,7 @@ import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
 import com.dotmarketing.startup.StartupTasksExecutorTest;
 import com.dotmarketing.startup.runalways.Task00050LoadAppsSecretsTest;
 import com.dotmarketing.startup.runonce.*;
-import com.dotmarketing.util.ConfigTest;
-import com.dotmarketing.util.HashBuilderTest;
-import com.dotmarketing.util.MaintenanceUtilTest;
-import com.dotmarketing.util.ResourceCollectorUtilTest;
-import com.dotmarketing.util.TestConfig;
+import com.dotmarketing.util.*;
 import com.liferay.portal.language.LanguageUtilTest;
 import org.apache.velocity.tools.view.tools.CookieToolTest;
 import org.junit.runner.RunWith;
@@ -493,7 +489,8 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentBundlerTest.class,
         URLMapBundlerTest.class,
         PermissionBitFactoryImplTest.class,
-        Task220912UpdateCorrectShowOnMenuPropertyTest.class
+        Task220912UpdateCorrectShowOnMenuPropertyTest.class,
+        UtilMethodsITest.class
 })
 public class MainSuite {
 
