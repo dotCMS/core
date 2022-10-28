@@ -31,6 +31,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -49,6 +50,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -63,11 +65,13 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import org.apache.commons.beanutils.BeanUtils;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.FormDataParam;
+import org.glassfish.jersey.message.internal.OutboundJaxrsResponse;
 import org.glassfish.jersey.server.JSONP;
 
 /**
@@ -126,6 +130,7 @@ public class CategoriesResource {
 
         Response response = null;
         final User user = initData.getUser();
+        final PageMode pageMode = PageMode.get(httpRequest);
 
         Logger.debug(this, () -> "Getting the List of categories. " + String.format(
                 "Request query parameters are : {filter : %s, page : %s, perPage : %s}", filter,
@@ -133,6 +138,8 @@ public class CategoriesResource {
 
         try {
             response = this.paginationUtil.getPage(httpRequest, user, filter, page, perPage);
+            response = addChildrenCountToResponse(response,user, pageMode,filter,page,perPage,"ASC");
+
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
@@ -142,6 +149,39 @@ public class CategoriesResource {
         }
 
         return response;
+    }
+
+    private Response addChildrenCountToResponse(final Response response, final User user, final PageMode pageMode, final String filter,
+            final int page, final int perPage, final String direction)
+            throws DotDataException, DotSecurityException {
+
+        List<CategoryListDTO> result = new ArrayList<>();
+
+        ResponseEntityView responseEntityView = (ResponseEntityView)((OutboundJaxrsResponse) response).getContext().getEntity();
+        PaginatedArrayList listWithoutChildrenCount = (PaginatedArrayList)responseEntityView.getEntity();
+        for(var c : listWithoutChildrenCount){
+            Category category = (Category)c;
+            CategoryListDTO categoryListDTO = new CategoryListDTO(category.getCategoryName(),category.getCategoryVelocityVarName(), category.getKey(),
+                    category.getKeywords(), category.getSortOrder(), category.getDescription(),category.isActive(),category.getModDate(),
+                    category.getIDate(),category.getType(),category.getOwner(),category.getInode(),category.getIdentifier(),
+                    this.categoryAPI.findChildren(user, category.getInode(), pageMode.respectAnonPerms, page, perPage,filter, direction).getTotalCount());
+
+            result.add(categoryListDTO);
+        }
+
+        Response modifiedResponse =  Response.
+                ok(new ResponseEntityView((Object) result)).build();
+
+        MultivaluedMap<String, Object> headers = response.getHeaders();
+
+        for (Entry<String, List<Object>> entry : headers.entrySet()) {
+            if (entry.getValue() == null || entry.getValue().isEmpty()) {
+                continue;
+            }
+            modifiedResponse.getHeaders().add(entry.getKey(), entry.getValue());
+        }
+
+        return modifiedResponse;
     }
 
     /**
