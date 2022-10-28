@@ -13,17 +13,19 @@ public class CopyContentletForm {
     private final String contentId;
     private final String pageId;
     private final String containerId;
-    private final String containerUUID;
+    private final String relationType;
     private final String personalization;
-
-    // todo: add variant
+    private final String variantId;
+    private final int treeOrder;
 
     private CopyContentletForm(final Builder builder) {
         this.contentId = builder.contentId;
         this.pageId = builder.pageId;
         this.containerId = builder.containerId;
-        this.containerUUID = builder.containerUUID;
+        this.relationType = builder.relationType;
         this.personalization = builder.personalization;
+        this.variantId = builder.variantId;
+        this.treeOrder = builder.treeOrder;
     }
 
     public String getContentId() {
@@ -38,13 +40,22 @@ public class CopyContentletForm {
         return containerId;
     }
 
-    public String getContainerUUID() {
-        return containerUUID;
+    public String getRelationType() {
+        return relationType;
     }
 
     public String getPersonalization() {
         return personalization;
     }
+
+    public String getVariantId() {
+        return variantId;
+    }
+
+    public int getTreeOrder() {
+        return treeOrder;
+    }
+
 
     @Override
     public String toString() {
@@ -52,8 +63,10 @@ public class CopyContentletForm {
                 "contentId='" + contentId + '\'' +
                 ", pageId='" + pageId + '\'' +
                 ", containerId='" + containerId + '\'' +
-                ", containerUUID='" + containerUUID + '\'' +
-                ", personalizationKey='" + personalization + '\'' +
+                ", relationType='" + relationType + '\'' +
+                ", personalization='" + personalization + '\'' +
+                ", variantId='" + variantId + '\'' +
+                ", treeOrder=" + treeOrder +
                 '}';
     }
 
@@ -68,10 +81,16 @@ public class CopyContentletForm {
         private String containerId;
 
         @JsonProperty(required = true)
-        private String containerUUID;
+        private String relationType;
 
         @JsonProperty
         private String personalization;
+
+        @JsonProperty
+        private String variantId;
+
+        @JsonProperty
+        private int treeOrder;
 
         public Builder contentId(String contentId) {
             this.contentId = contentId;
@@ -88,13 +107,23 @@ public class CopyContentletForm {
             return this;
         }
 
-        public Builder containerUUID(String containerUUID) {
-            this.containerUUID = containerUUID;
+        public Builder relationType(String relationType) {
+            this.relationType = relationType;
             return this;
         }
 
         public Builder personalization(String personalization) {
             this.personalization = personalization;
+            return this;
+        }
+
+        public Builder variantId(String variantId) {
+            this.variantId = variantId;
+            return this;
+        }
+
+        public Builder treeOrder(int treeOrder) {
+            this.treeOrder = treeOrder;
             return this;
         }
 

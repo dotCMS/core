@@ -20,6 +20,7 @@ import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
@@ -877,14 +878,21 @@ public class PageResource {
         final String htmlPage   = copyContentletForm.getPageId();
         final String container  = copyContentletForm.getContainerId();
         final String contentId  = copyContentletForm.getContentId();
-        final String instanceId = copyContentletForm.getContainerUUID();
+        final String instanceId = copyContentletForm.getRelationType();
+        final String variant    = copyContentletForm.getVariantId();
+        final int treeOrder     = copyContentletForm.getTreeOrder();
         final String personalization = copyContentletForm.getPersonalization();
 
-        final MultiTree currentMultitree = new MultiTree(htmlPage, container, contentId, instanceId, 0, personalization);
+
+        final MultiTree currentMultitree = new MultiTree(htmlPage, container, contentId,
+                instanceId, treeOrder, null == personalization? MultiTree.DOT_PERSONALIZATION_DEFAULT: personalization,
+                null == variant? VariantAPI.DEFAULT_VARIANT.name(): variant);
         Logger.debug(this, ()-> "Deleting current contentlet multi true: " + currentMultitree);
         APILocator.getMultiTreeAPI().deleteMultiTree(currentMultitree);
 
-        final MultiTree newMultitree = new MultiTree(htmlPage, container, copiedContentlet.getIdentifier(), instanceId, 0, personalization);
+        final MultiTree newMultitree = new MultiTree(htmlPage, container, copiedContentlet.getIdentifier(),
+                instanceId, treeOrder, null == personalization? MultiTree.DOT_PERSONALIZATION_DEFAULT: personalization,
+                null == variant? VariantAPI.DEFAULT_VARIANT.name(): variant);
         Logger.debug(this, ()-> "Saving current contentlet multi true: " + currentMultitree);
         APILocator.getMultiTreeAPI().saveMultiTree(newMultitree);
 
