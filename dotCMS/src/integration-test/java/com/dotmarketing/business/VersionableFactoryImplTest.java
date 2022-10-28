@@ -260,13 +260,11 @@ public class VersionableFactoryImplTest {
         final List<ContentletVersionInfo> allContentletVersionInfos = FactoryLocator.getVersionableFactory()
                 .findAllContentletVersionInfos(contentlet_1.getIdentifier(), variant.name());
 
-        assertEquals(2, allContentletVersionInfos.size());
-        final List<String> contents = allContentletVersionInfos.stream()
-                .map(contentletVersionInfo -> contentletVersionInfo.getWorkingInode())
-                .collect(Collectors.toList());
+        assertEquals(1, allContentletVersionInfos.size());
 
-        assertTrue(contents.contains(contentlet_1.getIdentifier()));
-        assertTrue(contents.contains(contentlet_2.getIdentifier()));
+        assertEquals(allContentletVersionInfos.get(0).getVariant(), variant.name());
+        assertEquals(allContentletVersionInfos.get(0).getWorkingInode(), contentlet_1.getInode());
+        assertEquals(allContentletVersionInfos.get(0).getLang(), language.getId());
     }
 
     /**

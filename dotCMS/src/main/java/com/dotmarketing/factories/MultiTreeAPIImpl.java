@@ -6,6 +6,7 @@ import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.business.web.WebAPILocator;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -57,6 +58,7 @@ import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import org.jetbrains.annotations.NotNull;
 
 
 /**
@@ -862,17 +864,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         CacheLocator.getMultiTreeCache()
                 .removePageMultiTrees(pageIdentifier, variantName);
 
-        final Set<String> inodeSet = new HashSet<>();
-        final List<ContentletVersionInfo> contentletVersionInfos = APILocator.getVersionableAPI()
-                .findContentletVersionInfos(pageIdentifier, variantName);
-
-        for (final ContentletVersionInfo versionInfo : contentletVersionInfos) {
-
-            inodeSet.add(versionInfo.getWorkingInode());
-            if (versionInfo.getLiveInode() != null) {
-                inodeSet.add(versionInfo.getLiveInode());
-            }
-        }
+        final Collection<String> inodeSet = getInodes(pageIdentifier, variantName);
 
         try {
             final List<Contentlet> contentlets = APILocator.getContentletAPIImpl()
@@ -884,13 +876,41 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
                 final IHTMLPage htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(pageContent);
 
-                pageLoader.invalidate(htmlPage, PageMode.EDIT_MODE);
-                pageLoader.invalidate(htmlPage, PageMode.PREVIEW_MODE);
+                pageLoader.invalidate(htmlPage, variantName, PageMode.EDIT_MODE);
+                pageLoader.invalidate(htmlPage, variantName, PageMode.PREVIEW_MODE);
             }
         } catch (DotStateException | DotSecurityException e) {
 
             Logger.warn(MultiTreeAPIImpl.class, "unable to refresh page cache:" + e.getMessage());
         }
+    }
+
+    private Collection<String> getInodes(String pageIdentifier, String variantName)
+            throws DotDataException {
+
+        final List<ContentletVersionInfo> contentletVersionInfos = APILocator.getVersionableAPI()
+                .findContentletVersionInfos(pageIdentifier, variantName);
+
+        if (UtilMethods.isSet(contentletVersionInfos)) {
+            return getInodes(contentletVersionInfos);
+        } else {
+           return  getInodes(APILocator.getVersionableAPI()
+                   .findContentletVersionInfos(pageIdentifier, VariantAPI.DEFAULT_VARIANT.name()));
+        }
+    }
+
+    private Collection<String> getInodes(final List<ContentletVersionInfo> contentletVersionInfos) {
+        final Set<String> inodeSet = new HashSet<>();
+
+        for (final ContentletVersionInfo versionInfo : contentletVersionInfos) {
+
+            inodeSet.add(versionInfo.getWorkingInode());
+            if (versionInfo.getLiveInode() != null) {
+                inodeSet.add(versionInfo.getLiveInode());
+            }
+        }
+
+        return inodeSet;
     }
 
     @WrapInTransaction

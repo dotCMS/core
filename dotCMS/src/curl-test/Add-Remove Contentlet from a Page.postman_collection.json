@@ -225,24 +225,6 @@
 					"response": []
 				},
 				{
-					"name": "logout",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/dotAdmin/logout",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"dotAdmin",
-								"logout"
-							]
-						}
-					},
-					"response": []
-				},
-				{
 					"name": "reder page with DEFAULT variant",
 					"event": [
 						{
@@ -252,9 +234,10 @@
 									"pm.test(\"Variants with correct weight\", function () {",
 									"    pm.response.to.have.status(200);",
 									"   ",
-									"    pm.expect(pm.response.text()).to.contains('content_1');",
-									"    pm.expect(pm.response.text()).to.contains('content_2');",
-									"    pm.expect(pm.response.text()).to.contains('content_3');",
+									"    var html = pm.response.json().entity.page.rendered;",
+									"    pm.expect(html).to.contains('content_1');",
+									"    pm.expect(html).to.contains('content_2');",
+									"    pm.expect(html).to.contains('content_3');",
 									"});"
 								],
 								"type": "text/javascript"
@@ -268,12 +251,22 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/page-test",
+							"raw": "{{serverURL}}/api/v1/page/render/page-test?language_id=1",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
+								"api",
+								"v1",
+								"page",
+								"render",
 								"page-test"
+							],
+							"query": [
+								{
+									"key": "language_id",
+									"value": "1"
+								}
 							]
 						}
 					},
@@ -289,9 +282,10 @@
 									"pm.test(\"Variants with correct weight\", function () {",
 									"    pm.response.to.have.status(200);",
 									"   ",
-									"    pm.expect(pm.response.text()).to.contains('content_1');",
-									"    pm.expect(pm.response.text()).to.contains('content_2');",
-									"    pm.expect(pm.response.text()).to.contains('content_3');",
+									"    var html = pm.response.json().entity.page.rendered;",
+									"    pm.expect(html).to.contains('content_1');",
+									"    pm.expect(html).to.contains('content_2');",
+									"    pm.expect(html).to.contains('content_3');",
 									"});"
 								],
 								"type": "text/javascript"
@@ -305,14 +299,22 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/page-test?variantName=dotexperiment-{{experimentId}}-variant-1",
+							"raw": "{{serverURL}}/api/v1/page/render/page-test?language_id=1&variantName=dotexperiment-{{experimentId}}-variant-1",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
+								"api",
+								"v1",
+								"page",
+								"render",
 								"page-test"
 							],
 							"query": [
+								{
+									"key": "language_id",
+									"value": "1"
+								},
 								{
 									"key": "variantName",
 									"value": "dotexperiment-{{experimentId}}-variant-1"
@@ -387,24 +389,6 @@
 					"response": []
 				},
 				{
-					"name": "logout",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/dotAdmin/logout",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"dotAdmin",
-								"logout"
-							]
-						}
-					},
-					"response": []
-				},
-				{
 					"name": "Render again after Add/remove",
 					"event": [
 						{
@@ -414,11 +398,12 @@
 									"pm.test(\"Variants with correct weight\", function () {",
 									"    pm.response.to.have.status(200);",
 									"   ",
-									"    pm.expect(pm.response.text()).to.contains('content_1');",
-									"    pm.expect(pm.response.text()).to.contains('content_4');",
+									"   var html = pm.response.json().entity.page.rendered;",
+									"    pm.expect(html).to.contains('content_1');",
+									"    pm.expect(html).to.contains('content_4');",
 									"",
-									"    pm.expect(pm.response.text()).not.to.contains('content_2');",
-									"    pm.expect(pm.response.text()).not.to.contains('content_3');",
+									"    pm.expect(html).not.to.contains('content_2');",
+									"    pm.expect(html).not.to.contains('content_3');",
 									"});"
 								],
 								"type": "text/javascript"
@@ -432,14 +417,22 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/page-test?variantName=dotexperiment-{{experimentShortId}}-variant-1",
+							"raw": "{{serverURL}}/api/v1/page/render/page-test?language_id=1&variantName=dotexperiment-{{experimentShortId}}-variant-1",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
+								"api",
+								"v1",
+								"page",
+								"render",
 								"page-test"
 							],
 							"query": [
+								{
+									"key": "language_id",
+									"value": "1"
+								},
 								{
 									"key": "variantName",
 									"value": "dotexperiment-{{experimentShortId}}-variant-1"
@@ -459,11 +452,12 @@
 									"pm.test(\"Variants with correct weight\", function () {",
 									"    pm.response.to.have.status(200);",
 									"   ",
-									"    pm.expect(pm.response.text()).to.contains('content_1');",
-									"    pm.expect(pm.response.text()).to.contains('content_2');",
-									"    pm.expect(pm.response.text()).to.contains('content_3');",
+									"    var html = pm.response.json().entity.page.rendered;",
+									"    pm.expect(html).to.contains('content_1');",
+									"    pm.expect(html).to.contains('content_2');",
+									"    pm.expect(html).to.contains('content_3');",
 									"",
-									"    pm.expect(pm.response.text()).not.to.contains('content_4');",
+									"    pm.expect(html).not.to.contains('content_4');",
 									"});"
 								],
 								"type": "text/javascript"
@@ -477,12 +471,22 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/page-test",
+							"raw": "{{serverURL}}/api/v1/page/render/page-test?language_id=1",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
+								"api",
+								"v1",
+								"page",
+								"render",
 								"page-test"
+							],
+							"query": [
+								{
+									"key": "language_id",
+									"value": "1"
+								}
 							]
 						}
 					},
