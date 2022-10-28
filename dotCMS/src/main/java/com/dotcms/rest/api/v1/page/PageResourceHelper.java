@@ -9,6 +9,7 @@ import com.dotcms.mock.request.ParameterDecorator;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
@@ -17,6 +18,7 @@ import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -39,6 +41,7 @@ import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Table;
@@ -341,5 +344,62 @@ public class PageResourceHelper implements Serializable {
         } catch (DotDataException | DotSecurityException | PortalException | SystemException e) {
             throw new DotRuntimeException(e);
         }
+    }
+
+
+    @WrapInTransaction
+    protected Contentlet copyContentlet(final CopyContentletForm copyContentletForm, final User user,
+                                      final PageMode pageMode, final Language language)
+            throws DotDataException, DotSecurityException {
+
+        final Contentlet copiedContentlet = this.copyContent(copyContentletForm, user, pageMode, language.getId());
+
+        final String htmlPage   = copyContentletForm.getPageId();
+        final String container  = copyContentletForm.getContainerId();
+        final String contentId  = copyContentletForm.getContentId();
+        final String instanceId = copyContentletForm.getRelationType();
+        final String variant    = copyContentletForm.getVariantId();
+        final int treeOrder     = copyContentletForm.getTreeOrder();
+        final String personalization = copyContentletForm.getPersonalization();
+
+
+        Logger.debug(this, ()-> "Deleting current contentlet multi true: " + copyContentletForm);
+        final MultiTree currentMultitree = APILocator.getMultiTreeAPI().getMultiTree(htmlPage, container, contentId, instanceId,
+                null == personalization? MultiTree.DOT_PERSONALIZATION_DEFAULT: personalization, null == variant? VariantAPI.DEFAULT_VARIANT.name(): variant);
+
+        if (null == currentMultitree) {
+
+            throw new DoesNotExistException(
+                    "Can not copied the contentlet in the page, because the record is not part of the page, multitree: " + copyContentletForm);
+        }
+
+        APILocator.getMultiTreeAPI().deleteMultiTree(currentMultitree);
+
+        final MultiTree newMultitree = new MultiTree(htmlPage, container, copiedContentlet.getIdentifier(),
+                instanceId, treeOrder, null == personalization? MultiTree.DOT_PERSONALIZATION_DEFAULT: personalization,
+                null == variant? VariantAPI.DEFAULT_VARIANT.name(): variant);
+        Logger.debug(this, ()-> "Saving current contentlet multi true: " + currentMultitree);
+        APILocator.getMultiTreeAPI().saveMultiTree(newMultitree);
+
+        return copiedContentlet;
+    }
+
+    private Contentlet copyContent(final CopyContentletForm copyContentletForm, final User user,
+                                   final PageMode pageMode, final long languageId) throws DotDataException, DotSecurityException {
+
+        Logger.debug(this, ()-> "Copying the contenlet: " + copyContentletForm.getContentId());
+        final Contentlet currentContentlet = this.contentletAPI.findContentletByIdentifier(
+                copyContentletForm.getContentId(), pageMode.showLive, languageId, user, pageMode.respectAnonPerms);
+
+        if (null == currentContentlet) {
+
+            throw new DoesNotExistException(
+                    "The Contentlet can not be copied, because do not exists, content id: " + copyContentletForm.getContentId());
+        }
+
+        final Contentlet copiedContentlet  = this.contentletAPI.copyContentlet(currentContentlet, user, pageMode.respectAnonPerms);
+        Logger.debug(this, ()-> "Copied the contenlet: " + copiedContentlet.getIdentifier());
+
+        return copiedContentlet;
     }
 }

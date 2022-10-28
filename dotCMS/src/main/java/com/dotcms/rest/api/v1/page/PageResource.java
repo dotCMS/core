@@ -834,6 +834,7 @@ public class PageResource {
 
     /**
      * Copy the contentlet sent over the CopyContentletForm
+     * The contentlet should be part of the multitree on the page sent in the form, also the content should exists to be copied.
      * @param request {@link HttpServletRequest}
      * @param response {@link HttpServletResponse}
      * @param copyContentletForm {@link CopyContentletForm}
@@ -862,55 +863,13 @@ public class PageResource {
         final PageMode pageMode       = PageMode.get(request);
         final User user               = initData.getUser();
         final Language language       = WebAPILocator.getLanguageWebAPI().getLanguage(request); // todo: not sure if this should be received on the form.
-        final Contentlet copiedContentlet = this.copyContentlet(copyContentletForm, user, pageMode, language);
+        final Contentlet copiedContentlet = this.pageResourceHelper.copyContentlet(copyContentletForm, user, pageMode, language);
 
         return new DotTransformerBuilder().defaultOptions().content(copiedContentlet).build()
                 .toMaps().stream().findFirst().orElse(Collections.emptyMap());
     }
 
-    @WrapInTransaction
-    private Contentlet copyContentlet(final CopyContentletForm copyContentletForm, final User user,
-                                      final PageMode pageMode, final Language language)
-            throws DotDataException, DotSecurityException {
 
-        final Contentlet copiedContentlet = this.copyContent(copyContentletForm, user, pageMode, language.getId());
-
-        final String htmlPage   = copyContentletForm.getPageId();
-        final String container  = copyContentletForm.getContainerId();
-        final String contentId  = copyContentletForm.getContentId();
-        final String instanceId = copyContentletForm.getRelationType();
-        final String variant    = copyContentletForm.getVariantId();
-        final int treeOrder     = copyContentletForm.getTreeOrder();
-        final String personalization = copyContentletForm.getPersonalization();
-
-
-        final MultiTree currentMultitree = new MultiTree(htmlPage, container, contentId,
-                instanceId, treeOrder, null == personalization? MultiTree.DOT_PERSONALIZATION_DEFAULT: personalization,
-                null == variant? VariantAPI.DEFAULT_VARIANT.name(): variant);
-        Logger.debug(this, ()-> "Deleting current contentlet multi true: " + currentMultitree);
-        APILocator.getMultiTreeAPI().deleteMultiTree(currentMultitree);
-
-        final MultiTree newMultitree = new MultiTree(htmlPage, container, copiedContentlet.getIdentifier(),
-                instanceId, treeOrder, null == personalization? MultiTree.DOT_PERSONALIZATION_DEFAULT: personalization,
-                null == variant? VariantAPI.DEFAULT_VARIANT.name(): variant);
-        Logger.debug(this, ()-> "Saving current contentlet multi true: " + currentMultitree);
-        APILocator.getMultiTreeAPI().saveMultiTree(newMultitree);
-
-        return copiedContentlet;
-    }
-
-    private Contentlet copyContent(final CopyContentletForm copyContentletForm, final User user,
-                                   final PageMode pageMode, final long languageId) throws DotDataException, DotSecurityException {
-
-        Logger.debug(this, ()-> "Copying the contenlet: " + copyContentletForm.getContentId());
-        final Contentlet currentContentlet = this.esapi.findContentletByIdentifier(
-                copyContentletForm.getContentId(), pageMode.showLive, languageId, user, pageMode.respectAnonPerms);
-
-        final Contentlet copiedContentlet  = this.esapi.copyContentlet(currentContentlet, user, pageMode.respectAnonPerms);
-        Logger.debug(this, ()-> "Copied the contenlet: " + copiedContentlet.getIdentifier());
-
-        return copiedContentlet;
-    }
 
 
 }

@@ -1,5 +1,9 @@
 package com.dotcms.rest.api.v1.page;
 
+/**
+ * Multitree view to render on the json.
+ * @author jsanca
+ */
 public class MulitreeView {
 
     private final String pageId;

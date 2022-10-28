@@ -3786,6 +3786,126 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "BadCopyContentlet-ContentDoNotExists",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code is 404\", function () {",
+									"  pm.response.to.have.status(404);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"containerId\": \"{{containerId}}\",\n    \"contentId\": \"{{contentId}}xxx\",\n    \"pageId\": \"{{pageId}}\",\n    \"personalization\": \"{{personalization}}\",\n    \"relationType\": \"{{relationType}}\",\n    \"treeOrder\": \"{{treeOrder}}\",\n    \"variantId\": \"{{variantId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/copyContent",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"copyContent"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "BadCopyContentlet-ContentDoNotExists Copy",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code is 404\", function () {",
+									"  pm.response.to.have.status(404);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"containerId\": \"{{containerId}}xx\",\n    \"contentId\": \"{{contentId}}\",\n    \"pageId\": \"{{pageId}}\",\n    \"personalization\": \"{{personalization}}\",\n    \"relationType\": \"{{relationType}}\",\n    \"treeOrder\": \"{{treeOrder}}\",\n    \"variantId\": \"{{variantId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/copyContent",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"copyContent"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
