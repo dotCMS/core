@@ -14,14 +14,16 @@ public class CopyContentletForm {
     private final String pageId;
     private final String containerId;
     private final String containerUUID;
-    private final String personalizationKey;
+    private final String personalization;
+
+    // todo: add variant
 
     private CopyContentletForm(final Builder builder) {
         this.contentId = builder.contentId;
         this.pageId = builder.pageId;
         this.containerId = builder.containerId;
         this.containerUUID = builder.containerUUID;
-        this.personalizationKey = builder.personalizationKey;
+        this.personalization = builder.personalization;
     }
 
     public String getContentId() {
@@ -40,8 +42,8 @@ public class CopyContentletForm {
         return containerUUID;
     }
 
-    public String getPersonalizationKey() {
-        return personalizationKey;
+    public String getPersonalization() {
+        return personalization;
     }
 
     @Override
@@ -51,7 +53,7 @@ public class CopyContentletForm {
                 ", pageId='" + pageId + '\'' +
                 ", containerId='" + containerId + '\'' +
                 ", containerUUID='" + containerUUID + '\'' +
-                ", personalizationKey='" + personalizationKey + '\'' +
+                ", personalizationKey='" + personalization + '\'' +
                 '}';
     }
 
@@ -69,7 +71,7 @@ public class CopyContentletForm {
         private String containerUUID;
 
         @JsonProperty
-        private String personalizationKey;
+        private String personalization;
 
         public Builder contentId(String contentId) {
             this.contentId = contentId;
@@ -91,8 +93,8 @@ public class CopyContentletForm {
             return this;
         }
 
-        public Builder personalizationKey(String personalizationKey) {
-            this.personalizationKey = personalizationKey;
+        public Builder personalization(String personalization) {
+            this.personalization = personalization;
             return this;
         }
 

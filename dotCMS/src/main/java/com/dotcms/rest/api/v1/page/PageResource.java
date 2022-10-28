@@ -31,7 +31,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
@@ -55,7 +54,6 @@ import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.collections.keyvalue.MultiKey;
 import org.glassfish.jersey.server.JSONP;
-import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -647,6 +645,38 @@ public class PageResource {
 
         return Response.ok(new ResponseEntityView(pageLivePreviewVersionBean)).build();
     }
+
+    /**
+     * Returns the tree associated to the page
+     * @param request
+     * @param response
+     * @param pageId
+     * @return Response, pair with
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @GET
+    @Path("/{pageId}/content/tree")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public List<MulitreeView> getContentTree (@Context final HttpServletRequest  request,
+                                                   @Context final HttpServletResponse response,
+                                                   @PathParam("pageId") final String  pageId) throws SystemException, PortalException, DotDataException, DotSecurityException {
+
+        final User user = this.webResource.init(request, response, true).getUser();
+
+        Logger.debug(this, ()-> "Getting multitree per page: " + pageId);
+
+        final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(pageId);
+
+        return null != multiTrees? multiTrees.stream().map(multiTree ->
+                new MulitreeView(multiTree.getHtmlPage(), multiTree.getContainer(),
+                        multiTree.getContentlet(), multiTree.getRelationType(), multiTree.getTreeOrder(),
+                        multiTree.getPersonalization(), multiTree.getVariantId())).collect(Collectors.toList()):
+                Collections.emptyList();
+    } // getPersonalizedPersonasOnPage
+
     /**
      * Returns the list of personas with a flag that determine if the persona has been customized on a page or not.
      * { persona:Persona, personalized:boolean, pageId:String  }
@@ -848,7 +878,7 @@ public class PageResource {
         final String container  = copyContentletForm.getContainerId();
         final String contentId  = copyContentletForm.getContentId();
         final String instanceId = copyContentletForm.getContainerUUID();
-        final String personalization = copyContentletForm.getPersonalizationKey();
+        final String personalization = copyContentletForm.getPersonalization();
 
         final MultiTree currentMultitree = new MultiTree(htmlPage, container, contentId, instanceId, 0, personalization);
         Logger.debug(this, ()-> "Deleting current contentlet multi true: " + currentMultitree);
@@ -873,4 +903,6 @@ public class PageResource {
 
         return copiedContentlet;
     }
+
+
 }
