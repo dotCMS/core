@@ -1,8 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
 import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
-import { LazyLoadEvent } from 'primeng/api';
+import { LazyLoadEvent, MenuItem } from 'primeng/api';
+import { Table } from 'primeng/table';
 import { Observable } from 'rxjs';
+import { take } from 'rxjs/operators';
 import { DotCategoriesListStore, DotCategoriesListState } from './store/dot-categories-list-store';
+
 @Component({
     selector: 'dot-categories-list',
     templateUrl: './dot-categories-list.component.html',
@@ -12,7 +15,40 @@ import { DotCategoriesListStore, DotCategoriesListState } from './store/dot-cate
 export class DotCategoriesListComponent {
     vm$: Observable<DotCategoriesListState> = this.store.vm$;
     selectedCategories: DotCategory[] = [];
+
+    @ViewChild('dataTable')
+    dataTable: Table;
+
     constructor(private store: DotCategoriesListStore) {}
+
+    /**
+     * Add category in breadcrumb
+     * @param {DotCategory} category
+     * @memberof DotCategoriesListComponent
+     */
+    addBreadCrumb(category: DotCategory) {
+        this.dataTable.filter(category.inode, 'inode', null);
+        this.dataTable.filter(null, 'global', null);
+        this.store.addCategoriesBreadCrumb({ label: category.categoryName, id: category.inode });
+    }
+
+    /**
+     * Update categories breadcrumb in store
+     * @param {*} event
+     * @memberof DotCategoriesListComponent
+     */
+    async updateBreadCrumb(event) {
+        const { item } = event;
+        let { categoryBreadCrumbs } = await this.store.categoryBreadCrumbSselector$
+            .pipe(take(1))
+            .toPromise();
+        categoryBreadCrumbs = categoryBreadCrumbs.filter(
+            ({ tabindex }: MenuItem) => Number(tabindex) <= Number(item.tabindex)
+        );
+        this.store.updateCategoriesBreadCrumb(categoryBreadCrumbs);
+        this.dataTable.filter(item.id || null, 'inode', null);
+        this.dataTable.filter(null, 'global', null);
+    }
 
     /**
      * Update selected categories in store
@@ -28,6 +64,11 @@ export class DotCategoriesListComponent {
      * @memberof DotCategoriesListComponent
      */
     loadCategories(event: LazyLoadEvent) {
-        this.store.getCategories(event);
+        const lazyLoadEvent = this.dataTable?.createLazyLoadMetadata();
+        if (lazyLoadEvent?.filters?.inode) {
+            this.store.getChildrenCategories(event);
+        } else {
+            this.store.getCategories(event);
+        }
     }
 }

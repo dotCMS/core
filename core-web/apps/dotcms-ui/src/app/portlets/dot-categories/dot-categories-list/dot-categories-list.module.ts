@@ -12,6 +12,7 @@ import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-b
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { InplaceModule } from 'primeng/inplace';
 import { InputNumberModule } from 'primeng/inputnumber';
+import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { DotCategoriesService } from '@dotcms/app/api/services/dot-categories/dot-categories.service';
 
 @NgModule({
@@ -29,7 +30,8 @@ import { DotCategoriesService } from '@dotcms/app/api/services/dot-categories/do
         InplaceModule,
         InputNumberModule,
         DotActionMenuButtonModule,
-        DotMessagePipeModule
+        DotMessagePipeModule,
+        BreadcrumbModule
     ],
     providers: [DotCategoriesService]
 })

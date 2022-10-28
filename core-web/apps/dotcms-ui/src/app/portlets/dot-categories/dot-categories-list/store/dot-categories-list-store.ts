@@ -16,6 +16,8 @@ export interface DotCategoriesListState {
     selectedCategories: DotCategory[];
     tableColumns: DataTableColumn[];
     categories: DotCategory[];
+    categoryBreadCrumbs: MenuItem[];
+    breadCrumbHome: MenuItem;
     paginationPerPage: number;
     currentPage: number;
     totalRecords: number;
@@ -36,6 +38,8 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
             tableColumns: this.getCategoriesColumns(),
             selectedCategories: [],
             categories: [],
+            categoryBreadCrumbs: [],
+            breadCrumbHome: { icon: 'pi pi-home' },
             currentPage: this.categoryService.currentPage,
             paginationPerPage: this.categoryService.paginationPerPage,
             totalRecords: this.categoryService.totalRecords,
@@ -46,9 +50,22 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
     readonly vm$ = this.select((state: DotCategoriesListState) => state);
 
     /**
+     * Get categories breadcrumbs
+     * @memberof DotCategoriesListStore
+     */
+    readonly categoryBreadCrumbSselector$ = this.select(
+        ({ categoryBreadCrumbs }: DotCategoriesListState) => {
+            return {
+                categoryBreadCrumbs
+            };
+        }
+    );
+
+    /**
      * A function that updates the state of the store.
      * @param state DotCategoryListState
      * @param selectedCategories DotCategory[]
+     * @memberof DotCategoriesListStore
      */
     readonly updateSelectedCategories = this.updater<DotCategory[]>(
         (state: DotCategoriesListState, selectedCategories: DotCategory[]) => {
@@ -62,6 +79,7 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
     /** A function that updates the state of the store.
      * @param state DotCategoryListState
      * @param categories DotCategory[]
+     * @memberof DotCategoriesListStore
      */
     readonly setCategories = this.updater<DotCategory[]>(
         (state: DotCategoriesListState, categories: DotCategory[]) => {
@@ -77,11 +95,40 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
         }
     );
 
+    /**
+     * Add cateogry in breadcrumb
+     * @memberof DotCategoriesListStore
+     */
+    readonly addCategoriesBreadCrumb = this.updater<MenuItem>(
+        (state: DotCategoriesListState, categoryBreadCrumb: MenuItem) => {
+            return {
+                ...state,
+                categoryBreadCrumbs: [
+                    ...state.categoryBreadCrumbs,
+                    { ...categoryBreadCrumb, tabindex: state.categoryBreadCrumbs.length.toString() }
+                ]
+            };
+        }
+    );
+    /**
+     * Update categories in store
+     * @memberof DotCategoriesListStore
+     */
+    readonly updateCategoriesBreadCrumb = this.updater<MenuItem[]>(
+        (state: DotCategoriesListState, categoryBreadCrumbs: MenuItem[]) => {
+            return {
+                ...state,
+                categoryBreadCrumbs
+            };
+        }
+    );
+
     // EFFECTS
 
     /**
      * > This function returns an observable of an array of DotCategory objects
      * @returns Observable<DotCategory[]>
+     * @memberof DotCategoriesListStore
      */
 
     readonly getCategories = this.effect((filters: Observable<LazyLoadEvent>) => {
@@ -89,6 +136,25 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
             map((filters: LazyLoadEvent) => {
                 this.categoryService
                     .getCategories(filters)
+                    .pipe(take(1))
+                    .subscribe((items: DotCategory[]) => {
+                        this.setCategories(items);
+                    });
+            })
+        );
+    });
+
+    /**
+     * > This function returns an observable of an array of DotCategory objects
+     * @returns Observable<DotCategory[]>
+     * @memberof DotCategoriesListStore
+     */
+
+    readonly getChildrenCategories = this.effect((filters: Observable<LazyLoadEvent>) => {
+        return filters.pipe(
+            map((filters: LazyLoadEvent) => {
+                this.categoryService
+                    .getChildrenCategories(filters)
                     .pipe(take(1))
                     .subscribe((items: DotCategory[]) => {
                         this.setCategories(items);

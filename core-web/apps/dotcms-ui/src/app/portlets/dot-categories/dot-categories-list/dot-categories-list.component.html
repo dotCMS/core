@@ -1,4 +1,12 @@
 <dot-portlet-base *ngIf="vm$ | async as vm">
+    <div class="px-3 py-2">
+        <p-breadcrumb
+            [model]="vm.categoryBreadCrumbs"
+            [home]="vm.breadCrumbHome"
+            (onItemClick)="updateBreadCrumb($event)"
+        >
+        </p-breadcrumb>
+    </div>
     <div class="category_listing">
         <p-table
             #dataTable
@@ -103,7 +111,7 @@
                     </td>
                     <td *ngFor="let col of columns">
                         <ng-container *ngIf="col.fieldName === 'sortOrder'; else Actions">
-                            <p-inplace #editText styleClass="listing__categories__sortOrder">
+                            <p-inplace #editText styleClass="sortOrder">
                                 <ng-template pTemplate="content">
                                     <span class="p-input-icon-right">
                                         <i class="pi pi-times" (click)="editText.deactivate()"></i>
@@ -119,7 +127,7 @@
                             </p-inplace>
                         </ng-container>
                         <ng-template #Actions>
-                            <ng-container *ngIf="col.fieldName === 'Actions'; else third">
+                            <ng-container *ngIf="col.fieldName === 'Actions'; else CategoryName">
                                 <dot-action-menu-button
                                     class="listing-categories__action-button"
                                     [attr.data-testid]="category.categoryId"
@@ -129,7 +137,18 @@
                                 </dot-action-menu-button>
                             </ng-container>
                         </ng-template>
-                        <ng-template #third>
+                        <ng-template #CategoryName>
+                            <ng-container *ngIf="col.fieldName === 'categoryName'; else last">
+                                <button
+                                    class="link-button p-button-link"
+                                    [label]="category.categoryName"
+                                    (click)="addBreadCrumb(category)"
+                                    pButton
+                                    type="button"
+                                ></button>
+                            </ng-container>
+                        </ng-template>
+                        <ng-template #last>
                             {{ category[col.fieldName] }}
                         </ng-template>
                     </td>

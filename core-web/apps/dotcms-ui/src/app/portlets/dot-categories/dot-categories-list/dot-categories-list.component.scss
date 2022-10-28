@@ -17,4 +17,17 @@ dot-portlet-base {
     .p-inputtext {
         border-left: none;
     }
+
+    .link-button {
+        color: var(--color-sec);
+        :hover {
+            color: var(--color-sec);
+        }
+        :enabled {
+            color: var(--color-sec);
+        }
+    }
+    .link-button:enabled:hover {
+        color: var(--color-sec);
+    }
 }
