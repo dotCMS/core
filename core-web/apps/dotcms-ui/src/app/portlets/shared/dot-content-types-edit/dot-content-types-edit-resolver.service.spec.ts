@@ -12,7 +12,7 @@ import { ActivatedRouteSnapshot } from '@angular/router';
 import { LoginServiceMock } from '@dotcms/utils-testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DOTTestBed } from '../../../test/dot-test-bed';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 
 class CrudServiceMock {

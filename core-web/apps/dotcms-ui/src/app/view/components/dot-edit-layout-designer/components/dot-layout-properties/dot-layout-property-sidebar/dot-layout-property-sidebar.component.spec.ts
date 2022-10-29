@@ -1,4 +1,4 @@
-import { DOTTestBed } from '../../../../../../test/dot-test-bed';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 

@@ -7,7 +7,7 @@ import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.s
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessageService } from '@dotcms/data-access';
 import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
-import { DOTTestBed } from '../../../test/dot-test-bed';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Component, DebugElement } from '@angular/core';
 import { DotContainerSelectorLayoutComponent } from './dot-container-selector-layout.component';

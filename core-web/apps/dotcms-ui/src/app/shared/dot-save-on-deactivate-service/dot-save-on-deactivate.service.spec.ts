@@ -1,7 +1,7 @@
 import { of as observableOf, Observable } from 'rxjs';
 import { DotSaveOnDeactivateService } from './dot-save-on-deactivate.service';
 import { DotAlertConfirmService } from '@dotcms/data-access';
-import { DOTTestBed } from '../../test/dot-test-bed';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { LoginService } from '@dotcms/dotcms-js';
 import { OnSaveDeactivate } from './save-on-deactivate';
 import { Component } from '@angular/core';

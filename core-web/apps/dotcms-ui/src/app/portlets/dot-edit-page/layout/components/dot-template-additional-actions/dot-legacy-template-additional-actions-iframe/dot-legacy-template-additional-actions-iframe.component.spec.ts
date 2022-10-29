@@ -1,6 +1,6 @@
 import { of as observableOf } from 'rxjs';
 import { ComponentFixture } from '@angular/core/testing';
-import { DOTTestBed } from '../../../../../../test/dot-test-bed';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { ActivatedRoute } from '@angular/router';
 import { Component, Input } from '@angular/core';

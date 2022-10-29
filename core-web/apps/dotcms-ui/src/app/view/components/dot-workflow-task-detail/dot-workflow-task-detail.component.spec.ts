@@ -7,7 +7,7 @@ import { waitForAsync, ComponentFixture } from '@angular/core/testing';
 
 import { LoginService } from '@dotcms/dotcms-js';
 
-import { DOTTestBed } from '../../../test/dot-test-bed';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotWorkflowTaskDetailService } from './services/dot-workflow-task-detail.service';
 import { DotWorkflowTaskDetailComponent } from './dot-workflow-task-detail.component';
 import { DotIframeDialogComponent } from '../dot-iframe-dialog/dot-iframe-dialog.component';

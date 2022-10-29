@@ -12,7 +12,7 @@ import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { DebugElement, Component, Input, forwardRef, Output, EventEmitter } from '@angular/core';
 import { DotLoginAsComponent } from './dot-login-as.component';
 import { LoginServiceMock, MockDotMessageService, mockUser } from '@dotcms/utils-testing';
-import { DOTTestBed } from '../../../../../test/dot-test-bed';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { SEARCHABLE_NGFACES_MODULES } from '../../../_common/searchable-dropdown/searchable-dropdown.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { LoginService, User } from '@dotcms/dotcms-js';

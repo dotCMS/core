@@ -2,7 +2,7 @@ import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { DotDevicesService } from '@dotcms/data-access';
 import { DotLanguagesService } from '@dotcms/data-access';
 import { DotPersonasService } from '@dotcms/data-access';
-import { DOTTestBed } from '../../../../../test/dot-test-bed';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';

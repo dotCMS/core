@@ -5,7 +5,7 @@ import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { DotPersonaSelectorComponent } from './dot-persona-selector.component';
 import { DebugElement, Component, Input } from '@angular/core';
 import { cleanUpDialog, MockDotMessageService } from '@dotcms/utils-testing';
-import { DOTTestBed } from '../../../test/dot-test-bed';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotMessageService } from '@dotcms/data-access';
 import { By } from '@angular/platform-browser';

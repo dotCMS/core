@@ -4,7 +4,7 @@ import { of as observableOf, Observable } from 'rxjs';
 import { ComponentFixture, async } from '@angular/core/testing';
 import { DebugElement, Component } from '@angular/core';
 
-import { DOTTestBed } from '../../../../test/dot-test-bed';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotMessageService } from '@dotcms/data-access';

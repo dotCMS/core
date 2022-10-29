@@ -1,7 +1,7 @@
 import { By } from '@angular/platform-browser';
 import { ComponentFixture } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
-import { DOTTestBed } from '../../../../../test/dot-test-bed';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotReorderMenuComponent } from './dot-reorder-menu.component';
 import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
 import { LoginService } from '@dotcms/dotcms-js';

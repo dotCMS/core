@@ -6,7 +6,7 @@ import { By } from '@angular/platform-browser';
 import { DebugElement, Component } from '@angular/core';
 import { waitForAsync, ComponentFixture } from '@angular/core/testing';
 
-import { DOTTestBed } from '../../../test/dot-test-bed';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotIframeDialogComponent } from './dot-iframe-dialog.component';
 import { IFrameModule } from '../_common/iframe';
 import { LoginService } from '@dotcms/dotcms-js';

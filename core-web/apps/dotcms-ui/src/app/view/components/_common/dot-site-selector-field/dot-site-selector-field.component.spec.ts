@@ -1,5 +1,5 @@
 import { By } from '@angular/platform-browser';
-import { DOTTestBed } from '../../../../test/dot-test-bed';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DebugElement, Component, Input } from '@angular/core';
 import { DotSiteSelectorFieldComponent } from './dot-site-selector-field.component';
 import { SiteService } from '@dotcms/dotcms-js';

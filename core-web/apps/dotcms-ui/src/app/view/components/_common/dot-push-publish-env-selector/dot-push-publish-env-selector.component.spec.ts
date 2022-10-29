@@ -4,7 +4,7 @@ import { of as observableOf, Observable } from 'rxjs';
 import { ComponentFixture } from '@angular/core/testing';
 import { DebugElement, Component } from '@angular/core';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DOTTestBed } from '../../../../test/dot-test-bed';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { PushPublishEnvSelectorComponent } from './dot-push-publish-env-selector.component';
 import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import { UntypedFormGroup, UntypedFormControl } from '@angular/forms';

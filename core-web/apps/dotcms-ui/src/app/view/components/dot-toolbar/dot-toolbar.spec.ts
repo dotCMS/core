@@ -4,7 +4,7 @@ import { By } from '@angular/platform-browser';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { DebugElement, Injectable, Component, Input } from '@angular/core';
 import { DotToolbarComponent } from './dot-toolbar.component';
-import { DOTTestBed } from '../../../test/dot-test-bed';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';

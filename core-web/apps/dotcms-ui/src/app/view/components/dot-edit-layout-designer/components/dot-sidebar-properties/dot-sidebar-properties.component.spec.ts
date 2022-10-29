@@ -1,5 +1,5 @@
 import { ComponentFixture } from '@angular/core/testing';
-import { DOTTestBed } from '../../../../../test/dot-test-bed';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessageService } from '@dotcms/data-access';
 import { By } from '@angular/platform-browser';

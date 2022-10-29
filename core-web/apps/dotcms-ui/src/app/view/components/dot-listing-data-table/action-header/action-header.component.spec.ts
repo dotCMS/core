@@ -3,7 +3,7 @@ import { DotActionButtonModule } from '../../_common/dot-action-button/dot-actio
 import { ActionHeaderComponent } from './action-header.component';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
-import { DOTTestBed } from '../../../../test/dot-test-bed';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DebugElement } from '@angular/core';
 import { DotMessageService } from '@dotcms/data-access';
 import { RouterTestingModule } from '@angular/router/testing';

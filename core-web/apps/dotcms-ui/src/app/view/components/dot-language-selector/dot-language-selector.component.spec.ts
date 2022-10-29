@@ -3,7 +3,7 @@ import { DotLanguageSelectorComponent } from './dot-language-selector.component'
 import { DotLanguagesService } from '@dotcms/data-access';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DOTTestBed } from '../../../test/dot-test-bed';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DebugElement, Component } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import {
