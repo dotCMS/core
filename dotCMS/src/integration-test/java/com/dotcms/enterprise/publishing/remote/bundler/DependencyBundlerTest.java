@@ -435,6 +435,7 @@ public class DependencyBundlerTest {
         return new TestData(folder, map(
                 folder, list(host, parentFolder, contentType, contentlet, link, subFolder),
                 contentlet, list(language),
+                contentlet_2, list(APILocator.getLanguageAPI().getLanguage(contentlet_2.getLanguageId())),
                 subFolder, list(contentlet_2, folderContentType),
                 contentType, list(systemWorkflowScheme),
                 folderContentType, list(systemWorkflowScheme)
@@ -614,7 +615,9 @@ public class DependencyBundlerTest {
 
         final Map<ManifestItem, Collection<ManifestItem>>  contentletWithImageIncludes = map(
                 contentletWithImage, list(host, contentTypeWithImageField, imageFileAsset, language),
-                imageFileAsset, list(imageFolder, imageFileLanguage, imageFileAsset.getContentType())
+                imageFileAsset, list(imageFolder, imageFileLanguage, imageFileAsset.getContentType()),
+                contentTypeWithImageField, list(APILocator.getWorkflowAPI().findSystemWorkflowScheme()),
+                imageFileAsset.getContentType(), list(APILocator.getWorkflowAPI().findSystemWorkflowScheme())
         );
 
         final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
@@ -760,7 +763,7 @@ public class DependencyBundlerTest {
         final Map<ManifestItem, Collection<ManifestItem>> hostWithContentIncludes = map(
                 hostWithContent, list(contentType, contentlet),
                 contentType, list(systemWorkflowScheme),
-                contentlet, list(language)
+                contentlet, list(language,contentType)
         );
 
         final Map<ManifestItem, Collection<ManifestItem>> hostWithFolderInclude = map(
@@ -1419,7 +1422,7 @@ public class DependencyBundlerTest {
             } else if (modDateTestData.operation == Operation.PUBLISH) {
                 manifestLines.addExclude(contentletChild, "Excluded by mod_date");
 
-                manifestLines.addDependencies(map(contentletChild, list(language)));
+                manifestLines.addDependencies(map(contentletChild, list(language,contentTypeChild)));
             } else {
                 manifestLines.addExclude(contentletChild, FILTER_EXCLUDE_BY_OPERATION + modDateTestData.operation);
             }
