@@ -6,7 +6,8 @@ export default {
     globals: {
         'ts-jest': {
             tsconfig: '<rootDir>/tsconfig.spec.json',
-            stringifyContentPathRegex: '\\.(html|svg)$'
+            stringifyContentPathRegex: '\\.(html|svg)$',
+            diagnostics: false // Prevent type checking in tests and deps
         }
     },
     coverageDirectory: '../../coverage/libs/data-access',
