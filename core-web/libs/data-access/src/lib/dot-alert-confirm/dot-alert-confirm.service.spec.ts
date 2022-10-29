@@ -13,7 +13,7 @@ const messageServiceMock = new MockDotMessageService({
     'dot.common.dialog.reject': 'No'
 });
 
-describe('DotAlertConfirmService', () => {
+fdescribe('DotAlertConfirmService', () => {
     let mockData: DotAlertConfirm;
     let service: DotAlertConfirmService;
     let confirmationService: ConfirmationService;
@@ -38,8 +38,8 @@ describe('DotAlertConfirmService', () => {
         mockData = {
             header: 'Header',
             message: 'Message',
-            accept: jasmine.createSpy('accept'),
-            reject: jasmine.createSpy('reject'),
+            accept: jest.fn(),
+            reject: jest.fn(),
             footerLabel: {
                 accept: 'Delete',
                 reject: 'Reject'
@@ -52,7 +52,7 @@ describe('DotAlertConfirmService', () => {
 
     describe('confirmation', () => {
         it('should set model and call confirm method in primeng service', fakeAsync(() => {
-            spyOn(confirmationService, 'confirm');
+            jest.spyOn(confirmationService, 'confirm');
             service.confirmDialogOpened$.pipe(take(1)).subscribe((response: boolean) => {
                 expect(response).toBe(true);
             });

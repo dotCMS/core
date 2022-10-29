@@ -51,7 +51,7 @@ describe('DotLocalstorageService', () => {
 
     describe('removeItem', () => {
         beforeEach(() => {
-            spyOn(window.localStorage, 'removeItem');
+            jest.spyOn(Storage.prototype, 'removeItem');
         });
 
         it('should remove', () => {
@@ -62,7 +62,7 @@ describe('DotLocalstorageService', () => {
 
     describe('clear', () => {
         beforeEach(() => {
-            spyOn(window.localStorage, 'clear');
+            jest.spyOn(Storage.prototype, 'clear');
         });
 
         it('should clean', () => {

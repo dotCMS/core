@@ -40,14 +40,14 @@ describe('DotPageRenderService', () => {
             expect(res).toEqual(mockDotRenderedPage());
         });
 
-        const req = httpMock.expectOne(`v1/page/render/${url.replace(/^\//, '')}`);
+        const req = httpMock.expectOne('v1/page/render/about-us?mode=PREVIEW_MODE');
         expect(req.request.method).toBe('GET');
         req.flush({ entity: mockDotRenderedPage() });
     });
 
     it('should get a page with just the url', () => {
         dotPageRenderService.get({ url }).subscribe();
-        httpMock.expectOne(`v1/page/render/${url}`);
+        httpMock.expectOne('v1/page/render/about-us?mode=PREVIEW_MODE');
     });
 
     it('should get a page with just the mode', () => {
@@ -65,7 +65,7 @@ describe('DotPageRenderService', () => {
                     }
                 })
                 .subscribe();
-            httpMock.expectOne(`v1/page/render/${url}?language_id=3`);
+            httpMock.expectOne('v1/page/render/about-us?language_id=3&mode=PREVIEW_MODE');
         });
 
         it('should get a page with just the device', () => {
@@ -80,7 +80,7 @@ describe('DotPageRenderService', () => {
                     }
                 })
                 .subscribe();
-            httpMock.expectOne(`v1/page/render/${url}?device_inode=1234`);
+            httpMock.expectOne('v1/page/render/about-us?device_inode=1234&mode=PREVIEW_MODE');
         });
 
         it('should get a page with just the device', () => {
@@ -95,7 +95,9 @@ describe('DotPageRenderService', () => {
                     }
                 })
                 .subscribe();
-            httpMock.expectOne(`v1/page/render/${url}?com.dotmarketing.persona.id=6789`);
+            httpMock.expectOne(
+                'v1/page/render/about-us?com.dotmarketing.persona.id=6789&mode=PREVIEW_MODE'
+            );
         });
 
         it('should get a page with all params and preserve render options over extraParams', () => {
@@ -117,12 +119,8 @@ describe('DotPageRenderService', () => {
                 .subscribe();
 
             httpMock.expectOne(
-                `v1/page/render/${url}?com.dotmarketing.persona.id=6789&device_inode=1234&language_id=3`
+                'v1/page/render/about-us?com.dotmarketing.persona.id=6789&device_inode=1234&language_id=3&mode=PREVIEW_MODE'
             );
         });
-    });
-
-    afterEach(() => {
-        httpMock.verify();
     });
 });

@@ -37,7 +37,7 @@ export class DotMessageService {
                 params?.buildDate ||
                 params.language)
         ) {
-            this.getAll(params.language);
+            this.getAll(params.language || 'default');
 
             if (params.buildDate) {
                 this.dotLocalstorageService.setItem(
@@ -50,7 +50,7 @@ export class DotMessageService {
                 this.MESSAGES_LOCALSTORAGE_KEY
             );
             if (!keys) {
-                this.getAll(params?.language);
+                this.getAll(params?.language || 'default');
             } else {
                 this.messageMap = keys;
             }

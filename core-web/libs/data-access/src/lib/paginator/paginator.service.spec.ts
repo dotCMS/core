@@ -57,13 +57,13 @@ describe('PaginatorService', () => {
 });
 
 describe('PaginatorService getting', () => {
-    let fakeEntity;
+    let fakeEntity: { items: { id: number; name: string }[]; totalRecords: number };
     let headerLink;
     let injector: TestBed;
     let paginatorService: PaginatorService;
     let httpMock: HttpTestingController;
     let req;
-    let result;
+    let result: unknown;
 
     beforeEach(() => {
         TestBed.configureTestingModule({

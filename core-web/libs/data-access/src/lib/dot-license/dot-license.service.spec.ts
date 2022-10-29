@@ -94,7 +94,7 @@ describe('DotLicenseService', () => {
     });
 
     it('should return true with any URL and user has license', () => {
-        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
+        jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
         let result: boolean;
         dotLicenseService
             .canAccessEnterprisePortlet('/whatever')
@@ -104,7 +104,7 @@ describe('DotLicenseService', () => {
     });
 
     it('should return true when URL is not enterprise and user do not has license', () => {
-        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
+        jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
         let result: boolean;
         dotLicenseService
             .canAccessEnterprisePortlet('/whatever')
@@ -114,7 +114,7 @@ describe('DotLicenseService', () => {
     });
 
     it('should return false when URL is enterprise and user do not has license', () => {
-        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
+        jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
         const urls = [
             '/rules',
             '/c/publishing-queue',

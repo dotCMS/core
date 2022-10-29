@@ -35,7 +35,7 @@ describe('AddToBundleService', () => {
     });
 
     it('should get bundle list', () => {
-        spyOn(dotCurrentUserService, 'getCurrentUser').and.returnValue(
+        jest.spyOn(dotCurrentUserService, 'getCurrentUser').mockReturnValue(
             of(<DotCurrentUser>{
                 userId: '1234'
             })

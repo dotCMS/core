@@ -88,7 +88,7 @@ export class DotLocalstorageService {
      * @memberof DotLocalstorageService
      */
     listen<T>(filterBy: string): Observable<T> {
-        return fromEvent(window, 'storage').pipe(
+        return fromEvent<StorageEvent>(window, 'storage').pipe(
             filter(({ key }: StorageEvent) => key === filterBy),
             map((e: StorageEvent) => <T>getValue(e.newValue))
         );
