@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "423e3f39-d4c5-4389-acad-8f5496ccb9bb",
+		"_postman_id": "687b569f-ae6d-4c81-adc5-980f3cb2a55f",
 		"name": "Page API - [api/v1/page]",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "781456"
@@ -3421,6 +3421,495 @@
 			"description": "1.  This test creates a Host with two variables\n2.  Creates a container with the generic contentlet and use this two variables\n3.  Creates a template that uses this container\n4.  creates a page that uses this page\n5.  Check that the page exists."
 		},
 		{
+			"name": "CopyContentlet",
+			"item": [
+				{
+					"name": "CreatePage",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"pageIdentifier\", jsonData.entity.identifier);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"htmlpageasset\",\n        \"title\":\"testPageCopy\",\n        \"url\":\"testPageCopy\",\n        \"hostFolder\":\"default\",\n        \"template\":\"SYSTEM_TEMPLATE\",\n        \"friendlyName\":\"testPageCopy\",\n        \"cachettl\":0\n\t\t\n\t}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CreateRichText",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"richContentIdentifier\", jsonData.entity.identifier);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"webPageContent\",\n        \"title\":\"textContent\",\n        \"contentHost\":\"default\",\n        \"body\":\"Text Content Body\"\n        \n\t}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "AddContentToPage",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\n    {\n        \"identifier\": \"SYSTEM_CONTAINER\",\n        \"uuid\": \"1\",\n        \"contentletsId\": [\n            \"{{richContentIdentifier}}\"\n        ]\n    }\n]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/content",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"{{pageIdentifier}}",
+								"content"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CheckMultitree",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"  pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"containerId\", jsonData[0].containerId);",
+									"pm.collectionVariables.set(\"contentId\", jsonData[0].contentId);",
+									"pm.collectionVariables.set(\"pageId\", jsonData[0].pageId);",
+									"pm.collectionVariables.set(\"personalization\", jsonData[0].personalization);",
+									"pm.collectionVariables.set(\"relationType\", jsonData[0].relationType);",
+									"pm.collectionVariables.set(\"treeOrder\", jsonData[0].treeOrder);",
+									"pm.collectionVariables.set(\"variantId\", jsonData[0].variantId);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/content/tree",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"{{pageIdentifier}}",
+								"content",
+								"tree"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CopyContentlet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"  pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"copiedRichContentIdentifier\", jsonData.identifier);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"containerId\": \"{{containerId}}\",\n    \"contentId\": \"{{contentId}}\",\n    \"pageId\": \"{{pageId}}\",\n    \"personalization\": \"{{personalization}}\",\n    \"relationType\": \"{{relationType}}\",\n    \"treeOrder\": \"{{treeOrder}}\",\n    \"variantId\": \"{{variantId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/copyContent",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"copyContent"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CheckMultitreeCopied",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"  pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var containerId = pm.collectionVariables.get(\"containerId\");",
+									"var contentId   = pm.collectionVariables.get(\"copiedRichContentIdentifier\");",
+									"var pageId      = pm.collectionVariables.get(\"pageId\");",
+									"var personalization = pm.collectionVariables.get(\"personalization\");",
+									"var relationType = pm.collectionVariables.get(\"relationType\");",
+									"var variantId = pm.collectionVariables.get(\"variantId\");",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"  ",
+									"  pm.expect(jsonData[0].containerId).to.eql(containerId);",
+									"  pm.expect(jsonData[0].contentId).to.eql(contentId);",
+									"  pm.expect(jsonData[0].pageId).to.eql(pageId);",
+									"  pm.expect(jsonData[0].personalization).to.eql(personalization);",
+									"  pm.expect(jsonData[0].relationType).to.eql(relationType);",
+									"  pm.expect(jsonData[0].variantId).to.eql(variantId);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/content/tree",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"{{pageIdentifier}}",
+								"content",
+								"tree"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "BadCopyContentlet-ContentDoNotExists",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code is 404\", function () {",
+									"  pm.response.to.have.status(404);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"containerId\": \"{{containerId}}\",\n    \"contentId\": \"{{contentId}}xxx\",\n    \"pageId\": \"{{pageId}}\",\n    \"personalization\": \"{{personalization}}\",\n    \"relationType\": \"{{relationType}}\",\n    \"treeOrder\": \"{{treeOrder}}\",\n    \"variantId\": \"{{variantId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/copyContent",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"copyContent"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "BadCopyContentlet-ContentDoNotExists Copy",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code is 404\", function () {",
+									"  pm.response.to.have.status(404);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"containerId\": \"{{containerId}}xx\",\n    \"contentId\": \"{{contentId}}\",\n    \"pageId\": \"{{pageId}}\",\n    \"personalization\": \"{{personalization}}\",\n    \"relationType\": \"{{relationType}}\",\n    \"treeOrder\": \"{{treeOrder}}\",\n    \"variantId\": \"{{variantId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/copyContent",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"copyContent"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "Put Create Page With CacheTTL 100",
 			"event": [
 				{
@@ -3632,6 +4121,46 @@
 		},
 		{
 			"key": "pageUrlHostVariablestest",
+			"value": ""
+		},
+		{
+			"key": "pageIdentifier",
+			"value": ""
+		},
+		{
+			"key": "richContentIdentifier",
+			"value": ""
+		},
+		{
+			"key": "containerId",
+			"value": ""
+		},
+		{
+			"key": "contentId",
+			"value": ""
+		},
+		{
+			"key": "pageId",
+			"value": ""
+		},
+		{
+			"key": "personalization",
+			"value": ""
+		},
+		{
+			"key": "relationType",
+			"value": ""
+		},
+		{
+			"key": "treeOrder",
+			"value": ""
+		},
+		{
+			"key": "variantId",
+			"value": ""
+		},
+		{
+			"key": "copiedRichContentIdentifier",
 			"value": ""
 		}
 	]
