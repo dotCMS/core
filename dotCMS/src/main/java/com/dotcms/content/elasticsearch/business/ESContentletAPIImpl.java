@@ -4364,7 +4364,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             List<Category> cats , List<Permission> permissions, User user,
             boolean respectFrontendRoles)
             throws DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException {
-        return checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, false);
+        final Contentlet contentletReturned =
+                checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, false);
+
+        this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+
+        return contentletReturned;
     }
 
     /**
@@ -4396,7 +4401,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public Contentlet checkin(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats,
             List<Permission> permissions, User user,boolean respectFrontendRoles)
             throws DotDataException,DotSecurityException, DotContentletStateException {
-        return checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, true, false);
+
+        final Contentlet contentletReturned = checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, true, false);
+
+        this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+
+        return contentletReturned;
     }
 
     private ContentletRelationships getContentletRelationshipsFromMap(final Contentlet contentlet,
@@ -5141,7 +5151,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             identifier = identifierAPI.find(contentlet);
 
             if (null == identifier || !UtilMethods.isSet(identifier.getId())){
-                throw new DotDataException(String.format("Contentlet with ID '%s' has not been found.", contentlet.getIdentifier()));
+                throw new DotDataException(new DoesNotExistException(String.format("Contentlet with ID '%s' has not been found.", contentlet.getIdentifier())));
             }
 
             final String oldURI = identifier.getURI();
@@ -8549,23 +8559,79 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 // if we are the latest and greatest and are a draft
                 if (working.getInode().equals(contentlet.getInode())) {
 
-                    return checkin(contentlet, contentletRelationships, cats ,
+                    final Contentlet contentletReturned = checkin(contentlet, contentletRelationships, cats ,
                             user, respectFrontendRoles, false, false);
+
+                    this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+
+                    return contentletReturned;
 
                 } else {
                     final String workingInode = working.getInode();
                     copyProperties(working, contentlet.getMap());
                     working.setInode(workingInode);
                     working.setModUser(user.getUserId());
-                    return checkin(contentlet, contentletRelationships, cats ,
+                    final Contentlet contentletReturned = checkin(contentlet, contentletRelationships, cats ,
                             user, respectFrontendRoles, false, false);
+
+                    this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+
+                    return contentletReturned;
                 }
             }
 
             contentlet.setInode(null);
-            return checkin(contentlet, contentletRelationships,
-                    cats,
-                    permissions, user, respectFrontendRoles);
+            final Contentlet contentletReturned = checkin(contentlet, contentletRelationships,
+                    cats, permissions, user, respectFrontendRoles);
+
+            this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+
+            return contentletReturned;
+        }
+    }
+
+    private void handlePermissions(final List<Permission> selectedPermissions,
+                                   final User user,
+                                   final boolean respectFrontendRoles,
+                                   final Contentlet contentlet) {
+
+        if (InodeUtils.isSet(contentlet.getInode()) && null != selectedPermissions) {
+
+            final Runnable savePermissions = () -> {
+
+                try {
+
+                    Logger.debug(this, ()-> "Removing the permissions for: "  + contentlet.getTitle() +
+                            ", id: " + contentlet.getIdentifier());
+                    this.permissionAPI.removePermissions(contentlet);
+
+                    Logger.debug(this, ()-> "Saving the permissions for: "  + contentlet.getTitle() +
+                            ", id: " + contentlet.getIdentifier());
+
+                    selectedPermissions.stream()
+                            .map(permission -> new Permission(contentlet.getPermissionId(), permission.getRoleId(), permission.getPermission()))
+                            .forEach(permission -> {
+                                try {
+                                    Logger.debug(this, ()-> "Adding permission: " + permission);
+                                    this.permissionAPI.save(permission, contentlet, user, respectFrontendRoles);
+                                } catch (Exception e) {
+                                    Logger.error(this, "contentletId: " + contentlet.getIdentifier() +
+                                            "roleId: " + permission.getRoleId() +
+                                            "permissionId: " + contentlet.getPermissionId() +
+                                            ", msg:" + e.getMessage());
+                                }
+                            });
+
+                } catch (Exception e) {
+
+                    Logger.error(this, "Could not save the permissions for: " + contentlet.getTitle() +
+                            ", id: " + contentlet.getIdentifier() + ", msg: " + e.getMessage(), e);
+                }
+            };
+
+            FunctionUtils.ifOrElse(DbConnectionFactory.inTransaction(),
+                    ()-> HibernateUtil.addCommitListener(contentlet.getInode(), savePermissions),
+                    ()-> savePermissions.run());
         }
     }
 
