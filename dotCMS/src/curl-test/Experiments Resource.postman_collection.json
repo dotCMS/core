@@ -402,7 +402,7 @@
 									"",
 									"",
 									"pm.test(\"Experiment returns expected data\", function () {",
-									"    var experiment = jsonData.entity[0];",
+									"    var experiment = jsonData.entity;",
 									"    pm.expect(jsonData.entity.length).to.be.greaterThan(0);",
 									"    pm.expect(experiment.description).to.be.eq(\"experiment with goals and variants\");",
 									"    pm.expect(experiment.goals.primary.name).to.be.eq(\"Reach thank-you page\");",

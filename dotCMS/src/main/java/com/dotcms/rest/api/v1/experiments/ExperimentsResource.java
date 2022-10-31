@@ -178,14 +178,14 @@ public class ExperimentsResource {
     @NoCache
     @Path("/{id}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityExperimentView get(@Context final HttpServletRequest request,
+    public ResponseEntitySingleExperimentView get(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response, @PathParam("id") String id
     ) throws DotDataException, DotSecurityException {
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
 
         return experimentsAPI.find(id, user)
-                .map(experiment -> new ResponseEntityExperimentView(Collections.singletonList(experiment)))
+                .map(experiment -> new ResponseEntitySingleExperimentView(experiment))
                 .orElseThrow(() -> new NotFoundException("Experiment with id: " + id + " not found."));
     }
 
