@@ -1,7 +1,7 @@
 package com.dotmarketing.startup.runonce;
 
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.content.business.ContentletJsonAPI;
+import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;

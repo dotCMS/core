@@ -1,4 +1,4 @@
-package com.dotcms.content.business;
+package com.dotcms.content.business.json;
 
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.DISABLED_WYSIWYG_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.FOLDER_KEY;
@@ -163,7 +163,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
             }
         });
 
-        return objectMapper.get().writeValueAsString(toImmutable(copy));
+        return ContentletJsonHelper.INSTANCE.get().writeAsString(toImmutable(copy));
     }
 
     /**
@@ -547,20 +547,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      * @throws JsonProcessingException
      */
     public Contentlet immutableFromJson(final String json) throws JsonProcessingException {
-        return objectMapper.get().readValue(json, Contentlet.class);
+        return ContentletJsonHelper.INSTANCE.get().immutableFromJson(json);
     }
-
-    /**
-     * Jackson mapper configuration and lazy initialized instance.
-     */
-    private final Lazy<ObjectMapper> objectMapper = Lazy.of(() -> {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
-        objectMapper.registerModule(new Jdk8Module());
-        objectMapper.registerModule(new GuavaModule());
-        objectMapper.registerModule(new JavaTimeModule());
-        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-        return objectMapper;
-    });
 
 }

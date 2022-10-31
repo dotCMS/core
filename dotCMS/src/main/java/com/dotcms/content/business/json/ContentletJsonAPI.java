@@ -1,4 +1,4 @@
-package com.dotcms.content.business;
+package com.dotcms.content.business.json;
 
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -49,7 +49,16 @@ public interface ContentletJsonAPI {
      * @return
      */
     default boolean isPersistContentAsJson(){
-        return DbConnectionFactory.isPostgres() && Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
+        return isJsonSupportedDatabase()
+                && Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
+    }
+
+    /**
+     * This tells us if we're running on a db that supports json
+     * @return
+     */
+    default boolean isJsonSupportedDatabase(){
+        return DbConnectionFactory.isPostgres() || DbConnectionFactory.isMsSql();
     }
 
     /**

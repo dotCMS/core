@@ -1700,6 +1700,18 @@ public interface ContentletAPIPreHook {
     }
 
 	/**
+	 * loadField Pre Hook
+	 * @param inode
+	 * @param field
+	 * @return
+	 * @throws DotDataException
+	 */
+	public default boolean loadField(String inode, com.dotcms.contenttype.model.field.Field field)
+			throws DotDataException{
+		return true;
+	}
+
+	/**
 	 * 
 	 * @param luceneQuery
 	 * @param user
