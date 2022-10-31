@@ -661,7 +661,7 @@ public class PageResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public List<MulitreeView> getContentTree (@Context final HttpServletRequest  request,
+    public ResponseEntityView<List<MulitreeView>> getContentTree (@Context final HttpServletRequest  request,
                                                    @Context final HttpServletResponse response,
                                                    @PathParam("pageId") final String  pageId) throws SystemException, PortalException, DotDataException, DotSecurityException {
 
@@ -671,11 +671,13 @@ public class PageResource {
 
         final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(pageId);
 
-        return null != multiTrees? multiTrees.stream().map(multiTree ->
+        final List<MulitreeView> mulitreeViews = null != multiTrees? multiTrees.stream().map(multiTree ->
                 new MulitreeView(multiTree.getHtmlPage(), multiTree.getContainer(),
                         multiTree.getContentlet(), multiTree.getRelationType(), multiTree.getTreeOrder(),
                         multiTree.getPersonalization(), multiTree.getVariantId())).collect(Collectors.toList()):
                 Collections.emptyList();
+
+        return new ResponseEntityView<>(mulitreeViews);
     } // getPersonalizedPersonasOnPage
 
     /**
@@ -846,7 +848,7 @@ public class PageResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/copyContent")
-    public final  Map<String, Object> copyContent(
+    public final  ResponseEntityView<Map<String, Object>> copyContent(
                                       @Context final HttpServletRequest request,
                                       @Context final HttpServletResponse response,
                                       final CopyContentletForm copyContentletForm)
@@ -864,12 +866,9 @@ public class PageResource {
         final User user               = initData.getUser();
         final Language language       = WebAPILocator.getLanguageWebAPI().getLanguage(request); // todo: not sure if this should be received on the form.
         final Contentlet copiedContentlet = this.pageResourceHelper.copyContentlet(copyContentletForm, user, pageMode, language);
-
-        return new DotTransformerBuilder().defaultOptions().content(copiedContentlet).build()
+        final Map<String, Object> entity = (Map<String, Object>)new DotTransformerBuilder().defaultOptions().content(copiedContentlet).build()
                 .toMaps().stream().findFirst().orElse(Collections.emptyMap());
+        return new ResponseEntityView<>(entity);
     }
-
-
-
 
 }
