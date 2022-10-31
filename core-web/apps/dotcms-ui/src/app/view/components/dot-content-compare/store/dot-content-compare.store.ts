@@ -46,7 +46,8 @@ export enum FieldWhiteList {
     'Date-and-Time' = 'Date-and-Time',
     Time = 'Time',
     'WYSIWYG' = 'WYSIWYG',
-    'Host-Folder' = 'Host-Folder'
+    'Host-Folder' = 'Host-Folder',
+    'JSON-Field' = 'JSON-Field'
 }
 
 @Injectable()

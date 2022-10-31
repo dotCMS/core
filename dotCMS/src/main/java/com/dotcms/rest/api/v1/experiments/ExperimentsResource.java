@@ -172,6 +172,24 @@ public class ExperimentsResource {
     }
 
     /**
+     * Returns an {@link Experiment}s by Id
+     */
+    @GET
+    @NoCache
+    @Path("/{id}")
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntitySingleExperimentView get(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response, @PathParam("id") String id
+    ) throws DotDataException, DotSecurityException {
+        final InitDataObject initData = getInitData(request, response);
+        final User user = initData.getUser();
+
+        return experimentsAPI.find(id, user)
+                .map(experiment -> new ResponseEntitySingleExperimentView(experiment))
+                .orElseThrow(() -> new NotFoundException("Experiment with id: " + id + " not found."));
+    }
+
+    /**
      * Returns a list of {@link Experiment}s optionally filtered by pageId, name or status.
      */
     @GET

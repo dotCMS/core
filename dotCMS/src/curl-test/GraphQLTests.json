@@ -1,13 +1,13 @@
 {
 	"info": {
-		"_postman_id": "ad523850-4a78-470e-bec1-3851dacaf4a9",
+		"_postman_id": "0ae9fe3d-4dda-47cd-9245-78e4bf53ca55",
 		"name": "GraphQL",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "4500400"
+		"_exporter_id": "5403727"
 	},
 	"item": [
 		{
-			"name": "Page API",
+			"name": "Pre-Execution Requests",
 			"item": [
 				{
 					"name": "invalidateSession",
@@ -41,6 +41,220 @@
 					},
 					"response": []
 				},
+				{
+					"name": "Back Up Existing Image Content Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Saving existing Image type info in Collection Variable\", function () {",
+									"    var entity = pm.response.json().entity;",
+									"    pm.collectionVariables.set(\"imageTypeInfo\", JSON.stringify(entity));",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/id/Image",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"id",
+								"Image"
+							]
+						},
+						"description": "Backs up the exiting **Image** type as it conflicts with the test bundles that must be deployed for the GraphQL Tests to run correctly."
+					},
+					"response": []
+				},
+				{
+					"name": "Back Up Existing Video Content Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Saving existing Video type info in Collection Variable\", function () {",
+									"    var entity = pm.response.json().entity;",
+									"    pm.collectionVariables.set(\"videoTypeInfo\", JSON.stringify(entity));",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/id/Video",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"id",
+								"Video"
+							]
+						},
+						"description": "Backs up the exiting **Video** type as it conflicts with the test bundles that must be deployed for the GraphQL Tests to run correctly."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Image Content Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/id/Image",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"id",
+								"Image"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Video Content Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/id/Video",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"id",
+								"Video"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Executes requests that are meant to fix or set up specific test conditions for the rest of the requests to run successfully."
+		},
+		{
+			"name": "Page API",
+			"item": [
 				{
 					"name": "pre_ImportBundleWithContext",
 					"event": [
@@ -1291,6 +1505,15 @@
 									"",
 									"});",
 									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"setTimeout(function(){}, 5000);"
 								],
 								"type": "text/javascript"
 							}
@@ -3934,6 +4157,15 @@
 								],
 								"type": "text/javascript"
 							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"setTimeout(function(){}, 5000);"
+								],
+								"type": "text/javascript"
+							}
 						}
 					],
 					"request": {
@@ -4469,10 +4701,9 @@
 							"script": {
 								"exec": [
 									"var jsonData = pm.response.json();",
-									"var dotasset = jsonData.data[\"TypeWithFileCollection\"][0];",
 									"",
 									"pm.test(\"dotasset Field attributes should be present\", function () {",
-									"    ",
+									"    var dotasset = jsonData.data[\"TypeWithFileCollection\"][0];    ",
 									"    var myFile = dotasset.myFile;",
 									"    // general attributes",
 									"    pm.expect(myFile.fileName).to.eql(\"Brave.pdf\");",
@@ -4541,6 +4772,15 @@
 									"    return metaDataIncludes;",
 									"}",
 									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"setTimeout(function(){}, 5000);"
 								],
 								"type": "text/javascript"
 							}
@@ -4889,6 +5129,15 @@
 									"    pm.expect(jsonData.data[collectionName][0].rel[0].identifier).to.eql(childIdentifier);",
 									"    pm.expect(jsonData.data[collectionName][0].rel[0].conLanguage.id).to.eql(languageId);",
 									"});"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"setTimeout(function(){}, 3000);"
 								],
 								"type": "text/javascript"
 							}
@@ -5359,6 +5608,15 @@
 								],
 								"type": "text/javascript"
 							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"setTimeout(function(){}, 3000);"
+								],
+								"type": "text/javascript"
+							}
 						}
 					],
 					"request": {
@@ -5781,6 +6039,15 @@
 									"    pm.expect(contentlet.body).to.eql(\"<p>&lt;p&gt;By default, CSS styles controlling the appearance of form fields reside in the following dotCMS directory:&amp;nbsp;/html/css/content/forms.css. However, redefining the CSS classes controlling the styling of form fields is fairly simple.&lt;/p&gt;\\\\n&lt;p&gt;Setting the &lt;b&gt;$contentFormMacroCSS&lt;/b&gt;&amp;nbsp;velocity variable on the Template, Container, or in a piece of content above the form on the page will over-ride the default CSS controlling form field styling. An example of the set command to a relative path is given below:&lt;/p&gt;\\\\n&lt;p&gt;&lt;b&gt;#set($contentFormMacroCSS = \\\\\\\"/global/css/&lt;span&gt;&lt;font color=\\\\\\\"#3366ff\\\\\\\"&gt;mycustomcssfile.css&lt;/font&gt;&lt;/span&gt;\\\\\\\")&lt;/b&gt;&lt;/p&gt;\\\\n&lt;p&gt;As long as the customized CSS file is read after the default dotCMS file, and before the Form itself, then the styles for the form fields will be over-ridden.&lt;/p&gt;</p>\");",
 									"    ",
 									"});"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"setTimeout(function(){}, 3000);"
 								],
 								"type": "text/javascript"
 							}
@@ -6356,6 +6623,15 @@
 										],
 										"type": "text/javascript"
 									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"setTimeout(function(){}, 3000);"
+										],
+										"type": "text/javascript"
+									}
 								}
 							],
 							"request": {
@@ -6489,6 +6765,15 @@
 											"    var jsonData = pm.response.json();",
 											"    pm.expect(jsonData.data[\"ContentWithCats2807Collection\"][0].mycats).to.eql([]);",
 											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"setTimeout(function(){}, 2000);"
 										],
 										"type": "text/javascript"
 									}
@@ -9006,6 +9291,15 @@
 								],
 								"type": "text/javascript"
 							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"setTimeout(function(){}, 3000);"
+								],
+								"type": "text/javascript"
+							}
 						}
 					],
 					"request": {
@@ -9045,7 +9339,8 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"pm.test(\"Contentlet StoryBlock has no value\", function() {",
-									"    pm.expect(jsonData.entity.block).is.undefined;",
+									"    console.log(jsonData.entity);",
+									"    pm.expect(jsonData.entity.block).equals(\"\");",
 									"});"
 								],
 								"type": "text/javascript"
@@ -9120,6 +9415,15 @@
 									"pm.test(\"Content has the correct value at the json property\", function () {",
 									"    pm.expect(jsonData.data[collectionName][0].block.json).to.be.eql({});",
 									"});"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"setTimeout(function(){}, 3000);"
 								],
 								"type": "text/javascript"
 							}
@@ -9412,6 +9716,15 @@
 								],
 								"type": "text/javascript"
 							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"setTimeout(function(){}, 3000);"
+								],
+								"type": "text/javascript"
+							}
 						}
 					],
 					"request": {
@@ -9442,81 +9755,85 @@
 			]
 		}
 	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
 	"variable": [
 		{
 			"key": "languageId",
-			"value": 1609799506077
-		},
-		{
-			"key": "contentId",
-			"value": null
+			"value": ""
 		},
 		{
 			"key": "contentTypeVariable",
-			"value": "MyCustomType94382829"
+			"value": ""
 		},
 		{
 			"key": "contentIdentifier",
-			"value": "671144d9-739d-4dd2-b8a0-5ea9c32f9daa"
+			"value": ""
 		},
 		{
-			"key": "structureVariable",
-			"value": "myStructure94983807"
+			"key": "imageTypeInfo",
+			"value": ""
 		},
 		{
-			"key": "imageContentTypeVariable",
-			"value": "MyImageType20538490"
-		},
-		{
-			"key": "imageContentIdentifier",
-			"value": "d3915dc0-ba86-48e7-a1f1-856478b06cfe"
-		},
-		{
-			"key": "imageFieldVariable",
-			"value": "myFile"
-		},
-		{
-			"key": "showOnMenu",
-			"value": true
-		},
-		{
-			"key": "sortOrder",
-			"value": 2
-		},
-		{
-			"key": "fileFieldVariable",
-			"value": "myImage"
-		},
-		{
-			"key": "fileContentIdentifier",
-			"value": "35bd8a93-0d74-44e6-8a89-cb57735114f1"
-		},
-		{
-			"key": "childContentTypeVariable",
-			"value": "childType40723544"
-		},
-		{
-			"key": "parentContentTypeVariable",
-			"value": "parentType84267241"
-		},
-		{
-			"key": "relFieldVariable",
-			"value": "rel"
-		},
-		{
-			"key": "childContentIdentifier",
-			"value": "69953bca-0384-487c-8288-5118f455c127"
-		},
-		{
-			"key": "parentContentIdentifier",
-			"value": "5f487236-01fb-4ff1-a25e-8eecc99b2312"
+			"key": "videoTypeInfo",
+			"value": ""
 		},
 		{
 			"key": "fileImageContentTypeVariable",
-			"value": "MyFileImageType68267192"
+			"value": ""
 		},
 		{
-			"key": "contentTypeVariableDCKRH",
+			"key": "imageFieldVariable",
+			"value": ""
+		},
+		{
+			"key": "fileFieldVariable",
+			"value": ""
+		},
+		{
+			"key": "fileContentIdentifier",
+			"value": ""
+		},
+		{
+			"key": "imageContentIdentifier",
+			"value": ""
+		},
+		{
+			"key": "childContentTypeVariable",
+			"value": ""
+		},
+		{
+			"key": "parentContentTypeVariable",
+			"value": ""
+		},
+		{
+			"key": "relFieldVariable",
+			"value": ""
+		},
+		{
+			"key": "childContentIdentifier",
+			"value": ""
+		},
+		{
+			"key": "parentContentIdentifier",
 			"value": ""
 		},
 		{
@@ -9525,18 +9842,6 @@
 		},
 		{
 			"key": "contentTypeVarNameWithStoryBlock",
-			"value": ""
-		},
-		{
-			"key": "contentletIdentifier",
-			"value": ""
-		},
-		{
-			"key": "contentletInode",
-			"value": ""
-		},
-		{
-			"key": "fireActionLanguageKey",
 			"value": ""
 		}
 	]

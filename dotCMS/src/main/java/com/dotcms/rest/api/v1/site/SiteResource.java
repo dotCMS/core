@@ -154,6 +154,42 @@ public class SiteResource implements Serializable {
     }
 
     /**
+     * Returns the default site
+     * @param httpServletRequest
+     * @param httpServletResponse
+     * @return
+     */
+    @GET
+    @Path ("/defaultSite")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response defaultSite(@Context final HttpServletRequest httpServletRequest,
+                                      @Context final HttpServletResponse httpServletResponse) {
+        Response response = null;
+
+        try {
+            final User user = new WebResource.InitBuilder(this.webResource)
+                    .requestAndResponse(httpServletRequest, httpServletResponse)
+                    .requiredBackendUser(true)
+                    .requiredFrontendUser(true)
+                    .init().getUser();
+
+            final Host currentSite = APILocator.getHostAPI().findDefaultHost(user, PageMode.get(httpServletRequest).respectAnonPerms);
+            response = Response.ok(
+                        new ResponseEntityView(currentSite)
+                    ).build();
+        } catch (Exception e) {
+            if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
+                throw new ForbiddenException(e);
+            }
+            // Unknown error, so we report it as a 500
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        return response;
+    }
+
+    /**
      * Return the list of sites paginated
      * @param httpServletRequest
      * @param httpServletResponse
