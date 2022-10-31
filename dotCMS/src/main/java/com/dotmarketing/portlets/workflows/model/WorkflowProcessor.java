@@ -66,6 +66,24 @@ public class WorkflowProcessor {
 	}
 
 	/**
+	 * Creates a new Contentlet Dependencies builder empty
+	 * @return ContentletDependencies.Builder
+	 */
+	public ContentletDependencies.Builder newContentletDependenciesBuilder() {
+
+		return new ContentletDependencies.Builder();
+	}
+
+	/**
+	 * Creates a copy of the current Contentlet Dependencies
+	 * @return ContentletDependencies.Builder
+	 */
+	public ContentletDependencies.Builder copyContentletDependenciesBuilder() {
+
+		return new ContentletDependencies.Builder().from(this.contentletDependencies);
+	}
+
+	/**
 	 * Get the context map for this processor.
 	 * @return Map
 	 */

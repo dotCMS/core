@@ -117,6 +117,7 @@ public class MainServlet extends ActionServlet {
       try {
         StartupTasksExecutor.getInstance().executeStartUpTasks();
         StartupTasksExecutor.getInstance().executeUpgrades();
+        StartupTasksExecutor.getInstance().executeBackportedTasks();
 
         final Task00030ClusterInitialize clusterInitializeTask = new Task00030ClusterInitialize();
         if(clusterInitializeTask.forceRun()){

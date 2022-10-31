@@ -1,0 +1,14 @@
+@use "variables" as *;
+
+:host {
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-end;
+    color: $gray-light;
+    margin-top: 1rem;
+    gap: 0.65rem;
+
+    .error-message {
+        color: $error;
+    }
+}
