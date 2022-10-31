@@ -194,7 +194,7 @@ export const replaceInlineLinkImage = (content) => {
 export const deselectCurrentNode = (view: EditorView) => {
     const { state } = view;
     const { doc } = state.tr;
-    const resolvedEnd = state.selection.to - 1; // - 1 is to not jump into the next line.
+    const resolvedEnd = state.selection.to;
     const selection = TextSelection.create(doc, resolvedEnd, resolvedEnd);
     view.dispatch(state.tr.setSelection(selection));
 };
