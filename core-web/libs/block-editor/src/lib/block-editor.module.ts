@@ -40,6 +40,7 @@ import { BubbleFormComponent } from './extensions/bubble-form/bubble-form.compon
 
 //Editor
 import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
+import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/dot-editor-count-bar.component';
 
 @NgModule({
     imports: [
@@ -67,7 +68,8 @@ import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block
         FormActionsComponent,
         BubbleFormComponent,
         SuggestionPageComponent,
-        DotBlockEditorComponent
+        DotBlockEditorComponent,
+        DotEditorCountBarComponent
     ],
     providers: [DotImageService, LoggerService, StringUtils],
     exports: [

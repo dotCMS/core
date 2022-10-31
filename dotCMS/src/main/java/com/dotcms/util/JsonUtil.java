@@ -1,6 +1,7 @@
 package com.dotcms.util;
 
 import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
@@ -16,7 +17,7 @@ import java.util.Map;
  */
 public class JsonUtil {
 
-    final static ObjectMapper JSON_MAPPER = new ObjectMapper();
+    public final static ObjectMapper JSON_MAPPER = new ObjectMapper();
 
     public static Map<String, Object> getJsonFileContent(final String path) throws IOException {
         return JSON_MAPPER.readValue(getJsonFileContentAsString(path), Map.class);
@@ -47,11 +48,11 @@ public class JsonUtil {
      */
     public static boolean isValidJSON(final String fieldValue) {
         try {
-            JSON_MAPPER.readTree(fieldValue);
+            JsonNode node = JSON_MAPPER.readTree(fieldValue);
+            return node != null && !node.isMissingNode();
         } catch (final JacksonException e) {
             return false;
         }
-        return true;
     }
 
 }
