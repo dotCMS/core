@@ -22,7 +22,7 @@
 									"    var jsonData = pm.response.json();",
 									"    console.log(jsonData);",
 									"",
-									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"assets.tar.gz\");",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"add_remove_contenlet_from_specific_variant_page_version.tar.gz\");",
 									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
 									"});"
 								],
