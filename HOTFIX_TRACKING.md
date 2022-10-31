@@ -61,3 +61,4 @@ This maintenance release includes the following code fixes:
 50. https://github.com/dotCMS/core/issues/22809 : Missing Nav items when upgrading #22809
 51. https://github.com/dotCMS/core/issues/23128 : UI showing wrong date when changing Timezones #23128
 52. https://github.com/dotCMS/core/issues/22771 : UT Task210901UpdateDateTimezones not running successfully #22771
+53. https://github.com/dotCMS/core/issues/21849 : Upgrade tomcat to latest minor version #21849
