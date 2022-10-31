@@ -15,8 +15,7 @@ public class EventLogRunnable implements Runnable {
 
     final Map<String, String> POSTING_HEADERS = ImmutableMap.of("content-type", "application/json");
 
-    final String token = Config.getStringProperty("EVENT_LOG_TOKEN",
-            "js.cluster1.customer1.3c7ftd589dwax9eqpz");
+    final String token = Config.getStringProperty("EVENT_LOG_TOKEN");
     final String log;
 
     EventLogRunnable(final String log) {
