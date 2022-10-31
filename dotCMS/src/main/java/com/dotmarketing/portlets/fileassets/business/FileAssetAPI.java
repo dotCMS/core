@@ -7,12 +7,14 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.business.FolderListener;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
@@ -402,5 +404,19 @@ public interface FileAssetAPI {
      * @return
      */
     List<FileAsset> findFileAssetsByDB(FileAssetSearcher searcher);
+
+	/**
+	 * Use a fileNamePattern to do the filter for the listener
+	 * @param fileListener {@link String}
+	 * @param fileNamePattern {@link FileListener}
+	 */
+	void subscribeFileListener (final FileListener fileListener, final String fileNamePattern);
+
+	/**
+	 * USe a Predicate to filter the file aset
+	 * @param fileListener {@link Predicate} of {@link FileAsset}
+	 * @param fileAssetFilter {@link FileListener}
+	 */
+	void subscribeFileListener (final FileListener fileListener, final Predicate<FileAsset> fileAssetFilter);
     
 }

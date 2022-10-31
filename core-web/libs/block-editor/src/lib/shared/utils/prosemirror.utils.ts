@@ -145,38 +145,45 @@ export const deleteSelectionNode = (editor: Editor, selectionRange: SelectionRan
 
 export const formatHTML = (html: string) => {
     const pRex = new RegExp(/<p(|\s+[^>]*)>(.|\n)*?<\/p>/gm);
+    const hRex = new RegExp(/<h\d+(|\s+[^>]*)>(.|\n)*?<\/h\d+>/gm);
     const liRex = new RegExp(/<li(|\s+[^>]*)>(.|\n)*?<\/li>/gm);
     const listRex = new RegExp(/<(ul|ol)(|\s+[^>]*)>(.|\n)*?<\/(ul|ol)>/gm);
 
     return html
+        .replace(aTagRex, (content) => replaceInlineLinkImage(content))
         .replace(pRex, (content) => replaceInlineContent(content))
+        .replace(hRex, (content) => replaceInlineContent(content))
         .replace(liRex, (content) => replaceInlineContent(content))
         .replace(listRex, (content) => replaceInlineContent(content));
 };
 
 export const replaceInlineContent = (content) => {
     // Get Images inside <a> Tag
-    const inlineContent = content.replace(aTagRex, (content) => {
-        const container = document.createElement('div');
-        container.innerHTML = content;
-        const href = container.querySelector('a').getAttribute('href');
-
-        return content
-            .replace(/<a(|\s+[^>]*)>/gm, '')
-            .replace(/<a\/>/gm, '')
-            .replace('src="', `href="${href}" src="`);
-    });
-
-    const images = inlineContent.match(imgTagRex) || [];
+    const images = content.match(imgTagRex) || [];
 
     // Check that after removing the images, it's not empty
-    const text = new DOMParser().parseFromString(inlineContent, 'text/html').documentElement
-        .textContent;
+    const text = new DOMParser().parseFromString(content, 'text/html').documentElement.textContent;
 
     // Move the <img/> tag to the end of the <p> tag.
     return text.trim().length > 0
-        ? inlineContent.replace(imgTagRex, '') + images.join('')
+        ? content.replace(imgTagRex, '') + images.join('')
         : images.join('');
+};
+
+
+export const replaceInlineLinkImage = (content) => {
+    const container = document.createElement('div');
+    container.innerHTML = content;
+    const href = container.querySelector('a').getAttribute('href');
+    const title = container.querySelector('a').getAttribute('href');
+    const alt = container.querySelector('a').getAttribute('alt');
+
+    return content
+        .replace(/<a(|\s+[^>]*)>/gm, '')
+        .replace(/<a\/>/gm, '')
+        .replace(imgTagRex, (content) => {
+            return content.replace(/img/gm, `img href="${href}" title="${title}" alt="${alt}"`);
+        });
 };
 
 // Adapted from https://discuss.prosemirror.net/t/changing-doc-attrs/784

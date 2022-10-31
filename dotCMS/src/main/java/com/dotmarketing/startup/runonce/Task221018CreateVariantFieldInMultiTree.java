@@ -19,7 +19,7 @@ public class Task221018CreateVariantFieldInMultiTree extends AbstractJDBCStartup
         final DotDatabaseMetaData databaseMetaData = new DotDatabaseMetaData();
 
         try {
-            return databaseMetaData.hasColumn("multi_tree", "variantId");
+            return databaseMetaData.hasColumn("multi_tree", "variant_id");
         } catch (SQLException e) {
             return false;
         }
@@ -39,7 +39,7 @@ public class Task221018CreateVariantFieldInMultiTree extends AbstractJDBCStartup
         final String dataBaseFieldType = DbConnectionFactory.isMsSql() ? "NVARCHAR" : "varchar";
 
         return String.format(
-                "ALTER TABLE multi_tree ADD variantId %s(255)",
+                "ALTER TABLE multi_tree ADD variant_id %s(255) NOT NULL",
                 dataBaseFieldType);
     }
 
