@@ -1,5 +1,7 @@
 package com.dotmarketing.cache;
 
+import com.dotcms.variant.VariantAPI;
+import com.liferay.util.StringPool;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
@@ -28,34 +30,41 @@ public class MultiTreeCache implements Cachable {
 
 
     @SuppressWarnings("unchecked")
-    public Optional<Table<String, String, Set<PersonalizedContentlet>>> getPageMultiTrees(final String pageIdentifier, final boolean live) {
+    public Optional<Table<String, String, Set<PersonalizedContentlet>>> getPageMultiTrees(
+            final String pageIdentifier, final String variantName, final boolean live) {
         final String group = (live) ? LIVE_GROUP : WORKING_GROUP;
 
         try {
-            return Optional.ofNullable((Table<String, String, Set<PersonalizedContentlet>>) cache.get(pageIdentifier, group));
+            return Optional.ofNullable((Table<String, String, Set<PersonalizedContentlet>>)
+                    cache.get(getKey(pageIdentifier, variantName), group));
         } catch (DotCacheException e) {
             Logger.warn(this.getClass(), e.getMessage());
             return Optional.empty();
         }
     }
 
-    public void putPageMultiTrees(final String pageIdentifier, final boolean live, final Table<String, String, Set<PersonalizedContentlet>> multiTrees) {
+    public void putPageMultiTrees(final String pageIdentifier, final String variantName, final boolean live, final Table<String, String, Set<PersonalizedContentlet>> multiTrees) {
         final String group = (live) ? LIVE_GROUP : WORKING_GROUP;
-        cache.put(pageIdentifier, multiTrees, group);
+        cache.put(getKey(pageIdentifier, variantName), multiTrees, group);
     }
 
 
-    public void removePageMultiTrees(final String pageIdentifier, final boolean live) {
+    public void removePageMultiTrees(final String pageIdentifier, final String variantName, final boolean live) {
         final String group = (live) ? LIVE_GROUP : WORKING_GROUP;
-        removePageMultiTrees(pageIdentifier, group);
+        removePageMultiTrees(pageIdentifier, variantName, group);
     }
 
     public void removePageMultiTrees(final String pageIdentifier) {
-        Arrays.asList(getGroups()).forEach(group -> removePageMultiTrees(pageIdentifier, group));
+        Arrays.asList(getGroups()).forEach(group -> removePageMultiTrees(pageIdentifier,
+                VariantAPI.DEFAULT_VARIANT.name(), group));
     }
 
-    public void removePageMultiTrees(final String pageIdentifier, final String group) {
-        cache.remove(pageIdentifier, group);
+    public void removePageMultiTrees(final String pageIdentifier, final String variantName) {
+        Arrays.asList(getGroups()).forEach(group -> removePageMultiTrees(pageIdentifier, variantName, group));
+    }
+
+    public void removePageMultiTrees(final String pageIdentifier, final String variantName, final String group) {
+        cache.remove(getKey(pageIdentifier, variantName), group);
     }
 
     @Override
@@ -67,6 +76,10 @@ public class MultiTreeCache implements Cachable {
     @Override
     public void clearCache() {
         Arrays.asList(getGroups()).forEach(group ->  cache.flushGroup(group));
+    }
+
+    private String getKey (final String pageIdentifier, final String variantName){
+        return pageIdentifier + StringPool.UNDERLINE + variantName;
     }
 
 }
