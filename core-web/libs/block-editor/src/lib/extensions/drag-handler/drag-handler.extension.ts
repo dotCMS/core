@@ -1,6 +1,6 @@
 import { ViewContainerRef } from '@angular/core';
 import { EditorView } from 'prosemirror-view';
-import { NodeSelection, Plugin, PluginKey } from 'prosemirror-state';
+import { NodeSelection, Plugin, PluginKey, TextSelection } from 'prosemirror-state';
 import { Extension } from '@tiptap/core';
 
 import { DragHandlerComponent } from './drag-handler.component';
@@ -56,7 +56,7 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                     );
                     const slice = view.state.selection.content();
                     e.dataTransfer.clearData();
-                    e.dataTransfer.setDragImage(nodeToBeDragged, 10, 10);
+                    e?.dataTransfer?.setDragImage(nodeToBeDragged, 10, 10);
                     view.dragging = { slice, move: true };
                 }
             }
@@ -106,6 +106,20 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                 );
             }
 
+            function hideDragHandler(): void {
+                const node = document.querySelector('.ProseMirror-hideselection');
+                node?.classList.remove('ProseMirror-hideselection');
+                dragHandler.classList.remove('visible');
+            }
+
+            function removeCurrentSelection(view: EditorView) {
+                const { state } = view;
+                const { doc } = state.tr;
+                const resolvedEnd = state.selection.to - 1; // - 1 is to not jump into the next line.
+                const selection = TextSelection.create(doc, resolvedEnd, resolvedEnd);
+                view.dispatch(state.tr.setSelection(selection));
+            }
+
             return [
                 new Plugin({
                     key: new PluginKey('dragHandler'),
@@ -124,16 +138,10 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                     },
                     props: {
                         handleDOMEvents: {
-                            drop() {
-                                setTimeout(() => {
-                                    const node = document.querySelector(
-                                        '.ProseMirror-hideselection'
-                                    );
-                                    if (node) {
-                                        node.classList.remove('ProseMirror-hideselection');
-                                    }
-
-                                    dragHandler.classList.remove('visible');
+                            drop(view: EditorView) {
+                                requestAnimationFrame(() => {
+                                    hideDragHandler();
+                                    removeCurrentSelection(view);
                                 });
 
                                 return false;
