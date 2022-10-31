@@ -119,7 +119,9 @@ public class CategoriesResource {
             @Context final HttpServletResponse httpResponse,
             @QueryParam(PaginationUtil.FILTER) final String filter,
             @QueryParam(PaginationUtil.PAGE) final int page,
-            @QueryParam(PaginationUtil.PER_PAGE) final int perPage) {
+            @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+            @DefaultValue("category_name") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
+            @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction) {
 
         final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true,
                 null);
@@ -132,7 +134,7 @@ public class CategoriesResource {
                 page, perPage));
 
         try {
-            response = this.paginationUtil.getPage(httpRequest, user, filter, page, perPage);
+            response = this.paginationUtil.getPage(httpRequest, user, filter, page, perPage,orderBy, direction);
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
