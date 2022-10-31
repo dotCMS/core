@@ -1,9 +1,10 @@
 import { ViewContainerRef } from '@angular/core';
 import { EditorView } from 'prosemirror-view';
-import { NodeSelection, Plugin, PluginKey, TextSelection } from 'prosemirror-state';
+import { NodeSelection, Plugin, PluginKey } from 'prosemirror-state';
 import { Extension } from '@tiptap/core';
 
 import { DragHandlerComponent } from './drag-handler.component';
+import { deselectCurrentNode } from '@dotcms/block-editor';
 
 export const DragHandler = (viewContainerRef: ViewContainerRef) => {
     return Extension.create({
@@ -112,14 +113,6 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                 dragHandler.classList.remove('visible');
             }
 
-            function removeCurrentSelection(view: EditorView) {
-                const { state } = view;
-                const { doc } = state.tr;
-                const resolvedEnd = state.selection.to - 1; // - 1 is to not jump into the next line.
-                const selection = TextSelection.create(doc, resolvedEnd, resolvedEnd);
-                view.dispatch(state.tr.setSelection(selection));
-            }
-
             return [
                 new Plugin({
                     key: new PluginKey('dragHandler'),
@@ -141,7 +134,7 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                             drop(view: EditorView) {
                                 requestAnimationFrame(() => {
                                     hideDragHandler();
-                                    removeCurrentSelection(view);
+                                    deselectCurrentNode(view);
                                 });
 
                                 return false;
