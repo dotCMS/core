@@ -870,6 +870,44 @@ public class PageResource {
     }
 
 
+    /**
+     * Copy the page
+     * The contentlet should be part of the multitree on the page sent in the form, also the content should exists to be copied.
+     * @param request {@link HttpServletRequest}
+     * @param response {@link HttpServletResponse}
+     * @param copyContentletForm {@link CopyContentletForm}
+     * @return Contentlet Map
+     */
+    @PUT
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/{pageId}/_copy")
+    public final  ResponseEntityView<Map<String, Object>> copyPage(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("pageId") final String pageId)
+            throws DotSecurityException, DotDataException {
+
+        Logger.debug(this, ()-> "Copying the page: " + pageId);
+
+        final InitDataObject initData = webResource.init(request, response,true);
+        final PageMode pageMode       = PageMode.get(request);
+        final User user               = initData.getUser();
+        final IHTMLPage  page         = this.pageResourceHelper.getPage(user, pageId, request);
+        final Language language       = WebAPILocator.getLanguageWebAPI().getLanguage(request); // todo: not sure if this should be received on the form.
+
+        if (null == page) {
+
+            throw new DoesNotExistException("The page: " +  pageId + " does not exists.");
+        }
+
+        final Contentlet copiedContentlet = this.pageResourceHelper.copyPage(page, user, pageMode, language);
+
+        return new ResponseEntityView<>(new DotTransformerBuilder().defaultOptions().content(copiedContentlet).build()
+                .toMaps().stream().findFirst().orElse(Collections.emptyMap()));
+    }
 
 
 }
