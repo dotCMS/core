@@ -15,8 +15,7 @@ import com.google.common.collect.ImmutableMap;
 
 public class EventLogRunnable implements Runnable {
 
-    final String POST_URL = Config.getStringProperty("EVENT_LOG_POSTING_URL",
-            "http://localhost:8081/api/v1/event");
+    final String POST_URL = Config.getStringProperty("EVENT_LOG_POSTING_URL");
 
     final Map<String, String> POSTING_HEADERS = ImmutableMap.of("content-type", "application/json");
 

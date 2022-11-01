@@ -1,5 +1,8 @@
 package com.dotcms.jitsu;
 
+import static javax.ws.rs.core.HttpHeaders.CONTENT_LENGTH;
+import static javax.ws.rs.core.HttpHeaders.CONTENT_TYPE;
+
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
@@ -81,14 +84,17 @@ public class EventLogWebInterceptor implements WebInterceptor {
     }
 
     public void doPost(final HttpServletRequest request, final HttpServletResponse response) throws IOException, JSONException {
-        if (request.getContentType() != null && request.getContentType().toLowerCase().indexOf("multipart/form-data") > -1) {
+        if (request.getContentType() != null && request.getContentType().toLowerCase()
+                .contains("multipart/form-data")) {
             return;
         }
 
         final String payload = CharStreams.toString(request.getReader());
         final String realIp = request.getRemoteAddr();
         JSONObject json = new JSONObject(payload);
-        String mungedIp = (realIp.lastIndexOf(".") > -1) ? realIp.substring(0, realIp.lastIndexOf(".")) + ".1" : "0.0.0.0";
+        String mungedIp = (realIp.lastIndexOf(".") > -1)
+                ? realIp.substring(0, realIp.lastIndexOf(".")) + ".1"
+                : "0.0.0.0";
 
         json.put("ip", mungedIp);
         json.put("clusterId", ClusterFactory.getClusterId());
@@ -103,12 +109,12 @@ public class EventLogWebInterceptor implements WebInterceptor {
     }
 
     public void doOptions(final HttpServletRequest request, final HttpServletResponse response) {
-        response.setHeader("content-length", "0");
+        response.setHeader(CONTENT_LENGTH, "0");
         response.setStatus(200);
     }
 
     public void setHeaders(final HttpServletResponse response) {
-        response.addHeader("content-type", "application/javascript; charset=utf-8");
+        response.addHeader(CONTENT_TYPE, "application/javascript; charset=utf-8");
         response.addHeader("access-control-allow-credentials", "true");
         response.addHeader("access-control-allow-headers",
                 "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Host");
