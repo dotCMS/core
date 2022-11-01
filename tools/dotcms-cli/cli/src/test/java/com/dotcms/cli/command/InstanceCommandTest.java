@@ -62,7 +62,7 @@ public class InstanceCommandTest extends CommandTest {
     @Test
     @Order(2)
     public void Test_Command_Instance_Pass_Only_List_Param() {
-        final String[] options = {"-l", "--list"};
+        final String[] options = {"-ls", "--list"};
         for (final String option : options) {
             final CommandLine commandLine = factory.create();
             final StringWriter writer = new StringWriter();

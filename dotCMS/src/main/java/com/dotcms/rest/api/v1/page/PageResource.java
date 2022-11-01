@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.page;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -19,7 +20,9 @@ import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -29,6 +32,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
@@ -642,6 +646,38 @@ public class PageResource {
 
         return Response.ok(new ResponseEntityView(pageLivePreviewVersionBean)).build();
     }
+
+    /**
+     * Returns the tree associated to the page
+     * @param request
+     * @param response
+     * @param pageId
+     * @return Response, pair with
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @GET
+    @Path("/{pageId}/content/tree")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public List<MulitreeView> getContentTree (@Context final HttpServletRequest  request,
+                                                   @Context final HttpServletResponse response,
+                                                   @PathParam("pageId") final String  pageId) throws SystemException, PortalException, DotDataException, DotSecurityException {
+
+        final User user = this.webResource.init(request, response, true).getUser();
+
+        Logger.debug(this, ()-> "Getting multitree per page: " + pageId);
+
+        final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(pageId);
+
+        return null != multiTrees? multiTrees.stream().map(multiTree ->
+                new MulitreeView(multiTree.getHtmlPage(), multiTree.getContainer(),
+                        multiTree.getContentlet(), multiTree.getRelationType(), multiTree.getTreeOrder(),
+                        multiTree.getPersonalization(), multiTree.getVariantId())).collect(Collectors.toList()):
+                Collections.emptyList();
+    } // getPersonalizedPersonasOnPage
+
     /**
      * Returns the list of personas with a flag that determine if the persona has been customized on a page or not.
      * { persona:Persona, personalized:boolean, pageId:String  }
@@ -795,5 +831,45 @@ public class PageResource {
         }
         return includeRenderedAttr;
     }
+
+    /**
+     * Copy the contentlet sent over the CopyContentletForm
+     * The contentlet should be part of the multitree on the page sent in the form, also the content should exists to be copied.
+     * @param request {@link HttpServletRequest}
+     * @param response {@link HttpServletResponse}
+     * @param copyContentletForm {@link CopyContentletForm}
+     * @return Contentlet Map
+     */
+    @PUT
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/copyContent")
+    public final  Map<String, Object> copyContent(
+                                      @Context final HttpServletRequest request,
+                                      @Context final HttpServletResponse response,
+                                      final CopyContentletForm copyContentletForm)
+            throws DotSecurityException, DotDataException {
+
+        Logger.debug(this, ()-> "Copying the contentlet: " + copyContentletForm);
+
+        if (copyContentletForm == null) {
+
+            throw new BadRequestException("Form is required");
+        }
+
+        final InitDataObject initData = webResource.init(request, response,true);
+        final PageMode pageMode       = PageMode.get(request);
+        final User user               = initData.getUser();
+        final Language language       = WebAPILocator.getLanguageWebAPI().getLanguage(request); // todo: not sure if this should be received on the form.
+        final Contentlet copiedContentlet = this.pageResourceHelper.copyContentlet(copyContentletForm, user, pageMode, language);
+
+        return new DotTransformerBuilder().defaultOptions().content(copiedContentlet).build()
+                .toMaps().stream().findFirst().orElse(Collections.emptyMap());
+    }
+
+
+
 
 }

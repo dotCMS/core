@@ -12,6 +12,7 @@ import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import com.dotcms.util.JsonUtil;
+import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
@@ -1353,7 +1354,8 @@ public class ContentResource {
                 APILocator.getContentTypeAPI(APILocator.systemUser()).
                         find(type.inode()).fields()).asOldFieldList();
         for (Field f : fields) {
-            if (f.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())) {
+            if (f.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())
+                    || f.getFieldType().equals(FieldType.JSON_FIELD.toString()) ) {
                 jsonFields.add(f.getVelocityVarName());
             }
         }
