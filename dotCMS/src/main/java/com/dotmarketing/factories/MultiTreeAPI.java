@@ -75,7 +75,7 @@ public interface MultiTreeAPI {
     void deleteMultiTreesRelatedToIdentifier(final String identifier) throws DotDataException;
 
     /**
-     * This method returns ALL MultiTree entries (in all languages) for a given page. It is up to what
+     * This method returns ALL MultiTree entries (in all languages) for a given page and DEFAULT variant. It is up to what
      * ever page renderer to properly choose which MultiTree children to show for example, show an
      * english content on a spanish page when language fallback=true
      *
@@ -88,6 +88,27 @@ public interface MultiTreeAPI {
      */
     Table<String, String, Set<PersonalizedContentlet>> getPageMultiTrees(final IHTMLPage page, final boolean liveMode)
             throws DotDataException, DotSecurityException;
+
+
+    /**
+     * This method returns ALL MultiTree entries (in all languages) for a given page and variant. It is up to what
+     * ever page renderer to properly choose which MultiTree children to show for example, show an
+     * english content on a spanish page when language fallback=true.
+     *
+     * If the page does not have any {@link MultiTree} to the specific variant then this method return the
+     * Page's {@link MultiTree} for the DEFAULT variant.
+     *
+     * @param page
+     * @param liveMode
+     * @param variantName
+     *
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    Table<String, String, Set<PersonalizedContentlet>> getPageMultiTrees(final IHTMLPage page, final String variantName, final boolean liveMode)
+            throws DotDataException, DotSecurityException;
+
 
     /**
      * Saves a list of MultiTrees
@@ -316,12 +337,22 @@ public interface MultiTreeAPI {
     List<MultiTree> getMultiTrees(String parentId) throws DotDataException;
 
     /**
+     * Gets a list of MultiTrees that has the parentId as a parent
+     *
+     * @param parentId
+     * @param variantName
+     * @return
+     * @throws DotDataException
+     */
+    List<MultiTree> getMultiTreesByVariant(final String parentId, final String variantName) throws DotDataException;
+
+    /**
      * Get an unique set of the personalization for a page
      * @param pageId String
      * @return unique Set of personalization values per the page
      */
     Set<String> getPersonalizationsForPage(final IHTMLPage page) throws DotDataException;
-    
+
     /**
      * Get an unique set of the personalization for a page
      * @param pageID
