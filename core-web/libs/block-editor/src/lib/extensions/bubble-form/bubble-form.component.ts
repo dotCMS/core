@@ -20,6 +20,7 @@ export class BubbleFormComponent {
     @Output() formValues = new EventEmitter();
     @Output() hide = new EventEmitter<boolean>();
 
+    options: { customClass: string } = null;
     dynamicControls: DynamicControl<unknown>[] = [];
     form: FormGroup;
 

@@ -24,6 +24,7 @@ import {
 import { LINK_FORM_PLUGIN_KEY, BUBBLE_FORM_PLUGIN_KEY, ImageNode } from '@dotcms/block-editor';
 
 import { bubbleMenuImageItems, bubbleMenuItems, isListNode, popperModifiers } from '../utils';
+import { filter, take } from 'rxjs/operators';
 
 export const DotBubbleMenuPlugin = (options: DotBubbleMenuPluginProps) => {
     const component = options.component.instance;
@@ -336,6 +337,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                 const { alt, src, title, data } = this.editor.getAttributes(ImageNode.name);
                 const { title: dotTitle = '', asset } = data || {};
                 /*eslint-enable */
+                console.log('open', open);
                 open
                     ? this.editor.commands.closeForm()
                     : this.editor.commands
@@ -363,7 +365,16 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                                   type: 'text'
                               }
                           ])
-                          .pipe();
+                          .pipe(
+                              take(1),
+                              filter((data) => data != null)
+                          )
+                          .subscribe((data) => {
+                              requestAnimationFrame(() => {
+                                  this.editor.commands.setImage({ ...data });
+                                  this.editor.commands.closeForm();
+                              });
+                          });
                 break;
 
             case 'deleteNode':

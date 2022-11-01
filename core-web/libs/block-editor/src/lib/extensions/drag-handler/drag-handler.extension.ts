@@ -127,12 +127,13 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                     props: {
                         handleDOMEvents: {
                             drop(view, dragEvent) {
-                                const directChildNode = getDirectChild(dragEvent.target);
+                                console.log(dragEvent);
+                                //const directChildNode = getDirectChild(dragEvent.target);
                                 // Disable the drop in the table node;
-                                if (directChildNode.nodeName === 'TABLE') {
-                                    return true;
-                                }
-                                view.state.tr.deleteSelection();
+                                // if (directChildNode.nodeName === 'TABLE') {
+                                //     return true;
+                                // }
+
                                 setTimeout(() => {
                                     const node = document.querySelector(
                                         '.ProseMirror-hideselection'

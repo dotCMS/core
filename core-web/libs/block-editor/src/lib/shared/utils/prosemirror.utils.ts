@@ -22,6 +22,7 @@ export const findParentNode = (
     do {
         parent = selectionStart.node(depth);
         if (parent) {
+            //  console.log('parent', parent.type.name);
             if (Array.isArray(NodesTypesToFind) && NodesTypesToFind.includes(parent.type.name)) {
                 break;
             }

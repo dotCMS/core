@@ -23,11 +23,11 @@ import { Highlight } from '@tiptap/extension-highlight';
 import { Link } from '@tiptap/extension-link';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
-import { TableCell } from '@tiptap/extension-table-cell';
 import { TableRow } from '@tiptap/extension-table-row';
 import { TableHeader } from '@tiptap/extension-table-header';
 import { Dropcursor } from '@tiptap/extension-dropcursor';
 import { DotTableExtension } from '../../extensions/dot-table/dot-table.extension';
+import { DotTableCellExtension } from '../../extensions/dot-table-cell/dot-table-cell.extension';
 
 function toTitleCase(str) {
     return str.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {
@@ -100,7 +100,7 @@ export class DotBlockEditorComponent implements OnInit {
             Dropcursor.configure({
                 class: 'dot-drop-cursor'
             }),
-            TableCell,
+            DotTableCellExtension(),
             TableRow,
             TableHeader,
             DotTableExtension()

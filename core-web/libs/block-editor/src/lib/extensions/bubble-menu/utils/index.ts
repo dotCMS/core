@@ -3,11 +3,14 @@ import {
     BubbleMenuItem,
     ShouldShowProps,
     LINK_FORM_PLUGIN_KEY,
-    ImageNode
+    ImageNode,
+    findParentNode
 } from '@dotcms/block-editor';
 
 const hideBubbleMenuOn = {
-    dotContent: true
+    dotContent: true,
+    tableCell: true,
+    table: true
 };
 
 /**
@@ -32,6 +35,7 @@ export const shouldShowBubbleMenu = ({ editor, state, from, to }: ShouldShowProp
     const isEmptyTextBlock = !doc.textBetween(from, to).length && isTextSelection(state.selection);
 
     // If it's empty or the current node is type dotContent, it will not open.
+    console.log('node?.type.name', node);
     if (
         !isOpen &&
         (!view.hasFocus() || empty || isEmptyTextBlock || hideBubbleMenuOn[node?.type.name])

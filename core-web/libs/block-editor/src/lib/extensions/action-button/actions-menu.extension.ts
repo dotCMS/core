@@ -98,34 +98,37 @@ function execCommand({
         },
         table: () => {
             editor.commands
-                .openForm([
-                    {
-                        key: 'rows',
-                        label: 'Rows',
-                        required: true,
-                        value: '3',
-                        controlType: 'number',
-                        type: 'number',
-                        min: 1
-                    },
-                    {
-                        key: 'columns',
-                        label: 'Columns',
-                        required: true,
-                        value: '3',
-                        controlType: 'number',
-                        type: 'number',
-                        min: 1
-                    },
-                    {
-                        key: 'header',
-                        label: 'Add Row Header',
-                        required: false,
-                        value: true,
-                        controlType: 'text',
-                        type: 'checkbox'
-                    }
-                ])
+                .openForm(
+                    [
+                        {
+                            key: 'rows',
+                            label: 'Rows',
+                            required: true,
+                            value: '3',
+                            controlType: 'number',
+                            type: 'number',
+                            min: 1
+                        },
+                        {
+                            key: 'columns',
+                            label: 'Columns',
+                            required: true,
+                            value: '3',
+                            controlType: 'number',
+                            type: 'number',
+                            min: 1
+                        },
+                        {
+                            key: 'header',
+                            label: 'Add Row Header',
+                            required: false,
+                            value: true,
+                            controlType: 'text',
+                            type: 'checkbox'
+                        }
+                    ],
+                    { customClass: 'dotTableForm' }
+                )
                 .pipe(take(1))
                 .subscribe((value) => {
                     requestAnimationFrame(() => {

@@ -1,6 +1,6 @@
 import { ComponentRef } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
-import { take, takeUntil } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 
 import { EditorState, Plugin, PluginKey, Transaction, NodeSelection } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
@@ -28,6 +28,7 @@ export type BubbleFormViewProps = BubbleFormProps & {
 interface PluginState {
     open: boolean;
     form: [];
+    options: { customClass: string };
 }
 
 export class BubbleFormView extends BubbleMenuView {
@@ -65,6 +66,10 @@ export class BubbleFormView extends BubbleMenuView {
         this.pluginKey = pluginKey;
         this.component = component;
 
+        this.component.instance.formValues.pipe(takeUntil(this.$destroy)).subscribe((data) => {
+            this.editor.commands.updateValue(data);
+        });
+
         this.component.instance.hide.pipe(takeUntil(this.$destroy)).subscribe(() => {
             this.editor.commands.closeForm();
         });
@@ -95,6 +100,7 @@ export class BubbleFormView extends BubbleMenuView {
 
         if (next.open && next.form) {
             this.component.instance.buildForm(next.form);
+            this.component.instance.options = next.options;
         } else {
             this.component.instance.cleanForm();
         }
@@ -150,14 +156,9 @@ export class BubbleFormView extends BubbleMenuView {
             onShow: () => {
                 requestAnimationFrame(() => {
                     this.component.instance.inputs.first.nativeElement.focus();
-                    this.component.instance.formValues.pipe(take(1)).subscribe((data) => {
-                        this.editor.commands.updateValue(data);
-                    });
                 });
             },
-            onHide: () => {
-                this.editor.commands.updateValue(null);
-            }
+            onHide: () => {}
         });
     }
 
@@ -205,7 +206,8 @@ export const bubbleFormPlugin = (options: BubbleFormProps) => {
             init(): PluginState {
                 return {
                     open: false,
-                    form: []
+                    form: [],
+                    options: null
                 };
             },
 
@@ -214,11 +216,11 @@ export const bubbleFormPlugin = (options: BubbleFormProps) => {
                 value: PluginState,
                 oldState: EditorState
             ): PluginState {
-                const { open, form } = transaction.getMeta(BUBBLE_FORM_PLUGIN_KEY) || {};
+                const { open, form, options } = transaction.getMeta(BUBBLE_FORM_PLUGIN_KEY) || {};
                 const state = BUBBLE_FORM_PLUGIN_KEY?.getState(oldState);
 
                 if (typeof open === 'boolean') {
-                    return { open, form };
+                    return { open, form, options };
                 }
 
                 // keep the old state in case we do not receive a new one.
