@@ -148,21 +148,6 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
 
         final com.dotmarketing.portlets.contentlet.model.Contentlet copy = new com.dotmarketing.portlets.contentlet.model.Contentlet(contentlet);
 
-        final ContentType contentType = copy.getContentType();
-        final ImmutableSet.Builder<com.dotcms.contenttype.model.field.Field> builder = ImmutableSet.builder();
-        Set<Field> categoriesAndTagFields = builder.addAll(contentType.fields(TagField.class))
-                .addAll(contentType.fields(CategoryField.class)).build();
-
-        final Map<String, Object> map = copy.getMap();
-        //A small precaution that guarantees categories and tags will be stored as Lists.
-        categoriesAndTagFields.forEach(field -> {
-            final Object object = map.get(field.variable());
-            if(object instanceof String){
-                final String asString = (String)object;
-                map.put(field.variable(), Arrays.asList(asString.split("\\s*,\\s*")));
-            }
-        });
-
         return ContentletJsonHelper.INSTANCE.get().writeAsString(toImmutable(copy));
     }
 
@@ -189,8 +174,6 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
         builder.disabledWysiwyg(contentlet.getDisabledWysiwyg());
         builder.modUser(contentlet.getModUser());
         builder.modDate(Try.of(() -> contentlet.getModDate().toInstant()).getOrNull());
-        builder.host(contentlet.getHost());
-        builder.folder(contentlet.getFolder());
 
         //These two are definitively mandatory but..
         //internalCheckIn calls "save" twice and the first time it is called these two aren't already set
@@ -285,8 +268,6 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
         map.put(TITTLE_KEY, immutableContentlet.title());
         map.put(SORT_ORDER_KEY, immutableContentlet.sortOrder());
         map.put(LANGUAGEID_KEY, immutableContentlet.languageId());
-        map.put(HOST_KEY,immutableContentlet.host());
-        map.put(FOLDER_KEY,immutableContentlet.folder());
         map.put(DISABLED_WYSIWYG_KEY,immutableContentlet.disabledWysiwyg());
 
         final ContentType contentType = contentTypeAPI.find(contentTypeId);
@@ -303,24 +284,14 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
             }
 
             Object value;
-            if (field instanceof ConstantField) {
-                value = field.values();
+            if (isSet(identifier) && isFileAsset(contentType, field)) {
+                value = identifierAPI.find(identifier).getAssetName();
             } else {
-                if (isSet(identifier) && isFileAsset(contentType, field)) {
-                    value = identifierAPI.find(identifier).getAssetName();
+                if (field instanceof BinaryField) {
+                    value = getBinary(field, inode).orElse(null);
                 } else {
-                    if (field instanceof BinaryField) {
-                        value = getBinary(field, inode).orElse(null);
-                    } else {
-                        value = getValue(contentletFields, field);
-                    }
+                    value = getValue(contentletFields, field);
                 }
-            }
-            //We're returning Tags as a comma separated string for backwards compatibility
-            //This is expected to be removed in the near future
-            if(field instanceof TagField && value instanceof Collection){
-                final Collection<String>tags = (Collection)value;
-                value = String.join(StringPool.COMMA,tags);
             }
             map.put(field.variable(), value);
         }
@@ -334,7 +305,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      * @return
      */
     private boolean isAllowedSystemField(final Field field){
-        return (field instanceof BinaryField || field instanceof HiddenField || field instanceof CategoryField || field instanceof TagField || field instanceof ConstantField);
+        return (field instanceof BinaryField || field instanceof HiddenField);
     }
 
     /**

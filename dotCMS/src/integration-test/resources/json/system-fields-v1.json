@@ -1,0 +1,42 @@
+{
+  "host": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
+  "inode": "0bf76a92-a3b5-46a1-9e94-2e5cb19d99d2",
+  "owner": "dotcms.org.1",
+  "title": "lol",
+  "fields": {
+    "lol": {
+      "type": "Constant",
+      "value": "lol"
+    },
+    "cats": {
+      "type": "Categories",
+      "value": [
+        "yes",
+        "lol"
+      ]
+    },
+    "tagz": {
+      "type": "Tags",
+      "value": [
+        "lol",
+        "xyz"
+      ]
+    },
+    "title": {
+      "type": "Text",
+      "value": "lol"
+    }
+  },
+  "folder": "SYSTEM_FOLDER",
+  "modDate": "2022-03-18T04:14:28.715Z",
+  "modUser": "dotcms.org.1",
+  "baseType": "CONTENT",
+  "sortOrder": 0,
+  "identifier": "b8b10c4d5edadb98f632a5e9897db33b",
+  "languageId": 1,
+  "showOnMenu": false,
+  "contentType": "40d3059aced29dbbfdcd7a8bb1da104e",
+  "disabledWysiwyg": [
+    "  "
+  ]
+}

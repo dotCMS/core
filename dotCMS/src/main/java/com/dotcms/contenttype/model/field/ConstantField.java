@@ -47,15 +47,4 @@ public abstract class ConstantField extends Field {
 		return list(ContentTypeFieldProperties.NAME, ContentTypeFieldProperties.VALUES, ContentTypeFieldProperties.HINT);
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public Optional<FieldValueBuilder> fieldValue(final Object value) {
-		if(value instanceof String){
-			return Optional.of(ConstantFieldType.builder().value((String) value));
-		}
-		return Optional.empty();
-	}
-
 }

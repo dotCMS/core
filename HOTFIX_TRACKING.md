@@ -63,3 +63,4 @@ This maintenance release includes the following code fixes:
 52. https://github.com/dotCMS/core/issues/22771 : UT Task210901UpdateDateTimezones not running successfully #22771
 53. https://github.com/dotCMS/core/issues/21849 : Upgrade tomcat to latest minor version #21849
 54. https://github.com/dotCMS/core/issues/21219 : Persist Contentlets as Json : Phase II #21219
+55. https://github.com/dotCMS/core/issues/21858 : Remove system fields #21858

@@ -57,22 +57,4 @@ public abstract class TagField extends Field  implements OnePerContentType{
 				ContentTypeFieldProperties.SEARCHABLE, ContentTypeFieldProperties.DATA_TYPE);
 	}
 
-	/**
-	 * {@inheritDoc}
-	 * @return
-	 */
-	@Override
-	public Optional<FieldValueBuilder> fieldValue(Object value) {
-		if (value instanceof String) {
-			final String[] strings = value.toString().split(StringPool.COMMA);
-			return Optional.of(TagFieldType.builder().value(Stream.of(strings).collect(Collectors.toList())));
-		} else {
-			if(value instanceof Iterable){
-			  return Optional.of(TagFieldType.builder().value((Iterable) value));
-			}
-		}
-
-		return Optional.empty();
-	}
-
 }

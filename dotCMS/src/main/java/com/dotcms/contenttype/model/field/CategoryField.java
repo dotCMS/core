@@ -53,28 +53,4 @@ public abstract class CategoryField extends Field {
 				ContentTypeFieldProperties.SEARCHABLE);
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public Optional<FieldValueBuilder> fieldValue(final Object value) {
-
-		if (value instanceof List<?>) {
-			final List<?> list = (List<?>) value;
-			if (!list.isEmpty()) {
-				//This might get a collection of Categories
-				if (list.get(0) instanceof Category) {
-					final List<Category> categories = (List<Category>) list;
-					return Optional.of(CategoryFieldType.builder()
-							.value(categories.stream().map(Category::getCategoryVelocityVarName).collect(
-									Collectors.toList())));
-				}
-				//Or a collection of Strings which would contain the Category-Name
-				return Optional.of(CategoryFieldType.builder().value((List<String>) value));
-			}
-		}
-
-		return Optional.empty();
-	}
-
 }

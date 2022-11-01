@@ -4847,9 +4847,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final IndexPolicy indexPolicy             = contentlet.getIndexPolicy();
             final IndexPolicy indexPolicyDependencies = contentlet.getIndexPolicyDependencies();
 
-            //Include system fields to generate a json representation - these fields are later removed before contentlet gets saved
-            contentlet = includeSystemFields(contentlet, contentletRaw, tagsValues, categories, user);
-
             contentlet = applyNullProperties(contentlet);
             //This is executed first hand to create the inode-contentlet relationship.
             if(InodeUtils.isSet(existingInode)) {
