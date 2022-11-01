@@ -65,3 +65,4 @@ This maintenance release includes the following code fixes:
 54. https://github.com/dotCMS/core/issues/21219 : Persist Contentlets as Json : Phase II #21219
 55. https://github.com/dotCMS/core/issues/21858 : Remove system fields #21858
 56. https://github.com/dotCMS/core/issues/22236 : Pagination not working when querying related content by Rest API #22236
+57. https://github.com/dotCMS/core/issues/22763 : Copy folder duplicates content on pages #22763
