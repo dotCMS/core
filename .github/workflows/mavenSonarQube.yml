@@ -4,6 +4,11 @@ on:
     branches:
       - master # or the name of your main branch
 
+  pull_request:
+    # Sequence of patterns matched against refs/heads
+    branches:    
+      - main
+
 jobs:
   build:
     name: Build
