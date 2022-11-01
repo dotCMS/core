@@ -1,5 +1,7 @@
 package com.dotcms.util.pagination;
 
+import com.dotcms.rest.api.v1.categories.CategoryListDTO;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
 

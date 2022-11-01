@@ -16,6 +16,7 @@ import com.dotcms.util.CloseUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.CategoriesPaginator;
+import com.dotcms.util.pagination.CategoryListDTOPaginator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -83,6 +84,7 @@ public class CategoriesResource {
 
     private final WebResource webResource;
     private final PaginationUtil paginationUtil;
+    private final PaginationUtil extendedPaginationUtil;
 
     private final CategoryAPI categoryAPI;
     private final VersionableAPI versionableAPI;
@@ -94,6 +96,7 @@ public class CategoriesResource {
 
     public CategoriesResource() {
         this(new WebResource(), new PaginationUtil(new CategoriesPaginator()),
+                new PaginationUtil(new CategoryListDTOPaginator()),
                 APILocator.getCategoryAPI(),
                 APILocator.getVersionableAPI(),
                 WebAPILocator.getHostWebAPI(),
@@ -103,11 +106,13 @@ public class CategoriesResource {
 
     @VisibleForTesting
     public CategoriesResource(final WebResource webresource, final PaginationUtil paginationUtil,
+            final PaginationUtil extendedPaginationUtil,
             final CategoryAPI categoryAPI, final VersionableAPI versionableAPI,
             final HostWebAPI hostWebAPI, final PermissionAPI permissionAPI,
             final CategoryHelper categoryHelper) {
         this.webResource = webresource;
         this.paginationUtil = paginationUtil;
+        this.extendedPaginationUtil = extendedPaginationUtil;
         this.categoryAPI = categoryAPI;
         this.versionableAPI = versionableAPI;
         this.hostWebAPI = hostWebAPI;
@@ -123,7 +128,8 @@ public class CategoriesResource {
             @Context final HttpServletResponse httpResponse,
             @QueryParam(PaginationUtil.FILTER) final String filter,
             @QueryParam(PaginationUtil.PAGE) final int page,
-            @QueryParam(PaginationUtil.PER_PAGE) final int perPage) {
+            @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+            @QueryParam("showChildrenCount") final boolean showChildrenCount) {
 
         final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true,
                 null);
@@ -137,9 +143,7 @@ public class CategoriesResource {
                 page, perPage));
 
         try {
-            response = this.paginationUtil.getPage(httpRequest, user, filter, page, perPage);
-            response = addChildrenCountToResponse(response,user, pageMode,filter,page,perPage,"ASC");
-
+           response = showChildrenCount == false ?  this.paginationUtil.getPage(httpRequest, user, filter, page, perPage) : this.extendedPaginationUtil.getPage(httpRequest, user, filter, page, perPage);
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
@@ -149,39 +153,6 @@ public class CategoriesResource {
         }
 
         return response;
-    }
-
-    private Response addChildrenCountToResponse(final Response response, final User user, final PageMode pageMode, final String filter,
-            final int page, final int perPage, final String direction)
-            throws DotDataException, DotSecurityException {
-
-        List<CategoryListDTO> result = new ArrayList<>();
-
-        ResponseEntityView responseEntityView = (ResponseEntityView)((OutboundJaxrsResponse) response).getContext().getEntity();
-        PaginatedArrayList listWithoutChildrenCount = (PaginatedArrayList)responseEntityView.getEntity();
-        for(var c : listWithoutChildrenCount){
-            Category category = (Category)c;
-            CategoryListDTO categoryListDTO = new CategoryListDTO(category.getCategoryName(),category.getCategoryVelocityVarName(), category.getKey(),
-                    category.getKeywords(), category.getSortOrder(), category.getDescription(),category.isActive(),category.getModDate(),
-                    category.getIDate(),category.getType(),category.getOwner(),category.getInode(),category.getIdentifier(),
-                    this.categoryAPI.findChildren(user, category.getInode(), pageMode.respectAnonPerms, page, perPage,filter, direction).getTotalCount());
-
-            result.add(categoryListDTO);
-        }
-
-        Response modifiedResponse =  Response.
-                ok(new ResponseEntityView((Object) result)).build();
-
-        MultivaluedMap<String, Object> headers = response.getHeaders();
-
-        for (Entry<String, List<Object>> entry : headers.entrySet()) {
-            if (entry.getValue() == null || entry.getValue().isEmpty()) {
-                continue;
-            }
-            modifiedResponse.getHeaders().add(entry.getKey(), entry.getValue());
-        }
-
-        return modifiedResponse;
     }
 
     /**
