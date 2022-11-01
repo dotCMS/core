@@ -4,11 +4,11 @@
 package com.dotmarketing.webdav;
 
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.repackage.com.bradmcevoy.http.ApplicationConfig;
-import com.dotcms.repackage.com.bradmcevoy.http.HttpManager;
-import com.dotcms.repackage.com.bradmcevoy.http.Initable;
-import com.dotcms.repackage.com.bradmcevoy.http.Resource;
-import com.dotcms.repackage.com.bradmcevoy.http.ResourceFactory;
+import com.bradmcevoy.http.ApplicationConfig;
+import com.bradmcevoy.http.HttpManager;
+import com.bradmcevoy.http.Initable;
+import com.bradmcevoy.http.Resource;
+import com.bradmcevoy.http.ResourceFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -24,7 +24,7 @@ import com.liferay.util.FileUtil;
  * @author Jason Tesser
  *
  */
-public class ResourceFactorytImpl implements ResourceFactory, Initable {
+public class ResourceFactoryImpl implements ResourceFactory, Initable {
 
 	private DotWebdavHelper dotDavHelper;
 	static final String AUTOPUB_PATH = "/webdav/autopub";
@@ -33,13 +33,13 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 	static final String WORKING_PATH = "/webdav/working";
 	private HostAPI hostAPI = APILocator.getHostAPI();
 	
-	public ResourceFactorytImpl() {
+	public ResourceFactoryImpl() {
 		super();
 		dotDavHelper = new DotWebdavHelper();
 	}
 	
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.ResourceFactory#getResource(java.lang.String, java.lang.String)
+	 * @see com.bradmcevoy.http.ResourceFactory#getResource(java.lang.String, java.lang.String)
 	 */
     @WrapInTransaction
 	public Resource getResource(String davHost, String url) {
@@ -48,7 +48,7 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 
 	public static Resource getResource(final String davHost, String url, final DotWebdavHelper dotDavHelper, final HostAPI hostAPI) {
 		url = url.toLowerCase();
-		Logger.debug(ResourceFactorytImpl.class, "WebDav ResourceFactory: Host is " + davHost + " and the url is " + url);
+		Logger.debug(ResourceFactoryImpl.class, "WebDav ResourceFactory: Host is " + davHost + " and the url is " + url);
 		try{
 			dotDavHelper.stripMapping(url);//method also sets the language
 			boolean isFolder = false;
@@ -189,7 +189,7 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 			if(!isFolder && isResource){
 				IFileAsset file = dotDavHelper.loadFile(url,user);
 				if(file == null || !InodeUtils.isSet(file.getInode())){
-					Logger.debug(ResourceFactorytImpl.class, "The file for url " + url + " returned null or not in db");
+					Logger.debug(ResourceFactoryImpl.class, "The file for url " + url + " returned null or not in db");
 					return null;
 				}
 				FileResourceImpl fr = new FileResourceImpl(file,url);
@@ -197,21 +197,21 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 			}else{
 				Folder folder = dotDavHelper.loadFolder(url,user);
 				if(folder == null || !InodeUtils.isSet(folder.getInode())){
-					Logger.debug(ResourceFactorytImpl.class, "The folder for url " + url + " returned null or not in db");
+					Logger.debug(ResourceFactoryImpl.class, "The folder for url " + url + " returned null or not in db");
 					return null;
 				}
 				FolderResourceImpl fr = new FolderResourceImpl(folder, url);
 				return fr;
 			}
 		} catch (Exception e) {
-			Logger.error(ResourceFactorytImpl.class, e.getMessage(), e);
+			Logger.error(ResourceFactoryImpl.class, e.getMessage(), e);
 			return null;
 		}
 	}
 
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.ResourceFactory#getSupportedLevels()
+	 * @see com.bradmcevoy.http.ResourceFactory#getSupportedLevels()
 	 */
 	public String getSupportedLevels() {
 		return "1,2";

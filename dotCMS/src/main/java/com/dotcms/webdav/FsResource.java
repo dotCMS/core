@@ -19,21 +19,21 @@
 
 package com.dotcms.webdav;
 
-import com.dotcms.repackage.com.bradmcevoy.http.Auth;
-import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
-import com.dotcms.repackage.com.bradmcevoy.http.CopyableResource;
-import com.dotcms.repackage.com.bradmcevoy.http.DigestResource;
-import com.dotcms.repackage.com.bradmcevoy.http.LockInfo;
-import com.dotcms.repackage.com.bradmcevoy.http.LockResult;
-import com.dotcms.repackage.com.bradmcevoy.http.LockTimeout;
-import com.dotcms.repackage.com.bradmcevoy.http.LockToken;
-import com.dotcms.repackage.com.bradmcevoy.http.LockableResource;
-import com.dotcms.repackage.com.bradmcevoy.http.MoveableResource;
-import com.dotcms.repackage.com.bradmcevoy.http.Request;
-import com.dotcms.repackage.com.bradmcevoy.http.Request.Method;
-import com.dotcms.repackage.com.bradmcevoy.http.Resource;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotAuthorizedException;
-import com.dotcms.repackage.com.bradmcevoy.http.http11.auth.DigestResponse;
+import com.bradmcevoy.http.Auth;
+import com.bradmcevoy.http.CollectionResource;
+import com.bradmcevoy.http.CopyableResource;
+import com.bradmcevoy.http.DigestResource;
+import com.bradmcevoy.http.LockInfo;
+import com.bradmcevoy.http.LockResult;
+import com.bradmcevoy.http.LockTimeout;
+import com.bradmcevoy.http.LockToken;
+import com.bradmcevoy.http.LockableResource;
+import com.bradmcevoy.http.MoveableResource;
+import com.bradmcevoy.http.Request;
+import com.bradmcevoy.http.Request.Method;
+import com.bradmcevoy.http.Resource;
+import com.bradmcevoy.http.exceptions.NotAuthorizedException;
+import com.bradmcevoy.http.http11.auth.DigestResponse;
 import com.dotmarketing.util.Logger;
 
 
