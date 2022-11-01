@@ -217,6 +217,9 @@ public abstract class VersionableFactory {
 
     protected abstract Optional<ContentletVersionInfo> findAnyContentletVersionInfo(String identifier) throws DotDataException;
 
+	public abstract Optional<ContentletVersionInfo> findAnyContentletVersionInfo(final String identifier, final boolean deleted)
+			throws DotDataException;
+
     protected abstract List<ContentletVersionInfo> findAllContentletVersionInfos(String identifier)
         throws DotDataException, DotStateException ;
 
