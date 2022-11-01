@@ -19,6 +19,15 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+/**
+ * This {@link WebInterceptor} intercepts both "/s/lib.js" and "/api/v1/event" and performs
+ * different actions on each.
+ * <p>
+ * For GET requests to "/s/lib.js", it responds with the lib.js file
+ * <p>
+ * For POST requests to "/api/v1/event", it sends the event in JSON via {@link EventLogSubmitter}
+ */
+
 public class EventLogWebInterceptor implements WebInterceptor {
     private static final long serialVersionUID = 1L;
     final String[] paths = new String[] {

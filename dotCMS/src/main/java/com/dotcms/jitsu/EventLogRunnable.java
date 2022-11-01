@@ -8,6 +8,11 @@ import com.dotcms.http.CircuitBreakerUrlBuilder;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableMap;
 
+/**
+ * POSTs events to established endpoint in EVENT_LOG_POSTING_URL config property using the token set in
+ * EVENT_LOG_TOKEN config property
+ */
+
 public class EventLogRunnable implements Runnable {
 
     final String POST_URL = Config.getStringProperty("EVENT_LOG_POSTING_URL",

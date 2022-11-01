@@ -6,6 +6,14 @@ import com.dotcms.concurrent.DotConcurrentFactory.SubmitterConfig;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotmarketing.util.Config;
 
+/**
+ * Wrapper class to a {@link DotSubmitter} instance used to execute instances of {@link EventLogRunnable}
+ * <p>
+ * It's configuration can be modified via the following properties:
+ * <li>EVENT_LOG_POSTING_THREADS: Max active posting threads
+ * <li>EVENT_LOG_QUEUE_SIZE: Max size of the queue
+ */
+
 public class EventLogSubmitter {
     private final DotSubmitter submitter;
 
