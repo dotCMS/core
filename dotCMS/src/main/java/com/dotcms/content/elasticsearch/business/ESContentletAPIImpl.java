@@ -72,7 +72,6 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -155,6 +154,8 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.dotmarketing.util.contentlet.pagination.PaginatedContentletBuilder;
+import com.dotmarketing.util.contentlet.pagination.PaginatedContentlets;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -706,9 +707,44 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public List<Contentlet> findContentletsByHost(Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        try {
-            StringBuilder query = new StringBuilder();
+    public PaginatedContentlets findContentletsPaginatedByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        return findContentletsPaginatedByHost(parentHost, null, null, user, respectFrontendRoles);
+    }
+
+
+    public PaginatedContentlets findContentletsPaginatedByHost(final Host parentHost,
+        final List<Integer> includingContentTypes,
+        final List<Integer> excludingContentTypes,
+        final User user,
+        final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+            final String query = getContentletByHostQuery(parentHost, includingContentTypes,
+                    excludingContentTypes);
+
+            return new PaginatedContentletBuilder()
+                    .setLuceneQuery(query)
+                    .setUser(user)
+                    .setRespectFrontendRoles(respectFrontendRoles)
+                    .build();
+        }
+
+        @CloseDBIfOpened
+        @Override
+        public List<Contentlet> findContentletsByHost(Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+            try {
+                final String query = getContentletByHostQuery(parentHost, includingContentTypes,
+                        excludingContentTypes);
+
+                return permissionAPI.filterCollection(search(query, -1, 0, null , user, respectFrontendRoles), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+        } catch (Exception e) {
+            Logger.error(this.getClass(), e.getMessage(), e);
+            throw new DotRuntimeException(e.getMessage(), e);
+        }
+    }
+
+        private String getContentletByHostQuery(Host parentHost, List<Integer> includingContentTypes,
+                List<Integer> excludingContentTypes) {
+            final StringBuilder query = new StringBuilder();
             query.append("+conHost:").append(parentHost.getIdentifier()).append(" +working:true");
 
             // Including content types
@@ -720,13 +756,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(excludingContentTypes != null && !excludingContentTypes.isEmpty()) {
                 query.append(" -structureType:(").append(StringUtils.join(excludingContentTypes, " ")).append(")");
             }
-
-            return permissionAPI.filterCollection(search(query.toString(), -1, 0, null , user, respectFrontendRoles), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
-        } catch (Exception e) {
-            Logger.error(this.getClass(), e.getMessage(), e);
-            throw new DotRuntimeException(e.getMessage(), e);
+            return query.toString();
         }
-    }
 
     @CloseDBIfOpened
     @Override
