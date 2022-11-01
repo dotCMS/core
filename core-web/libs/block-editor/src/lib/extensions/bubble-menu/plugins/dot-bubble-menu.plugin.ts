@@ -15,7 +15,8 @@ import {
     suggestionOptions,
     SuggestionsComponent,
     // Utils
-    getNodePosition,
+    setBubbleMenuCoords,
+    getNodeCoords,
     deleteByRange,
     deleteByNode
 } from '@dotcms/block-editor';
@@ -166,17 +167,15 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
         this.tippy?.setProps({
             getReferenceClientRect: () => {
-                if (selection instanceof NodeSelection) {
-                    const node = view.nodeDOM(from) as HTMLElement;
+                const node = view.nodeDOM(from) as HTMLElement;
+                const type = doc.nodeAt(from)?.type.name;
+                const viewCoords = view.dom.parentElement.getBoundingClientRect();
+                const nodeCoords =
+                    selection instanceof NodeSelection
+                        ? getNodeCoords(node, type)
+                        : posToDOMRect(view, from, to);
 
-                    if (node) {
-                        const type = doc.nodeAt(from).type.name;
-
-                        return getNodePosition(node, type);
-                    }
-                }
-
-                return posToDOMRect(view, from, to);
+                return setBubbleMenuCoords({ viewCoords, nodeCoords, padding: 60 });
             }
         });
 

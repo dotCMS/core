@@ -77,6 +77,27 @@ export const getNodePosition = (node: HTMLElement, type: string): DOMRect => {
     return node.getBoundingClientRect();
 };
 
+export const getNodeCoords = (node: HTMLElement, type: string): DOMRect => {
+    if (type === ImageNode.name && node?.firstElementChild) {
+        return node.firstElementChild.getBoundingClientRect();
+    }
+
+    return node.getBoundingClientRect();
+};
+
+export const setBubbleMenuCoords = ({ viewCoords, nodeCoords, padding }): DOMRect => {
+    const { top: nodeTop, bottom: nodeBottom } = nodeCoords;
+    const { top: viewTop, bottom: viewBottom } = viewCoords;
+
+    const isTopOverflow = Math.ceil(nodeTop - viewTop) < padding;
+    const isBottomOverflow = Math.ceil(viewBottom - nodeBottom) < padding;
+
+    return {
+        ...nodeCoords.toJSON(),
+        top: isTopOverflow && isBottomOverflow ? viewTop + padding : nodeTop
+    };
+};
+
 export const isListNode = (editor): boolean => {
     return editor.isActive('bulletList') || editor.isActive('orderedList');
 };
