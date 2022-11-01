@@ -19,7 +19,15 @@ plugins {
     id 'war'
     id 'org.ajoberstar.grgit' version '4.1.1'
     id "com.palantir.docker" version "0.32.0"  // reference:  https://github.com/palantir/gradle-docker
+    id "org.sonarqube" version "3.4.0.2513"
 
+
+}
+
+sonarqube {
+  properties {
+    property "sonar.projectKey", "dotCMS_core_AYQvQCMIJs0IgspqN39B"
+  }
 }
 
 repositories {
