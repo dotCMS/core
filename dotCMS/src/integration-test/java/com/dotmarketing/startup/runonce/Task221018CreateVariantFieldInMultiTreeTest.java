@@ -114,7 +114,6 @@ public class Task221018CreateVariantFieldInMultiTreeTest {
             DotDatabaseMetaData.dropPrimaryKey("multi_tree");
         } catch (Exception e) {
             //ignore
-            System.out.println();
         }
 
         try {
@@ -122,7 +121,6 @@ public class Task221018CreateVariantFieldInMultiTreeTest {
                     "ALTER TABLE multi_tree DROP COLUMN variant_id");
         } catch (SQLException e) {
             //ignore
-            System.out.println();
         }
 
         new DotConnect().executeStatement(String.format("ALTER TABLE multi_tree "
