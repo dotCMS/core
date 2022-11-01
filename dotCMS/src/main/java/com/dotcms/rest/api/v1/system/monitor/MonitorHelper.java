@@ -205,8 +205,8 @@ class MonitorHelper {
                     + "monitor"
                     + File.separator;
     
-    private final String dynamicPath = ConfigUtils.getDynamicContentPath()
-                    + (ConfigUtils.getDynamicContentPath().endsWith(File.separator) ? "" : File.separator)
+    private final String assetPath = ConfigUtils.getAbsoluteAssetsRootPath()
+                    + (ConfigUtils.getAbsoluteAssetsRootPath().endsWith(File.separator) ? "" : File.separator)
                     + "monitor"
                     + File.separator;
         
@@ -255,7 +255,7 @@ class MonitorHelper {
         return Failsafe
                 .with(breaker())
                 .withFallback(Boolean.FALSE)
-                .get(this.failFastBooleanPolicy(timeOut, new FileSystemTest(dynamicPath) 
+                .get(this.failFastBooleanPolicy(timeOut, new FileSystemTest(assetPath) 
                 ));
     }
 
