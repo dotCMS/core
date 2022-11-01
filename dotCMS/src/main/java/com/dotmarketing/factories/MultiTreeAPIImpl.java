@@ -270,11 +270,23 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     private List<MultiTree> getMultiTreeByVariantWithoutFallback(String parentId, String variantName)
             throws DotDataException {
+
         List<Map<String, Object>> loadObjectResults = new DotConnect().setSQL(SELECT_BY_ONE_PARENT)
                 .addParam(parentId)
                 .addParam(parentId)
                 .addParam(variantName)
                 .loadObjectResults();
+
+        if (!UtilMethods.isSet(loadObjectResults)) {
+            if (!VariantAPI.DEFAULT_VARIANT.name().equals(variantName)) {
+                loadObjectResults = new DotConnect().setSQL(SELECT_BY_ONE_PARENT)
+                        .addParam(parentId)
+                        .addParam(parentId)
+                        .addParam(VariantAPI.DEFAULT_VARIANT.name())
+                        .loadObjectResults();
+            }
+        }
+
         return TransformerLocator.createMultiTreeTransformer(loadObjectResults).asList();
     }
 
@@ -781,8 +793,6 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             db.executeBatch(INSERT_SQL, insertParams);
         }
 
-
-
         for (String variantId : variants) {
             updateHTMLPageVersionTS(pageId, variantId);
             refreshPageInCache(pageId,variantId );
@@ -858,7 +868,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             updateHTMLPageVersionTS(pageId, variant.name());
         }
     }
-
+    
     private void refreshPageInCache(final String pageIdentifier, final String variantName) throws DotDataException {
 
         CacheLocator.getMultiTreeCache()
