@@ -354,11 +354,6 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
         }
     }
 
-    /**
-     *
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
     private void processContentTypeDependency(final Structure contentType) {
         try {
             // Site Dependency
@@ -428,9 +423,6 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
 
     /**
      * Takes the specified {@link Contentlet} object and analyzes the different object dependencies it may have.
-     *
-     * @throws DotDataException     An error occurred when interacting with the data source.
-     * @throws DotSecurityException The {@link User} accessing the APIs doesn't have the required permissions to do so.
      */
     private void processContentDependency(final Contentlet contentlet)
             throws  DotBundleException {
@@ -449,22 +441,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                 if (contentletVersion.isHTMLPage()) {
                     processHTMLPagesDependency(contentletVersion.getIdentifier());
                 }
-                // Contentlet Dependencies in Story Block fields, if applicable
-                if (contentlet.getContentType().hasStoryBlockFields()) {
-                    this.storyBlockAPI.get().getDependencies(contentletVersion).forEach(contentletId -> {
-                        try {
-                            final Contentlet contentInStoryBlock =
-                                    this.contentletAPI.get().findContentletByIdentifier(contentletId,
-                                            contentletVersion.isLive(), contentletVersion.getLanguageId(),
-                                            APILocator.systemUser(), false);
-                            tryToAddAndProcessDependencies(PusheableAsset.CONTENTLET, contentInStoryBlock,
-                                    ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(contentletVersion));
-                        } catch (final DotDataException | DotSecurityException e) {
-                            Logger.warn(this,
-                                    String.format("Could not analyze dependent Contentlet '%s' referenced " + "in " + "Story Block field from Contentlet Inode " + "'%s': %s", contentletId, contentletVersion.getInode(), e.getMessage()));
-                        }
-                    });
-                }
+                processStoryBockDependencies(contentletVersion);
 
                 // Site Dependency
                 tryToAddSilently(PusheableAsset.SITE,
@@ -500,7 +477,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
 
                 contentsWithDependenciesToProcess.add(contentletToProcess);
                 //Copy asset files to bundle folder keeping original folders structure
-                final List<Field> fields= FieldsCache.getFieldsByStructureInode(contentletToProcess.getStructureInode());
+                final List<Field> fields= FieldsCache.getFieldsByStructureInode(contentletToProcess.getContentTypeId());
 
                 for(final Field field : fields) {
                     if (field.getFieldType().equals(Field.FieldType.IMAGE.toString())
@@ -511,7 +488,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                                 value = APILocator.getContentletAPI().getFieldValue(contentletToProcess, field).toString();
                             }
                             final Identifier id = APILocator.getIdentifierAPI().find(value);
-                            if (InodeUtils.isSet(id.getInode()) && id.getAssetType().equals("contentlet")) {
+                            if (InodeUtils.isSet(id.getId()) && id.getAssetType().equals("contentlet")) {
                                 final List<Contentlet> fileAssets = APILocator.getContentletAPI()
                                         .findAllVersions(id, false, user, false);
 
@@ -593,6 +570,32 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                             contentlet.getIdentifier(), e.getMessage());
             Logger.error(this, errorMsg, e);
             throw new DotBundleException(errorMsg, e);
+        }
+    }
+
+    /**
+     * Analyzes the specified {@link Contentlet} and determines whether it has at least one Story Block field. If it
+     * does, then its contents are retrieved in order to determine if any other Contentlets are being referenced in it
+     * or not. And if they are, the Dependency Processor needs to determine whether they need to be added to the Bundle
+     * or not.
+     *
+     * @param contentlet The {@link Contentlet} whose Story Block fields will be analyzed.
+     */
+    private void processStoryBockDependencies(final Contentlet contentlet) {
+        if (contentlet.getContentType().hasStoryBlockFields()) {
+            this.storyBlockAPI.get().getDependencies(contentlet).forEach(contentletId -> {
+                Contentlet contentInStoryBlock = new Contentlet();
+                try {
+                    contentInStoryBlock = this.contentletAPI.get().findContentletByIdentifier(contentletId,
+                            contentlet.isLive(), contentlet.getLanguageId(), APILocator.systemUser(), false);
+                    tryToAddAndProcessDependencies(PusheableAsset.CONTENTLET, contentInStoryBlock,
+                            ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(contentlet));
+                } catch (final DotDataException | DotSecurityException e) {
+                    Logger.warn(this, String.format("Could not analyze dependent Contentlet '%s' referenced in Story "
+                                                            + "Block field from Contentlet Inode " + "'%s': %s",
+                            contentInStoryBlock, contentlet.getInode(), e.getMessage()));
+                }
+            });
         }
     }
 
