@@ -1,6 +1,6 @@
 package com.ettrema.httpclient;
 
-import com.dotcms.repackage.com.bradmcevoy.http.Range;
+import com.bradmcevoy.http.Range;
 import java.util.List;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpMethodBase;
 import com.dotcms.repackage.org.slf4j.Logger;

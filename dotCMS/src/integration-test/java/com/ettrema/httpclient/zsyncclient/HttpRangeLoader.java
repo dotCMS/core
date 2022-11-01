@@ -1,14 +1,14 @@
 package com.ettrema.httpclient.zsyncclient;
 
-import com.dotcms.repackage.com.bradmcevoy.http.Range;
+import com.bradmcevoy.http.Range;
 import com.ettrema.httpclient.File;
 import com.ettrema.httpclient.HttpException;
 import com.ettrema.httpclient.ProgressListener;
 import com.ettrema.httpclient.Utils.CancelledException;
 import java.io.ByteArrayOutputStream;
 import java.util.List;
-import com.dotcms.repackage.org.slf4j.Logger;
-import com.dotcms.repackage.org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *

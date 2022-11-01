@@ -1,12 +1,12 @@
 package com.ettrema.httpclient;
 
-import com.dotcms.repackage.com.bradmcevoy.common.Path;
-import com.dotcms.repackage.com.bradmcevoy.http.DateUtils;
-import com.dotcms.repackage.com.bradmcevoy.http.DateUtils.DateParseException;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.BadRequestException;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.ConflictException;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotAuthorizedException;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotFoundException;
+import com.bradmcevoy.common.Path;
+import com.bradmcevoy.http.DateUtils;
+import com.bradmcevoy.http.DateUtils.DateParseException;
+import com.bradmcevoy.http.exceptions.BadRequestException;
+import com.bradmcevoy.http.exceptions.ConflictException;
+import com.bradmcevoy.http.exceptions.NotAuthorizedException;
+import com.bradmcevoy.http.exceptions.NotFoundException;
 import com.dotcms.repackage.org.slf4j.Logger;
 import com.dotcms.repackage.org.slf4j.LoggerFactory;
 import com.ettrema.cache.Cache;
@@ -205,7 +205,7 @@ public abstract class Resource {
     }
 
     public void copyTo(Folder folder, String destName) throws IOException, HttpException, NotAuthorizedException, ConflictException, BadRequestException, NotFoundException  {
-        host().doCopy(encodedUrl(), folder.encodedUrl() + com.dotcms.repackage.com.bradmcevoy.http.Utils.percentEncode(destName));
+        host().doCopy(encodedUrl(), folder.encodedUrl() + com.bradmcevoy.http.Utils.percentEncode(destName));
         folder.flush();
     }
     
@@ -214,7 +214,7 @@ public abstract class Resource {
         if (parent != null) {
             dest = parent.encodedUrl();
         }
-        dest = dest + com.dotcms.repackage.com.bradmcevoy.http.Utils.percentEncode(newName);
+        dest = dest + com.bradmcevoy.http.Utils.percentEncode(newName);
         int res = host().doMove(encodedUrl(), dest);
         if (res == 201) {
             this.name = newName;
@@ -226,7 +226,7 @@ public abstract class Resource {
     }
     public void moveTo(Folder folder, String destName) throws IOException, HttpException, NotAuthorizedException, ConflictException, BadRequestException, NotFoundException  {
         log.info("Move: " + this.href() + " to " + folder.href());
-        int res = host().doMove(encodedUrl(), folder.href() + com.dotcms.repackage.com.bradmcevoy.http.Utils.percentEncode(destName));
+        int res = host().doMove(encodedUrl(), folder.href() + com.bradmcevoy.http.Utils.percentEncode(destName));
         if (res == 201) {
             this.parent.flush();
             folder.flush();
@@ -266,7 +266,7 @@ public abstract class Resource {
     }
 
     public String encodedName() {
-        return com.dotcms.repackage.com.bradmcevoy.http.Utils.percentEncode(name);
+        return com.bradmcevoy.http.Utils.percentEncode(name);
     }
 
     /**
