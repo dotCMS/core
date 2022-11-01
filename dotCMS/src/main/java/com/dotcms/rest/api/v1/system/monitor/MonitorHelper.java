@@ -200,18 +200,7 @@ class MonitorHelper {
 
     }
 
-    private final String localPath = ConfigUtils.getDynamicContentPath()
-                    + (ConfigUtils.getDynamicContentPath().endsWith(File.separator) ? "" : File.separator)
-                    + "monitor"
-                    + File.separator;
-    
-    private final String assetPath = ConfigUtils.getAbsoluteAssetsRootPath()
-                    + (ConfigUtils.getAbsoluteAssetsRootPath().endsWith(File.separator) ? "" : File.separator)
-                    + "monitor"
-                    + File.separator;
-        
-    
-    final class FileSystemTest implements Callable<Boolean> {
+       final class FileSystemTest implements Callable<Boolean> {
 
         final String initialPath;
 
@@ -245,7 +234,7 @@ class MonitorHelper {
         return Failsafe
                 .with(breaker())
                 .withFallback(Boolean.FALSE)
-                .get(this.failFastBooleanPolicy(timeOut, new FileSystemTest(localPath) 
+                .get(this.failFastBooleanPolicy(timeOut, new FileSystemTest(ConfigUtils.getDynamicContentPath()) 
                 ));
     }
 
@@ -255,10 +244,10 @@ class MonitorHelper {
         return Failsafe
                 .with(breaker())
                 .withFallback(Boolean.FALSE)
-                .get(this.failFastBooleanPolicy(timeOut, new FileSystemTest(assetPath) 
+                .get(this.failFastBooleanPolicy(timeOut, new FileSystemTest(ConfigUtils.getAbsoluteAssetsRootPath()) 
                 ));
     }
-
+    
     private Callable<Boolean> failFastBooleanPolicy(long thresholdMilliseconds, final Callable<Boolean> callable) throws Throwable{
         return ()-> {
             try {
