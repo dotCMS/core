@@ -410,7 +410,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         final ExperimentVariant experimentVariant = ExperimentVariant.builder().id(variantName)
                 .description(variantDescription).weight(0)
-                .url(page.getPageUrl()+"?variant="+variantName).build();
+                .url(page.getPageUrl()+"?variantName="+variantName).build();
 
         final TrafficProportion trafficProportion = persistedExperiment.trafficProportion();
 
