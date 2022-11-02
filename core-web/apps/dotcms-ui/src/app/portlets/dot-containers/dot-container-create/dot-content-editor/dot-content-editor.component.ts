@@ -4,8 +4,7 @@ import { DotAddVariableComponent } from './dot-add-variable/dot-add-variable.com
 import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { Subject } from 'rxjs';
-import { DotContainerStructure } from '@models/container/dot-container.model';
-import { FormArray, FormControl, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ControlValueAccessor, FormArray, FormControl, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { MenuItem } from 'primeng/api';
 
 interface DotContainerContent extends DotCMSContentType {
@@ -24,12 +23,12 @@ interface DotContainerContent extends DotCMSContentType {
         }
     ]
 })
-export class DotContentEditorComponent implements OnInit {
-    @Input() containerStructures: DotContainerStructure[];
+export class DotContentEditorComponent implements ControlValueAccessor, OnInit {
     @Input() contentTypes: DotContainerContent[];
     @Output() valueChange = new EventEmitter<MenuItem[]>();
 
     public readonly containerContents = new FormArray([] as FormControl<DotContainerContent>[]);
+
     menuItems: MenuItem[];
     activeTabIndex = 1;
     monacoEditors = {};
