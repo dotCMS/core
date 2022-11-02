@@ -91,6 +91,7 @@ public class PaginationUtil {
 	public Response getPage(final HttpServletRequest req, final User user, final String filter, final int pageParam, final int perPageParam) {
 		return getPage(req, user, filter, pageParam, perPageParam, StringUtils.EMPTY, (OrderDirection) null, null);
 	}
+
 	public Response getPage(final HttpServletRequest req, final User user, final String filter, final int pageParam,
 							final int perPageParam, final String orderBy, final String direction) {
 		return getPage(req, user, filter, pageParam, perPageParam, orderBy,
