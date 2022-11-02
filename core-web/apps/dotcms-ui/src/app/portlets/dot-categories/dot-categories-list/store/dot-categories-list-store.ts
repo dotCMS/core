@@ -17,7 +17,6 @@ export interface DotCategoriesListState {
     tableColumns: DataTableColumn[];
     categories: DotCategory[];
     categoryBreadCrumbs: MenuItem[];
-    breadCrumbHome: MenuItem;
     paginationPerPage: number;
     currentPage: number;
     totalRecords: number;
@@ -39,7 +38,6 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
             selectedCategories: [],
             categories: [],
             categoryBreadCrumbs: [],
-            breadCrumbHome: { icon: 'pi pi-home' },
             currentPage: this.categoryService.currentPage,
             paginationPerPage: this.categoryService.paginationPerPage,
             totalRecords: this.categoryService.totalRecords,
@@ -64,7 +62,7 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
     /**
      * A function that updates the state of the store.
      * @param state DotCategoryListState
-     * @param selectedCategories DotCategory[]
+     * @param selectedCategories DotCategory
      * @memberof DotCategoriesListStore
      */
     readonly updateSelectedCategories = this.updater<DotCategory[]>(
@@ -114,11 +112,16 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
      * Update categories in store
      * @memberof DotCategoriesListStore
      */
-    readonly updateCategoriesBreadCrumb = this.updater<MenuItem[]>(
-        (state: DotCategoriesListState, categoryBreadCrumbs: MenuItem[]) => {
+    readonly updateCategoriesBreadCrumb = this.updater<MenuItem>(
+        (state: DotCategoriesListState, categoryBreadCrumb: MenuItem) => {
+            let { categoryBreadCrumbs } = this.get();
+            categoryBreadCrumbs = categoryBreadCrumbs.filter(
+                ({ tabindex }: MenuItem) => Number(tabindex) <= Number(categoryBreadCrumb.tabindex)
+            );
+
             return {
                 ...state,
-                categoryBreadCrumbs
+                categoryBreadCrumbs: categoryBreadCrumbs
             };
         }
     );

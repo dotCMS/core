@@ -1,9 +1,8 @@
 import { Component, ViewChild } from '@angular/core';
 import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
-import { LazyLoadEvent, MenuItem } from 'primeng/api';
+import { LazyLoadEvent } from 'primeng/api';
 import { Table } from 'primeng/table';
 import { Observable } from 'rxjs';
-import { take } from 'rxjs/operators';
 import { DotCategoriesListStore, DotCategoriesListState } from './store/dot-categories-list-store';
 
 @Component({
@@ -15,7 +14,7 @@ import { DotCategoriesListStore, DotCategoriesListState } from './store/dot-cate
 export class DotCategoriesListComponent {
     vm$: Observable<DotCategoriesListState> = this.store.vm$;
     selectedCategories: DotCategory[] = [];
-
+    breadCrumbHome = { icon: 'pi pi-home' };
     @ViewChild('dataTable')
     dataTable: Table;
 
@@ -37,15 +36,9 @@ export class DotCategoriesListComponent {
      * @param {*} event
      * @memberof DotCategoriesListComponent
      */
-    async updateBreadCrumb(event) {
+    updateBreadCrumb(event) {
         const { item } = event;
-        let { categoryBreadCrumbs } = await this.store.categoryBreadCrumbSselector$
-            .pipe(take(1))
-            .toPromise();
-        categoryBreadCrumbs = categoryBreadCrumbs.filter(
-            ({ tabindex }: MenuItem) => Number(tabindex) <= Number(item.tabindex)
-        );
-        this.store.updateCategoriesBreadCrumb(categoryBreadCrumbs);
+        this.store.updateCategoriesBreadCrumb(item);
         this.dataTable.filter(item.id || null, 'inode', null);
         this.dataTable.filter(null, 'global', null);
     }

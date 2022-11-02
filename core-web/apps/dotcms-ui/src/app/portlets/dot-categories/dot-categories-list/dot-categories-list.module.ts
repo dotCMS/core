@@ -13,6 +13,7 @@ import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module
 import { InplaceModule } from 'primeng/inplace';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
+import { CheckboxModule } from 'primeng/checkbox';
 import { DotCategoriesService } from '@dotcms/app/api/services/dot-categories/dot-categories.service';
 
 @NgModule({
@@ -26,11 +27,11 @@ import { DotCategoriesService } from '@dotcms/app/api/services/dot-categories/do
         InputTextModule,
         TableModule,
         PaginatorModule,
-        DotActionMenuButtonModule,
         InplaceModule,
         InputNumberModule,
         DotActionMenuButtonModule,
         DotMessagePipeModule,
+        CheckboxModule,
         BreadcrumbModule
     ],
     providers: [DotCategoriesService]

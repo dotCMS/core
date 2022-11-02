@@ -2,7 +2,7 @@
     <div class="px-3 py-2">
         <p-breadcrumb
             [model]="vm.categoryBreadCrumbs"
-            [home]="vm.breadCrumbHome"
+            [home]="breadCrumbHome"
             (onItemClick)="updateBreadCrumb($event)"
         >
         </p-breadcrumb>
@@ -16,16 +16,16 @@
             [rows]="vm.paginationPerPage"
             [totalRecords]="vm.totalRecords"
             [paginator]="true"
-            [metaKeySelection]="true"
             [reorderableColumns]="true"
             [columns]="vm.tableColumns"
             (onLazyLoad)="loadCategories($event)"
-            (onRowSelect)="handleRowCheck()"
-            (onRowUnselect)="handleRowCheck()"
-            (onHeaderCheckboxToggle)="handleRowCheck()"
+            (onRowSelect)="handleRowCheck($event)"
+            (onRowUnselect)="handleRowCheck($event)"
+            (onHeaderCheckboxToggle)="handleRowCheck($event)"
             selectionMode="checkbox"
             loadingIcon="fa fa-circle-o-notch fa-spin"
             dataKey="categoryId"
+            responsiveLayout="scroll"
         >
             <ng-template pTemplate="caption">
                 <div class="flex justify-content-between p-3">
@@ -102,11 +102,15 @@
                 </tr>
             </ng-template>
             <ng-template pTemplate="body" let-category let-index="rowIndex" let-columns="columns">
-                <tr [pReorderableRow]="index" [pSelectableRow]="category">
+                <tr
+                    [pReorderableRow]="index"
+                    [pSelectableRow]="category"
+                    (click)="addBreadCrumb(category)"
+                >
                     <td>
                         <span class="pi pi-bars" pReorderableRowHandle></span>
                     </td>
-                    <td style="width: 3rem">
+                    <td (click)="$event.stopPropagation()" style="width: 3rem">
                         <p-tableCheckbox [value]="category"></p-tableCheckbox>
                     </td>
                     <td *ngFor="let col of columns">
@@ -127,7 +131,7 @@
                             </p-inplace>
                         </ng-container>
                         <ng-template #Actions>
-                            <ng-container *ngIf="col.fieldName === 'Actions'; else CategoryName">
+                            <ng-container *ngIf="col.fieldName === 'Actions'; else last">
                                 <dot-action-menu-button
                                     class="listing-categories__action-button"
                                     [attr.data-testid]="category.categoryId"
@@ -135,17 +139,6 @@
                                     [item]="category"
                                 >
                                 </dot-action-menu-button>
-                            </ng-container>
-                        </ng-template>
-                        <ng-template #CategoryName>
-                            <ng-container *ngIf="col.fieldName === 'categoryName'; else last">
-                                <button
-                                    class="link-button p-button-link"
-                                    [label]="category.categoryName"
-                                    (click)="addBreadCrumb(category)"
-                                    pButton
-                                    type="button"
-                                ></button>
                             </ng-container>
                         </ng-template>
                         <ng-template #last>
