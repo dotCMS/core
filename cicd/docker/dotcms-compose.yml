@@ -37,6 +37,7 @@ services:
       DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS: 600
       WAIT_FOR_DEPS:
       JVM_ENDPOINT_TEST_PASS:
+      DOT_ANALYTICS_IDP_URL: http://localhost:61111/realms/dotcms/protocol/openid-connect/token
     depends_on:
       - database
       - elasticsearch
