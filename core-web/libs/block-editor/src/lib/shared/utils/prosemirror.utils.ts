@@ -2,6 +2,7 @@ import { ResolvedPos } from 'prosemirror-model';
 import { EditorView } from 'prosemirror-view';
 import { SelectionRange } from 'prosemirror-state';
 import { Editor } from '@tiptap/core';
+import { Step, StepResult } from 'prosemirror-transform';
 
 import { NodeTypes, CustomNodeTypes } from '@dotcms/block-editor';
 
@@ -144,36 +145,104 @@ export const deleteSelectionNode = (editor: Editor, selectionRange: SelectionRan
 
 export const formatHTML = (html: string) => {
     const pRex = new RegExp(/<p(|\s+[^>]*)>(.|\n)*?<\/p>/gm);
+    const hRex = new RegExp(/<h\d+(|\s+[^>]*)>(.|\n)*?<\/h\d+>/gm);
     const liRex = new RegExp(/<li(|\s+[^>]*)>(.|\n)*?<\/li>/gm);
     const listRex = new RegExp(/<(ul|ol)(|\s+[^>]*)>(.|\n)*?<\/(ul|ol)>/gm);
 
     return html
+        .replace(aTagRex, (content) => replaceInlineLinkImage(content))
         .replace(pRex, (content) => replaceInlineContent(content))
+        .replace(hRex, (content) => replaceInlineContent(content))
         .replace(liRex, (content) => replaceInlineContent(content))
         .replace(listRex, (content) => replaceInlineContent(content));
 };
 
 export const replaceInlineContent = (content) => {
     // Get Images inside <a> Tag
-    const inlineContent = content.replace(aTagRex, (content) => {
-        const container = document.createElement('div');
-        container.innerHTML = content;
-        const href = container.querySelector('a').getAttribute('href');
-
-        return content
-            .replace(/<a(|\s+[^>]*)>/gm, '')
-            .replace(/<a\/>/gm, '')
-            .replace('src="', `href="${href}" src="`);
-    });
-
-    const images = inlineContent.match(imgTagRex) || [];
+    const images = content.match(imgTagRex) || [];
 
     // Check that after removing the images, it's not empty
-    const text = new DOMParser().parseFromString(inlineContent, 'text/html').documentElement
-        .textContent;
+    const text = new DOMParser().parseFromString(content, 'text/html').documentElement.textContent;
 
     // Move the <img/> tag to the end of the <p> tag.
     return text.trim().length > 0
-        ? inlineContent.replace(imgTagRex, '') + images.join('')
+        ? content.replace(imgTagRex, '') + images.join('')
         : images.join('');
 };
+
+export const replaceInlineLinkImage = (content) => {
+    const container = document.createElement('div');
+    container.innerHTML = content;
+    const href = container.querySelector('a').getAttribute('href');
+    const title = container.querySelector('a').getAttribute('href');
+    const alt = container.querySelector('a').getAttribute('alt');
+
+    return content
+        .replace(/<a(|\s+[^>]*)>/gm, '')
+        .replace(/<a\/>/gm, '')
+        .replace(imgTagRex, (content) => {
+            return content.replace(/img/gm, `img href="${href}" title="${title}" alt="${alt}"`);
+        });
+};
+
+// Adapted from https://discuss.prosemirror.net/t/changing-doc-attrs/784
+export class SetDocAttrStep extends Step {
+    private key: string;
+    private value: string;
+    private prevValue: string;
+    private STEP_TYPE = 'setDocAttr';
+
+    constructor(key, value) {
+        super();
+        this.key = key;
+        this.value = value;
+    }
+
+    get stepType() {
+        return this.STEP_TYPE;
+    }
+
+    static fromJSON(_schema, json) {
+        return new SetDocAttrStep(json.key, json.value);
+    }
+
+    static register() {
+        try {
+            Step.jsonID(this.prototype.STEP_TYPE, SetDocAttrStep);
+        } catch (err) {
+            if (err.message !== `Duplicate use of step JSON ID ${this.prototype.STEP_TYPE}`)
+                throw err;
+        }
+
+        return true;
+    }
+
+    apply(doc) {
+        this.prevValue = doc.attrs[this.key];
+        // avoid clobbering doc.type.defaultAttrs
+        if (doc.attrs === doc.type.defaultAttrs) {
+            doc.attrs = Object.assign({}, doc.attrs);
+        }
+
+        doc.attrs[this.key] = this.value;
+
+        return StepResult.ok(doc);
+    }
+
+    invert() {
+        return new SetDocAttrStep(this.key, this.prevValue);
+    }
+
+    // position never changes so map should always return same step
+    map() {
+        return this;
+    }
+
+    toJSON() {
+        return {
+            stepType: this.stepType,
+            key: this.key,
+            value: this.value
+        };
+    }
+}

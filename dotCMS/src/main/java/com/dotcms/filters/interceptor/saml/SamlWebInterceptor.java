@@ -133,6 +133,7 @@ public class SamlWebInterceptor implements WebInterceptor {
 
             if (null != this.samlConfig() && this.isAnySamlConfigurated()) {
 
+                Logger.debug(this, ()-> "There is any saml configuration, analyzing the request...");
                 final Host host = hostWebAPI.getCurrentHostNoThrow(request);
                 identityProviderConfiguration = // gets the SAML Configuration for this site.
                         null != host?
@@ -141,11 +142,16 @@ public class SamlWebInterceptor implements WebInterceptor {
                 // If idpConfig is null, means this site does not need SAML processing
                 if (null != identityProviderConfiguration && identityProviderConfiguration.isEnabled()) { // SAML is configurated, so continue
 
+                    Logger.debug(this, ()-> "There is configuration for the host: " + host.getHostname());
                     // check if there is any exception filter path, to avoid to canApply all the logic.
                     if (!this.checkAccessFilters(request.getRequestURI(), host, request, this.getAccessFilterArray(identityProviderConfiguration))
                             && this.checkIncludePath(request.getRequestURI(), this.getIncludePathArray(identityProviderConfiguration))) {
 
+                        Logger.debug(this, ()-> "The request is ok and not filtered for the url: " + request.getRequestURI());
+
                         if (this.samlWebUtils.isNotLogged(request)) {
+
+                            Logger.debug(this, ()-> "The user is not log in, starting idp authentication request for: " + request.getRequestURI());
 
                             final AutoLoginResult autoLoginResult = this.autoLogin(request, response,
                                     null != session? session: this.getSession(request), identityProviderConfiguration);
@@ -153,13 +159,16 @@ public class SamlWebInterceptor implements WebInterceptor {
                             // we have to assign again the session, since the doAutoLogin might be renewed.
                             session = autoLoginResult.getSession();
 
-                            // if the auto login couldn't logged the user, then send it to the IdP login page (if it is not already logged in).
+                            // if the auto login couldn't log in the user, then send it to the IdP login page (if it is not already logged in).
                             if (null == session || !autoLoginResult.isAutoLogin() || this.samlWebUtils.isNotLogged(request)) {
 
-                                Logger.debug(this, ()-> "User not logged in, doing SAML Authentication request");
+                                Logger.debug(this, ()-> "User is not log in, doing SAML Authentication request");
                                 this.doAuthentication(request, response, session, identityProviderConfiguration);
                                 return Result.SKIP_NO_CHAIN;
                             }
+                        } else {
+
+                            Logger.debug(this, ()-> "The user is already log in, not need SAML on the url: " + request.getRequestURI());
                         }
                     }
 
@@ -228,12 +237,13 @@ public class SamlWebInterceptor implements WebInterceptor {
                 originalRequest;
 
         Logger.debug(this, ()-> "Referrer: " + request.getParameter(REFERRER_PARAMETER_KEY));
-        Logger.debug(this.getClass(),
-                ()-> "Executing SAML Login Redirection with request: " + redirectAfterLogin);
+        Logger.debug(this,
+                ()-> "Executing SAML Login Redirection with request, redirectAfterLogin: " + redirectAfterLogin);
 
         // if we don't have a redirect yet
         if (null != session) {
 
+            Logger.debug(this, ()-> "SAML: Http Session Id: " + session.getId());
             session.setAttribute(WebKeys.REDIRECT_AFTER_LOGIN, redirectAfterLogin);
             session.setAttribute(ORIGINAL_REQUEST,             originalRequest);
         }
@@ -274,7 +284,8 @@ public class SamlWebInterceptor implements WebInterceptor {
             try {
 
                 Logger.debug(this, "User with ID '" + user.getUserId()
-                        + "' has been returned by SAML Service. User " + "Map: " + user.toMap());
+                        + "' has been returned by SAML Service. User " + "Map: " + user.toMap() +
+                        " on the http session id: " + (null != session?session.getId():"unknown"));
             } catch (Exception e) {
 
                 Logger.error(this,
@@ -307,7 +318,7 @@ public class SamlWebInterceptor implements WebInterceptor {
                     PrincipalThreadLocal.setName(user.getUserId());
 
                     renewSession =
-                            this.samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration, SamlName.DOT_RENEW_SESSION)?
+                            Try.of(()->this.samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration, SamlName.DOT_RENEW_SESSION)).getOrElse(false)?
                                 this.samlWebUtils.renewSession(request, session): session;
 
                     this.doAuthenticationLoginSecurityLog(request, identityProviderConfiguration, user);

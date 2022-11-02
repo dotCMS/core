@@ -31,10 +31,11 @@ export class AppModule {
     constructor(private injector: Injector) {}
 
     ngDoBootstrap() {
-        const element = createCustomElement(DotBlockEditorComponent, {
-            injector: this.injector
-        });
-
-        customElements.define('dotcms-block-editor', element);
+        if (customElements.get('dotcms-block-editor') === undefined) {
+            const element = createCustomElement(DotBlockEditorComponent, {
+                injector: this.injector
+            });
+            customElements.define('dotcms-block-editor', element);
+        }
     }
 }

@@ -45,8 +45,7 @@ describe('DotExperimentsShellStore', () => {
 
     it('should set initial data', (done) => {
         const expectedInitialState: DotExperimentsShellState = {
-            pageTitle: 'My Page',
-            pageId: '111-222'
+            pageTitle: 'My Page'
         };
 
         store.state$.subscribe((state) => {

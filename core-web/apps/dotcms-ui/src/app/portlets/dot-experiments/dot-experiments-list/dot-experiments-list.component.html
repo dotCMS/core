@@ -11,8 +11,8 @@
                 ></dot-experiments-status-filter>
 
                 <button
+                    (click)="addNewExperiment()"
                     data-testId="add-experiment-button"
-                    disabled
                     label="{{ 'experimentspage.add.new.experiment' | dm }}"
                     pButton
                     pRipple
@@ -38,3 +38,5 @@
 <ng-template #loadingExperiments>
     <dot-experiments-list-skeleton></dot-experiments-list-skeleton>
 </ng-template>
+
+<ng-template dotDynamic></ng-template>

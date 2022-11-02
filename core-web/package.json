@@ -1,6 +1,6 @@
 {
   "name": "dotcms-ui",
-  "version": "22.11.0-next.261",
+  "version": "22.12.0-next.10",
   "license": "MIT",
   "engines": {
     "node": ">=16.13.2"
@@ -72,6 +72,7 @@
     "@tarekraafat/autocomplete.js": "^10.2.6",
     "@tiptap/core": "^2.0.0-beta.174",
     "@tiptap/extension-bubble-menu": "^2.0.0-beta.55",
+    "@tiptap/extension-character-count": "^2.0.0-beta.199",
     "@tiptap/extension-floating-menu": "^2.0.0-beta.50",
     "@tiptap/extension-highlight": "^2.0.0-beta.33",
     "@tiptap/extension-image": "^2.0.0-beta.30",
@@ -123,7 +124,7 @@
     "@compodoc/compodoc": "^1.1.11",
     "@materia-ui/ngx-monaco-editor": "^6.0.0",
     "@mdx-js/react": "^2.1.2",
-    "@ngneat/spectator": "^11.2.0",
+    "@ngneat/spectator": "^11.3.0",
     "@nrwl/cli": "14.6.3",
     "@nrwl/cypress": "14.6.3",
     "@nrwl/eslint-plugin-nx": "14.6.3",

@@ -12,6 +12,11 @@
                 type="control.type"
             />
         </ng-container>
+        <span
+            class="error-message"
+            *ngIf="form.controls[control.key].invalid && form.controls[control.key].dirty"
+            >This field is required</span
+        >
     </div>
 
     <div class="form-action">
@@ -25,10 +30,11 @@
         ></button>
         <button
             class="p-button"
+            [disabled]="form.invalid"
             [style]="{ padding: '11.5px 24px' }"
             pButton
             type="submit"
-            label="APPLAY"
+            label="APPLY"
         ></button>
     </div>
 </form>

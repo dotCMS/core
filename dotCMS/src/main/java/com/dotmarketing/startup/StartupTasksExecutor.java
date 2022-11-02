@@ -227,6 +227,54 @@ public class StartupTasksExecutor {
 
 
     }
+	
+	/**
+     * This will execute all the UT that were backported to the LTS version.
+     * Will be run everytime the server gets restarted just like the Startup Tasks.
+     * But these will be run after the upgradeTasks.
+     *
+     * @throws DotDataException
+     */
+    public void executeBackportedTasks() throws DotDataException {
+        Logger.debug(this.getClass(), "Running Backported Tasks");
+        String name = null;
+        try {
+            Logger.info(this, "Running Backported Tasks");
+
+
+            for (Class<?> c : TaskLocatorUtil.getBackportedUpgradeTaskClasses()) {
+                HibernateUtil.startTransaction();
+                name = c.getCanonicalName();
+                name = name.substring(name.lastIndexOf(".") + 1);
+		String id = getTaskId(name);
+                int taskId = Integer.parseInt(id); 
+		if (StartupTask.class.isAssignableFrom(c) && taskId > Config.DB_VERSION) {
+                    StartupTask  task = (StartupTask) c.newInstance();
+                    if (task.forceRun()) {
+                        HibernateUtil.startTransaction();
+                        Logger.info(this, "Running Backported Tasks : " + name);
+                        task.executeUpgrade();
+                    } else {
+                        Logger.info(this, "Not Running Backported Tasks: " + name);
+                    }
+                }
+                HibernateUtil.closeAndCommitTransaction();
+            }
+            Logger.info(this, "Finishing Backported tasks.");
+        } catch (Throwable e) {
+            HibernateUtil.rollbackTransaction();
+            Logger.error(this, "FATAL: Unable to execute the upgrade task : " + name, e);
+            if(Config.getBooleanProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", true)){
+                e.printStackTrace();
+                System.exit(1);
+            }
+        } finally {
+            // This will commit the changes and close the connection
+            HibernateUtil.closeAndCommitTransaction();
+        }
+
+
+    }
 
 
 
