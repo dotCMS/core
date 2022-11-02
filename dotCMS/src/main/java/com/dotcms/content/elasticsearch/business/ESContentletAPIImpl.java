@@ -3103,7 +3103,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final IndexPolicy indexPolicy              = contentlet.getIndexPolicy();
         final IndexPolicy  indexPolicyDependencies = contentlet.getIndexPolicyDependencies();
         final Contentlet workingContentlet = findContentletByIdentifier(contentlet.getIdentifier(),
-                false, contentlet.getLanguageId(), user, respectFrontendRoles);
+                false, contentlet.getLanguageId(), contentlet.getVariantId(), user, respectFrontendRoles);
 
         if(workingContentlet==null) {
             return;

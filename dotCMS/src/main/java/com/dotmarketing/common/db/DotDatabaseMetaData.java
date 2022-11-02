@@ -700,6 +700,7 @@ public class DotDatabaseMetaData {
         return indexMeta.stream().map(map -> map.get("index_name").toString()).collect(Collectors.toList());
     }
 
+
     /**
      * Return a list of the fields that make up the table primary key
      *
