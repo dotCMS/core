@@ -31,7 +31,7 @@ export class DotCategoriesListComponent {
         this.store.addCategoriesBreadCrumb({ label: category.categoryName, id: category.inode });
     }
 
-    /**
+    /**5
      * Update categories breadcrumb in store
      * @param {*} event
      * @memberof DotCategoriesListComponent
