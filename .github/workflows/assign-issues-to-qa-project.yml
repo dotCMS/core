@@ -12,7 +12,7 @@ jobs:
       MY_GITHUB_TOKEN: ${{ secrets.PROJECT_GITHUB_TOKEN }}
     steps:
       - name: Assign issues with `Passed Internal QA` label to QA project
-        uses: dotcms/assign-one-project-github-action:master
+        uses: dotcms/assign-one-project-github-action@master
         if: |
           contains(github.event.issue.labels.*.name, 'Passed Internal QA')
         with:
