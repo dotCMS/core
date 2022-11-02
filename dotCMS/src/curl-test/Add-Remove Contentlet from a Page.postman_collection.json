@@ -22,7 +22,7 @@
 									"    var jsonData = pm.response.json();",
 									"    console.log(jsonData);",
 									"",
-									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"add_remove_contenlet_from_specific_variant_page_version.tar.gz\");",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"add_remove_contenlet_from_specific_variant_page_version-01GGDFQR4DEJD8EQSBV91R9D0J.tar.gz\");",
 									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
 									"});"
 								],
@@ -90,12 +90,12 @@
 								}
 							]
 						},
-						"description": "Imports a Bundle that includes:\n\n*   HTMLPage page_test\n*   Content Type: add_remove_content_from_a_page_variant, this just had one text field named 'title'\n*   4 Contentlet:\n    *   Title: content_1\n    *   Title: content_2\n    *   Title: content_3\n    *   Title: content_4"
+						"description": "Imports a Bundle that includes:\n\n*   HTMLPage page_test_add_remove_contentlet\n*   Content Type: add_remove_content_from_a_page_variant, this just had one text field named 'title'\n*   4 Contentlet:\n    *   Title: content_1\n    *   Title: content_2\n    *   Title: content_3\n    *   Title: content_4"
 					},
 					"response": []
 				},
 				{
-					"name": "createDraftExperiment_shoudSucceed Copy",
+					"name": "createDraftExperiment_shoudSucceed",
 					"event": [
 						{
 							"listen": "test",
@@ -108,8 +108,8 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"pm.collectionVariables.set(\"experimentId\", jsonData.entity[0].id);",
-									"pm.collectionVariables.set(\"experimentShortId\", jsonData.entity[0].id.substring(0, 11).replace('-', ''));",
+									"pm.collectionVariables.set(\"experimentId\", jsonData.entity.id);",
+									"pm.collectionVariables.set(\"experimentShortId\", jsonData.entity.id.substring(0, 11).replace('-', ''));",
 									"",
 									""
 								],
