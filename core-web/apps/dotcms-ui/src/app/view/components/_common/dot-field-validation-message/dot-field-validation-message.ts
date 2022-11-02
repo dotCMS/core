@@ -9,15 +9,16 @@ import {
     Input,
     OnDestroy
 } from '@angular/core';
-import { UntypedFormControl, ValidationErrors } from '@angular/forms';
+import { AbstractControl, UntypedFormControl, ValidationErrors } from '@angular/forms';
 import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 
-type DefaultsNGValidatorsTypes = 'maxlength';
-// TODO: add the defaults messages for defaults Angular validators
+type DefaultsNGValidatorsTypes = 'maxlength' | 'required';
+
 const NG_DEFAULT_VALIDATORS_ERRORS_MSG: Record<DefaultsNGValidatorsTypes, string> = {
-    maxlength: 'contentType.errors.input.maxlength'
+    maxlength: 'error.form.validator.maxlength',
+    required: 'error.form.validator.required'
 };
 
 @Component({
@@ -35,20 +36,28 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
         private readonly dotMessageService: DotMessageService
     ) {}
 
+    /**
+     * Manual message when the input has an error.
+     * @param {string} msg
+     */
     @Input()
     set message(msg: string) {
         this.defaultMessage = msg;
         this.cd.markForCheck();
     }
 
-    _field: UntypedFormControl;
+    _field: UntypedFormControl | AbstractControl;
 
+    /**
+     * Form control to check
+     * @param control
+     */
     @Input()
-    set field(control: UntypedFormControl) {
+    set field(control: UntypedFormControl | AbstractControl) {
         this._field = control;
         control.statusChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
             this.errorMsg = this.getErrors(control.errors);
-            this.cd.markForCheck();
+            this.cd.detectChanges();
         });
     }
 
@@ -57,7 +66,14 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
         this.destroy$.complete();
     }
 
-    getErrors(errors: ValidationErrors) {
+    /**
+     * Return a default Message if are sent, or use NG_DEFAULT_VALIDATORS_ERRORS_MSG map
+     * with the DefaultsNGValidatorsTypes of Angular
+     *
+     * @param {ValidationErrors} errors
+     * @private
+     */
+    private getErrors(errors: ValidationErrors) {
         let errorMsgs = [];
         if (errors) {
             errorMsgs = [

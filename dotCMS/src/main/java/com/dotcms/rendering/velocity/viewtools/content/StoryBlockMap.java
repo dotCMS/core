@@ -58,6 +58,12 @@ public class StoryBlockMap implements Renderable {
     }
 
     public StoryBlockMap(final Object contFieldValue) throws JSONException {
+
+        if (null == contFieldValue || !UtilMethods.isSet(contFieldValue.toString())) {
+
+            throw new JSONException("Invalid Json Value");
+        }
+
         if (JsonUtil.isValidJSON(contFieldValue.toString())) {
             this.jsonContFieldValue = new JSONObject(contFieldValue.toString());
             this.htmlContFieldValue = StringPool.BLANK;

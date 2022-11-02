@@ -6,14 +6,10 @@ import static org.junit.Assert.assertTrue;
 
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.exception.DotDataException;
-import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -48,7 +44,7 @@ public class Task221007AddVariantIntoPrimaryKeyTest {
     }
 
     private static void checkPrimaryKey() throws SQLException {
-        final List<String> primaryKeysFields = getPrimaryKeysFields();
+        final List<String> primaryKeysFields = DotDatabaseMetaData.getPrimaryKeysFields("contentlet_version_info");
         assertEquals(3, primaryKeysFields.size());
         assertTrue(primaryKeysFields.contains("identifier"));
         assertTrue(primaryKeysFields.contains("lang"));
@@ -56,55 +52,24 @@ public class Task221007AddVariantIntoPrimaryKeyTest {
     }
 
     private static void checkOldPrimaryKey() throws SQLException {
-        final List<String> primaryKeysFields = getPrimaryKeysFields();
+        final List<String> primaryKeysFields =  DotDatabaseMetaData.getPrimaryKeysFields("contentlet_version_info");
         assertEquals(2, primaryKeysFields.size());
         assertTrue(primaryKeysFields.contains("identifier"));
         assertTrue(primaryKeysFields.contains("lang"));
     }
 
-    private static List<String> getPrimaryKeysFields() throws SQLException {
-        final Connection connection = DbConnectionFactory.getConnection();
-        final ResultSet pkColumns = connection.getMetaData()
-                .getPrimaryKeys(null, null, "contentlet_version_info");
-
-        List<String> primaryKeysFields = new ArrayList();
-
-        while(pkColumns.next()) {
-            primaryKeysFields.add(pkColumns.getString("COLUMN_NAME"));
-        }
-
-        return primaryKeysFields;
-    }
-
     private void cleanUp() throws SQLException {
 
-        final String constraintName =
-                DbConnectionFactory.isPostgres() ? "contentlet_version_info_pkey"
-                        : getMSSQLPrimaryKeyName();
+        final String constraintName = DotDatabaseMetaData.getPrimaryKeyName("contentlet_version_info")
+                .orElse("contentlet_version_info_pkey");
 
         try {
-            new DotConnect().executeStatement(String.format("ALTER TABLE contentlet_version_info "
-                    + "DROP CONSTRAINT %s", constraintName));
-
+            DotDatabaseMetaData.dropPrimaryKey("contentlet_version_info");
         } catch (Exception e) {
             //ignore
         }
 
         new DotConnect().executeStatement(String.format("ALTER TABLE contentlet_version_info "
                 + " ADD CONSTRAINT %s PRIMARY KEY (identifier, lang)", constraintName));
-    }
-
-    private String getMSSQLPrimaryKeyName()  {
-        try {
-            final ArrayList arrayList = new DotConnect()
-                    .setSQL("SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS T "
-                            + "WHERE table_name = 'contentlet_version_info' "
-                            + "AND constraint_type = 'PRIMARY KEY'")
-                    .loadResults();
-
-            return (((Map) arrayList.get(0))).get("constraint_name").toString();
-        } catch (Exception e) {
-            return "contentlet_version_info_pkey";
-        }
     }
 }

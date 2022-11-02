@@ -4,12 +4,10 @@ import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models';
 import { ActivatedRoute } from '@angular/router';
 
 export interface DotExperimentsShellState {
-    pageId: string;
     pageTitle: string;
 }
 
 const initialState: DotExperimentsShellState = {
-    pageId: '',
     pageTitle: ''
 };
 
@@ -19,13 +17,10 @@ export class DotExperimentsShellStore
     implements OnStoreInit
 {
     //Updater
-    readonly setPageDetails = this.updater(
-        (state, page: { pageId: string; pageTitle: string }) => ({
-            ...state,
-            pageId: page.pageId,
-            pageTitle: page.pageTitle
-        })
-    );
+    readonly setPageDetails = this.updater((state, page: { pageTitle: string }) => ({
+        ...state,
+        pageTitle: page.pageTitle
+    }));
 
     constructor(private readonly route: ActivatedRoute) {
         super(initialState);
@@ -35,11 +30,10 @@ export class DotExperimentsShellStore
         this.setPageDetails(this._getResolverExperimentsData());
     }
 
-    private _getResolverExperimentsData(): { pageId: string; pageTitle: string } {
+    private _getResolverExperimentsData(): { pageTitle: string } {
         const { page } = this.route.parent?.parent.snapshot.data?.content as DotPageRenderState;
 
         return {
-            pageId: page.identifier,
             pageTitle: page.title
         };
     }

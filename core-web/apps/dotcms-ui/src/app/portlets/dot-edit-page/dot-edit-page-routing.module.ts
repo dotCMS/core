@@ -49,7 +49,7 @@ const dotEditPage: Routes = [
 
             // TODO: create a guard global of isEnterprise
             {
-                path: 'experiments/:pageId',
+                path: 'experiments',
                 loadChildren: async () =>
                     (
                         await import(

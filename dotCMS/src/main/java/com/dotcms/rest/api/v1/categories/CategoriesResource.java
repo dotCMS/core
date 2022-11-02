@@ -129,6 +129,8 @@ public class CategoriesResource {
             @QueryParam(PaginationUtil.FILTER) final String filter,
             @QueryParam(PaginationUtil.PAGE) final int page,
             @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+            @DefaultValue("category_name") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
+            @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
             @QueryParam("showChildrenCount") final boolean showChildrenCount) {
 
         final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true,
@@ -136,7 +138,6 @@ public class CategoriesResource {
 
         Response response = null;
         final User user = initData.getUser();
-        final PageMode pageMode = PageMode.get(httpRequest);
 
         Logger.debug(this, () -> "Getting the List of categories. " + String.format(
                 "Request query parameters are : {filter : %s, page : %s, perPage : %s}", filter,

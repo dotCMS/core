@@ -8,8 +8,8 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/experiments-header
 import { DotExperimentsShellRoutingModule } from '@portlets/dot-experiments/dot-experiments-shell/dot-experiments-shell-routing.module';
 import { DotExperimentsListModule } from '@portlets/dot-experiments/dot-experiments-list/dot-experiments-list.module';
 import { ToastModule } from 'primeng/toast';
-import { MessageService } from 'primeng/api';
 import { DotExperimentsShellStore } from './store/dot-experiments-shell-store.service';
+import { MessagesModule } from 'primeng/messages';
 
 @NgModule({
     declarations: [DotExperimentsShellComponent],
@@ -23,8 +23,9 @@ import { DotExperimentsShellStore } from './store/dot-experiments-shell-store.se
         DotExperimentsUiHeaderComponent,
 
         // PrimeNg
-        ToastModule
+        ToastModule,
+        MessagesModule
     ],
-    providers: [DotExperimentsShellStore, MessageService]
+    providers: [DotExperimentsShellStore]
 })
 export class DotExperimentsShellModule {}

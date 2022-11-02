@@ -1,0 +1,511 @@
+{
+	"info": {
+		"_postman_id": "5ce2779d-480b-443c-8020-5261de3b4fe7",
+		"name": "VelocityMacro",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "781456"
+	},
+	"item": [
+		{
+			"name": "GetDefaultSite",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json();",
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.collectionVariables.set(\"siteName\", jsonData.entity.hostname);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/site/defaultSite",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"site",
+						"defaultSite"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "SwitchToDefault",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json();",
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.collectionVariables.set(\"siteName\", jsonData.entity.hostname);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/site/switch",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"site",
+						"switch"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CreateMacroFolder",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json();",
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.collectionVariables.set(\"folderIdentifier\", jsonData.entity.identifier);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "[\"/test-macros\"]\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/folder/createfolders/{{siteName}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"folder",
+						"createfolders",
+						"{{siteName}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UploadMacroFile",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json();",
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.collectionVariables.set(\"fileAssetIdentifier\", jsonData.entity.identifier);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "body",
+							"value": "  {\n     \"contentlet\": {\n        \"contentType\":\"FileAsset\",\n        \"hostFolder\":\":/test-macros\",\n        \"fileName\":\"dot_velocity_macros.vtl\",\n        \"title\":\"dot_velocity_macros.vtl\"\n        }\n    }",
+							"contentType": "application/json",
+							"type": "text"
+						},
+						{
+							"key": "file",
+							"type": "file",
+							"src": "resources/dot_velocity_macros.vtl"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"actions",
+						"default",
+						"fire",
+						"PUBLISH"
+					],
+					"query": [
+						{
+							"key": "json",
+							"value": "  {\n     \"contentlet\": {\n        \"contentType\":\"FileAsset\",\n        \"hostFolder\":\"{{folderIdentifier}}\",\n        \"fileName\":\"dot_velocity_macros.vtl\",\n        \"title\":\"dot_velocity_macros.vtl\"\n    }",
+							"disabled": true
+						},
+						{
+							"key": "file",
+							"value": null,
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CheckMacroCache",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"Hello, template msg 1.1\");",
+							"});",
+							"",
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"dotcms\");",
+							"});",
+							"",
+							"",
+							"",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "#macroMessage(\"dotcms\")",
+					"options": {
+						"raw": {
+							"language": "text"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/vtl/dynamic/",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"vtl",
+						"dynamic",
+						""
+					],
+					"query": [
+						{
+							"key": "json",
+							"value": "  {\n     \"contentlet\": {\n        \"contentType\":\"FileAsset\",\n        \"hostFolder\":\"{{folderIdentifier}}\",\n        \"fileName\":\"dot_velocity_macros.vtl\",\n        \"title\":\"dot_velocity_macros.vtl\"\n    }",
+							"disabled": true
+						},
+						{
+							"key": "file",
+							"value": null,
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ModifyUploadMacroFile",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json();",
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.collectionVariables.set(\"fileAssetIdentifier\", jsonData.entity.identifier);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "body",
+							"value": "  {\n     \"contentlet\": {\n        \"contentType\":\"FileAsset\",\n        \"hostFolder\":\":/test-macros\",\n        \"fileName\":\"dot_velocity_macros.vtl\",\n        \"title\":\"dot_velocity_macros.vtl\"\n        }\n    }",
+							"contentType": "application/json",
+							"type": "text"
+						},
+						{
+							"key": "file",
+							"type": "file",
+							"src": "resources/dot_velocity_macros-updated.vtl"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?identifier={{fileAssetIdentifier}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"actions",
+						"default",
+						"fire",
+						"PUBLISH"
+					],
+					"query": [
+						{
+							"key": "json",
+							"value": "  {\n     \"contentlet\": {\n        \"contentType\":\"FileAsset\",\n        \"hostFolder\":\"{{folderIdentifier}}\",\n        \"fileName\":\"dot_velocity_macros.vtl\",\n        \"title\":\"dot_velocity_macros.vtl\"\n    }",
+							"disabled": true
+						},
+						{
+							"key": "file",
+							"value": null,
+							"disabled": true
+						},
+						{
+							"key": "identifier",
+							"value": "{{fileAssetIdentifier}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CheckMacroUpdatedCacheAgain",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"Hello, template msg 1.2\");",
+							"});",
+							"",
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"dotCMS\");",
+							"});",
+							"",
+							"",
+							"",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "#macroMessage(\"dotCMS\")"
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/vtl/dynamic/",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"vtl",
+						"dynamic",
+						""
+					],
+					"query": [
+						{
+							"key": "json",
+							"value": "  {\n     \"contentlet\": {\n        \"contentType\":\"FileAsset\",\n        \"hostFolder\":\"{{folderIdentifier}}\",\n        \"fileName\":\"dot_velocity_macros.vtl\",\n        \"title\":\"dot_velocity_macros.vtl\"\n    }",
+							"disabled": true
+						},
+						{
+							"key": "file",
+							"value": null,
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "siteName",
+			"value": ""
+		},
+		{
+			"key": "folderIdentifier",
+			"value": ""
+		},
+		{
+			"key": "fileAssetIdentifier",
+			"value": ""
+		}
+	]
+}
