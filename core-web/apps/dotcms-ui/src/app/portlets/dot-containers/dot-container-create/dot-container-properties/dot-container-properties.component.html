@@ -95,8 +95,9 @@
                 formControlName="preLoop"
             ></dot-loop-editor>
             <dot-content-code-editor
-                [containerStructures]="vm.contentTypes"
-                (updateContainerStructure)="updateContainerStructure($event)"
+                [containerStructures]="vm.containerStructures"
+                [contentTypes]="vm.contentTypes"
+                (valueChange)="updateContainerStructure($event)"
             ></dot-content-code-editor>
             <dot-loop-editor
                 [isEditorVisible]="vm.showPrePostLoopInput"

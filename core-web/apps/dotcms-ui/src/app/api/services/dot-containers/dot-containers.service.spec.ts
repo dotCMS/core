@@ -38,7 +38,7 @@ const mockContainer: DotContainerEntity = {
         type: 'containers',
         working: true
     },
-    contentTypes: []
+    containerStructures: []
 };
 
 describe('DotContainersService', () => {
@@ -158,7 +158,7 @@ describe('DotContainersService', () => {
         service
             .saveAndPublish({
                 container: { name: '', friendlyName: '' },
-                contentTypes: []
+                containerStructures: []
             } as DotContainerEntity)
             .subscribe((container: DotContainerEntity) => {
                 expect(container).toEqual(mockContainer);

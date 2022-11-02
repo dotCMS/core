@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ComponentStore } from '@ngrx/component-store';
-import { Observable, of } from 'rxjs';
+import { Observable, of, pipe } from 'rxjs';
 import { catchError, filter, pluck, switchMap, take, tap } from 'rxjs/operators';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
@@ -15,13 +15,16 @@ import { DotContainersService } from '@services/dot-containers/dot-containers.se
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { ActivatedRoute } from '@angular/router';
+import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotContentTypeService } from '@dotcms/app/api/services/dot-content-type';
 
 export interface DotContainerPropertiesState {
     showPrePostLoopInput: boolean;
     isContentTypeVisible: boolean;
     isContentTypeButtonEnabled: boolean;
     container: DotContainer;
-    contentTypes: DotContainerStructure[];
+    containerStructures: DotContainerStructure[];
+    contentTypes: DotCMSContentType[];
     apiLink: string;
 }
 
@@ -33,12 +36,14 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
         private dotContainersService: DotContainersService,
         private dotHttpErrorManagerService: DotHttpErrorManagerService,
         private activatedRoute: ActivatedRoute,
-        private dotRouterService: DotRouterService
+        private dotRouterService: DotRouterService,
+        private dotContentTypeService: DotContentTypeService
     ) {
         super({
             showPrePostLoopInput: false,
             isContentTypeVisible: false,
             isContentTypeButtonEnabled: false,
+            containerStructures: [],
             contentTypes: [],
             container: null,
             apiLink: ''
@@ -56,7 +61,7 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
                         showPrePostLoopInput: true,
                         isContentTypeVisible: true,
                         container: container,
-                        contentTypes: contentTypes ?? []
+                        containerStructures: contentTypes ?? []
                     });
                 } else {
                     this.updateContainerState(containerEntity);
@@ -71,10 +76,10 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
     });
 
     readonly containerAndStructure$ = this.select(
-        ({ container, contentTypes }: DotContainerPropertiesState) => {
+        ({ container, containerStructures }: DotContainerPropertiesState) => {
             return {
                 container,
-                contentTypes
+                containerStructures
             };
         }
     );
@@ -83,7 +88,7 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
         showPrePostLoopInput: boolean;
         isContentTypeVisible: boolean;
         container: DotContainer;
-        contentTypes: DotContainerStructure[];
+        containerStructures: DotContainerStructure[];
     }>(
         (
             state: DotContainerPropertiesState,
@@ -91,7 +96,7 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
                 showPrePostLoopInput,
                 isContentTypeVisible,
                 container,
-                contentTypes
+                containerStructures
             }: DotContainerPropertiesState
         ) => {
             return {
@@ -99,7 +104,7 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
                 showPrePostLoopInput,
                 isContentTypeVisible,
                 container,
-                contentTypes
+                containerStructures
             };
         }
     );
@@ -136,7 +141,7 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
             return {
                 ...state,
                 container: container.container,
-                contentTypes: container.contentTypes
+                containerStructures: container.contentTypes
             };
         }
     );
@@ -148,6 +153,36 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
                 apiLink
             };
         }
+    );
+
+    readonly updateContentTypes = this.updater<DotCMSContentType[]>(
+        (state: DotContainerPropertiesState, contentTypes: DotCMSContentType[]) => {
+            return {
+                ...state,
+                contentTypes
+            };
+        }
+    );
+
+    readonly loadContentTypesAndUpdateVisibility = this.effect<void>(
+        pipe(
+            switchMap(() => {
+                this.dotGlobalMessageService.loading(this.dotMessageService.get('loading'));
+
+                return this.dotContentTypeService.getContentTypes({ page: 999 });
+            }),
+            tap((contentTypes: DotCMSContentType[]) => {
+                this.dotGlobalMessageService.success(this.dotMessageService.get('loaded'));
+                this.updateContentTypes(contentTypes);
+                this.updateContentTypeVisibility(true);
+            }),
+            catchError((err: HttpErrorResponse) => {
+                this.dotGlobalMessageService.error(err.statusText);
+                this.dotHttpErrorManagerService.handle(err);
+
+                return of(null);
+            })
+        )
     );
 
     readonly saveContainer = this.effect((origin$: Observable<DotContainerPayload>) => {

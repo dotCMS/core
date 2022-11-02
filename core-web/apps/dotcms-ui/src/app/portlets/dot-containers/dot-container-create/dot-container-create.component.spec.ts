@@ -44,7 +44,7 @@ describe('ContainerCreateComponent', () => {
                                         hostname: 'dotcms.com'
                                     }
                                 },
-                                contentTypes: []
+                                containerStructures: []
                             }
                         }),
                         snapshot: {

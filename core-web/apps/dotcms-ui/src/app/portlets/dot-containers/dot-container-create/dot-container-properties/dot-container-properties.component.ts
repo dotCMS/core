@@ -44,7 +44,7 @@ export class DotContainerPropertiesComponent implements OnInit {
         this.store.containerAndStructure$
             .pipe(take(1))
             .subscribe((state: DotContainerPropertiesState) => {
-                const { container, contentTypes } = state;
+                const { container, containerStructures } = state;
                 this.form = this.fb.group({
                     identifier: new FormControl(container?.identifier ?? ''),
                     title: new FormControl(container?.title ?? '', [Validators.required]),
@@ -54,13 +54,13 @@ export class DotContainerPropertiesComponent implements OnInit {
                     ]),
                     code: new FormControl(
                         container?.code ?? '',
-                        contentTypes.length === 0 ? [Validators.required] : null
+                        containerStructures.length === 0 ? [Validators.required] : null
                     ),
                     preLoop: container?.preLoop ?? '',
                     postLoop: container?.postLoop ?? '',
                     containerStructures: this.fb.array(
-                        contentTypes ?? [],
-                        contentTypes.length ? [Validators.minLength(1)] : null
+                        containerStructures ?? [],
+                        containerStructures.length ? [Validators.minLength(1)] : null
                     )
                 });
             });
@@ -85,12 +85,12 @@ export class DotContainerPropertiesComponent implements OnInit {
      * @memberof DotContainerPropertiesComponent
      */
     showContentTypeAndCode(): void {
-        this.store.updateContentTypeVisibility(true);
         const values = this.form.value;
         if (values.maxContentlets > 0) {
             this.form.get('code').clearValidators();
             this.form.get('code').reset();
             this.form.get('containerStructures').setValidators(Validators.minLength(1));
+            this.store.loadContentTypesAndUpdateVisibility();
         } else {
             this.form.get('code').setValidators(Validators.required);
             this.form.get('containerStructures').clearValidators();
