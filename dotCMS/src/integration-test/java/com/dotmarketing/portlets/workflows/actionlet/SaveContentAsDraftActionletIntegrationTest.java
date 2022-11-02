@@ -25,7 +25,7 @@ import java.util.Optional;
  * Save Draft test
  * @author jsanca
  */
-public class SaveContentAsDraftActionletTest extends BaseWorkflowIntegrationTest  {
+public class SaveContentAsDraftActionletIntegrationTest extends BaseWorkflowIntegrationTest  {
 
 
     @BeforeClass
