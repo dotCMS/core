@@ -4,7 +4,6 @@ import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.cache.AnalyticsCache;
 import com.dotcms.analytics.model.AccessToken;
-import com.dotcms.analytics.model.AnalyticsKey;
 import com.dotcms.rest.validation.Preconditions;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.CacheLocator;
@@ -21,7 +20,6 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.time.Instant;
-import java.util.Objects;
 import java.util.Optional;
 
 
@@ -56,6 +54,27 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
      * {@inheritDoc}
      */
     @Override
+    public AccessToken fetchAccessToken(final AnalyticsApp analyticsApp) throws DotDataException {
+        // check for token at cache and not expired
+        final Optional<AccessToken> accessToken = analyticsCache
+            // Where does `audience` come from? Using null in the meantime
+            .getAccessToken(analyticsApp.getAnalyticsProperties().clientId(), null)
+            .filter(token -> !AnalyticsHelper.isExpired(token));
+        if (accessToken.isPresent()) {
+            return accessToken.get();
+        }
+
+        // validates that we have the url
+        validateAnalytics();
+
+        // Extract token and verify that is not expired (it shouldn't but anyway)
+        return refreshAccessToken(analyticsApp);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public String fetchAnalyticsKey(final Host host) throws DotDataException {
         final AnalyticsApp analyticsApp = AnalyticsHelper.getHostApp(host);
         validateAnalyticsApp(analyticsApp);
@@ -82,30 +101,6 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
         validateAnalyticsApp(analyticsApp);
 
         _resetAnalyticsKey(analyticsApp);
-    }
-
-    /**
-     * Fetches an {@link Optional<AccessToken>} instance from cache falling back to get the access token
-     * from analytics IDP. It also saves it in cache.
-     *
-     * @param analyticsApp app to associate app's data with
-     * @return the access token if found, otherwise empty
-     */
-    private AccessToken fetchAccessToken(final AnalyticsApp analyticsApp) throws DotDataException {
-        // check for token at cache and not expired
-        final Optional<AccessToken> accessToken = analyticsCache
-            // Where does `audience` come from? Using null in the meantime
-            .getAccessToken(analyticsApp.getAnalyticsProperties().clientId(), null)
-            .filter(token -> !AnalyticsHelper.isExpired(token));
-        if (accessToken.isPresent()) {
-            return accessToken.get();
-        }
-
-        // validates that we have the url
-        validateAnalytics();
-
-        // Extract token and verify that is not expired (it shouldn't but anyway)
-        return refreshAccessToken(analyticsApp);
     }
 
     /**
@@ -156,17 +151,35 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
     }
 
     /**
-     * Logs response from a http interaction.
+     * Logs access token response from a http interaction.
      *
      * @param response http response
      */
-    private void logResponse(final Response response) {
+    private void logTokenResponse(final Response response) {
         if (AnalyticsHelper.isSuccessResponse(response)) {
             Logger.info(this, "ACCESS_TOKEN requested and fetched correctly");
         } else {
             Logger.error(this, String.format(
                 "Error requesting access token from IDP server %s due to: %s (status code: %d)",
                 analyticsIdpUrl,
+                response.getStatusInfo().getReasonPhrase(),
+                response.getStatusInfo().getStatusCode()));
+        }
+    }
+
+    /**
+     * Logs analytics key response from a http interaction.
+     *
+     * @param response http response
+     * @param analyticsApp analytics app instance
+     */
+    private void logKeyResponse(final Response response, AnalyticsApp analyticsApp) {
+        if (AnalyticsHelper.isSuccessResponse(response)) {
+            Logger.info(this, "ANALYTICS_KEY requested and fetched correctly");
+        } else {
+            Logger.error(this, String.format(
+                "Error requesting analytics key from analytics config server %s due to: %s (status code: %d)",
+                analyticsApp.getAnalyticsProperties().analyticsConfigUrl(),
                 response.getStatusInfo().getReasonPhrase(),
                 response.getStatusInfo().getStatusCode()));
         }
@@ -184,7 +197,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
             .request()
             .header(HttpHeaders.AUTHORIZATION, String.format("Basic %s", analyticsApp.clientIdAndSecret()))
             .post(Entity.entity("grant_type=client_credentials", MediaType.APPLICATION_FORM_URLENCODED));
-        logResponse(response);
+        logTokenResponse(response);
         return response;
     }
 
@@ -224,9 +237,11 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
         final Response response = ClientBuilder.newClient()
             .target(analyticsApp.getAnalyticsProperties().analyticsConfigUrl())
             .request(MediaType.APPLICATION_JSON_TYPE)
-            .header(HttpHeaders.AUTHORIZATION, String.format("Bearer %s", accessToken.accessToken()))
+            .header(
+                HttpHeaders.AUTHORIZATION,
+                accessToken.tokenType() + " " + accessToken.accessToken())
             .get();
-        logResponse(response);
+        logKeyResponse(response, analyticsApp);
         return response;
     }
 

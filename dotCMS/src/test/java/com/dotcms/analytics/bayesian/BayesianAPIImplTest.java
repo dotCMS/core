@@ -33,7 +33,7 @@ public class BayesianAPIImplTest {
      *     testFailures: 2
      * </pre>
      *
-     * Expect that the probability B beats A is at least 0.72.
+     * Expect that the probability B beats A is at least 0.69.
      */
     @Test
     public void test_calculateABTesting() {
@@ -47,7 +47,7 @@ public class BayesianAPIImplTest {
                 .build();
         final BayesianResult result = bayesianAPI.calcABTesting(input);
         Assert.assertNotNull(result);
-        Assert.assertEquals("0.72", String.format("%.2f", result.result()));
+        Assert.assertEquals("0.69", String.format("%.2f", result.result()));
     }
 
     /**
