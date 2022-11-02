@@ -10,6 +10,9 @@
     <create creator="new" javascript="ContentletAjax" scope="request">
       <param name="class" value="com.dotmarketing.portlets.contentlet.ajax.ContentletAjax"/>
     </create>
+    <create creator="new" javascript="CategoryAjax" scope="request">
+      <param name="class" value="com.dotmarketing.portlets.categories.ajax.CategoryAjax"/>
+    </create>
     <create creator="new" javascript="BrowserAjax" scope="session">
       <param name="class" value="com.dotmarketing.portlets.browser.ajax.BrowserAjax"/>
     </create>
