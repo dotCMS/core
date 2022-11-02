@@ -9,7 +9,7 @@ jobs:
     env:
       QA_PROJECT_ID: 6
       COLUMN_NAME: Backlog
-      MY_GITHUB_TOKEN: ${{ secrets.PROJECT_GITHUB_TOKEN }}
+      MY_GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
     steps:
       - name: Assign issues with `Passed Internal QA` label to QA project
         uses: dotcms/assign-one-project-github-action@master
