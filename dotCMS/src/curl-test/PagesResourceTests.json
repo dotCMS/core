@@ -3738,7 +3738,7 @@
 									"var relationType = pm.collectionVariables.get(\"relationType\");",
 									"var variantId = pm.collectionVariables.get(\"variantId\");",
 									"",
-									"pm.test(\"Status code is 200\", function () {",
+									"pm.test(\"Right response\", function () {",
 									"  ",
 									"  pm.expect(jsonData.entity[0].containerId).to.eql(containerId);",
 									"  pm.expect(jsonData.entity[0].contentId).to.eql(contentId);",
@@ -3902,6 +3902,123 @@
 								"v1",
 								"page",
 								"copyContent"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DeepClonePage",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"  pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"pageDeepCopyIdentifier\", jsonData.entity.identifier);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/_deepcopy",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"{{pageIdentifier}}",
+								"_deepcopy"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CheckMultitreeDeepCopyPage",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"  pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var containerId = pm.collectionVariables.get(\"containerId\");",
+									"var contentId = pm.collectionVariables.get(\"contentId\");",
+									"var pageId = pm.collectionVariables.get(\"pageId\");",
+									"var personalization = pm.collectionVariables.get(\"personalization\");",
+									"var relationType = pm.collectionVariables.get(\"relationType\");",
+									"",
+									"pm.expect(jsonData.entity[0].containerId).to.eql(containerId);",
+									"pm.expect(jsonData.entity[0].contentId).to.not.eql(contentId);",
+									"pm.expect(jsonData.entity[0].pageId).to.not.eql(pageId);",
+									"pm.expect(jsonData.entity[0].personalization).to.eql(personalization);",
+									"pm.expect(jsonData.entity[0].relationType).to.eql(relationType);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/{{pageDeepCopyIdentifier}}/content/tree",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"{{pageDeepCopyIdentifier}}",
+								"content",
+								"tree"
 							]
 						}
 					},
@@ -4161,6 +4278,10 @@
 		},
 		{
 			"key": "copiedRichContentIdentifier",
+			"value": ""
+		},
+		{
+			"key": "pageDeepCopyIdentifier",
 			"value": ""
 		}
 	]
