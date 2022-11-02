@@ -39,9 +39,9 @@ public interface AbstractTrafficProportion extends Serializable {
     @Value.Default
     default SortedSet<ExperimentVariant> variants() {
         final TreeSet<ExperimentVariant> treeSet = new TreeSet<>();
-        treeSet.add((ExperimentVariant.builder()
-                .id(APILocator.getVariantAPI().DEFAULT_VARIANT.name())
-                .description("Original").weight(100).build()));
+//        treeSet.add((ExperimentVariant.builder()
+//                .id(APILocator.getVariantAPI().DEFAULT_VARIANT.name())
+//                .description("Original").weight(100).build()));
         return treeSet;
     }
 

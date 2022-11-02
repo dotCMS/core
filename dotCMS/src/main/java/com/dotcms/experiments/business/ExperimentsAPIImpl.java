@@ -4,6 +4,7 @@ import static com.dotcms.experiments.model.AbstractExperiment.Status.DRAFT;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.ENDED;
 import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME_PREFIX;
 import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME_SUFFIX;
+import static com.dotcms.experiments.model.AbstractExperimentVariant.ORIGINAL_VARIANT;
 
 import com.dotcms.analytics.metrics.MetricsUtil;
 import com.dotcms.business.CloseDBIfOpened;
@@ -33,6 +34,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.LogicalOperator;
@@ -116,9 +118,15 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         DotPreconditions.isTrue(experimentToSave.id().isPresent(), "Experiment doesn't have Id");
 
-        final Optional<Experiment> savedExperiment = find(experimentToSave.id().get(), user);
+        Optional<Experiment> savedExperiment = find(experimentToSave.id().get(), user);
 
         DotPreconditions.isTrue(savedExperiment.isPresent(), "Saved Experiment not found");
+
+        if(savedExperiment.get().trafficProportion().variants().stream().noneMatch((variant
+                -> variant.description().equals(ORIGINAL_VARIANT)))) {
+            savedExperiment = Optional.of(addVariant(savedExperiment.get().id().get(),
+                    ORIGINAL_VARIANT, user));
+        }
 
         return savedExperiment.get();
     }
@@ -385,6 +393,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final Experiment persistedExperiment = find(experimentId, user)
                 .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
 
+        final Contentlet pageContentlet = contentletAPI
+                .findContentletByIdentifierAnyLanguage(persistedExperiment.pageId(), false);
+
+        final HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(pageContentlet);
+
         final String variantNameBase = EXPERIMENT_VARIANT_NAME_PREFIX + shortyIdAPI.shortify(experimentId)
                 + EXPERIMENT_VARIANT_NAME_SUFFIX;
 
@@ -396,7 +409,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 .description(Optional.of(variantDescription)).build());
 
         final ExperimentVariant experimentVariant = ExperimentVariant.builder().id(variantName)
-                .description(variantDescription).weight(0).build();
+                .description(variantDescription).weight(0)
+                .url(page.getPageUrl()+"?variant="+variantName).build();
 
         final TrafficProportion trafficProportion = persistedExperiment.trafficProportion();
 
