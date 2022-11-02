@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "e5dcdca9-3383-4796-b294-c7e6a5846074",
+		"_postman_id": "beb5e1f6-89fb-4bc0-b946-086afabcbf59",
 		"name": "Experiments Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "4500400"
@@ -2355,8 +2355,10 @@
 							"    pm.expect(jsonData.entity.trafficProportion.variants.length).equal(2);",
 							"    pm.expect(jsonData.entity.trafficProportion.variants[0].name).equal(\"Original\");",
 							"    pm.expect(jsonData.entity.trafficProportion.variants[0].weight).equal(50.0);",
+							"    pm.expect(jsonData.entity.trafficProportion.variants[0].url).equal(\"another-experiment-page?variant=dotexperiment-9f582db33e-variant-1\");",
 							"    pm.expect(jsonData.entity.trafficProportion.variants[1].name).equal(\"My first Variant\");",
 							"    pm.expect(jsonData.entity.trafficProportion.variants[1].weight).equal(50.0);",
+							"    pm.expect(jsonData.entity.trafficProportion.variants[1].url).equal(\"another-experiment-page?variant=dotexperiment-9f582db33e-variant-2\");",
 							"    ",
 							"    pm.collectionVariables.set(\"variantToDelete\", jsonData.entity.trafficProportion.variants[1].id);",
 							"",
