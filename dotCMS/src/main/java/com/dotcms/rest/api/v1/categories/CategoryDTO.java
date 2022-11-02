@@ -2,6 +2,11 @@ package com.dotcms.rest.api.v1.categories;
 
 import java.util.Date;
 
+/**
+ * Category import data transfer object
+ *
+ * @author Hassan Mustafa Baig
+ */
 public class CategoryDTO {
 
     private final String categoryName;
