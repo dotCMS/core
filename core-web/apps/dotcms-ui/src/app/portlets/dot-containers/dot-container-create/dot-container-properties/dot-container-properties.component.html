@@ -94,11 +94,11 @@
                 (buttonClick)="showLoopInput()"
                 formControlName="preLoop"
             ></dot-loop-editor>
-            <dot-content-code-editor
+            <dot-container-code
                 [contentTypes]="vm.contentTypes"
                 (valueChange)="updateContainerStructure($event)"
                 formControlName="containerStructures"
-            ></dot-content-code-editor>
+            ></dot-container-code>
             <dot-loop-editor
                 [isEditorVisible]="vm.showPrePostLoopInput"
                 (buttonClick)="showLoopInput()"

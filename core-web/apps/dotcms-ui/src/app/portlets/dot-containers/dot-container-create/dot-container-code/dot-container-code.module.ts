@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
-import { DotContentEditorComponent } from '@portlets/dot-containers/dot-container-create/dot-content-editor/dot-content-editor.component';
 import { CommonModule } from '@angular/common';
+import { DotContentEditorComponent } from './dot-container-code.component';
 import { TabViewModule } from 'primeng/tabview';
 import { MenuModule } from 'primeng/menu';
 import { DotTextareaContentModule } from '@components/_common/dot-textarea-content/dot-textarea-content.module';

@@ -1,14 +1,14 @@
 @use "variables" as *;
 
-.dot-content-editor__content-tab-container {
+.dot-container-code__content-tab-container {
     padding: $spacing-4;
 }
 
-.dot-content-editor__variable-btn {
+.dot-container-code__variable-btn {
     margin-bottom: $spacing-2;
 }
 
-.dot-content-editor__content-tab-container ::ng-deep {
+.dot-container-code__content-tab-container ::ng-deep {
     .p-tabview {
         height: 100%;
     }

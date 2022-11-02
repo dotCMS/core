@@ -12,9 +12,9 @@ interface DotContainerContent extends DotCMSContentType {
 }
 
 @Component({
-    selector: 'dot-content-code-editor',
-    templateUrl: './dot-content-editor.component.html',
-    styleUrls: ['./dot-content-editor.component.scss'],
+    selector: 'dot-container-code',
+    templateUrl: './dot-container-code.component.html',
+    styleUrls: ['./dot-container-code.component.scss'],
     providers: [
         {
             provide: NG_VALUE_ACCESSOR,
