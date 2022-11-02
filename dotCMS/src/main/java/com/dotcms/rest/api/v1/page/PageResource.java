@@ -871,8 +871,9 @@ public class PageResource {
 
 
     /**
-     * Copy the page
-     * The contentlet should be part of the multitree on the page sent in the form, also the content should exists to be copied.
+     * Do a deep copy of a page:
+     * 1. Creates a page copy
+     * 2. For each contentlet on the multitree related on the page, creates a copy.
      * @param request {@link HttpServletRequest}
      * @param response {@link HttpServletResponse}
      * @param copyContentletForm {@link CopyContentletForm}
@@ -883,8 +884,8 @@ public class PageResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("/{pageId}/_copy")
-    public final  ResponseEntityView<Map<String, Object>> copyPage(
+    @Path("/{pageId}/_deepcopy")
+    public final  ResponseEntityView<Map<String, Object>> deepCopyPage(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("pageId") final String pageId)
