@@ -22,7 +22,7 @@
 									"    var jsonData = pm.response.json();",
 									"    console.log(jsonData);",
 									"",
-									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"add_remove_contenlet_from_specific_variant_page_version-01GGDFQR4DEJD8EQSBV91R9D0J.tar.gz\");",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"add_remove_contenlet_from_specific_variant_page_version-01GGWFCA9B5B000C4AYRH6ENSD.tar.gz\");",
 									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
 									"});"
 								],
@@ -65,7 +65,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "resources/add_remove_contentlet_from_page/add_remove_contenlet_from_specific_variant_page_version-01GGDFQR4DEJD8EQSBV91R9D0J.tar.gz"
+									"src": "resources/add_remove_contentlet_from_page/add_remove_contenlet_from_specific_variant_page_version-01GGWFCA9B5B000C4AYRH6ENSD.tar.gz"
 								}
 							]
 						},
@@ -251,7 +251,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/render/page-test?language_id=1",
+							"raw": "{{serverURL}}/api/v1/page/render/page_test_add_remove_contentlet?language_id=1",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -260,7 +260,7 @@
 								"v1",
 								"page",
 								"render",
-								"page-test"
+								"page_test_add_remove_contentlet"
 							],
 							"query": [
 								{
@@ -299,7 +299,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/render/page-test?language_id=1&variantName=dotexperiment-{{experimentId}}-variant-1",
+							"raw": "{{serverURL}}/api/v1/page/render/page_test_add_remove_contentlet?language_id=1&variantName=dotexperiment-{{experimentId}}-variant-1",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -308,7 +308,7 @@
 								"v1",
 								"page",
 								"render",
-								"page-test"
+								"page_test_add_remove_contentlet"
 							],
 							"query": [
 								{
@@ -417,7 +417,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/render/page-test?language_id=1&variantName=dotexperiment-{{experimentShortId}}-variant-1",
+							"raw": "{{serverURL}}/api/v1/page/render/page_test_add_remove_contentlet?language_id=1&variantName=dotexperiment-{{experimentShortId}}-variant-1",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -426,7 +426,7 @@
 								"v1",
 								"page",
 								"render",
-								"page-test"
+								"page_test_add_remove_contentlet"
 							],
 							"query": [
 								{
@@ -471,7 +471,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/render/page-test?language_id=1",
+							"raw": "{{serverURL}}/api/v1/page/render/page_test_add_remove_contentlet?language_id=1",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -480,7 +480,7 @@
 								"v1",
 								"page",
 								"render",
-								"page-test"
+								"page_test_add_remove_contentlet"
 							],
 							"query": [
 								{
