@@ -128,6 +128,7 @@ import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtilTest;
 import com.dotmarketing.portlets.templates.business.TemplateFactoryImplTest;
 import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionletIntegrationTest;
 import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletAbortTest;
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
 import com.dotmarketing.portlets.workflows.util.WorkflowEmailUtilTest;
@@ -600,7 +601,8 @@ import org.junit.runners.Suite.SuiteClasses;
         TailLogResourceTest.class,
         BayesianAPIImplTest.class,
         ContentletDependenciesTest.class,
-        UtilMethodsITest.class
+        UtilMethodsITest.class,
+        SaveContentAsDraftActionletIntegrationTest.class,
 })
 public class MainSuite {
 
