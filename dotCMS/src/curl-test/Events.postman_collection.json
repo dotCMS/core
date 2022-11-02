@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "81fcaa74-8ef4-4675-9f17-77cf90aa6ab5",
+		"_postman_id": "c79a8f30-dcc8-49d4-9c54-f5459b1f64dc",
 		"name": "Events",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "4500400"
@@ -102,8 +102,6 @@
 							"",
 							"pm.test(\"Verify Visitor's IP\", function () { ",
 							"    pm.response.to.have.status(200);",
-							"    pm.expect(response).contains(\"Variants: [{name=default, trafficPercentage=50.0}, {name=variant1, trafficPercentage=50.0}]\"); ",
-							"    pm.expect(response).contains(\"Traffic Proportion Type: SPLIT_EVENLY\"); ",
 							"});"
 						],
 						"type": "text/javascript"
