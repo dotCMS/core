@@ -1,6 +1,7 @@
 package com.dotmarketing.startup.runonce;
 
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -17,7 +18,7 @@ public class Task221007AddVariantIntoPrimaryKey extends AbstractJDBCStartupTask 
 
     @Override
     public boolean forceRun() {
-        final List<String> primaryKeysFields = getPrimaryKeysFields();
+        final List<String> primaryKeysFields = DotDatabaseMetaData.getPrimaryKeysFields("contentlet_version_info");
         return primaryKeysFields.size() != 3 ||
                 (!primaryKeysFields.contains("identifier") ||
                 !primaryKeysFields.contains("variant_id") ||
@@ -51,23 +52,5 @@ public class Task221007AddVariantIntoPrimaryKey extends AbstractJDBCStartupTask 
         final String createStatement = String.format("ALTER TABLE contentlet_version_info "
                 + " ADD CONSTRAINT %s PRIMARY KEY (identifier, lang, variant_id)", name);
         return dropStatement + ";" + createStatement + ";";
-    }
-
-    private List<String> getPrimaryKeysFields()  {
-        try {
-            final Connection connection = DbConnectionFactory.getConnection();
-            final ResultSet pkColumns = connection.getMetaData()
-                    .getPrimaryKeys(null, null, "contentlet_version_info");
-
-            List<String> primaryKeysFields = new ArrayList();
-
-            while (pkColumns.next()) {
-                primaryKeysFields.add(pkColumns.getString("COLUMN_NAME"));
-            }
-
-            return primaryKeysFields;
-        } catch (SQLException e) {
-            return Collections.emptyList();
-        }
     }
 }

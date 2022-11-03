@@ -1298,7 +1298,8 @@ create table multi_tree (
    relation_type NVARCHAR(64) not null,
    tree_order int null,
    personalization NVARCHAR(255) not null  default 'dot:default',
-   primary key (child, parent1, parent2, relation_type, personalization)
+   variant_id NVARCHAR(255) default 'DEFAULT' not null,
+   primary key (child, parent1, parent2, relation_type, personalization, variant_id)
 );
 create table workflow_task (
    id NVARCHAR(36) not null,
@@ -2124,7 +2125,7 @@ CREATE Trigger check_identifier_parent_path
     select @folderId = id from identifier where asset_type='folder' and host_inode = @hostInode and parent_path+asset_name+'/' = @parentPath and id <>@id
     IF (@folderId IS NULL)
      BEGIN
-       RAISERROR (N'Cannot insert/update for this path does not exist for the given host', 10, 1)
+       RAISERROR (N'Cannot insert/update parent folder %s [%s] as one or more folders do not exist in Site %s', 10, 1, @parentPath, @id, @hostInode)
        ROLLBACK WORK
      END
   END

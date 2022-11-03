@@ -19,7 +19,15 @@ plugins {
     id 'war'
     id 'org.ajoberstar.grgit' version '4.1.1'
     id "com.palantir.docker" version "0.32.0"  // reference:  https://github.com/palantir/gradle-docker
+    id "org.sonarqube" version "3.4.0.2513"
 
+
+}
+
+sonarqube {
+  properties {
+    property "sonar.projectKey", "dotCMS_core_AYQvQCMIJs0IgspqN39B"
+  }
 }
 
 repositories {
@@ -245,11 +253,11 @@ dependencies {
 
     //// starter config
 
-    starter group: 'com.dotcms', name: 'starter', version: 'empty_20220908', ext: 'zip'
+    starter group: 'com.dotcms', name: 'starter', version: 'empty_20221018', ext: 'zip'
     //Uncomment this line if you want to download the starter that comes with data
-    //starter group: 'com.dotcms', name: 'starter', version: '20220908', ext: 'zip'
-    testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20220908', ext: 'zip'
-
+    //starter group: 'com.dotcms', name: 'starter', version: '20221010', ext: 'zip'
+    testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20220718', ext: 'zip'
+    
     profiler group: 'glowroot-custom', name: 'glowroot-agent', version: '0.13.1'
     profilerDependencies group: 'glowroot-custom', name: 'collector-https-linux', version: '0.13.1'
     profilerDependencies group: 'glowroot-custom', name: 'collector-https-osx', version: '0.13.1'

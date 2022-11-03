@@ -6,7 +6,7 @@ async function getUrl(
     { host, hostId }: DotCMSConfigurationParams
 ): Promise<string> {
     if (!host) {
-        throw new Error('Please pass the DotCMS instance in the initDotCMS initialization')
+        throw new Error('Please pass the DotCMS instance in the initDotCMS initialization');
     }
 
     const newUrl = new URL(`${host}${url}`);
@@ -15,7 +15,7 @@ async function getUrl(
     if (paramsKeys.length) {
         paramsKeys.map((key: string) => {
             newUrl.searchParams.append(key, params[key]);
-        })
+        });
     }
 
     if (hostId) {
