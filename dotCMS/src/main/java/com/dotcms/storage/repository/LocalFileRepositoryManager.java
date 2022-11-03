@@ -2,6 +2,7 @@ package com.dotcms.storage.repository;
 
 import com.dotmarketing.util.Config;
 import com.liferay.util.FileUtil;
+import io.vavr.Lazy;
 
 import java.io.File;
 
@@ -11,7 +12,7 @@ import java.io.File;
  */
 public class LocalFileRepositoryManager implements FileRepositoryManager {
 
-    private static final String BASE_PATH = Config.getStringProperty("LOCAL_FILE_REPO_BASE_PATH", FileUtil.getRealPath("/local-repo"));
+    private static final Lazy<String> BASE_PATH = Lazy.of(()->Config.getStringProperty("LOCAL_FILE_REPO_BASE_PATH", FileUtil.getRealPath("/local-repo")));
 
     @Override
     public boolean exists(final String fileName) {
@@ -22,7 +23,7 @@ public class LocalFileRepositoryManager implements FileRepositoryManager {
             return true;
         }
 
-        return new File(BASE_PATH, fileName).exists();
+        return new File(BASE_PATH.get(), fileName).exists();
     }
 
     @Override
@@ -33,6 +34,6 @@ public class LocalFileRepositoryManager implements FileRepositoryManager {
             return file;
         }
 
-        return new File(BASE_PATH, fileName);
+        return new File(BASE_PATH.get(), fileName);
     }
 }

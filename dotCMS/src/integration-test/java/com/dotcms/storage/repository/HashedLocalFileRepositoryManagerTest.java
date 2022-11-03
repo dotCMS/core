@@ -1,9 +1,10 @@
 package com.dotcms.storage.repository;
 
+import com.dotcms.IntegrationTestBase;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class HashedLocalFileRepositoryManagerTest {
+public class HashedLocalFileRepositoryManagerTest extends IntegrationTestBase {
 
     /**
      * Method to test:  {@link HashedLocalFileRepositoryManager#normalizeFileInSubDirectoryAndFile(String)}

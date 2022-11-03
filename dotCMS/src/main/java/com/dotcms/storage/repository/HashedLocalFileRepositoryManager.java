@@ -20,7 +20,7 @@ public class HashedLocalFileRepositoryManager extends  LocalFileRepositoryManage
      */
     protected String normalizeFileInSubDirectoryAndFile (final String hash) {
 
-        if (null != hash && hash.length() >= 4) {
+        if (null != hash && hash.length() > 4) {
 
             final String directoryName = hash.substring(0, 4);
             return File.separator + directoryName + File.separator + hash;
