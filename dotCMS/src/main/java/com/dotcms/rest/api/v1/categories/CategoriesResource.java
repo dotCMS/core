@@ -120,6 +120,29 @@ public class CategoriesResource {
         this.categoryHelper = new CategoryHelper(categoryAPI);
     }
 
+    /**
+     * Returns a response of ResponseEntityView with PaginatedArrayList of categories
+     * syntax:.
+     * <p>
+     * Url syntax:
+     * api/v1/categories?filter=filter-string&page=page-number&per_page=per-page&orderby=order-field-name&direction=order-direction&showChildrenCount=true
+     * <p>
+     * where:
+     *
+     * <ul>
+     * <li>filter-string: just return Category whose content this pattern into its name</li>
+     * <li>page: page to return</li>
+     * <li>per_page: limit of items to return</li>
+     * <li>ordeby: field to order by</li>
+     * <li>direction: asc for upward order and desc for downward order</li>
+     * <li>showChildrenCount: true for including children categories count and false to exclude it</li>
+     * </ul>
+     * <p>
+     * Url example: /api/v1/categories?filter=&page=0&per_page=5&ordeby=category_name&direction=ASC&showChildrenCount=true
+     *
+     * @param httpRequest
+     * @return
+     */
     @GET
     @JSONP
     @NoCache
