@@ -184,6 +184,7 @@ import com.dotmarketing.startup.runonce.Task220825MakeSomeSystemFieldsRemovableT
 
 import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTableTest;
 
+import com.dotmarketing.startup.runonce.Task220912UpdateCorrectShowOnMenuPropertyTest;
 import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExperimentTest;
 import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
 import com.dotmarketing.util.ConfigTest;
@@ -600,7 +601,8 @@ import org.junit.runners.Suite.SuiteClasses;
         TailLogResourceTest.class,
         BayesianAPIImplTest.class,
         ContentletDependenciesTest.class,
-        UtilMethodsITest.class
+        UtilMethodsITest.class,
+        Task220912UpdateCorrectShowOnMenuPropertyTest.class
 })
 public class MainSuite {
 
