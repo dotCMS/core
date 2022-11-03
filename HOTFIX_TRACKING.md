@@ -67,3 +67,4 @@ This maintenance release includes the following code fixes:
 56. https://github.com/dotCMS/core/issues/22236 : Pagination not working when querying related content by Rest API #22236
 57. https://github.com/dotCMS/core/issues/22763 : Copy folder duplicates content on pages #22763
 58. https://github.com/dotCMS/core/issues/22520 : Copy Site does not copy all content when a site has more than 10000 contentlets #22520
+59. https://github.com/dotCMS/core/issues/22910 : Multilingual content related slows down edit content screen #22910
