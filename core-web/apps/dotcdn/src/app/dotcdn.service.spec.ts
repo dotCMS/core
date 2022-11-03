@@ -4,7 +4,6 @@ import { HttpClientTestingModule, HttpTestingController } from '@angular/common/
 
 import { DotCDNService } from './dotcdn.service';
 import { SiteServiceMock, CoreWebServiceMock } from '@dotcms/dotcms-js';
-import MockDate from 'mockdate';
 
 const fakeDotCDNViewData = {
     resp: {
@@ -232,16 +231,11 @@ describe('DotcdnService', () => {
         httpMock = TestBed.inject(HttpTestingController);
         jest.spyOn(dotSiteService, 'getCurrentSite');
         jest.restoreAllMocks();
-    });
 
-    afterEach(() => {
-        MockDate.reset();
+        jest.useFakeTimers().setSystemTime(new Date('2021-05-03'));
     });
-
     it('should return the stats', (done) => {
         jest.spyOn(dotCoreWebService, 'requestView');
-
-        MockDate.set('2021-05-03');
 
         const {
             bodyJsonObject: { entity }

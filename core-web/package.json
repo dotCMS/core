@@ -186,7 +186,6 @@
     "karma-jasmine": "5.1.0",
     "karma-jasmine-html-reporter": "2.0.0",
     "mock-socket": "^9.0.3",
-    "mockdate": "^3.0.5",
     "monaco-editor": "^0.33.0",
     "npm": "^6.14.16",
     "postcss": "^8.3.9",
