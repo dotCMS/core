@@ -232,7 +232,8 @@ describe('DotcdnService', () => {
         jest.spyOn(dotSiteService, 'getCurrentSite');
         jest.restoreAllMocks();
 
-        jest.useFakeTimers().setSystemTime(new Date('2021-05-03'));
+        jest.useFakeTimers('modern');
+        jest.setSystemTime(new Date('2021-05-03'));
     });
     it('should return the stats', (done) => {
         jest.spyOn(dotCoreWebService, 'requestView');
