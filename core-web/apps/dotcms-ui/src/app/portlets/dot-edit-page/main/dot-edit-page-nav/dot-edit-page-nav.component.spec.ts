@@ -133,12 +133,14 @@ describe('DotEditPageNavComponent', () => {
 
     describe('model change', () => {
         it('should have basic menu items', () => {
+            const TOTAL_NAV_ITEMS_SHOWED = 4;
             fixture.detectChanges();
             const menuListItems = fixture.debugElement.queryAll(By.css('.edit-page-nav__item'));
-            expect(menuListItems.length).toEqual(4);
 
-            const labels = ['Content', 'Layout', 'Rules', 'Properties', 'Experiments'];
-            const icons = ['insert_drive_file', 'view_quilt', 'tune', 'more_horiz', 'dataset'];
+            expect(menuListItems.length).toEqual(TOTAL_NAV_ITEMS_SHOWED);
+
+            const labels = ['Content', 'Layout', 'Rules', 'Properties'];
+            const icons = ['insert_drive_file', 'view_quilt', 'tune', 'more_horiz'];
             menuListItems.forEach((item, index) => {
                 const iconClass = item.query(By.css('i')).nativeElement.innerHTML.trim();
                 expect(iconClass).toEqual(icons[index]);
@@ -186,6 +188,7 @@ describe('DotEditPageNavComponent', () => {
         });
         // Disable advance template commit https://github.com/dotCMS/core-web/pull/589
         it('should have menu items: Content and Layout', () => {
+            const TOTAL_NAV_ITEMS_SHOWED = 4;
             fixture.componentInstance.pageState = new DotPageRenderState(
                 mockUser(),
                 new DotPageRender(mockDotRenderedPageAdvanceTemplate)
@@ -197,7 +200,7 @@ describe('DotEditPageNavComponent', () => {
             );
             const iconClass = menuListItems[0].query(By.css('i')).nativeElement.innerHTML.trim();
 
-            expect(menuListItems.length).toEqual(4);
+            expect(menuListItems.length).toEqual(TOTAL_NAV_ITEMS_SHOWED);
             expect(iconClass).toEqual('insert_drive_file');
             expect(menuListItems[0].nativeElement.textContent).toContain('Content');
             expect(menuListItems[1].nativeElement.textContent).toContain('Layout');
@@ -307,7 +310,8 @@ describe('DotEditPageNavComponent', () => {
     });
 
     describe('experiments feature flag true', () => {
-        it('should has Experiments item', () => {
+        it('should has Experiments nav item', () => {
+            const MATERIAL_ICON_NAME = 'science';
             // eslint-disable-next-line  @typescript-eslint/no-explicit-any
             spyOnProperty<any>(route, 'snapshot', 'get').and.returnValue({
                 firstChild: {
@@ -329,8 +333,7 @@ describe('DotEditPageNavComponent', () => {
             const iconClass = menuListItems[4].query(By.css('i')).nativeElement.innerHTML;
             const label = menuListItems[4].query(By.css('[data-testId="menuListItemText"]'))
                 .nativeElement.innerHTML;
-
-            expect('dataset').toEqual(iconClass);
+            expect(MATERIAL_ICON_NAME).toEqual(iconClass);
             expect('Experiments').toEqual(label);
         });
     });

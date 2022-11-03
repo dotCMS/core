@@ -24,9 +24,10 @@ import { mockResponseView } from '@tests/response-view.mock';
 import { PageModelChangeEventType } from '../dot-edit-content-html/models';
 import { mockDotPersona } from '@tests/dot-persona.mock';
 import { mockUserAuth } from '@tests/dot-auth-user.mock';
+import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
 
-const getDotPageRenderStateMock = () => {
-    return new DotPageRenderState(mockUser(), mockDotRenderedPage());
+const getDotPageRenderStateMock = (favoritePage: boolean) => {
+    return new DotPageRenderState(mockUser(), mockDotRenderedPage(), favoritePage);
 };
 
 describe('DotPageStateService', () => {
@@ -36,6 +37,7 @@ describe('DotPageStateService', () => {
     let dotPageRenderService: DotPageRenderService;
     let dotPageRenderServiceGetSpy: jasmine.Spy;
     let dotRouterService: DotRouterService;
+    let dotESContentService: DotESContentService;
     let loginService: LoginService;
     let injector: TestBed;
     let service: DotPageStateService;
@@ -51,6 +53,7 @@ describe('DotPageStateService', () => {
                 DotAlertConfirmService,
                 ConfirmationService,
                 DotFormatDateService,
+                DotESContentService,
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 {
@@ -66,6 +69,7 @@ describe('DotPageStateService', () => {
         dotHttpErrorManagerService = injector.get(DotHttpErrorManagerService);
         dotPageRenderService = injector.get(DotPageRenderService);
         dotRouterService = injector.get(DotRouterService);
+        dotESContentService = injector.inject(DotESContentService);
         loginService = injector.get(LoginService);
 
         dotPageRenderServiceGetSpy = spyOn(dotPageRenderService, 'get').and.returnValue(
@@ -82,6 +86,17 @@ describe('DotPageStateService', () => {
         spyOnProperty(dotRouterService, 'queryParams', 'get').and.returnValue({
             url: '/an/url/test/form/query/params'
         });
+
+        spyOn(dotESContentService, 'get').and.returnValue(
+            of({
+                contentTook: 0,
+                jsonObjectView: {
+                    contentlets: []
+                },
+                queryTook: 1,
+                resultsSize: 20
+            })
+        );
     });
 
     describe('Method: get', () => {
@@ -112,7 +127,7 @@ describe('DotPageStateService', () => {
 
     describe('$state', () => {
         it('should get state', () => {
-            const mock = getDotPageRenderStateMock();
+            const mock = getDotPageRenderStateMock(true);
             service.state$.subscribe((state: DotPageRenderState) => {
                 expect(state).toEqual(mock);
             });
@@ -230,6 +245,15 @@ describe('DotPageStateService', () => {
             });
         });
 
+        describe('setFavoritePageHighlight', () => {
+            it('should set FavoritePageHighlight false', () => {
+                service.state$.subscribe(({ state }: DotPageRenderState) => {
+                    expect(state.favoritePage).toBe(false);
+                });
+                service.setFavoritePageHighlight(false);
+            });
+        });
+
         describe('setPersona', () => {
             it('should set persona', () => {
                 const persona: DotPersona = {
@@ -318,7 +342,7 @@ describe('DotPageStateService', () => {
 
     describe('internal navigation state', () => {
         it('should return content from setted internal state', () => {
-            const renderedPage = getDotPageRenderStateMock();
+            const renderedPage = getDotPageRenderStateMock(true);
             service.setInternalNavigationState(renderedPage);
 
             expect(service.getInternalNavigationState()).toEqual(renderedPage);
@@ -333,7 +357,7 @@ describe('DotPageStateService', () => {
 
     describe('setting local state', () => {
         it('should set local state and emit', () => {
-            const renderedPage = getDotPageRenderStateMock();
+            const renderedPage = getDotPageRenderStateMock(true);
 
             service.state$.subscribe((state: DotPageRenderState) => {
                 expect(state).toEqual(renderedPage);
@@ -363,7 +387,7 @@ describe('DotPageStateService', () => {
     describe('content added/removed', () => {
         describe('selected persona is not default', () => {
             it('should trigger haceContent as true', () => {
-                const renderedPage = getDotPageRenderStateMock();
+                const renderedPage = getDotPageRenderStateMock(true);
                 service.setLocalState(renderedPage);
 
                 const subscribeCallback = jasmine.createSpy('spy');

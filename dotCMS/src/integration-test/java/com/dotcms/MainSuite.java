@@ -1,5 +1,6 @@
 package com.dotcms;
 
+import com.dotcms.analytics.bayesian.BayesianAPIImplTest;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
 import com.dotcms.cache.lettuce.DotObjectCodecTest;
@@ -81,6 +82,7 @@ import com.dotcms.rest.api.v1.folder.FolderResourceTest;
 import com.dotcms.rest.api.v1.menu.MenuResourceTest;
 import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
 import com.dotcms.rest.api.v1.system.ConfigurationHelperTest;
+import com.dotcms.rest.api.v1.taillog.TailLogResourceTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
 import com.dotcms.saml.SamlConfigurationServiceTest;
@@ -95,6 +97,7 @@ import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
 import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotcms.variant.VariantAPITest;
+import com.dotcms.variant.VariantFactoryTest;
 import com.dotcms.variant.business.VariantCacheTest;
 import com.dotmarketing.beans.HostTest;
 import com.dotmarketing.business.DeterministicIdentifierAPITest;
@@ -115,6 +118,7 @@ import com.dotmarketing.portlets.containers.business.ContainerFactoryImplTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
 import com.dotmarketing.portlets.contentlet.business.ContentletCacheImplTest;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPIImplIntegrationTest;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependenciesTest;
 import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegrationTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegrationTest;
@@ -122,7 +126,6 @@ import com.dotmarketing.portlets.folders.business.FolderFactoryImplTest;
 import com.dotmarketing.portlets.folders.model.FolderTest;
 import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtilTest;
 import com.dotmarketing.portlets.templates.business.TemplateFactoryImplTest;
-import com.dotcms.variant.VariantFactoryTest;
 import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletAbortTest;
@@ -171,17 +174,24 @@ import com.dotmarketing.startup.runonce.Task220402UpdateDateTimezonesTest;
 import com.dotmarketing.startup.runonce.Task220413IncreasePublishedPushedAssetIdColTest;
 import com.dotmarketing.startup.runonce.Task220512UpdateNoHTMLRegexValueTest;
 import com.dotmarketing.startup.runonce.Task220606UpdatePushNowActionletNameTest;
-
-import com.dotmarketing.startup.runonce.Task220824CreateDefaultVariantTest;
-
 import com.dotmarketing.startup.runonce.Task220822CreateVariantTableTest;
+import com.dotmarketing.startup.runonce.Task220824CreateDefaultVariantTest;
 import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTableTest;
 
+import com.dotmarketing.startup.runonce.Task220825CreateVariantFieldTest;
+
+import com.dotmarketing.startup.runonce.Task220825MakeSomeSystemFieldsRemovableTest;
+
+import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTableTest;
+
+import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExperimentTest;
+import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
 import com.dotmarketing.util.ResourceCollectorUtilTest;
 import com.dotmarketing.util.TestConfig;
+import com.dotmarketing.util.UtilMethodsITest;
 import com.dotmarketing.util.contentlet.pagination.PaginatedContentletsIntegrationTest;
 import com.liferay.portal.language.LanguageUtilTest;
 import org.apache.velocity.tools.view.tools.CookieToolTest;
@@ -194,6 +204,8 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        Task220825CreateVariantFieldTest.class,
+        Task221007AddVariantIntoPrimaryKeyTest.class,
         ContentletWebAPIImplIntegrationTest.class, // moved to top because of failures on GHA
         DependencyBundlerTest.class, // moved to top because of failures on GHA
         FolderCacheImplIntegrationTest.class,
@@ -578,11 +590,17 @@ import org.junit.runners.Suite.SuiteClasses;
         PaginatedContentletsIntegrationTest.class,
         Task220824CreateDefaultVariantTest.class,
         Task220822CreateVariantTableTest.class,
+        Task220825MakeSomeSystemFieldsRemovableTest.class,
         Task220829CreateExperimentsTableTest.class,
         StoryBlockTest.class,
         IdentifierCacheImplTest.class,
         VariantCacheTest.class,
-        VersionableFactoryImplTest.class
+        VersionableFactoryImplTest.class,
+        Task220928AddLookbackWindowColumnToExperimentTest.class,
+        TailLogResourceTest.class,
+        BayesianAPIImplTest.class,
+        ContentletDependenciesTest.class,
+        UtilMethodsITest.class
 })
 public class MainSuite {
 

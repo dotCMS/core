@@ -261,7 +261,7 @@ public class Category extends Inode implements Serializable, ManifestItem {
 		return new ManifestInfoBuilder()
 				.objectType(PusheableAsset.CATEGORY.getType())
 				.id(this.getInode())
-				.title(this.getTitle())
+				.title(this.getCategoryName())
 				.build();
 	}
 

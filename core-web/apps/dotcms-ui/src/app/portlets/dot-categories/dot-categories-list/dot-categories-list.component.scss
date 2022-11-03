@@ -1,0 +1,20 @@
+@use "variables" as *;
+
+dot-portlet-base {
+    overflow-x: scroll;
+}
+
+.category_listing ::ng-deep {
+    .tableHeader {
+        padding-top: $spacing-4;
+        padding-bottom: $spacing-4;
+    }
+
+    .p-inputgroup-addon {
+        border-right: none;
+    }
+
+    .p-inputtext {
+        border-left: none;
+    }
+}

@@ -12,6 +12,7 @@ import com.dotcms.rest.api.FailedResultView;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.util.CloseUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.CategoriesPaginator;
@@ -35,6 +36,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -45,6 +52,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -57,6 +65,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.apache.commons.beanutils.BeanUtils;
+import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.glassfish.jersey.server.JSONP;
 
 /**
@@ -108,7 +119,9 @@ public class CategoriesResource {
             @Context final HttpServletResponse httpResponse,
             @QueryParam(PaginationUtil.FILTER) final String filter,
             @QueryParam(PaginationUtil.PAGE) final int page,
-            @QueryParam(PaginationUtil.PER_PAGE) final int perPage) {
+            @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+            @DefaultValue("category_name") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
+            @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction) {
 
         final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true,
                 null);
@@ -116,10 +129,12 @@ public class CategoriesResource {
         Response response = null;
         final User user = initData.getUser();
 
-       Logger.debug(this, ()-> "Getting the List of categories. " + String.format("Request query parameters are : {filter : %s, page : %s, perPage : %s}", filter, page, perPage));
+        Logger.debug(this, () -> "Getting the List of categories. " + String.format(
+                "Request query parameters are : {filter : %s, page : %s, perPage : %s}", filter,
+                page, perPage));
 
         try {
-            response = this.paginationUtil.getPage(httpRequest, user, filter, page, perPage);
+            response = this.paginationUtil.getPage(httpRequest, user, filter, page, perPage,orderBy, direction);
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
@@ -176,12 +191,15 @@ public class CategoriesResource {
         final User user = initData.getUser();
         final PageMode pageMode = PageMode.get(httpRequest);
 
-        Logger.debug(this, ()-> "Getting the List of children categories. " + String.format("Request query parameters are : {filter : %s, page : %s, perPage : %s, orderBy : %s, direction : %s, inode : %s}", filter, page, perPage, orderBy, direction, inode));
+        Logger.debug(this, () -> "Getting the List of children categories. " + String.format(
+                "Request query parameters are : {filter : %s, page : %s, perPage : %s, orderBy : %s, direction : %s, inode : %s}",
+                filter, page, perPage, orderBy, direction, inode));
 
         DotPreconditions.checkArgument(UtilMethods.isSet(inode),
                 "The inode is required");
 
-        PaginatedCategories list = this.categoryAPI.findChildren(user, inode, pageMode.respectAnonPerms, page, perPage,
+        PaginatedCategories list = this.categoryAPI.findChildren(user, inode,
+                pageMode.respectAnonPerms, page, perPage,
                 filter, direction);
 
         return getPage(list.getCategories(), list.getTotalCount(), page, perPage);
@@ -213,7 +231,8 @@ public class CategoriesResource {
                 () -> this.hostWebAPI.getCurrentHostNoThrow(httpRequest));
         final PageMode pageMode = PageMode.get(httpRequest);
 
-        Logger.debug(this, () -> "Saving category. Request payload is : " + getObjectToJsonString(categoryForm));
+        Logger.debug(this, () -> "Saving category. Request payload is : " + getObjectToJsonString(
+                categoryForm));
 
         DotPreconditions.checkArgument(UtilMethods.isSet(categoryForm.getCategoryName()),
                 "The category name is required");
@@ -228,11 +247,12 @@ public class CategoriesResource {
     }
 
     /**
-     * Update a working version of an existing category. The categoryForm must contain the inode of the category.
+     * Update a working version of an existing category. The categoryForm must contain the inode of
+     * the category.
      *
-     * @param httpRequest       {@link HttpServletRequest}
-     * @param httpResponse      {@link HttpServletResponse}
-     * @param categoryForm  {@link CategoryForm}
+     * @param httpRequest  {@link HttpServletRequest}
+     * @param httpResponse {@link HttpServletResponse}
+     * @param categoryForm {@link CategoryForm}
      * @return CategoryView
      * @throws DotDataException
      * @throws DotSecurityException
@@ -241,31 +261,35 @@ public class CategoriesResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final CategoryView save(@Context final HttpServletRequest  httpRequest,
+    public final CategoryView save(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
             final CategoryForm categoryForm) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
-        final User user         = initData.getUser();
+        final User user = initData.getUser();
         final Host host = this.categoryHelper.getHost(categoryForm.getSiteId(),
                 () -> this.hostWebAPI.getCurrentHostNoThrow(httpRequest));
         final PageMode pageMode = PageMode.get(httpRequest);
 
-        Logger.debug(this, () -> "Saving category. Request payload is : " + getObjectToJsonString(categoryForm));
+        Logger.debug(this, () -> "Saving category. Request payload is : " + getObjectToJsonString(
+                categoryForm));
 
         DotPreconditions.checkArgument(UtilMethods.isSet(categoryForm.getInode()),
                 "The inode is required");
 
-        final Category oldCategory = this.categoryAPI.find(categoryForm.getInode(), user, pageMode.respectAnonPerms);
+        final Category oldCategory = this.categoryAPI.find(categoryForm.getInode(), user,
+                pageMode.respectAnonPerms);
 
         if (null == oldCategory) {
-            throw new DoesNotExistException("Category with inode: " + categoryForm.getInode() + " does not exist");
+            throw new DoesNotExistException(
+                    "Category with inode: " + categoryForm.getInode() + " does not exist");
         }
 
         try {
-           return this.categoryHelper.toCategoryView(
-                    this.fillAndSave(categoryForm, user, host, pageMode, oldCategory, new Category()), user);
+            return this.categoryHelper.toCategoryView(
+                    this.fillAndSave(categoryForm, user, host, pageMode, oldCategory,
+                            new Category()), user);
         } catch (InvocationTargetException | IllegalAccessException e) {
             Logger.error(this, e.getMessage(), e);
             throw new RuntimeException(e);
@@ -273,11 +297,12 @@ public class CategoriesResource {
     }
 
     /**
-     * Update a working version of an existing category for sortOrder. The categoryEditDTO must contain the inode and sortOrder of the category.
+     * Update a working version of an existing category for sortOrder. The categoryEditDTO must
+     * contain the inode and sortOrder of the category.
      *
-     * @param httpRequest       {@link HttpServletRequest}
-     * @param httpResponse      {@link HttpServletResponse}
-     * @param categoryEditForm  {@link CategoryForm}
+     * @param httpRequest      {@link HttpServletRequest}
+     * @param httpResponse     {@link HttpServletResponse}
+     * @param categoryEditForm {@link CategoryForm}
      * @return CategoryView
      * @throws DotDataException
      * @throws DotSecurityException
@@ -287,10 +312,10 @@ public class CategoriesResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response save(@Context final HttpServletRequest  httpRequest,
+    public final Response save(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
             final CategoryEditForm categoryEditForm
-            ) throws DotDataException, DotSecurityException {
+    ) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
@@ -318,18 +343,21 @@ public class CategoriesResource {
         return parentCategory == null
                 ? this.paginationUtil.getPage(httpRequest, user, categoryEditForm.getFilter(),
                 categoryEditForm.getPage(), categoryEditForm.getPerPage())
-                    : this.getChildren(httpRequest,httpResponse,categoryEditForm.getFilter(), categoryEditForm.getPage(),
-                            categoryEditForm.getPerPage(),"", categoryEditForm.getDirection(),categoryEditForm.getParentInode());
+                : this.getChildren(httpRequest, httpResponse, categoryEditForm.getFilter(),
+                        categoryEditForm.getPage(),
+                        categoryEditForm.getPerPage(), "", categoryEditForm.getDirection(),
+                        categoryEditForm.getParentInode());
     }
 
     /**
      * Deletes Categories.
-     *
+     * <p>
      * This method receives a list of inodes and deletes all the children and the parent categories.
      * To delete a category successfully the user needs to have Edit Permissions over it.
-     * @param httpRequest            {@link HttpServletRequest}
-     * @param httpResponse           {@link HttpServletResponse}
-     * @param categoriesToDelete     {@link String} category inode to look for and then delete it
+     *
+     * @param httpRequest        {@link HttpServletRequest}
+     * @param httpResponse       {@link HttpServletResponse}
+     * @param categoriesToDelete {@link String} category inode to look for and then delete it
      * @return Response
      * @throws DotDataException
      * @throws DotSecurityException
@@ -338,43 +366,47 @@ public class CategoriesResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response delete(@Context final HttpServletRequest  httpRequest,
+    public final Response delete(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
             final List<String> categoriesToDelete) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
-        final User user         = initData.getUser();
+        final User user = initData.getUser();
         final PageMode pageMode = PageMode.get(httpRequest);
-        final List<FailedResultView> failedToDelete  = new ArrayList<>();
+        final List<FailedResultView> failedToDelete = new ArrayList<>();
         List<String> deletedIds = new ArrayList();
 
         DotPreconditions.checkArgument(UtilMethods.isSet(categoriesToDelete),
                 "The body must send a collection of category inode such as: " +
                         "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
 
-        try{
-            HashMap<String, Category> undeletedCategoryList = this.categoryAPI.deleteCategoryAndChildren(categoriesToDelete, user, pageMode.respectAnonPerms);
-            List<String> undeletedIds = undeletedCategoryList.entrySet().stream().map(k -> k.getKey()).collect(
-                    Collectors.toUnmodifiableList());
+        try {
+            HashMap<String, Category> undeletedCategoryList = this.categoryAPI.deleteCategoryAndChildren(
+                    categoriesToDelete, user, pageMode.respectAnonPerms);
+            List<String> undeletedIds = undeletedCategoryList.entrySet().stream()
+                    .map(k -> k.getKey()).collect(
+                            Collectors.toUnmodifiableList());
             deletedIds = new ArrayList<>(categoriesToDelete);
             deletedIds.removeAll(undeletedIds);
 
             ActivityLogger.logInfo(this.getClass(), "Delete Category Action", "User " +
-                    user.getPrimaryKey() + " deleted category list: [" + String.join(",", deletedIds) + "]");
+                    user.getPrimaryKey() + " deleted category list: [" + String.join(",",
+                    deletedIds) + "]");
 
-            if(!undeletedCategoryList.isEmpty()) {
+            if (!undeletedCategoryList.isEmpty()) {
                 for (final String categoryInode : undeletedIds) {
                     Logger.error(this, "Category with Id: " + categoryInode + " does not exist");
-                    failedToDelete.add(new FailedResultView(categoryInode, "Category does not exist or failed to remove child category"));
+                    failedToDelete.add(new FailedResultView(categoryInode,
+                            "Category does not exist or failed to remove child category"));
                 }
             }
-        }catch (Exception e){
-            Logger.debug(this,e.getMessage(),e);
+        } catch (Exception e) {
+            Logger.debug(this, e.getMessage(), e);
         }
 
         return Response.ok(new ResponseEntityView(
-                        new BulkResultView(Long.valueOf(deletedIds.size()),0L,failedToDelete)))
+                        new BulkResultView(Long.valueOf(deletedIds.size()), 0L, failedToDelete)))
                 .build();
     }
 
@@ -387,19 +419,20 @@ public class CategoriesResource {
 
         Category parentCategory = null;
 
-        Logger.debug(this, ()-> "Filling category entity");
+        Logger.debug(this, () -> "Filling category entity");
 
         if (UtilMethods.isSet(categoryForm.getParent())) {
-            parentCategory = this.categoryAPI.find(categoryForm.getParent(), user, pageMode.respectAnonPerms);
+            parentCategory = this.categoryAPI.find(categoryForm.getParent(), user,
+                    pageMode.respectAnonPerms);
         }
 
         BeanUtils.copyProperties(category, categoryForm);
 
         category.setModDate(new Date());
 
-        Logger.debug(this, ()-> "Saving category entity : " + getObjectToJsonString(category));
+        Logger.debug(this, () -> "Saving category entity : " + getObjectToJsonString(category));
         this.categoryAPI.save(parentCategory, category, user, pageMode.respectAnonPerms);
-        Logger.debug(this, ()-> "Saved category entity : " + getObjectToJsonString(category));
+        Logger.debug(this, () -> "Saved category entity : " + getObjectToJsonString(category));
 
         ActivityLogger.logInfo(this.getClass(), "Saved Category", "User " + user.getPrimaryKey()
                         + "Category: " + category.getCategoryName(),
@@ -418,10 +451,11 @@ public class CategoriesResource {
 
         Category parentCategory = null;
 
-        Logger.debug(this, ()-> "Filling category entity");
+        Logger.debug(this, () -> "Filling category entity");
 
         if (UtilMethods.isSet(categoryForm.getParent())) {
-            parentCategory = this.categoryAPI.find(categoryForm.getParent(), user, pageMode.respectAnonPerms);
+            parentCategory = this.categoryAPI.find(categoryForm.getParent(), user,
+                    pageMode.respectAnonPerms);
         }
 
         BeanUtils.copyProperties(updatedCategory, oldCategory);
@@ -431,9 +465,11 @@ public class CategoriesResource {
         updatedCategory.setKeywords(categoryForm.getKeywords());
         updatedCategory.setModDate(new Date());
 
-        Logger.debug(this, ()-> "Saving category entity : " + getObjectToJsonString(updatedCategory));
+        Logger.debug(this,
+                () -> "Saving category entity : " + getObjectToJsonString(updatedCategory));
         this.categoryAPI.save(parentCategory, updatedCategory, user, pageMode.respectAnonPerms);
-        Logger.debug(this, ()-> "Saved category entity : " + getObjectToJsonString(updatedCategory));
+        Logger.debug(this,
+                () -> "Saved category entity : " + getObjectToJsonString(updatedCategory));
 
         ActivityLogger.logInfo(this.getClass(), "Saved Category", "User " + user.getPrimaryKey()
                         + "Category: " + updatedCategory.getCategoryName(),
@@ -442,14 +478,221 @@ public class CategoriesResource {
         return updatedCategory;
     }
 
+    /**
+     * Return a list of {@link com.dotmarketing.portlets.categories.model.Category}, entity response
+     * syntax:
+     * <code> { contentTypes: array of Category total: total number of Categories } <code/>
+     * <p>
+     * Url syntax: api/v1/categories/_export?contextInode=inode&filter=filter-string
+     * <p>
+     * where:
+     *
+     * <ul>
+     * <li>filter-string: just return Category whose content this pattern into its name</li>
+     * <li>contextInode: category inode</li>
+     * </ul>
+     * <p>
+     * Url example: v1/categories/_export?contextInode=inode&filter=test
+     *
+     * @param httpRequest
+     * @return
+     */
+    @GET
+    @Path("/_export")
+    @JSONP
+    @NoCache
+    @Produces({"text/csv"})
+    public final void export(@Context final HttpServletRequest httpRequest,
+            @Context final HttpServletResponse httpResponse,
+            @QueryParam("contextInode") final String contextInode,
+            @QueryParam(PaginationUtil.FILTER) final String filter)
+            throws DotDataException, DotSecurityException, IOException {
+
+        final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true,
+                null);
+
+        final User user = initData.getUser();
+        final PageMode pageMode = PageMode.get(httpRequest);
+
+        httpResponse.setCharacterEncoding("UTF-8");
+        httpResponse.setContentType("application/octet-stream");
+        httpResponse.setHeader("Content-Disposition",
+                "attachment; filename=\"categories_" + UtilMethods.dateToHTMLDate(new Date(),
+                        "M_d_yyyy") + ".csv\"");
+
+        Logger.debug(this, () -> "Exporting the list of categories. " + String.format(
+                "Request query parameters are : {contextInode : %s, filter : %s}", contextInode,
+                filter));
+
+        final PrintWriter output = httpResponse.getWriter();
+
+        try {
+            List<Category> categories =
+                    UtilMethods.isSet(contextInode) ? this.categoryAPI.findChildren(user,
+                            contextInode, false, filter) :
+                            this.categoryAPI.findTopLevelCategories(user, false, filter);
+
+            if (!categories.isEmpty()) {
+                output.print("\"name\",\"key\",\"variable\",\"sort\"");
+                output.print("\r\n");
+
+                for (Category category : categories) {
+                    String catName = category.getCategoryName();
+                    String catKey = category.getKey();
+                    String catVar = category.getCategoryVelocityVarName();
+                    String catSort = Integer.toString(category.getSortOrder());
+                    catName = catName == null ? "" : catName;
+                    catKey = catKey == null ? "" : catKey;
+                    catVar = catVar == null ? "" : catVar;
+
+                    catName = "\"" + catName + "\"";
+                    catKey = "\"" + catKey + "\"";
+                    catVar = "\"" + catVar + "\"";
+
+                    output.print(catName + "," + catKey + "," + catVar + "," + catSort);
+                    output.print("\r\n");
+                }
+
+            } else {
+                output.print("There are no Categories to show");
+                output.print("\r\n");
+            }
+        } catch (Exception e) {
+            Logger.error(this, "Error exporting categories", e);
+        } finally {
+            output.flush();
+            output.close();
+        }
+    }
+
+    /**
+     * Exports a list of categories.
+     *
+     * @param httpRequest
+     * @param httpResponse
+     * @param uploadedFile
+     * @param multiPart
+     * @param fileDetail
+     * @param filter
+     * @param exportType
+     * @param contextInode
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @POST
+    @Path("/_import")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes({MediaType.MULTIPART_FORM_DATA})
+    public Response importCategories(@Context final HttpServletRequest httpRequest,
+            @Context final HttpServletResponse httpResponse,
+            @FormDataParam("file") final File uploadedFile,
+            FormDataMultiPart multiPart,
+            @FormDataParam("file") FormDataContentDisposition fileDetail,
+            @FormDataParam("filter") String filter,
+            @FormDataParam("exportType") String exportType,
+            @FormDataParam("contextInode") String contextInode) throws IOException {
+
+        return processImport(httpRequest, httpResponse, uploadedFile, multiPart, fileDetail, filter,
+                exportType, contextInode);
+
+    }
+
+    private String getContentFromFile(String path) throws IOException {
+
+        String content = StringPool.BLANK;
+
+        try (InputStream file = java.nio.file.Files.newInputStream(java.nio.file.Path.of(path))) {
+            byte[] uploadedFileBytes = file.readAllBytes();
+
+            content = new String(uploadedFileBytes);
+        }
+        return content;
+    }
+
     @WrapInTransaction
-    private void updateSortOrder(final CategoryEditForm categoryEditForm, final User user, final Host host,
+    private Response processImport(final HttpServletRequest httpRequest,
+            final HttpServletResponse httpResponse,
+            final File uploadedFile,
+            final FormDataMultiPart multiPart,
+            final FormDataContentDisposition fileDetail,
+            final String filter,
+            final String exportType,
+            final String contextInode) throws IOException {
+
+        List<Category> unableToDeleteCats = null;
+        final List<FailedResultView> failedToDelete = new ArrayList<>();
+
+        StringReader stringReader = null;
+        BufferedReader bufferedReader = null;
+
+        try {
+            final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true,
+                    null);
+
+            final User user = initData.getUser();
+            final PageMode pageMode = PageMode.get(httpRequest);
+
+            Logger.debug(this, () -> "Importing the list of categories. " + String.format(
+                    "Request payload is : {contextInode : %s, filter : %s, exportType : %s}",
+                    contextInode,
+                    filter, exportType));
+
+            String content = getContentFromFile(uploadedFile.getPath());
+
+            stringReader = new StringReader(content);
+            bufferedReader = new BufferedReader(stringReader);
+
+            if (exportType.equals("replace")) {
+                Logger.debug(this, () -> "Replacing categories");
+                if (UtilMethods.isSet(contextInode)) {
+                    Category contextCat = this.categoryAPI.find(contextInode, user, false);
+                    unableToDeleteCats = this.categoryAPI.removeAllChildren(contextCat, user,
+                            false);
+                    if (!unableToDeleteCats.isEmpty()) {
+                        for (final Category category : unableToDeleteCats) {
+                            Logger.error(this, "Category with Id: " + category.getInode()
+                                    + " unable to delete");
+                            failedToDelete.add(new FailedResultView(category.getInode(),
+                                    "Category with id: " + category.getInode()
+                                            + " unable to delete"));
+                        }
+                    }
+                } else {
+                    Logger.debug(this, () -> "Deleting all the categories");
+                    categoryAPI.deleteAll(user, false);
+                    Logger.debug(this, () -> "Deleted all the categories");
+                }
+
+                this.categoryHelper.addOrUpdateCategory(user, contextInode, bufferedReader, false);
+            } else if (exportType.equals("merge")) {
+                Logger.debug(this, () -> "Merging categories");
+                this.categoryHelper.addOrUpdateCategory(user, contextInode, bufferedReader, true);
+            }
+
+        } catch (Exception e) {
+            Logger.error(this, "Error importing categories", e);
+        } finally {
+            CloseUtils.closeQuietly(stringReader, bufferedReader);
+        }
+
+        return Response.ok(new ResponseEntityView(
+                        new BulkResultView(Long.valueOf(UtilMethods.isSet(unableToDeleteCats) ? 1 : 0), 0L,
+                                failedToDelete)))
+                .build();
+    }
+
+    @WrapInTransaction
+    private void updateSortOrder(final CategoryEditForm categoryEditForm, final User user,
+            final Host host,
             final PageMode pageMode, final Category parentCategory)
             throws DotDataException, DotSecurityException {
 
         Iterator iterator = categoryEditForm.getCategoryData().entrySet().iterator();
 
-        while(iterator.hasNext()) {
+        while (iterator.hasNext()) {
             Map.Entry entry = (Map.Entry) iterator.next();
             String key = (String) entry.getKey();
             Integer value = (Integer) entry.getValue();
@@ -489,13 +732,12 @@ public class CategoriesResource {
                 .build();
     }
 
-    private String getObjectToJsonString(final Object object){
+    private String getObjectToJsonString(final Object object) {
         ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
         try {
             final String json = mapper.writeValueAsString(object);
             return json;
-        }
-        catch (JsonProcessingException e){
+        } catch (JsonProcessingException e) {
             Logger.error(this, e.getMessage(), e);
         }
         return StringPool.BLANK;

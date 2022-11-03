@@ -58,6 +58,7 @@ import com.dotcms.rest.api.v1.system.redis.RedisResource;
 import com.dotcms.rest.api.v1.system.role.RoleResource;
 import com.dotcms.rest.api.v1.system.ruleengine.actionlets.ActionletsResource;
 import com.dotcms.rest.api.v1.system.ruleengine.conditionlets.ConditionletsResource;
+import com.dotcms.rest.api.v1.taillog.TailLogResource;
 import com.dotcms.rest.api.v1.temp.TempFileResource;
 import com.dotcms.rest.api.v1.template.TemplateResource;
 import com.dotcms.rest.api.v1.theme.ThemeResource;
@@ -212,6 +213,7 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 			.add(OpenApiResource.class)
 			.add(AcceptHeaderOpenApiResource.class)
 			.add(ExperimentsResource.class)
+			.add(TailLogResource.class)
 			.build();
 
 

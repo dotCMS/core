@@ -7,7 +7,6 @@ import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.business.Ruleable;
-import com.dotmarketing.exception.DotDataException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.vavr.control.Try;
@@ -88,6 +87,12 @@ public interface AbstractExperiment extends Serializable, ManifestItem, Ruleable
     @JsonProperty("targetingConditions")
     Optional<List<TargetingCondition>> targetingConditions();
 
+    @JsonProperty("lookbackWindow")
+    @Value.Default
+    default int lookbackWindow() {
+        return 10;
+    }
+
     // Beginning Permissionable methods
 
     @Value.Derived
@@ -120,6 +125,7 @@ public interface AbstractExperiment extends Serializable, ManifestItem, Ruleable
     }
 
     @Value.Derived
+    @JsonIgnore
     default Permissionable getParentPermissionable() {
         return Try.of(()->APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(pageId()))
                 .getOrNull();

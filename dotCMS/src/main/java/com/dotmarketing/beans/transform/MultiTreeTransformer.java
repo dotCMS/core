@@ -18,6 +18,7 @@ public class MultiTreeTransformer implements DBTransformer<MultiTree> {
     private static final String RELATION_TYPE = "relation_type";
     private static final String TREE_ORDER = "tree_order";
     private static final String PERSONALIZATION = "personalization";
+    private static final String VARIANT = "variant_id";
 
     private final ArrayList<MultiTree> list = new ArrayList<>();
 
@@ -47,7 +48,9 @@ public class MultiTreeTransformer implements DBTransformer<MultiTree> {
         if (UtilMethods.isSet(map.get(TREE_ORDER))) {
             multiTree.setTreeOrder(ConversionUtils.toInt(map.get(TREE_ORDER), 0));
         }
-
+        if (UtilMethods.isSet(map.get(VARIANT))) {
+            multiTree.setVariantId(map.get(VARIANT).toString());
+        }
         return multiTree;
     }
 }

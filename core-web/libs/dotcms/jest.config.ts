@@ -2,22 +2,14 @@
 export default {
     displayName: 'dotcms',
     preset: '../../jest.preset.js',
-    setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
     globals: {
         'ts-jest': {
-            stringifyContentPathRegex: '\\.(html|svg)$',
-
             tsconfig: '<rootDir>/tsconfig.spec.json'
         }
     },
-    coverageDirectory: '../../coverage/libs/dotcms',
-    snapshotSerializers: [
-        'jest-preset-angular/build/serializers/no-ng-attributes',
-        'jest-preset-angular/build/serializers/ng-snapshot',
-        'jest-preset-angular/build/serializers/html-comment'
-    ],
     transform: {
-        '^.+.(ts|mjs|js|html)$': 'jest-preset-angular'
+        '^.+\\.[tj]s$': 'ts-jest'
     },
-    transformIgnorePatterns: ['node_modules/(?!.*.mjs$)']
+    moduleFileExtensions: ['ts', 'js', 'html'],
+    coverageDirectory: '../../coverage/libs/dotcms'
 };

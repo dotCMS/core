@@ -129,6 +129,7 @@ export class DotEditContentHtmlService {
                 iframeElement.contentWindow['contentletEvents'] = this.contentletEvents$;
 
                 this.bindGlobalEvents();
+                this.setMaterialIcons();
 
                 resolve(true);
             });
@@ -343,6 +344,14 @@ export class DotEditContentHtmlService {
      */
     getContentModel(): DotPageContainer[] {
         return this.getEditPageIframe().contentWindow['getDotNgModel']();
+    }
+
+    private setMaterialIcons(): void {
+        const doc = this.getEditPageDocument();
+        const link = this.dotDOMHtmlUtilService.createLinkElement(
+            'dotAdmin/assets/material-icons.css'
+        );
+        doc.head.appendChild(link);
     }
 
     private setCurrentContainerOnContentDrop(doc: Document): void {

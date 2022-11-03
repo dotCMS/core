@@ -11,6 +11,8 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { dotMenuMock } from '../../services/dot-navigation.service.spec';
 import { DotMenu } from '@models/navigation';
 import { TooltipModule } from 'primeng/tooltip';
+import { LABEL_IMPORTANT_ICON } from '@pipes/dot-radom-icon/dot-random-icon.pipe';
+import { DotRandomIconPipeModule } from '@pipes/dot-radom-icon/dot-random-icon.pipe.module';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -33,20 +35,19 @@ describe('DotNavItemComponent', () => {
     let navItem: DebugElement;
     let subNav: DebugElement;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [TestHostComponent, DotNavItemComponent, DotSubNavComponent],
-                imports: [
-                    DotNavIconModule,
-                    DotIconModule,
-                    RouterTestingModule,
-                    BrowserAnimationsModule,
-                    TooltipModule
-                ]
-            }).compileComponents();
-        })
-    );
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [TestHostComponent, DotNavItemComponent, DotSubNavComponent],
+            imports: [
+                DotNavIconModule,
+                DotIconModule,
+                RouterTestingModule,
+                BrowserAnimationsModule,
+                TooltipModule,
+                DotRandomIconPipeModule
+            ]
+        }).compileComponents();
+    }));
 
     beforeEach(() => {
         fixtureHost = TestBed.createComponent(TestHostComponent);
@@ -75,6 +76,14 @@ describe('DotNavItemComponent', () => {
 
         expect(icon.componentInstance.icon).toBe('icon');
         expect(arrow.componentInstance.name).toBe('arrow_drop_up');
+    });
+
+    it('should avoid label_important icon', () => {
+        componentHost.menu.tabIcon = LABEL_IMPORTANT_ICON;
+        fixtureHost.detectChanges();
+        const icon: DebugElement = de.query(By.css('dot-nav-icon'));
+
+        expect(icon.componentInstance.icon).not.toBe(LABEL_IMPORTANT_ICON);
     });
 
     it('should emit menuClick when nav__item is clicked', () => {

@@ -1063,7 +1063,8 @@ create table multi_tree (
    relation_type varchar(64) not null,
    tree_order int4,
    personalization varchar(255) not null default 'dot:default',
-   primary key (child, parent1, parent2, relation_type, personalization)
+   variant_id varchar(255) default 'DEFAULT' not null,
+   primary key (child, parent1, parent2, relation_type, personalization, variant_id)
 );
 create table workflow_task (
    id varchar(36) not null,
@@ -1946,7 +1947,7 @@ CREATE OR REPLACE FUNCTION identifier_parent_path_check() RETURNS trigger AS '
       IF FOUND THEN
         RETURN NEW;
       ELSE
-        RAISE EXCEPTION ''Cannot insert/update for this path does not exist for the given host'';
+        RAISE EXCEPTION ''Cannot % folder % [%] in path % as one or more parent folders do not exist in Site %'', tg_op, NEW.asset_name, NEW.id, NEW.parent_path, NEW.host_inode;
         RETURN NULL;
       END IF;
      END IF;
@@ -2504,7 +2505,8 @@ create table experiment (
      creation_date timestamptz not null,
      created_by varchar(255) not null,
      last_modified_by varchar(255) not null,
-     goals jsonb
+     goals jsonb,
+     lookback_window integer not null
 );
 
 CREATE INDEX idx_exp_pageid ON experiment (page_id);

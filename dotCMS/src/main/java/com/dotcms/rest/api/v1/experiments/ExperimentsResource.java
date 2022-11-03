@@ -25,10 +25,8 @@ import java.util.Optional;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.validation.constraints.Size;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
-import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -68,14 +66,14 @@ public class ExperimentsResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityExperimentView create(@Context final HttpServletRequest request,
+    public ResponseEntitySingleExperimentView create(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             final ExperimentForm experimentForm) throws DotDataException, DotSecurityException {
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
         final Experiment experiment = createExperimentFromForm(experimentForm, user);
         final Experiment persistedExperiment = experimentsAPI.save(experiment, user);
-        return new ResponseEntityExperimentView(Collections.singletonList(persistedExperiment));
+        return new ResponseEntitySingleExperimentView(persistedExperiment);
     }
 
     private Experiment createExperimentFromForm(final ExperimentForm experimentForm,
@@ -116,7 +114,7 @@ public class ExperimentsResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityExperimentView update(@Context final HttpServletRequest request,
+    public ResponseEntitySingleExperimentView update(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("experimentId") final String experimentId,
             final ExperimentForm experimentForm) throws DotDataException, DotSecurityException {
@@ -132,7 +130,7 @@ public class ExperimentsResource {
         final Experiment patchedExperiment = patchExperiment(experimentToUpdate.get(), experimentForm,
                 user);
         final Experiment persistedExperiment = experimentsAPI.save(patchedExperiment, user);
-        return new ResponseEntityExperimentView(Collections.singletonList(persistedExperiment));
+        return new ResponseEntitySingleExperimentView(persistedExperiment);
     }
 
     /**
@@ -171,6 +169,24 @@ public class ExperimentsResource {
         final User user = initData.getUser();
         experimentsAPI.delete(experimentId, user);
         return new ResponseEntityView<>("Experiment deleted");
+    }
+
+    /**
+     * Returns an {@link Experiment}s by Id
+     */
+    @GET
+    @NoCache
+    @Path("/{id}")
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntitySingleExperimentView get(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response, @PathParam("id") String id
+    ) throws DotDataException, DotSecurityException {
+        final InitDataObject initData = getInitData(request, response);
+        final User user = initData.getUser();
+
+        return experimentsAPI.find(id, user)
+                .map(experiment -> new ResponseEntitySingleExperimentView(experiment))
+                .orElseThrow(() -> new NotFoundException("Experiment with id: " + id + " not found."));
     }
 
     /**
@@ -213,7 +229,7 @@ public class ExperimentsResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityExperimentView deleteGoal(@Context final HttpServletRequest request,
+    public ResponseEntitySingleExperimentView deleteGoal(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("experimentId") final String experimentId) throws DotDataException, DotSecurityException {
         final InitDataObject initData = getInitData(request, response);
@@ -227,7 +243,7 @@ public class ExperimentsResource {
         final Experiment experimentNoGoal = existingExperiment.get().withGoals(Optional.empty());
 
         final Experiment savedExperiment = experimentsAPI.save(experimentNoGoal, user);
-        return new ResponseEntityExperimentView(Collections.singletonList(savedExperiment));
+        return new ResponseEntitySingleExperimentView(savedExperiment);
     }
 
     /**
@@ -251,13 +267,13 @@ public class ExperimentsResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityExperimentView start(@Context final HttpServletRequest request,
+    public ResponseEntitySingleExperimentView start(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("experimentId") final String experimentId) throws DotDataException, DotSecurityException {
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
         final Experiment startedExperiment = experimentsAPI.start(experimentId, user);
-        return new ResponseEntityExperimentView(Collections.singletonList(startedExperiment));
+        return new ResponseEntitySingleExperimentView(startedExperiment);
     }
 
     /**
@@ -270,13 +286,13 @@ public class ExperimentsResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityExperimentView end(@Context final HttpServletRequest request,
+    public ResponseEntitySingleExperimentView end(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("experimentId") final String experimentId) throws DotDataException, DotSecurityException {
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
         final Experiment endedExperiment = experimentsAPI.end(experimentId, user);
-        return new ResponseEntityExperimentView(Collections.singletonList(endedExperiment));
+        return new ResponseEntitySingleExperimentView(endedExperiment);
     }
 
     /**
@@ -289,7 +305,7 @@ public class ExperimentsResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityExperimentView addVariant(@Context final HttpServletRequest request,
+    public ResponseEntitySingleExperimentView addVariant(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("experimentId") final String experimentId,
             AddVariantForm addVariantForm) throws DotDataException, DotSecurityException {
@@ -301,7 +317,7 @@ public class ExperimentsResource {
         final User user = initData.getUser();
         final Experiment updatedExperiment =  experimentsAPI.addVariant(experimentId,
                 addVariantForm.getName(), user);
-        return new ResponseEntityExperimentView(Collections.singletonList(updatedExperiment));
+        return new ResponseEntitySingleExperimentView(updatedExperiment);
     }
 
     /**
@@ -313,14 +329,14 @@ public class ExperimentsResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityExperimentView deleteVariant(@Context final HttpServletRequest request,
+    public ResponseEntitySingleExperimentView deleteVariant(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("experimentId") final String experimentId,
             @PathParam("name") final String variantName) throws DotDataException, DotSecurityException {
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
         final Experiment updatedExperiment =  experimentsAPI.deleteVariant(experimentId, variantName, user);
-        return new ResponseEntityExperimentView(Collections.singletonList(updatedExperiment));
+        return new ResponseEntitySingleExperimentView(updatedExperiment);
     }
 
     /**
@@ -332,7 +348,7 @@ public class ExperimentsResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityExperimentView deleteTargetingCondition(@Context final HttpServletRequest request,
+    public ResponseEntitySingleExperimentView deleteTargetingCondition(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("experimentId") final String experimentId,
             @PathParam("id") final String conditionId) throws DotDataException, DotSecurityException {
@@ -340,7 +356,7 @@ public class ExperimentsResource {
         final User user = initData.getUser();
         final Experiment updatedExperiment =  experimentsAPI
                 .deleteTargetingCondition(experimentId, conditionId, user);
-        return new ResponseEntityExperimentView(Collections.singletonList(updatedExperiment));
+        return new ResponseEntitySingleExperimentView(updatedExperiment);
     }
 
     private Experiment patchExperiment(final Experiment experimentToUpdate,
@@ -374,6 +390,10 @@ public class ExperimentsResource {
 
         if(experimentForm.getTargetingConditions()!=null) {
             builder.targetingConditions(experimentForm.getTargetingConditions());
+        }
+
+        if(experimentForm.getLookbackWindow()>-1) {
+            builder.lookbackWindow(experimentForm.getLookbackWindow());
         }
 
         return builder.build();

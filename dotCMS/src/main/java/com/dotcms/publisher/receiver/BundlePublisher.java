@@ -40,7 +40,7 @@ import com.dotcms.publishing.manifest.CSVManifestReader;
 import com.dotcms.publishing.manifest.ManifestBuilder;
 import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import com.dotcms.publishing.manifest.ManifestReason;
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FileUtils;
 import com.dotcms.rest.BundlePublisherResource;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.pushpublish.receiver.PushPublishEndOnReceiverEvent;

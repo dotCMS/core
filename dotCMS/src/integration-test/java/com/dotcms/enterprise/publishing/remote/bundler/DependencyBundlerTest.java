@@ -102,10 +102,12 @@ public class DependencyBundlerTest {
                 .dependencies(false)
                 .next();
 
+        // Revisar con integration tests aqui
         filterDescriptorNotRelationship = new FilterDescriptorDataGen()
                 .relationships(false)
                 .next();
 
+        // Revisar con integration tests aqui
         filterDescriptorNotDependenciesRelationship = new FilterDescriptorDataGen()
                 .relationships(false)
                 .dependencies(false)
@@ -625,7 +627,7 @@ public class DependencyBundlerTest {
                 list(host, contentType, language, folder));
 
         final Map<String, List<ManifestItem>> contentletWithRelationshipExcludes = map(
-                FILTER_EXCLUDE_REASON, list(host, relationship, contentTypeParent, language),
+                FILTER_EXCLUDE_REASON, list(host, contentTypeParent, language, contentTypeChild),
                 EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder));
 
         final Map<String, List<ManifestItem>> contentWithCategoryExcludes = map(FILTER_EXCLUDE_REASON,
@@ -654,11 +656,11 @@ public class DependencyBundlerTest {
 
                 new TestData(contentletWithRelationship, contentletWithRelationshipIncludes, excludeSystemFolder,
                         filterDescriptorAllDependencies, "Contentlet with Relationship and filterDescriptorAllDependencies"),
-                new TestData(contentletWithRelationship, map(), contentletWithRelationshipExcludes, filterDescriptorNotDependencies, "Contentlet with Relationship and filterDescriptorNotDependencies"),
-                new TestData(contentletWithRelationship, map(contentletWithRelationship, list(host, contentTypeParent, language), contentTypeParent, list(systemWorkflowScheme)),
-                        map(FILTER_EXCLUDE_REASON, list(relationship), EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)),
+                new TestData(contentletWithRelationship, map(contentTypeParent, list(relationship), contentletWithRelationship, list(relationship)), contentletWithRelationshipExcludes, filterDescriptorNotDependencies, "Contentlet with Relationship and filterDescriptorNotDependencies"),
+                new TestData(contentletWithRelationship, map(contentletWithRelationship, list(host, contentTypeParent, language, relationship), contentTypeParent, list(systemWorkflowScheme, relationship), relationship, list(contentTypeChild)),
+                        map(FILTER_EXCLUDE_REASON, list(), EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)),
                         filterDescriptorNotRelationship, "Contentlet with Relationship and filterDescriptorNotRelationship"),
-                new TestData(contentletWithRelationship, map(), contentletWithRelationshipExcludes,
+                new TestData(contentletWithRelationship, map(contentletWithRelationship, list(relationship), contentTypeParent, list(relationship)), contentletWithRelationshipExcludes,
                         filterDescriptorNotDependenciesRelationship, "Contentlet with Relationship and filterDescriptorNotDependenciesRelationship"),
 
                 new TestData(contentWithCategory, contentWithCategoryIncludes, excludeSystemFolder,
@@ -1178,12 +1180,12 @@ public class DependencyBundlerTest {
                         EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)), filterDescriptorNotDependenciesRelationship, "Contentype with Category and filterDescriptorNotDependenciesRelationship"),
 
                 new TestData(contentTypeParent, contentTypeParentIncludes, excludeSystemFolder, filterDescriptorAllDependencies, "Contentype with Relationship and filterDescriptorAllDependencies"),
-                new TestData(contentTypeParent, map(), map(FILTER_EXCLUDE_REASON, list(host, systemWorkflowScheme, relationship),
+                new TestData(contentTypeParent, map(contentTypeParent, list(relationship)), map(FILTER_EXCLUDE_REASON, list(host, systemWorkflowScheme, contentTypeChild),
                         EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)), filterDescriptorNotDependencies, "Contentype with Relationship and filterDescriptorNotDependencies"),
-                new TestData(contentTypeParent, map(contentTypeParent, list(host, systemWorkflowScheme)),
-                        map(FILTER_EXCLUDE_REASON, list(relationship), EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)),
+                new TestData(contentTypeParent, map(contentTypeParent, list(host, systemWorkflowScheme, relationship), relationship, list(contentTypeChild)),
+                        map(FILTER_EXCLUDE_REASON, list(), EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)),
                         filterDescriptorNotRelationship, "Contentype with Relationship and filterDescriptorNotRelationship"),
-                new TestData(contentTypeParent, map(), map(FILTER_EXCLUDE_REASON, list(host, systemWorkflowScheme, relationship),
+                new TestData(contentTypeParent, map(contentTypeParent, list(relationship)), map(FILTER_EXCLUDE_REASON, list(host, systemWorkflowScheme, contentTypeChild),
                         EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)), filterDescriptorNotDependenciesRelationship, "Contentype with Relationship and filterDescriptorNotDependenciesRelationship")
         );
     }

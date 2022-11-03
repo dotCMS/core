@@ -200,7 +200,8 @@ public class PageRenderUtil implements Serializable {
 
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         final boolean live               = this.isLive(request);
-        final Table<String, String, Set<PersonalizedContentlet>> pageContents = this.multiTreeAPI.getPageMultiTrees(htmlPage, live);
+        final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
+        final Table<String, String, Set<PersonalizedContentlet>> pageContents = this.multiTreeAPI.getPageMultiTrees(htmlPage, currentVariantId, live);
         final Set<String> personalizationsForPage = this.multiTreeAPI.getPersonalizationsForPage(htmlPage);
         final List<ContainerRaw> raws  = Lists.newArrayList();
         final String includeContentFor = this.getPersonaTagToIncludeContent(request, personalizationsForPage);
