@@ -227,6 +227,7 @@ import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTable;
 import com.dotmarketing.startup.runonce.Task220912UpdateCorrectShowOnMenuProperty;
 import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExperiment;
 import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKey;
+import com.dotmarketing.startup.runonce.Task221018CreateVariantFieldInMultiTree;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -529,6 +530,7 @@ public class TaskLocatorUtil {
 		.add(Task220825CreateVariantField.class)
 		.add(Task220928AddLookbackWindowColumnToExperiment.class)
 		.add(Task221007AddVariantIntoPrimaryKey.class)
+		.add(Task221018CreateVariantFieldInMultiTree.class)
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
@@ -559,6 +561,12 @@ public class TaskLocatorUtil {
 		ret.add(Task00040CheckAnonymousUser.class);
 		ret.add(Task00050LoadAppsSecrets.class);
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
+	}
+	
+		//UT that were backported to LTS
+	public static List<Class<?>> getBackportedUpgradeTaskClasses() {
+		final List<Class<?>> ret = new ArrayList<Class<?>>();
+		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 
 }

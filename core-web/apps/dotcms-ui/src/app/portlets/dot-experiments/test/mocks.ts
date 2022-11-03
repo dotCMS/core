@@ -55,10 +55,20 @@ export const ExperimentMocks: Array<DotExperiment> = [
         return of(ExperimentMocks);
     }
 }*/
+export const dotExperimentsCreateStoreStub = {
+    state$: () =>
+        of({
+            isSaving: false,
+            isOpenSidebar: false
+        }),
+    setCloseSidebar: () => of({}),
+    addExperiments: () => of([])
+};
 
 export const DotExperimentsListStoreMock = {
     addExperiment: () => of({}),
-    setCloseSidebar: () => of({})
+    setCloseSidebar: () => of({}),
+    getPageId$: of('1111-1111')
 };
 
 export const DotExperimentsShellStoreMock = {

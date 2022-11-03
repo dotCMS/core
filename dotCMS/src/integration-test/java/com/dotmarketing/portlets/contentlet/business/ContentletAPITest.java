@@ -6,7 +6,6 @@ import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.business.APILocator.getContentTypeFieldAPI;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.VARIANT_ID;
 import static java.io.File.separator;
-import static java.util.Collections.list;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -20,6 +19,7 @@ import static org.junit.Assert.fail;
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
+
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -29,6 +29,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.datagen.*;
 import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.exception.ExceptionUtil;
@@ -7607,6 +7608,41 @@ public class ContentletAPITest extends ContentletBaseTest {
             }
             fail("Should have thrown ValidationException");
         }
+    }
+
+    @DataProvider
+    public static Object[] testCasesJSON() {
+        final Tuple2<String, String> case1 = new Tuple2<>("{} {}", "{}");
+        final Tuple2<String, String> case2 = new Tuple2<>("{} LOL", "{}");
+
+        return new Object[]{case1, case2};
+    }
+
+    /**
+     * Given scenario: Contentlet with a {@link JSONField} with value "{} {}"
+     * Expected result: should save as "{}"
+     *
+     */
+    @Test
+    @UseDataProvider("testCasesJSON")
+    public void saveContentWithJSONField(final Tuple2<String, String> testCase) throws Exception {
+        // create content type with JSON field
+        ContentType typeWithJSONField = new ContentTypeDataGen().nextPersisted();
+        com.dotcms.contenttype.model.field.Field jsonField = new FieldDataGen()
+                .type(JSONField.class)
+                .contentTypeId(typeWithJSONField.id())
+                .nextPersisted();
+
+        Contentlet contentletWithJSON = new ContentletDataGen(typeWithJSONField)
+                .next();
+
+        contentletAPI.setContentletProperty(contentletWithJSON,
+                new LegacyFieldTransformer(jsonField).asOldField(), testCase._1);
+
+        // Save the content
+        contentletWithJSON = contentletAPI.checkin(contentletWithJSON, user, Boolean.TRUE);
+
+        assertEquals(testCase._2, contentletWithJSON.getStringProperty(jsonField.variable()));
     }
 
     /**

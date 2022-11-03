@@ -305,8 +305,13 @@ public class MapToContentletPopulator  {
                                               final User systemUser) throws DotDataException, DotSecurityException {
         Folder folder         = null;
         final String[] split  = value.toString().split(":");
-        final Host     host   = APILocator.getHostAPI()
+        Host     host   = APILocator.getHostAPI()
                 .findByName(split[0], systemUser, false);
+
+        if (null == host || !InodeUtils.isSet(host.getIdentifier())) {
+
+            host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+        }
 
         if (host != null && InodeUtils.isSet(host.getIdentifier())) {
 

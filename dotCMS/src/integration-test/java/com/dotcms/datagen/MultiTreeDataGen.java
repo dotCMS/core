@@ -1,5 +1,7 @@
 package com.dotcms.datagen;
 
+import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -14,6 +16,7 @@ public class MultiTreeDataGen extends AbstractDataGen<MultiTree> {
     private Contentlet contentlet;
     private String instanceID = "1";
     private String personalization = MultiTree.DOT_PERSONALIZATION_DEFAULT;
+    private String variantId = VariantAPI.DEFAULT_VARIANT.name();
     private int treeOrder;
     private HTMLPageAsset page;
 
@@ -26,6 +29,7 @@ public class MultiTreeDataGen extends AbstractDataGen<MultiTree> {
         multiTree.setInstanceId(instanceID);
         multiTree.setTreeOrder(treeOrder);
         multiTree.setPersonalization(personalization);
+        multiTree.setVariantId(variantId);
         multiTree.setTreeOrder(1);
 
         return multiTree;
@@ -73,6 +77,11 @@ public class MultiTreeDataGen extends AbstractDataGen<MultiTree> {
 
     public MultiTreeDataGen setPersona(Persona persona) {
         personalization = Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + persona.getKeyTag();
+        return this;
+    }
+
+    public MultiTreeDataGen setVariant(final Variant variant) {
+        this.variantId = variant.name();
         return this;
     }
 }

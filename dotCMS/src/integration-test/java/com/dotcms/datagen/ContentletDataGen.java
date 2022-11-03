@@ -4,6 +4,7 @@ import static com.dotmarketing.business.ModDateTestUtil.updateContentletVersionD
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
@@ -49,6 +50,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
     private boolean skipValidation = false;
     private IndexPolicy policy = null;
     private Date modDate;
+    private String variantId;
 
     public ContentletDataGen(final ContentType contentType) {
         this(contentType.id());
@@ -66,6 +68,11 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
      */
     public ContentletDataGen languageId(long languageId){
         this.languageId = languageId;
+        return this;
+    }
+
+    public ContentletDataGen variant(final Variant variant) {
+        this.variantId = variant.name();
         return this;
     }
 
@@ -176,6 +183,8 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
         if (modDate != null) {
             contentlet.setProperty("_use_mod_date", modDate);
         }
+
+        contentlet.setVariantId(variantId);
 
         return contentlet;
     }
