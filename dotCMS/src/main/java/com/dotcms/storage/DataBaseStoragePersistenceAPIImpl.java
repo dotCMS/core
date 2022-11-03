@@ -5,6 +5,7 @@ import static com.dotcms.storage.model.BasicMetadataFields.SHA256_META_KEY;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.storage.repository.BinaryFileWrapper;
 import com.dotcms.storage.repository.FileRepositoryManager;
+import com.dotcms.storage.repository.HashedLocalFileRepositoryManager;
 import com.dotcms.storage.repository.LocalFileRepositoryManager;
 import com.dotcms.storage.repository.TempFileRepositoryManager;
 import com.dotcms.util.CloseUtils;
@@ -74,11 +75,21 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
     private final FileRepositoryManager fileRepositoryManager = this.getFileRepository();
     private static final int DATABASE_FILE_BUFFER_SIZE = Config.getIntProperty("DATABASE_FILE_BUFFER_SIZE", 2000);
 
+    private static final String DATA_BASE_STORAGE_FILE_REPO_TYPE = Config.getStringProperty(
+            "DATA_BASE_STORAGE_FILE_REPO_TYPE", FileRepositoryManager.TEMP_REPO).toUpperCase();
+
     private FileRepositoryManager getFileRepository() {
-        return FileRepositoryManager.TEMP_REPO.equalsIgnoreCase(Config.getStringProperty(
-                "DATA_BASE_STORAGE_FILE_REPO_TYPE", FileRepositoryManager.TEMP_REPO))?
-                new TempFileRepositoryManager():
-                new LocalFileRepositoryManager();
+
+        switch (DATA_BASE_STORAGE_FILE_REPO_TYPE) {
+
+            case FileRepositoryManager.HASH_LOCAL_REPO:
+                return new HashedLocalFileRepositoryManager();
+            case FileRepositoryManager.LOCAL_REPO:
+                return new LocalFileRepositoryManager();
+
+        }
+
+        return new TempFileRepositoryManager();
     }
 
     /**

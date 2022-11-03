@@ -10,6 +10,7 @@ public interface FileRepositoryManager {
 
     String TEMP_REPO  = "TEMP_REPO";
     String LOCAL_REPO = "LOCAL_REPO";
+    String HASH_LOCAL_REPO = "HASH_LOCAL_REPO";
     /**
      * Returns true if the file exists on the repository
      * @param fileName {@link String}
