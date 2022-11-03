@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import com.dotcms.analytics.cache.AnalyticsCache;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenCache;
 import com.dotcms.business.SystemCache;
 import com.dotcms.cache.KeyValueCache;
@@ -28,7 +29,6 @@ import com.dotcms.vanityurl.cache.VanityUrlCache;
 import com.dotcms.vanityurl.cache.VanityUrlCacheImpl;
 import com.dotcms.variant.business.VariantCache;
 import com.dotcms.variant.business.VariantCacheImpl;
-import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.portal.PortletCache;
 import com.dotmarketing.cache.ContentTypeCache;
 import com.dotmarketing.cache.FolderCache;
@@ -72,10 +72,8 @@ import com.dotmarketing.tag.business.TagCache;
 import com.dotmarketing.tag.business.TagCacheImpl;
 import com.dotmarketing.tag.business.TagInodeCache;
 import com.dotmarketing.tag.business.TagInodeCacheImpl;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
-
 
 
 /**
@@ -337,6 +335,14 @@ public class CacheLocator extends Locator<CacheIndex>{
 	}
 
 	/**
+	 * This will get you an instance of the {@link AnalyticsCache} singleton cache.
+	 * @return
+	 */
+	public static AnalyticsCache getAnalyticsCache() {
+		return (AnalyticsCache) getInstance(CacheIndex.AnalyticsCache);
+	}
+
+	/**
 	 * The legacy cache administrator will invalidate cache entries within a cluster
 	 * on a put where the non legacy one will not.
 	 * @return
@@ -444,7 +450,8 @@ enum CacheIndex
 	GraphQLSchemaCache("GraphQLSchemaCache"),
 	Metadata("Metadata"),
 	GraphQLCache("GraphQLCache"),
-	VariantCache("VariantCache");
+	VariantCache("VariantCache"),
+	AnalyticsCache("AnalyticsCache");
 
 	Cachable create() {
 		switch(this) {
@@ -497,6 +504,7 @@ enum CacheIndex
 			case Metadata: return new MetadataCacheImpl();
 			case GraphQLCache: return new GraphQLCache();
 			case VariantCache: return new VariantCacheImpl();
+			case AnalyticsCache: return new AnalyticsCache();
 
 		}
 		throw new AssertionError("Unknown Cache index: " + this);
