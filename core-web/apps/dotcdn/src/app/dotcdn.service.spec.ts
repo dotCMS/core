@@ -14,8 +14,7 @@ const fakeDotCDNViewData = {
         },
         status: 200,
         statusText: 'OK',
-        url:
-            'http://localhost:4200/api/v1/dotcdn/stats?hostId=48190c8c-42c4-46af-8d1a-0cd5db894797&dateFrom=2021-04-16&dateTo=2021-05-01',
+        url: 'http://localhost:4200/api/v1/dotcdn/stats?hostId=48190c8c-42c4-46af-8d1a-0cd5db894797&dateFrom=2021-04-16&dateTo=2021-05-01',
         ok: true,
         type: 4,
         body: {
@@ -254,7 +253,7 @@ describe('DotcdnService', () => {
         });
 
         const req = httpMock.expectOne(
-            `/api/v1/dotcdn/stats?hostId=123-xyz-567-xxl&dateFrom=2021-04-03&dateTo=2021-05-03`
+            `/api/v1/dotcdn/stats?hostId=123-xyz-567-xxl&dateFrom=2021-04-02&dateTo=2021-05-02`
         );
 
         req.flush({ entity });
