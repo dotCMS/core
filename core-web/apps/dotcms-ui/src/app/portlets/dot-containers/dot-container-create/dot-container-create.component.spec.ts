@@ -30,19 +30,22 @@ describe('ContainerCreateComponent', () => {
                     provide: ActivatedRoute,
                     useValue: {
                         data: of({
-                            container: of({
-                                archived: false,
-                                live: true,
-                                working: true,
-                                locked: false,
-                                identifier: '',
-                                name: '',
-                                type: '',
-                                source: CONTAINER_SOURCE.DB,
-                                parentPermissionable: {
-                                    hostname: 'dotcms.com'
-                                }
-                            })
+                            container: {
+                                container: {
+                                    archived: false,
+                                    live: true,
+                                    working: true,
+                                    locked: false,
+                                    identifier: '',
+                                    name: '',
+                                    type: '',
+                                    source: CONTAINER_SOURCE.DB,
+                                    parentPermissionable: {
+                                        hostname: 'dotcms.com'
+                                    }
+                                },
+                                containerStructures: []
+                            }
                         }),
                         snapshot: {
                             params: {

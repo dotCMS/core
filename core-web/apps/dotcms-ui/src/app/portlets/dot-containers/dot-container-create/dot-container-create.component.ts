@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotContainer } from '@dotcms/app/shared/models/container/dot-container.model';
+import { DotContainerEntity } from '@dotcms/app/shared/models/container/dot-container.model';
 import { pluck, take } from 'rxjs/operators';
 
 @Component({
@@ -19,9 +19,9 @@ export class DotContainerCreateComponent implements OnInit {
     ngOnInit() {
         this.activatedRoute.data
             .pipe(pluck('container'), take(1))
-            .subscribe((container: DotContainer) => {
-                if (container) this.containerId = container.identifier;
-                else this.dotRouterService.goToPreviousUrl();
+            .subscribe((container: DotContainerEntity) => {
+                if (container?.container) this.containerId = container.container.identifier;
+                else this.dotRouterService.goToCreateContainer();
             });
     }
 }

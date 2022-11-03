@@ -15,6 +15,7 @@ import { DotMessageDisplayService } from '@components/dot-message-display/servic
 import { DialogService } from 'primeng/dynamicdialog';
 import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 @Component({
     selector: 'dot-container-list',
@@ -35,7 +36,8 @@ export class ContainerListComponent implements OnDestroy {
         private store: DotContainerListStore,
         private dotMessageService: DotMessageService,
         private dotMessageDisplayService: DotMessageDisplayService,
-        private dialogService: DialogService
+        private dialogService: DialogService,
+        private dotRouterService: DotRouterService
     ) {
         this.notify$.pipe(takeUntil(this.destroy$)).subscribe(({ payload, message, failsInfo }) => {
             this.notifyResult(payload, failsInfo, message);
@@ -93,18 +95,33 @@ export class ContainerListComponent implements OnDestroy {
         return this.store.getContainerActions(container);
     }
 
+    /**
+     * Return a list of containers with disableInteraction in system items.
+     * @param {DotContainer[]} containers
+     * @returns DotContainer[]
+     * @memberof DotContainerListComponent
+     */
+    getContainersWithDisabledEntities(containers: DotContainer[]): DotContainer[] {
+        return containers.map((container) => {
+            container.disableInteraction =
+                container.identifier.includes('/') || container.identifier === 'SYSTEM_CONTAINER';
+
+            return container;
+        });
+    }
+
     private notifyResult(
         response: DotActionBulkResult | DotContainer,
         failsInfo: DotBulkFailItem[],
         message: string
     ): void {
-        if ('fails' in response && failsInfo.length) {
+        if ('fails' in response && failsInfo?.length) {
             this.showErrorDialog({
                 ...response,
                 fails: failsInfo,
                 action: message
             });
-        } else {
+        } else if (message) {
             this.showToastNotification(message);
         }
 

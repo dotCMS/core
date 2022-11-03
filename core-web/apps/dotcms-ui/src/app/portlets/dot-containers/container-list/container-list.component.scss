@@ -13,6 +13,11 @@
     }
 }
 
+.container-listing ::ng-deep {
+    overflow-y: auto;
+    height: 100%;
+}
+
 dot-base-type-selector {
     margin-right: $spacing-3;
 }

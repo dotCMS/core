@@ -7,7 +7,11 @@ import { CoreWebService, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
 
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotActionBulkResult } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
-import { DotContainer } from '@dotcms/app/shared/models/container/dot-container.model';
+import {
+    DotContainer,
+    DotContainerEntity,
+    DotContainerPayload
+} from '@dotcms/app/shared/models/container/dot-container.model';
 
 export const CONTAINER_API_URL = '/api/v1/containers/';
 
@@ -28,22 +32,28 @@ export class DotContainersService {
      * @returns Observable<DotContainer[]>
      * @memberof DotContainersService
      */
-    get(): Observable<DotContainer[]> {
-        return this.request<DotContainer[]>({ url: CONTAINER_API_URL });
+    get(): Observable<DotContainerEntity[]> {
+        return this.request<DotContainerEntity[]>({ url: CONTAINER_API_URL });
     }
 
     /**
-     * Get the container, pass the version default working
-     *
+     * Get the container, pass the version default working, pass the includeContentType default false
      * @param {string} id
-     * @param {string} [version='working']
-     * @returns {Observable<DotContainer>}
+     * @param {string} version
+     * @param {boolean} includeContentType
+     * @returns {Observable<DotContainerEntity>}
      * @memberof DotContainersService
      */
-    getById(id: string, version = 'working'): Observable<DotContainer> {
-        const url = `${CONTAINER_API_URL}${version}?containerId=${id}`;
+    getById(
+        id: string,
+        version = 'working',
+        includeContentType = false
+    ): Observable<DotContainerEntity> {
+        const url = `${CONTAINER_API_URL}${version}?containerId=${id}${
+            includeContentType ? `&includeContentType=${includeContentType}` : ''
+        }`;
 
-        return this.request<DotContainer>({
+        return this.request<DotContainerEntity>({
             url
         });
     }
@@ -52,35 +62,45 @@ export class DotContainersService {
      * Get the container filtered by tittle or inode .
      *
      * @param {string} filter
-     * @returns {Observable<DotContainer>}
+     * @returns {Observable<DotContainerEntity>}
      * @memberof DotContainersService
      */
-    getFiltered(filter: string): Observable<DotContainer[]> {
+    getFiltered(filter: string): Observable<DotContainerEntity[]> {
         const url = `${CONTAINER_API_URL}?filter=${filter}`;
 
-        return this.request<DotContainer[]>({
+        return this.request<DotContainerEntity[]>({
             url
         });
     }
 
     /**
      * Creates a container
-     *
-     * @param {DotContainer} values
-     * @return Observable<DotContainer>
+     * @param {DotContainerRequest} values
+     * @returns Observable<DotContainer>
      * @memberof DotContainersService
      */
-    create(values: DotContainer): Observable<DotContainer> {
-        return this.request<DotContainer>({ method: 'POST', url: CONTAINER_API_URL, body: values });
+
+    create(values: DotContainerPayload): Observable<DotContainerEntity> {
+        return this.request<DotContainerEntity>({
+            method: 'POST',
+            url: CONTAINER_API_URL,
+            body: values
+        });
     }
 
     /**
      * Updates a container
+     *
+     * @param {DotContainerPayload} values
      * @returns Observable<DotContainer>
      * @memberof DotContainersService
      */
-    update(values: DotContainer): Observable<DotContainer> {
-        return this.request<DotContainer>({ method: 'PUT', url: CONTAINER_API_URL, body: values });
+    update(values: DotContainerPayload): Observable<DotContainerEntity> {
+        return this.request<DotContainerEntity>({
+            method: 'PUT',
+            url: CONTAINER_API_URL,
+            body: values
+        });
     }
 
     /**
@@ -89,8 +109,8 @@ export class DotContainersService {
      * @returns Observable<DotContainer>
      * @memberof DotContainersService
      */
-    saveAndPublish(values: DotContainer): Observable<DotContainer> {
-        return this.request<DotContainer>({
+    saveAndPublish(values: DotContainerEntity): Observable<DotContainerEntity> {
+        return this.request<DotContainerEntity>({
             method: 'PUT',
             url: `${CONTAINER_API_URL}_savepublish`,
             body: values
@@ -106,7 +126,7 @@ export class DotContainersService {
     delete(identifiers: string[]): Observable<DotActionBulkResult> {
         return this.request<DotActionBulkResult>({
             method: 'DELETE',
-            url: `${CONTAINER_API_URL}bulkdelete`,
+            url: `${CONTAINER_API_URL}_bulkdelete`,
             body: identifiers
         });
     }

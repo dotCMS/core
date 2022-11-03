@@ -9,11 +9,12 @@
         ></button>
     </div>
     <div *ngIf="isEditorVisible">
-        <label>{{ 'message.containers.create.pre_loop' | dm }}</label>
+        <label class="block field">{{ 'message.containers.create.pre_loop' | dm }}</label>
         <dot-textarea-content
-            #preLoop
+            [formControl]="loopControl"
             [show]="['code']"
-            formControlName="preLoop"
+            (blur)="onTouched()"
+            (input)="onTouched()"
             language="html"
         ></dot-textarea-content>
     </div>

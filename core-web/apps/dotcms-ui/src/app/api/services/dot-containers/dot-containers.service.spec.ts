@@ -8,7 +8,11 @@ import { DotContainersService, CONTAINER_API_URL } from './dot-containers.servic
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { DotActionBulkResult } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
 import { of } from 'rxjs';
-import { CONTAINER_SOURCE, DotContainer } from '@models/container/dot-container.model';
+import {
+    CONTAINER_SOURCE,
+    DotContainerEntity,
+    DotContainerPayload
+} from '@models/container/dot-container.model';
 
 const mockBulkResponseSuccess: DotActionBulkResult = {
     skippedCount: 0,
@@ -16,22 +20,25 @@ const mockBulkResponseSuccess: DotActionBulkResult = {
     fails: []
 };
 
-const mockContainer: DotContainer = {
-    archived: false,
-    categoryId: '6e07301c-e6d2-4c1f-9e8e-fcc4a31947d3',
-    deleted: false,
-    friendlyName: '',
-    identifier: '1234',
-    live: true,
-    name: 'movie',
-    parentPermissionable: {
-        hostname: 'default'
+const mockContainer: DotContainerEntity = {
+    container: {
+        archived: false,
+        categoryId: '6e07301c-e6d2-4c1f-9e8e-fcc4a31947d3',
+        deleted: false,
+        friendlyName: '',
+        identifier: '1234',
+        live: true,
+        name: 'movie',
+        parentPermissionable: {
+            hostname: 'default'
+        },
+        path: null,
+        source: CONTAINER_SOURCE.DB,
+        title: 'movie',
+        type: 'containers',
+        working: true
     },
-    path: null,
-    source: CONTAINER_SOURCE.DB,
-    title: 'movie',
-    type: 'containers',
-    working: true
+    containerStructures: []
 };
 
 describe('DotContainersService', () => {
@@ -63,7 +70,7 @@ describe('DotContainersService', () => {
     });
 
     it('should get a list of containers', () => {
-        service.get().subscribe((container: DotContainer[]) => {
+        service.get().subscribe((container: DotContainerEntity[]) => {
             expect(container).toEqual([mockContainer]);
         });
 
@@ -77,8 +84,8 @@ describe('DotContainersService', () => {
     });
 
     it('should get a container by id', () => {
-        service.getById('123').subscribe((container: DotContainer) => {
-            expect(container).toEqual(mockContainer);
+        service.getById('123').subscribe((containerEntity: DotContainerEntity) => {
+            expect(containerEntity).toEqual(mockContainer);
         });
 
         const req = httpMock.expectOne(`${CONTAINER_API_URL}working?containerId=123`);
@@ -86,12 +93,14 @@ describe('DotContainersService', () => {
         expect(req.request.method).toBe('GET');
 
         req.flush({
-            entity: mockContainer
+            entity: {
+                ...mockContainer
+            }
         });
     });
 
     it('should get a containers by filter', () => {
-        service.getFiltered('123').subscribe((container: DotContainer[]) => {
+        service.getFiltered('123').subscribe((container: DotContainerEntity[]) => {
             expect(container).toEqual([mockContainer]);
         });
 
@@ -107,17 +116,17 @@ describe('DotContainersService', () => {
     it('should post to create a container', () => {
         service
             .create({
-                name: '',
+                title: '',
                 friendlyName: ''
-            } as DotContainer)
-            .subscribe((container: DotContainer) => {
+            } as DotContainerPayload)
+            .subscribe((container: DotContainerEntity) => {
                 expect(container).toEqual(mockContainer);
             });
 
-        const req = httpMock.expectOne(CONTAINER_API_URL);
+        const req = httpMock.expectOne(`${CONTAINER_API_URL}`);
 
         expect(req.request.method).toBe('POST');
-        expect(req.request.body.name).toEqual('');
+        expect(req.request.body.title).toEqual('');
         expect(req.request.body.friendlyName).toEqual('');
 
         req.flush({
@@ -128,9 +137,9 @@ describe('DotContainersService', () => {
     it('should put to update a container', () => {
         service
             .update({
-                name: '',
+                title: '',
                 friendlyName: ''
-            } as DotContainer)
+            } as DotContainerPayload)
             .subscribe((container) => {
                 expect(container).toEqual(mockContainer);
             });
@@ -138,7 +147,7 @@ describe('DotContainersService', () => {
         const req = httpMock.expectOne(CONTAINER_API_URL);
 
         expect(req.request.method).toBe('PUT');
-        expect(req.request.body.name).toEqual('');
+        expect(req.request.body.title).toEqual('');
         expect(req.request.body.friendlyName).toEqual('');
 
         req.flush({
@@ -148,18 +157,18 @@ describe('DotContainersService', () => {
     it('should put to save and publish a container', () => {
         service
             .saveAndPublish({
-                name: '',
-                friendlyName: ''
-            } as DotContainer)
-            .subscribe((container: DotContainer) => {
+                container: { name: '', friendlyName: '' },
+                containerStructures: []
+            } as DotContainerEntity)
+            .subscribe((container: DotContainerEntity) => {
                 expect(container).toEqual(mockContainer);
             });
 
         const req = httpMock.expectOne(`${CONTAINER_API_URL}_savepublish`);
 
         expect(req.request.method).toBe('PUT');
-        expect(req.request.body.name).toEqual('');
-        expect(req.request.body.friendlyName).toEqual('');
+        expect(req.request.body.container.name).toEqual('');
+        expect(req.request.body.container.friendlyName).toEqual('');
 
         req.flush({
             entity: mockContainer
@@ -167,7 +176,7 @@ describe('DotContainersService', () => {
     });
     it('should delete a container', () => {
         service.delete(['testId01']).subscribe();
-        const req = httpMock.expectOne(`${CONTAINER_API_URL}bulkdelete`);
+        const req = httpMock.expectOne(`${CONTAINER_API_URL}_bulkdelete`);
 
         expect(req.request.method).toBe('DELETE');
         expect(req.request.body).toEqual(['testId01']);

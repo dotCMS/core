@@ -659,6 +659,7 @@ public class ContainerResource implements Serializable {
         Logger.debug(this,
                 () -> "Adding container. Request payload is : " + JsonUtil.getJsonStringFromObject(containerForm));
 
+        container.setCode(containerForm.getCode());
         container.setMaxContentlets(containerForm.getMaxContentlets());
         container.setNotes(containerForm.getNotes());
         container.setPreLoop(containerForm.getPreLoop());
@@ -721,6 +722,7 @@ public class ContainerResource implements Serializable {
         ActivityLogger.logInfo(this.getClass(), "Upate Container: " + containerForm.getIdentifier(),
                 "User " + user.getPrimaryKey() + " saved " + container.getTitle(), host.getHostname());
 
+        container.setCode(containerForm.getCode());
         container.setMaxContentlets(containerForm.getMaxContentlets());
         container.setNotes(containerForm.getNotes());
         container.setPreLoop(containerForm.getPreLoop());
