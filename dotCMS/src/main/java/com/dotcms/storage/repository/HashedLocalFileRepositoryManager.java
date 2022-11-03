@@ -1,5 +1,7 @@
 package com.dotcms.storage.repository;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import java.io.File;
 
 /**
@@ -8,6 +10,15 @@ import java.io.File;
  * @author jsanca
  */
 public class HashedLocalFileRepositoryManager extends  LocalFileRepositoryManager {
+
+    public HashedLocalFileRepositoryManager() {
+        super();
+    }
+
+    @VisibleForTesting
+    protected HashedLocalFileRepositoryManager(final String basePath) {
+        super(basePath);
+    }
 
     /**
      * If this receives f813463c714e009df1227f706e290e01, it is converted to
