@@ -11,7 +11,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 /**
- * Encapsulates the configuration for the Object Mapper on the Resources.
+ * Encapsulates the configuration for the Object Mapper on the Resources. 
  * @author jsanca
  */
 public class DotObjectMapperProvider {
@@ -48,7 +48,8 @@ public class DotObjectMapperProvider {
         result.registerModule(new Jdk8Module());
         result.registerModule(new JavaTimeModule());
         result.registerModule(new GuavaModule());
-        result.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        //TODO: commented by now to fix bug with date format in Templates 'Last Edit Date' field
+        //result.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         return result;
     }
 

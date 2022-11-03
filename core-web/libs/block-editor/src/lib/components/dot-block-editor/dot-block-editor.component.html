@@ -1,3 +1,11 @@
 <div class="editor-wrapper" [style]="customStyles">
-    <tiptap-editor [editor]="editor" [(ngModel)]="value"></tiptap-editor>
+    <tiptap-editor [editor]="editor" (keyup)="subject.next()"></tiptap-editor>
 </div>
+
+<dot-editor-count-bar
+    *ngIf="showCharData"
+    [characterCount]="characterCount"
+    [charLimit]="charLimit"
+    [readingTime]="readingTime"
+>
+</dot-editor-count-bar>

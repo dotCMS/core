@@ -562,5 +562,11 @@ public class TaskLocatorUtil {
 		ret.add(Task00050LoadAppsSecrets.class);
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
+	
+		//UT that were backported to LTS
+	public static List<Class<?>> getBackportedUpgradeTaskClasses() {
+		final List<Class<?>> ret = new ArrayList<Class<?>>();
+		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
+	}
 
 }

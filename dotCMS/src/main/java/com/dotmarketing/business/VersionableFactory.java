@@ -217,6 +217,18 @@ public abstract class VersionableFactory {
 
     protected abstract Optional<ContentletVersionInfo> findAnyContentletVersionInfo(String identifier) throws DotDataException;
 
+	/**
+	 * Return any version of the {@link com.dotmarketing.portlets.contentlet.model.Contentlet} no matter the
+	 * {@link com.dotmarketing.portlets.languagesmanager.model.Language} or the {@link com.dotcms.variant.model.Variant}
+	 *
+	 * @param identifier {@link com.dotmarketing.portlets.contentlet.model.Contentlet}'s Identifier that you are looking for
+	 * @param deleted If it is true then return just archived {@link com.dotmarketing.portlets.contentlet.model.Contentlet}.
+	 * @return
+	 * @throws DotDataException
+	 */
+	public abstract Optional<ContentletVersionInfo> findAnyContentletVersionInfo(final String identifier, final boolean deleted)
+			throws DotDataException;
+
     protected abstract List<ContentletVersionInfo> findAllContentletVersionInfos(String identifier)
         throws DotDataException, DotStateException ;
 

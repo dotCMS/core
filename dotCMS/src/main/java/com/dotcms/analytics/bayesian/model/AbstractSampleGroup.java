@@ -17,6 +17,6 @@ import java.util.Map;
 public interface AbstractSampleGroup {
 
     @JsonProperty("samples")
-    Map<String, List<AbstractSampleData>> samples();
+    Map<String, List<SampleData>> samples();
 
 }
