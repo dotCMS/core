@@ -1418,16 +1418,6 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 .getMultiTreesByVariant(page.getIdentifier(), variantB.name());
 
         assertEquals(4, multiTreesByVariant.size());
-
-        /*final List<String> multiTreeContentlets = multiTrees.stream()
-                .map(multiTree -> multiTree.getContentlet())
-                .collect(Collectors.toList());
-
-        assertEquals(3, multiTreeContentlets.size());
-        assertTrue(multiTreeContentlets.contains(defaultContentlet.getIdentifier()));
-        assertTrue(multiTreeContentlets.contains(newEnContentlet.getIdentifier()));
-        assertTrue(multiTreeContentlets.contains(variantBContentlet.getIdentifier()));
-        assertFalse(multiTreeContentlets.contains(variantAContentlet.getIdentifier()));*/
     }
 
     /**

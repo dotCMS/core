@@ -4,7 +4,6 @@ package com.dotmarketing.factories;
 import com.dotcms.variant.VariantAPI;
 
 import com.dotcms.variant.model.Variant;
-import com.dotmarketing.business.web.WebAPILocator;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
@@ -58,7 +57,6 @@ import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import org.jetbrains.annotations.NotNull;
 
 
 /**
@@ -268,7 +266,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         return loadObjectResults;
     }
 
-    private List<MultiTree> getMultiTreeByVariantWithoutFallback(String parentId, String variantName)
+    private List<MultiTree> getMultiTreeByVariantWithoutFallback(final String parentId, final String variantName)
             throws DotDataException {
 
         List<Map<String, Object>> loadObjectResults = new DotConnect().setSQL(SELECT_BY_ONE_PARENT)
@@ -380,7 +378,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     } // copyPersonalizationForPage.
 
     @Override
-    public List<MultiTree> copyVariantForPage (String pageId, String baseVariant, String newVariant) throws DotDataException{
+    public List<MultiTree> copyVariantForPage (final String pageId, final String baseVariant,
+            final String newVariant) throws DotDataException{
 
         List<MultiTree> multiTrees = this.getMultiTreeByVariantWithoutFallback(
                 pageId, baseVariant);
@@ -388,7 +387,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         if (UtilMethods.isSet(multiTrees)) {
 
             multiTrees = multiTrees.stream()
-                    .map(multiTree -> MultiTree.vary(multiTree, newVariant))
+                    .map(multiTree -> MultiTree.buildMultitreeWithVariant(multiTree, newVariant))
                     .collect(Collectors.toList());
             this.saveMultiTrees(multiTrees);
         }

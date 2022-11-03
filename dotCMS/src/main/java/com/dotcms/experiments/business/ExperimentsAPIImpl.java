@@ -57,7 +57,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import org.jetbrains.annotations.NotNull;
 
 public class ExperimentsAPIImpl implements ExperimentsAPI {
 
@@ -425,7 +424,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         return experimentVariant;
     }
 
-    @NotNull
     private String getVariantName(final String experimentId) throws DotDataException {
         final String variantNameBase = EXPERIMENT_VARIANT_NAME_PREFIX + shortyIdAPI.shortify(
                 experimentId)
