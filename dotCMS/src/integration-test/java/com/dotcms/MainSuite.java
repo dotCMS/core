@@ -94,6 +94,7 @@ import com.dotcms.security.multipart.ContentDispositionFileNameParserTest;
 import com.dotcms.security.multipart.SecureFileValidatorTest;
 import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
+import com.dotcms.storage.repository.HashedLocalFileRepositoryManagerTest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
 import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotcms.variant.VariantAPITest;
@@ -602,7 +603,8 @@ import org.junit.runners.Suite.SuiteClasses;
         BayesianAPIImplTest.class,
         ContentletDependenciesTest.class,
         UtilMethodsITest.class,
-        Task220912UpdateCorrectShowOnMenuPropertyTest.class
+        Task220912UpdateCorrectShowOnMenuPropertyTest.class,
+        HashedLocalFileRepositoryManagerTest.class
 })
 public class MainSuite {
 
