@@ -219,34 +219,34 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
         return [
             {
                 fieldName: 'categoryName',
-                header: this.dotMessageService.get('message.categories.fieldName.Name'),
+                header: this.dotMessageService.get('message.category.fieldName.Name'),
                 width: '50%',
                 sortable: true
             },
             {
                 fieldName: 'key',
-                header: this.dotMessageService.get('message.categories.fieldName.Key'),
+                header: this.dotMessageService.get('message.category.fieldName.Key'),
                 width: '20%',
                 sortable: true
             },
             {
                 fieldName: 'categoryVelocityVarName',
                 header: this.dotMessageService.get(
-                    'message.categories.fieldName.CategoryVelocityVarName'
+                    'message.category.fieldName.CategoryVelocityVarName'
                 ),
                 width: '20%',
                 sortable: true
             },
             {
                 fieldName: 'childrens',
-                header: this.dotMessageService.get('message.categories.fieldName.childrens'),
+                header: this.dotMessageService.get('message.category.fieldName.Childrens'),
                 width: '20%',
                 sortable: true
             },
             {
                 fieldName: 'sortOrder',
                 width: '5%',
-                header: this.dotMessageService.get('message.categories.fieldName.SortOrder'),
+                header: this.dotMessageService.get('message.category.fieldName.SortOrder'),
                 sortable: true
             },
             {

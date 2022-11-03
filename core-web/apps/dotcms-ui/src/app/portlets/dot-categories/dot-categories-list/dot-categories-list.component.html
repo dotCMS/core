@@ -51,28 +51,28 @@
                         <div class="p-inputgroup searchBox">
                             <span class="p-inputgroup-addon"><i class="pi pi-search"></i></span>
                             <input
+                                [placeholder]="'message.category.search' | dm"
                                 (input)="dataTable.filterGlobal($event.target.value, 'contains')"
                                 type="text"
                                 pInputText
-                                placeholder="Type to filter"
                             />
                         </div>
                     </div>
                     <div>
                         <button
                             class="p-button-outlined"
+                            [label]="'message.category.import' || dm"
                             pButton
                             pRipple
                             type="button"
-                            label="IMPORT"
                             icon="pi pi-upload"
                         ></button>
                         <button
                             class="p-button-outlined mx-4"
+                            [label]="'message.category.export' || dm"
                             pButton
                             pRipple
                             type="button"
-                            label="EXPORT"
                             icon="pi pi-download"
                         ></button>
                         <button
@@ -86,7 +86,7 @@
                 </div>
             </ng-template>
             <ng-template pTemplate="header" let-columns>
-                <tr>
+                <tr data-testid="testHeadTableRow">
                     <th class="tableHeader" style="width: 3rem"></th>
                     <th class="tableHeader" style="width: 3rem">
                         <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
@@ -106,6 +106,7 @@
                     [pReorderableRow]="index"
                     [pSelectableRow]="category"
                     (click)="addBreadCrumb(category)"
+                    data-testid="testTableRow"
                 >
                     <td>
                         <span class="pi pi-bars" pReorderableRowHandle></span>
@@ -115,7 +116,7 @@
                     </td>
                     <td *ngFor="let col of columns">
                         <ng-container *ngIf="col.fieldName === 'sortOrder'; else Actions">
-                            <p-inplace #editText styleClass="sortOrder">
+                            <p-inplace #editText styleClass="listing__categories__sortOrder">
                                 <ng-template pTemplate="content">
                                     <span class="p-input-icon-right">
                                         <i class="pi pi-times" (click)="editText.deactivate()"></i>

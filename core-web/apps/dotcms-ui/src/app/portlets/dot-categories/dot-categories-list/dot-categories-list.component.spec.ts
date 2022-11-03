@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { By } from '@angular/platform-browser';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { TableModule } from 'primeng/table';
 import { Component, DebugElement } from '@angular/core';
 import { DotCategoriesListComponent } from './dot-categories-list.component';
@@ -24,6 +24,8 @@ import { PaginatorModule } from 'primeng/paginator';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
+import { of } from 'rxjs';
+import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -32,13 +34,40 @@ import { InputNumberModule } from 'primeng/inputnumber';
 class TestHostComponent {}
 
 fdescribe('DotCategoriesListingTableComponent', () => {
-    // let comp: DotCategoriesListComponent;
     let hostFixture: ComponentFixture<TestHostComponent>;
-    // let hostComponent: TestHostComponent;
     let de: DebugElement;
-    // let el: HTMLElement;
-    // let coreWebService: CoreWebService;
-
+    let el: HTMLElement;
+    let coreWebService: CoreWebService;
+    const items: DotCategory[] = [
+        {
+            categoryId: '9e882f2a-ada2-47e3-a441-bdf9a7254216',
+            categoryName: 'Age or Gender',
+            categoryVelocityVarName: 'ageOrGender',
+            identifier: '1212',
+            inode: '9e882f2a-ada2-47e3-a441-bdf9a7254216',
+            key: 'ageOrGender',
+            live: false,
+            sortOrder: 1,
+            working: false,
+            name: 'dsdsd',
+            friendlyName: 'dfdf',
+            type: 'ASD'
+        },
+        {
+            categoryId: '9e882f2a-ada2-47e3-a441-bdf9a7254216',
+            categoryName: 'Age or Gender',
+            categoryVelocityVarName: 'ageOrGender',
+            identifier: '1212',
+            inode: '9e882f2a-ada2-47e3-a441-bdf9a7254216',
+            key: 'ageOrGender',
+            live: false,
+            sortOrder: 1,
+            working: false,
+            name: 'dsdsd',
+            friendlyName: 'dfdf',
+            type: 'ASD'
+        }
+    ];
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [DotCategoriesListComponent, TestHostComponent],
@@ -67,17 +96,50 @@ fdescribe('DotCategoriesListingTableComponent', () => {
         });
 
         hostFixture = TestBed.createComponent(TestHostComponent);
-        // hostComponent = hostFixture.componentInstance;
-        // coreWebService = TestBed.inject(CoreWebService);
-        // comp = hostFixture.debugElement.query(By.css('dot-categories-list')).componentInstance;
-        de = hostFixture.debugElement.query(By.css('p-table'));
-        // el = de.nativeElement;
+        coreWebService = TestBed.inject(CoreWebService);
     });
 
-    it('should have default attributes', () => {
+    it('should have default attributes', fakeAsync(() => {
+        hostFixture.detectChanges();
+        tick();
+        hostFixture.detectChanges();
+        de = hostFixture.debugElement.query(By.css('p-table'));
         expect(de.componentInstance.responsiveLayout).toBe('scroll');
         expect(de.componentInstance.lazy).toBe(true);
         expect(de.componentInstance.paginator).toBe(true);
         expect(de.componentInstance.reorderableColumns).toBe(true);
-    });
+        expect(de.componentInstance.rows).toBe(40);
+    }));
+
+    it('renderer basic datatable component', fakeAsync(() => {
+        setRequestSpy(items);
+
+        hostFixture.detectChanges();
+        tick();
+        hostFixture.detectChanges();
+        de = hostFixture.debugElement.query(By.css('p-table'));
+        el = de.nativeElement;
+        const rows = el.querySelectorAll('[data-testid="testTableRow"]');
+        expect(items.length).toEqual(rows.length);
+
+        const headRow = el.querySelector('[data-testid="testHeadTableRow"]');
+        const headers = headRow.querySelectorAll('th');
+        expect(8).toEqual(headers.length);
+
+        headers.forEach((_col, index) => {
+            const sortableIcon = headers[index].querySelector('p-sortIcon');
+            index === 0 || index === headers.length - 1
+                ? expect(sortableIcon).toBeNull()
+                : expect(sortableIcon).toBeDefined();
+        });
+    }));
+
+    function setRequestSpy(response: any): void {
+        spyOn<any>(coreWebService, 'requestView').and.returnValue(
+            of({
+                entity: response,
+                header: (type) => (type === 'Link' ? 'test;test=test' : '40')
+            })
+        );
+    }
 });
