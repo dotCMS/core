@@ -48,7 +48,7 @@ public class StripedLockImpl<K> implements DotKeyLockManager<K> {
     }
 
     /**
-     * @inheritDoc
+     * `@inheritDoc`
      */
     @Override
     public <R> R tryLock(final K key, final ReturnableDelegate<R> callback) throws Throwable {
