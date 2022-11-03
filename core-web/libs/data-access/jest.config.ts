@@ -5,9 +5,9 @@ export default {
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
     globals: {
         'ts-jest': {
+            isolatedModules: true, // Prevent type checking in tests and deps
             tsconfig: '<rootDir>/tsconfig.spec.json',
-            stringifyContentPathRegex: '\\.(html|svg)$',
-            diagnostics: false // Prevent type checking in tests and deps
+            stringifyContentPathRegex: '\\.(html|svg)$'
         }
     },
     coverageDirectory: '../../coverage/libs/data-access',
