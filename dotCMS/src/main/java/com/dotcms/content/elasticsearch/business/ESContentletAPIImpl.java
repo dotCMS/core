@@ -6478,8 +6478,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }else if(value instanceof String){
                 if(((String) value).trim().length()>0) {
                     try {
-                        contentlet.setDateProperty(field.getVelocityVarName(),
-                                DateUtil.convertDate((String)value, dateFormats));
+                        final String trimmedValue = ((String) value).trim();
+                        if(trimmedValue.equals("+0000") || trimmedValue.equals("00:00 +0000")) {
+                            contentlet.setDateProperty(field.getVelocityVarName(),
+                                    null);
+                        } else {
+                            contentlet.setDateProperty(field.getVelocityVarName(),
+                                    DateUtil.convertDate((String) value, dateFormats));
+                        }
                     }catch (Exception e) {
                         throw new DotContentletStateException("Unable to convert string to date " + value);
                     }
