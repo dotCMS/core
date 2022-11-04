@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotCategoriesCreateEditComponent } from './dot-categories-create-edit.component';
 
 import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
-import { DotCategoriesListModule } from '../dot-categories-list/dot-categories-list.module';
+import { DotCategoriesListingModule } from '../dot-categories-list/dot-categories-list.module';
 import { TabViewModule } from 'primeng/tabview';
 
 @Pipe({ name: 'dm' })
@@ -19,7 +19,7 @@ describe('CategoriesCreateEditComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [DotCategoriesCreateEditComponent, MockPipe],
-            imports: [DotPortletBaseModule, DotCategoriesListModule, TabViewModule]
+            imports: [DotPortletBaseModule, DotCategoriesListingModule, TabViewModule]
         }).compileComponents();
 
         fixture = TestBed.createComponent(DotCategoriesCreateEditComponent);

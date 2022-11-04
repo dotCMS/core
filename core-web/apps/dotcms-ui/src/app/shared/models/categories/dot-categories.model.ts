@@ -6,6 +6,9 @@ export enum CATEGORY_SOURCE {
 export interface DotCategory {
     categoryId?: string;
     categoryName: string;
+    key: string;
+    sortOrder: number;
+    categoryVelocityVarName: string;
     deleted?: boolean;
     friendlyName?: string;
     path?: string;

@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 dot-portlet-base {
-    overflow-x: scroll;
+    overflow-y: scroll;
 }
 
 .category_listing ::ng-deep {
@@ -10,11 +10,15 @@ dot-portlet-base {
         padding-bottom: $spacing-4;
     }
 
-    .p-inputgroup-addon {
-        border-right: none;
+    .category_listing__sortOrder__field {
+        width: 60px;
+        border: none;
     }
 
-    .p-inputtext {
-        border-left: none;
+    .category_listing-datatable__empty {
+        display: flex;
+        justify-content: center;
+        font-size: $spacing-9;
+        font-size: $font-size-xx-large;
     }
 }

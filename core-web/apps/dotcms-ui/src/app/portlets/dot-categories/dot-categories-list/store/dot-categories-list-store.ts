@@ -16,6 +16,7 @@ export interface DotCategoriesListState {
     selectedCategories: DotCategory[];
     tableColumns: DataTableColumn[];
     categories: DotCategory[];
+    categoryBreadCrumbs: MenuItem[];
     paginationPerPage: number;
     currentPage: number;
     totalRecords: number;
@@ -27,7 +28,7 @@ export interface DotCategoriesListState {
 export class DotCategoriesListStore extends ComponentStore<DotCategoriesListState> {
     constructor(
         private dotMessageService: DotMessageService,
-        public categoryService: DotCategoriesService
+        private categoryService: DotCategoriesService
     ) {
         super();
         this.setState({
@@ -36,6 +37,7 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
             tableColumns: this.getCategoriesColumns(),
             selectedCategories: [],
             categories: [],
+            categoryBreadCrumbs: [],
             currentPage: this.categoryService.currentPage,
             paginationPerPage: this.categoryService.paginationPerPage,
             totalRecords: this.categoryService.totalRecords,
@@ -46,9 +48,22 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
     readonly vm$ = this.select((state: DotCategoriesListState) => state);
 
     /**
+     * Get categories breadcrumbs
+     * @memberof DotCategoriesListStore
+     */
+    readonly categoryBreadCrumbSselector$ = this.select(
+        ({ categoryBreadCrumbs }: DotCategoriesListState) => {
+            return {
+                categoryBreadCrumbs
+            };
+        }
+    );
+
+    /**
      * A function that updates the state of the store.
      * @param state DotCategoryListState
-     * @param selectedCategories DotCategory[]
+     * @param selectedCategories DotCategory
+     * @memberof DotCategoriesListStore
      */
     readonly updateSelectedCategories = this.updater<DotCategory[]>(
         (state: DotCategoriesListState, selectedCategories: DotCategory[]) => {
@@ -62,6 +77,7 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
     /** A function that updates the state of the store.
      * @param state DotCategoryListState
      * @param categories DotCategory[]
+     * @memberof DotCategoriesListStore
      */
     readonly setCategories = this.updater<DotCategory[]>(
         (state: DotCategoriesListState, categories: DotCategory[]) => {
@@ -77,11 +93,45 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
         }
     );
 
+    /**
+     * Add cateogry in breadcrumb
+     * @memberof DotCategoriesListStore
+     */
+    readonly addCategoriesBreadCrumb = this.updater<MenuItem>(
+        (state: DotCategoriesListState, categoryBreadCrumb: MenuItem) => {
+            return {
+                ...state,
+                categoryBreadCrumbs: [
+                    ...state.categoryBreadCrumbs,
+                    { ...categoryBreadCrumb, tabindex: state.categoryBreadCrumbs.length.toString() }
+                ]
+            };
+        }
+    );
+    /**
+     * Update categories in store
+     * @memberof DotCategoriesListStore
+     */
+    readonly updateCategoriesBreadCrumb = this.updater<MenuItem>(
+        (state: DotCategoriesListState, categoryBreadCrumb: MenuItem) => {
+            let { categoryBreadCrumbs } = this.get();
+            categoryBreadCrumbs = categoryBreadCrumbs.filter(
+                ({ tabindex }: MenuItem) => Number(tabindex) <= Number(categoryBreadCrumb.tabindex)
+            );
+
+            return {
+                ...state,
+                categoryBreadCrumbs: categoryBreadCrumbs
+            };
+        }
+    );
+
     // EFFECTS
 
     /**
      * > This function returns an observable of an array of DotCategory objects
      * @returns Observable<DotCategory[]>
+     * @memberof DotCategoriesListStore
      */
 
     readonly getCategories = this.effect((filters: Observable<LazyLoadEvent>) => {
@@ -89,6 +139,25 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
             map((filters: LazyLoadEvent) => {
                 this.categoryService
                     .getCategories(filters)
+                    .pipe(take(1))
+                    .subscribe((items: DotCategory[]) => {
+                        this.setCategories(items);
+                    });
+            })
+        );
+    });
+
+    /**
+     * > This function returns an observable of an array of DotCategory objects
+     * @returns Observable<DotCategory[]>
+     * @memberof DotCategoriesListStore
+     */
+
+    readonly getChildrenCategories = this.effect((filters: Observable<LazyLoadEvent>) => {
+        return filters.pipe(
+            map((filters: LazyLoadEvent) => {
+                this.categoryService
+                    .getChildrenCategories(filters)
                     .pipe(take(1))
                     .subscribe((items: DotCategory[]) => {
                         this.setCategories(items);
@@ -150,34 +219,32 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
         return [
             {
                 fieldName: 'categoryName',
-                header: this.dotMessageService.get('message.categories.fieldName.Name'),
-                width: '50%',
+                header: this.dotMessageService.get('message.category.fieldName.Name'),
+                width: '30%',
                 sortable: true
             },
             {
                 fieldName: 'key',
-                header: this.dotMessageService.get('message.categories.fieldName.Key'),
+                header: this.dotMessageService.get('message.category.fieldName.Key'),
                 width: '20%',
                 sortable: true
             },
             {
                 fieldName: 'categoryVelocityVarName',
-                header: this.dotMessageService.get(
-                    'message.categories.fieldName.CategoryVelocityVarName'
-                ),
+                header: this.dotMessageService.get('message.category.fieldName.Variable'),
                 width: '20%',
                 sortable: true
             },
             {
                 fieldName: 'childrens',
-                header: this.dotMessageService.get('message.categories.fieldName.childrens'),
-                width: '20%',
+                header: this.dotMessageService.get('message.category.fieldName.Childrens'),
+                width: '15%',
                 sortable: true
             },
             {
                 fieldName: 'sortOrder',
-                width: '5%',
-                header: this.dotMessageService.get('message.categories.fieldName.SortOrder'),
+                width: '10%',
+                header: this.dotMessageService.get('message.category.fieldName.Order'),
                 sortable: true
             },
             {
