@@ -28,7 +28,7 @@ export interface DotCategoriesListState {
 export class DotCategoriesListStore extends ComponentStore<DotCategoriesListState> {
     constructor(
         private dotMessageService: DotMessageService,
-        public categoryService: DotCategoriesService
+        private categoryService: DotCategoriesService
     ) {
         super();
         this.setState({
@@ -220,7 +220,7 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
             {
                 fieldName: 'categoryName',
                 header: this.dotMessageService.get('message.category.fieldName.Name'),
-                width: '50%',
+                width: '30%',
                 sortable: true
             },
             {
@@ -231,22 +231,20 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
             },
             {
                 fieldName: 'categoryVelocityVarName',
-                header: this.dotMessageService.get(
-                    'message.category.fieldName.CategoryVelocityVarName'
-                ),
+                header: this.dotMessageService.get('message.category.fieldName.Variable'),
                 width: '20%',
                 sortable: true
             },
             {
                 fieldName: 'childrens',
                 header: this.dotMessageService.get('message.category.fieldName.Childrens'),
-                width: '20%',
+                width: '15%',
                 sortable: true
             },
             {
                 fieldName: 'sortOrder',
-                width: '5%',
-                header: this.dotMessageService.get('message.category.fieldName.SortOrder'),
+                width: '10%',
+                header: this.dotMessageService.get('message.category.fieldName.Order'),
                 sortable: true
             },
             {

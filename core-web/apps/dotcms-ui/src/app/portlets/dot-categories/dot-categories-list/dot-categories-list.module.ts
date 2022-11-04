@@ -15,6 +15,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { CheckboxModule } from 'primeng/checkbox';
 import { DotCategoriesService } from '@dotcms/app/api/services/dot-categories/dot-categories.service';
+import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
 
 @NgModule({
     declarations: [DotCategoriesListComponent],
@@ -32,7 +33,8 @@ import { DotCategoriesService } from '@dotcms/app/api/services/dot-categories/do
         DotActionMenuButtonModule,
         DotMessagePipeModule,
         CheckboxModule,
-        BreadcrumbModule
+        BreadcrumbModule,
+        DotEmptyStateModule
     ],
     providers: [DotCategoriesService]
 })

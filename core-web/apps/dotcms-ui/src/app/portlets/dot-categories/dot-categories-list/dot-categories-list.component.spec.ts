@@ -26,6 +26,9 @@ import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { of } from 'rxjs';
 import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
+import { MockDotMessageService } from '@dotcms/app/test/dot-message-service.mock';
+import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
+import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -33,7 +36,7 @@ import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-catego
 })
 class TestHostComponent {}
 
-fdescribe('DotCategoriesListingTableComponent', () => {
+describe('DotCategoriesListingTableComponent', () => {
     let hostFixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
     let el: HTMLElement;
@@ -69,6 +72,14 @@ fdescribe('DotCategoriesListingTableComponent', () => {
         }
     ];
     beforeEach(() => {
+        const messageServiceMock = new MockDotMessageService({
+            'message.category.search': 'Type to Filter',
+            'No-Results-Found': 'No Results Found',
+            'message.category.empty.title': 'Your category list is empty',
+            'message.category.empty.content':
+                'You have not added anything yet, start by clicking the button below',
+            'message.category.empty.button.label': 'Add New Category'
+        });
         TestBed.configureTestingModule({
             declarations: [DotCategoriesListComponent, TestHostComponent],
             imports: [
@@ -87,10 +98,12 @@ fdescribe('DotCategoriesListingTableComponent', () => {
                 InputNumberModule,
                 DotActionMenuButtonModule,
                 DotMessagePipeModule,
-                CheckboxModule
+                CheckboxModule,
+                DotEmptyStateModule
             ],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
+                { provide: DotMessageService, useValue: messageServiceMock },
                 DotCategoriesService
             ]
         });
@@ -104,7 +117,6 @@ fdescribe('DotCategoriesListingTableComponent', () => {
         tick();
         hostFixture.detectChanges();
         de = hostFixture.debugElement.query(By.css('p-table'));
-        expect(de.componentInstance.responsiveLayout).toBe('scroll');
         expect(de.componentInstance.lazy).toBe(true);
         expect(de.componentInstance.paginator).toBe(true);
         expect(de.componentInstance.reorderableColumns).toBe(true);
@@ -119,10 +131,10 @@ fdescribe('DotCategoriesListingTableComponent', () => {
         hostFixture.detectChanges();
         de = hostFixture.debugElement.query(By.css('p-table'));
         el = de.nativeElement;
-        const rows = el.querySelectorAll('[data-testid="testTableRow"]');
+        const rows = el.querySelectorAll('[data-testId="testTableRow"]');
         expect(items.length).toEqual(rows.length);
 
-        const headRow = el.querySelector('[data-testid="testHeadTableRow"]');
+        const headRow = el.querySelector('[data-testId="testHeadTableRow"]');
         const headers = headRow.querySelectorAll('th');
         expect(8).toEqual(headers.length);
 
@@ -132,6 +144,16 @@ fdescribe('DotCategoriesListingTableComponent', () => {
                 ? expect(sortableIcon).toBeNull()
                 : expect(sortableIcon).toBeDefined();
         });
+    }));
+
+    it('should renders the dot empty state component if items array is empty', fakeAsync(() => {
+        setRequestSpy([]);
+        hostFixture.detectChanges();
+        tick();
+        hostFixture.detectChanges();
+        de = hostFixture.debugElement.query(By.css('p-table'));
+        const emptyState = de.query(By.css('[data-testid="title"]'));
+        expect(emptyState.nativeElement.innerText).toBe('Your category list is empty');
     }));
 
     function setRequestSpy(response: any): void {

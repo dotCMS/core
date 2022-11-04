@@ -1,4 +1,4 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component, ElementRef, ViewChild } from '@angular/core';
 import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
 import { LazyLoadEvent } from 'primeng/api';
 import { Table } from 'primeng/table';
@@ -15,9 +15,11 @@ export class DotCategoriesListComponent {
     vm$: Observable<DotCategoriesListState> = this.store.vm$;
     selectedCategories: DotCategory[] = [];
     breadCrumbHome = { icon: 'pi pi-home' };
+    isContentFiltered = false;
     @ViewChild('dataTable')
     dataTable: Table;
-
+    @ViewChild('gf')
+    globalSearch: ElementRef;
     constructor(private store: DotCategoriesListStore) {}
 
     /**
@@ -39,6 +41,7 @@ export class DotCategoriesListComponent {
     updateBreadCrumb(event) {
         const { item } = event;
         this.store.updateCategoriesBreadCrumb(item);
+        // for getting child categories need to pass category ID
         this.dataTable.filter(item.id || null, 'inode', null);
         this.dataTable.filter(null, 'global', null);
     }
@@ -52,13 +55,23 @@ export class DotCategoriesListComponent {
     }
 
     /**
+     * Check if display results are filtered.
+     * @memberof DotCategoriesListComponent
+     */
+    handleFilter(): void {
+        this.isContentFiltered = Object.prototype.hasOwnProperty.call(
+            this.dataTable.filters,
+            'global'
+        );
+    }
+
+    /**
      * get records according to pagination
      * @param {LazyLoadEvent} event
      * @memberof DotCategoriesListComponent
      */
     loadCategories(event: LazyLoadEvent) {
-        const lazyLoadEvent = this.dataTable?.createLazyLoadMetadata();
-        if (lazyLoadEvent?.filters?.inode) {
+        if (event?.filters?.inode) {
             this.store.getChildrenCategories(event);
         } else {
             this.store.getCategories(event);

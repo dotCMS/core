@@ -10,24 +10,15 @@ dot-portlet-base {
         padding-bottom: $spacing-4;
     }
 
-    .p-inputgroup-addon {
-        border-right: none;
+    .category_listing__sortOrder__field {
+        width: 60px;
+        border: none;
     }
 
-    .p-inputtext {
-        border-left: none;
-    }
-
-    .link-button {
-        color: var(--color-sec);
-        :hover {
-            color: var(--color-sec);
-        }
-        :enabled {
-            color: var(--color-sec);
-        }
-    }
-    .link-button:enabled:hover {
-        color: var(--color-sec);
+    .category_listing-datatable__empty {
+        display: flex;
+        justify-content: center;
+        font-size: $spacing-9;
+        font-size: $font-size-xx-large;
     }
 }
