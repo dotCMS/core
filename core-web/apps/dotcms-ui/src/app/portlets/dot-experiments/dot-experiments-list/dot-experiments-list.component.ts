@@ -9,7 +9,8 @@ import {
 } from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store.service';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 import { DotExperimentsCreateComponent } from '@portlets/dot-experiments/dot-experiments-create/dot-experiments-create.component';
-import { delay, take } from 'rxjs/operators';
+import { take } from 'rxjs/operators';
+import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
     selector: 'dot-experiments-list',
@@ -29,7 +30,9 @@ export class DotExperimentsListComponent implements OnInit {
 
     constructor(
         private readonly dotExperimentsListStore: DotExperimentsListStore,
-        private readonly dotMessagePipe: DotMessagePipe
+        private readonly dotMessagePipe: DotMessagePipe,
+        private readonly route: ActivatedRoute,
+        private readonly router: Router
     ) {}
 
     ngOnInit() {
@@ -58,7 +61,7 @@ export class DotExperimentsListComponent implements OnInit {
         const componentRef = viewContainerRef.createComponent<DotExperimentsCreateComponent>(
             DotExperimentsCreateComponent
         );
-        componentRef.instance.closedSidebar.pipe(delay(500), take(1)).subscribe(() => {
+        componentRef.instance.closedSidebar.pipe(take(1)).subscribe(() => {
             viewContainerRef.clear();
         });
     }
@@ -81,5 +84,14 @@ export class DotExperimentsListComponent implements OnInit {
      */
     deleteExperiment(experiment: DotExperiment) {
         this.dotExperimentsListStore.deleteExperiment(experiment);
+    }
+
+    /**
+     * Back to Edit Page / Content
+     * @returns void
+     * @memberof DotExperimentsShellComponent
+     */
+    goBack() {
+        this.router.navigate(['edit-page/content'], { queryParamsHandling: 'preserve' });
     }
 }

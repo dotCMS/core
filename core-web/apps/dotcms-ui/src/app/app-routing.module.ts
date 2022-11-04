@@ -1,4 +1,4 @@
-import { Routes, RouterModule, RouteReuseStrategy } from '@angular/router';
+import { RouteReuseStrategy, RouterModule, Routes, TitleStrategy } from '@angular/router';
 import { NgModule } from '@angular/core';
 import { MainCoreLegacyComponent } from '@components/main-core-legacy/main-core-legacy-component';
 import { MainComponentLegacyComponent } from '@components/main-legacy/main-legacy.component';
@@ -14,6 +14,7 @@ import { DotLoginPageComponent } from '@components/login/main/dot-login-page.com
 import { DotLoginPageResolver } from '@components/login/dot-login-page-resolver.service';
 import { DotIframePortletLegacyResolver } from '@components/_common/iframe/service/dot-iframe-porlet-legacy-resolver.service';
 import { DotCustomReuseStrategyService } from '@shared/dot-custom-reuse-strategy/dot-custom-reuse-strategy.service';
+import { DotTemplatePageTitleStrategy } from '@shared/services/dot-title-strategy.service';
 
 const PORTLETS_ANGULAR = [
     {
@@ -200,6 +201,12 @@ const appRoutes: Routes = [
             onSameUrlNavigation: 'reload'
         })
     ],
-    providers: [{ provide: RouteReuseStrategy, useClass: DotCustomReuseStrategyService }]
+    providers: [
+        { provide: RouteReuseStrategy, useClass: DotCustomReuseStrategyService },
+        {
+            provide: TitleStrategy,
+            useClass: DotTemplatePageTitleStrategy
+        }
+    ]
 })
 export class AppRoutingModule {}

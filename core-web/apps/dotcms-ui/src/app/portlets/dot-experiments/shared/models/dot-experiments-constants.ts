@@ -1,3 +1,5 @@
+export const MAX_VARIANTS_ALLOWED = 3;
+
 export enum TrafficProportionTypes {
     SPLIT_EVENLY = 'SPLIT_EVENLY',
     CUSTOM_PERCENTAGES = 'CUSTOM_PERCENTAGES'

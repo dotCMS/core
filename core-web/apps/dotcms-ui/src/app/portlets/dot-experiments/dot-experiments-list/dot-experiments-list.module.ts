@@ -25,9 +25,10 @@ import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-butto
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotExperimentsListRoutingModule } from '@portlets/dot-experiments/dot-experiments-list/dot-experiments-list-routing.module';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { DotExperimentsListStore } from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store.service';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotExperimentsListStore } from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store.service';
+import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 
 @NgModule({
     declarations: [
@@ -47,9 +48,10 @@ import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module
         DotActionMenuButtonModule,
         UiDotIconButtonModule,
         DotMessagePipeModule,
-        DotDynamicDirective,
+        DotExperimentsUiHeaderComponent,
 
         // PrimeNG
+        DotDynamicDirective,
         SkeletonModule,
         ButtonModule,
         MultiSelectModule,
