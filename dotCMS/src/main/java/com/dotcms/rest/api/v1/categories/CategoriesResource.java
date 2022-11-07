@@ -16,6 +16,7 @@ import com.dotcms.util.CloseUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.CategoriesPaginator;
+import com.dotcms.util.pagination.CategoryListDTOPaginator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -31,6 +32,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -49,6 +51,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -63,11 +66,13 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import org.apache.commons.beanutils.BeanUtils;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.FormDataParam;
+import org.glassfish.jersey.message.internal.OutboundJaxrsResponse;
 import org.glassfish.jersey.server.JSONP;
 
 /**
@@ -79,6 +84,7 @@ public class CategoriesResource {
 
     private final WebResource webResource;
     private final PaginationUtil paginationUtil;
+    private final PaginationUtil extendedPaginationUtil;
 
     private final CategoryAPI categoryAPI;
     private final VersionableAPI versionableAPI;
@@ -90,6 +96,7 @@ public class CategoriesResource {
 
     public CategoriesResource() {
         this(new WebResource(), new PaginationUtil(new CategoriesPaginator()),
+                new PaginationUtil(new CategoryListDTOPaginator()),
                 APILocator.getCategoryAPI(),
                 APILocator.getVersionableAPI(),
                 WebAPILocator.getHostWebAPI(),
@@ -99,11 +106,13 @@ public class CategoriesResource {
 
     @VisibleForTesting
     public CategoriesResource(final WebResource webresource, final PaginationUtil paginationUtil,
+            final PaginationUtil extendedPaginationUtil,
             final CategoryAPI categoryAPI, final VersionableAPI versionableAPI,
             final HostWebAPI hostWebAPI, final PermissionAPI permissionAPI,
             final CategoryHelper categoryHelper) {
         this.webResource = webresource;
         this.paginationUtil = paginationUtil;
+        this.extendedPaginationUtil = extendedPaginationUtil;
         this.categoryAPI = categoryAPI;
         this.versionableAPI = versionableAPI;
         this.hostWebAPI = hostWebAPI;
@@ -111,6 +120,29 @@ public class CategoriesResource {
         this.categoryHelper = new CategoryHelper(categoryAPI);
     }
 
+    /**
+     * Returns a response of ResponseEntityView with PaginatedArrayList of categories
+     * syntax:.
+     * <p>
+     * Url syntax:
+     * api/v1/categories?filter=filter-string&page=page-number&per_page=per-page&orderby=order-field-name&direction=order-direction&showChildrenCount=true
+     * <p>
+     * where:
+     *
+     * <ul>
+     * <li>filter-string: just return Category whose content this pattern into its name</li>
+     * <li>page: page to return</li>
+     * <li>per_page: limit of items to return</li>
+     * <li>ordeby: field to order by</li>
+     * <li>direction: asc for upward order and desc for downward order</li>
+     * <li>showChildrenCount: true for including children categories count and false to exclude it</li>
+     * </ul>
+     * <p>
+     * Url example: /api/v1/categories?filter=&page=0&per_page=5&ordeby=category_name&direction=ASC&showChildrenCount=true
+     *
+     * @param httpRequest
+     * @return
+     */
     @GET
     @JSONP
     @NoCache
@@ -121,7 +153,8 @@ public class CategoriesResource {
             @QueryParam(PaginationUtil.PAGE) final int page,
             @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
             @DefaultValue("category_name") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
-            @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction) {
+            @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
+            @QueryParam("showChildrenCount") final boolean showChildrenCount) {
 
         final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true,
                 null);
@@ -134,7 +167,7 @@ public class CategoriesResource {
                 page, perPage));
 
         try {
-            response = this.paginationUtil.getPage(httpRequest, user, filter, page, perPage,orderBy, direction);
+           response = showChildrenCount == false ?  this.paginationUtil.getPage(httpRequest, user, filter, page, perPage) : this.extendedPaginationUtil.getPage(httpRequest, user, filter, page, perPage);
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
