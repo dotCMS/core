@@ -88,7 +88,7 @@ export const deleteByNode = ({ editor, nodeType, selectionRange }) => {
 export const deleteByRange = (editor: Editor, selectionRange: SelectionRange) => {
     const from = selectionRange.$from.pos;
     const to = selectionRange.$to.pos + 1;
-    editor.chain().deleteRange({ from, to }).blur().run();
+    editor.chain().deleteRange({ from, to }).run();
 };
 
 /**
@@ -102,7 +102,7 @@ export const deleteSelectedCustomNodeType = (editor: Editor, selectionRange: Sel
     const to = from + 1;
 
     // TODO: Try to make the `deleteNode` command works with custom nodes.
-    editor.chain().deleteRange({ from, to }).blur().run();
+    editor.chain().deleteRange({ from, to }).run();
 };
 
 /**
@@ -129,16 +129,16 @@ export const deleteSelectionNode = (editor: Editor, selectionRange: SelectionRan
         case NodeTypes.BULLET_LIST:
             if (childCount > 1) {
                 //delete only the list item selected
-                editor.chain().deleteNode(NodeTypes.LIST_ITEM).blur().run();
+                editor.chain().deleteNode(NodeTypes.LIST_ITEM).run();
             } else {
                 // delete the order/bullet node
-                editor.chain().deleteNode(closestOrderedOrBulletNode.type).blur().run();
+                editor.chain().deleteNode(closestOrderedOrBulletNode.type).run();
             }
 
             break;
 
         default:
-            editor.chain().deleteNode(selectionParentNode.type).blur().run();
+            editor.chain().deleteNode(selectionParentNode.type).run();
             break;
     }
 };
