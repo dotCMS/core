@@ -2,11 +2,11 @@
     <div class="options">
         <label data-testId="designer">
             <input
+                id="designer"
+                [(ngModel)]="value"
                 type="radio"
                 value="designer"
                 name="template"
-                [(ngModel)]="value"
-                id="designer"
             />
             <div class="item">
                 <dot-icon size="60" name="web"></dot-icon>
@@ -15,11 +15,11 @@
         </label>
         <label data-testId="advanced">
             <input
+                id="advanced"
+                [(ngModel)]="value"
                 type="radio"
                 value="advanced"
                 name="template"
-                [(ngModel)]="value"
-                id="advanced"
             />
             <div class="item">
                 <dot-icon size="60" name="settings_applications"></dot-icon>
@@ -31,4 +31,10 @@
     <p [innerHTML]="map[value]" data-testId="description"></p>
 </div>
 
-<button pButton [pAutoFocus]="true" [label]="'next' | dm" (click)="onClick()" data-testId="button"></button>
+<button
+    [pAutoFocus]="true"
+    [label]="'next' | dm"
+    (click)="onClick()"
+    pButton
+    data-testId="button"
+></button>
