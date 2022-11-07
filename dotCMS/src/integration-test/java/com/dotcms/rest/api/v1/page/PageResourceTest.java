@@ -1,6 +1,10 @@
 package com.dotcms.rest.api.v1.page;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.variant.VariantAPI;
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
+import com.dotmarketing.portlets.htmlpageasset.business.render.*;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.TextField;
@@ -230,7 +234,7 @@ public class PageResourceTest {
         containerEntry.addContentId(contentlet.getIdentifier());
         entries.add(containerEntry);
         final PageContainerForm pageContainerForm = new PageContainerForm(entries, requestJson);
-        this.pageResource.addContent(request, response, pagetest.getIdentifier(), pageContainerForm);
+        this.pageResource.addContent(request, response, pagetest.getIdentifier(), VariantAPI.DEFAULT_VARIANT.name(), pageContainerForm);
     }
 
     /**
