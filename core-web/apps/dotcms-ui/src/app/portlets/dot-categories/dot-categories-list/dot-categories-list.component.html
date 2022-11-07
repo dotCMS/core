@@ -148,6 +148,7 @@
                                     [attr.data-testId]="category.categoryId"
                                     [actions]="vm.categoriesActions"
                                     [item]="category"
+                                    (click)="$event.stopPropagation()"
                                 >
                                 </dot-action-menu-button>
                             </ng-container>

@@ -190,7 +190,22 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
             },
             {
                 menuItem: {
-                    label: this.dotMessageService.get('View Children')
+                    label: this.dotMessageService.get('View Children'),
+                    command: (event) => {
+                        this.getChildrenCategories({
+                            sortOrder: 1,
+                            filters: {
+                                inode: {
+                                    value: event.inode,
+                                    matchMode: null
+                                }
+                            }
+                        });
+                        this.addCategoriesBreadCrumb({
+                            label: event.categoryName,
+                            id: event.inode
+                        });
+                    }
                 }
             },
             {

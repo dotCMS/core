@@ -76,5 +76,10 @@ export class DotCategoriesListComponent {
         } else {
             this.store.getCategories(event);
         }
+
+        // for reset search field
+        if (!event.globalFilter && this.globalSearch) {
+            this.globalSearch.nativeElement.value = '';
+        }
     }
 }
