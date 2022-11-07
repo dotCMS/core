@@ -16,7 +16,7 @@ export class DotCategoriesService extends PaginatorService {
         this.url = CATEGORY_API_URL;
     }
 
-    updatePaginationService(event?: LazyLoadEvent) {
+    updatePaginationService(event: LazyLoadEvent) {
         const { sortField, sortOrder, filters } = event;
         this.setExtraParams('inode', filters?.inode?.value || null);
         this.filter = event?.filters?.global?.value || '';
@@ -30,7 +30,7 @@ export class DotCategoriesService extends PaginatorService {
      * @return {*}  {Observable<DotCategory[]>}
      * @memberof DotCategoriesService
      */
-    getCategories(event?: LazyLoadEvent): Observable<DotCategory[]> {
+    getCategories(event: LazyLoadEvent): Observable<DotCategory[]> {
         this.url = CATEGORY_API_URL;
         this.updatePaginationService(event);
         const page = parseInt(String(event.first / this.paginationPerPage), 10) + 1;
@@ -44,7 +44,7 @@ export class DotCategoriesService extends PaginatorService {
      * @return {*}  {Observable<DotCategory[]>}
      * @memberof DotCategoriesService
      */
-    getChildrenCategories(event?: LazyLoadEvent): Observable<DotCategory[]> {
+    getChildrenCategories(event: LazyLoadEvent): Observable<DotCategory[]> {
         this.url = CATEGORY_CHILDREN_API_URL;
         this.updatePaginationService(event);
         const page = parseInt(String(event.first / this.paginationPerPage), 10) + 1;
