@@ -11,7 +11,10 @@ import {
 } from './dot-categories.service';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { of } from 'rxjs';
-import { CATEGORY_SOURCE, DotCategory } from '@models/categories/dot-categories.model';
+import {
+    CATEGORY_SOURCE,
+    DotCategory
+} from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
 
 const mockCategory: DotCategory = {
     categoryId: '1222',
