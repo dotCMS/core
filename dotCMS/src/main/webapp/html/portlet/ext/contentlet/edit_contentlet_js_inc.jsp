@@ -4,6 +4,7 @@
 <%@ page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
+<%@ page import="com.dotcms.variant.VariantAPI" %>
 <%
 
 	String catCount = (String) request.getAttribute("counter");
@@ -351,6 +352,13 @@
             }
 
         }
+
+		var variantName = sessionStorage.getItem('<%=VariantAPI.VARIANT_KEY%>');
+
+		if (variantName) {
+			formData[formData.length] = '<%=VariantAPI.VARIANT_KEY%>' + nameValueSeparator + variantName;
+		}
+
         return formData;
 
     }
@@ -368,7 +376,7 @@
     }
 
 
-    function persistContent(isAutoSave, publish){
+    async function persistContent(isAutoSave, publish){
 
         window.onbeforeunload=true;
         var isAjaxFileUploading = false;
@@ -412,7 +420,10 @@
         window.scrollTo(0,0);	// To show lightbox effect(IE) and save content errors.
         dijit.byId('savingContentDialog').show();
 
-
+        // Check if the relations have not been loaded.
+        if(!allRelationsHaveLoad()) {
+            await waitForRelation();
+        }
 
         if(isAutoSave && isContentSaving){
             return;
@@ -421,6 +432,7 @@
         var fmData = new Array();
 
         fmData = getFormData("fm","<%= com.dotmarketing.util.WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR %>");
+
         if(isInodeSet(currentContentletInode)){
             isCheckin = false;
             isAutoSave=false;
@@ -806,7 +818,6 @@
         executeWfAction: function(wfId, popupable, showpush){
             this.wfActionId = wfId;
             if(popupable){
-
                 var inode = (currentContentletInode != undefined && currentContentletInode.length > 0)
                     ? currentContentletInode
                     :workingContentletInode;

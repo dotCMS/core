@@ -64,17 +64,22 @@ export class DotAlertConfirmService {
         };
 
         this.alertModel = dialogModel;
+        setTimeout(() => {
+            this._confirmDialogOpened$.next(true);
+        }, 0);
     }
 
     /**
      * Call the alert accept action and clear the model
      *
+     * @param Event $event
      * @memberof DotAlertConfirmService
      */
-    alertAccept($event): void {
+    alertAccept($event?: Event): void {
         if (this.alertModel.accept) {
             this.alertModel.accept($event);
         }
+
         this.alertModel = null;
     }
 
@@ -87,6 +92,7 @@ export class DotAlertConfirmService {
         if (this.alertModel.reject) {
             this.alertModel.reject($event);
         }
+
         this.alertModel = null;
     }
 

@@ -51,6 +51,7 @@ export class DotKeyValueComponent implements OnChanges {
         } else {
             this.variables = [variable, ...this.variables];
         }
+
         this.variablesBackup = [...this.variables];
     }
 
@@ -65,6 +66,7 @@ export class DotKeyValueComponent implements OnChanges {
 
     private setHiddenValue(variable: DotKeyValue): DotKeyValue {
         variable.value = variable.hidden ? '********' : variable.value;
+
         return variable;
     }
 }

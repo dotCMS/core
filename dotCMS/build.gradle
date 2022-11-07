@@ -19,7 +19,15 @@ plugins {
     id 'war'
     id 'org.ajoberstar.grgit' version '4.1.1'
     id "com.palantir.docker" version "0.32.0"  // reference:  https://github.com/palantir/gradle-docker
+    id "org.sonarqube" version "3.4.0.2513"
 
+
+}
+
+sonarqube {
+  properties {
+    property "sonar.projectKey", "dotCMS_core_AYQvQCMIJs0IgspqN39B"
+  }
 }
 
 repositories {
@@ -179,6 +187,7 @@ configurations {
     buildlibs
 
     felix
+    felixsystem
     starter
     testsStarter
     profiler
@@ -224,26 +233,31 @@ dependencies {
     felix(group: 'org.osgi', name: 'org.osgi.compendium', version: '4.3.1') {
         transitive = false
     }
-    felix(group: 'org.apache.tika', name: 'tika-core', version: '1.19') {
-        transitive = false
-    }
-    felix(group: 'org.apache.tika', name: 'tika-bundle', version: '1.19') {
-        transitive = false
-    }
 
     felix group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.25'
     felix group: 'org.slf4j', name: 'jcl-over-slf4j', version: '1.7.25'
-    felix group: 'com.dotcms.tika', name: 'com.dotcms.tika', version: '0.2'
 
-    felix group: 'com.dotcms.samlbundle', name: 'com.dotcms.samlbundle', version: '22.03'
+    //// Felix system configuration
+    felixsystem group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.25'
+    felixsystem group: 'org.slf4j', name: 'jcl-over-slf4j', version: '1.7.25'
 
+    felixsystem(group: 'org.apache.tika', name: 'tika-core', version: '1.19') {
+        transitive = false
+    }
+    felixsystem(group: 'org.apache.tika', name: 'tika-bundle', version: '1.19') {
+        transitive = false
+    }
+    felixsystem group: 'com.dotcms.tika', name: 'com.dotcms.tika', version: '0.2'
 
+    felixsystem group: 'com.dotcms.samlbundle', name: 'com.dotcms.samlbundle', version: '22.03'
 
-    starter group: 'com.dotcms', name: 'starter', version: 'empty_20220627-SNAPSHOT', ext: 'zip'
+    //// starter config
+
+    starter group: 'com.dotcms', name: 'starter', version: 'empty_20221018', ext: 'zip'
     //Uncomment this line if you want to download the starter that comes with data
-    //starter group: 'com.dotcms', name: 'starter', version: '20220627-SNAPSHOT', ext: 'zip'
-    testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20220627-SNAPSHOT', ext: 'zip'
-
+    //starter group: 'com.dotcms', name: 'starter', version: '20221010', ext: 'zip'
+    testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20220718', ext: 'zip'
+    
     profiler group: 'glowroot-custom', name: 'glowroot-agent', version: '0.13.1'
     profilerDependencies group: 'glowroot-custom', name: 'collector-https-linux', version: '0.13.1'
     profilerDependencies group: 'glowroot-custom', name: 'collector-https-osx', version: '0.13.1'
@@ -260,8 +274,6 @@ dependencies {
     }
 }
 
-
-import com.dotcms.repackage.org.apache.commons.io.FileUtils
 import groovy.json.JsonSlurper
 import org.ajoberstar.grgit.Grgit
 import org.gradle.api.tasks.testing.logging.TestLogEvent
@@ -699,6 +711,16 @@ war {
             exclude 'WEB-INF/felix'
         }
     }
+    // verify system-felix {
+        from(configurations.felixsystem) {
+            into felixSystemFolder.concat("/bundle")
+        }
+
+        from(configurations.runtimeClasspath) {
+            into felixSystemFolder.concat("/bundle")
+            include '**/org.apache.felix.http.api*.jar'
+        }
+    //}
 
     from (configurations.starter) {
         into dotcmsFolder

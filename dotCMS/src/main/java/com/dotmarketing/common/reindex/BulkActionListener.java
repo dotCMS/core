@@ -1,5 +1,7 @@
 package com.dotmarketing.common.reindex;
 
+import static com.dotmarketing.common.reindex.BulkProcessorListener.getMatchingReservedIdIfAny;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -56,11 +58,14 @@ class BulkActionListener implements ActionListener<BulkResponse> {
             final DocWriteResponse itemResponse = bulkItemResponse.getResponse();
             String id;
             if (bulkItemResponse.isFailed() || itemResponse == null) {
-                id = bulkItemResponse.getFailure().getId().substring(0,
-                        bulkItemResponse.getFailure().getId().lastIndexOf(StringPool.UNDERLINE));
+                final String reservedId = getMatchingReservedIdIfAny(bulkItemResponse.getFailure().getId());
+
+                id = reservedId!=null ? reservedId: bulkItemResponse.getFailure().getId().substring(0,
+                        bulkItemResponse.getFailure().getId().indexOf(StringPool.UNDERLINE));
             } else {
-                id = itemResponse.getId()
-                        .substring(0, itemResponse.getId().lastIndexOf(StringPool.UNDERLINE));
+                final String reservedId = getMatchingReservedIdIfAny(itemResponse.getId());
+                id = reservedId!=null ? reservedId: itemResponse.getId()
+                        .substring(0, itemResponse.getId().indexOf(StringPool.UNDERLINE));
             }
 
             ReindexEntry idx = workingRecords.get(id);

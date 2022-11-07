@@ -3,7 +3,7 @@
  */
 package com.dotmarketing.util;
 
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import org.apache.commons.io.IOUtils;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;

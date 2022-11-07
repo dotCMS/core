@@ -57,6 +57,7 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
                 if (canAccessPortlet) {
                     this.setIframeSrc();
                 }
+
                 this.canAccessPortlet = canAccessPortlet;
             });
     }

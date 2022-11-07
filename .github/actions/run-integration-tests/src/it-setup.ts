@@ -47,18 +47,18 @@ const TEST_RESOURCES = [path.join(projectRoot, SOURCE_TEST_RESOURCES_FOLDER, 'lo
  *
  * @param propertyMap properties vaslues map
  */
-export const setupTests = (propertyMap: Map<string, string>) => {
+export const setupTests = async (propertyMap: Map<string, string>) => {
   // prepare folders and copy files
-  prepareTests()
+  await prepareTests()
 
   // override existing properties
-  overrideProperties(propertyMap)
+  await overrideProperties(propertyMap)
 
   // append new properties
   appendProperties(propertyMap)
 
   // prepare license
-  prepareLicense()
+  await prepareLicense()
 }
 
 /**
@@ -80,6 +80,7 @@ const prepareTests = async () => {
     const itFolder = path.join(workspaceRoot, folder)
     core.info(`Creating IT folder ${itFolder}`)
     fs.mkdirSync(itFolder, {recursive: true})
+    await exec.exec('ls', ['-las', path.dirname(itFolder)])
   }
 
   for (const res of TEST_RESOURCES) {
@@ -124,7 +125,7 @@ const appendProperties = (propertyMap: Map<string, string>) => {
   for (const file of appends.files) {
     core.info(`Appending properties to ${file.file}`)
     const line = file.lines.join('\n')
-    core.info(`Appeding properties:\n ${line}`)
+    core.info(`Appending properties:\n${line}`)
     fs.appendFileSync(file.file, `\n${line}`, {encoding: 'utf8', flag: 'a+', mode: 0o666})
   }
 }
@@ -182,7 +183,7 @@ const getOverrides = (propertyMap: Map<string, string>): OverrideProperties => {
           },
           {
             original: '^ES_HOSTNAME=.*$',
-            replacement: 'ES_HOSTNAME=localhost'
+            replacement: '#ES_HOSTNAME=localhost'
           }
         ]
       },
@@ -231,6 +232,7 @@ const getOverrides = (propertyMap: Map<string, string>): OverrideProperties => {
  */
 const getAppends = (propertyMap: Map<string, string>): AppendProperties => {
   const felixFolder = getValue(propertyMap, 'felixFolder')
+  const systemFelixFolder = getValue(propertyMap, 'systemFelixFolder')
   const esDataFolder = getValue(propertyMap, 'esDataFolder')
   const logsFolder = getValue(propertyMap, 'logsFolder')
   const dotCmsFolder = getValue(propertyMap, 'dotCmsFolder')
@@ -243,13 +245,14 @@ const getAppends = (propertyMap: Map<string, string>): AppendProperties => {
         lines: [
           `felix.felix.fileinstall.dir=${felixFolder}/load`,
           `felix.felix.undeployed.dir=${felixFolder}/undeploy`,
-          'dotcms.concurrent.locks.disable=false'
+          'dotcms.concurrent.locks.disable=false',
+          `system.felix.base.dir=${systemFelixFolder}`
         ]
       },
-      // {
-      //   file: `${itResourcesFolder}/it-dotcms-config-cluster.properties`,
-      //   lines: ['ES_ENDPOINTS=http://localhost:9200', 'ES_PROTOCOL=http', 'ES_HOSTNAME=localhost', 'ES_PORT=9200']
-      // },
+      {
+        file: `${itResourcesFolder}/it-dotcms-config-cluster.properties`,
+        lines: ['ES_ENDPOINTS=http://localhost:9200', 'ES_PROTOCOL=http']
+      },
       {
         file: `${dotCmsFolder}/src/main/webapp/WEB-INF/elasticsearch/config/elasticsearch-override.yml`,
         lines: [

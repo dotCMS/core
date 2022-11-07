@@ -1,7 +1,7 @@
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { of as observableOf, Observable } from 'rxjs';
+import { Observable, of as observableOf } from 'rxjs';
 import { map } from 'rxjs/operators';
 import * as _ from 'lodash';
 
@@ -11,6 +11,7 @@ import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models';
 import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
+import { DotPropertiesService } from '@services/dot-properties/dot-properties.service';
 
 interface DotEditPageNavItem {
     action?: (inode: string) => void;
@@ -37,7 +38,8 @@ export class DotEditPageNavComponent implements OnChanges {
         private dotLicenseService: DotLicenseService,
         private dotContentletEditorService: DotContentletEditorService,
         private dotMessageService: DotMessageService,
-        public route: ActivatedRoute
+        private readonly dotPropertiesService: DotPropertiesService,
+        private readonly route: ActivatedRoute
     ) {}
 
     ngOnChanges(changes: SimpleChanges): void {
@@ -61,6 +63,7 @@ export class DotEditPageNavComponent implements OnChanges {
         return this.dotLicenseService.isEnterprise().pipe(
             map((isEnterpriseLicense: boolean) => {
                 this.isEnterpriseLicense = isEnterpriseLicense;
+
                 return this.getNavItems(this.pageState, isEnterpriseLicense);
             })
         );
@@ -76,7 +79,7 @@ export class DotEditPageNavComponent implements OnChanges {
         dotRenderedPage: DotPageRender,
         enterpriselicense: boolean
     ): DotEditPageNavItem[] {
-        return [
+        const navItems: DotEditPageNavItem[] = [
             {
                 needsEntepriseLicense: false,
                 disabled: false,
@@ -100,6 +103,12 @@ export class DotEditPageNavComponent implements OnChanges {
                 }
             }
         ];
+
+        if (this.route.snapshot.data?.featuredFlag) {
+            navItems.push(this.getExperimentsNavItem(dotRenderedPage, enterpriselicense));
+        }
+
+        return navItems;
     }
 
     private getLayoutNavItem(
@@ -132,6 +141,19 @@ export class DotEditPageNavComponent implements OnChanges {
             icon: 'tune',
             label: this.dotMessageService.get('editpage.toolbar.nav.rules'),
             link: `rules/${dotRenderedPage.page.identifier}`
+        };
+    }
+
+    private getExperimentsNavItem(
+        dotRenderedPage: DotPageRender,
+        enterpriselicense: boolean
+    ): DotEditPageNavItem {
+        return {
+            needsEntepriseLicense: !enterpriselicense,
+            disabled: !this.canGoToLayout(dotRenderedPage),
+            icon: 'science',
+            label: this.dotMessageService.get('editpage.toolbar.nav.experiments'),
+            link: `experiments/${dotRenderedPage.page.identifier}`
         };
     }
 

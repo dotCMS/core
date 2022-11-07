@@ -28,6 +28,7 @@ import com.dotcms.datagen.PushPublishingEndPointDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TemplateLayoutDataGen;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.WorkflowActionDataGen;
 import com.dotcms.datagen.WorkflowDataGen;
 import com.dotcms.datagen.WorkflowStepDataGen;
@@ -43,14 +44,18 @@ import com.dotcms.publisher.endpoint.bean.impl.PushPublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publisher.util.dependencies.DependencyManager;
 import com.dotcms.publishing.manifest.ManifestBuilder;
 import com.dotcms.publishing.manifest.ManifestItem;
+import com.dotcms.publishing.manifest.ManifestItem.ManifestInfoBuilder;
+import com.dotcms.publishing.manifest.ManifestReason;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -93,6 +98,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -102,6 +108,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -122,12 +129,10 @@ public class PublisherAPIImplTest {
         IntegrationTestInitService.getInstance().init();
     }
 
-    @AfterClass
     public static void removeLanguageVariable(){
         ContentletDataGen.remove(languageVariableCreated);
     }
 
-    @BeforeClass
     public static void createLanguageVariableIfNeeded() throws DotSecurityException, DotDataException {
         final User systemUser = APILocator.systemUser();
         final List<Contentlet> langVariables = getLanguageVariables();
@@ -173,7 +178,8 @@ public class PublisherAPIImplTest {
                 getWorkflowWithDependencies(),
                 getLanguageWithDependencies(),
                 getRuleWithDependencies(),
-                getContentWithSeveralVersions()
+                getContentWithSeveralVersions(),
+                getUser()
         };
     }
 
@@ -221,6 +227,13 @@ public class PublisherAPIImplTest {
         return new TestAsset(ruleWithPage,
                 map(ruleWithPage, list(host)),
                 "/bundlers-test/rule/rule.rule.xml", false);
+    }
+
+    private static TestAsset getUser() {
+        final User user = new UserDataGen().nextPersisted();
+        return new TestAsset(user,
+                map(),
+                "/bundlers-test/user/user.user.xml", false);
     }
 
     private static TestAsset getLanguageWithDependencies() {
@@ -448,9 +461,12 @@ public class PublisherAPIImplTest {
         createLanguageVariableIfNeeded();
 
         List<Contentlet> languageVariables = getLanguageVariables();
-        Set<?> languagesVariableDependencies = getLanguagesVariableDependencies(
-                languageVariables,
-                testAsset.addLanguageVariableDependencies, true, true);
+
+        Set<?> languagesVariableDependencies = !User.class.isInstance(testAsset.asset) && !Category.class.isInstance(testAsset.asset) ?
+                getLanguagesVariableDependencies(
+                    languageVariables,
+                    testAsset.addLanguageVariableDependencies, true, true)
+                : Collections.EMPTY_SET;
 
         final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
@@ -462,13 +478,16 @@ public class PublisherAPIImplTest {
         config.setLuceneQueries(list());
         config.setId("PublisherAPIImplTest_" + System.currentTimeMillis());
 
-        new BundleDataGen()
+         new BundleDataGen()
                 .pushPublisherConfig(config)
                 .addAssets(list(testAsset.asset))
                 .filter(filterDescriptor)
+                .operation(PublisherConfig.Operation.PUBLISH)
+                 .setSavePublishQueueElements(true)
                 .nextPersisted();
 
         final PublishStatus publish = publisherAPI.publish(config);
+
         File bundleRoot = publish.getOutputFiles().get(0);
 
         final File extractHere = new File(bundleRoot.getParent() + File.separator + config.getName());
@@ -477,21 +496,52 @@ public class PublisherAPIImplTest {
         final List<Contentlet> languageVariablesAddInBundle = testAsset.addLanguageVariableDependencies ?
                 getLanguageVariables() : Collections.EMPTY_LIST;
 
-        assertBundle(testAsset,
-                getJustOneList(testAsset.otherVersions, testAsset.getDependencies(),
-                        languageVariablesAddInBundle, languagesVariableDependencies),
-                extractHere);
+        final Collection<Object> dependencies = getJustOneList(testAsset.otherVersions,
+                testAsset.getDependencies(),
+                languageVariablesAddInBundle, languagesVariableDependencies);
 
-        if (!Rule.class.isInstance(testAsset.asset)) {
-            final ManifestItemsMapTest manifestLines = testAsset.manifestLines();
-            manifestLines.addExcludes(map("Excluded System Folder/Host/Container/Template",
-                    list(APILocator.getHostAPI().findSystemHost(), APILocator.getFolderAPI().findSystemFolder())));
+        final ManifestItemsMapTest manifestLines = testAsset.manifestLines();
 
-            addLanguageVariableManifestItem(
-                    manifestLines,
-                    testAsset.addLanguageVariableDependencies,
-                    languageVariablesAddInBundle
-            );
+        if (Category.class.isInstance(testAsset.asset)) {
+            List<Category> topLevelCategories = APILocator.getCategoryAPI()
+                    .findTopLevelCategories(APILocator.systemUser(), true);
+
+            final List<ManifestItem> manifestItems = topLevelCategories.stream()
+                    .map(category -> (ManifestItem) category).collect(Collectors.toList());
+            manifestLines.addDependencies(map((Category) testAsset.asset, manifestItems));
+
+            for (Category topLevel : topLevelCategories) {
+                dependencies.add(topLevel);
+
+                final List<Category> children = APILocator.getCategoryAPI()
+                        .findChildren(APILocator.systemUser(), topLevel.getInode(), true,
+                                null);
+                for (Category child : children) {
+                    dependencies.add(child);
+                }
+
+                final List<ManifestItem> childManifestItems = children.stream()
+                        .map(category -> (ManifestItem) category).collect(Collectors.toList());
+                manifestLines.addDependencies(map(topLevel, childManifestItems));
+            }
+
+            dependencies.addAll(APILocator.getCategoryAPI().findAll(APILocator.systemUser(), true));
+        }
+
+        assertBundle(testAsset, dependencies, extractHere);
+
+        if (!Rule.class.isInstance(testAsset.asset) && !User.class.isInstance(testAsset.asset)) {
+            if (!Category.class.isInstance(testAsset.asset)) {
+                manifestLines.addExcludes(map("Excluded System Folder/Host/Container/Template",
+                        list(APILocator.getHostAPI().findSystemHost(),
+                                APILocator.getFolderAPI().findSystemFolder())));
+
+                addLanguageVariableManifestItem(
+                        manifestLines,
+                        testAsset.addLanguageVariableDependencies,
+                        languageVariablesAddInBundle
+                );
+            }
 
             final String manifestFilePath = extractHere.getAbsolutePath() + File.separator +
                     ManifestBuilder.MANIFEST_NAME;
@@ -634,8 +684,10 @@ public class PublisherAPIImplTest {
 
         createLanguageVariableIfNeeded();
 
-        addLanguageVariableDependencies(dependencies,
+        if (!User.class.isInstance(testAsset.asset)) {
+            addLanguageVariableDependencies(dependencies,
                     testAsset.addLanguageVariableDependencies);
+        }
 
         final PublisherAPIImpl publisherAPI = new PublisherAPIImpl();
 
@@ -666,7 +718,9 @@ public class PublisherAPIImplTest {
             httpServer.stop(0);
         }
 
-        assertPushAsset(bundle, environment, publishingEndPoint, dependencies);
+        if (!User.class.isInstance(testAsset.asset)) {
+            assertPushAsset(bundle, environment, publishingEndPoint, dependencies);
+        }
     }
 
     private void assertPushAsset(final Bundle bundle,
@@ -710,13 +764,17 @@ public class PublisherAPIImplTest {
         return httpServer;
     }
 
+
     private void assertBundle(TestAsset testAsset, Collection<Object> dependencies, File bundleRoot)
-            throws IOException {
+        throws IOException {
         final Collection<File> filesExpected = new HashSet<>();
-        filesExpected.addAll(
-                FileTestUtil.assertBundleFile(bundleRoot, testAsset.asset,
-                        testAsset.fileExpectedPath)
-        );
+
+        if (testAsset != null) {
+            filesExpected.addAll(
+                    FileTestUtil.assertBundleFile(bundleRoot, testAsset.asset,
+                            testAsset.fileExpectedPath)
+            );
+        }
 
         for (Object assetToAssert : dependencies) {
             final Collection<File> files = FileTestUtil
@@ -1019,7 +1077,8 @@ public class PublisherAPIImplTest {
 
         public ManifestItemsMapTest manifestLines() {
             final ManifestItemsMapTest manifestItemsMap = new ManifestItemsMapTest();
-            final ManifestItem assetManifestItem = (ManifestItem) asset;
+            final ManifestItem assetManifestItem = "CAT".equals(asset) ? getCategoryManifestItem()
+                    : (ManifestItem) asset;
             manifestItemsMap.add(assetManifestItem, "Added directly by User");
 
             manifestItemsMap.addDependencies(dependencies);
@@ -1032,5 +1091,68 @@ public class PublisherAPIImplTest {
                     .flatMap(dependencies -> dependencies.stream())
                     .collect(Collectors.toList());
         }
+    }
+
+    @NotNull
+    private static ManifestItem getCategoryManifestItem() {
+        return (ManifestItem) () -> new ManifestInfoBuilder()
+                .objectType(PusheableAsset.CATEGORY.getType())
+                .title("Syncing All Categorie")
+                    .build();
+    }
+
+    /**
+     * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig)}
+     * When: Add a {@link Category} into a Bundle
+     * Should: Add all the {@link Category} into the Bundle
+     */
+    @Test
+    public void AddAllCategoryIntoBundle() throws Exception {
+        prepare();
+        final Class<? extends Publisher> publisher = GenerateBundlePublisher.class;
+
+        final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
+
+        final PublisherAPIImpl publisherAPI = new PublisherAPIImpl();
+
+        final PushPublisherConfig config = new PushPublisherConfig();
+        config.setPublishers(list(publisher));
+        config.setOperation(PublisherConfig.Operation.PUBLISH);
+        config.setLuceneQueries(list());
+        config.setId("PublisherAPIImplTest_" + System.currentTimeMillis());
+
+        new BundleDataGen()
+                .pushPublisherConfig(config)
+                .addAsset("CAT", PusheableAsset.CATEGORY)
+                .filter(filterDescriptor)
+                .operation(PublisherConfig.Operation.PUBLISH)
+                .setSavePublishQueueElements(true)
+                .nextPersisted();
+
+        final PublishStatus publish = publisherAPI.publish(config);
+
+        File bundleRoot = publish.getOutputFiles().get(0);
+
+        final File extractHere = new File(bundleRoot.getParent() + File.separator + config.getName());
+        extractTarArchive(bundleRoot, extractHere);
+
+        List topLevelCategories = APILocator.getCategoryAPI()
+                .findAll(APILocator.systemUser(), true);
+
+        assertBundle(null, topLevelCategories, extractHere);
+
+        final String manifestFilePath = extractHere.getAbsolutePath() + File.separator +
+                ManifestBuilder.MANIFEST_NAME;
+        final File manifestFile = new File(manifestFilePath);
+
+        final ManifestItemsMapTest manifestItemsMapTest = new ManifestItemsMapTest();
+        final ManifestItem manifestItem = () -> new ManifestInfoBuilder()
+                .objectType(PusheableAsset.CATEGORY.getType())
+                .title("Syncing All Categories")
+                .build();
+
+        manifestItemsMapTest.add(manifestItem, ManifestReason.INCLUDE_BY_USER.getMessage());
+
+        assertManifestFile(manifestFile, manifestItemsMapTest);
     }
 }

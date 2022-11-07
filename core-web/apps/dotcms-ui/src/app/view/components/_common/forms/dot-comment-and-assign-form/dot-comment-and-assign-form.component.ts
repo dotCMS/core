@@ -4,7 +4,7 @@ import { take, takeUntil } from 'rxjs/operators';
 import { DotRole } from '@models/dot-role/dot-role.model';
 import { SelectItem } from 'primeng/api';
 import { DotFormModel } from '@models/dot-form/dot-form.model';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { Subject } from 'rxjs';
 
 enum DotActionInputs {
@@ -34,7 +34,7 @@ interface DotCommentAndAssignValue {
 export class DotCommentAndAssignFormComponent
     implements OnInit, DotFormModel<DotCommentAndAssignData, DotCommentAndAssignValue>
 {
-    form: FormGroup;
+    form: UntypedFormGroup;
     @Input() data: DotCommentAndAssignData;
     @Output() value = new EventEmitter<DotCommentAndAssignValue>();
     @Output() valid = new EventEmitter<boolean>();
@@ -42,7 +42,7 @@ export class DotCommentAndAssignFormComponent
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(private dotRolesService: DotRolesService, public fb: FormBuilder) {}
+    constructor(private dotRolesService: DotRolesService, public fb: UntypedFormBuilder) {}
 
     ngOnInit() {
         if (this.data) {

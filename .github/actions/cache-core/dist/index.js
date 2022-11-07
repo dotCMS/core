@@ -42,6 +42,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.cacheCore = void 0;
 const cache = __importStar(__nccwpck_require__(7799));
 const core = __importStar(__nccwpck_require__(2186));
+const exec = __importStar(__nccwpck_require__(1514));
 const cache_1 = __nccwpck_require__(7799);
 const EMPTY_CACHE_RESULT = {
     cacheKey: '',
@@ -68,7 +69,7 @@ const cacheCore = () => __awaiter(void 0, void 0, void 0, function* () {
         locations: []
     };
     const locationTypes = Object.keys(cacheLocations);
-    core.info(`Caching these locations: ${locationTypes}`);
+    core.info(`Caching these locations: ${locationTypes.join(', ')}`);
     for (const locationType of locationTypes) {
         const cacheLocationMetadata = yield cacheLocation(cacheLocations, cacheKeys, locationType);
         if (cacheLocationMetadata !== EMPTY_CACHE_RESULT) {
@@ -89,10 +90,14 @@ exports.cacheCore = cacheCore;
 const cacheLocation = (cacheLocations, resolvedKeys, locationType) => __awaiter(void 0, void 0, void 0, function* () {
     const cacheKey = resolvedKeys[locationType];
     const resolvedLocations = cacheLocations[locationType];
-    core.info(`Caching locations:\n  [${resolvedLocations}]\n  with key: ${cacheKey}`);
+    core.info(`Caching locations:\n  [${resolvedLocations.join(', ')}]\n  with key: ${cacheKey}`);
     let cacheResult = EMPTY_CACHE_RESULT;
     try {
         const cacheId = yield cache.saveCache(resolvedLocations, cacheKey);
+        core.info('Location contents');
+        for (const location of resolvedLocations) {
+            ls(location);
+        }
         core.info(`Cache id found: ${cacheId}`);
         cacheResult = {
             cacheKey,
@@ -116,6 +121,15 @@ const cacheLocation = (cacheLocations, resolvedKeys, locationType) => __awaiter(
         }
     }
     return Promise.resolve(cacheResult);
+});
+const ls = (location) => __awaiter(void 0, void 0, void 0, function* () {
+    core.info(`Listing folder ${location}`);
+    try {
+        yield exec.exec('ls', ['-las', location]);
+    }
+    catch (err) {
+        core.info(`Cannot list folder ${location}`);
+    }
 });
 
 

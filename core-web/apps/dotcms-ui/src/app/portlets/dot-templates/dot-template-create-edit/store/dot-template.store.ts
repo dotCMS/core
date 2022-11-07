@@ -156,6 +156,7 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
                 this.dotHttpErrorManagerService.handle(err).subscribe(() => {
                     this.dotEditLayoutService.changeDesactivateState(true);
                 });
+
                 return of(null);
             })
         );
@@ -165,6 +166,7 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
         (state: DotTemplateState, template: DotTemplateItem) => {
             const working = this.updateTemplateProperties(state.working, template);
             const original = this.updateTemplateProperties(state.original, template);
+
             return {
                 ...state,
                 working: working,
@@ -179,6 +181,7 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
                 this.dotGlobalMessageService.loading(
                     this.dotMessageService.get('dot.common.message.saving')
                 );
+
                 return this.dotTemplateService.update(this.cleanTemplateItem(template));
             }),
             tap((template: DotTemplate) => this.onSaveTemplate(template)),
@@ -201,6 +204,7 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
                 this.dotGlobalMessageService.loading(
                     this.dotMessageService.get('dot.common.message.saving')
                 );
+
                 return this.dotTemplateService.update(this.cleanTemplateItem(template));
             }),
             tap((template: DotTemplate) => this.onSaveTemplate(template)),
@@ -215,6 +219,7 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
                     // Design templates need to be save 10 seconds after the last change.
                     this.saveTemplateDebounce(template);
                 }
+
                 this.updateWorkingTemplate(template);
             })
         );
@@ -269,6 +274,7 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
         const templateId = this.activatedRoute.snapshot.params['id'];
         if (templateId === 'SYSTEM_TEMPLATE') {
             this.goToTemplateList();
+
             return;
         }
 
@@ -317,6 +323,7 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
         if (template.drawed) {
             this.templateContainersCacheService.set(template.containers);
         }
+
         this.updateTemplate(this.getTemplateItem(template));
         this.dotGlobalMessageService.success(
             this.dotMessageService.get('dot.common.message.saved')
@@ -331,6 +338,7 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
         this.dotHttpErrorManagerService.handle(err).subscribe(() => {
             this.dotEditLayoutService.changeDesactivateState(true);
         });
+
         return of(null);
     }
 
@@ -412,6 +420,7 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
                 layout: (templateState as DotTemplateItemDesign).layout
             };
         }
+
         return {
             ...newPropertiesTemplate,
             body: (templateState as DotTemplateItemadvanced).body
@@ -423,6 +432,7 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
         if (template.type === 'design') {
             delete template.containers;
         }
+
         return template as DotTemplate;
     }
 
@@ -430,6 +440,7 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
         if (template.drawed) {
             this.templateContainersCacheService.set(template.containers);
         }
+
         this.updateTemplate(this.getTemplateItem(template));
         if (this.activatedRoute?.snapshot?.params['inode']) {
             this.dotRouterService.goToEditTemplate(template.identifier);

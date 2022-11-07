@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { moduleMetadata } from '@storybook/angular';
@@ -77,6 +78,7 @@ export const NoActions = () => ({
     },
     template: NoActionsTemplate
 });
+
 NoActions.parameters = {
     docs: {
         source: {
@@ -110,6 +112,7 @@ export const BasicActions = () => ({
     },
     template: BasicActionsTemplate
 });
+
 BasicActions.parameters = {
     docs: {
         source: {
@@ -155,6 +158,7 @@ export const MultipleActions = () => ({
     },
     template: MultipleActionsTemplate
 });
+
 MultipleActions.parameters = {
     docs: {
         source: {
@@ -197,6 +201,7 @@ export const ExtraActions = () => ({
     },
     template: ExtraActionsTemplate
 });
+
 ExtraActions.parameters = {
     docs: {
         source: {
@@ -234,6 +239,7 @@ export const WithTabs = () => ({
     },
     template: WithTabsTemplate
 });
+
 WithTabs.parameters = {
     docs: {
         source: {

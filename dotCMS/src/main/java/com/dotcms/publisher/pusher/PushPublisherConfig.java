@@ -1,6 +1,8 @@
 package com.dotcms.publisher.pusher;
 
 
+import static com.dotcms.publisher.ajax.RemotePublishAjaxAction.ADD_ALL_CATEGORIES_TO_BUNDLE_KEY;
+
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publisher.util.dependencies.DependencyManager;
 import com.dotcms.publisher.util.dependencies.DependencyProcessor;
@@ -111,6 +113,42 @@ public class PushPublisherConfig extends PublisherConfig {
 
 	public void setSwitchIndexWhenDone(boolean switchIndexWhenDone) {
 		this.switchIndexWhenDone = switchIndexWhenDone;
+	}
+
+	/**
+	 * Return true if the {@link PushPublisherConfig#getAssets()} list is not empty and just
+	 * contains {@link User}, otherwise return false.
+	 *
+	 * @return
+	 */
+	public boolean justIncludesUsers() {
+
+		if (!UtilMethods.isSet(this.getAssets())) {
+			return false;
+		}
+
+		for (PublishQueueElement asset : this.getAssets()) {
+			if (!PusheableAsset.USER.name().equalsIgnoreCase(asset.getType())) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Return true if the {@link PushPublisherConfig#getAssets()} list is not empty and just
+	 * contains {@link com.dotmarketing.portlets.categories.model.Category}, otherwise return false.
+	 *
+	 * @return
+	 */
+	public boolean justIncludesCategories() {
+
+		if (!UtilMethods.isSet(this.getAssets())) {
+			return false;
+		}
+
+		return !this.getAssets().stream().anyMatch (asset -> !ADD_ALL_CATEGORIES_TO_BUNDLE_KEY.equalsIgnoreCase(asset.getAsset()));
 	}
 
 	public List<PublishingEndPoint> getEndpoints() {
@@ -266,7 +304,7 @@ public class PushPublisherConfig extends PublisherConfig {
 		}
 	}
 
-	private <T> void writeIncludeManifestItem(final T asset, final String reason) {
+	public <T> void writeIncludeManifestItem(final T asset, final String reason) {
 		if (ManifestItem.class.isAssignableFrom(asset.getClass())) {
 			if (UtilMethods.isSet(manifestBuilder)) {
 				manifestBuilder.include((ManifestItem) asset, reason);

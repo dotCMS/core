@@ -7,10 +7,12 @@ import { UiDotIconButtonComponent } from '@components/_common/dot-icon-button/do
 import { ButtonModule } from 'primeng/button';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-const dispatchKeydownEvent = (key: string) => {
+const dispatchKeydownEvent = (key: string, meta = false, alt = false) => {
     const event = new KeyboardEvent('keydown', {
         key: key,
-        code: key
+        code: key,
+        metaKey: meta,
+        altKey: alt
     });
 
     document.dispatchEvent(event);
@@ -20,19 +22,19 @@ const dispatchKeydownEvent = (key: string) => {
     selector: 'dot-test-host-component',
     template: `
         <dot-dialog
-            width="100px"
-            height="100px"
+            [(visible)]="show"
             [actions]="actions"
             [cssClass]="cssClass"
             [headerStyle]="{ margin: '0' }"
             [contentStyle]="{ padding: '0' }"
             [header]="header"
-            [(visible)]="show"
             [closeable]="closeable"
             [appendToBody]="appendToBody"
             [hideButtons]="hideButtons"
             [bindEvents]="bindEvents"
             [isSaving]="isSaving"
+            width="100px"
+            height="100px"
         >
             <b>Dialog content</b>
         </dot-dialog>
@@ -53,7 +55,7 @@ class TestHostComponent {
 @Component({
     selector: 'dot-test-host-component',
     template: `
-        <dot-dialog (beforeClose)="beforeClose($event)" [(visible)]="show">
+        <dot-dialog [(visible)]="show" (beforeClose)="beforeClose($event)">
             <b>Dialog content</b>
         </dot-dialog>
     `
@@ -76,15 +78,13 @@ describe('DotDialogComponent', () => {
         let accceptAction: jasmine.Spy;
         let cancelAction: jasmine.Spy;
 
-        beforeEach(
-            waitForAsync(() => {
-                TestBed.configureTestingModule({
-                    imports: [UiDotIconButtonModule, ButtonModule, BrowserAnimationsModule],
-                    providers: [],
-                    declarations: [DotDialogComponent, TestHostComponent]
-                }).compileComponents();
-            })
-        );
+        beforeEach(waitForAsync(() => {
+            TestBed.configureTestingModule({
+                imports: [UiDotIconButtonModule, ButtonModule, BrowserAnimationsModule],
+                providers: [],
+                declarations: [DotDialogComponent, TestHostComponent]
+            }).compileComponents();
+        }));
 
         beforeEach(() => {
             hostFixture = TestBed.createComponent(TestHostComponent);
@@ -321,7 +321,7 @@ describe('DotDialogComponent', () => {
                         expect(component.hide.emit).toHaveBeenCalledTimes(1);
                     });
 
-                    it('should trigger accept action on Enter and unbind events', () => {
+                    it('should trigger accept action on CMD + Enter and unbind events', () => {
                         hostComponent.actions = {
                             ...hostComponent.actions,
                             accept: {
@@ -334,11 +334,27 @@ describe('DotDialogComponent', () => {
 
                         expect(component.visible).toBe(true);
 
-                        dispatchKeydownEvent('Enter');
+                        dispatchKeydownEvent('Enter', true);
 
                         hostFixture.detectChanges();
 
-                        dispatchKeydownEvent('Enter');
+                        expect(accceptAction).toHaveBeenCalledTimes(1);
+                    });
+
+                    it('should trigger accept action on ALT + Enter and unbind events', () => {
+                        hostComponent.actions = {
+                            ...hostComponent.actions,
+                            accept: {
+                                ...hostComponent.actions.accept,
+                                disabled: false
+                            }
+                        };
+
+                        hostFixture.detectChanges();
+
+                        expect(component.visible).toBe(true);
+
+                        dispatchKeydownEvent('Enter', false, true);
 
                         hostFixture.detectChanges();
 
@@ -460,15 +476,13 @@ describe('DotDialogComponent', () => {
         let hostDe: DebugElement;
         let hostFixture: ComponentFixture<TestHost2Component>;
 
-        beforeEach(
-            waitForAsync(() => {
-                TestBed.configureTestingModule({
-                    imports: [UiDotIconButtonModule, ButtonModule, BrowserAnimationsModule],
-                    providers: [],
-                    declarations: [DotDialogComponent, TestHost2Component]
-                }).compileComponents();
-            })
-        );
+        beforeEach(waitForAsync(() => {
+            TestBed.configureTestingModule({
+                imports: [UiDotIconButtonModule, ButtonModule, BrowserAnimationsModule],
+                providers: [],
+                declarations: [DotDialogComponent, TestHost2Component]
+            }).compileComponents();
+        }));
 
         beforeEach(() => {
             hostFixture = TestBed.createComponent(TestHost2Component);

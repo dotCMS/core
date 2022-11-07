@@ -1,5 +1,6 @@
 import * as cache from '@actions/cache'
 import * as core from '@actions/core'
+import * as exec from '@actions/exec'
 import {ReserveCacheError} from '@actions/cache'
 
 export interface CacheLocations {
@@ -60,7 +61,7 @@ export const cacheCore = async (): Promise<CacheMetadata> => {
   }
 
   const locationTypes = Object.keys(cacheLocations)
-  core.info(`Caching these locations: ${locationTypes}`)
+  core.info(`Caching these locations: ${locationTypes.join(', ')}`)
   for (const locationType of locationTypes) {
     const cacheLocationMetadata: CacheLocationMetadata = await cacheLocation(cacheLocations, cacheKeys, locationType)
     if (cacheLocationMetadata !== EMPTY_CACHE_RESULT) {
@@ -86,11 +87,15 @@ const cacheLocation = async (
 ): Promise<CacheLocationMetadata> => {
   const cacheKey = resolvedKeys[locationType as keyof BuildEnvCacheKeys]
   const resolvedLocations = cacheLocations[locationType as keyof CacheLocations]
-  core.info(`Caching locations:\n  [${resolvedLocations}]\n  with key: ${cacheKey}`)
+  core.info(`Caching locations:\n  [${resolvedLocations.join(', ')}]\n  with key: ${cacheKey}`)
 
   let cacheResult = EMPTY_CACHE_RESULT
   try {
     const cacheId = await cache.saveCache(resolvedLocations, cacheKey)
+    core.info('Location contents')
+    for (const location of resolvedLocations) {
+      ls(location)
+    }
     core.info(`Cache id found: ${cacheId}`)
     cacheResult = {
       cacheKey,
@@ -113,4 +118,13 @@ const cacheLocation = async (
   }
 
   return Promise.resolve(cacheResult)
+}
+
+const ls = async (location: string) => {
+  core.info(`Listing folder ${location}`)
+  try {
+    await exec.exec('ls', ['-las', location])
+  } catch (err) {
+    core.info(`Cannot list folder ${location}`)
+  }
 }

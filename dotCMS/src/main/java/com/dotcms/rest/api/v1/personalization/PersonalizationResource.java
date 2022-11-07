@@ -111,7 +111,7 @@ public class PersonalizationResource {
             return Response.status(Status.FORBIDDEN).build();
         }
 
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityView<>(
                         this.multiTreeAPI.copyPersonalizationForPage(
                             personalizationPersonaPageForm.getPageId(),
                             Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + personalizationPersonaPageForm.getPersonaTag())

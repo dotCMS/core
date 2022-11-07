@@ -1,10 +1,13 @@
 package com.dotcms.system.event.local.business;
 
+import com.dotcms.analytics.listener.AnalyticsAppListener;
 import com.dotcms.config.DotInitializer;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.graphql.listener.ContentTypeAndFieldsModsListeners;
 import com.dotcms.publishing.listener.PushPublishKeyResetEventListener;
+import com.dotcms.rendering.velocity.services.MacroCacheRefresherJob;
 import com.dotcms.rest.api.v1.system.logger.ChangeLoggerLevelEvent;
+import com.dotcms.security.apps.AppSecretSavedEvent;
 import com.dotcms.security.apps.AppsKeyResetEventListener;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.system.event.local.type.security.CompanyKeyResetEvent;
@@ -63,6 +66,16 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
 
         APILocator.getLocalSystemEventsAPI().subscribe(APILocator.getTemplateAPI());
         APILocator.getLocalSystemEventsAPI().subscribe(APILocator.getContainerAPI());
+
+        APILocator.getLocalSystemEventsAPI().subscribe(AppSecretSavedEvent.class, AnalyticsAppListener.Instance.get());
+
+        this.initDotVelocityMacrosVtlFiles();
+    }
+
+    private void initDotVelocityMacrosVtlFiles() {
+
+        APILocator.getFileAssetAPI().subscribeFileListener(new MacroCacheRefresherJob(),
+                "dot_velocity_macros.*"); // handles the dot_velocity_macros.vtl
     }
 
     public void initApplicationContainerFolderListener() {

@@ -32,6 +32,7 @@ export class DotPageRenderService {
         extraParams?: Params
     ): Observable<DotPageRenderParameters> {
         const params: DotPageRenderRequestParams = this.getOptionalViewAsParams(viewAs, mode);
+
         return this.coreWebService
             .requestView({
                 url: `v1/page/render/${url.replace(/^\//, '')}`,

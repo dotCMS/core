@@ -1,4 +1,4 @@
-import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement, Component, Input, Injectable } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
@@ -30,7 +30,7 @@ import {
 } from '@dotcms/dotcms-js';
 import { SiteServiceMock } from '@tests/site-service.mock';
 import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
-import { LoginServiceMock } from '@tests/login-service.mock';
+import { LoginServiceMock, mockUser } from '@tests/login-service.mock';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { mockDotPersona } from '@tests/dot-persona.mock';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
@@ -53,6 +53,13 @@ import { ConfirmationService } from 'primeng/api';
 import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
 import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotFormatDateServiceMock } from '@dotcms/app/test/format-date-service.mock';
+import { DialogService } from 'primeng/dynamicdialog';
+import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
+import { TooltipModule } from 'primeng/tooltip';
+import { ESContent } from '@dotcms/app/shared/models/dot-es-content/dot-es-content.model';
+import { DotPageRender } from '@dotcms/app/shared/models/dot-page/dot-rendered-page.model';
+import { mockDotRenderedPage } from '@dotcms/app/test/dot-page-render.mock';
+import { DotPropertiesService } from '@dotcms/app/api/services/dot-properties/dot-properties.service';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -62,10 +69,31 @@ class TestHostComponent {
     @Input() pageState: DotPageRenderState = mockDotRenderedPageState;
 }
 
+@Component({
+    selector: 'dot-icon-button',
+    template: ''
+})
+class MockDotIconButtonComponent {
+    @Input() icon: string;
+}
+
+@Component({
+    selector: 'dot-global-message',
+    template: ''
+})
+class MockGlobalMessageComponent {}
+
 @Injectable()
 class MockDotLicenseService {
     isEnterprise(): Observable<boolean> {
         return of(true);
+    }
+}
+
+@Injectable()
+class MockDotPageStateService {
+    requestFavoritePageData(_urlParam: string): Observable<ESContent> {
+        return of();
     }
 }
 
@@ -77,69 +105,78 @@ describe('DotEditPageToolbarComponent', () => {
     let deHost: DebugElement;
     let dotLicenseService: DotLicenseService;
     let dotMessageDisplayService: DotMessageDisplayService;
+    let dotDialogService: DialogService;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [TestHostComponent, DotEditPageToolbarComponent],
-                imports: [
-                    HttpClientTestingModule,
-                    ButtonModule,
-                    CommonModule,
-                    CheckboxModule,
-                    DotSecondaryToolbarModule,
-                    FormsModule,
-                    ToolbarModule,
-                    DotEditPageViewAsControllerModule,
-                    DotEditPageStateControllerModule,
-                    DotEditPageInfoModule,
-                    DotEditPageWorkflowsActionsModule,
-                    DotPipesModule,
-                    DotWizardModule
-                ],
-                providers: [
-                    { provide: DotLicenseService, useClass: MockDotLicenseService },
-                    {
-                        provide: DotMessageService,
-                        useValue: new MockDotMessageService({
-                            'dot.common.whats.changed': 'Whats',
-                            'dot.common.cancel': 'Cancel'
-                        })
-                    },
-                    {
-                        provide: DotPageStateService,
-                        useValue: {}
-                    },
-                    {
-                        provide: SiteService,
-                        useClass: SiteServiceMock
-                    },
-                    {
-                        provide: LoginService,
-                        useClass: LoginServiceMock
-                    },
-                    DotMessageDisplayService,
-                    DotEventsService,
-                    DotcmsEventsService,
-                    DotEventsSocket,
-                    { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
-                    DotcmsConfigService,
-                    { provide: CoreWebService, useClass: CoreWebServiceMock },
-                    LoggerService,
-                    StringUtils,
-                    { provide: DotRouterService, useClass: MockDotRouterService },
-                    DotHttpErrorManagerService,
-                    DotAlertConfirmService,
-                    ConfirmationService,
-                    { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
-                    DotGlobalMessageService,
-                    ApiRoot,
-                    UserModel,
-                    DotIframeService
-                ]
-            });
-        })
-    );
+    beforeEach(() => {
+        TestBed.configureTestingModule({
+            declarations: [
+                TestHostComponent,
+                DotEditPageToolbarComponent,
+                MockDotIconButtonComponent,
+                MockGlobalMessageComponent
+            ],
+            imports: [
+                HttpClientTestingModule,
+                ButtonModule,
+                CommonModule,
+                CheckboxModule,
+                DotSecondaryToolbarModule,
+                FormsModule,
+                ToolbarModule,
+                DotEditPageViewAsControllerModule,
+                DotEditPageStateControllerModule,
+                DotEditPageInfoModule,
+                DotEditPageWorkflowsActionsModule,
+                DotPipesModule,
+                DotWizardModule,
+                TooltipModule
+            ],
+            providers: [
+                { provide: DotLicenseService, useClass: MockDotLicenseService },
+                {
+                    provide: DotMessageService,
+                    useValue: new MockDotMessageService({
+                        'dot.common.whats.changed': 'Whats',
+                        'dot.common.cancel': 'Cancel',
+                        'favoritePage.dialog.header.add.page': 'Add Favorite Page'
+                    })
+                },
+                {
+                    provide: DotPageStateService,
+                    useClass: MockDotPageStateService
+                },
+                {
+                    provide: SiteService,
+                    useClass: SiteServiceMock
+                },
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                },
+                DotMessageDisplayService,
+                DotEventsService,
+                DotcmsEventsService,
+                DotEventsSocket,
+                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
+                DotcmsConfigService,
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                LoggerService,
+                StringUtils,
+                { provide: DotRouterService, useClass: MockDotRouterService },
+                DotHttpErrorManagerService,
+                DotAlertConfirmService,
+                ConfirmationService,
+                { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
+                DotGlobalMessageService,
+                ApiRoot,
+                UserModel,
+                DotIframeService,
+                DialogService,
+                DotESContentService,
+                DotPropertiesService
+            ]
+        });
+    });
 
     beforeEach(() => {
         fixtureHost = TestBed.createComponent(TestHostComponent);
@@ -151,6 +188,7 @@ describe('DotEditPageToolbarComponent', () => {
 
         dotLicenseService = de.injector.get(DotLicenseService);
         dotMessageDisplayService = de.injector.get(DotMessageDisplayService);
+        dotDialogService = de.injector.get(DialogService);
     });
 
     describe('elements', () => {
@@ -264,6 +302,7 @@ describe('DotEditPageToolbarComponent', () => {
                 const whatsChangedElem = de.query(By.css('.dot-edit__what-changed-button'));
                 expect(whatsChangedElem).toBeDefined();
                 expect(whatsChangedElem.componentInstance.label).toBe('Whats');
+                expect(whatsChangedElem.componentInstance.binary).toBe(true);
             });
 
             it("should hide what's change selector", () => {
@@ -285,16 +324,55 @@ describe('DotEditPageToolbarComponent', () => {
         });
     });
 
+    describe('Favorite icon', () => {
+        it('should change icon on favorite page if contentlet exist', () => {
+            componentHost.pageState = new DotPageRenderState(
+                mockUser(),
+                new DotPageRender(mockDotRenderedPage()),
+                true
+            );
+            component.showFavoritePageStar = true;
+
+            fixtureHost.detectChanges();
+
+            const favoritePageIcon = de.query(By.css('[data-testId="addFavoritePageButton"]'));
+            expect(favoritePageIcon.componentInstance.icon).toBe('grade');
+        });
+
+        it('should show empty star icon on favorite page if NO contentlet exist', () => {
+            component.showFavoritePageStar = true;
+
+            fixtureHost.detectChanges();
+
+            const favoritePageIcon = de.query(By.css('[data-testId="addFavoritePageButton"]'));
+            expect(favoritePageIcon.componentInstance.icon).toBe('star_outline');
+        });
+    });
+
     describe('events', () => {
         let whatsChangedElem: DebugElement;
         beforeEach(() => {
             spyOn(component.whatschange, 'emit');
             spyOn(dotMessageDisplayService, 'push');
+            spyOn(dotDialogService, 'open');
+            spyOn(component.favoritePage, 'emit');
 
             componentHost.pageState.state.mode = DotPageMode.PREVIEW;
             delete componentHost.pageState.viewAs.persona;
+            component.showFavoritePageStar = true;
             fixtureHost.detectChanges();
             whatsChangedElem = de.query(By.css('.dot-edit__what-changed-button'));
+        });
+
+        it('should instantiate dialog with DotFavoritePageComponent', () => {
+            de.query(By.css('[data-testId="addFavoritePageButton"]')).nativeElement.click();
+            fixtureHost.detectChanges();
+
+            expect(component.favoritePage.emit).toHaveBeenCalledTimes(1);
+        });
+
+        it('should store RenderedHTML value if PREVIEW MODE', () => {
+            expect(component.pageRenderedHtml).toBe(mockDotRenderedPageState.page.rendered);
         });
 
         it("should emit what's change in true", () => {

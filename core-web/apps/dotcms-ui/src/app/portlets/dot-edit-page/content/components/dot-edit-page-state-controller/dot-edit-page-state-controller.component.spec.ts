@@ -65,33 +65,31 @@ describe('DotEditPageStateControllerComponent', () => {
     let dialogService: DotAlertConfirmService;
     let personalizeService: DotPersonalizeService;
 
-    beforeEach(
-        waitForAsync(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [
-                    TestHostComponent,
-                    DotEditPageStateControllerComponent,
-                    DotEditPageLockInfoComponent
-                ],
-                providers: [
-                    {
-                        provide: DotMessageService,
-                        useValue: mockDotMessageService
-                    },
-                    {
-                        provide: DotPageStateService,
-                        useClass: DotPageStateServiceMock
-                    },
-                    {
-                        provide: DotPersonalizeService,
-                        useClass: DotPersonalizeServiceMock
-                    },
-                    DotAlertConfirmService
-                ],
-                imports: [InputSwitchModule, SelectButtonModule, TooltipModule, DotPipesModule]
-            });
-        })
-    );
+    beforeEach(waitForAsync(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [
+                TestHostComponent,
+                DotEditPageStateControllerComponent,
+                DotEditPageLockInfoComponent
+            ],
+            providers: [
+                {
+                    provide: DotMessageService,
+                    useValue: mockDotMessageService
+                },
+                {
+                    provide: DotPageStateService,
+                    useClass: DotPageStateServiceMock
+                },
+                {
+                    provide: DotPersonalizeService,
+                    useClass: DotPersonalizeServiceMock
+                },
+                DotAlertConfirmService
+            ],
+            imports: [InputSwitchModule, SelectButtonModule, TooltipModule, DotPipesModule]
+        });
+    }));
 
     beforeEach(() => {
         fixtureHost = DOTTestBed.createComponent(TestHostComponent);
@@ -254,7 +252,7 @@ describe('DotEditPageStateControllerComponent', () => {
             );
         });
 
-        it('should update LOCK and MODE when confirmation dialog Canceled', async () => {
+        it('should update LOCK and MODE when confirmation dialog Canceled', () => {
             spyOn<any>(dialogService, 'confirm').and.callFake((conf) => {
                 conf.cancel();
             });
@@ -266,7 +264,7 @@ describe('DotEditPageStateControllerComponent', () => {
                 value: DotPageMode.EDIT
             });
 
-            await fixtureHost.whenStable();
+            fixtureHost.whenStable();
 
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
             expect(dialogService.confirm).toHaveBeenCalledTimes(1);

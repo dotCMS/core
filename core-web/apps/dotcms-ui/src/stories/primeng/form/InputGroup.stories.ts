@@ -124,6 +124,7 @@ const Template: Story<{
     text: string;
 }> = (props: { text: string }) => {
     const template = InputGroupTemplate;
+
     return {
         props,
         template
@@ -131,6 +132,7 @@ const Template: Story<{
 };
 
 export const Primary: Story = Template.bind({});
+
 Primary.parameters = {
     docs: {
         source: {

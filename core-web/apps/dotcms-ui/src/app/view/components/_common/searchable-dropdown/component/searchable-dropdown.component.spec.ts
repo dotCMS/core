@@ -1,7 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { By } from '@angular/platform-browser';
-import { ComponentFixture, waitForAsync, fakeAsync, tick, TestBed } from '@angular/core/testing';
+import {
+    ComponentFixture,
+    waitForAsync,
+    fakeAsync,
+    tick,
+    TestBed,
+    flush
+} from '@angular/core/testing';
 import { DebugElement, Component, Input } from '@angular/core';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
@@ -87,48 +94,46 @@ describe('SearchableDropdownComponent', () => {
     let pageLinkSize: number;
     let mainButton: DebugElement;
 
-    beforeEach(
-        waitForAsync(() => {
-            const messageServiceMock = new MockDotMessageService({
-                search: 'Search'
-            });
+    beforeEach(waitForAsync(() => {
+        const messageServiceMock = new MockDotMessageService({
+            search: 'Search'
+        });
 
-            TestBed.configureTestingModule({
-                declarations: [SearchableDropdownComponent, HostTestComponent],
-                imports: [
-                    ...SEARCHABLE_NGFACES_MODULES,
-                    BrowserAnimationsModule,
-                    DotIconModule,
-                    UiDotIconButtonModule,
-                    DotPipesModule
-                ],
-                providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-            }).compileComponents();
+        TestBed.configureTestingModule({
+            declarations: [SearchableDropdownComponent, HostTestComponent],
+            imports: [
+                ...SEARCHABLE_NGFACES_MODULES,
+                BrowserAnimationsModule,
+                DotIconModule,
+                UiDotIconButtonModule,
+                DotPipesModule
+            ],
+            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+        }).compileComponents();
 
-            hostFixture = TestBed.createComponent(HostTestComponent);
-            hostComp = hostFixture.componentInstance;
-            de = hostFixture.debugElement.query(By.css('dot-searchable-dropdown'));
-            comp = de.componentInstance;
+        hostFixture = TestBed.createComponent(HostTestComponent);
+        hostComp = hostFixture.componentInstance;
+        de = hostFixture.debugElement.query(By.css('dot-searchable-dropdown'));
+        comp = de.componentInstance;
 
-            for (let i = 0; i < NROWS; i++) {
-                data[i] = {
-                    id: i,
-                    label: `site-${i}`,
-                    name: `site-${i}`,
-                    parentPermissionable: {
-                        hostname: 'demo.dotcms.com'
-                    }
-                };
-            }
+        for (let i = 0; i < NROWS; i++) {
+            data[i] = {
+                id: i,
+                label: `site-${i}`,
+                name: `site-${i}`,
+                parentPermissionable: {
+                    hostname: 'demo.dotcms.com'
+                }
+            };
+        }
 
-            rows = NROWS / 3;
-            pageLinkSize = 1;
+        rows = NROWS / 3;
+        pageLinkSize = 1;
 
-            hostComp.totalRecords = NROWS;
-            hostComp.rows = rows;
-            hostComp.pageLinkSize = pageLinkSize;
-        })
-    );
+        hostComp.totalRecords = NROWS;
+        hostComp.rows = rows;
+        hostComp.pageLinkSize = pageLinkSize;
+    }));
 
     beforeEach(() => {
         hostComp.placeholder = 'placeholder';
@@ -175,6 +180,7 @@ describe('SearchableDropdownComponent', () => {
         expect(
             hostComp.data.map((item) => {
                 item.label = item.name;
+
                 return item;
             })
         ).toEqual(pdataview.value);
@@ -190,6 +196,8 @@ describe('SearchableDropdownComponent', () => {
             By.css('p-dataview .p-dataview-content .searchable-dropdown__data-list-item')
         );
         expect(dataviewDataEl.nativeElement.textContent).toEqual('site-0');
+        expect(comp.selectedOptionIndex).toBe(0);
+        expect(comp.selectedOptionValue).toBe(data[0].name);
     });
 
     it('should set CSS class, width', fakeAsync(() => {
@@ -204,6 +212,7 @@ describe('SearchableDropdownComponent', () => {
 
         expect(overlay.componentInstance.styleClass).toBe('testClass');
         expect(overlay.componentInstance.style.width).toEqual('650px');
+        flush();
     }));
 
     it('should reset Panel Min Height', () => {
@@ -227,6 +236,7 @@ describe('SearchableDropdownComponent', () => {
     it('should display defaultFilterTemplate', () => {
         hostFixture.detectChanges();
         const searchInput = de.query(By.css('[data-testid="searchInput"]'));
+        expect(searchInput.attributes.autofocus).toBeDefined();
         expect(searchInput).not.toBeNull();
     });
 
@@ -404,52 +414,52 @@ describe('SearchableDropdownComponent', () => {
     let hostFixture: ComponentFixture<HostTestExternalTemplateComponent>;
     let hostComp: HostTestExternalTemplateComponent;
     let de: DebugElement;
+    let comp: SearchableDropdownComponent;
     const data = [];
     let rows: number;
     let pageLinkSize: number;
     let mainButton: DebugElement;
 
-    beforeEach(
-        waitForAsync(() => {
-            const messageServiceMock = new MockDotMessageService({
-                search: 'Search'
-            });
+    beforeEach(waitForAsync(() => {
+        const messageServiceMock = new MockDotMessageService({
+            search: 'Search'
+        });
 
-            TestBed.configureTestingModule({
-                declarations: [SearchableDropdownComponent, HostTestExternalTemplateComponent],
-                imports: [
-                    ...SEARCHABLE_NGFACES_MODULES,
-                    BrowserAnimationsModule,
-                    DotIconModule,
-                    UiDotIconButtonModule,
-                    DotPipesModule
-                ],
-                providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-            }).compileComponents();
+        TestBed.configureTestingModule({
+            declarations: [SearchableDropdownComponent, HostTestExternalTemplateComponent],
+            imports: [
+                ...SEARCHABLE_NGFACES_MODULES,
+                BrowserAnimationsModule,
+                DotIconModule,
+                UiDotIconButtonModule,
+                DotPipesModule
+            ],
+            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+        }).compileComponents();
 
-            hostFixture = TestBed.createComponent(HostTestExternalTemplateComponent);
-            hostComp = hostFixture.componentInstance;
-            de = hostFixture.debugElement.query(By.css('dot-searchable-dropdown'));
+        hostFixture = TestBed.createComponent(HostTestExternalTemplateComponent);
+        hostComp = hostFixture.componentInstance;
+        de = hostFixture.debugElement.query(By.css('dot-searchable-dropdown'));
+        comp = de.componentInstance;
 
-            for (let i = 0; i < NROWS; i++) {
-                data[i] = {
-                    id: i,
-                    label: `site-${i}`,
-                    name: `site-${i}`,
-                    parentPermissionable: {
-                        hostname: 'demo.dotcms.com'
-                    }
-                };
-            }
+        for (let i = 0; i < NROWS; i++) {
+            data[i] = {
+                id: i,
+                label: `site-${i}`,
+                name: `site-${i}`,
+                parentPermissionable: {
+                    hostname: 'demo.dotcms.com'
+                }
+            };
+        }
 
-            rows = 10;
-            pageLinkSize = 1;
+        rows = 10;
+        pageLinkSize = 1;
 
-            hostComp.totalRecords = NROWS;
-            hostComp.rows = rows;
-            hostComp.pageLinkSize = pageLinkSize;
-        })
-    );
+        hostComp.totalRecords = NROWS;
+        hostComp.rows = rows;
+        hostComp.pageLinkSize = pageLinkSize;
+    }));
 
     beforeEach(() => {
         hostComp.placeholder = 'placeholder';
@@ -464,6 +474,40 @@ describe('SearchableDropdownComponent', () => {
     it('should render external dropdown template', () => {
         const dropdown = de.query(By.css('.dot-persona-selector__testContainer')).nativeElement;
         expect(dropdown).not.toBeNull();
+    });
+
+    it('should allow keyboad nav on filter Input - ArrowDown', () => {
+        hostFixture.detectChanges();
+        const searchInput = de.query(By.css('[data-testid="searchInput"]'));
+        const keyboardEvent = new KeyboardEvent('keyup', {key: 'ArrowDown'});
+        searchInput.nativeElement.dispatchEvent(keyboardEvent);
+
+        expect(comp.selectedOptionIndex).toBe(1);
+        expect(comp.selectedOptionValue).toBe(data[1].name);
+    });
+
+    it('should allow keyboad nav on filter Input - ArrowUp', () => {
+        comp.selectedOptionIndex = 3;
+        
+        hostFixture.detectChanges();
+        const searchInput = de.query(By.css('[data-testid="searchInput"]'));
+        const keyboardEvent = new KeyboardEvent('keyup', {key: 'ArrowUp'});
+        searchInput.nativeElement.dispatchEvent(keyboardEvent);
+
+        expect(comp.selectedOptionIndex).toBe(2);
+        expect(comp.selectedOptionValue).toBe(data[2].name);
+    });
+
+    it('should allow keyboad nav on filter Input - Enter', () => {
+        comp.selectedOptionIndex = 3;
+        spyOn(comp, 'handleClick');
+        
+        hostFixture.detectChanges();
+        const searchInput = de.query(By.css('[data-testid="searchInput"]'));
+        const keyboardEvent = new KeyboardEvent('keyup', {key: 'Enter'});
+        searchInput.nativeElement.dispatchEvent(keyboardEvent);
+
+        expect(comp.handleClick).toHaveBeenCalledWith(data[3])
     });
 
     it('should render external listItem template', () => {

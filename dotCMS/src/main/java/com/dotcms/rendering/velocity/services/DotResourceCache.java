@@ -3,6 +3,7 @@
  */
 package com.dotcms.rendering.velocity.services;
 
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
@@ -156,6 +157,7 @@ public class DotResourceCache implements ResourceCache, Cachable {
             cache.flushGroup(group);
         }
 
+        DotConcurrentFactory.getInstance().getSubmitter().submit(new MacroCacheRefresherJob());
     }
 
 

@@ -8,16 +8,16 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
+import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.UserAPI;
@@ -76,7 +76,6 @@ import java.text.MessageFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -817,6 +816,14 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			if(UtilMethods.isSet(contentletFormData.get("languageId")))
 				contentlet.setLanguageId(Long.parseLong(contentletFormData.get("languageId").toString()));
 
+			if(UtilMethods.isSet(contentletFormData.get(VariantAPI.VARIANT_KEY))) {
+				final String variantName = contentletFormData.get(VariantAPI.VARIANT_KEY).toString();
+
+				final Variant variant = APILocator.getVariantAPI().get(variantName)
+						.orElse(VariantAPI.DEFAULT_VARIANT);
+
+				contentlet.setVariantId(variant.name());
+			}
 
 			List<String> disabled = new ArrayList<>();
 			if(UtilMethods.isSet(contentletFormData.get("disabledWysiwyg")))
@@ -930,8 +937,19 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		if(InodeUtils.isSet(inodeStr))
 		{
 			Contentlet contentletFind = conAPI.find(inodeStr, user, false);
+
 			if(contentletFind != null) {
-				contentlet.getMap().putAll(contentletFind.getMap());
+
+				final String variantNameFormData = UtilMethods.isSet(contentletFormData.get(VariantAPI.VARIANT_KEY)) ?
+						contentletFormData.get(VariantAPI.VARIANT_KEY).toString() :
+						VariantAPI.DEFAULT_VARIANT.name();
+
+				if (contentletFind.getVariantId().equals(variantNameFormData)) {
+					contentlet.getMap().putAll(contentletFind.getMap());
+				} else {
+					contentletFormData.put("contentletInode", StringPool.BLANK);
+					creatingNewVersion(inodeStr, contentletFormData, contentlet);
+				}
 			} else{
 				throw new NotFoundInDbException("contentlet with that inode does not exist");
 			}
@@ -939,25 +957,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 			/*In case of multi-language first ocurrence new contentlet*/
 			String sibblingInode = (String) contentletFormData.get("sibbling");
-
-			if(InodeUtils.isSet(sibblingInode) && !sibblingInode.equals("0")){
-
-				Contentlet sibblingContentlet = conAPI.find(sibblingInode,APILocator.getUserAPI().getSystemUser(), false);
-
-				Logger.debug(UtilHTML.class, "getLanguagesIcons :: Sibbling Contentlet = "+ sibblingContentlet.getInode());
-
-				Identifier identifier = APILocator.getIdentifierAPI().find(sibblingContentlet);
-
-				contentlet.setIdentifier(identifier.getInode());
-
-				String langId = (String) contentletFormData.get("lang");
-
-				if(UtilMethods.isSet(langId)){
-					contentlet.setLanguageId(Long.parseLong(langId));
-				}
-
-				contentlet.setStructureInode(sibblingContentlet.getStructureInode());
-			}
+			creatingNewVersion(sibblingInode, contentletFormData, contentlet);
 		}
 
 		//if(perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, false));
@@ -986,6 +986,36 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 		// Asset Versions to list in the versions tab
 		contentletFormData.put(WebKeys.VERSIONS_INODE_EDIT, contentlet);
+	}
+
+	private void creatingNewVersion(final String inode, final Map<String, Object> contentletFormData, final Contentlet contentlet)
+			throws DotDataException, DotSecurityException {
+
+
+		if(InodeUtils.isSet(inode) && !inode.equals("0")){
+
+			Contentlet sibblingContentlet = conAPI.find(inode,APILocator.getUserAPI().getSystemUser(), false);
+
+			Logger.debug(UtilHTML.class, "getLanguagesIcons :: Sibbling Contentlet = "+ sibblingContentlet.getInode());
+
+			Identifier identifier = APILocator.getIdentifierAPI().find(sibblingContentlet);
+
+			contentlet.setIdentifier(identifier.getInode());
+
+			String langId = (String) contentletFormData.get("lang");
+
+			if(UtilMethods.isSet(langId)){
+				contentlet.setLanguageId(Long.parseLong(langId));
+			}
+
+			final String variantName = (String) contentletFormData.get(VariantAPI.VARIANT_KEY);
+
+			if(UtilMethods.isSet(variantName)){
+				contentlet.setVariantId(variantName);
+			}
+
+			contentlet.setStructureInode(sibblingContentlet.getStructureInode());
+		}
 	}
 
 	private void loadContentletRelationshipsInRequest(Map<String, Object> contentletFormData, Contentlet contentlet, Structure structure) throws DotDataException {

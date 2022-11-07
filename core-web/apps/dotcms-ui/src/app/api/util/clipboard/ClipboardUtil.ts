@@ -39,6 +39,7 @@ export class DotClipboardUtil {
             } catch (err) {
                 reject(result);
             }
+
             document.body.removeChild(txtArea);
         });
     }

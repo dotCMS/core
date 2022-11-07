@@ -17,6 +17,7 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.toImmutableList;
@@ -53,6 +54,6 @@ public class FieldTypeResource {
                 .map(FieldType::toMap)
                 .collect(toImmutableList());
 
-        return Response.ok( new ResponseEntityView( fieldTypesMap ) ).build();
+        return Response.ok( new ResponseEntityView<List<Map<String, Object>>>( fieldTypesMap ) ).build();
     }
 }

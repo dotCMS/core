@@ -1,4 +1,5 @@
 title: Force Push Everything
+sort: 4
 default: false
 roles: DOTCMS_BACK_END_USER
 filters:
@@ -14,5 +15,5 @@ filters:
    excludeDependencyClasses: []
    ## force push as always worked, if true will push regardless the pushed asset history
    forcePush: true
-   ## check for relationships (if false neither the Relationship object nor the related content nor the related content type will be pushed)
+   ## check for relationships (if false neither the related content nor the related content type will be pushed)
    relationships: true

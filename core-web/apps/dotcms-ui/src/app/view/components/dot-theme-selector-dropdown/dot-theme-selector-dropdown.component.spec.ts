@@ -3,7 +3,7 @@
 import { DebugElement, Input } from '@angular/core';
 import { Component } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { of } from 'rxjs';
 
 import { SiteService } from '@dotcms/dotcms-js';
@@ -55,9 +55,9 @@ class MockDotSiteSelectorComponent {
     `
 })
 class TestHostFilledComponent {
-    form: FormGroup;
+    form: UntypedFormGroup;
 
-    constructor(private fb: FormBuilder) {
+    constructor(private fb: UntypedFormBuilder) {
         this.form = this.fb.group({
             theme: '123'
         });
@@ -73,9 +73,9 @@ class TestHostFilledComponent {
     `
 })
 class TestHostEmtpyComponent {
-    form: FormGroup;
+    form: UntypedFormGroup;
 
-    constructor(private fb: FormBuilder) {
+    constructor(private fb: UntypedFormBuilder) {
         this.form = this.fb.group({
             theme: ''
         });
@@ -231,31 +231,34 @@ describe('DotThemeSelectorDropdownComponent', () => {
         describe('filters', () => {
             beforeEach(() => {
                 spyOn(paginationService, 'setExtraParams');
-                spyOn(paginationService, 'getWithOffset').and.returnValue(of([mockDotThemes[2]]));
-                spyOnProperty(paginationService, 'totalRecords').and.returnValue(1);
+                spyOn(paginationService, 'getWithOffset').and.returnValue(of(mockDotThemes));
+                spyOnProperty(paginationService, 'totalRecords').and.returnValue(3);
 
                 const searchableButton = de.query(By.css('dot-searchable-dropdown button'));
                 searchableButton.nativeElement.click();
-                fixture.detectChanges();
+                
             });
 
             it('should system to true', () => {
+                fixture.detectChanges();
                 const siteSelector = de.query(By.css('[data-testId="siteSelector"]'));
                 expect(siteSelector.componentInstance.system).toEqual(true);
             });
 
             it('should update themes, totalRecords and call setExtraParams when site selector change', fakeAsync(() => {
+                fixture.detectChanges();
                 const siteSelector = de.query(By.css('[data-testId="siteSelector"]'));
                 siteSelector.triggerEventHandler('switch', {
                     identifier: '123'
                 });
                 tick();
                 expect(paginationService.setExtraParams).toHaveBeenCalledWith('hostId', '123');
-                expect(component.themes).toEqual([mockDotThemes[2]]);
-                expect(component.totalRecords).toBe(1);
+                expect(component.themes).toEqual(mockDotThemes);
+                expect(component.totalRecords).toBe(3);
             }));
 
             it('should update themes, totalRecords and call setExtraParams when search input change', async () => {
+                fixture.detectChanges();
                 await fixture.whenStable();
                 const input = de.query(By.css('[data-testId="searchInput"]')).nativeElement;
                 input.value = 'hello';
@@ -263,8 +266,42 @@ describe('DotThemeSelectorDropdownComponent', () => {
                 input.dispatchEvent(event);
                 await fixture.whenStable();
                 expect(paginationService.searchParam).toBe('hello');
-                expect(component.themes).toEqual([mockDotThemes[2]]);
-                expect(component.totalRecords).toBe(1);
+                expect(component.themes).toEqual(mockDotThemes);
+                expect(component.totalRecords).toBe(3);
+            });
+
+            it('should allow keyboad nav on filter Input - ArrowDown', async () => {
+                fixture.detectChanges();
+                await fixture.whenStable();
+                const input = de.query(By.css('[data-testId="searchInput"]')).nativeElement;
+                const event = new KeyboardEvent('keyup', {key: 'ArrowDown'});
+                input.dispatchEvent(event);
+                await fixture.whenStable();
+                expect(component.selectedOptionIndex).toBe(1);
+                expect(component.selectedOptionValue).toBe(mockDotThemes[1].name);
+            });
+
+            it('should allow keyboad nav on filter Input - ArrowUp', async () => {
+                fixture.detectChanges();
+                await fixture.whenStable();
+                const input = de.query(By.css('[data-testId="searchInput"]')).nativeElement;
+                const event = new KeyboardEvent('keyup', {key: 'ArrowUp'});
+                input.dispatchEvent(event);
+                await fixture.whenStable();
+                expect(component.selectedOptionIndex).toBe(0);
+                expect(component.selectedOptionValue).toBe(mockDotThemes[0].name);
+            });
+
+            it('should allow keyboad nav on filter Input - Enter', async () => {
+                spyOn(component, 'onChange');
+                fixture.detectChanges();
+                await fixture.whenStable();
+                const input = de.query(By.css('[data-testId="searchInput"]')).nativeElement;
+                const event = new KeyboardEvent('keyup', {key: 'Enter'});
+                input.dispatchEvent(event);
+                await fixture.whenStable();
+                expect(component.onChange).toHaveBeenCalledWith(mockDotThemes[0])
+
             });
         });
     });

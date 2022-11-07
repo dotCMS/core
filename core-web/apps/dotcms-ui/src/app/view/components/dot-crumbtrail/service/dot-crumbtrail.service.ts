@@ -64,10 +64,12 @@ export class DotCrumbtrailService {
                             res = [
                                 {
                                     label: menu.name,
+                                    target: '_self',
                                     url: `#/${menu.menuItems[0].menuLink}`
                                 },
                                 {
                                     label: menuItem.label,
+                                    target: '_self',
                                     url: `#/${menuItem.menuLink}`
                                 }
                             ];
@@ -91,10 +93,13 @@ export class DotCrumbtrailService {
                 if (index === array.length - 1) {
                     section = currentData[key];
                 }
+
                 currentData = currentData[key];
             });
+
             return section;
         }
+
         return null;
     }
 
@@ -121,6 +126,7 @@ export class DotCrumbtrailService {
 
                     crumbTrail.push({
                         label: sectionLabel ? sectionLabel : sections[1],
+                        target: '_self',
                         url: ''
                     });
                 }
@@ -136,11 +142,13 @@ export class DotCrumbtrailService {
 
     private isPortletTitleAvailable(url: string): boolean {
         const sections: string[] = this.splitURL(url);
+
         return !!this.portletsTitlePathFinder[sections[0]];
     }
 }
 
 export interface DotCrumb {
     label: string;
+    target?: string;
     url: string;
 }

@@ -163,6 +163,40 @@ describe('DotWorkflowActionsFireService', () => {
         });
     });
 
+    it('should PUBLISH and Wait For Index with Individual Permissions', () => {
+        dotWorkflowActionsFireService
+            .publishContentletAndWaitForIndex(
+                'persona',
+                { name: 'test' },
+                { READ: ['123'], WRITE: ['456'] }
+            )
+            .subscribe((res) => {
+                expect(res).toEqual([
+                    {
+                        name: 'test'
+                    }
+                ]);
+            });
+
+        const req = httpMock.expectOne('v1/workflow/actions/default/fire/PUBLISH');
+        expect(req.request.method).toBe('PUT');
+        expect(req.request.body).toEqual({
+            contentlet: {
+                contentType: 'persona',
+                name: 'test',
+                indexPolicy: 'WAIT_FOR'
+            },
+            individualPermissions: { READ: ['123'], WRITE: ['456'] }
+        });
+        req.flush({
+            entity: [
+                {
+                    name: 'test'
+                }
+            ]
+        });
+    });
+
     it('should create and return a new Content', () => {
         const data = { id: '123' };
         dotWorkflowActionsFireService.fireTo('123', 'new', data).subscribe((res: any) => {

@@ -1,10 +1,10 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.enterprise.license.LicenseManager;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -30,6 +30,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.contentet.pagination.PaginatedContentlets;
 import com.liferay.portal.model.User;
 import org.elasticsearch.action.search.SearchResponse;
 
@@ -825,6 +826,11 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
 	@Override
 	public Contentlet findContentletByIdentifier(String identifier, boolean live, long languageId, User user, boolean respectFrontendRoles)	throws DotDataException, DotSecurityException,	DotContentletStateException {
+		return findContentletByIdentifier(identifier, live, languageId, VariantAPI.DEFAULT_VARIANT.name(), user, respectFrontendRoles);
+	}
+
+	@Override
+	public Contentlet findContentletByIdentifier(String identifier, boolean live, long languageId, String variantId, User user, boolean respectFrontendRoles)	throws DotDataException, DotSecurityException,	DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findContentletByIdentifier(identifier, live, languageId, user, respectFrontendRoles);
 			if(!preResult){
@@ -832,7 +838,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
 			}
 		}
-		Contentlet c = conAPI.findContentletByIdentifier(identifier, live, languageId, user, respectFrontendRoles);
+		Contentlet c = conAPI.findContentletByIdentifier(identifier, live, languageId, variantId, user, respectFrontendRoles);
 		for(ContentletAPIPostHook post : postHooks){
 			post.findContentletByIdentifier(identifier, live, languageId, user, respectFrontendRoles,c);
 		}
@@ -959,7 +965,41 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         return c;
     }
 
-    @Override
+
+
+	public PaginatedContentlets findContentletsPaginatedByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		return findContentletsPaginatedByHost(parentHost, null, null, user, respectFrontendRoles);
+	}
+
+	@Override
+	public PaginatedContentlets findContentletsPaginatedByHost(
+			final Host parentHost,
+			final List<Integer> includingContentTypes,
+			final List<Integer> excludingContentTypes,
+			final User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException{
+		for (ContentletAPIPreHook pre : preHooks) {
+			boolean preResult = pre.findContentletsByHost(parentHost, includingContentTypes,
+					excludingContentTypes, user, respectFrontendRoles);
+			if (!preResult) {
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed "
+						+ pre.getClass().getName());
+			}
+		}
+
+		final PaginatedContentlets paginatedContentletsByHost = conAPI.findContentletsPaginatedByHost(
+				parentHost, includingContentTypes,
+				excludingContentTypes, user, respectFrontendRoles);
+
+		for (ContentletAPIPostHook post : postHooks) {
+			post.findContentletsByHost(parentHost, includingContentTypes,
+					excludingContentTypes, user, respectFrontendRoles);
+		}
+		return paginatedContentletsByHost;
+	}
+
+
+	@Override
 	public List<Contentlet> findContentletsByHostBaseType(Host parentHost,
 												  List<Integer> includingBaseTypes, User user,
 												  boolean respectFrontendRoles) throws DotDataException, DotSecurityException {

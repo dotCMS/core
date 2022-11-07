@@ -27,7 +27,7 @@ import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.manifest.ManifestBuilder;
 import com.dotcms.publishing.manifest.ManifestUtil;
 import com.dotcms.publishing.output.TarGzipBundleOutput;
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import org.apache.commons.io.IOUtils;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;

@@ -149,7 +149,7 @@ public abstract class DotAbstractSamlConfigurationServiceImpl implements SamlCon
                     + " property. idpConfigId: " + identityProviderConfiguration.getId());
         }
 
-        return null;
+        return false;
     }
 
     @Override

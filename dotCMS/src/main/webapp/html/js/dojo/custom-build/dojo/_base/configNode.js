@@ -7,6 +7,27 @@ exports.config = function(config){
 		var arg = (process.argv[i] + "").split("=");
 		if(arg[0] == "load"){
 			deps.push(arg[1]);
+		}else if(arg[0] == "mapPackage") {
+			var parts = arg[1].split(":"),
+				name = parts[0],
+				location=parts[1],
+				isPrexisting = false;
+
+			for (var j = 0; j < config.packages.length; j++) {
+				var pkg = config.packages[j];
+				if (pkg.name === name) {
+					pkg.location = location;
+					isPrexisting = true;
+					break;
+				}
+			}
+
+			if (!isPrexisting) {
+				config.packages.push({
+					name: name,
+					location: location
+				});
+			}
 		}else{
 			args.push(arg);
 		}
@@ -58,7 +79,7 @@ exports.config = function(config){
 				// define debug for console messages during dev instead of console.log
 				// (node's heavy async makes console.log confusing sometimes)
 				var util = require("util");
-				util.debug(util.inspect(item));
+				util.debuglog(util.inspect(item));
 			},
 
 			eval: function(__text, __urlHint){

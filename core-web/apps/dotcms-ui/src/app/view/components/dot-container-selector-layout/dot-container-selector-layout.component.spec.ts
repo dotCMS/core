@@ -138,7 +138,6 @@ describe('DotContainerSelectorLayoutComponent', () => {
 
     it('should remove containers after click on trash icon', () => {
         const bodySelectorList = de.query(By.css('.container-selector__list'));
-        console.log(bodySelectorList);
 
         const bodySelectorListItems = bodySelectorList.nativeElement.children;
 

@@ -151,7 +151,7 @@ public class VersionableResource {
                                 + " does not exists");
             }
 
-            return Response.ok(new ResponseEntityView(
+            return Response.ok(new ResponseEntityView<>(
                     this.versionableHelper.getAssetTypeByVersionableFindAllMap()
                             .getOrDefault(identifier.getAssetType(),
                                     this.versionableHelper.getDefaultVersionableFindAllStrategy())

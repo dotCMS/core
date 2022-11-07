@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { UntypedFormControl, UntypedFormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { DotFieldValidationMessageComponent } from '@components/_common/dot-field-validation-message/dot-field-validation-message';
 import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
@@ -32,8 +32,8 @@ describe('DefaultValuePropertyComponent', () => {
             fixture = TestBed.createComponent(DefaultValuePropertyComponent);
             comp = fixture.componentInstance;
 
-            comp.group = new FormGroup({
-                name: new FormControl('', Validators.required)
+            comp.group = new UntypedFormGroup({
+                name: new UntypedFormControl('', Validators.required)
             });
             comp.property = {
                 name: 'name',
@@ -46,7 +46,7 @@ describe('DefaultValuePropertyComponent', () => {
     );
 
     it('should have a form', () => {
-        const group = new FormGroup({});
+        const group = new UntypedFormGroup({});
         comp.group = group;
         const divForm: DebugElement = fixture.debugElement.query(By.css('div'));
 

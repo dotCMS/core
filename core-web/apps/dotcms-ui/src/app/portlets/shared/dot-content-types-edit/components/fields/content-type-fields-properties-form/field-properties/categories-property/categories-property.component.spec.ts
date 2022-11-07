@@ -7,7 +7,7 @@ import { PaginatorService } from '@services/paginator';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
 
-import { NgControl, FormGroup } from '@angular/forms';
+import { NgControl, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { of } from 'rxjs';
 import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
@@ -91,7 +91,7 @@ describe('CategoriesPropertyComponent', () => {
     );
 
     it('should have a form', () => {
-        const group = new FormGroup({});
+        const group = new UntypedFormGroup({});
         comp.group = group;
         const divForm: DebugElement = de.query(By.css('div'));
 

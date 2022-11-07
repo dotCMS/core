@@ -1,8 +1,8 @@
 import { DotRolesService } from './dot-roles.service';
 import { DotRole } from '@models/dot-role/dot-role.model';
-import { TestBed, getTestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { MockDotMessageService } from '@dotcms/app/test/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
@@ -28,17 +28,16 @@ export const mockProcessedRoles: DotRole[] = [
     { id: '2', name: 'Some Role (User)', user: true, roleKey: 'roleKey1' }
 ];
 
-const messageServiceMock = new MockDotMessageService({
-    'current-user': 'Current User',
-    user: 'User'
-});
-
 describe('DotRolesService', () => {
-    let injector: TestBed;
     let dotRolesService: DotRolesService;
     let httpMock: HttpTestingController;
 
     beforeEach(() => {
+        const messageServiceMock = new MockDotMessageService({
+            'current-user': 'Current User',
+            user: 'User'
+        });
+
         TestBed.configureTestingModule({
             imports: [HttpClientTestingModule],
             providers: [
@@ -47,9 +46,8 @@ describe('DotRolesService', () => {
                 { provide: DotMessageService, useValue: messageServiceMock }
             ]
         });
-        injector = getTestBed();
-        dotRolesService = injector.get(DotRolesService);
-        httpMock = injector.get(HttpTestingController);
+        dotRolesService = TestBed.inject(DotRolesService);
+        httpMock = TestBed.inject(HttpTestingController);
     });
 
     it('should get Roles', () => {
@@ -60,7 +58,18 @@ describe('DotRolesService', () => {
 
         const req = httpMock.expectOne(url);
         expect(req.request.method).toBe('GET');
-        req.flush({ entity: mockRoles });
+        req.flush({ entity: JSON.parse(JSON.stringify(mockRoles)) });
+    });
+
+    it('should search Roles', () => {
+        const url = '/api/v1/roles/_search';
+        dotRolesService.search().subscribe((res) => {
+            expect(res).toEqual(mockProcessedRoles);
+        });
+
+        const req = httpMock.expectOne(url);
+        expect(req.request.method).toBe('GET');
+        req.flush({ entity: JSON.parse(JSON.stringify(mockRoles)) });
     });
 
     afterEach(() => {

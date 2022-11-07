@@ -33,6 +33,19 @@ export const config: Config = {
             serviceWorker: null
         }
     ],
+    testing: {
+        reporters: [
+            'default',
+            [
+                'jest-html-reporters',
+                {
+                    publicPath: 'test-reports/dotcms-webcomponents',
+                    filename: 'report.html',
+                    openReport: false
+                }
+            ]
+        ]
+    },
 
     plugins: [sass()]
 };

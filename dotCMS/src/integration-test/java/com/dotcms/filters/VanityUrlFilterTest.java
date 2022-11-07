@@ -151,7 +151,7 @@ public class VanityUrlFilterTest {
         String title = "VanityURL"  + System.currentTimeMillis();
         String site = defaultHost.getIdentifier();
         String uri = "/testing_forward" + System.currentTimeMillis();
-        String forwardTo = "https://dotcms.com";
+        String forwardTo = "https://www.dotcms.com";
         int action = 200;
         int order = 1;
 

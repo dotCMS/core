@@ -62,7 +62,8 @@
     for(Contentlet relatedContent : relatedContents ){
         listOfRelatedInodes.add(relatedContent.getInode());
     }
-    
+
+
 	//Variable used to return after the work is done with the contentlet
 	String referer = "";
 	if (request.getParameter("referer") != null) {
@@ -176,6 +177,41 @@
 %>
     <style type="text/css" media="all">
         @import url(/html/portlet/ext/contentlet/field/relationship_field.css);
+		.loader-spinner {
+			border-radius: 50%;
+			width: 40px;
+			height: 40px;
+			display: inline-block;
+			vertical-align: middle;
+			font-size: 10px;
+			position: relative;
+			text-indent: -9999em;
+			border: 4px solid rgba(107, 77, 226, 0.2);
+			border-left-color: #6b4de2;
+			transform: translateZ(0);
+			animation: load8 1.1s infinite linear;
+			overflow: hidden;
+		}
+		@-webkit-keyframes load8 {
+			0% {
+				-webkit-transform: rotate(0deg);
+				transform: rotate(0deg);
+			}
+			100% {
+				-webkit-transform: rotate(360deg);
+				transform: rotate(360deg);
+			}
+		}
+		@keyframes load8 {
+			0% {
+				-webkit-transform: rotate(0deg);
+				transform: rotate(0deg);
+			}
+			100% {
+				-webkit-transform: rotate(360deg);
+				transform: rotate(360deg);
+			}
+}
     </style>
 
 	<table border="0" class="listingTable" style="margin-bottom: 30px;">
@@ -215,7 +251,6 @@
 
 	<!--  Javascripts -->
 	<script	language="javascript">
-	
         dojo.require("dojo.dnd.Container");
         dojo.require("dojo.dnd.Manager");
         dojo.require("dojo.dnd.Source");
@@ -226,6 +261,9 @@
 		var <%= relationJsName %>_jsOverrideRelated = <%= overrideRelated %>;
 		var <%= relationJsName %>_specialFields = { <%= jsSpecialFields %> };
 		var <%= relationJsName %>_showFields = [ <%= jsFieldNames %> ];
+
+		// Add the relation to the map, and set it to false.
+		relationsLoadedMap['<%=relationJsName%>'] = false;
 
         function getCurrentLanguageIndex(o) {
             var index = 0;
@@ -391,11 +429,18 @@
 				}
 				if(!doesIdentifierExists)
 					data[data.length] = dataToRelate[indexK];
-			}				
+			}
+
+			// Remove the loading
+			document.querySelector('#relationship-loading<%=relationJsName%>')?.remove();
 
 			if( data == null || (data != null && data.length == 0) ) {
+				// If it's empty, set the value to true as well.
+				relationsLoadedMap['<%=relationJsName%>'] = true;
+				renumberAndReorder<%= relationJsName %>();
 			  return;
 			}
+
 
 			var dataNoRep = new Array();
 
@@ -436,6 +481,9 @@
             }
 
 			<%= relationJsName %>_Contents = <%= relationJsName %>_Contents.concat(dataNoRep);
+			// This function is called when relations are loaded or every time we add a new relation.
+			// So we set the map value to true.
+			relationsLoadedMap['<%=relationJsName%>'] = true;
 			renumberAndReorder<%= relationJsName %>();
 		}
 
@@ -524,9 +572,7 @@
 			window.location=href;
 		}
 	    
-
 		// DOTCMS-6097
-
 
 		var <%= relationJsName %>RelatedCons;
 
@@ -555,8 +601,7 @@
                     langTD.style.whiteSpace="nowrap";
                     langTD.style.textAlign = 'right';
                     langTD.innerHTML = <%= relationJsName %>_lang(item, preId);
-                    setTimeout(function () { dojo.parser.parse(document.querySelector('[data-id="' + preId + '_'+ item.id +'"]')
-); }, 0);
+                    setTimeout(function () { dojo.parser.parse(document.querySelector('[data-id="' + preId + '_'+ item.id +'"]')); }, 0);
                 }
             <%}%>
         }
@@ -631,16 +676,15 @@
 		}
 
 		function <%= relationJsName %>init(){
+			add<%= relationJsName %>Loading();
 
-                  // Initializing related contents table.
+			// Initializing related contents table.
 			<%= relationJsName %>buildListing('<%= relationJsName %>Table',<%= relationJsName %>_Contents);
 
 			// connecting drag and drop to reorder functionality
 			dojo.subscribe("/dnd/drop", function(source){
 			  	renumberAndReorder<%= relationJsName %>(source);
 			});
-
-			renumberAndReorder<%= relationJsName %>();
 		}
 
 		dojo.addOnLoad(<%= relationJsName %>init);
@@ -821,16 +865,28 @@
 	        dojo.byId("<%= relationJsName %>relateMenu").appendChild(button.domNode);
 	    }
 
+		function add<%= relationJsName %>Loading() {
+			// Create row
+			const row = document.createElement("tr");
+			row.setAttribute("id", 'relationship-loading<%=relationJsName%>');
+			// Create column
+			const col = document.createElement("td");
+			col.setAttribute("style", "text-align:center");
+			col.setAttribute("colspan", "1000");
+
+			// Append loading to the table
+			col.innerHTML = '<div class="loader-spinner"></div>';
+			row.appendChild(col);
+			document.getElementById('<%= relationJsName %>Table').appendChild(row);
+		}
 
         dojo.addOnLoad(
          function(){
-             var doRelateContainer = document.getElementById('doRelateContainer');
-             doRelateContainer.style.display = '<%= relationship.getCardinality() == 2 ? "none" : "block"%>';
-         	// Load initial relationships
-             ContentletAjax.getContentletsData ('<%=String.join(",", listOfRelatedInodes)%>', <%= relationJsName %>_addRelationshipCallback);
-         }
-        );
-
+			var doRelateContainer = document.getElementById('doRelateContainer');
+			doRelateContainer.style.display = '<%= relationship.getCardinality() == 2 ? "none" : "block"%>';
+			// Load initial relationships
+			ContentletAjax.getContentletsData ('<%=String.join(",", listOfRelatedInodes)%>', <%= relationJsName %>_addRelationshipCallback);
+        });
 	</script>
 	
 

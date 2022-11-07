@@ -86,7 +86,7 @@ public class FieldResource implements Serializable {
             }
             final ContentType contentType = APILocator.getContentTypeAPI(user).find(typeIdOrVarName);
             final List<Field> contentTypeFields = fieldAPI.byContentTypeId(contentType.id());
-            response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(contentTypeFields).mapList())).build();
+            response = Response.ok(new ResponseEntityView<>(new JsonFieldTransformer(contentTypeFields).mapList())).build();
         } catch (Exception e) {
             response = ResponseUtil.mapExceptionResponse(e);
         }
@@ -151,7 +151,7 @@ public class FieldResource implements Serializable {
                     : APILocator.getContentTypeAPI(user).find(typeIdOrVarName).id();
             final List<Field> fields = fieldAPI.byContentTypeId(contentTypeAPI.find(contentTypeId).id());
 
-            response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(fields).mapList())).build();
+            response = Response.ok(new ResponseEntityView<>(new JsonFieldTransformer(fields).mapList())).build();
 
         } catch (Exception e) {
 
@@ -368,7 +368,7 @@ public class FieldResource implements Serializable {
             final Field field = fieldAPI.find(fieldId);
             fieldAPI.delete(field, user);
 
-            response = Response.ok(new ResponseEntityView(null)).build();
+            response = Response.ok(new ResponseEntityView<>((String)null)).build();
 
         } catch (Exception e) {
 
@@ -400,7 +400,7 @@ public class FieldResource implements Serializable {
 
             fieldAPI.delete(field, user);
 
-            response = Response.ok(new ResponseEntityView(null)).build();
+            response = Response.ok(new ResponseEntityView<>((String)null)).build();
 
         } catch (Exception e) {
 

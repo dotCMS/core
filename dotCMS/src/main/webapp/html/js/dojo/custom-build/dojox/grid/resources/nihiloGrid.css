@@ -1,4 +1,5 @@
 @import url("Grid.css");
+@import url("Grid_rtl.css");
 
 .nihilo .dojoxGrid {
 	background-color: #e9e9e9;

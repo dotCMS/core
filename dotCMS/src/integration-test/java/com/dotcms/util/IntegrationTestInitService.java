@@ -11,6 +11,8 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.SystemProperties;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.apache.felix.framework.OSGISystem;
 import org.mockito.Mockito;
 
 /**

@@ -148,7 +148,7 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 	public Identifier createNew(final Folder folder, final Treeable parent,
 			final String existingId) throws DotDataException {
 
-		Logger.info(IdentifierAPIImpl.class, String.format(
+		Logger.debug(IdentifierAPIImpl.class, String.format(
 				"Creating new identifier for folder `%s` ", folder.getName()));
 
 		if (UtilMethods.isNotSet(existingId)) {

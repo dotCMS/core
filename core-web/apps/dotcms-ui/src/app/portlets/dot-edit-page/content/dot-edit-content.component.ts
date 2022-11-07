@@ -40,6 +40,11 @@ import { DotPropertiesService } from '@services/dot-properties/dot-properties.se
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotContentletEventAddContentType } from './services/dot-edit-content-html/models/dot-contentlets-events.model';
 import { DotIframeEditEvent } from '@dotcms/dotcms-models';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { DialogService } from 'primeng/dynamicdialog';
+import { DotFavoritePageComponent } from '../components/dot-favorite-page/dot-favorite-page.component';
+
+export const EDIT_BLOCK_EDITOR_CUSTOM_EVENT = 'edit-block-editor';
 
 /**
  * Edit content page component, render the html of a page and bind all events to make it ediable.
@@ -75,6 +80,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     private pageStateInternal: DotPageRenderState;
 
     constructor(
+        private dialogService: DialogService,
         private dotContentletEditorService: DotContentletEditorService,
         private dotDialogService: DotAlertConfirmService,
         private dotEditPageService: DotEditPageService,
@@ -93,7 +99,8 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         public iframeOverlayService: IframeOverlayService,
         private httpErrorManagerService: DotHttpErrorManagerService,
         private dotConfigurationService: DotPropertiesService,
-        private dotLicenseService: DotLicenseService
+        private dotLicenseService: DotLicenseService,
+        private dotEventsService: DotEventsService
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
@@ -137,6 +144,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 'cancel-save-menu-order': () => {
                     this.reorderMenuUrl = '';
                     this.reload(null);
+                },
+                'edit-block-editor': (element) => {
+                    this.dotEventsService.notify(EDIT_BLOCK_EDITOR_CUSTOM_EVENT, element);
                 }
             };
         }
@@ -152,7 +162,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         this.dotLoadingIndicatorService.show();
         this.setInitalData();
         this.subscribeSwitchSite();
-        this.subscribeIframeCustomEvents();
+        this.subscribeToNgEvents();
         this.subscribeIframeActions();
         this.subscribePageModelChange();
         this.subscribeOverlayService();
@@ -258,6 +268,32 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         this.dotEditContentHtmlService.removeContentletPlaceholder();
     }
 
+    /**
+     * Fires a dynamic dialog instance with DotFavoritePage component
+     *
+     * @param boolean openDialog
+     * @memberof DotEditContentComponent
+     */
+    showFavoritePageDialog(openDialog: boolean): void {
+        this.pageState$.pipe(take(1)).subscribe((pageState: DotPageRenderState) => {
+            if (openDialog) {
+                this.dialogService.open(DotFavoritePageComponent, {
+                    header: this.dotMessageService.get('favoritePage.dialog.header.add.page'),
+                    width: '80rem',
+                    data: {
+                        page: {
+                            pageState: pageState,
+                            pageRenderedHtml: pageState.params.page.rendered || null
+                        },
+                        onSave: () => {
+                            this.dotPageStateService.setFavoritePageHighlight(true);
+                        }
+                    }
+                });
+            }
+        });
+    }
+
     private setAllowedContent(pageState: DotPageRenderState): void {
         const CONTENT_HIDDEN_KEY = 'CONTENT_PALETTE_HIDDEN_CONTENT_TYPES';
         this.dotConfigurationService
@@ -296,6 +332,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         this.dotGlobalMessageService.loading(
             this.dotMessageService.get('dot.common.message.saving')
         );
+
         return this.dotEditPageService
             .save(this.pageStateInternal.page.identifier, this.getPersonalizedModel(model) || model)
             .pipe(
@@ -305,6 +342,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 }),
                 catchError((error: HttpErrorResponse) => {
                     this.httpErrorManagerService.handle(error);
+
                     return of('error');
                 })
             );
@@ -321,6 +359,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 };
             });
         }
+
         return null;
     }
 
@@ -407,10 +446,11 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 this.reload(null);
             }
         };
+
         return eventsHandlerMap[event];
     }
 
-    private subscribeIframeCustomEvents(): void {
+    private subscribeToNgEvents(): void {
         fromEvent(window.document, 'ng-event')
             .pipe(pluck('detail'), takeUntil(this.destroy$))
             .subscribe((customEvent: { name: string; data: unknown }) => {
@@ -451,6 +491,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             if (this.isEnterpriseLicense) {
                 this.setAllowedContent(pageState);
             }
+
             this.dotEditContentHtmlService.initEditMode(pageState, this.iframe);
             this.isEditMode = true;
         } else {

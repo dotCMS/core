@@ -30,7 +30,6 @@ import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/index';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
 import { DotEditPageService } from '@services/dot-edit-page/dot-edit-page.service';
-import { DotEditPageToolbarModule } from './components/dot-edit-page-toolbar/dot-edit-page-toolbar.module';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
@@ -39,7 +38,10 @@ import { DotPageStateService } from './services/dot-page-state/dot-page-state.se
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
-import { DotEditContentComponent } from './dot-edit-content.component';
+import {
+    DotEditContentComponent,
+    EDIT_BLOCK_EDITOR_CUSTOM_EVENT
+} from './dot-edit-content.component';
 import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit-page-info.module';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
@@ -80,6 +82,10 @@ import { DotGenerateSecurePasswordService } from '@services/dot-generate-secure-
 import { DotPropertiesService } from '@services/dot-properties/dot-properties.service';
 import { PageModelChangeEventType } from './services/dot-edit-content-html/models';
 import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
+import { mockDotLanguage } from '@dotcms/app/test/dot-language.mock';
+import { mockDotRenderedPageState } from '@dotcms/app/test/dot-rendered-page-state.mock';
+import { DotWorkflowActionsFireService } from '@dotcms/app/api/services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
+import { DialogService } from 'primeng/dynamicdialog';
 
 @Component({
     selector: 'dot-global-message',
@@ -121,6 +127,18 @@ export class MockDotFormSelectorComponent {
 }
 
 @Component({
+    selector: 'dot-edit-page-toolbar',
+    template: ''
+})
+export class MockDotEditPageToolbarComponent {
+    @Input() pageState = mockDotRenderedPageState;
+    @Output() actionFired = new EventEmitter<DotCMSContentlet>();
+    @Output() cancel = new EventEmitter<boolean>();
+    @Output() favoritePage = new EventEmitter<boolean>();
+    @Output() whatschange = new EventEmitter<boolean>();
+}
+
+@Component({
     selector: 'dot-palette',
     template: ''
 })
@@ -149,10 +167,12 @@ describe('DotEditContentComponent', () => {
     let iframeOverlayService: IframeOverlayService;
     let dotLoadingIndicatorService: DotLoadingIndicatorService;
     let dotContentletEditorService: DotContentletEditorService;
+    let dialogService: DialogService;
     let dotDialogService: DotAlertConfirmService;
     let dotCustomEventHandlerService: DotCustomEventHandlerService;
     let dotConfigurationService: DotPropertiesService;
     let dotLicenseService: DotLicenseService;
+    let dotEventsService: DotEventsService;
 
     function detectChangesForIframeRender(fix) {
         fix.detectChanges();
@@ -184,6 +204,7 @@ describe('DotEditContentComponent', () => {
                 DotEditContentComponent,
                 MockDotWhatsChangedComponent,
                 MockDotFormSelectorComponent,
+                MockDotEditPageToolbarComponent,
                 MockDotIconComponent,
                 MockDotPaletteComponent,
                 HostTestComponent,
@@ -195,7 +216,6 @@ describe('DotEditContentComponent', () => {
                 ButtonModule,
                 DialogModule,
                 DotContentletEditorModule,
-                DotEditPageToolbarModule,
                 DotEditPageInfoModule,
                 DotLoadingIndicatorModule,
                 DotEditPageWorkflowsActionsModule,
@@ -209,6 +229,7 @@ describe('DotEditContentComponent', () => {
                 ])
             ],
             providers: [
+                DialogService,
                 DotContentletLockerService,
                 DotPageRenderService,
                 DotContainerContentletService,
@@ -220,6 +241,7 @@ describe('DotEditContentComponent', () => {
                 DotEditPageService,
                 DotGlobalMessageService,
                 DotPageStateService,
+                DotWorkflowActionsFireService,
                 DotGenerateSecurePasswordService,
                 DotCustomEventHandlerService,
                 DotPropertiesService,
@@ -294,10 +316,12 @@ describe('DotEditContentComponent', () => {
         iframeOverlayService = de.injector.get(IframeOverlayService);
         dotLoadingIndicatorService = de.injector.get(DotLoadingIndicatorService);
         dotContentletEditorService = de.injector.get(DotContentletEditorService);
+        dialogService = de.injector.get(DialogService);
         dotDialogService = de.injector.get(DotAlertConfirmService);
         dotCustomEventHandlerService = de.injector.get(DotCustomEventHandlerService);
         dotConfigurationService = de.injector.get(DotPropertiesService);
         dotLicenseService = de.injector.get(DotLicenseService);
+        dotEventsService = de.injector.get(DotEventsService);
         spyOn(dotPageStateService, 'reload');
 
         spyOn(dotEditContentHtmlService, 'renderAddedForm').and.returnValue(
@@ -361,6 +385,7 @@ describe('DotEditContentComponent', () => {
             let toolbarElement: DebugElement;
 
             beforeEach(() => {
+                spyOn(dialogService, 'open');
                 fixture.detectChanges();
                 toolbarElement = de.query(By.css('dot-edit-page-toolbar'));
             });
@@ -406,6 +431,11 @@ describe('DotEditContentComponent', () => {
                     fixture.detectChanges();
                     whatschange = de.query(By.css('dot-whats-changed'));
                     expect(whatschange).not.toBeNull();
+                });
+
+                it('should instantiate dialog with DotFavoritePageComponent', () => {
+                    toolbarElement.triggerEventHandler('favoritePage', true);
+                    expect(dialogService.open).toHaveBeenCalledTimes(1);
                 });
             });
         });
@@ -526,7 +556,8 @@ describe('DotEditContentComponent', () => {
                                         cssHeight: '100',
                                         cssWidth: '100',
                                         name: 'Watch',
-                                        inode: '1234'
+                                        inode: '1234',
+                                        identifier: 'abc'
                                     }
                                 }
                             })
@@ -653,7 +684,7 @@ describe('DotEditContentComponent', () => {
                             },
                             viewAs: {
                                 mode: DotPageMode.EDIT,
-                                language: 1
+                                language: mockDotLanguage
                             }
                         })
                     );
@@ -696,7 +727,7 @@ describe('DotEditContentComponent', () => {
                             },
                             viewAs: {
                                 mode: DotPageMode.EDIT,
-                                language: 1
+                                language: mockDotLanguage
                             }
                         })
                     );
@@ -725,7 +756,7 @@ describe('DotEditContentComponent', () => {
                             },
                             viewAs: {
                                 mode: DotPageMode.EDIT,
-                                language: 1
+                                language: mockDotLanguage
                             }
                         })
                     );
@@ -758,7 +789,7 @@ describe('DotEditContentComponent', () => {
                             },
                             viewAs: {
                                 mode: DotPageMode.EDIT,
-                                language: 1
+                                language: mockDotLanguage
                             }
                         })
                     );
@@ -948,6 +979,22 @@ describe('DotEditContentComponent', () => {
                         const menu = de.query(By.css('dot-reorder-menu'));
                         expect(menu.componentInstance.url).toBe('');
                         expect(dotPageStateService.reload).toHaveBeenCalledTimes(1);
+                    }));
+
+                    it('should handle edit-block-editor', fakeAsync(() => {
+                        detectChangesForIframeRender(fixture);
+                        spyOn(dotEventsService, 'notify');
+
+                        triggerIframeCustomEvent({
+                            name: 'edit-block-editor',
+                            data: 'test'
+                        });
+                        fixture.detectChanges();
+
+                        expect(dotEventsService.notify).toHaveBeenCalledWith(
+                            EDIT_BLOCK_EDITOR_CUSTOM_EVENT,
+                            'test'
+                        );
                     }));
                 });
 
@@ -1388,7 +1435,7 @@ describe('DotEditContentComponent', () => {
                     },
                     viewAs: {
                         mode: DotPageMode.EDIT,
-                        language: 1
+                        language: mockDotLanguage
                     },
                     containers: {
                         ...mockDotRenderedPage().containers,

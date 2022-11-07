@@ -10,7 +10,7 @@ import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fi
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { dotcmsContentletMock } from '@tests/dotcms-contentlet.mock';
 import { DotTemplateThumbnailFieldComponent } from './dot-template-thumbnail-field.component';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 const messageServiceMock = new MockDotMessageService({
     'templates.properties.form.thumbnail.error.invalid.url': 'Invalid url',
@@ -27,9 +27,9 @@ const messageServiceMock = new MockDotMessageService({
     `
 })
 class TestHostComponent {
-    form: FormGroup;
+    form: UntypedFormGroup;
 
-    constructor(private fb: FormBuilder) {
+    constructor(private fb: UntypedFormBuilder) {
         this.form = this.fb.group({
             id: '123'
         });

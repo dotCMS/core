@@ -10,6 +10,7 @@ import { DotTemplate } from '@shared/models/dot-edit-layout-designer';
 import { DotActionBulkResult } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
 
 export const TEMPLATE_API_URL = '/api/v1/templates/';
+
 /**
  * Provide util methods to handle templates in the system.
  * @export
@@ -56,6 +57,7 @@ export class DotTemplatesService {
      */
     getFiltered(filter: string): Observable<DotTemplate[]> {
         const url = `${TEMPLATE_API_URL}?filter=${filter}`;
+
         return this.request<DotTemplate[]>({
             url
         });
@@ -117,6 +119,7 @@ export class DotTemplatesService {
      */
     unArchive(identifiers: string[]): Observable<DotActionBulkResult> {
         const url = `${TEMPLATE_API_URL}_unarchive`;
+
         return this.request<DotActionBulkResult>({ method: 'PUT', url, body: identifiers });
     }
 
@@ -128,6 +131,7 @@ export class DotTemplatesService {
      */
     archive(identifiers: string[]): Observable<DotActionBulkResult> {
         const url = `${TEMPLATE_API_URL}_archive`;
+
         return this.request<DotActionBulkResult>({ method: 'PUT', url, body: identifiers });
     }
 
@@ -139,6 +143,7 @@ export class DotTemplatesService {
      */
     unPublish(identifiers: string[]): Observable<DotActionBulkResult> {
         const url = `${TEMPLATE_API_URL}_unpublish`;
+
         return this.request<DotActionBulkResult>({ method: 'PUT', url, body: identifiers });
     }
 
@@ -150,6 +155,7 @@ export class DotTemplatesService {
      */
     publish(identifiers: string[]): Observable<DotActionBulkResult> {
         const url = `${TEMPLATE_API_URL}_publish`;
+
         return this.request<DotActionBulkResult>({ method: 'PUT', url, body: identifiers });
     }
 
@@ -161,11 +167,13 @@ export class DotTemplatesService {
      */
     copy(identifier: string): Observable<DotTemplate> {
         const url = `${TEMPLATE_API_URL}${identifier}/_copy`;
+
         return this.request<DotTemplate>({ method: 'PUT', url });
     }
 
     private request<T>(options: DotRequestOptionsArgs): Observable<T> {
         const response$ = this.coreWebService.requestView<T>(options);
+
         return response$.pipe(
             pluck('entity'),
             catchError((error: HttpErrorResponse) => {

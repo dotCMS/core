@@ -412,6 +412,7 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
         map.put("userId", getUserId());
         map.put("backendUser", isBackendUser());
         map.put("frontendUser", isFrontendUser());
+		map.put("admin", isAdmin());
         map.put("hasConsoleAccess", hasConsoleAccess());
         map.put("id", getUserId());
         map.put("type", UserAjax.USER_TYPE_VALUE);

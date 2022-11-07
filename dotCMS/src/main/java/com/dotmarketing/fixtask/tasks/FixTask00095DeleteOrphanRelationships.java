@@ -2,7 +2,6 @@ package com.dotmarketing.fixtask.tasks;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.util.CloseUtils;
-import com.dotcms.util.XStreamFactory;
 import com.dotmarketing.beans.FixAudit;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
@@ -102,7 +101,7 @@ public class FixTask00095DeleteOrphanRelationships implements FixTask{
     public List<Map<String, String>> getModifiedData() {
         if (modifiedData.isEmpty()) {
             final String fixesUriSubstring = "fixes";
-            final XStream xstreamObj = XStreamFactory.INSTANCE.getInstance();
+            final XStream xstreamObj = new XStream(new DomDriver());
             final LocalDate date = LocalDate.now();
             final SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
             final String lastModDate = sdf.format(date);

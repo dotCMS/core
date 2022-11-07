@@ -27,7 +27,8 @@ const routes: Routes = [
     },
     {
         path: 'edit',
-        redirectTo: ''
+        redirectTo: '',
+        pathMatch: 'full'
     },
     {
         loadChildren: () =>

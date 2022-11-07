@@ -125,7 +125,7 @@ ext {
     snapshotRepository = "https://repo.dotcms.com/artifactory/libs-snapshot-local"
     repositoryUrl      = snapshotRepository
 
-    if (gradle.startParameter.taskNames.contains("uploadEnterprise")) {
+    if (gradle.startParameter.taskNames.contains("uploadEnterprise") || gradle.startParameter.taskNames.contains("uploadArchives")) {
         jarName = "ee_$dotcmsReleaseVersion" + ".jar"
         fileToUpload = "src/main/enterprise/build/libs/$jarName"
         artifactGroupId = "com.dotcms.enterprise"

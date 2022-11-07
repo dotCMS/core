@@ -12,6 +12,11 @@ import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ToolbarModule } from 'primeng/toolbar';
 import { DotGlobalMessageModule } from '@dotcms/app/view/components/_common/dot-global-message/dot-global-message.module';
+import { DotFavoritePageModule } from '../../../components/dot-favorite-page/dot-favorite-page.module';
+import { DialogService } from 'primeng/dynamicdialog';
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { TooltipModule } from 'primeng/tooltip';
+import { DotPropertiesService } from '@dotcms/app/api/services/dot-properties/dot-properties.service';
 
 @NgModule({
     imports: [
@@ -25,10 +30,14 @@ import { DotGlobalMessageModule } from '@dotcms/app/view/components/_common/dot-
         DotSecondaryToolbarModule,
         FormsModule,
         ToolbarModule,
+        TooltipModule,
         DotPipesModule,
-        DotGlobalMessageModule
+        DotGlobalMessageModule,
+        DotFavoritePageModule,
+        UiDotIconButtonModule
     ],
     exports: [DotEditPageToolbarComponent],
-    declarations: [DotEditPageToolbarComponent]
+    declarations: [DotEditPageToolbarComponent],
+    providers: [DialogService, DotPropertiesService]
 })
 export class DotEditPageToolbarModule {}

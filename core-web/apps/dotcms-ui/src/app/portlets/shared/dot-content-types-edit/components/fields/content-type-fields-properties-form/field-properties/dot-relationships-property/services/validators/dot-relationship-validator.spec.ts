@@ -1,9 +1,9 @@
 import { validateRelationship } from './dot-relationship-validator';
-import { FormControl } from '@angular/forms';
+import { UntypedFormControl } from '@angular/forms';
 
 describe('validateRelationship', () => {
     it('should return true if both cardinality and velocityVarare set', () => {
-        const formControl: FormControl = new FormControl({
+        const formControl: UntypedFormControl = new UntypedFormControl({
             cardinality: 0,
             velocityVar: 'velocityVar'
         });
@@ -12,7 +12,7 @@ describe('validateRelationship', () => {
     });
 
     it('should return false if cardinality is not set', () => {
-        const formControl: FormControl = new FormControl({
+        const formControl: UntypedFormControl = new UntypedFormControl({
             velocityVar: 'velocityVar'
         });
 
@@ -22,7 +22,7 @@ describe('validateRelationship', () => {
     });
 
     it('should return false if velocityVar is not set', () => {
-        const formControl: FormControl = new FormControl({
+        const formControl: UntypedFormControl = new UntypedFormControl({
             cardinality: 1
         });
 

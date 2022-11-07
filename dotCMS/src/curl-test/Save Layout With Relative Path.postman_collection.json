@@ -1,8 +1,9 @@
 {
 	"info": {
-		"_postman_id": "87387ef4-2f0c-4a85-b5f6-d5f14dbc2a6b",
+		"_postman_id": "b96d818a-f498-46c0-8dc1-75476af6a118",
 		"name": "Save Layout With Relative Path",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "5403727"
 	},
 	"item": [
 		{
@@ -11,7 +12,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "2d81b7a6-ec34-4b2a-8d15-b5b2bb433a83",
 						"exec": [
 							"pm.test(\"Bundle uploaded sucessfully\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -59,10 +59,7 @@
 							"type": "file",
 							"src": "resources/resolve_relative_path_in_layout_end_point/page_test_bundle-01EEZJ5H186WF88K28VHB3P9A6.tar.gz"
 						}
-					],
-					"options": {
-						"formdata": {}
-					}
+					]
 				},
 				"url": {
 					"raw": "{{serverURL}}/api/bundle/sync",
@@ -92,7 +89,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "fb013fb2-bd90-4dfc-97b6-34853feb4c2c",
 						"exec": [
 							"pm.test(\"Relative path should be save as Absolute path\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -109,7 +105,7 @@
 							"    var containers = columns[0].containers;",
 							"    pm.expect(containers.length).to.eql(1);",
 							"",
-							"    pm.expect(containers[0].identifier).to.eql(\"/application/containers/default/\");",
+							"    pm.expect(containers[0].identifier).to.eql(\"SYSTEM_CONTAINER\");",
 							"});"
 						],
 						"type": "text/javascript"
@@ -136,7 +132,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"title\":null,\n    \"themeId\":\"d7b0ebc2-37ca-4a5a-b769-e8a3ff187661\",\n    \"layout\":{\n        \"body\":{\n            \"rows\":[\n                {\n                    \"styleClass\":null,\n                    \"columns\":[\n                        {\n                            \"styleClass\":null,\n                            \"leftOffset\":1,\n                            \"width\":10,\n                            \"containers\":[\n                                {\n                                    \"identifier\":\"/application/containers/default/\",\n                                    \"uuid\":\"1234\"\n                                }\n                            ]\n                        }\n                    ]\n                }\n            ]\n        },\n        \"header\":true,\n        \"footer\":true,\n        \"sidebar\":{\n            \"location\":\"\",\n            \"containers\":[],\n            \"width\":\"small\"\n        }\n    }\n}",
+					"raw": "{\n    \"title\":null,\n    \"themeId\":\"d7b0ebc2-37ca-4a5a-b769-e8a3ff187661\",\n    \"layout\":{\n        \"body\":{\n            \"rows\":[\n                {\n                    \"styleClass\":null,\n                    \"columns\":[\n                        {\n                            \"styleClass\":null,\n                            \"leftOffset\":1,\n                            \"width\":10,\n                            \"containers\":[\n                                {\n                                    \"identifier\":\"SYSTEM_CONTAINER\",\n                                    \"uuid\":\"1234\"\n                                }\n                            ]\n                        }\n                    ]\n                }\n            ]\n        },\n        \"header\":true,\n        \"footer\":true,\n        \"sidebar\":{\n            \"location\":\"\",\n            \"containers\":[],\n            \"width\":\"small\"\n        }\n    }\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -159,6 +155,5 @@
 			},
 			"response": []
 		}
-	],
-	"protocolProfileBehavior": {}
+	]
 }

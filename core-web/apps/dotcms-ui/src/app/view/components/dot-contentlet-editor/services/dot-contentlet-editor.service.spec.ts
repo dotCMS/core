@@ -18,9 +18,11 @@ describe('DotContentletEditorService', () => {
     const load = () => {
         //
     };
+
     const keyDown = () => {
         //
     };
+
     let service: DotContentletEditorService;
     let dotMenuService: DotMenuService;
     let dotRouterService: DotRouterService;

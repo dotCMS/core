@@ -15,6 +15,7 @@ const getValue = <T>(item): T => {
         return item as unknown as T;
     }
 };
+
 /**
  * A service to wrap the window localstorage API
  *

@@ -327,8 +327,10 @@ public class ESMappingAPITest {
 
         final VersionableAPI versionableAPI = mock(VersionableAPIImpl.class);
         final ContentletVersionInfo versionInfo = mock(ContentletVersionInfo.class);
-        when(versionableAPI
-                .getContentletVersionInfo(Matchers.any(String.class), Matchers.any(Long.class)))
+        when(versionableAPI.getContentletVersionInfo(
+                Matchers.any(String.class),
+                Matchers.any(Long.class),
+                Matchers.any(String.class)))
                 .thenReturn(Optional.of(versionInfo));
 
         final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl(
@@ -381,7 +383,10 @@ public class ESMappingAPITest {
         final VersionableAPI versionableAPI = mock(VersionableAPIImpl.class);
         final ContentletVersionInfo versionInfo = mock(ContentletVersionInfo.class);
         when(versionableAPI
-                .getContentletVersionInfo(Matchers.any(String.class), Matchers.any(Long.class)))
+                .getContentletVersionInfo(
+                        Matchers.any(String.class),
+                        Matchers.any(Long.class),
+                        Matchers.any(String.class)))
                 .thenReturn(Optional.of(versionInfo));
 
         final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl(
@@ -565,7 +570,8 @@ public class ESMappingAPITest {
         assertEquals(320, contentletMap.get("metadata.width"));
         assertEquals(235, contentletMap.get("metadata.height"));
         assertEquals(true, contentletMap.get("metadata.isimage"));
-        assertTrue( contentletMap.get("metadata.content").toString().trim().equals(NO_METADATA));
+        assertNotNull(contentletMap.get("metadata.content"));
+        assertTrue( NO_METADATA.equals(contentletMap.get("metadata.content").toString().trim()));
 
     }
 

@@ -5,7 +5,9 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.SystemEnvironmentProperties;
+
 import javax.sql.DataSource;
+import java.util.TimeZone;
 
 /**
  * Class used to obtain a valid DataSource strategy provider
@@ -39,16 +41,25 @@ public class DataSourceStrategyProvider {
     }
 
     /**
-     * Method that loads a datasource from a custom implementation if <b>DATASOURCE_PROVIDER_STRATEGY_CLASS</b>
-     * property is defined. Otherwise, the datasource is initialized using any of these implementations (respecting order):<br>
-     * 1. A db.properties file in WEB-INF/classes implemented by {@link DBPropertiesDataSourceStrategy}<br>
-     * 2. Configuration is taken from environment variables implemented by {@link SystemEnvDataSourceStrategy}<br>
-     * 3. Getting Docker Secrets if set. Implementation: {@link DockerSecretDataSourceStrategy}<br>
-     * 4. A context.xml file in META-INF. Implementation: {@link TomcatDataSourceStrategy}
+     * Method that loads a datasource from a custom implementation if <b>DATASOURCE_PROVIDER_STRATEGY_CLASS</b> property
+     * is defined. Otherwise, the datasource is initialized using any of these implementations (respecting order):
+     * <ol>
+     *     <li>A {@code db.properties} file in {@code /WEB-INF/classes} implemented by
+     *     {@link DBPropertiesDataSourceStrategy}</li>
+     *     <li>Configuration is taken from environment variables implemented by {@link SystemEnvDataSourceStrategy}</li>
+     *     <li>Getting Docker Secrets if set. Implementation: {@link DockerSecretDataSourceStrategy}</li>
+     *     <li>A {@code context.xml} file in {@code /META-INF/}. Implementation: {@link TomcatDataSourceStrategy}</li>
+     * </ol>
+     * It's also worth noting that creating the {@link DataSource} instance requires the default {@link TimeZone} object
+     * to be set to {@code UTC}. Otherwise, the default Time Zone will be used instead and several database operations
+     * will not result as expected. Once the Data Source instance is created, the default Time Zone value will be
+     * brought back.
      *
-     * @throws InstantiationException
-     * @throws IllegalAccessException
+     * @return The {@link DataSource} singleton.
+     *
      * @throws ClassNotFoundException
+     * @throws IllegalAccessException
+     * @throws InstantiationException
      */
     public DataSource get()
             throws ClassNotFoundException, IllegalAccessException, InstantiationException {
@@ -58,9 +69,7 @@ public class DataSourceStrategyProvider {
         final SystemEnvironmentProperties systemEnvironmentProperties = getSystemEnvironmentProperties();
 
         final String providerClassName = getCustomDataSourceProvider();
-
         try {
-
             if (!UtilMethods.isSet(providerClassName)) {
                 if (getDBPropertiesInstance()
                         .existsDBPropertiesFile()) {

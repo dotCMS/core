@@ -2,7 +2,7 @@ import { DOTTestBed } from '../../../../../../test/dot-test-bed';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '../../../../../../test/dot-message-service.mock';
 import { DotLayoutSidebarComponent } from './dot-layout-property-sidebar.component';
-import { FormGroup, FormControl } from '@angular/forms';
+import { UntypedFormGroup, UntypedFormControl } from '@angular/forms';
 import { DotLayoutPropertiesItemModule } from '../dot-layout-properties-item/dot-layout-properties-item.module';
 import { ComponentFixture } from '@angular/core/testing';
 import { DebugElement, Component } from '@angular/core';
@@ -15,10 +15,10 @@ import { By } from '@angular/platform-browser';
     </form>`
 })
 class TestHostComponent {
-    group: FormGroup;
+    group: UntypedFormGroup;
     constructor() {
-        this.group = new FormGroup({
-            sidebar: new FormControl({
+        this.group = new UntypedFormGroup({
+            sidebar: new UntypedFormControl({
                 location: 'left',
                 containers: [],
                 width: ''

@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
-import { FormBuilder } from '@angular/forms';
+import { UntypedFormBuilder } from '@angular/forms';
 import { ParameterDefinition } from '../../services/util/CwInputModel';
 import { CwDropdownInputModel } from '../../services/util/CwInputModel';
 import { CwComponent } from '../../services/util/CwComponent';
@@ -142,7 +142,7 @@ export class ServersideCondition {
         required: 'Required'
     };
 
-    constructor(_fb: FormBuilder, resources: I18nService, private loggerService: LoggerService) {
+    constructor(_fb: UntypedFormBuilder, resources: I18nService, private loggerService: LoggerService) {
         this._resources = resources;
         this._inputs = [];
     }

@@ -10,7 +10,7 @@
   background-repeat: no-repeat;
   background-position: center center;
   background-size: 15px 15px;
-  background-image: -webkit-gradient(linear, left top, right bottom, from(transparent), color-stop(0.46, transparent), color-stop(0.46, white), color-stop(0.54, white), color-stop(0.54, transparent), to(transparent)), -webkit-gradient(linear, right top, left bottom, from(transparent), color-stop(0.46, transparent), color-stop(0.46, white), color-stop(0.54, white), color-stop(0.54, transparent), to(transparent)) !important;
+  background-image: -webkit-gradient(linear, left top, right bottom, from(transparent), color-stop(0.46, transparent), color-stop(0.46, #ffffff), color-stop(0.54, #ffffff), color-stop(0.54, transparent), to(transparent)), -webkit-gradient(linear, right top, left bottom, from(transparent), color-stop(0.46, transparent), color-stop(0.46, #ffffff), color-stop(0.54, #ffffff), color-stop(0.54, transparent), to(transparent)) !important;
   border: 2px solid #b2b2b2;
   box-sizing: border-box;
   height: 15px;
@@ -36,4 +36,26 @@
 }
 .dj_chrome .mblSearchBox {
   border-radius: 0;
+}
+/* CSS class for the parent DIV of the dojox/mobile/SearchBox used for filtering a 
+  dojox/mobile/RoundRectList or subclass. This class is set by dojox/mobile/FilteredListMixin 
+  only if the mixin creates the SearchBox by itself. */
+.mblFilteredRoundRectListSearchBox {
+  width: 100%;
+  padding-left: 9px;
+  padding-right: 9px;
+  box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+}
+.mblFilteredRoundRectListSearchBox > input {
+  width: 100%;
+}
+/* CSS class for the parent DIV of the dojox/mobile/SearchBox used for filtering a 
+  dojox/mobile/EdgeToEdgeList or subclass. This class is set by dojox/mobile/FilteredListMixin 
+  only if the mixin creates the SearchBox by itself. */
+.mblFilteredEdgeToEdgeListSearchBox {
+  width: 100%;
+}
+.mblFilteredEdgeToEdgeListSearchBox > input {
+  width: 100%;
 }

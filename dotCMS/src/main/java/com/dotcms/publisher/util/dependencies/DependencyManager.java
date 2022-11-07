@@ -1,5 +1,6 @@
 package com.dotcms.publisher.util.dependencies;
 
+import static com.dotcms.publisher.ajax.RemotePublishAjaxAction.ADD_ALL_CATEGORIES_TO_BUNDLE_KEY;
 import static com.dotcms.util.CollectionsUtils.set;
 
 import com.dotcms.contenttype.model.type.ContentType;
@@ -11,6 +12,8 @@ import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.PublisherFilter;
 import com.dotcms.publishing.manifest.CSVManifestBuilder;
+import com.dotcms.publishing.manifest.ManifestItem;
+import com.dotcms.publishing.manifest.ManifestItem.ManifestInfoBuilder;
 import com.dotcms.publishing.manifest.ManifestReason;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -35,8 +38,11 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
+import com.liferay.util.StringPool;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.*;
@@ -44,6 +50,7 @@ import java.util.concurrent.*;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.felix.framework.OSGIUtil;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * The main purpose of this class is to determine all possible content
@@ -307,6 +314,16 @@ public class DependencyManager {
 									"Plugin id: %s is not present as a jar, not pushed.",
 									asset.getAsset() != null ? asset.getAsset() : "N/A"));
 				}
+			} else if (asset.getType().equals(PusheableAsset.USER.getType())) {
+				final String userID = getUserID(asset);
+				final User user = APILocator.getUserAPI().loadUserById(userID);
+				config.add(user, PusheableAsset.USER, ManifestReason.INCLUDE_BY_USER.getMessage());
+			} else if (ADD_ALL_CATEGORIES_TO_BUNDLE_KEY.equals(asset.getAsset())) {
+				config.writeIncludeManifestItem((ManifestItem) () -> new ManifestInfoBuilder()
+						.objectType(PusheableAsset.CATEGORY.getType())
+						.title(getSyncingAllCategoriesTitle())
+						.build(), ManifestReason.INCLUDE_BY_USER.getMessage());
+
 			}
 		}
 
@@ -337,6 +354,25 @@ public class DependencyManager {
 				throw new DotBundleException(rootCause.getMessage(), (Exception) rootCause);
 			}
 		}
+	}
+
+	@NotNull
+	private String getSyncingAllCategoriesTitle() {
+		String syncingAllCategories = StringPool.BLANK;
+
+		try {
+			syncingAllCategories = LanguageUtil.get("Syncing_all_Categories");
+		} catch (LanguageException e) {
+			Logger.warn(DependencyManager.class, e.getMessage());
+		}
+		return syncingAllCategories;
+	}
+
+	private String getUserID(PublishQueueElement asset) {
+		final String assetKey = asset.getAsset();
+		final int indexOf = assetKey.indexOf("_") + 1;
+		final String userID = assetKey.substring(indexOf);
+		return userID;
 	}
 
 	private <T> void add(final T asset, final PusheableAsset pusheableAsset) {
@@ -421,7 +457,10 @@ public class DependencyManager {
 		} else if (Plugin.class.isInstance(asset)) {
 			final Plugin plugin = Plugin.class.cast(asset);
 			return plugin.getId();
-		}else {
+		} else if (User.class.isInstance(asset)) {
+			final User user = User.class.cast(asset);
+			return user.getUserId();
+		} else {
 			throw new IllegalArgumentException("Not allowed: " + asset.getClass().getName());
 		}
 	}

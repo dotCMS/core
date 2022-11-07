@@ -75,6 +75,7 @@ export class DotDialogComponent implements OnChanges {
             if (this.bindEvents) {
                 this.bindKeydown();
             }
+
             this.appendContainer();
         }
     }
@@ -152,6 +153,7 @@ export class DotDialogComponent implements OnChanges {
                 .pipe(
                     filter((event: MouseEvent) => {
                         const el = <HTMLElement>event.target;
+
                         return el.localName !== 'dot-dialog' && el.classList.contains('active');
                     })
                 )
@@ -170,15 +172,10 @@ export class DotDialogComponent implements OnChanges {
     }
 
     private handleKeyboardEvents(event: KeyboardEvent): void {
-        switch (event.code) {
-            case 'Escape':
-                this.cancelAction();
-                break;
-            case 'Enter':
-                this.acceptAction();
-                break;
-            default:
-                break;
+        if (event.code === 'Escape') {
+            this.cancelAction();
+        } else if (event.code === 'Enter' && (event.metaKey || event.altKey)) {
+            this.acceptAction();
         }
     }
 

@@ -34,7 +34,9 @@
  * Also use this styling when dropping between items on the tree (in other words, don't
  * use hover effect)
  */
-.claro .dijitTreeRow, .claro .dijitTreeNode .dojoDndItemBefore, .claro .dijitTreeNode .dojoDndItemAfter {
+.claro .dijitTreeRow,
+.claro .dijitTreeNode .dojoDndItemBefore,
+.claro .dijitTreeNode .dojoDndItemAfter {
   /* so insert line shows up on IE when dropping after a target element */
 
   padding: 4px 0 2px 0;
@@ -124,11 +126,13 @@
 .claro .dijitTreeRowHover .dijitTreeExpandoClosed {
   background-position: -17px 0;
 }
-.claro .dijitTreeExpandoLeaf, .dj_ie6 .claro .dijitTreeExpandoLeaf {
+.claro .dijitTreeExpandoLeaf,
+.dj_ie6 .claro .dijitTreeExpandoLeaf {
   background-image: none;
 }
 .claro .dijitTreeExpandoLoading {
-  background-image: url("images/loadingAnimation.gif");
+  background-image: url("../../icons/images/loadingAnimation.gif");
+  background-position: 0 0;
 }
 /* Drag and Drop on TreeNodes
  * Put insert line on dijitTreeContent node so it's aligned w/

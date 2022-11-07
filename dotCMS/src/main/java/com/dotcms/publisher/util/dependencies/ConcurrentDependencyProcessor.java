@@ -4,6 +4,7 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -16,6 +17,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -118,20 +120,33 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
      */
     public void waitUntilResolveAllDependencies() throws ExecutionException {
         final String submitterName = "DependencyManagerSubmitter" + Thread.currentThread().getName();
+        int emptyDependencies=0;
         submitter = DotConcurrentFactory.getInstance().getSubmitter(submitterName,
                 new DotConcurrentFactory.SubmitterConfigBuilder()
                         .poolSize(
-                                Config.getIntProperty("MIN_NUMBER_THREAD_TO_EXECUTE_BUNDLER", 10))
+                                Config.getIntProperty("MIN_NUMBER_THREAD_TO_EXECUTE_BUNDLER", 1))
                         .maxPoolSize(Config.getIntProperty("MAX_NUMBER_THREAD_TO_EXECUTE_BUNDLER", 40))
                         .queueCapacity(Config.getIntProperty("QUEUE_CAPACITY_TO_EXECUTE_BUNDLER", Integer.MAX_VALUE))
                         .build()
         );
 
+        
         try {
             while (!isFinish()) {
                 try {
                     Logger.debug(ConcurrentDependencyProcessor.class, () -> "Waiting for more assets");
-                    final DependencyProcessorItem dependencyProcessorItem = queue.take();
+                    final DependencyProcessorItem dependencyProcessorItem = queue.poll(1000, TimeUnit.MILLISECONDS);
+
+                    if(dependencyProcessorItem == null) {
+                        if(++emptyDependencies > 60) {
+                            break;
+                        }
+                        
+                        continue;
+                    }
+
+                    emptyDependencies = 0;
+
                     Logger.debug(ConcurrentDependencyProcessor.class,
                             () -> "Taking one " + dependencyProcessorItem.asset);
                     if (!dependencyProcessorItem
@@ -140,8 +155,8 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
                     } else {
                         finishReceived.incrementAndGet();
                     }
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                } catch (Exception e) {
+                    throw new DotRuntimeException(e);
                 }
             }
 

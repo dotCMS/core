@@ -25,6 +25,7 @@ export interface ChartData {
     labels: string[];
     datasets: ChartDataSet[];
 }
+
 export interface DotChartStats {
     label: string;
     value: string;
@@ -36,6 +37,7 @@ export interface PurgeUrlOptions {
     invalidateAll: boolean;
     urls?: string[];
 }
+
 export interface DotCDNState {
     chartBandwidthData: ChartData;
     chartRequestsData: ChartData;

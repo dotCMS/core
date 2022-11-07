@@ -52,9 +52,10 @@ public class Task210901UpdateDateTimezonesTest {
      * <b>Given Scenario:</b> When postgres is used, checks that the offset of a given timezone in millis is calculated
      * correctly.<p>
      * <b>Expected Result:</b> Checks that the offset for UTC is {@code 0}, and the offset for Us/Eastern is
-     * {@code -18000}.
+     * {@code 18000}. Even though the right value is {@code 18000} (minus 18000), the Upgrade Task multiplies it by -1
+     * depending on the hemisphere that the Time Zone is located in.
      *
-     * @throws Exception
+     * @throws Exception An error occurred when interacting with the data source.
      */
     @Test
     public void test_timezone_offset() throws Exception {
@@ -65,7 +66,7 @@ public class Task210901UpdateDateTimezonesTest {
         updateTimeZone("UTC");
         assertTrue(tztask.calculateOffsetSeconds() == 0);
         updateTimeZone("US/Eastern");
-        assertTrue(tztask.calculateOffsetSeconds() == -18000);
+        assertTrue(tztask.calculateOffsetSeconds() == 18000);
     }
 
     /**

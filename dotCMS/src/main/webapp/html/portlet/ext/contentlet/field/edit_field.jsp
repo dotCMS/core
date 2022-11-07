@@ -25,6 +25,7 @@
 <%@page import="com.dotmarketing.util.Parameter"%>
 <%@page import="com.dotmarketing.util.PortletID"%>
 <%@page import="com.dotmarketing.util.VelocityUtil"%>
+<%@page import="com.dotmarketing.util.json.JSONObject"%>
 <%@ page import="com.dotcms.contenttype.model.type.ContentType" %>
 <%@ page import="com.dotcms.contenttype.model.type.BaseContentType" %>
 <%@ page import="com.dotmarketing.portlets.browser.BrowserUtil" %>
@@ -34,14 +35,16 @@
 <%@ page import="io.vavr.control.Try" %>
 <%@ page import="com.dotcms.contenttype.model.field.HostFolderField" %>
 <%@ page import="com.dotmarketing.beans.Host" %>
+<%@ page import="com.dotcms.contenttype.model.field.JSONField" %>
 
 
 <%
     long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
     final Structure structure = Structure.class.cast(request.getAttribute("structure"));
     final Contentlet contentlet = Contentlet.class.cast(request.getAttribute("contentlet"));
-    long contentLanguage = contentlet.getLanguageId();
+    long contentLanguage = contentlet.getLanguageId() > 0 ? contentlet.getLanguageId() : APILocator.getLanguageAPI().getDefaultLanguage().getId();
     final Field field = Field.class.cast(request.getAttribute("field"));
+    final com.dotcms.contenttype.model.field.Field newField = LegacyFieldTransformer.from(field);
 
     Object value = (Object) request.getAttribute("value");
     String hint = UtilMethods.isSet(field.getHint()) ? field.getHint() : null;
@@ -152,72 +155,103 @@
 
         // STORY BLOCK
         else if (field.getFieldType().equals(Field.FieldType.STORY_BLOCK_FIELD.toString())) {
-
-            // The extra single quotes indicate that it will return an empty string -> "''"
-            String textValue = UtilMethods.isSet(value) ? value.toString() : (UtilMethods.isSet(defaultValue) ? defaultValue : "''");
+            String textValue = UtilMethods.isSet(value) ? value.toString() : (UtilMethods.isSet(defaultValue) ? defaultValue : "");
             String customStyles = "";
             String customClassName = "";
             String allowedContentTypes = "";
+            String allowedBlocks = "";
+            String displayCountBar = "";
+            String charLimit = "";
+
+            // By default this is an empty JSON `{}`.
+            JSONObject JSONValue = new JSONObject();
+            try {
+                JSONValue = new JSONObject(textValue);
+            } catch(Exception e) {
+                // Need it in case the value contains Single quote/backtick.
+                textValue = "`" + textValue.replaceAll("`", "&#96;") + "`";
+            }
 
             List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
             for(FieldVariable fv : acceptTypes){
                 if("styles".equalsIgnoreCase(fv.getKey())){
                     customStyles = fv.getValue();
-                    customClassName = "block-custom-styles";
                 }
                 if("contentTypes".equalsIgnoreCase(fv.getKey())){
                     //only allow alphanumeric character an comma
                     allowedContentTypes = fv.getValue().replaceAll("[^a-zA-Z0-9,]", "");
                 }
+                if("allowedBlocks".equalsIgnoreCase(fv.getKey())){
+                    allowedBlocks = fv.getValue().replaceAll("[^a-zA-Z0-9,]", "");
+                }
+                if("displayCountBar".equalsIgnoreCase(fv.getKey())){
+                    displayCountBar = fv.getValue();
+                }
+                if("charLimit".equalsIgnoreCase(fv.getKey())){
+                    charLimit = fv.getValue();
+                }
             }
             %>
-            <style type="text/css">
-                dotcms-block-editor {
-                    width: 100%;
-                    height: 500px;
-                    display: block;
-                }
-
-                dotcms-block-editor.block-custom-styles {
-                    <%=customStyles%>
-                }
-            </style>
 
             <script src="/html/dotcms-block-editor.js"></script>
             <dotcms-block-editor
+                id="block-editor-<%=field.getVelocityVarName()%>"
                 allowed-content-types="<%=allowedContentTypes%>"
-                class="<%=customClassName%>"
+                allowed-blocks="<%=allowedBlocks%>"
+                custom-styles="<%=customStyles%>"
+                display-count-bar="<%=displayCountBar%>"
+                char-limit="<%=charLimit%>"
                 lang="<%=contentLanguage%>">
             </dotcms-block-editor>
             <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"/>
 
             <script>
 
-                /**
-                 * Do not use "<%=textValue%>" or '<%=textValue%>'
-                 * If we put it in quotes and the user adds a content that has quotes,
-                 * it will throw a syntax error
-                 */
-                const data = <%=textValue%>;
+                // Create a new scope so that variables defined here can have the same name without being overwritten.
+                (function autoexecute() {
+                    /**
+                     * "JSONValue" is by default an empty Object.
+                     *  If that's the case we set "JSONValue" as null.
+                     *  Otherwise, we set "JSONValue" equals to "JSONValue".
+                     */
+                    const JSONValue = JSON.stringify(<%=JSONValue%>) !== JSON.stringify({}) ? <%=JSONValue%> : null;
+                    let content;
+    
+                    /**
+                     * Try/catch will tell us if the content in the DB is html string (WYSIWYG)  
+                     * or JSON (block editor)
+                     */
+                    try {
+                        // If JSONValue is an valid Object, we use it as the Block Editor Content.
+                        // Otherwise, we try to parse the "textValue".
+                        content = JSONValue || JSON.parse(<%=textValue%>);
+                    } catch (error) {
+                        content = <%=textValue%>;
+                    }
 
-                const block = document.querySelector('dotcms-block-editor .ProseMirror');
-                const field = document.querySelector('#<%=field.getVelocityVarName()%>');
+                    const blockEditor = document.getElementById("block-editor-<%=field.getVelocityVarName()%>");
+                    const block = blockEditor.querySelector('.ProseMirror');
+                    const field = document.querySelector('#<%=field.getVelocityVarName()%>');
 
-                if (data) {
-                    block.editor.commands.setContent(data);
-                    field.value = JSON.stringify(data);
-                }
+                    if (content) {
+                        blockEditor.setValue = content;
+                        field.value = JSON.stringify(block.editor.getJSON());
+                    }
 
-                block.editor.on('update', ({ editor }) => {
-                    field.value = JSON.stringify(editor.getJSON());
-                })
+                    block.editor.on('update', ({ editor }) => {
+                        field.value = JSON.stringify(editor.getJSON());
+                    })
+                })();
+
             </script>
         <% }
 
 
         //TEXTAREA kind of field rendering
         else if (field.getFieldType().equals(
-                Field.FieldType.TEXT_AREA.toString())) {
+                Field.FieldType.TEXT_AREA.toString())
+                || newField instanceof JSONField)
+        {
             String textValue = UtilMethods.isSet(value) ? (String) value : (UtilMethods.isSet(defaultValue) ? defaultValue : "");
             String keyValue = com.dotmarketing.util.WebKeys.VELOCITY;
             FieldAPI fieldAPI = APILocator.getFieldAPI();
@@ -1161,7 +1195,7 @@
         }
 
         final StringBuilder keyValueDataRaw = new StringBuilder("{");
-        final StringBuilder dotKeyValueDataRaw = new StringBuilder();
+        final StringBuilder dotKeyValueDataRaw = new StringBuilder("{");
 
         final Iterator<String> iterator = keyValueMap.keySet().iterator();
 
@@ -1169,16 +1203,16 @@
             final String key = iterator.next();
             final Object object = keyValueMap.get(key);
             if(null != object) {
-                final String sanitized = UtilMethods.htmlifyString(UtilMethods.escapeDoubleQuotes(object.toString()));
-                keyValueDataRaw.append(key).append(":").append(sanitized);
-                dotKeyValueDataRaw.append(key).append("|").append(sanitized);
+                keyValueDataRaw.append(key.replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;")).append(":").append(object.toString().replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;"));
+                dotKeyValueDataRaw.append("&#x22;" + key.replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;") + "&#x22;").append(":").append("&#x22;" + object.toString().replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;") + "&#x22;");
                 if (iterator.hasNext()) {
                     keyValueDataRaw.append(',');
                     dotKeyValueDataRaw.append(',');
                 }
             }
         }
-        keyValueDataRaw.append('}');
+        keyValueDataRaw.append("}");
+        dotKeyValueDataRaw.append("}");
 
         List<FieldVariable> fieldVariables=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, true);
         String whiteListKeyValues = "";
@@ -1188,7 +1222,7 @@
             }
         }
     %>
-        <input type="hidden" class ="<%=field.getVelocityVarName()%>" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>" value="<%=keyValueDataRaw.toString()%>" />
+        <input type="hidden" class ="<%=field.getVelocityVarName()%>" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>" />
         <style>
             dot-key-value key-value-table tr {
                 cursor: move;
@@ -1248,11 +1282,24 @@
         </style>
 
         <dot-key-value id="<%=field.getVelocityVarName()%>KeyValue"></dot-key-value>
-
         <script>
+            function escapeQuoteAndBackSlash(value) {
+                return value.replaceAll('\"','&#34;').replaceAll(/\\/g, '&#92;');
+            }
+
+            function formatToJsonData(value) {
+                var removedBrackets = value.trim().substring(1, value.length-1);
+                var preformatted = removedBrackets.replaceAll(/:/g, '":"').replaceAll(/,/g, '","');
+                return preformatted ? `{"${preformatted}"}` : '';
+            }
+
+            // Escape chars and set value to hidden input
+            var dotKeyValueHiddenIput = document.getElementById('<%=field.getVelocityVarName()%>');
+            dotKeyValueHiddenIput.value = formatToJsonData(escapeQuoteAndBackSlash("<%=keyValueDataRaw%>"));
+
             var dotKeyValue = document.querySelector('#<%=field.getVelocityVarName()%>KeyValue');
             dotKeyValue.uniqueKeys = "true";
-            dotKeyValue.value = '<%=dotKeyValueDataRaw.toString()%>';
+            dotKeyValue.value = "<%=dotKeyValueDataRaw.toString()%>";
             dotKeyValue.disabled = '<%=field.isReadOnly()%>';
             dotKeyValue.whiteList = '<%=whiteListKeyValues%>';
             dotKeyValue.formKeyLabel = '<%= LanguageUtil.get(pageContext, "Key") %>'
@@ -1262,11 +1309,12 @@
             dotKeyValue.whiteListEmptyOptionLabel = '<%= LanguageUtil.get(pageContext, "Pick-an-option") %>'
             dotKeyValue.requiredMessage = '<%= LanguageUtil.get(pageContext, "message.fieldvariables.key.required") %>'
 
-                dotKeyValue.addEventListener('dotValueChange', function (event) {
-                    var formattedData = event.detail.value.replace(/[|]/g, ':');
-                    var keyfieldId = document.getElementById('<%=field.getVelocityVarName()%>');
-                    keyfieldId.value = `{${formattedData}}`
-                }, false);
+            dotKeyValue.addEventListener('dotValueChange', function (event) {
+                var escapedData = "{" + escapeQuoteAndBackSlash(event.detail.value) + "}";
+                var formattedData = formatToJsonData(escapedData);
+                var keyfieldId = document.getElementById('<%=field.getVelocityVarName()%>');
+                keyfieldId.value = event.detail.value;
+            }, false);
 
         </script>
     <%}%>

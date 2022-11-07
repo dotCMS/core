@@ -6,12 +6,13 @@ import { Subject } from 'rxjs';
 
 @Component({
     selector: 'dot-alert-confirm',
-    templateUrl: './dot-alert-confirm.html',
-    styleUrls: ['./dot-alert-confirm.scss']
+    templateUrl: './dot-alert-confirm.html'
 })
 export class DotAlertConfirmComponent implements OnInit, OnDestroy {
     @ViewChild('cd') cd: ConfirmDialog;
     @ViewChild('confirmBtn') confirmBtn: ElementRef;
+    @ViewChild('acceptBtn') acceptBtn: ElementRef;
+
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(public dotAlertConfirmService: DotAlertConfirmService) {}
@@ -20,9 +21,8 @@ export class DotAlertConfirmComponent implements OnInit, OnDestroy {
         this.dotAlertConfirmService.confirmDialogOpened$
             .pipe(takeUntil(this.destroy$))
             .subscribe(() => {
-                setTimeout(() => {
-                    this.confirmBtn.nativeElement.focus();
-                });
+                const btn = this.confirmBtn || this.acceptBtn;
+                btn.nativeElement.focus();
             });
     }
 

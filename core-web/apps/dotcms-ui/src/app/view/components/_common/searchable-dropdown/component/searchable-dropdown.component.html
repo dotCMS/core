@@ -2,6 +2,7 @@
     <span
         class="searchable-dropdown__data-list-item"
         [class.selected]="item[labelPropertyName] === valueString"
+        [class.highlight]="item.label === selectedOptionValue"
         (click)="handleClick(item)"
         >{{ item.label }}</span
     >
@@ -11,6 +12,7 @@
     <dot-icon class="searchable-dropdown__search-icon" name="search"></dot-icon>
     <input
         #searchInput
+        autofocus
         pInputText
         [placeholder]="'search' | dm"
         type="text"
@@ -61,6 +63,7 @@
             ></dot-icon-button>
         </div>
     </header>
+
     <p-dataView
         #dataView
         (click)="$event.stopPropagation()"
@@ -76,7 +79,7 @@
         <ng-template let-item pTemplate="listItem">
             <ng-container
                 [ngTemplateOutlet]="externalItemListTemplate || defaultItemListTemplate"
-                [ngTemplateOutletContext]="{ item: item }"
+                [ngTemplateOutletContext]="{ item: item, selectedOptionValue: selectedOptionValue }"
             ></ng-container>
         </ng-template>
     </p-dataView>

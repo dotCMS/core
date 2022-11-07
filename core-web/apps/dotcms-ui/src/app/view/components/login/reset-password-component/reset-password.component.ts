@@ -1,5 +1,5 @@
 import { AfterViewChecked, ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { take, tap } from 'rxjs/operators';
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
@@ -15,13 +15,13 @@ import { DotLoginInformation } from '@dotcms/dotcms-models';
     templateUrl: 'reset-password.component.html'
 })
 export class ResetPasswordComponent implements OnInit, AfterViewChecked {
-    resetPasswordForm: FormGroup;
+    resetPasswordForm: UntypedFormGroup;
     loginInfo$: Observable<DotLoginInformation>;
     message = '';
     private passwordDontMatchMessage = '';
 
     constructor(
-        private fb: FormBuilder,
+        private fb: UntypedFormBuilder,
         private loginService: LoginService,
         public dotLoginPageStateService: DotLoginPageStateService,
         private dotRouterService: DotRouterService,

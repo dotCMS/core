@@ -117,6 +117,9 @@ public abstract class VersionableFactory {
 	 */
 	protected abstract Optional<ContentletVersionInfo> getContentletVersionInfo(String identifier, long lang) throws DotDataException, DotStateException;
 
+	protected abstract Optional<ContentletVersionInfo> getContentletVersionInfo(
+			final String identifier, final long lang, final String variantId) throws DotDataException, DotStateException;
+
 	/**
 	 * The method will load from Hibernate and NOT use cache
 	 * 
@@ -125,6 +128,20 @@ public abstract class VersionableFactory {
 	 * @throws DotStateException
 	 */
 	protected abstract Optional<ContentletVersionInfo> findContentletVersionInfoInDB(String identifier, long lang) throws DotDataException, DotStateException;
+
+	/**
+	 * Return a {@link ContentletVersionInfo}
+	 *
+	 * @param identifier
+	 * @param lang
+	 * @param variantId
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 */
+	protected abstract Optional<ContentletVersionInfo> findContentletVersionInfoInDB(
+			String identifier, long lang, String variantId) throws DotDataException, DotStateException;
+
 
 	/**
 	 * 
@@ -146,15 +163,33 @@ public abstract class VersionableFactory {
 	protected abstract VersionInfo createVersionInfo(Identifier identifier, String workingInode) throws DotStateException, DotDataException;
 
 	/**
-	 * 
-	 * @param identifier
-	 * @param lang
-	 * @param workingInode
+	 * Create a new {@link ContentletVersionInfo} with the {@link com.dotcms.variant.VariantAPI#DEFAULT_VARIANT}
+	 * and with de live inode equals to null.
+	 *
+	 * @param identifier {@link ContentletVersionInfo}'s ID
+	 * @param lang {@link ContentletVersionInfo}'s language
+	 * @param workingInode {@link ContentletVersionInfo}'s working inode
 	 * @return
 	 * @throws DotStateException
 	 * @throws DotDataException
 	 */
 	protected abstract ContentletVersionInfo createContentletVersionInfo(Identifier identifier, long lang, String workingInode) throws DotStateException, DotDataException;
+
+	/**
+	 * Create a new {@link ContentletVersionInfo} with with de live inode equals to null.
+	 *
+	 * @param identifier {@link ContentletVersionInfo}'s ID
+	 * @param lang {@link ContentletVersionInfo}'s language
+	 * @param workingInode {@link ContentletVersionInfo}'s working inode
+	 * @param variantId {@link ContentletVersionInfo}'s variant
+	 * @return
+	 * @throws DotStateException
+	 * @throws DotDataException
+	 */
+	protected abstract ContentletVersionInfo createContentletVersionInfo(final Identifier identifier,
+			final long lang, final String workingInode, final String variantId)
+			throws DotStateException, DotDataException;
+
 
 	/**
 	 * 
@@ -180,9 +215,27 @@ public abstract class VersionableFactory {
      */
     protected abstract VersionInfo findVersionInfoFromDb(Identifier identifier) throws DotDataException, DotStateException;
 
+	/**
+	 * Return any version of the {@link com.dotmarketing.portlets.contentlet.model.Contentlet} no matter the
+	 * {@link com.dotmarketing.portlets.languagesmanager.model.Language} or the {@link com.dotcms.variant.model.Variant}
+	 */
     protected abstract Optional<ContentletVersionInfo> findAnyContentletVersionInfo(String identifier) throws DotDataException;
+
+	/**
+	 * Return any version of the {@link com.dotmarketing.portlets.contentlet.model.Contentlet} no matter the
+	 * {@link com.dotmarketing.portlets.languagesmanager.model.Language} or the {@link com.dotcms.variant.model.Variant}
+	 *
+	 * @param identifier {@link com.dotmarketing.portlets.contentlet.model.Contentlet}'s Identifier that you are looking for
+	 * @param deleted If it is true then return just archived {@link com.dotmarketing.portlets.contentlet.model.Contentlet}.
+	 * @return
+	 * @throws DotDataException
+	 */
+	public abstract Optional<ContentletVersionInfo> findAnyContentletVersionInfo(final String identifier, final boolean deleted)
+			throws DotDataException;
 
     protected abstract List<ContentletVersionInfo> findAllContentletVersionInfos(String identifier)
         throws DotDataException, DotStateException ;
 
+	protected abstract List<ContentletVersionInfo> findAllContentletVersionInfos(String identifier, String variantName)
+			throws DotDataException, DotStateException ;
 }

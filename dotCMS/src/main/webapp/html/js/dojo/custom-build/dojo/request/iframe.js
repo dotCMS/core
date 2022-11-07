@@ -11,10 +11,11 @@ define("dojo/request/iframe", [
 	'../dom',
 	'../dom-construct',
 	'../_base/window',
-	'../NodeList-dom'/*=====,
-	'../request',
-	'../_base/declare' =====*/
-], function(module, require, watch, util, handlers, lang, ioQuery, query, has, dom, domConstruct, win/*=====, NodeList, request, declare =====*/){
+	// NodeList enhancement modules;
+	// must be loaded (but no reference needed)
+	'../NodeList-dom',
+        '../NodeList-manipulate'
+], function(module, require, watch, util, handlers, lang, ioQuery, query, has, dom, domConstruct, win){
 	var mid = module.id.replace(/[\/\.\-]/g, '_'),
 		onload = mid + '_onload';
 
@@ -179,7 +180,7 @@ define("dojo/request/iframe", [
 					var parentNode = formNode;
 					do{
 						parentNode = parentNode.parentNode;
-					}while(parentNode !== win.doc.documentElement);
+					}while(parentNode && parentNode !== win.doc.documentElement);
 
 					// Append the form node or some browsers won't work
 					if(!parentNode){
@@ -212,10 +213,16 @@ define("dojo/request/iframe", [
 								createInput(x, val[i]);
 							}
 						}else{
-							if(!formNode[x]){
+							// Explicitly search for nodes in the dom tree
+							// using formNode[x] may access attributes of the
+							// form node itself, e.g. formNode['action']
+							var n = query("input[name='"+x+"']", formNode);
+
+							// Not found if indexOf == -1
+							if(n.indexOf() == -1){
 								createInput(x, val);
 							}else{
-								formNode[x].value = val;
+								n.val(val);
 							}
 						}
 					}
@@ -304,7 +311,7 @@ define("dojo/request/iframe", [
 						// IE6-8 have to parse the XML manually. See http://bugs.dojotoolkit.org/ticket/6334
 						if(doc.documentElement.tagName.toLowerCase() === 'html'){
 							query('a', doc.documentElement).orphan();
-							var xmlText = doc.documentElement.innerText;
+							var xmlText = doc.documentElement.innerText || doc.documentElement.textContent;
 							xmlText = xmlText.replace(/>\s+</g, '><');
 							response.text = lang.trim(xmlText);
 						}else{

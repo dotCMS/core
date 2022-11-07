@@ -19,11 +19,11 @@ inputs:
     default: |
             {
               "gradle": {
-                "dependencies": "${{ runner.os }}-gradle-dependencies-${{ hashFiles('**/build.gradle', '**/dependencies.gradle', '**/deploy.gradle', '**/immutables.gradle', '**/settings.gradle', '**/gradle.properties', '**/gradle-wrapper.properties') }}",
+                "dependencies": "${{ runner.os }}-gradle-dependencies-${{ hashFiles('**/build.gradle', '**/dependencies.gradle', '**/deploy.gradle', '**/immutables.gradle', '**/settings.gradle', '**/gradle.properties', '**/gradle-wrapper.properties', '**/core-cicd-tests.yml') }}",
                 "buildOutput": "${{ runner.os }}-gradle-build-output-${{ github.SHA }}"
               },
               "maven": {
-                "dependencies": "${{ runner.os }}-maven-dependencies-${{ hashFiles('**/pom.xml') }}",
+                "dependencies": "${{ runner.os }}-maven-dependencies-${{ hashFiles('**/pom.xml', '**/core-cicd-tests.yml') }}",
                 "buildOutput": "${{ runner.os }}-maven-build-output-${{ github.SHA }}"
               }
             }

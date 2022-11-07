@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.folders.business;
 
+import static com.dotcms.rendering.velocity.directive.ParseContainer.getDotParserContainerUUID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -12,12 +13,16 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TemplateLayoutDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.UserDataGen;
-import com.dotcms.junit.CustomDataProviderRunner;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -47,6 +52,7 @@ import com.dotmarketing.portlets.folders.exception.InvalidFolderNameException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPIImpl;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
@@ -54,8 +60,11 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -815,6 +824,72 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 		}
 	}
 
+	/**
+	 * <b>Method to test:</b> {@link FolderAPI#copy(Folder, Folder, User, boolean)}<br></br>
+	 * <b>Given Scenario:</b> Copying a folder that contains pieces of content with relation_type (multi_tree table)
+	 * different from {@link ContainerUUID#UUID_LEGACY_VALUE}<br></br>
+	 * <b>ExpectedResult:</b> the folder should be copied with its pieces of content without duplication.
+	 *
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 * @throws IOException
+	 */
+	@Test
+	public void testCopyFolderDoesNotDuplicateContent()
+			throws DotDataException, DotSecurityException, IOException {
+		final Host host = new SiteDataGen().nextPersisted();
+		final Folder folder = new FolderDataGen().site(host).nextPersisted();
+		final ContentType contentTypeToPage = new ContentTypeDataGen().host(host).nextPersisted();
+		final Container container = new ContainerDataGen().withContentType(contentTypeToPage, "")
+				.nextPersisted();
+
+		final TemplateLayout templateLayout = new TemplateLayoutDataGen().withContainer(container)
+				.next();
+		final Template template = new TemplateDataGen().drawedBody(templateLayout).nextPersisted();
+
+		final Contentlet htmlPageAsset = new HTMLPageDataGen(host, template).host(host).folder(folder)
+				.languageId(langId).nextPersisted();
+
+		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+		final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
+		final Contentlet contentlet = new ContentletDataGen(contentGenericType)
+				.languageId(langId)
+				.host(host)
+				.setProperty("title", "genericContent")
+				.setProperty("author", "systemUser")
+				.setProperty("body", "Generic Content Body").nextPersisted();
+
+		/*Relate content to page*/
+		final MultiTree multiTree =  new MultiTree(htmlPageAsset.getIdentifier(),
+				container.getIdentifier(),
+				contentlet.getIdentifier(), getDotParserContainerUUID(UUIDGenerator.generateUuid()), 0);
+
+		APILocator.getMultiTreeAPI()
+				.overridesMultitreesByPersonalization(htmlPageAsset.getIdentifier(),
+						MultiTree.DOT_PERSONALIZATION_DEFAULT, CollectionsUtils.list(multiTree));
+
+		final Folder destinationFolder = folderAPI
+				.createFolders("/folderCopyDestinationTest" + System.currentTimeMillis(), host,
+						user, false);
+
+		//Copy folder
+		folderAPI.copy(folderAPI.find(htmlPageAsset.getFolder(), user, false), destinationFolder,
+				user, false);
+
+		//Compare results. There shouldn't be duplicates
+		final IHTMLPage copiedPage = htmlPageAssetAPI
+				.getPageByPath(destinationFolder.getPath() + folder.getName()
+						+ "/" + ((HTMLPageAsset) htmlPageAsset).getPageUrl(), host, langId, false);
+		assertNotNull(copiedPage);
+
+		final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI()
+				.getMultiTrees(copiedPage.getIdentifier());
+		assertEquals(1, multiTrees.size());
+		assertEquals(container.getIdentifier(), multiTrees.get(0).getContainer());
+		assertEquals(contentlet.getIdentifier(), multiTrees.get(0).getContentlet());
+
+	}
+
 	@Test
 	public void testFindSubFolders() throws DotDataException, DotSecurityException {
 		String folderPath1, folderPath2;
@@ -1443,7 +1518,41 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 		assertTrue(folderAPI.exists(folder.getInode()));
 		assertTrue(folderAPI.exists(folder.getIdentifier()));
 	}
-	
-	
-}
 
+	/**
+	 * <ul>
+	 *     <li>Method to test: {@link FolderAPI#save(Folder, User, boolean)}</li>
+	 *     <li>Given Scenario: When creating a new Folder, if the required {@code title} property is missing, then use
+	 *     the {@code name (URL)} property for it.</li>
+	 *     <li>ExpectedResult: Whether the {@code title} is missing or not, the save method must not fail to create the
+	 *     folder.</li>
+	 * </ul>
+	 */
+	@Test
+	public void createFolderWithoutAndWithoutTitle() throws DotDataException, DotSecurityException {
+		// Initialization
+		Folder testFolderOne = null;
+		Folder testFolderTwo = null;
+
+		try {
+			final Host defautSite = hostAPI.findDefaultHost(user, false);
+
+			// Test data generation
+			testFolderOne = new FolderDataGen().title("").name("my-test-folder-" + System.currentTimeMillis()).site(defautSite).nextPersisted();
+			testFolderTwo = new FolderDataGen().title("My Test Folder").name("my-test-folder-" + System.currentTimeMillis() + 100L).site(defautSite).nextPersisted();
+
+			// Assertions
+			assertNotNull("Failed to create a Folder without title. Default mechanism failed!", testFolderOne);
+			assertNotNull("Failed to create a Folder with title!", testFolderTwo);
+		} finally {
+			// Cleanup
+			if (null != testFolderOne) {
+				folderAPI.delete(testFolderOne, user, false);
+			}
+			if (null != testFolderTwo) {
+				folderAPI.delete(testFolderTwo, user, false);
+			}
+		}
+	}
+
+}

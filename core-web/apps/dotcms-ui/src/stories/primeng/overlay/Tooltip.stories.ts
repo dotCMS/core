@@ -25,6 +25,7 @@ const TooltipTemplate = `<button pButton label="Submit" icon="pi pi-check" pTool
 
 const Template: Story<never> = (props: never) => {
     const template = TooltipTemplate;
+
     return {
         props,
         template

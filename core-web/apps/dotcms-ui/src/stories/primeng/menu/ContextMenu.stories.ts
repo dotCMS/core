@@ -27,6 +27,7 @@ const ContextMenuTemplate = `
 
 const Template: Story<never> = () => {
     const template = ContextMenuTemplate;
+
     return {
         props: {
             items: [

@@ -1,0 +1,9 @@
+@import "libs/dot-primeng-theme-styles/src/scss/variables";
+
+.form-actions {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    padding: $spacing-3;
+    gap: 0.5rem;
+}

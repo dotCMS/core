@@ -13,6 +13,7 @@ export class DotTemplateCreateEditResolver implements Resolve<DotTemplate> {
 
     resolve(route: ActivatedRouteSnapshot, _state: RouterStateSnapshot): Observable<DotTemplate> {
         const inode = route.paramMap.get('inode');
+
         return inode
             ? this.service.getFiltered(inode).pipe(
                   map((templates: DotTemplate[]) => {

@@ -108,6 +108,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
             if (filterBy) {
                 this.setFilterByContentType(filterBy as string);
             }
+
             this.showTable = true;
         });
     }
@@ -158,6 +159,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
         this.actionHeaderOptions.primary.command = ($event) => {
             this.createContentType(null, $event);
         };
+
         this.actionHeaderOptions.primary.model = null;
     }
 
@@ -242,6 +244,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
     private removeIconsFromMenuItem(action: DotActionMenuItem): DotActionMenuItem {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { icon, ...noIconMenuItem } = action.menuItem;
+
         return {
             ...action,
             menuItem: noIconMenuItem
@@ -302,6 +305,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
         if (type) {
             params.push(type);
         }
+
         this.router.navigate(params, { relativeTo: this.route });
     }
 

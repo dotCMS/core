@@ -8,6 +8,7 @@ export enum ESOrderDirection {
     ASC = 'ASC',
     DESC = 'DESC'
 }
+
 export interface queryEsParams {
     itemsPerPage?: number;
     filter?: string;
@@ -101,6 +102,7 @@ export class DotESContentService {
         if (params.filter && params.filter.indexOf(' ') > 0) {
             filterValue = `'${params.filter.replace(/'/g, "\\'")}'`;
         }
+
         this.setExtraParams('+title', `${filterValue || params.filter || ''}*`);
     }
 

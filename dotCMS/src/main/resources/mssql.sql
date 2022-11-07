@@ -794,7 +794,8 @@ create table contentlet_version_info (
    locked_by NVARCHAR(100) null,
    locked_on datetimeoffset(3) null,
    version_ts datetimeoffset(3) not null,
-   primary key (identifier, lang)
+   variant_id NVARCHAR(255) default 'DEFAULT' not null,
+   primary key (identifier, lang, variant_id)
 );
 create table fixes_audit (
    id NVARCHAR(36) not null,
@@ -1297,7 +1298,8 @@ create table multi_tree (
    relation_type NVARCHAR(64) not null,
    tree_order int null,
    personalization NVARCHAR(255) not null  default 'dot:default',
-   primary key (child, parent1, parent2, relation_type, personalization)
+   variant_id NVARCHAR(255) default 'DEFAULT' not null,
+   primary key (child, parent1, parent2, relation_type, personalization, variant_id)
 );
 create table workflow_task (
    id NVARCHAR(36) not null,
@@ -2123,7 +2125,7 @@ CREATE Trigger check_identifier_parent_path
     select @folderId = id from identifier where asset_type='folder' and host_inode = @hostInode and parent_path+asset_name+'/' = @parentPath and id <>@id
     IF (@folderId IS NULL)
      BEGIN
-       RAISERROR (N'Cannot insert/update for this path does not exist for the given host', 10, 1)
+       RAISERROR (N'Cannot insert/update parent folder %s [%s] as one or more folders do not exist in Site %s', 10, 1, @parentPath, @id, @hostInode)
        ROLLBACK WORK
      END
   END
@@ -2684,3 +2686,29 @@ create table storage_x_data (
 
 CREATE TABLE shedlock(name VARCHAR(64) NOT NULL, lock_until datetime NOT NULL,
                       locked_at datetime NOT NULL, locked_by VARCHAR(255) NOT NULL, PRIMARY KEY (name));
+
+create table variant (
+     name NVARCHAR(255) primary key,
+     description NVARCHAR(255) not null,
+     archived tinyint not null default 0,
+);
+
+create table experiment (
+    id  NVARCHAR(255) primary key,
+    page_id NVARCHAR(255) not null,
+    name NVARCHAR(255) not null,
+    description NVARCHAR(255) not null,
+    status NVARCHAR(255) not null,
+    traffic_proportion NVARCHAR(MAX) not null,
+    traffic_allocation float not null,
+    mod_date datetimeoffset(3) not null,
+    scheduling NVARCHAR(MAX),
+    creation_date datetimeoffset(3) not null,
+    created_by NVARCHAR(255) not null,
+    last_modified_by NVARCHAR(255) not null,
+    goals NVARCHAR(MAX),
+    lookback_window numeric(19,0) not null
+);
+
+CREATE INDEX idx_exp_pageid ON experiment (page_id);
+

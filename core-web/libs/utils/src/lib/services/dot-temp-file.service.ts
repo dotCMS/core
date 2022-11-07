@@ -35,6 +35,7 @@ export function uploadFile({
 
 function uploadFileByURL(url: string): Promise<DotCMSTempFile> {
     const UPLOAD_FILE_FROM_URL = `${TEMP_API_URL}/byUrl`;
+
     return fetch(UPLOAD_FILE_FROM_URL, {
         method: 'POST',
         headers: {
@@ -87,6 +88,7 @@ export function uploadBinaryFile({
         .then((request: XMLHttpRequest) => {
             if (request.status === 200) {
                 const data = JSON.parse(request.response).tempFiles;
+
                 return data.length > 1 ? data : data[0];
             } else {
                 throw request;
@@ -110,6 +112,7 @@ function dotRequest(
         for (const name in opts.headers || {}) {
             xhr.setRequestHeader(name, opts.headers[name]);
         }
+
         xhr.onload = () => res(xhr);
         xhr.onerror = rej;
         if (xhr.upload && progressCallBack) {
@@ -118,6 +121,7 @@ function dotRequest(
                 progressCallBack(percentComplete);
             };
         }
+
         xhr.send(opts.body);
     });
 }
@@ -129,6 +133,7 @@ function errorHandler(response: Record<string, string>, status: number): DotHttp
     } catch (e) {
         message = fallbackErrorMessages[status || 500];
     }
+
     return {
         message: message,
         status: status | 500

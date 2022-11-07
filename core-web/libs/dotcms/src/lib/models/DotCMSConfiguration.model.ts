@@ -1,4 +1,4 @@
-import { DotCMSLanguageItem } from './';
+import { DotCMSLanguageItem } from '.';
 
 export interface DotCMSConfigurationParams {
     token: string;

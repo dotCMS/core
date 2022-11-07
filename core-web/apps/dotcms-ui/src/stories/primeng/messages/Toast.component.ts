@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { MessageService } from 'primeng/api';
 
 @Component({
@@ -22,12 +22,8 @@ import { MessageService } from 'primeng/api';
         </p>
     `
 })
-export class ToastComponent implements OnInit {
+export class ToastComponent {
     constructor(private messageService: MessageService) {}
-
-    ngOnInit() {
-        console.log('object');
-    }
 
     showSuccess() {
         this.messageService.add({

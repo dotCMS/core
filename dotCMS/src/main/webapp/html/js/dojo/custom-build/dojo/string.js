@@ -5,12 +5,114 @@ define("dojo/string", [
 
 // module:
 //		dojo/string
-
+var ESCAPE_REGEXP = /[&<>'"\/]/g;
+var ESCAPE_MAP = {
+	'&': '&amp;',
+	'<': '&lt;',
+	'>': '&gt;',
+	'"': '&quot;',
+	"'": '&#x27;',
+	'/': '&#x2F;'
+};
 var string = {
 	// summary:
 	//		String utilities for Dojo
 };
 lang.setObject("dojo.string", string);
+
+string.escape = function(/*String*/str){
+	// summary:
+	//		Efficiently escape a string for insertion into HTML (innerHTML or attributes), replacing &, <, >, ", ', and / characters.
+	// str:
+	//		the string to escape
+	if(!str){ return ""; }
+	return str.replace(ESCAPE_REGEXP, function(c) {
+		return ESCAPE_MAP[c];
+	});
+};
+
+// Adapted from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/codePointAt#Polyfill
+string.codePointAt = String.prototype.codePointAt ?
+	function (str, position) {
+		return String.prototype.codePointAt.call(str, position);
+	} :
+	function(str, position) {
+		if (str == null) {
+			throw new TypeError('codePointAt called on null or undefined');
+		}
+
+		var size;
+		var first;
+		var second;
+		var index;
+
+		str = String(str);
+		size = str.length;
+		// `ToInteger`
+		index = position ? Number(position) : 0;
+
+		if (index != index) { // better `isNaN`
+			index = 0;
+		}
+
+		// Account for out-of-bounds indices:
+		if (index < 0 || index >= size) {
+			return undefined;
+		}
+
+		// Get the first code unit
+		first = str.charCodeAt(index);
+
+		// check if it's the start of a surrogate pair
+		if (first >= 0xD800 && first <= 0xDBFF && // high surrogate
+			size > index + 1 // there is a next code unit
+		) {
+			second = str.charCodeAt(index + 1);
+			if (second >= 0xDC00 && second <= 0xDFFF) { // low surrogate
+				// https://mathiasbynens.be/notes/javascript-encoding#surrogate-formulae
+				return (first - 0xD800) * 0x400 + second - 0xDC00 + 0x10000;
+			}
+		}
+
+		return first;
+	};
+
+// Adapted from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/fromCodePoint#Polyfill
+string.fromCodePoint = String.fromCodePoint || function () {
+	var codeUnits = [];
+	var codeLen = 0;
+	var result = "";
+	var codePoint;
+	var index;
+
+	for (index = 0, len = arguments.length; index !== len; ++index) {
+		codePoint = +arguments[index];
+		// correctly handles all cases including `NaN`, `-Infinity`, `+Infinity`
+		// The surrounding `!(...)` is required to correctly handle `NaN` cases
+		// The (codePoint>>>0) === codePoint clause handles decimals and negatives
+		if (!(codePoint < 0x10FFFF && (codePoint>>>0) === codePoint)) {
+			throw RangeError("Invalid code point: " + codePoint);
+		}
+
+		if (codePoint <= 0xFFFF) { // BMP code point
+			codeLen = codeUnits.push(codePoint);
+		} else { // Astral code point; split in surrogate halves
+			// https://mathiasbynens.be/notes/javascript-encoding#surrogate-formulae
+			codePoint -= 0x10000;
+			codeLen = codeUnits.push(
+				(codePoint >> 10) + 0xD800,  // highSurrogate
+				(codePoint % 0x400) + 0xDC00 // lowSurrogate
+			);
+		}
+
+		if (codeLen >= 0x3fff) {
+			result += String.fromCharCode.apply(null, codeUnits);
+			codeUnits.length = 0;
+		}
+	}
+
+	return result + String.fromCharCode.apply(null, codeUnits);
+};
 
 string.rep = function(/*String*/str, /*Integer*/num){
 	// summary:
@@ -68,6 +170,7 @@ string.substitute = function(	/*String*/		template,
 	// template:
 	//		a string with expressions in the form `${key}` to be replaced or
 	//		`${key:format}` which specifies a format function. keys are case-sensitive.
+	//		The special sequence `${}` can be used escape `$`.
 	// map:
 	//		hash to search for substitutions
 	// transform:
@@ -119,13 +222,22 @@ string.substitute = function(	/*String*/		template,
 	transform = transform ?
 		lang.hitch(thisObject, transform) : function(v){ return v; };
 
-	return template.replace(/\$\{([^\s\:\}]+)(?:\:([^\s\:\}]+))?\}/g,
+	return template.replace(/\$\{([^\s\:\}]*)(?:\:([^\s\:\}]+))?\}/g,
 		function(match, key, format){
+			if (key == ''){
+				return '$';
+			}
 			var value = lang.getObject(key, false, map);
 			if(format){
 				value = lang.getObject(format, false, thisObject).call(thisObject, value, key);
 			}
-			return transform(value, key).toString();
+			var result = transform(value, key);
+
+			if (typeof result === 'undefined') {
+				throw new Error('string.substitute could not find key "' + key + '" in template');
+			}
+
+			return result.toString();
 		}); // String
 };
 
@@ -152,7 +264,7 @@ string.trim = String.prototype.trim ?
 	 //		Returns the trimmed string
 	 // description:
 	 //		This version of trim() was taken from [Steven Levithan's blog](http://blog.stevenlevithan.com/archives/faster-trim-javascript).
-	 //		The short yet performant version of this function is dojo.trim(),
+	 //		The short yet performant version of this function is dojo/_base/lang.trim(),
 	 //		which is part of Dojo base.  Uses String.prototype.trim instead, if available.
 	 return "";	// String
  };

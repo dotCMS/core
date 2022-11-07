@@ -2,6 +2,7 @@
     <span
         class="theme-selector__data-list-item"
         [class.selected]="value && value.identifier === item.identifier"
+        [class.highlight]="item.name === selectedOptionValue"
         (click)="onChange(item)"
     >
         <img

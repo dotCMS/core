@@ -8,34 +8,6 @@ const grayLight = '#c5c5c5';
 
 export const getEditPageCss = (timestampId: string): string => {
     return `
-    // Fonts
-    // MATERIAL DESIGN ICONS
-    /* fallback */
-    @font-face {
-        font-family: 'Material Icons';
-        font-style: normal;
-        font-weight: 400;
-        font-display: swap;
-        src: url('/dotAdmin/assets/MaterialIcons-Regular.ttf') format('truetype');
-    }
-
-    .material-icons {
-        font-family: 'Material Icons';
-        font-weight: normal;
-        font-style: normal;
-        font-size: 24px;
-        line-height: 1;
-        letter-spacing: normal;
-        text-transform: none;
-        display: inline-block;
-        white-space: nowrap;
-        word-wrap: normal;
-        direction: ltr;
-        -webkit-font-feature-settings: 'liga';
-        -webkit-font-smoothing: antialiased;
-    }
-
-
     // GOOGLE FONTS
     /* roboto-regular - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
     @font-face {
@@ -452,6 +424,10 @@ export const getEditPageCss = (timestampId: string): string => {
         cursor: text;
         border: 1px solid #53c2f9 !important;
         display: block;
+    }
+    
+    ${timestampId} [data-inode][data-field-name][data-block-editor-content].dotcms__inline-edit-field {
+        cursor: pointer;
     }
     
     ${timestampId} .dotcms__navbar-form {

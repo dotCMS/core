@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import com.dotcms.repackage.com.google.common.base.Supplier;
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import org.apache.commons.io.IOUtils;
 import com.dotcms.util.ConfigurationInterpolator;
 import com.dotcms.util.FileWatcherAPI;
 import com.dotcms.util.ReflectionUtils;
@@ -320,6 +320,24 @@ public class Config {
         return envKey.endsWith("_") ? envKey.substring(0, envKey.length() - 1) : envKey;
 
 	}
+
+	/**
+	 * Given a property name, evaluates if it belongs to the environment variables.
+	 *
+	 * @param key property name
+	 * @return true if key is found when looked by its environment variable name equivalent and if it has properties
+	 * associated to, otherwise false.
+	 */
+	public static boolean isKeyEnvBased(final String key) {
+		final String envKey = envKey(key);
+
+		if (!props.containsKey(envKey)) {
+			return false;
+		}
+
+		final String[] properties = props.getStringArray(envKey);
+		return properties != null && properties.length > 0;
+	}
 	
 	/**
 	 * Returns a string property
@@ -367,9 +385,7 @@ public class Config {
 	 */
 	@Deprecated
     public static String getStringProperty (String name) {
-        String value = getStringProperty(name, null);
-
-        return value;
+        return getStringProperty(name, null);
     }
 
 	/**

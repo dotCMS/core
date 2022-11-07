@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { FormGroup } from '@angular/forms';
+import { UntypedFormGroup } from '@angular/forms';
 import * as _ from 'lodash';
 import { FieldProperty } from '../field-properties.model';
 import { DotRelationshipsPropertyValue } from './model/dot-relationships-property-value.model';
@@ -23,7 +23,7 @@ export class DotRelationshipsPropertyComponent implements OnInit {
     readonly STATUS_EXISTING = 'EXISTING';
 
     property: FieldProperty<{ [key: string]: unknown }>;
-    group: FormGroup;
+    group: UntypedFormGroup;
 
     status = this.STATUS_NEW;
 

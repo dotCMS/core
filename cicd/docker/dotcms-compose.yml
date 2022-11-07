@@ -12,7 +12,6 @@ volumes:
   cms-local:
   output:
   license:
-  logs:
 
 services:
   dotcms-app:
@@ -28,7 +27,8 @@ services:
       DB_BASE_URL: "jdbc:postgresql://database/dotcms"
       DB_USERNAME: "postgres"
       DB_PASSWORD: "postgres"
-      DOT_ES_ENDPOINTS: 'https://elasticsearch:9200'
+      DOT_ES_ENDPOINTS: 'http://elasticsearch:9200'
+      DOT_ES_PROTOCOL: 'http'
       DOT_DOTCMS_DEV_MODE: 'true'
       DB_MAX_TOTAL: 15
       DOT_INDEX_POLICY_SINGLE_CONTENT: "FORCE"
@@ -36,13 +36,13 @@ services:
       DOT_ASYNC_COMMIT_LISTENERS: "false"
       DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS: 600
       WAIT_FOR_DEPS:
+      JVM_ENDPOINT_TEST_PASS:
     depends_on:
       - database
       - elasticsearch
     volumes:
       - cms-shared:/data/shared
       - cms-local:/data/local
-      - logs:/srv/dotserver/tomcat-9.0.60/logs
       - type: bind
         source: ./license/license.dat
         target: /data/local/dotsecure/license/license.dat

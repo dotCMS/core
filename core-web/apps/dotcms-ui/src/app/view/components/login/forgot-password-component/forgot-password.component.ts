@@ -1,5 +1,5 @@
 import { Component, ViewEncapsulation, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { take, tap } from 'rxjs/operators';
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
@@ -17,13 +17,13 @@ import { DotLoginInformation } from '@dotcms/dotcms-models';
 export class ForgotPasswordComponent implements OnInit {
     message = '';
 
-    forgotPasswordForm: FormGroup;
+    forgotPasswordForm: UntypedFormGroup;
     loginInfo$: Observable<DotLoginInformation>;
 
     private forgotPasswordConfirmationMessage = '';
 
     constructor(
-        private fb: FormBuilder,
+        private fb: UntypedFormBuilder,
         public loginPageStateService: DotLoginPageStateService,
         private dotRouterService: DotRouterService,
         private loginService: LoginService

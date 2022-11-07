@@ -1,33 +1,42 @@
 {
-    "projectType": "library",
-    "root": "libs/dotcms",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
     "sourceRoot": "libs/dotcms/src",
-    "prefix": "dotcms",
+    "projectType": "library",
     "targets": {
         "build": {
-            "executor": "@angular-devkit/build-ng-packagr:build",
+            "executor": "@nrwl/js:tsc",
+            "outputs": ["{options.outputPath}"],
             "options": {
+                "outputPath": "dist/libs/dotcms",
+                "main": "libs/dotcms/src/index.ts",
                 "tsConfig": "libs/dotcms/tsconfig.lib.json",
-                "project": "libs/dotcms/ng-package.json"
-            },
-            "configurations": {
-                "production": {
-                    "tsConfig": "libs/dotcms/tsconfig.lib.prod.json"
-                }
+                "assets": ["libs/dotcms/*.md"]
             }
+        },
+        "publish": {
+            "executor": "@nrwl/workspace:run-commands",
+            "options": {
+                "command": "node tools/scripts/publish.mjs dotcms {args.ver} {args.tag}"
+            },
+            "dependsOn": [
+                {
+                    "projects": "self",
+                    "target": "build"
+                }
+            ]
         },
         "lint": {
             "executor": "@nrwl/linter:eslint",
+            "outputs": ["{options.outputFile}"],
             "options": {
-                "lintFilePatterns": ["libs/dotcms/src/**/*.ts", "libs/dotcms/src/**/*.html"]
-            },
-            "outputs": ["{options.outputFile}"]
+                "lintFilePatterns": ["libs/dotcms/**/*.ts"]
+            }
         },
         "test": {
             "executor": "@nrwl/jest:jest",
             "outputs": ["coverage/libs/dotcms"],
             "options": {
-                "jestConfig": "libs/dotcms/jest.config.js",
+                "jestConfig": "libs/dotcms/jest.config.ts",
                 "passWithNoTests": true
             }
         }

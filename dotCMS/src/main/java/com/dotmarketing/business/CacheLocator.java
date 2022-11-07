@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import com.dotcms.analytics.cache.AnalyticsCache;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenCache;
 import com.dotcms.business.SystemCache;
 import com.dotcms.cache.KeyValueCache;
@@ -26,7 +27,8 @@ import com.dotcms.security.apps.AppsCache;
 import com.dotcms.security.apps.AppsCacheImpl;
 import com.dotcms.vanityurl.cache.VanityUrlCache;
 import com.dotcms.vanityurl.cache.VanityUrlCacheImpl;
-import com.dotmarketing.business.cache.transport.CacheTransport;
+import com.dotcms.variant.business.VariantCache;
+import com.dotcms.variant.business.VariantCacheImpl;
 import com.dotmarketing.business.portal.PortletCache;
 import com.dotmarketing.cache.ContentTypeCache;
 import com.dotmarketing.cache.FolderCache;
@@ -70,10 +72,8 @@ import com.dotmarketing.tag.business.TagCache;
 import com.dotmarketing.tag.business.TagCacheImpl;
 import com.dotmarketing.tag.business.TagInodeCache;
 import com.dotmarketing.tag.business.TagInodeCacheImpl;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
-
 
 
 /**
@@ -327,6 +327,22 @@ public class CacheLocator extends Locator<CacheIndex>{
 	}
 
 	/**
+	 * This will get you an instance of the {@link VariantCache} singleton cache.
+	 * @return
+	 */
+	public static VariantCache getVariantCache() {
+		return (VariantCache) getInstance(CacheIndex.VariantCache);
+	}
+
+	/**
+	 * This will get you an instance of the {@link AnalyticsCache} singleton cache.
+	 * @return
+	 */
+	public static AnalyticsCache getAnalyticsCache() {
+		return (AnalyticsCache) getInstance(CacheIndex.AnalyticsCache);
+	}
+
+	/**
 	 * The legacy cache administrator will invalidate cache entries within a cluster
 	 * on a put where the non legacy one will not.
 	 * @return
@@ -433,7 +449,9 @@ enum CacheIndex
 	AppsCache("Apps"),
 	GraphQLSchemaCache("GraphQLSchemaCache"),
 	Metadata("Metadata"),
-	GraphQLCache("GraphQLCache");
+	GraphQLCache("GraphQLCache"),
+	VariantCache("VariantCache"),
+	AnalyticsCache("AnalyticsCache");
 
 	Cachable create() {
 		switch(this) {
@@ -485,6 +503,8 @@ enum CacheIndex
 	      	case GraphQLSchemaCache : return new GraphQLSchemaCache();
 			case Metadata: return new MetadataCacheImpl();
 			case GraphQLCache: return new GraphQLCache();
+			case VariantCache: return new VariantCacheImpl();
+			case AnalyticsCache: return new AnalyticsCache();
 
 		}
 		throw new AssertionError("Unknown Cache index: " + this);

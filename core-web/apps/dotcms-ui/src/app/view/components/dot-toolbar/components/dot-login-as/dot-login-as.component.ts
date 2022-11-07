@@ -12,7 +12,7 @@ import {
 
 import { LoginService, User } from '@dotcms/dotcms-js';
 
-import { FormGroup, FormBuilder, FormControl, Validators } from '@angular/forms';
+import { UntypedFormGroup, UntypedFormBuilder, UntypedFormControl, Validators } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { take, takeUntil } from 'rxjs/operators';
 
@@ -40,7 +40,7 @@ export class DotLoginAsComponent implements OnInit, OnDestroy {
     @ViewChild('formEl', { static: true })
     formEl: HTMLFormElement;
 
-    form: FormGroup;
+    form: UntypedFormGroup;
     needPassword = false;
     userCurrentPage: User[];
     errorMessage: string;
@@ -52,7 +52,7 @@ export class DotLoginAsComponent implements OnInit, OnDestroy {
         @Inject(LOCATION_TOKEN) private location: Location,
         private dotMessageService: DotMessageService,
         private dotNavigationService: DotNavigationService,
-        private fb: FormBuilder,
+        private fb: UntypedFormBuilder,
         private loginService: LoginService,
         public paginationService: PaginatorService
     ) {}
@@ -62,7 +62,7 @@ export class DotLoginAsComponent implements OnInit, OnDestroy {
         this.getUsersList();
 
         this.form = this.fb.group({
-            loginAsUser: new FormControl('', Validators.required),
+            loginAsUser: new UntypedFormControl('', Validators.required),
             password: ''
         });
 

@@ -94,6 +94,17 @@ public abstract class ContentletFactory {
 	protected abstract Contentlet findContentletByIdentifier(String identifier, Boolean live, Long languageId) throws DotDataException, DotSecurityException;
 
 	/**
+	 * Retrieves a contentlet from the database based on its identifier
+	 * @param identifier
+	 * @param live Retrieves the live version if false retrieves the working version
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	protected abstract Contentlet findContentletByIdentifier(final String identifier,
+			final Boolean live, final Long languageId, final String variantId) throws DotDataException, DotSecurityException;
+
+	/**
 	 * Retrieves a contentlet from the database based on its identifier and the working version
 	 * @param identifier
 	 * @return Contentlet

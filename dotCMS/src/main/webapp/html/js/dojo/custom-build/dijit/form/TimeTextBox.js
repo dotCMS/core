@@ -1,21 +1,17 @@
 define("dijit/form/TimeTextBox", [
 	"dojo/_base/declare", // declare
 	"dojo/keys", // keys.DOWN_ARROW keys.ENTER keys.ESCAPE keys.TAB keys.UP_ARROW
+	"dojo/query",
 	"dojo/_base/lang", // lang.hitch
 	"../_TimePicker",
 	"./_DateTimeTextBox"
-], function(declare, keys, lang, _TimePicker, _DateTimeTextBox){
+], function(declare, keys, query, lang, _TimePicker, _DateTimeTextBox){
 
 	// module:
 	//		dijit/form/TimeTextBox
 
 
-	/*=====
-	var __Constraints = declare([_DateTimeTextBox.__Constraints, _TimePicker.__Constraints], {
-	});
-	=====*/
-
-	return declare("dijit.form.TimeTextBox", _DateTimeTextBox, {
+	var TimeTextBox = declare("dijit.form.TimeTextBox", _DateTimeTextBox, {
 		// summary:
 		//		A validating, serializable, range-bound time text box with a drop down time picker
 
@@ -24,7 +20,10 @@ define("dijit/form/TimeTextBox", [
 		_selector: "time",
 
 /*=====
-		// constraints: __Constraints
+		// constraints: TimeTextBox.__Constraints
+		//		Despite the name, this parameter specifies both constraints on the input
+		//		(including minimum/maximum allowed values) as well as
+		//		formatting options.  See `dijit/form/TimeTextBox.__Constraints` for details.
 		constraints:{},
 =====*/
 
@@ -42,38 +41,55 @@ define("dijit/form/TimeTextBox", [
 		value: new Date(""),		// value.toString()="NaN"
 		//FIXME: in markup, you have no control over daylight savings
 
-		_onKey: function(evt){
-			if(this.disabled || this.readOnly){ return; }
+		// Add scrollbars if necessary so that dropdown doesn't cover the <input>
+		maxHeight: -1,
+
+		openDropDown: function(/*Function*/ callback){
 			this.inherited(arguments);
 
-			// If the user has backspaced or typed some numbers, then filter the result list
-			// by what they typed.  Maybe there's a better way to detect this, like _handleOnChange()?
-			switch(evt.keyCode){
-				case keys.ENTER:
-				case keys.TAB:
-				case keys.ESCAPE:
-				case keys.DOWN_ARROW:
-				case keys.UP_ARROW:
-					// these keys have special meaning
-					break;
-				default:
-					// defer() because the keystroke hasn't yet appeared in the <input>,
-					// so the get('displayedValue') call below won't give the result we want.
-					this.defer(function(){
-						// set this.filterString to the filter to apply to the drop down list;
-						// it will be used in openDropDown()
-						var val = this.get('displayedValue');
-						this.filterString = (val && !this.parse(val, this.constraints)) ? val.toLowerCase() : "";
+			// Fix #18683
+			var selectedNode = query(".dijitTimePickerItemSelected", this.dropDown.domNode),
+				parentNode=this.dropDown.domNode.parentNode;
+			if(selectedNode[0]){
+				// Center the selected node in the client area of the popup.
+				parentNode.scrollTop=selectedNode[0].offsetTop-(parentNode.clientHeight-selectedNode[0].clientHeight)/2;
+			}else{
+				// There is no currently selected value. Position the list so that the median
+				// node is visible.
+				parentNode.scrollTop=(parentNode.scrollHeight-parentNode.clientHeight)/2;
+            }
 
-						// close the drop down and reopen it, in order to filter the items shown in the list
-						// and also since the drop down may need to be repositioned if the number of list items has changed
-						// and it's being displayed above the <input>
-						if(this._opened){
-							this.closeDropDown();
-						}
-						this.openDropDown();
-					});
+			// For screen readers, as user arrows through values, populate <input> with latest value.
+			this.dropDown.on("input", lang.hitch(this, function(){
+				this.set('value', this.dropDown.get("value"), false);
+			}));
+		},
+
+		_onInput: function(){
+			this.inherited(arguments);
+
+			// set this.filterString to the filter to apply to the drop down list;
+			// it will be used in openDropDown()
+			var val = this.get('displayedValue');
+			this.filterString = (val && !this.parse(val, this.constraints)) ? val.toLowerCase() : "";
+
+			// close the drop down and reopen it, in order to filter the items shown in the list
+			// and also since the drop down may need to be repositioned if the number of list items has changed
+			// and it's being displayed above the <input>
+			if(this._opened){
+				this.closeDropDown();
 			}
+			this.openDropDown();
 		}
 	});
+
+	/*=====
+	 TimeTextBox.__Constraints = declare([_DateTimeTextBox.__Constraints, _TimePicker.__Constraints], {
+		 // summary:
+		 //		Specifies both the rules on valid/invalid values (first/last time allowed),
+		 //		and also formatting options for how the time is displayed.
+	 });
+	 =====*/
+
+	return TimeTextBox;
 });

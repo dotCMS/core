@@ -11,7 +11,7 @@ import { DropdownModule } from 'primeng/dropdown';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
-import { MarkdownModule, MarkdownService } from 'ngx-markdown';
+import { MarkdownService } from 'ngx-markdown';
 import { DebugElement } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 
@@ -98,25 +98,11 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
                 DotIconModule,
                 InputTextareaModule,
                 InputTextModule,
-                MarkdownModule,
                 ReactiveFormsModule,
                 TooltipModule
             ],
             declarations: [DotAppsConfigurationDetailFormComponent],
-            providers: [
-                {
-                    provide: MarkdownService,
-                    useValue: {
-                        compile(text) {
-                            return text;
-                        },
-
-                        highlight() {
-                            //
-                        }
-                    }
-                }
-            ]
+            providers: [MarkdownService]
         });
     });
 
@@ -273,6 +259,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
                         warnings: [`error ${i}`]
                     };
                 }
+
                 return item;
             });
             fixture.detectChanges();
