@@ -665,7 +665,7 @@ public class PageResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public List<MulitreeView> getContentTree (@Context final HttpServletRequest  request,
+    public ResponseEntityView<List<MulitreeView>> getContentTree (@Context final HttpServletRequest  request,
                                                    @Context final HttpServletResponse response,
                                                    @PathParam("pageId") final String  pageId) throws SystemException, PortalException, DotDataException, DotSecurityException {
 
@@ -675,11 +675,13 @@ public class PageResource {
 
         final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(pageId);
 
-        return null != multiTrees? multiTrees.stream().map(multiTree ->
+        final List<MulitreeView> mulitreeViews = null != multiTrees? multiTrees.stream().map(multiTree ->
                 new MulitreeView(multiTree.getHtmlPage(), multiTree.getContainer(),
                         multiTree.getContentlet(), multiTree.getRelationType(), multiTree.getTreeOrder(),
                         multiTree.getPersonalization(), multiTree.getVariantId())).collect(Collectors.toList()):
                 Collections.emptyList();
+
+        return new ResponseEntityView<>(mulitreeViews);
     } // getPersonalizedPersonasOnPage
 
     /**
@@ -850,7 +852,7 @@ public class PageResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/copyContent")
-    public final  Map<String, Object> copyContent(
+    public final  ResponseEntityView<Map<String, Object>> copyContent(
                                       @Context final HttpServletRequest request,
                                       @Context final HttpServletResponse response,
                                       final CopyContentletForm copyContentletForm)
@@ -868,12 +870,48 @@ public class PageResource {
         final User user               = initData.getUser();
         final Language language       = WebAPILocator.getLanguageWebAPI().getLanguage(request); // todo: not sure if this should be received on the form.
         final Contentlet copiedContentlet = this.pageResourceHelper.copyContentlet(copyContentletForm, user, pageMode, language);
-
-        return new DotTransformerBuilder().defaultOptions().content(copiedContentlet).build()
+        final Map<String, Object> entity = (Map<String, Object>)new DotTransformerBuilder().defaultOptions().content(copiedContentlet).build()
                 .toMaps().stream().findFirst().orElse(Collections.emptyMap());
+        return new ResponseEntityView<>(entity);
     }
 
+    /**
+     * Do a deep copy of a page:
+     * 1. Creates a page copy
+     * 2. For each contentlet on the multitree related on the page, creates a copy.
+     * @param request {@link HttpServletRequest}
+     * @param response {@link HttpServletResponse}
+     * @param copyContentletForm {@link CopyContentletForm}
+     * @return Contentlet Map
+     */
+    @PUT
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/{pageId}/_deepcopy")
+    public final  ResponseEntityView<Map<String, Object>> deepCopyPage(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("pageId") final String pageId)
+            throws DotSecurityException, DotDataException {
 
+        Logger.debug(this, ()-> "Copying the page: " + pageId);
 
+        final InitDataObject initData = webResource.init(request, response,true);
+        final PageMode pageMode       = PageMode.get(request);
+        final User user               = initData.getUser();
+        final IHTMLPage  page         = this.pageResourceHelper.getPage(user, pageId, request);
+        final Language language       = WebAPILocator.getLanguageWebAPI().getLanguage(request); // todo: not sure if this should be received on the form.
 
-}
+        if (null == page) {
+
+            throw new DoesNotExistException("The page: " +  pageId + " does not exists.");
+        }
+
+        final Contentlet copiedContentlet = this.pageResourceHelper.copyPage(page, user, pageMode, language);
+
+        return new ResponseEntityView<>(new DotTransformerBuilder().defaultOptions().content(copiedContentlet).build()
+                .toMaps().stream().findFirst().orElse(Collections.emptyMap()));
+    } // deepCopyPage.
+} // E:O:F:PageResource
