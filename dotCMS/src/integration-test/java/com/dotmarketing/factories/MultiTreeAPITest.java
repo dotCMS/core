@@ -1342,6 +1342,85 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     }
 
     /**
+     * Method to Test: {@link MultiTreeAPI#copyVariantForPage(String, String, String)}
+     * When: A Page with {@link MultiTree} in different a Variant A try to copy the {@link MultiTree} to Variant B
+     * Should: Should copy all the {@link MultiTree}
+     */
+    @Test
+    public void copyVariant() throws Exception {
+        final Variant variantA = new VariantDataGen().nextPersisted();
+        final Variant variantB = new VariantDataGen().nextPersisted();
+
+        final Persona persona = new PersonaDataGen().keyTag(UUIDGenerator.shorty()).nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet contentlet_3 = new ContentletDataGen(contentType.id()).nextPersisted();
+
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(1).withStructure(structure, "").nextPersisted();
+
+        final String uniqueId = UUIDGenerator.shorty();
+
+        for (Variant variant : list(variantA, VariantAPI.DEFAULT_VARIANT)) {
+            new MultiTreeDataGen()
+                    .setPage(page)
+                    .setContainer(container)
+                    .setContentlet(contentlet_1)
+                    .setInstanceID(uniqueId)
+                    .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                    .setTreeOrder(1)
+                    .setVariant(variant)
+                    .nextPersisted();
+
+            new MultiTreeDataGen()
+                    .setPage(page)
+                    .setContainer(container)
+                    .setContentlet(contentlet_2)
+                    .setInstanceID(uniqueId)
+                    .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                    .setTreeOrder(1)
+                    .setVariant(variant)
+                    .nextPersisted();
+
+            new MultiTreeDataGen()
+                    .setPage(page)
+                    .setContainer(container)
+                    .setContentlet(contentlet_1)
+                    .setInstanceID(uniqueId)
+                    .setPersonalization(persona.getKeyTag())
+                    .setTreeOrder(1)
+                    .setVariant(variant)
+                    .nextPersisted();
+
+            new MultiTreeDataGen()
+                    .setPage(page)
+                    .setContainer(container)
+                    .setContentlet(contentlet_3)
+                    .setInstanceID(uniqueId)
+                    .setPersonalization(persona.getKeyTag())
+                    .setTreeOrder(1)
+                    .setVariant(variant)
+                    .nextPersisted();
+        }
+
+        APILocator.getMultiTreeAPI().copyVariantForPage(page.getIdentifier(), variantA.name(), variantB.name());
+
+        final List<MultiTree> multiTrees = getMultiTrees(page.getIdentifier());
+
+        assertEquals(12, multiTrees.size());
+
+        final List<MultiTree> multiTreesByVariant = APILocator.getMultiTreeAPI()
+                .getMultiTreesByVariant(page.getIdentifier(), variantB.name());
+
+        assertEquals(4, multiTreesByVariant.size());
+    }
+
+    /**
      * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional)} )}
      * When: A Page with content in Spanish and English try to update the MulTree just for English lang
      * Should: Should keep the Spanish content and replace the English content

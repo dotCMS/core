@@ -421,8 +421,12 @@ public class PageResource {
     public final Response addContent(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("pageId") final String pageId,
+            @QueryParam("variantName") final String variantNameParam,
             final PageContainerForm pageContainerForm)
             throws DotSecurityException, DotDataException {
+
+        final String variantName = UtilMethods.isSet(variantNameParam) ? variantNameParam :
+                VariantAPI.DEFAULT_VARIANT.name();
 
         Logger.debug(this, ()->String.format("Saving page's content: %s",
                 pageContainerForm != null ? pageContainerForm.getRequestJson() : null));
@@ -443,7 +447,7 @@ public class PageResource {
             final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
             this.validateContainerEntries(pageContainerForm.getContainerEntries());
 
-            pageResourceHelper.saveContent(pageId, this.reduce(pageContainerForm.getContainerEntries()), language);
+            pageResourceHelper.saveContent(pageId, this.reduce(pageContainerForm.getContainerEntries()), language, variantName);
 
             return Response.ok(new ResponseEntityView("ok")).build();
         } catch(HTMLPageAssetNotFoundException e) {
