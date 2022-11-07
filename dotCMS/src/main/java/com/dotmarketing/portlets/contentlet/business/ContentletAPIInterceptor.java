@@ -36,7 +36,13 @@ import org.elasticsearch.action.search.SearchResponse;
 
 import java.io.File;
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * This interceptor class allows developers to execute Java <b>code</b> before
@@ -53,9 +59,9 @@ import java.util.*;
  */
 public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
-	private List<ContentletAPIPreHook> preHooks = new ArrayList<ContentletAPIPreHook>();
-	private List<ContentletAPIPostHook> postHooks = new ArrayList<ContentletAPIPostHook>();
-	private ContentletAPI conAPI;
+	private List<ContentletAPIPreHook> preHooks = new ArrayList<>();
+	private List<ContentletAPIPostHook> postHooks = new ArrayList<>();
+	private final ContentletAPI conAPI;
 
 	/**
 	 * Default class constructor.
@@ -1149,6 +1155,22 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 			post.getContentletReferences(contentlet, user, respectFrontendRoles,c);
 		}
 		return c;
+	}
+
+	@Override
+	public Optional<Integer> getContentletReferenceCount(final String contentletId) {
+		for (final ContentletAPIPreHook pre : this.preHooks) {
+			final boolean preResult = pre.getContentletReferenceCount(contentletId);
+			if (!preResult) {
+				Logger.error(this, "The following prehook failed: " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed: " + pre.getClass().getName());
+			}
+		}
+		final Optional<Integer> count = this.conAPI.getContentletReferenceCount(contentletId);
+		for (final ContentletAPIPostHook post : this.postHooks) {
+			post.getContentletReferenceCount(contentletId);
+		}
+		return count;
 	}
 
 	/**

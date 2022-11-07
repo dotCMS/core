@@ -1,8 +1,5 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -23,6 +20,10 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -331,6 +332,23 @@ public interface ContentletAPIPreHook {
 	public default boolean getContentletReferences(Contentlet contentlet, User user, boolean respectFrontendRoles){
       return true;
     }
+
+	/**
+	 * This is a simplified version of the more complex {@link #getContentletReferences(Contentlet, User, boolean)}
+	 * method. This one will only be focused on querying the database to return the number of Containers that include
+	 * the specified Contentlet ID.
+	 * <p>The result provided by this method can be used to customize or determine specific behaviors. For example,
+	 * this
+	 * piece of information is used by the dotCMS UI to ask the User whether they want to edit a Contentlet referenced
+	 * everywhere, or if dotCMS should create a copy of such a Contentlet so they can edit that one version.</p>
+	 *
+	 * @param contentletId The Contentlet ID whose references will be retrieved.
+	 *
+	 * @return The number of times the specified Contentlet is added to a Container in any HTML Page.
+	 */
+	default boolean getContentletReferenceCount(final String contentletId) {
+		return true;
+	}
 	
 	/**
 	 * Gets the value of a field with a given contentlet 
