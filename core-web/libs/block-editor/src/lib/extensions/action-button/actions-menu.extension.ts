@@ -96,7 +96,6 @@ function execCommand({
                 .chain()
                 .addContentletBlock({ range, payload: props.payload })
                 .addNextLine()
-                .focus()
                 .run();
         },
         heading: () => {
@@ -293,6 +292,7 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
 
                                 return true;
                             })
+                            .focus()
                             .run();
                     }
             };
