@@ -21,8 +21,10 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -222,6 +224,47 @@ public class VersionableFactoryImplTest {
         assertEquals(contentlet.getIdentifier(), contentletVersionInfoFromCache.getIdentifier());
         assertEquals(language.getId(), contentletVersionInfoFromCache.getLang());
         assertEquals(variant.name(), contentletVersionInfoFromCache.getVariant());
+    }
+
+    /**
+     * Method to test: {@link VersionableFactoryImpl#findAllContentletVersionInfos(String, String)}
+     * When: Create several {@link ContentletVersionInfo} for DEFAULT variant and a specific variant
+     * Should: return just to a specific variant
+     */
+    @Test
+    public void findAllContentletVersionInfoWithVariant() throws DotDataException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Language language = new LanguageDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType).nextPersisted();
+
+        final Identifier identifier_1 = APILocator.getIdentifierAPI()
+                .find(contentlet_1.getIdentifier());
+
+        final Identifier identifier_2 = APILocator.getIdentifierAPI()
+                .find(contentlet_2.getIdentifier());
+
+        FactoryLocator.getVersionableFactory()
+                .createContentletVersionInfo(identifier_1, language.getId(), contentlet_1.getInode(), VariantAPI.DEFAULT_VARIANT.name());
+
+        FactoryLocator.getVersionableFactory()
+                .createContentletVersionInfo(identifier_1, language.getId(), contentlet_1.getInode(), variant.name());
+
+        FactoryLocator.getVersionableFactory()
+                .createContentletVersionInfo(identifier_2, language.getId(), contentlet_1.getInode(), VariantAPI.DEFAULT_VARIANT.name());
+
+        FactoryLocator.getVersionableFactory()
+                .createContentletVersionInfo(identifier_2, language.getId(), contentlet_1.getInode(), variant.name());
+
+        final List<ContentletVersionInfo> allContentletVersionInfos = FactoryLocator.getVersionableFactory()
+                .findAllContentletVersionInfos(contentlet_1.getIdentifier(), variant.name());
+
+        assertEquals(1, allContentletVersionInfos.size());
+
+        assertEquals(allContentletVersionInfos.get(0).getVariant(), variant.name());
+        assertEquals(allContentletVersionInfos.get(0).getWorkingInode(), contentlet_1.getInode());
+        assertEquals(allContentletVersionInfos.get(0).getLang(), language.getId());
     }
 
     /**

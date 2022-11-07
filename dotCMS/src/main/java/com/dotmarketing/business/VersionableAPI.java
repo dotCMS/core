@@ -423,5 +423,17 @@ public interface VersionableAPI {
 	 * @throws DotStateException
 	 */
     List<ContentletVersionInfo> findContentletVersionInfos(String identifier) throws DotDataException, DotStateException;
-	
+
+	/**
+	 * Will return a list of all ContentletVersionInfo for a given piece of content and {@link com.dotcms.variant.model.Variant}
+	 * (if there are multiple languages)
+	 *
+	 * @param identifier
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 */
+	List<ContentletVersionInfo> findContentletVersionInfos(String identifier, String variantName)
+			throws DotDataException, DotStateException;
+
 }

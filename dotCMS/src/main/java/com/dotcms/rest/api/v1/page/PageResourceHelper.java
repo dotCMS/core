@@ -7,6 +7,7 @@ import com.dotcms.mock.request.HttpServletRequestParameterDecoratorWrapper;
 import com.dotcms.mock.request.LanguageIdParameterDecorator;
 import com.dotcms.mock.request.ParameterDecorator;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
+import com.dotcms.rest.api.v1.page.PageContainerForm.ContainerEntry;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.variant.VariantAPI;
@@ -100,8 +101,8 @@ public class PageResourceHelper implements Serializable {
 
     @WrapInTransaction
     public void saveContent(final String pageId,
-                            final List<PageContainerForm.ContainerEntry> containerEntries,
-                            final Language language) throws DotDataException {
+            final List<ContainerEntry> containerEntries,
+            final Language language, String variantName) throws DotDataException {
 
         final Map<String, List<MultiTree>> multiTreesMap = new HashMap<>();
         for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
@@ -117,7 +118,8 @@ public class PageResourceHelper implements Serializable {
                             .setContentlet(contentletId)
                             .setInstanceId(containerEntry.getContainerUUID())
                             .setTreeOrder(i++)
-                            .setHtmlPage(pageId);
+                            .setHtmlPage(pageId)
+                            .setVariantId(variantName);
 
                     CollectionsUtils.computeSubValueIfAbsent(
                             multiTreesMap, personalization, MultiTree.personalized(multiTree, personalization),
@@ -133,7 +135,8 @@ public class PageResourceHelper implements Serializable {
         for (final String personalization : multiTreesMap.keySet()) {
 
             multiTreeAPI.overridesMultitreesByPersonalization(pageId, personalization,
-                    multiTreesMap.get(personalization), Optional.ofNullable(language.getId()));
+                    multiTreesMap.get(personalization), Optional.ofNullable(language.getId()),
+                    variantName);
         }
     }
 

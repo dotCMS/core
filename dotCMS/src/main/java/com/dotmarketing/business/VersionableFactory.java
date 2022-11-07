@@ -215,6 +215,10 @@ public abstract class VersionableFactory {
      */
     protected abstract VersionInfo findVersionInfoFromDb(Identifier identifier) throws DotDataException, DotStateException;
 
+	/**
+	 * Return any version of the {@link com.dotmarketing.portlets.contentlet.model.Contentlet} no matter the
+	 * {@link com.dotmarketing.portlets.languagesmanager.model.Language} or the {@link com.dotcms.variant.model.Variant}
+	 */
     protected abstract Optional<ContentletVersionInfo> findAnyContentletVersionInfo(String identifier) throws DotDataException;
 
 	/**
@@ -232,4 +236,6 @@ public abstract class VersionableFactory {
     protected abstract List<ContentletVersionInfo> findAllContentletVersionInfos(String identifier)
         throws DotDataException, DotStateException ;
 
+	protected abstract List<ContentletVersionInfo> findAllContentletVersionInfos(String identifier, String variantName)
+			throws DotDataException, DotStateException ;
 }
