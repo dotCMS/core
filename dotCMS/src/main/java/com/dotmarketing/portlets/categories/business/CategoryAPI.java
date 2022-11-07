@@ -7,6 +7,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
+import java.util.HashMap;
 import java.util.List;
 /**
  * 
@@ -389,6 +390,13 @@ public interface CategoryAPI {
 	 * @return The List of categories that could not be deleted
 	 */
 	List<Category>  removeAllChildren(Category parentCategory, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	/**
+	 * Recursive Method that deletes all the parent categories along with their children
+	 * @param categoriesToDelete
+	 * @return The List of parent categories that could not be deleted
+	 */
+	HashMap<String, Category> deleteCategoryAndChildren(final List<String> categoriesToDelete, final User user,
+			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	/**
 	 * Retrieves a list all the line of parent categories of the given child category
 	 * a final fake top category is added at the beginning of the list to represent the top of
