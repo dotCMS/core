@@ -6,9 +6,9 @@ import { Observable, of, Subject } from 'rxjs';
 import { DotBlockEditorComponent } from '@dotcms/block-editor';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotContentTypeService } from '@services/dot-content-type';
 import { DotCMSContentTypeField, DotCMSContentTypeFieldVariable } from '@dotcms/dotcms-models';
+import { DotAlertConfirmService } from '@dotcms/app/api/services/dot-alert-confirm';
 
 export interface BlockEditorInput {
     content: { [key: string]: string };
@@ -38,7 +38,7 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
         private dotWorkflowActionsFireService: DotWorkflowActionsFireService,
         private dotEventsService: DotEventsService,
         private dotMessageService: DotMessageService,
-        private dotGlobalMessageService: DotGlobalMessageService,
+        private dotAlertConfirmService: DotAlertConfirmService,
         private dotContentTypeService: DotContentTypeService
     ) {}
 
@@ -80,10 +80,15 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
                     this.closeSidebar();
                 },
                 (e: HttpErrorResponse) => {
-                    const message =
-                        e.error.errors[0].message ||
-                        this.dotMessageService.get('editpage.inline.error');
-                    this.dotGlobalMessageService.error(message);
+                    this.saving = false;
+                    this.dotAlertConfirmService.alert({
+                        accept: () => {
+                            this.closeSidebar();
+                        },
+                        header: this.dotMessageService.get('error'),
+                        message:
+                            e.error?.message || this.dotMessageService.get('editpage.inline.error')
+                    });
                 }
             );
     }

@@ -19,19 +19,20 @@ import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.business.StoryBlockReferenceResult;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotmarketing.business.VersionableFactoryImpl;
+import org.apache.commons.io.FileUtils;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.system.SimpleMapAppContext;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.I18NMessage;
 import com.dotcms.util.transform.TransformerLocator;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -73,7 +74,6 @@ import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.NumberUtil;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
@@ -1065,7 +1065,16 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	@Override
 	protected Contentlet findContentletByIdentifier(String identifier, Boolean live, Long languageId) throws DotDataException {
-        final Optional<ContentletVersionInfo> cvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, languageId);
+        return findContentletByIdentifier(identifier, live, languageId, VariantAPI.DEFAULT_VARIANT.name());
+    }
+
+    @Override
+    protected Contentlet findContentletByIdentifier(final String identifier, final Boolean live,
+            final Long languageId, final String variantId) throws DotDataException {
+
+        final Optional<ContentletVersionInfo> cvi = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(identifier, languageId, variantId);
+
         if(!cvi.isPresent() || UtilMethods.isEmpty(cvi.get().getIdentifier())
                 || (live && UtilMethods.isEmpty(cvi.get().getLiveInode()))) {
             return null;
@@ -1084,19 +1093,21 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     @Override
     protected Contentlet findContentletByIdentifierAnyLanguage(final String identifier, final boolean includeDeleted) throws DotDataException, DotSecurityException {
-        // Looking content up this way can avoid any DB hits as these calls are all cached.
-        final List<Language> langs = this.languageAPI.getLanguages();
-        for(final Language language : langs) {
-            final Optional<ContentletVersionInfo> contentVersion = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, language.getId());
-            if (contentVersion.isPresent() && UtilMethods.isSet(contentVersion.get().getIdentifier())
-                    && (includeDeleted || !contentVersion.get().isDeleted())) {
-                return find(contentVersion.get().getWorkingInode());
-            }
-            if (contentVersion.isPresent() && contentVersion.get().isDeleted() && !includeDeleted) {
-                Logger.warn(this, String.format("Contentlet with ID '%s' exists, but is marked as 'Archived'.",
-                        identifier));
-            }
+        final Optional<ContentletVersionInfo> contentVersionDeleted = FactoryLocator.getVersionableFactory()
+                .findAnyContentletVersionInfo(identifier, true);
+
+        final Optional<ContentletVersionInfo> contentVersionNotDeleted = FactoryLocator.getVersionableFactory()
+                .findAnyContentletVersionInfo(identifier, false);
+
+        if (contentVersionNotDeleted.isPresent()) {
+            return find(contentVersionNotDeleted.get().getWorkingInode());
+        } else if (contentVersionDeleted.isPresent() && includeDeleted) {
+            return find(contentVersionDeleted.get().getWorkingInode());
+        } else if (contentVersionDeleted.isPresent() && !includeDeleted) {
+            Logger.warn(this, String.format("Contentlet with ID '%s' exists, but is marked as 'Archived'.",
+                    identifier));
         }
+
         return null;
     }
 

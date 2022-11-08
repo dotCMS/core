@@ -5,7 +5,12 @@ import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { map, startWith, takeUntil } from 'rxjs/operators';
 import { DotRole } from '@dotcms/app/shared/models/dot-role/dot-role.model';
 import { DotPageRenderState } from '../../shared/models';
-import { DotFavoritePageState, DotFavoritePageStore } from './store/dot-favorite-page.store';
+import {
+    DotFavoritePageState,
+    DotFavoritePageStore,
+    DotFavoritePageActionState
+} from './store/dot-favorite-page.store';
+import { generateDotFavoritePageUrl } from '@dotcms/app/shared/dot-utils';
 
 export interface DotFavoritePageProps {
     pageRenderedHtml?: string;
@@ -24,6 +29,7 @@ export interface DotFavoritePageFormData {
 @Component({
     selector: 'dot-favorite-page',
     templateUrl: 'dot-favorite-page.component.html',
+    styleUrls: ['./dot-favorite-page.component.scss'],
     providers: [DotFavoritePageStore]
 })
 export class DotFavoritePageComponent implements OnInit, AfterViewInit, OnDestroy {
@@ -71,6 +77,14 @@ export class DotFavoritePageComponent implements OnInit, AfterViewInit, OnDestro
                 this.ref.close(true);
             }
         });
+
+        this.store.actionState$
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((actionState: DotFavoritePageActionState) => {
+                if (actionState === DotFavoritePageActionState.SAVED) {
+                    this.config.data?.onSave?.();
+                }
+            });
     }
 
     ngAfterViewInit(): void {
@@ -104,14 +118,7 @@ export class DotFavoritePageComponent implements OnInit, AfterViewInit, OnDestro
     }
 
     private setupForm(page: DotFavoritePageProps) {
-        const url =
-            `${page.pageState.params.page?.pageURI}?language_id=${page.pageState.params.viewAs.language.id}` +
-            (page.pageState.params.viewAs.device?.identifier
-                ? `&device_id=${page.pageState.params.viewAs.device?.identifier}`
-                : '') +
-            (page.pageState.params.site?.identifier
-                ? `&host_id=${page.pageState.params.site?.identifier}`
-                : '');
+        const url = generateDotFavoritePageUrl(page.pageState);
 
         return {
             currentUserRoleId: ['', Validators.required],

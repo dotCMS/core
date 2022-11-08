@@ -23,7 +23,7 @@ import {
     getClassNames,
     getDotOptionsFromFieldValue,
     getOriginalStatus,
-    getStringFromDotKeyArray,
+    getJsonStringFromDotKeyArray,
     getTagError,
     getTagHint,
     updateStatus,
@@ -160,7 +160,20 @@ export class DotKeyValueComponent {
     @Watch('value')
     valueWatch(): void {
         this.value = checkProp<DotKeyValueComponent, string>(this, 'value', 'string');
-        this.items = getDotOptionsFromFieldValue(this.value).map(mapToKeyValue);
+
+        let formattedValue = '';
+        if (this.value) {
+            formattedValue = this.value
+                .replace(/&lt;/gi, '<')
+                .replace(/[|]/gi, '&#124;')
+                .replace(/&#x22;:&#x22;/gi, '|')
+                .replace(/&#x22;,&#x22;/gi, ',')
+                .replace(/{&#x22;/gi, '')
+                .replace(/&#x22;}/gi, '')
+                .replace(/&#x22;/gi, '"');
+        }
+
+        this.items = getDotOptionsFromFieldValue(formattedValue).map(mapToKeyValue);
     }
 
     /**
@@ -198,7 +211,12 @@ export class DotKeyValueComponent {
         let keyValueRawData = '';
 
         for (let i = 0, total = keys.length; i < total; i++) {
-            keyValueRawData += `${keys[i].innerHTML}|${values[i].innerHTML},`;
+            // Escaping "Comma" and "Pipe" symbols are needed due to format structure designed to separate values
+            keyValueRawData += `${keys[i].textContent
+                .replace(/,/gi, '&#44;')
+                .replace(/[|]/gi, '&#124;')}|${values[i].textContent
+                .replace(/,/gi, '&#44;')
+                .replace(/[|]/gi, '&#124;')},`;
         }
 
         // Timeout to let the DOM get cleaned and then repopulate with list of keyValues
@@ -346,7 +364,7 @@ export class DotKeyValueComponent {
     }
 
     private emitValueChange(): void {
-        const returnedValue = getStringFromDotKeyArray(this.items);
+        const returnedValue = getJsonStringFromDotKeyArray(this.items);
         this.dotValueChange.emit({
             name: this.name,
             value: returnedValue

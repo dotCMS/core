@@ -259,11 +259,17 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
         if ("contentlet".equals(id.getAssetType())) {
             try {
-
-                Optional<ContentletVersionInfo> cinfo = versionableAPI.getContentletVersionInfo( id.getId(), languageId );
+                final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
+                Optional<ContentletVersionInfo> cinfo = versionableAPI
+                        .getContentletVersionInfo( id.getId(), languageId, currentVariantId);
 
                 if (!cinfo.isPresent() || cinfo.get().getWorkingInode().equals( "NOTFOUND" )) {
-                    return null;
+
+                    cinfo = versionableAPI.getContentletVersionInfo( id.getId(), languageId);
+
+                    if (!cinfo.isPresent() || cinfo.get().getWorkingInode().equals( "NOTFOUND" )) {
+                        return null;
+                    }
                 }
 
                 Contentlet contentlet = contentletAPI.find(live ? cinfo.get().getLiveInode()

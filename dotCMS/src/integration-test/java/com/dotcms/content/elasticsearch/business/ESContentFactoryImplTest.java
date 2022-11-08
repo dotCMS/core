@@ -25,7 +25,9 @@ import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -36,6 +38,7 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -61,6 +64,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -1028,5 +1032,73 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to test: {@link ESContentFactoryImpl#findContentletByIdentifierAnyLanguage(String, boolean)}
+     * When: The contentlet had just one version not in the DEFAULT variant
+     * Should: return that version anyway
+     *
+     * @throws WebAssetException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void findContentletByIdentifierAnyLanguageNoDefaultVersion()
+            throws DotDataException, DotSecurityException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Language language = new com.dotcms.datagen.LanguageDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
 
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .languageId(language.getId())
+                .host(host)
+                .variant(variant)
+                .nextPersisted();
+
+
+        final Contentlet contentletByIdentifierAnyLanguage = ((ESContentFactoryImpl) FactoryLocator.getContentletFactory())
+                .findContentletByIdentifierAnyLanguage(contentlet.getIdentifier(), false);
+
+        assertNotNull(contentletByIdentifierAnyLanguage);
+        assertEquals(contentlet.getIdentifier(), contentletByIdentifierAnyLanguage.getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link ESContentFactoryImpl#findContentletByIdentifierAnyLanguage(String, boolean)}
+     * When: The contentlet had just one version not in the DEFAULT variant but it was archived
+     * Should: return {@link Optional#empty()}
+     *
+     * @throws WebAssetException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void findDeletedContentletByIdentifierAnyLanguage()
+            throws DotDataException, DotSecurityException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Language language = new com.dotcms.datagen.LanguageDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        Contentlet contentlet = new ContentletDataGen(contentType)
+                .languageId(language.getId())
+                .host(host)
+                .variant(variant)
+                .nextPersisted();
+
+        final String identifier = contentlet.getIdentifier();
+        APILocator.getContentletAPI().archive(contentlet, APILocator.systemUser(), false);
+
+        Contentlet contentletByIdentifierAnyLanguage = ((ESContentFactoryImpl) FactoryLocator.getContentletFactory())
+                .findContentletByIdentifierAnyLanguage(identifier, true);
+
+        assertNotNull(contentletByIdentifierAnyLanguage);
+        assertEquals(contentlet.getIdentifier(), contentletByIdentifierAnyLanguage.getIdentifier());
+
+
+        contentletByIdentifierAnyLanguage = ((ESContentFactoryImpl) FactoryLocator.getContentletFactory())
+                .findContentletByIdentifierAnyLanguage(identifier, false);
+
+        assertNull(contentletByIdentifierAnyLanguage);
+    }
 }

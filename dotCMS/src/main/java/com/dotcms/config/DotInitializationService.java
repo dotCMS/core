@@ -6,6 +6,7 @@ import com.dotcms.contenttype.business.ContentTypeInitializer;
 import com.dotcms.rendering.velocity.events.ExceptionHandlersInitializer;
 import com.dotcms.system.event.local.business.LocalSystemEventSubscribersInitializer;
 import com.dotcms.util.ReflectionUtils;
+import com.dotcms.variant.business.DefaultVariantInitializer;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.*;
 import org.apache.commons.lang.time.StopWatch;
@@ -116,7 +117,8 @@ public class DotInitializationService implements Serializable {
                 (DotInitializer)APILocator.getContainerAPI(),
                 (DotInitializer)APILocator.getThemeAPI(),
                 (DotInitializer)APILocator.getTemplateAPI(),
-                new ContentTypeInitializer()
+                new ContentTypeInitializer(),
+                new DefaultVariantInitializer()
         );
     } // getInternalInitializers.
 

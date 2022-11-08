@@ -9,9 +9,10 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import com.dotcms.util.JsonUtil;
+import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
@@ -1353,7 +1354,8 @@ public class ContentResource {
                 APILocator.getContentTypeAPI(APILocator.systemUser()).
                         find(type.inode()).fields()).asOldFieldList();
         for (Field f : fields) {
-            if (f.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())) {
+            if (f.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())
+                    || f.getFieldType().equals(FieldType.JSON_FIELD.toString()) ) {
                 jsonFields.add(f.getVelocityVarName());
             }
         }
@@ -1896,7 +1898,7 @@ public class ContentResource {
             HibernateUtil.startTransaction();
 
             // preparing categories
-            List<Category> categories = MapToContentletPopulator.INSTANCE.getCategories
+            final Optional<List<Category>> categories = MapToContentletPopulator.INSTANCE.fetchCategories
                     (contentlet, init.getUser(), mode.respectAnonPerms);
             // running a workflow action?
             final ContentWorkflowResult contentWorkflowResult = processWorkflowAction(contentlet, init, live);
@@ -1904,14 +1906,12 @@ public class ContentResource {
                     .get(RELATIONSHIP_KEY);
             live = contentWorkflowResult.publish;
 
-            categories = UtilMethods.isSet(categories)?categories:null;
-
             // if one of the actions does not have save, so call the checkin
             if (!contentWorkflowResult.save) {
 
                 contentlet.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
                 contentlet = APILocator.getContentletAPI()
-                        .checkin(contentlet, relationships, categories, null, init.getUser(), mode.respectAnonPerms);
+                        .checkin(contentlet, relationships, categories.orElse(null), null, init.getUser(), mode.respectAnonPerms);
                 if (live) {
                     APILocator.getContentletAPI()
                             .publish(contentlet, init.getUser(), mode.respectAnonPerms);
@@ -1921,7 +1921,7 @@ public class ContentResource {
                 contentlet = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet,
                         new ContentletDependencies.Builder()
                         .respectAnonymousPermissions(mode.respectAnonPerms)
-                        .modUser(init.getUser()).categories(categories)
+                        .modUser(init.getUser()).categories(categories.orElse(null))
                         .relationships(relationships)
                         .indexPolicy(IndexPolicyProvider.getInstance().forSingleContent())
                         .build());

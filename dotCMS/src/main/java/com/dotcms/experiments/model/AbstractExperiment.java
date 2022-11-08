@@ -2,9 +2,18 @@ package com.dotcms.experiments.model;
 
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionSummary;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.RelatedPermissionableGroup;
+import com.dotmarketing.business.Ruleable;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.vavr.control.Try;
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import org.immutables.value.Value;
 
@@ -20,7 +29,7 @@ import org.immutables.value.Value;
  */
 @Value.Style(typeImmutable="*", typeAbstract="Abstract*")
 @Value.Immutable
-public interface AbstractExperiment extends Serializable, ManifestItem {
+public interface AbstractExperiment extends Serializable, ManifestItem, Ruleable {
     @JsonProperty("name")
     String name();
 
@@ -66,17 +75,71 @@ public interface AbstractExperiment extends Serializable, ManifestItem {
     @JsonProperty("pageId")
     String pageId();
 
-    @JsonProperty("archived")
-    @Value.Default
-    default boolean archived() {
-        return false;
-    }
-
     @JsonProperty("createdBy")
     String createdBy();
 
     @JsonProperty("lastModifiedBy")
     String lastModifiedBy();
+
+    @JsonProperty("goals")
+    Optional<Goals> goals();
+
+    @JsonProperty("targetingConditions")
+    Optional<List<TargetingCondition>> targetingConditions();
+
+    @JsonProperty("lookbackWindow")
+    @Value.Default
+    default int lookbackWindow() {
+        return 10;
+    }
+
+    // Beginning Permissionable methods
+
+    @Value.Derived
+    default String getIdentifier() {
+        return id().orElse("");
+    }
+
+    @Value.Derived
+    default String getPermissionId() {
+        return id().orElse("");
+    }
+
+    @Value.Derived
+    default String getOwner() {
+        return createdBy();
+    }
+
+    @Value.Derived
+    default void setOwner(String owner){
+
+    }
+    @Value.Derived
+    default List<PermissionSummary> acceptedPermissions () {
+        return Collections.emptyList();
+    }
+
+    @Value.Derived
+    default List<RelatedPermissionableGroup> permissionDependencies(int requiredPermission) {
+        return Collections.emptyList();
+    }
+
+    @Value.Derived
+    @JsonIgnore
+    default Permissionable getParentPermissionable() {
+        return Try.of(()->APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(pageId()))
+                .getOrNull();
+    }
+
+    @Value.Derived
+    default String getPermissionType() {
+        return this.getClass().getCanonicalName();
+    }
+
+    @Value.Derived
+    default boolean isParentPermissionable() {
+        return false;
+    }
 
     @Value.Derived
     @Override
@@ -92,6 +155,7 @@ public interface AbstractExperiment extends Serializable, ManifestItem {
         RUNNING,
         SCHEDULED,
         ENDED,
-        DRAFT
+        DRAFT,
+        ARCHIVED
     }
 }

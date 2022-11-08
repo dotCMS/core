@@ -18,12 +18,12 @@ public class ExperimentsFactoryImpl implements
 
     public static final String INSERT_EXPERIMENT = "INSERT INTO experiment(id, page_id, name, description, status, " +
             "traffic_proportion, traffic_allocation, mod_date, scheduling, "
-            + "archived, creation_date, created_by, last_modified_by) "
-            + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)";
+            + "creation_date, created_by, last_modified_by, goals, lookback_window) "
+            + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     public static final String UPDATE_EXPERIMENT = "UPDATE experiment set name=?, description=?, status=?, " +
-            "traffic_proportion=?, traffic_allocation=?, mod_date=?, scheduling=?, archived=?, "
-            + " creation_date=?, created_by=?, last_modified_by=?"
+            "traffic_proportion=?, traffic_allocation=?, mod_date=?, scheduling=?, "
+            + " creation_date=?, created_by=?, last_modified_by=?, goals=?, lookback_window=?"
             + " WHERE id=?";
 
     public static final String FIND_EXPERIMENT_BY_ID = "SELECT * FROM experiment WHERE id = ?";
@@ -39,18 +39,12 @@ public class ExperimentsFactoryImpl implements
     public static final String STATUS_FILTER = "SELECT * from experiment WHERE status = ?";
 
     @Override
-    public Experiment save(Experiment experiment) throws DotDataException {
-        String experimentId = experiment.id().isEmpty() || find(experiment.id().get()).isEmpty()
-            ? insertInDB(experiment)
-            : updateInDB(experiment);
-
-        final Optional<Experiment> saved = find(experimentId);
-
-        if(saved.isEmpty()) {
-            throw new DotDataException("Unable to retrieve saved/updated Experiment");
+    public void save(Experiment experiment) throws DotDataException {
+        if(experiment.id().isEmpty() || find(experiment.id().get()).isEmpty()) {
+             insertInDB(experiment);
+        } else {
+            updateInDB(experiment);
         }
-
-        return saved.get();
     }
 
     @Override
@@ -128,7 +122,7 @@ public class ExperimentsFactoryImpl implements
         return TransformerLocator.createExperimentTransformer(results).list;
     }
 
-    private String insertInDB(final Experiment experiment) throws DotDataException {
+    private void insertInDB(final Experiment experiment) throws DotDataException {
         DotPreconditions.checkArgument(experiment.id().isPresent(), "Experiment id is "
                 + "required for saves ");
 
@@ -142,17 +136,16 @@ public class ExperimentsFactoryImpl implements
         dc.addJSONParam(experiment.trafficProportion());
         dc.addParam(experiment.trafficAllocation());
         dc.addParam(Timestamp.from(experiment.modDate()));
-        experiment.scheduling().ifPresentOrElse(dc::addJSONParam, ()->dc.addObject(null));
-        dc.addParam(experiment.archived());
+        dc.addJSONParam(experiment.scheduling().isPresent()?experiment.scheduling().get():null);
         dc.addParam(Timestamp.from(experiment.creationDate()));
         dc.addParam(experiment.createdBy());
         dc.addParam(experiment.lastModifiedBy());
+        dc.addJSONParam(experiment.goals().isPresent()?experiment.goals().get():null);
+        dc.addParam(experiment.lookbackWindow());
         dc.loadResult();
-
-        return experiment.id().get();
     }
 
-    private String updateInDB(final Experiment experiment) throws DotDataException {
+    private void updateInDB(final Experiment experiment) throws DotDataException {
         DotPreconditions.checkArgument(experiment.id().isPresent(), "Experiment id is "
                 + "required for updates ");
 
@@ -164,14 +157,13 @@ public class ExperimentsFactoryImpl implements
         dc.addJSONParam(experiment.trafficProportion());
         dc.addParam(experiment.trafficAllocation());
         dc.addParam(Timestamp.from(experiment.modDate()));
-        experiment.scheduling().ifPresentOrElse(dc::addJSONParam, ()->dc.addObject(null));
-        dc.addParam(experiment.archived());
+        dc.addJSONParam(experiment.scheduling().isPresent()?experiment.scheduling().get():null);
         dc.addParam(Timestamp.from(experiment.creationDate()));
         dc.addParam(experiment.createdBy());
         dc.addParam(experiment.lastModifiedBy());
+        dc.addJSONParam(experiment.goals().isPresent()?experiment.goals().get():null);
+        dc.addParam(experiment.lookbackWindow());
         dc.addParam(experiment.id().get());
         dc.loadResult();
-
-        return experiment.id().get();
     }
 }

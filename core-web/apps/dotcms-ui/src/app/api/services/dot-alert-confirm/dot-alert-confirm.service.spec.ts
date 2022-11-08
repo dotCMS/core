@@ -14,7 +14,7 @@ const messageServiceMock = new MockDotMessageService({
     'dot.common.dialog.reject': 'No'
 });
 
-describe('DotDialogService', () => {
+describe('DotAlertConfirmService', () => {
     let mockData: DotAlertConfirm;
     let service: DotAlertConfirmService;
     let confirmationService: ConfirmationService;
@@ -86,10 +86,14 @@ describe('DotDialogService', () => {
     });
 
     describe('alert', () => {
-        it('should set model', () => {
+        it('should set model', fakeAsync(() => {
             service.alert(mockData);
             expect(service.alertModel).toEqual(mockData);
-        });
+            tick();
+            service.confirmDialogOpened$.pipe(take(1)).subscribe((response: boolean) => {
+                expect(response).toBe(true);
+            });
+        }));
 
         it('should set alert with default labels', () => {
             service.alert({

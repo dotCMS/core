@@ -865,7 +865,6 @@ export const MaterialIconClasses = [
     'kitchen',
     'kitesurfing',
     'label',
-    'label_important',
     'label_off',
     'landscape',
     'language',

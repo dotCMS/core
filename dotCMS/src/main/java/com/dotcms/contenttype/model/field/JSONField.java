@@ -51,7 +51,7 @@ public abstract class JSONField extends Field {
 	@JsonIgnore
 	public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties(){
 		return list(ContentTypeFieldProperties.REQUIRED, ContentTypeFieldProperties.NAME,
-				ContentTypeFieldProperties.REGEX_CHECK, ContentTypeFieldProperties.DEFAULT_VALUE, ContentTypeFieldProperties.HINT,
+				ContentTypeFieldProperties.DEFAULT_VALUE, ContentTypeFieldProperties.HINT,
 				ContentTypeFieldProperties.SEARCHABLE, ContentTypeFieldProperties.INDEXED);
 	}
 
@@ -67,5 +67,8 @@ public abstract class JSONField extends Field {
 		return Optional.empty();
 	}
 
-
+	@JsonIgnore
+	public String getContentTypeFieldLabelKey(){
+		return "JSON-Field";
+	}
 }

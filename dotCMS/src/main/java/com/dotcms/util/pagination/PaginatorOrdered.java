@@ -2,10 +2,7 @@ package com.dotcms.util.pagination;
 
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
-
 import java.util.Map;
-
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * It is a {@link Paginator} with Order and Filter

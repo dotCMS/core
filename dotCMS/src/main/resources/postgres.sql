@@ -560,8 +560,8 @@ create table contentlet_version_info (
    locked_by varchar(100),
    locked_on timestamptz,
    version_ts timestamptz not null,
-   variant_id varchar(255) default 'DEFAULT',
-   primary key (identifier, lang)
+   variant_id varchar(255) default 'DEFAULT' not null,
+   primary key (identifier, lang, variant_id)
 );
 create table fixes_audit (
    id varchar(36) not null,
@@ -1063,7 +1063,8 @@ create table multi_tree (
    relation_type varchar(64) not null,
    tree_order int4,
    personalization varchar(255) not null default 'dot:default',
-   primary key (child, parent1, parent2, relation_type, personalization)
+   variant_id varchar(255) default 'DEFAULT' not null,
+   primary key (child, parent1, parent2, relation_type, personalization, variant_id)
 );
 create table workflow_task (
    id varchar(36) not null,
@@ -1946,7 +1947,7 @@ CREATE OR REPLACE FUNCTION identifier_parent_path_check() RETURNS trigger AS '
       IF FOUND THEN
         RETURN NEW;
       ELSE
-        RAISE EXCEPTION ''Cannot insert/update for this path does not exist for the given host'';
+        RAISE EXCEPTION ''Cannot % folder % [%] in path % as one or more parent folders do not exist in Site %'', tg_op, NEW.asset_name, NEW.id, NEW.parent_path, NEW.host_inode;
         RETURN NULL;
       END IF;
      END IF;
@@ -2486,8 +2487,8 @@ CREATE TABLE shedlock(name VARCHAR(64) NOT NULL, lock_until timestamptz NOT NULL
 
 
 create table variant (
-     id varchar(255) primary key,
-     name varchar(255) not null UNIQUE,
+     name varchar(255) primary key,
+     description varchar(255) not null,
      archived boolean NOT NULL default false
 );
 
@@ -2501,10 +2502,11 @@ create table experiment (
      traffic_allocation float4 not null,
      mod_date timestamptz not null,
      scheduling jsonb,
-     archived bool not null,
      creation_date timestamptz not null,
      created_by varchar(255) not null,
-     last_modified_by varchar(255) not null
+     last_modified_by varchar(255) not null,
+     goals jsonb,
+     lookback_window integer not null
 );
 
 CREATE INDEX idx_exp_pageid ON experiment (page_id);
