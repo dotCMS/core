@@ -10,6 +10,7 @@
             [actions]="[]"
             [checkbox]="true"
             (selectedItems)="updateSelectedContainers($event)"
+            (rowWasClicked)="handleRowClick($event)"
             url="v1/containers?system=true"
             dataKey="inode"
         >
