@@ -225,23 +225,6 @@ public class PageResourceHelper implements Serializable {
         throw new IllegalArgumentException("The page: " + page.getIdentifier() + " is not a valid page");
     }
 
-
-    /**
-     * Provides a singleton instance of the {@link PageResourceHelper}
-     */
-    private static class SingletonHolder {
-        private static final PageResourceHelper INSTANCE = new PageResourceHelper();
-    }
-
-    /**
-     * Returns a singleton instance of this class.
-     *
-     * @return A single instance of this class.
-     */
-    public static PageResourceHelper getInstance() {
-        return PageResourceHelper.SingletonHolder.INSTANCE;
-    }
-
     @WrapInTransaction
     public HTMLPageAsset saveTemplate(final User user, final HTMLPageAsset htmlPageAsset, final PageForm pageForm)
 
