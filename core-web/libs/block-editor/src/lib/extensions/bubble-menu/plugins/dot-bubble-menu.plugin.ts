@@ -21,9 +21,9 @@ import {
     deleteByNode
 } from '@dotcms/block-editor';
 
-import { LINK_FORM_PLUGIN_KEY, BUBBLE_FORM_PLUGIN_KEY, ImageNode } from '@dotcms/block-editor';
+import { LINK_FORM_PLUGIN_KEY, BUBBLE_FORM_PLUGIN_KEY } from '@dotcms/block-editor';
 
-import { bubbleMenuImageItems, bubbleMenuItems, isListNode, popperModifiers } from '../utils';
+import { getBubbleMenuItem, isListNode, popperModifiers } from '../utils';
 
 export const DotBubbleMenuPlugin = (options: DotBubbleMenuPluginProps) => {
     const component = options.component.instance;
@@ -259,11 +259,9 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
     setMenuItems(doc, from) {
         const node = doc.nodeAt(from);
-        const isImage = node?.type.name == ImageNode.name;
-
+        const type = node?.type.name;
         this.selectionNode = node;
-
-        this.component.instance.items = isImage ? bubbleMenuImageItems : bubbleMenuItems;
+        this.component.instance.items = getBubbleMenuItem(type);
     }
 
     /* Run commands */

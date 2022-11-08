@@ -6,9 +6,7 @@ import {
     ImageNode
 } from '@dotcms/block-editor';
 
-const hideBubbleMenuOn = {
-    dotContent: true
-};
+const hideBubbleMenuOn = {};
 
 /**
  * Determine when the bubble menu can or cannot be displayed.
@@ -103,7 +101,7 @@ export const isListNode = (editor): boolean => {
 };
 
 /* Bubble Menu Items*/
-export const bubbleMenuItems: Array<BubbleMenuItem> = [
+const bubbleMenuDefaultItems: Array<BubbleMenuItem> = [
     {
         icon: 'format_bold',
         markAction: 'bold',
@@ -181,7 +179,7 @@ export const bubbleMenuItems: Array<BubbleMenuItem> = [
     }
 ];
 
-export const bubbleMenuImageItems: Array<BubbleMenuItem> = [
+const imageOptions: Array<BubbleMenuItem> = [
     {
         icon: 'format_align_left',
         markAction: 'left',
@@ -210,6 +208,27 @@ export const bubbleMenuImageItems: Array<BubbleMenuItem> = [
         active: false
     }
 ];
+
+const dotContentOptions: Array<BubbleMenuItem> = [
+    {
+        icon: 'delete',
+        markAction: 'deleteNode',
+        active: false
+    }
+];
+
+export const getBubbleMenuItem = (nodeType: string = ''): Array<BubbleMenuItem> => {
+    switch (nodeType) {
+        case 'dotImage':
+            return imageOptions;
+
+        case 'dotContent':
+            return dotContentOptions;
+
+        default:
+            return bubbleMenuDefaultItems;
+    }
+};
 
 // Tippy Modifiers
 export const popperModifiers = [
