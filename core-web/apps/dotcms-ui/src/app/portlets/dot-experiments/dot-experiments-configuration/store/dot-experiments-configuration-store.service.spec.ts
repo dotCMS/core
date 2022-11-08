@@ -39,7 +39,7 @@ describe('DotExperimentsConfigurationStore', () => {
     });
 
     beforeEach(() => {
-        spectator = createStoreService();
+        spectator = createStoreService({});
         dotExperimentsService = spectator.inject(DotExperimentsService);
         store = spectator.inject(DotExperimentsConfigurationStore);
 
@@ -61,31 +61,34 @@ describe('DotExperimentsConfigurationStore', () => {
     });
 
     it('should have getPageId$ from the store', (done) => {
-        store.getPageId$.subscribe((data) => {
-            expect(data).toEqual(PAGE_ID);
+        store.state$.subscribe(({ pageId }) => {
+            expect(pageId).toEqual(PAGE_ID);
             done();
         });
     });
+
     it('should have getExperimentId$ from the store', (done) => {
-        store.getExperimentId$.subscribe((data) => {
-            expect(data).toEqual(EXPERIMENT_ID);
+        store.state$.subscribe(({ experimentId }) => {
+            expect(experimentId).toEqual(EXPERIMENT_ID);
             done();
         });
     });
+
     it('should have getExperiment$ from the store', (done) => {
         store.loadExperiment();
-        store.getExperiment$.subscribe((data) => {
-            expect(data).toEqual(ExperimentMocks[0]);
+        store.state$.subscribe(({ experiment }) => {
+            expect(experiment).toEqual(ExperimentMocks[0]);
             done();
         });
     });
+
     it('should have isLoading$ from the store', (done) => {
         store.isLoading$.subscribe((data) => {
             expect(data).toEqual(true);
             done();
         });
     });
-    //
+
     it('should update status to the store', (done) => {
         store.setComponentStatus(LoadingState.LOADED);
         store.isLoading$.subscribe((status) => {
@@ -93,9 +96,10 @@ describe('DotExperimentsConfigurationStore', () => {
             done();
         });
     });
+
     it('should update experiments to the store', (done) => {
         store.setExperiment(ExperimentMocks[0]);
-        store.getExperiment$.subscribe((experiment) => {
+        store.state$.subscribe(({ experiment }) => {
             expect(experiment).toEqual(ExperimentMocks[0]);
             done();
         });
@@ -105,8 +109,8 @@ describe('DotExperimentsConfigurationStore', () => {
         it('should load experiment to store', (done) => {
             store.loadExperiment();
             expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_ID);
-            store.getExperiment$.subscribe((exp) => {
-                expect(exp).toEqual(ExperimentMocks[0]);
+            store.state$.subscribe(({ experiment }) => {
+                expect(experiment).toEqual(ExperimentMocks[0]);
                 done();
             });
         });

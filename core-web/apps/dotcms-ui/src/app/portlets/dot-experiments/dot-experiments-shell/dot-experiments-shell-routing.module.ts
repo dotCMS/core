@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Routes } from '@angular/router';
 
 import { DotExperimentsShellComponent } from './dot-experiments-shell.component';
+import { HTTP_INTERCEPTORS } from '@angular/common/http';
+import { ServerErrorInterceptor } from '@shared/interceptors/server-error.interceptor';
 
 const routes: Routes = [
     {
@@ -32,6 +34,13 @@ const routes: Routes = [
 ];
 
 @NgModule({
-    imports: [CommonModule, RouterModule.forChild(routes)]
+    imports: [CommonModule, RouterModule.forChild(routes)],
+    providers: [
+        {
+            provide: HTTP_INTERCEPTORS,
+            useClass: ServerErrorInterceptor,
+            multi: true
+        }
+    ]
 })
 export class DotExperimentsShellRoutingModule {}

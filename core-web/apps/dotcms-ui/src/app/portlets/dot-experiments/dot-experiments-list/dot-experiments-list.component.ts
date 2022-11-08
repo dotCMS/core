@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewChild } from '@angular/core';
 import { Observable } from 'rxjs';
 import { DotExperiment } from '../shared/models/dot-experiments.model';
 import { ExperimentsStatusList } from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
@@ -10,16 +10,17 @@ import {
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 import { DotExperimentsCreateComponent } from '@portlets/dot-experiments/dot-experiments-create/dot-experiments-create.component';
 import { take } from 'rxjs/operators';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
+import { provideComponentStore } from '@ngrx/component-store';
 
 @Component({
     selector: 'dot-experiments-list',
     templateUrl: './dot-experiments-list.component.html',
     styleUrls: ['./dot-experiments-list.component.scss'],
-    providers: [DotExperimentsListStore, DotMessagePipe],
+    providers: [DotMessagePipe, provideComponentStore(DotExperimentsListStore)],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotExperimentsListComponent implements OnInit {
+export class DotExperimentsListComponent {
     @ViewChild(DotDynamicDirective, { static: true }) dotDynamicHost!: DotDynamicDirective;
 
     vm$: Observable<VmListExperiments> = this.dotExperimentsListStore.vm$;
@@ -31,13 +32,8 @@ export class DotExperimentsListComponent implements OnInit {
     constructor(
         private readonly dotExperimentsListStore: DotExperimentsListStore,
         private readonly dotMessagePipe: DotMessagePipe,
-        private readonly route: ActivatedRoute,
         private readonly router: Router
     ) {}
-
-    ngOnInit() {
-        this.dotExperimentsListStore.loadExperiments();
-    }
 
     /**
      * Update the list of selected statuses
@@ -91,7 +87,7 @@ export class DotExperimentsListComponent implements OnInit {
      * @returns void
      * @memberof DotExperimentsShellComponent
      */
-    goBack() {
+    goToBrowserBack() {
         this.router.navigate(['edit-page/content'], { queryParamsHandling: 'preserve' });
     }
 }

@@ -11,8 +11,8 @@ import { CommonModule } from '@angular/common';
 })
 export class DotExperimentsConfigurationItemsCountComponent {
     @Input()
-    maxLength: string;
+    maxLength: number;
 
     @Input()
-    count: string;
+    count: number;
 }

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { ComponentStore, tapResponse } from '@ngrx/component-store';
+import { ComponentStore, OnStoreInit, tapResponse } from '@ngrx/component-store';
 import { LoadingState } from '@portlets/shared/models/shared-models';
 import { ActivatedRoute } from '@angular/router';
 import { DotExperiment } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
@@ -32,11 +32,11 @@ export interface VmConfigurationExperiments {
 }
 
 @Injectable()
-export class DotExperimentsConfigurationStore extends ComponentStore<DotExperimentsConfigurationState> {
+export class DotExperimentsConfigurationStore
+    extends ComponentStore<DotExperimentsConfigurationState>
+    implements OnStoreInit
+{
     // Selectors
-    readonly getPageId$ = this.select(({ pageId }) => pageId);
-    readonly getExperimentId$ = this.select(({ experimentId }) => experimentId);
-    readonly getExperiment$ = this.select(({ experiment }) => experiment);
     readonly isLoading$ = this.select(({ status }) => status === LoadingState.LOADING);
 
     // Updaters
@@ -54,15 +54,16 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     readonly loadExperiment = this.effect<void>(
         pipe(
             tap(() => this.setComponentStatus(LoadingState.LOADING)),
-            withLatestFrom(this.getExperimentId$),
-            switchMap(([, experimentId]) =>
+            withLatestFrom(this.state$),
+            switchMap(([, { experimentId }]) =>
                 this.dotExperimentsService.getById(experimentId).pipe(
                     tapResponse(
                         (experiments) => {
                             this.setExperiment(experiments);
                             this.updateTitles(experiments);
                         },
-                        (error: HttpErrorResponse) => throwError(error)
+                        (error: HttpErrorResponse) => throwError(error),
+                        () => this.setComponentStatus(LoadingState.LOADED)
                     )
                 )
             )
@@ -70,14 +71,12 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     );
 
     readonly vm$: Observable<VmConfigurationExperiments> = this.select(
-        this.getPageId$,
-        this.getExperimentId$,
-        this.getExperiment$,
+        this.state$,
         this.isLoading$,
-        (pageId, experimentId, experiment, isLoading) => ({
+        ({ pageId, experiment, experimentId }, isLoading) => ({
             pageId,
-            experimentId,
             experiment,
+            experimentId,
             isLoading
         })
     );
@@ -92,6 +91,10 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             experimentId: route.snapshot.params.experimentId,
             pageId: route.snapshot.params.pageId
         });
+    }
+
+    ngrxOnStoreInit() {
+        this.loadExperiment();
     }
 
     private updateTitles(experiment: DotExperiment) {

@@ -318,7 +318,7 @@
 }
 
 .p-button.p-button-link {
-    color: $blue-link;
+    color: $brand-primary;
     background: transparent;
     border: transparent;
     text-decoration: underline;
@@ -332,7 +332,7 @@
 .p-button.p-button-link:enabled:hover {
     background: transparent;
     border-color: transparent;
-    color: $blue-link;
+    color: $brand-primary;
 }
 
 .p-button.p-button-link:enabled:hover .p-button-label {

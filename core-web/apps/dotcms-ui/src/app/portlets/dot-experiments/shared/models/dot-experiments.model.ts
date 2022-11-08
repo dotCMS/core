@@ -33,6 +33,7 @@ export interface Variant {
     id: string;
     name: string;
     weight: number;
+    url?: string;
 }
 
 interface RangeOfDateAndTime {

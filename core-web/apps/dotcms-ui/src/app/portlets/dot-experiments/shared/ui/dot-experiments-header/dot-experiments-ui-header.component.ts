@@ -1,8 +1,8 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { DotIconModule } from '@dotcms/ui';
 import { SkeletonModule } from 'primeng/skeleton';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLinkWithHref } from '@angular/router';
+import { RouterLinkWithHref } from '@angular/router';
 
 @Component({
     standalone: true,
@@ -17,14 +17,8 @@ export class DotExperimentsUiHeaderComponent {
     title = '';
 
     @Input()
-    backUrl: string;
-
-    @Input()
     isLoading: boolean;
 
-    constructor(private readonly router: Router) {}
-
-    goToTheRoute() {
-        this.router.navigate([this.backUrl], { queryParamsHandling: 'preserve' });
-    }
+    @Output()
+    goBack = new EventEmitter<void>();
 }

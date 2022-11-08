@@ -25,7 +25,7 @@ import { DotIconModule } from '@dotcms/ui';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationVariantsComponent {
-    maxLenth = MAX_VARIANTS_ALLOWED;
+    maxLength = MAX_VARIANTS_ALLOWED;
     @Input()
     trafficProportion: TrafficProportion;
 

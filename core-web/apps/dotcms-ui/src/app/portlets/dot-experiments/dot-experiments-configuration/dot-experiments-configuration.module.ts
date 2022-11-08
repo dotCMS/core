@@ -28,6 +28,7 @@ import { ButtonModule } from 'primeng/button';
         DotExperimentsUiHeaderComponent,
         // PrimeNg
         ButtonModule
-    ]
+    ],
+    providers: []
 })
 export class DotExperimentsConfigurationModule {}

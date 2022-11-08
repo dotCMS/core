@@ -2,7 +2,7 @@
     <dot-experiments-header
         [isLoading]="vm.isLoading"
         [title]="vm.page.pageTitle"
-        backUrl="/edit-page/content"
+        (goBack)="goToBrowserBack()"
     ></dot-experiments-header>
 
     <div class="dot-experiment">

@@ -14,14 +14,13 @@ describe('DotExperimentsConfigurationItemsCountComponent', () => {
     });
 
     it('should create', () => {
-        const maxLength = '5';
-        const count = '1';
+        const maxLength = 5;
+        const count = 1;
 
         spectator.setInput({
             maxLength,
             count
         });
-        expect(spectator.query(byTestId('maxLength-input'))).toHaveText(maxLength);
-        expect(spectator.query(byTestId('count-input'))).toHaveText(count);
+        expect(spectator.query(byTestId('count-text'))).toContainText(`${count}/${maxLength}`);
     });
 });

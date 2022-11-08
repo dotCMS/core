@@ -4,7 +4,7 @@
             <h2>{{ 'experiments.configure.variants.name' | dm }}</h2>
             <dot-experiments-configuration-items-count
                 [count]="trafficProportion.variants.length"
-                [maxLength]="maxLenth"
+                [maxLength]="maxLength"
             >
             </dot-experiments-configuration-items-count>
         </div>
@@ -14,7 +14,9 @@
             <div class="flex flex-row align-items-center align-content-between gap-2">
                 <div class="title flex flex-grow-1 flex-column">
                     <span data-testId="variant-name">{{ variant.name }}</span>
-                    <span class="muted" data-testId="variant-url">http://zxzxzxzxzxzx.com</span>
+                    <span class="muted" *ngIf="variant.url" data-testId="variant-url">{{
+                        variant.url
+                    }}</span>
                 </div>
 
                 <span class="separator">|</span>

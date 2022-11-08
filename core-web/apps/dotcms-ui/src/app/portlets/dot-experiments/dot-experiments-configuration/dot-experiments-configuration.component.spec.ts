@@ -1,7 +1,7 @@
 import { DotExperimentsConfigurationComponent } from './dot-experiments-configuration.component';
 import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Title } from '@angular/platform-browser';
 import {
     DotExperimentsConfigurationStore,
@@ -64,6 +64,7 @@ describe('DotExperimentsConfigurationComponent', () => {
                 provide: DotMessageService,
                 useValue: messageServiceMock
             },
+            mockProvider(Router),
             mockProvider(Title)
         ]
     });
@@ -91,6 +92,13 @@ describe('DotExperimentsConfigurationComponent', () => {
     });
 
     it('should load all the components', () => {
+        const vmMock$: VmConfigurationExperiments = {
+            pageId: ExperimentMocks[0].pageId,
+            experimentId: ExperimentMocks[0].id,
+            experiment: ExperimentMocks[0],
+            isLoading: false
+        };
+        spectator.component.vm$ = of(vmMock$);
         spectator.detectChanges();
 
         expect(spectator.query(DotExperimentsUiHeaderComponent)).toExist();

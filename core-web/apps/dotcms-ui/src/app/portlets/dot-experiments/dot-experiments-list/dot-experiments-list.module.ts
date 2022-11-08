@@ -18,8 +18,6 @@ import { FormsModule } from '@angular/forms';
 import { DotExperimentsListTableComponent } from './components/dot-experiments-list-table/dot-experiments-list-table.component';
 import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
 import { MenuModule } from 'primeng/menu';
-import { HTTP_INTERCEPTORS } from '@angular/common/http';
-import { ServerErrorInterceptor } from '@shared/interceptors/server-error.interceptor';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
@@ -27,7 +25,6 @@ import { DotExperimentsListRoutingModule } from '@portlets/dot-experiments/dot-e
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { DotExperimentsListStore } from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store.service';
 import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 
 @NgModule({
@@ -61,14 +58,6 @@ import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/share
         ConfirmPopupModule,
         ToastModule
     ],
-    providers: [
-        DotExperimentsListStore,
-        DotExperimentsService,
-        {
-            provide: HTTP_INTERCEPTORS,
-            useClass: ServerErrorInterceptor,
-            multi: true
-        }
-    ]
+    providers: [DotExperimentsService]
 })
 export class DotExperimentsListModule {}

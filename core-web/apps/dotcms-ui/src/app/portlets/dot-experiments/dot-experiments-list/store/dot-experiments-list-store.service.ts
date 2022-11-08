@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { ComponentStore, tapResponse } from '@ngrx/component-store';
+import { ComponentStore, OnStoreInit, tapResponse } from '@ngrx/component-store';
 import { LoadingState } from '@portlets/shared/models/shared-models';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { catchError, switchMap, tap, withLatestFrom } from 'rxjs/operators';
@@ -55,7 +55,10 @@ export interface VmListExperiments {
 @Injectable({
     providedIn: 'root'
 })
-export class DotExperimentsListStore extends ComponentStore<DotExperimentsState> {
+export class DotExperimentsListStore
+    extends ComponentStore<DotExperimentsState>
+    implements OnStoreInit
+{
     // Selectors
     readonly getPage$ = this.select((state) => state.page);
     readonly getStatus$ = this.select((state) => state.status);
@@ -226,5 +229,9 @@ export class DotExperimentsListStore extends ComponentStore<DotExperimentsState>
                 pageTitle: route.snapshot.parent?.parent?.parent?.parent.data?.content?.page?.title
             }
         });
+    }
+
+    ngrxOnStoreInit() {
+        this.loadExperiments();
     }
 }
