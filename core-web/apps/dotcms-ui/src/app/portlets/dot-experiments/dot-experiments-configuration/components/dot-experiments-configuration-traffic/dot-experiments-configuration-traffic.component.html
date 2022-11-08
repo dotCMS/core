@@ -1,0 +1,37 @@
+<p-card>
+    <ng-template pTemplate="title">
+        <h2 data-testId="traffic-card-title">{{ 'experiments.configure.traffic.name' | dm }}</h2>
+    </ng-template>
+
+    <p-card styleClass="card-load">
+        <div class="flex flex-row align-items-center align-content-between gap-2">
+            <div class="title flex flex-grow-1 flex-column">
+                <span data-testId="card-title">{{
+                    'experiments.configure.traffic.load.name' | dm
+                }}</span>
+            </div>
+
+            <p-button
+                (onClick)="changeTrafficAllocation()"
+                data-testId="traffic-allocation-button"
+                label=" {{ trafficAllocation }}%"
+                styleClass="p-button-sm p-button-link"
+            ></p-button>
+        </div>
+    </p-card>
+    <p-card styleClass="card-split">
+        <div class="flex flex-row align-items-center align-content-between gap-2">
+            <div class="title flex flex-grow-1 flex-column">
+                <span data-testId="traffic-split-title">{{
+                    'experiments.configure.traffic.split.name' | dm
+                }}</span>
+            </div>
+            <p-button
+                (onClick)="changeTrafficProportion()"
+                data-testId="traffic-split-change-button"
+                label=" {{ trafficProportionType | dm }}"
+                styleClass="p-button-sm p-button-link"
+            ></p-button>
+        </div>
+    </p-card>
+</p-card>

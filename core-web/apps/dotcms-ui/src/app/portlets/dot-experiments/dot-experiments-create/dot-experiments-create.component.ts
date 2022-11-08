@@ -69,7 +69,7 @@ export class DotExperimentsCreateComponent implements OnInit {
     ngOnInit(): void {
         this.initForm();
         this.dotExperimentsCreateStore.setOpenSlider();
-        this.dotExperimentsListStore.getPageId$.pipe(take(1)).subscribe((pageId) => {
+        this.dotExperimentsListStore.getPage$.pipe(take(1)).subscribe(({ pageId }) => {
             this.form.controls.pageId.setValue(pageId);
         });
     }

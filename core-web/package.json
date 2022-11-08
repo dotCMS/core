@@ -1,6 +1,6 @@
 {
   "name": "dotcms-ui",
-  "version": "22.12.0-next.11",
+  "version": "22.12.0-next.13",
   "license": "MIT",
   "engines": {
     "node": ">=16.13.2"
@@ -101,7 +101,7 @@
     "node-fetch": "^2.6.1",
     "primeflex": "^3.1.2",
     "primeicons": "^6.0.1",
-    "primeng": "^14.0.2",
+    "primeng": "^14.1.2",
     "prosemirror-model": "^1.16.1",
     "prosemirror-view": "^1.23.12",
     "react": "^18.2.0",
@@ -188,7 +188,7 @@
     "mockdate": "^3.0.5",
     "monaco-editor": "^0.33.0",
     "npm": "^6.14.16",
-    "postcss": "^8.3.9",
+    "postcss": "^8.4.18",
     "postcss-import": "14.1.0",
     "postcss-preset-env": "7.5.0",
     "postcss-url": "10.1.3",

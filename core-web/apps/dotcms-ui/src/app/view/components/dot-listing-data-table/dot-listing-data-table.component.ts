@@ -129,8 +129,11 @@ export class DotListingDataTableComponent implements OnInit {
      * @memberof DotListingDataTableComponent
      */
     handleRowClick(rowData: Record<string, unknown>): void {
-        // If the system template is clicked, do nothings.
-        if (rowData?.identifier === 'SYSTEM_TEMPLATE') {
+        // If the system template or system contaier is clicked, do nothings.
+        if (
+            rowData?.identifier === 'SYSTEM_TEMPLATE' ||
+            rowData?.identifier === 'SYSTEM_CONTAINER'
+        ) {
             return;
         }
 
