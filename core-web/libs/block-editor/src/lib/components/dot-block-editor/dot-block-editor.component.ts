@@ -27,7 +27,7 @@ import { TableRow } from '@tiptap/extension-table-row';
 import { TableHeader } from '@tiptap/extension-table-header';
 import { Dropcursor } from '@tiptap/extension-dropcursor';
 import { DotTableExtension } from '../../extensions/dot-table/dot-table.extension';
-import { DotTableCellExtension } from '../../extensions/dot-table-cell/dot-table-cell.extension';
+import { DotTableCellExtension } from '../../extensions/dot-table/dot-table-cell/dot-table-cell.extension';
 
 function toTitleCase(str) {
     return str.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {
@@ -100,10 +100,10 @@ export class DotBlockEditorComponent implements OnInit {
             Dropcursor.configure({
                 class: 'dot-drop-cursor'
             }),
-            DotTableCellExtension(),
+            DotTableCellExtension(this.viewContainerRef),
             TableRow,
-            TableHeader,
-            DotTableExtension()
+            TableHeader.extend({ content: 'block' }),
+            DotTableExtension(this.viewContainerRef)
         ];
         const customExtensions: Map<string, AnyExtension> = new Map([
             ['contentlets', ContentletBlock(this.injector)],

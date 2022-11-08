@@ -10,18 +10,18 @@ import Suggestion, { SuggestionOptions, SuggestionProps } from '@tiptap/suggesti
 import tippy, { GetReferenceClientRect } from 'tippy.js';
 
 import {
-    // Floating Menu
+    CONTENT_SUGGESTION_ID,
+    findParentNode,
     FLOATING_ACTIONS_MENU_KEYBOARD,
     FloatingActionsKeydownProps,
     FloatingActionsPlugin,
     FloatingActionsProps,
-    // Suggestions
     ItemsType,
-    SuggestionsCommandProps,
-    SuggestionsComponent,
-    CONTENT_SUGGESTION_ID,
+    NodeTypes,
     suggestionOptions,
-    SuggestionPopperModifiers
+    SuggestionPopperModifiers,
+    SuggestionsCommandProps,
+    SuggestionsComponent
 } from '@dotcms/block-editor';
 
 import { ActionButtonComponent } from './action-button.component';
@@ -166,6 +166,7 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
     let suggestionsComponent: ComponentRef<SuggestionsComponent>;
     const suggestionKey = new PluginKey('suggestionPlugin');
     const destroy$: Subject<boolean> = new Subject<boolean>();
+    let shouldShow = true;
 
     /**
      * Get's called on button click or suggestion char
@@ -173,18 +174,28 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
      * @param {(SuggestionProps | FloatingActionsProps)} { editor, range, clientRect }
      */
     function onStart({ editor, range, clientRect }: SuggestionProps | FloatingActionsProps): void {
-        setUpSuggestionComponent(editor, range);
-        myTippy = getTippyInstance({
-            element: editor.options.element.parentElement,
-            content: suggestionsComponent.location.nativeElement,
-            rect: clientRect,
-            onHide: () => {
-                const transaction = editor.state.tr.setMeta(FLOATING_ACTIONS_MENU_KEYBOARD, {
-                    open: false
-                });
-                editor.view.dispatch(transaction);
-            }
-        });
+        if (shouldShow) {
+            setUpSuggestionComponent(editor, range);
+            myTippy = getTippyInstance({
+                element: editor.options.element.parentElement,
+                content: suggestionsComponent.location.nativeElement,
+                rect: clientRect,
+                onHide: () => {
+                    const transaction = editor.state.tr.setMeta(FLOATING_ACTIONS_MENU_KEYBOARD, {
+                        open: false
+                    });
+                    editor.view.dispatch(transaction);
+                }
+            });
+        }
+    }
+
+    function onBeforeStart({ editor }): void {
+        const isTableCell =
+            findParentNode(editor.view.state.selection.$from, [NodeTypes.TABLE_CELL])?.type.name ===
+            NodeTypes.TABLE_CELL;
+
+        shouldShow = !isTableCell;
     }
 
     function setUpSuggestionComponent(editor: Editor, range: Range) {
@@ -272,6 +283,7 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
                     startOfLine: true,
                     render: () => {
                         return {
+                            onBeforeStart,
                             onStart,
                             onKeyDown,
                             onExit

@@ -1,14 +1,21 @@
+import { Injector } from '@angular/core';
+import { Node, mergeAttributes, NodeViewRenderer } from '@tiptap/core';
 import { TableCell } from '@tiptap/extension-table-cell';
+import { AngularNodeViewRenderer } from '@dotcms/block-editor';
+import { DotTableCellComponent } from './components/dot-table-cell.component';
 import { Plugin } from 'prosemirror-state';
-import { mergeAttributes } from '@tiptap/core';
 
-export function DotTableCellExtension() {
+export const DotTableCellNode = (injector: Injector): Node<any> => {
     return TableCell.extend({
-        addOptions() {
-            return {
-                HTMLAttributes: { data: 'test' }
-            };
-        },
+        // addOptions() {
+        //     return {
+        //         HTMLAttributes: { data: 'test' }
+        //     };
+        // },
+
+        // addNodeView(): NodeViewRenderer {
+        //     return AngularNodeViewRenderer(DotTableCellComponent, { injector });
+        // },
 
         onFocus({ event }) {
             // The editor is focused.
@@ -22,23 +29,23 @@ export function DotTableCellExtension() {
         mouseover({ event }) {
             console.log('----------a');
         },
-        renderHTML({ HTMLAttributes }) {
-            return [
-                'td',
-                mergeAttributes(this.options.HTMLAttributes, HTMLAttributes),
-                [
-                    'button',
-                    {
-                        class: 'dot-cell-arrow',
-                        click: () => {
-                            console.log('test click');
-                        },
-                        value: 'Test'
-                    }
-                ],
-                ['textNode', 0]
-            ];
-        },
+        // renderHTML({ HTMLAttributes }) {
+        //     return [
+        //         'td',
+        //         mergeAttributes(this.options.HTMLAttributes, HTMLAttributes),
+        //         [
+        //             'button',
+        //             {
+        //                 class: 'dot-cell-arrow',
+        //                 click: () => {
+        //                     console.log('test click');
+        //                 },
+        //                 value: 'Test'
+        //             }
+        //         ],
+        //         ['textNode', 0]
+        //     ];
+        // },
 
         addProseMirrorPlugins() {
             const cellArrow = document.createElement('button');
@@ -50,7 +57,7 @@ export function DotTableCellExtension() {
                         handleDOMEvents: {
                             click(view, event) {
                                 console.log(
-                                    'click',
+                                    'click NEW ',
                                     (event.target as HTMLButtonElement).tagName === 'button'
                                 );
                             },
@@ -111,4 +118,4 @@ export function DotTableCellExtension() {
             ];
         }
     });
-}
+};

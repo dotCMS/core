@@ -10,7 +10,8 @@ import {
 const hideBubbleMenuOn = {
     dotContent: true,
     tableCell: true,
-    table: true
+    table: true,
+    doc: true
 };
 
 /**
@@ -27,7 +28,8 @@ export const shouldShowBubbleMenu = ({ editor, state, from, to }: ShouldShowProp
     const { isOpen, openOnClick } = LINK_FORM_PLUGIN_KEY.getState(state);
 
     // Current selected node
-    const node = editor.state.doc.nodeAt(editor.state.selection.from);
+    // const node = editor.state.doc.nodeAt(editor.state.selection.from);
+    const node = findParentNode(editor.state.selection.$from);
 
     // Sometime check for `empty` is not enough.
     // Doubleclick an empty paragraph returns a node size of 2.
@@ -35,7 +37,8 @@ export const shouldShowBubbleMenu = ({ editor, state, from, to }: ShouldShowProp
     const isEmptyTextBlock = !doc.textBetween(from, to).length && isTextSelection(state.selection);
 
     // If it's empty or the current node is type dotContent, it will not open.
-    console.log('node?.type.name', node);
+    // console.log('node?.type.name', findParentNode(editor.state.selection.$from)?.type.name);
+
     if (
         !isOpen &&
         (!view.hasFocus() || empty || isEmptyTextBlock || hideBubbleMenuOn[node?.type.name])

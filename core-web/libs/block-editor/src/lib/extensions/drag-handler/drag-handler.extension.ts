@@ -128,11 +128,11 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                         handleDOMEvents: {
                             drop(view, dragEvent) {
                                 console.log(dragEvent);
-                                //const directChildNode = getDirectChild(dragEvent.target);
+                                const directChildNode = getDirectChild(dragEvent.target);
                                 // Disable the drop in the table node;
-                                // if (directChildNode.nodeName === 'TABLE') {
-                                //     return true;
-                                // }
+                                if (directChildNode.nodeName === 'TABLE') {
+                                    return true;
+                                }
 
                                 setTimeout(() => {
                                     const node = document.querySelector(

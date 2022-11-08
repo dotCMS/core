@@ -1,5 +1,5 @@
 <div *ngIf="items.length; else emptyBlock">
-    <h3>{{ title }}</h3>
+    <h3 *ngIf="!!title">{{ title }}</h3>
     <dot-suggestion-list #list>
         <dot-suggestions-list-item
             *ngFor="let item of items; let i = index"
