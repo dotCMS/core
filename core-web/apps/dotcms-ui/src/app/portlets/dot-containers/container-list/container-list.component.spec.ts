@@ -147,9 +147,11 @@ class ActivatedRouteMock {
 
 describe('ContainerListComponent', () => {
     let fixture: ComponentFixture<ContainerListComponent>;
+    let comp: ContainerListComponent;
     let dotListingDataTable: DotListingDataTableComponent;
     let dotPushPublishDialogService: DotPushPublishDialogService;
     let coreWebService: CoreWebService;
+    let dotRouterService: DotRouterService;
 
     const messageServiceMock = new MockDotMessageService(messages);
 
@@ -204,8 +206,10 @@ describe('ContainerListComponent', () => {
             schemas: [CUSTOM_ELEMENTS_SCHEMA]
         }).compileComponents();
         fixture = TestBed.createComponent(ContainerListComponent);
+        comp = fixture.componentInstance;
         dotPushPublishDialogService = TestBed.inject(DotPushPublishDialogService);
         coreWebService = TestBed.inject(CoreWebService);
+        dotRouterService = TestBed.inject(DotRouterService);
     });
 
     describe('with data', () => {
@@ -231,6 +235,14 @@ describe('ContainerListComponent', () => {
             expect(dotListingDataTable.actions).toEqual([]);
             expect(dotListingDataTable.checkbox).toEqual(true);
             expect(dotListingDataTable.dataKey).toEqual('inode');
+        });
+
+        it('should clicked on row and emit dotRouterService', () => {
+            comp.listing.dataTable.tableViewChild.nativeElement.rows[1].click();
+            expect(dotRouterService.goToEditContainer).toHaveBeenCalledTimes(1);
+            expect(dotRouterService.goToEditContainer).toHaveBeenCalledWith(
+                containersMock[0].identifier
+            );
         });
     });
 });
