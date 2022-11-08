@@ -158,7 +158,7 @@ const DEPS_ENV = {
  */
 const runTests = () => __awaiter(void 0, void 0, void 0, function* () {
     yield setup();
-    startDeps();
+    yield startDeps();
     printInfo();
     try {
         return yield runPostmanCollections();

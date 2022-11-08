@@ -60,7 +60,7 @@ const DEPS_ENV: {[key: string]: string} = {
  */
 export const runTests = async (): Promise<PostmanTestsResult> => {
   await setup()
-  startDeps()
+  await startDeps()
   printInfo()
 
   try {
