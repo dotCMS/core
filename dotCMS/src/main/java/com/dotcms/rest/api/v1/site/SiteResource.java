@@ -1264,7 +1264,7 @@ public class SiteResource implements Serializable {
 
     private SiteView toView (final Host host) throws DotStateException, DotDataException, DotSecurityException {
 
-        return new SiteView(host.getIdentifier(), host.getInode(), host.getAliases(), host.getHostname(), host.getTagStorage(),
+        return new SiteView(host.getIdentifier(), host.getInode(), host.getAliases(), host.getHostname(), host.getFolder(),host.getTagStorage(),
                 null != host.getHostThumbnail()? host.getHostThumbnail().getName(): StringPool.BLANK,
                 host.getBoolProperty("runDashboard"), host.getStringProperty("keywords"), host.getStringProperty("description"),
                 host.getStringProperty("googleMap"), host.getStringProperty("googleAnalytics"), host.getStringProperty("addThis"),

@@ -37,6 +37,7 @@ import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import org.elasticsearch.action.search.SearchResponse;
 
 import java.util.*;
@@ -552,11 +553,14 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
         contentType = ContentTypeBuilder.builder(contentType).host(Host.SYSTEM_HOST).build();
         contentType.constructWithFields(existingFields);
       }
-      if (!UUIDUtil.isUUID(contentType.host()) && !Host.SYSTEM_HOST.equalsIgnoreCase(contentType.host())) {
-        HostAPI hapi = APILocator.getHostAPI();
+      if (!UUIDUtil.isUUID(contentType.host()) && !Host.SYSTEM_HOST.equalsIgnoreCase(
+              contentType.host())) {
+        final HostAPI hapi = APILocator.getHostAPI();
         final List<Field> existingFields = contentType.fields();
         contentType = ContentTypeBuilder.builder(contentType)
-            .host(hapi.resolveHostName(contentType.host(), APILocator.systemUser(), true).getIdentifier()).build();
+                //if host-name resolution fails it will fall back to default-host
+                .host(hapi.resolveHostName(contentType.host(), APILocator.systemUser(), true)
+                        .getIdentifier()).build();
         contentType.constructWithFields(existingFields);
       }
     } catch (DotDataException e) {
@@ -598,15 +602,48 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     // set to system folder if on system host or the host id of the folder it is on
     List<Field> oldFields = fieldAPI.byContentTypeId(contentTypeToSave.id());
 
+    final String folderPathOrId = contentTypeToSave.folder();
+    final String siteId = contentTypeToSave.host();
+
     // Checks if the folder has been set, if so checks the host where that folder lives and set
     // it.
-    if (UtilMethods.isSet(contentTypeToSave.folder()) && !contentTypeToSave.folder().equals(Folder.SYSTEM_FOLDER)) {
+    if (UtilMethods.isSet(folderPathOrId) && !folderPathOrId.equals(Folder.SYSTEM_FOLDER)) {
 
-      contentTypeToSave = ContentTypeBuilder.builder(contentTypeToSave)
-          .host(APILocator.getFolderAPI().find(contentTypeToSave.folder(), user, false).getHostId()).build();
-    } else if (UtilMethods.isSet(contentTypeToSave.host())) {// If there is no folder set, check
-                                                             // if the host has been set, if so
-                                                             // set the folder to System Folder
+      final Host defaultHost = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+
+      final Folder folder ;
+
+      //trying the incoming folder as a path but in order to do that we must have a valid host
+      if(UtilMethods.isSet(siteId) && !UUIDUtil.isUUID(folderPathOrId)){
+        Logger.info(ContentTypeAPIImpl.class,()-> String.format("Trying folder [%s] as a path on given host [%s]", folderPathOrId, siteId));
+        folder = APILocator.getFolderAPI()
+                .findFolderByPath(folderPathOrId, siteId,
+                        APILocator.systemUser(), false);
+      } else {
+         //trying folder as an id
+        Logger.info(ContentTypeAPIImpl.class,()->String.format("Trying folder [%s] as an id.",folderPathOrId));
+        folder = APILocator.getFolderAPI().find(folderPathOrId, user, false);
+      }
+
+      //in case we fail to establish our folder then fallback to default-host + default-folder
+      final String hostIdentifier;
+      final String folderIdentifier;
+        if(null == folder || UtilMethods.isNotSet(folder.getIdentifier())){
+           hostIdentifier = defaultHost.getIdentifier();
+           folderIdentifier = Folder.SYSTEM_FOLDER;
+           Logger.debug(ContentTypeAPIImpl.class,
+                   ()-> String.format("Unable to locate host from the given folder (path/id) [%s]. Default host will be used.",
+                           folderPathOrId));
+        } else{
+           hostIdentifier = folder.getHostId();
+           folderIdentifier = folder.getIdentifier();
+           Logger.info(ContentTypeAPIImpl.class,()->"Valid folder was found from the given id/path.");
+        }
+
+       contentTypeToSave = ContentTypeBuilder.builder(contentTypeToSave).folder(folderIdentifier).host(hostIdentifier).build();
+    } else if (UtilMethods.isSet(siteId)) {
+      // If there is no folder set, check if the host has been set, if so set the folder to System Folder
+      Logger.info(ContentTypeAPIImpl.class,()->String.format("For no folder info was provided defaulting to [%s].",Folder.SYSTEM_FOLDER));
       contentTypeToSave = ContentTypeBuilder.builder(contentTypeToSave).folder(Folder.SYSTEM_FOLDER).build();
     }
 
@@ -637,13 +674,13 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     }
     ActivityLogger.logInfo(getClass(), "Save ContentType Action",
         "User " + user.getUserId() + "/" + user.getFullName() + " added ContentType " + contentTypeToSave.name()
-            + " to host id:" + contentTypeToSave.host());
+            + " to host id:" + siteId);
     AdminLogger.log(getClass(), "ContentType", "ContentType saved : " + contentTypeToSave.name(), user);
 
     // update the existing content type fields
     if (newFields != null) {
 
-      Map<String, Field> varNamesCantDelete = new HashMap();
+      Map<String, Field> varNamesCantDelete = new HashMap<>();
 
       for (Field oldField : oldFields) {
         if (!newFields.stream().anyMatch(f -> f.id().equals(oldField.id()))) {

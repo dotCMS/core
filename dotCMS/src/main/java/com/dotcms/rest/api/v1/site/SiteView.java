@@ -12,6 +12,8 @@ public class SiteView {
 
     private final String siteName;
 
+    private final String folder;
+
     private final String tagStorage;
 
     private final String siteThumbnail;
@@ -50,7 +52,7 @@ public class SiteView {
 
     private final  String modUser;
 
-    public SiteView(String identifier, String inode, String aliases, String siteName, String tagStorage, String hostThumbnail,
+    public SiteView(String identifier, String inode, String aliases, String siteName, String folder, String tagStorage, String hostThumbnail,
                     boolean runDashboard, String keywords, String description, String googleMap, String googleAnalytics, String addThis,
                     String proxyUrlForEditMode, String embeddedDashboard, long languageId, boolean isSystemHost, boolean isDefault, boolean isArchived,
                     boolean isLive, boolean isLocked, boolean isWorking, Date modDate, String modUser) {
@@ -59,6 +61,7 @@ public class SiteView {
         this.inode = inode;
         this.aliases = aliases;
         this.siteName = siteName;
+        this.folder = folder;
         this.tagStorage = tagStorage;
         this.siteThumbnail = hostThumbnail;
         this.runDashboard = runDashboard;
@@ -94,6 +97,10 @@ public class SiteView {
 
     public String getSiteName() {
         return siteName;
+    }
+
+    public String getFolder() {
+        return folder;
     }
 
     public String getTagStorage() {
