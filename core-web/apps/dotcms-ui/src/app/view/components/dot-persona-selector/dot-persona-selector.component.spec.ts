@@ -79,32 +79,30 @@ describe('DotPersonaSelectorComponent', () => {
 
     const siteServiceMock = new SiteServiceMock();
 
-    beforeEach(
-        waitForAsync(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [DotPersonaSelectorComponent, HostTestComponent],
-                imports: [
-                    BrowserAnimationsModule,
-                    SearchableDropDownModule,
-                    DotPersonaSelectedItemModule,
-                    DotPersonaSelectorOptionModule,
-                    DotAddPersonaDialogModule,
-                    TooltipModule,
-                    DotPipesModule
-                ],
-                providers: [
-                    IframeOverlayService,
-                    {
-                        provide: DotMessageService,
-                        useValue: messageServiceMock
-                    },
-                    { provide: PaginatorService, useClass: TestPaginatorService },
-                    { provide: LoginService, useClass: LoginServiceMock },
-                    { provide: SiteService, useValue: siteServiceMock }
-                ]
-            });
-        })
-    );
+    beforeEach(waitForAsync(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [DotPersonaSelectorComponent, HostTestComponent],
+            imports: [
+                BrowserAnimationsModule,
+                SearchableDropDownModule,
+                DotPersonaSelectedItemModule,
+                DotPersonaSelectorOptionModule,
+                DotAddPersonaDialogModule,
+                TooltipModule,
+                DotPipesModule
+            ],
+            providers: [
+                IframeOverlayService,
+                {
+                    provide: DotMessageService,
+                    useValue: messageServiceMock
+                },
+                { provide: PaginatorService, useClass: TestPaginatorService },
+                { provide: LoginService, useClass: LoginServiceMock },
+                { provide: SiteService, useValue: siteServiceMock }
+            ]
+        });
+    }));
 
     beforeEach(() => {
         hostFixture = DOTTestBed.createComponent(HostTestComponent);

@@ -1,0 +1,61 @@
+@use "variables" as *;
+
+.dot-container-code__content-tab-container {
+    padding: $spacing-4;
+}
+
+.dot-container-code__variable-btn {
+    margin-bottom: $spacing-2;
+}
+
+.dot-container-code__content-tab-container ::ng-deep {
+    .p-tabview {
+        height: 100%;
+    }
+    .p-tabview-panels {
+        height: 100%;
+        flex-grow: 1;
+        flex-basis: 0;
+        overflow: auto;
+    }
+    .p-tabview-nav {
+        padding: 0;
+        background: $white;
+        border: 1px solid $input-border-color;
+        border-bottom: none;
+    }
+
+    .p-tabview-panel {
+        height: 100%;
+        padding: 0;
+        padding-top: 0;
+        border: 1px solid $input-border-color;
+        border-top: none;
+    }
+
+    .p-tabview-nav-next {
+        width: 40px;
+        background-color: #f1f3f4;
+        border: 1px solid $input-border-color;
+        border-left: none;
+        border-bottom: none;
+    }
+
+    .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
+        border-bottom: 2px solid var(--color-sec);
+    }
+
+    .p-tabview .p-tabview-nav li .p-tabview-nav-link {
+        padding-left: $spacing-4;
+        padding-right: $spacing-4;
+    }
+
+    .p-tabview .tab-panel-btn a.p-tabview-nav-link {
+        padding: 0;
+    }
+
+    .p-tabview-title {
+        display: inline-block;
+        margin-right: $spacing-2;
+    }
+}
