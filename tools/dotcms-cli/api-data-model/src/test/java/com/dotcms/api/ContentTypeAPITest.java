@@ -4,7 +4,6 @@ import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.api.client.ServiceManager;
 import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.contenttype.model.field.BinaryField;
-import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -12,6 +11,9 @@ import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.config.ServiceBean;
 import com.dotcms.model.contenttype.FilterContentTypesRequest;
+import com.dotcms.model.site.GetSiteByNameRequest;
+import com.dotcms.model.site.Site;
+import com.dotcms.model.site.SiteView;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
@@ -19,10 +21,10 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.quarkus.test.junit.QuarkusTest;
 import java.io.IOException;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import javax.inject.Inject;
+import javax.ws.rs.NotFoundException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,9 +34,9 @@ import org.wildfly.common.Assert;
 public class ContentTypeAPITest {
 
     private static final Set<String> CONTENT_TYPE_VARS = ImmutableSet.of(
-            "HtmlPageAsset", "FileAsset", "dotFavoritePage", "Host",
+            "HtmlPageAsset", "FileAsset", "Host",
             "forms", "VanityUrl", "htmlpageasset", "webPageContent",
-            "dotAsset", "Languagevariable", "persona", "calendarEvent"
+            "dotAsset", "Languagevariable", "persona"
     );
     @Inject
     AuthenticationContext authenticationContext;
@@ -67,38 +69,33 @@ public class ContentTypeAPITest {
 
         final ImmutableSimpleContentType contentType = ImmutableSimpleContentType.builder()
                 .baseType(BaseContentType.CONTENT)
-                .description("LOL")
-                .id("1").name("name")
-                .inode("123456")
-                .variable("lol").modDate(new Date())
-                .fixed(true)
-                .iDate(new Date())
-                .host("host")
-                .folder("lol")
-                .addFields(ImmutableBinaryField.builder().name("lol").id("1").searchable(true)
-                        .unique(false).indexed(true).readOnly(false).forceIncludeInApi(false)
-                        .modDate(new Date()).required(false).variable("lol").sortOrder(1)
-                        .fixed(false).listed(true).dataType(DataTypes.SYSTEM).build()).build();
+                .description("desc")
+                .id("1")
+                .variable("var")
+                .addFields(ImmutableBinaryField.builder()
+                        .name("name")
+                        .id("1")
+                        .variable("fieldVar")
+                        .build()).build();
 
         final String ctAsString = objectMapper.writeValueAsString(contentType);
-        //System.out.println(ctAsString);
+        System.out.println(ctAsString);
 
         final ContentType ct = objectMapper.readValue(ctAsString, ContentType.class);
         Assert.assertNotNull(ct);
         Assert.assertTrue(
                 ct.fields().stream().anyMatch(field -> field instanceof BinaryField));
 
-        final ResponseEntityView<ImmutableSimpleContentType> responseEntityView = ResponseEntityView.<ImmutableSimpleContentType>builder()
-                .entity(contentType).build();
-        final String viewAsString = objectMapper.writeValueAsString(responseEntityView);
-        System.out.println(viewAsString);
+        Assertions.assertEquals(BaseContentType.CONTENT,ct.baseType());
+        Assertions.assertEquals(ContentType.SYSTEM_HOST,ct.host());
+        Assertions.assertEquals(ContentType.SYSTEM_FOLDER,ct.folder());
 
         /*
          The following bits won't work as the generated json lacks of the class attribute within entity
          ResponseEntityView takes the entity as a Parametrized type
          Therefore the annotations on the entity we're passing are not present when ObjectMapper serialize EntityView
          If we want to be able to rebuild the CT from within a generated json
-         We would need a concrete immutable class geerated from AbstractResponseEntityView making the type info available explicitly like this:
+         We would need a concrete immutable class generated from AbstractResponseEntityView making the type info available explicitly like this:
           @Immutable
           abstract class AbstractContentTypesResponse extends AbstractResponseEntityView <List<? extends ContentType>>{
           }
@@ -142,12 +139,12 @@ public class ContentTypeAPITest {
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
         final ResponseEntityView<List<ContentType>> response = client.filterContentTypes(FilterContentTypesRequest.builder()
                 .filter(ImmutableMap.of("types",
-                        "calendarEvent,VanityUrl,webPageContent,htmlpageasset,FileAsset"
+                        "VanityUrl,webPageContent,htmlpageasset,FileAsset"
                         )
                 ).page(1)
-                .perPage(3).build());
+                .perPage(4).build());
         Assertions.assertNotNull(response);
-        Assertions.assertEquals(3, response.entity().size());
+        Assertions.assertEquals(4, response.entity().size());
     }
 
     @Test
@@ -156,43 +153,38 @@ public class ContentTypeAPITest {
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
 
         for (final String var : CONTENT_TYPE_VARS) {
-            //System.out.println("Testing with var " + var);
             final ResponseEntityView<ContentType> response =
                     client.getContentType(var, 1L, true);
             Assertions.assertNotNull(response);
         }
     }
 
+    /**
+     * Test we get 404 when requesting a non-existing CT
+     */
+    @Test
+    public void Test_404_None_Existing_Content_Type() {
+        final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
+        try {
+            client.getContentType("non-existing-content-type-"+System.currentTimeMillis(), null, null);
+        }catch (NotFoundException notFoundException){
+            return;
+        }
+        Assertions.fail("If we got here then test has failed");
+    }
 
     @Test
     public void Test_Create_Then_Update_Then_Delete_Content_Type() {
 
-         long identifier =  System.currentTimeMillis();
+        final long identifier =  System.currentTimeMillis();
         final ImmutableSimpleContentType contentType = ImmutableSimpleContentType.builder()
-                .baseType(BaseContentType.CONTENT)
                 .description("ct for testing.")
-                .name("name")
                 .variable("_var_"+identifier)
-                .modDate(new Date())
-                .fixed(true)
-                .iDate(new Date())
-                .host("SYSTEM_HOST")
-                .folder("SYSTEM_FOLDER")
                 .addFields(
                         ImmutableBinaryField.builder()
                                 .name("_bin_var_"+identifier)
-                                .fixed(false)
-                                .listed(true)
-                                .searchable(true)
-                                .unique(false)
-                                .indexed(true)
-                                .readOnly(false)
-                                .forceIncludeInApi(false)
-                                .modDate(new Date())
-                                .required(false)
                                 .variable("lol")
-                                .sortOrder(1)
-                                .dataType(DataTypes.SYSTEM).build()
+                                .build()
                 ).build();
 
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
@@ -219,44 +211,157 @@ public class ContentTypeAPITest {
         }catch(javax.ws.rs.NotFoundException e){
             // Not relevant here
         }
-
     }
 
-
-    public void Test_Load_Minimalistic_File() throws JsonProcessingException {
-       final String in = "{\n"
-                + "  \"clazz\" : \"SimpleContentType\",\n"
-                + "  \"name\" : \"name\",\n"
-                + "  \"variable\" : \"__var__1666727954809\",\n"
-                + "  \"modDate\" : \"2022-10-25T19:59:14.818+00:00\",\n"
-                + "  \"fixed\" : true,\n"
-                + "  \"iDate\" : \"2022-10-25T19:59:14.818+00:00\",\n"
-                + "  \"host\" : \"SYSTEM_HOST\",\n"
-                + "  \"folder\" : \"SYSTEM_FOLDER\",\n"
-                + "  \"sortOrder\" : 1,\n"
-                + "  \"description\" : \"ct for testing.\",\n"
-                + "  \"baseType\" : \"CONTENT\",\n"
-                + "  \"fields\" : [ {\n"
-                + "    \"clazz\" : \"BinaryField\",\n"
-                + "    \"searchable\" : true,\n"
-                + "    \"unique\" : false,\n"
-                + "    \"indexed\" : true,\n"
-                + "    \"listed\" : true,\n"
-                + "    \"readOnly\" : false,\n"
-                + "    \"forceIncludeInApi\" : false,\n"
-                + "    \"modDate\" : \"2022-10-25T19:59:14.820+00:00\",\n"
-                + "    \"name\" : \"__bin_var__1666727954809\",\n"
-                + "    \"required\" : false,\n"
-                + "    \"variable\" : \"lol\",\n"
-                + "    \"sortOrder\" : 1,\n"
-                + "    \"fixed\" : false,\n"
-                + "    \"dataType\" : \"SYSTEM\"\n"
-                + "  } ]\n"
+    /**
+     * We're trying to simplify the input file we want to se to the server via CLI so this basically test we are allowing the use of a Shorter name in the clazz field
+     * @throws JsonProcessingException
+     */
+    @Test
+    public void Test_Deserialize_Class_Alias_Content_Type() throws JsonProcessingException {
+        String json = "{\n"
+                + "\t\"clazz\": \"SimpleContentType\",\n"
+                + "\t\"variable\": \"simple\",\n"
+                + "\t\"host\": \"SYSTEM_HOST\",\n"
+                + "\t\"folder\": \"SYSTEM_FOLDER\",\n"
+                + "\t\"description\": \"LOL\",\n"
+                + "\t\"baseType\": \"CONTENT\",\n"
+                + "\t\"fields\": [{\n"
+                + "\t\t\"clazz\": \"BinaryField\",\n"
+                + "\t\t\"variable\": \"binary\"\n"
+                + "\t}, {\n"
+                + "\t\t\"clazz\": \"StoryBlockField\",\n"
+                + "\t\t\"variable\": \"storyBlock\"\n"
+                + "\t}, {\n"
+                + "\t\t\"clazz\": \"CategoryField\",\n"
+                + "\t\t\"variable\": \"category\"\n"
+                + "\t}, {\n"
+                + "\t\t\"clazz\": \"CheckboxField\",\n"
+                + "\t\t\"variable\": \"checkbox\"\n"
+                + "\t}, {\n"
+                + "\t\t\"clazz\": \"ConstantField\",\n"
+                + "\t\t\"variable\": \"const\"\n"
+                + "\t}, {\n"
+                + "\t\t\"clazz\": \"CustomField\",\n"
+                + "\t\t\"variable\": \"custom\"\n"
+                + "\t}, {\n"
+                + "\t\t\"clazz\": \"DateField\",\n"
+                + "\t\t\"variable\": \"date\"\n"
+                + "\t}, {\n"
+                + "\t\t\"clazz\": \"DateTimeField\",\n"
+                + "\t\t\"variable\": \"dateTime\"\n"
+                + "\t}, {\n"
+                + "\t\t\"clazz\": \"EmptyField\",\n"
+                + "\t\t\"variable\": \"empty\"\n"
+                + "\t}, {\n"
+                + "\t\t\"clazz\": \"FileField\",\n"
+                + "\t\t\"variable\": \"file\"\n"
+                + "\t}, {\n"
+                + "\t\t\"clazz\": \"HiddenField\",\n"
+                + "\t\t\"variable\": \"hidden\"\n"
+                + "\t}, {\n"
+                + "\t\t\"clazz\": \"HostFolderField\",\n"
+                + "\t\t\"variable\": \"hostFolder\"\n"
+                + "\t}, {\n"
+                + "\t\t\"clazz\": \"ImageField\",\n"
+                + "\t\t\"variable\": \"image\"\n"
+                + "\t}, {\n"
+                + "\t\t\"clazz\": \"KeyValueField\",\n"
+                + "\t\t\"variable\": \"keyVal\"\n"
+                + "\t}, {\n"
+                + "\t\t\"clazz\": \"LineDividerField\",\n"
+                + "\t\t\"variable\": \"line\"\n"
+                + "\t}, {\n"
+                + "\t\t\"clazz\": \"MultiSelectField\",\n"
+                + "\t\t\"variable\": \"multiSelect\"\n"
+                + "\t}, {\n"
+                + "\t\t\"clazz\": \"PermissionTabField\",\n"
+                + "\t\t\"variable\": \"permissions\"\n"
+                + "\t}, {\n"
+                + "\t\t\"clazz\": \"RadioField\",\n"
+                + "\t\t\"variable\": \"radio\"\n"
+                + "\t}, {\n"
+                + "\t\t\"clazz\": \"RelationshipField\",\n"
+                + "\t\t\"variable\": \"rels\"\n"
+                + "\t}, {\n"
+                + "\t\t\"clazz\": \"RelationshipsTabField\",\n"
+                + "\t\t\"variable\": \"relTab\"\n"
+                + "\t}, {\n"
+                + "\t\t\"clazz\": \"SelectField\",\n"
+                + "\t\t\"variable\": \"select\"\n"
+                + "\t}, {\n"
+                + "\t\t\"clazz\": \"TabDividerField\",\n"
+                + "\t\t\"variable\": \"tabDiv\"\n"
+                + "\t}, {\n"
+                + "\t\t\"clazz\": \"TagField\",\n"
+                + "\t\t\"variable\": \"lol\"\n"
+                + "\t}, {\n"
+                + "\t\t\"clazz\": \"TextAreaField\",\n"
+                + "\t\t\"variable\": \"textArea\"\n"
+                + "\t}, {\n"
+                + "\t\t\"clazz\": \"TextField\",\n"
+                + "\t\t\"variable\": \"text\"\n"
+                + "\t}, {\n"
+                + "\t\t\"clazz\": \"TimeField\",\n"
+                + "\t\t\"variable\": \"time\"\n"
+                + "\t}, {\n"
+                + "\t\t\"clazz\": \"WysiwygField\",\n"
+                + "\t\t\"variable\": \"wysiwyg\"\n"
+                + "\t}, {\n"
+                + "\t\t\"clazz\": \"RowField\",\n"
+                + "\t\t\"variable\": \"row\"\n"
+                + "\t}, {\n"
+                + "\t\t\"clazz\": \"ColumnField\",\n"
+                + "\t\t\"variable\": \"col\"\n"
+                + "\t}]\n"
                 + "}";
-        final ObjectMapper objectMapper = new ClientObjectMapper().getContext(null);
-        final ContentType contentType = objectMapper.readValue(in, ContentType.class);
-        Assertions.assertNotNull(contentType);
 
+        final ObjectMapper objectMapper = new ClientObjectMapper().getContext(null);
+        final ContentType ct = objectMapper.readValue(json, ContentType.class);
+        Assertions.assertNotNull(ct);
     }
+
+    /**
+     * Normally this would have created an invalid Response error mapped to a 500 response code
+     * This exception needs to be managed in the server side to be able to still create the CT under the defaults host and folder locations
+     */
+    @Test
+    public void Test_Send_Invalid_Host_And_Folder_Should_Default_to_System() {
+
+        final SiteAPI siteAPI = apiClientFactory.getClient(SiteAPI.class);
+        final ResponseEntityView<SiteView> siteResponse = siteAPI.findHostByName(
+                GetSiteByNameRequest.builder().siteName("default").build());
+
+        final SiteView defaultSite = siteResponse.entity();
+        Assertions.assertNotNull(defaultSite);
+        Assertions.assertTrue(defaultSite.isDefault());
+
+        final long identifier =  System.currentTimeMillis();
+        final String varName = "___var_"+identifier;
+        final ImmutableSimpleContentType contentType = ImmutableSimpleContentType.builder()
+                .description("ct for testing.")
+                .name("name")
+                .variable(varName)
+                .host("default")
+                .folder("/folder1/folder2")
+                .addFields(
+                        ImmutableBinaryField.builder()
+                                .name("_bin_var_"+identifier)
+                                .variable("lol")
+                                .build()
+                ).build();
+
+        final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
+        final ResponseEntityView<List<ContentType>> contentTypeResponse = client.createContentTypes(ImmutableList.of(contentType));
+        Assertions.assertNotNull(contentTypeResponse);
+        final List<ContentType> contentTypes = contentTypeResponse.entity();
+        Assertions.assertNotNull(contentTypes);
+        ContentType newContentType = contentTypes.get(0);
+        Assertions.assertNotNull(newContentType.id());
+        Assertions.assertEquals(newContentType.variable(),varName);
+        Assertions.assertEquals(defaultSite.identifier(), newContentType.host());
+        Assertions.assertEquals(ContentType.SYSTEM_FOLDER,newContentType.folder());
+    }
+
 
 }
