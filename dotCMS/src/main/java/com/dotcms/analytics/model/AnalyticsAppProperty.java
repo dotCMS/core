@@ -39,19 +39,19 @@ public enum AnalyticsAppProperty {
     ANALYTICS_CONFIG_URL("analyticsConfigUrl", AnalyticsApp.ANALYTICS_APP_CONFIG_URL_KEY) {
         @Override
         public Consumer<AnalyticsProperties.Builder> setter(String value) {
-            return builder -> builder.analyticsConfigUrl(AnalyticsAppProperty.resolveEnvVarValue(this, value));
+            return builder -> builder.analyticsConfigUrl(resolveEnvVarValue(this, value));
         }
     },
     ANALYTICS_WRITE_URL("analyticsWriteUrl", AnalyticsApp.ANALYTICS_APP_WRITE_URL_KEY) {
         @Override
         public Consumer<AnalyticsProperties.Builder> setter(String value) {
-            return builder -> builder.analyticsWriteUrl(AnalyticsAppProperty.resolveEnvVarValue(this, value));
+            return builder -> builder.analyticsWriteUrl(resolveEnvVarValue(this, value));
         }
     },
     ANALYTICS_READ_URL("analyticsReadUrl", AnalyticsApp.ANALYTICS_APP_READ_URL_KEY) {
         @Override
         public Consumer<AnalyticsProperties.Builder> setter(String value) {
-            return builder -> builder.analyticsReadUrl(AnalyticsAppProperty.resolveEnvVarValue(this, value));
+            return builder -> builder.analyticsReadUrl(resolveEnvVarValue(this, value));
         }
     };
 
@@ -114,8 +114,6 @@ public enum AnalyticsAppProperty {
      * @return the resolved value
      */
     private static String resolveEnvVarValue(final AnalyticsAppProperty property, final String value) {
-        return StringUtils.defaultIfBlank(
-            Config.getStringProperty(property.getEnvVarName(), null),
-            value);
+        return StringUtils.defaultIfBlank(Config.getStringProperty(property.getEnvVarName(), null), value);
     }
 }
