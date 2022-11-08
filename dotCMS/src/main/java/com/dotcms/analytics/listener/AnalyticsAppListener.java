@@ -76,7 +76,7 @@ public final class AnalyticsAppListener implements EventSubscriber<AppSecretSave
         // detect blank analytics key to reset it
         resolveAnalyticsKey(event)
             .map(AbstractProperty::getString)
-            .filter(StringUtils::isNotBlank)
+            .filter(StringUtils::isWhitespace)
             .ifPresent(analyticsKey -> {
                 try {
                     final Host host = hostAPI.find(event.getHostIdentifier(), APILocator.systemUser(), false);
