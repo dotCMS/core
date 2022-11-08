@@ -1,8 +1,14 @@
 <ng-container *ngIf="vm$ | async as vm">
-    <ng-container
-        *ngIf="vm.experiments.length; else vm.isLoading ? loadingExperiments : noExperiments"
-    >
-        <div class="dot-experiment">
+    <dot-experiments-header
+        [isLoading]="vm.isLoading"
+        [title]="vm.page.pageTitle"
+        (goBack)="goToBrowserBack()"
+    ></dot-experiments-header>
+
+    <div class="dot-experiment">
+        <ng-container
+            *ngIf="vm.experiments.length; else vm.isLoading ? loadingExperiments : noExperiments"
+        >
             <div class="dot-experiment__actions">
                 <dot-experiments-status-filter
                     [options]="statusOptionList"
@@ -25,8 +31,8 @@
                 (archiveItem)="archiveExperiment($event)"
                 (deleteItem)="deleteExperiment($event)"
             ></dot-experiments-list-table>
-        </div>
-    </ng-container>
+        </ng-container>
+    </div>
 </ng-container>
 
 <ng-template #noExperiments>

@@ -3,10 +3,9 @@
 :host {
     display: flex;
     flex-direction: row;
-    height: $dot-secondary-toolbar-height;
+    min-height: $navigation-item-height;
     align-items: center;
     background-color: $white;
-    border-bottom: 1px $gray-lighter;
     color: $gray;
     font-size: $font-size-medium;
     column-gap: $spacing-3;
@@ -20,5 +19,6 @@
         color: $gray;
         cursor: pointer;
         border-right: 1px solid $gray-bg;
+        text-decoration: none;
     }
 }
