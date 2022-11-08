@@ -15,27 +15,25 @@ describe('DotAlertConfirmComponent', () => {
     let fixture: ComponentFixture<DotAlertConfirmComponent>;
     let de: DebugElement;
 
-    beforeEach(
-        waitForAsync(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [DotAlertConfirmComponent],
-                providers: [
-                    {
-                        provide: LoginService,
-                        useClass: LoginServiceMock
-                    },
-                    DotAlertConfirmService
-                ],
-                imports: [BrowserAnimationsModule]
-            });
+    beforeEach(waitForAsync(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [DotAlertConfirmComponent],
+            providers: [
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                },
+                DotAlertConfirmService
+            ],
+            imports: [BrowserAnimationsModule]
+        });
 
-            fixture = DOTTestBed.createComponent(DotAlertConfirmComponent);
-            component = fixture.componentInstance;
-            de = fixture.debugElement;
-            dialogService = de.injector.get(DotAlertConfirmService);
-            fixture.detectChanges();
-        })
-    );
+        fixture = DOTTestBed.createComponent(DotAlertConfirmComponent);
+        component = fixture.componentInstance;
+        de = fixture.debugElement;
+        dialogService = de.injector.get(DotAlertConfirmService);
+        fixture.detectChanges();
+    }));
 
     it('should have confirm and dialog null by default', () => {
         const confirm = de.query(By.css('p-confirmDialog'));

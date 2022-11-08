@@ -167,6 +167,64 @@ public class PageResourceHelper implements Serializable {
         }
     }
 
+    public void saveMultiTree(final String containerId,
+                              final String contentletId,
+                              final int order,
+                              final String uid,
+                              final Contentlet page) throws DotDataException {
+
+        final MultiTree multiTree = new MultiTree().setContainer(containerId)
+                .setContentlet(contentletId)
+                .setRelationType(uid)
+                .setTreeOrder(order)
+                .setHtmlPage(page.getIdentifier());
+
+        multiTreeAPI.saveMultiTreeAndReorder(multiTree);
+    }
+
+    /**
+     * Do a copy page including the multi tree
+     * @param page
+     * @param user
+     * @param pageMode
+     * @param language
+     * @return returns only the page contentlet
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @WrapInTransaction
+    public Contentlet copyPage(final IHTMLPage page, final User user,
+                               final PageMode pageMode, final Language language) throws DotDataException, DotSecurityException {
+
+        if (page instanceof HTMLPageAsset) {
+
+            final Contentlet newPage = this.contentletAPI.copyContentlet(
+                    HTMLPageAsset.class.cast(page), user, pageMode.respectAnonPerms);
+
+            Logger.debug(this, ()-> "New page from: " + page.getIdentifier() + " has been already created");
+
+            final List<MultiTree> multiTrees = this.multiTreeAPI.getMultiTrees(page.getIdentifier());
+            for (final MultiTree multiTree : multiTrees) {
+
+                Logger.debug(this, ()-> "Making a copy of: " + multiTree.getContentlet());
+                this.copyContentlet(new CopyContentletForm.Builder()
+                                .pageId(page.getIdentifier())
+                                .containerId(multiTree.getContainer())
+                                .relationType(multiTree.getRelationType())
+                                .contentId(multiTree.getContentlet())
+                                .personalization(multiTree.getPersonalization())
+                                .treeOrder(multiTree.getTreeOrder())
+                                .variantId(multiTree.getVariantId())
+                                .build()
+                        , user, pageMode, language);
+            }
+
+            return newPage;
+        }
+
+        throw new IllegalArgumentException("The page: " + page.getIdentifier() + " is not a valid page");
+    }
+
     @WrapInTransaction
     public HTMLPageAsset saveTemplate(final User user, final HTMLPageAsset htmlPageAsset, final PageForm pageForm)
 

@@ -326,11 +326,13 @@ describe('DotFavoritePageComponent', () => {
             fixture.detectChanges();
             expect(dialogRef.close).toHaveBeenCalledWith(true);
         });
-        
+
         it('should call onSave ref event when actionState event is executed from store with Saved value', () => {
-            spyOnProperty(store, 'actionState$', 'get').and.returnValue(of(DotFavoritePageActionState.SAVED));
+            spyOnProperty(store, 'actionState$', 'get').and.returnValue(
+                of(DotFavoritePageActionState.SAVED)
+            );
             fixture.detectChanges();
             expect(dialogConfig.data.onSave).toHaveBeenCalledTimes(1);
         });
-    })
+    });
 });
