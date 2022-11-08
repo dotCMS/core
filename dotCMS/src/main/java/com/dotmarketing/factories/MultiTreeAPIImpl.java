@@ -137,6 +137,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     public void deleteMultiTree(final MultiTree mTree) throws DotDataException {
         Logger.info(this, String.format("Deleting MultiTree: %s", mTree));
         _dbDelete(mTree);
+        this.multiTreeCache.get().removeContentletReferenceCount(mTree.getContentlet());
         updateHTMLPageVersionTS(mTree.getHtmlPage(), mTree.getVariantId());
         refreshPageInCache(mTree.getHtmlPage(), mTree.getVariantId());
     }
@@ -559,6 +560,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     public void saveMultiTree(final MultiTree mTree) throws DotDataException {
         Logger.debug(this, () -> String.format("Saving MultiTree: %s", mTree));
         _dbUpsert(mTree);
+        this.multiTreeCache.get().removeContentletReferenceCount(mTree.getContentlet());
         updateHTMLPageVersionTS(mTree.getHtmlPage(), mTree.getVariantId());
         refreshPageInCache(mTree.getHtmlPage(), mTree.getVariantId());
 
@@ -707,7 +709,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             }
             db.executeBatch(INSERT_SQL, insertParams);
         }
-
+        this.refreshContentletReferenceCount(originalContentletIds, multiTrees);
         updateHTMLPageVersionTS(pageId, variantId);
         refreshPageInCache(pageId, variantId);
     }
@@ -723,8 +725,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private void deleteMultiTreeToMySQL(
             final String pageId,
             final String personalization,
-            final Optional<Long> languageIdOpt, String variantId) throws DotDataException {
-
+            final Optional<Long> languageIdOpt, final String variantId) throws DotDataException {
         final DotConnect db = new DotConnect();
 
         final List<String> multiTreesId = db.setSQL(SELECT_MULTI_TREE_BY_LANG)
@@ -810,12 +811,11 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
             db.executeBatch(INSERT_SQL, insertParams);
         }
-
+        this.refreshContentletReferenceCount(originalContents, mTrees);
         for (String variantId : variants) {
             updateHTMLPageVersionTS(pageId, variantId);
             refreshPageInCache(pageId,variantId );
         }
-
     }
 
     @Override
@@ -1156,17 +1156,20 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
     }
 
-    @CloseDBIfOpened
     @Override
     public int getContentletReferenceCount(final String contentletId) throws DotDataException {
         final Optional<Integer> referenceCount = this.multiTreeCache.get().getContentletReferenceCount(contentletId);
         if (referenceCount.isPresent()) {
             return referenceCount.get();
         }
-        final Long count =
-                ((Long) new DotConnect().setSQL(SELECT_CONTENTLET_REFERENCES).addParam(contentletId).loadObjectResults().get(0).get("count"));
+        final Long count = this.getContentletReferenceCountFromDB(contentletId);
         this.multiTreeCache.get().putContentletReferenceCount(contentletId, count.intValue());
         return count.intValue();
+    }
+
+    @CloseDBIfOpened
+    public Long getContentletReferenceCountFromDB(final String contentletId) throws DotDataException {
+        return ((Long) new DotConnect().setSQL(SELECT_CONTENTLET_REFERENCES).addParam(contentletId).loadObjectResults().get(0).get("count"));
     }
 
     /**

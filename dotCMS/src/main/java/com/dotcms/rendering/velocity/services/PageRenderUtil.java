@@ -340,7 +340,7 @@ public class PageRenderUtil implements Serializable {
      * @param contentlet The {@link Contentlet} whose HTML Page references will be counted.
      */
     private void addContentletPageReferenceCount(final Contentlet contentlet) {
-        if (this.mode.equals(PageMode.EDIT_MODE)) {
+        if (this.mode.isEditMode()) {
             final Optional<Integer> pageReferences =
                     this.contentletAPI.getContentletReferenceCount(contentlet.getIdentifier());
             pageReferences.ifPresent(integer -> contentlet.getMap().put(Contentlet.ON_NUMBER_OF_PAGES,
