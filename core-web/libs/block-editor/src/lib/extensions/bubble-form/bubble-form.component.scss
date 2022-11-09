@@ -17,6 +17,10 @@ form {
 
     &.dotTableForm {
         width: 200px;
+
+        .p-button-outlined {
+            display: none;
+        }
     }
 }
 

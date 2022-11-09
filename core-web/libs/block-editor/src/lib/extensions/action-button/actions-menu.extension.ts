@@ -132,11 +132,15 @@ function execCommand({
                 .pipe(take(1))
                 .subscribe((value) => {
                     requestAnimationFrame(() => {
-                        editor.commands.insertTable({
-                            rows: value.rows,
-                            cols: value.columns,
-                            withHeaderRow: !!value.header
-                        });
+                        editor
+                            .chain()
+                            .insertTable({
+                                rows: value.rows,
+                                cols: value.columns,
+                                withHeaderRow: !!value.header
+                            })
+                            .focus()
+                            .run();
                     });
                 });
         },
