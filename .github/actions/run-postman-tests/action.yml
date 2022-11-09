@@ -39,6 +39,11 @@ inputs:
     type: boolean
     required: false
     default: 'false'
+  include_analytics:
+    description: 'Include Analytics infrastructure flag'
+    type: boolean
+    required: false
+    default: 'false'
 outputs:
   tests_results_status:
     description: 'Tests results status'

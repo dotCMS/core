@@ -325,6 +325,7 @@ jobs:
           license_key: ${{ secrets.DOTCMS_LICENSE }}
           tests: ${{ needs.repo-metadata-job.outputs.commit_message }}
           export_report: ${{ env.PUBLISH_MODE == 'ALL' || env.PUBLISH_MODE == 'RESULTS' }}
+          include_analytics: true
       - id: postman-tests-comment
         name: Postman Test Comment
         uses: EnricoMi/publish-unit-test-result-action@v1
