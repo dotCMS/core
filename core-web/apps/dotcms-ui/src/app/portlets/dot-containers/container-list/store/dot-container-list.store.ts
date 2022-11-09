@@ -156,13 +156,11 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
             options = this.setBaseContainerOptions(container);
             options = [...options, ...this.setCopyContainerOptions(container)];
 
-            if (!container.live) {
-                options = [
-                    ...options,
-                    ...this.getLicenseAndRemotePublishContainerOptions(container),
-                    ...this.getUnPublishAndArchiveContainerOptions(container)
-                ];
-            }
+            options = [
+                ...options,
+                ...this.getLicenseAndRemotePublishContainerOptions(container),
+                ...this.getUnPublishAndArchiveContainerOptions(container)
+            ];
         }
 
         return options;
@@ -390,16 +388,14 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
             });
         }
 
-        if (!container.live) {
-            options.push({
-                menuItem: {
-                    label: this.dotMessageService.get('publish'),
-                    command: () => {
-                        this.publishContainer([container.identifier]);
-                    }
+        options.push({
+            menuItem: {
+                label: this.dotMessageService.get('publish'),
+                command: () => {
+                    this.publishContainer([container.identifier]);
                 }
-            });
-        }
+            }
+        });
 
         return options;
     }
