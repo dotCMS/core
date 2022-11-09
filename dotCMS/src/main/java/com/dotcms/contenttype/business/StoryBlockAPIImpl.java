@@ -4,9 +4,8 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.StoryBlockField;
-import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.ConversionUtils;
-import com.dotmarketing.beans.Host;
+import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -45,7 +44,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                         .forEach(field -> {
 
                             final Object storyBlockValue = contentlet.get(field.variable());
-                            if (null != storyBlockValue) {
+                            if (null != storyBlockValue && JsonUtil.isValidJSON(storyBlockValue.toString())) {
                                 final StoryBlockReferenceResult result =
                                         this.refreshStoryBlockValueReferences(storyBlockValue);
                                 if (result.isRefreshed()) {
@@ -244,32 +243,15 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         }
     }
 
-    /**
-     * Takes the actual value of the Story Block field in the form of JSON and transforms it into a Linked Map.
-     *
-     * @param blockEditorValue The value of the Story Block field as JSON.
-     *
-     * @return The Story Block field as a {@link LinkedHashMap}.
-     *
-     * @throws JsonProcessingException An error occurred when processing the JSON data.
-     */
-    private LinkedHashMap<String, Object> toMap(final Object blockEditorValue) throws JsonProcessingException {
+    @Override
+    public LinkedHashMap<String, Object> toMap(final Object blockEditorValue) throws JsonProcessingException {
         return ContentletJsonHelper.INSTANCE.get().objectMapper()
                        .readValue(Try.of(blockEditorValue::toString)
                                           .getOrElse(StringPool.BLANK), LinkedHashMap.class);
     }
 
-    /**
-     * Takes the Map containing the properties of a specific Story Block field and transforms it into JSON data as a
-     * String value.
-     *
-     * @param blockEditorMap The Map with the Contentlet properties.
-     *
-     * @return The Story Block field as a JSON String.
-     *
-     * @throws JsonProcessingException An error occurred when transforming the Map into JSON data.
-     */
-    private String toJson (final Map<String, Object> blockEditorMap) throws JsonProcessingException {
+    @Override
+    public String toJson (final Map<String, Object> blockEditorMap) throws JsonProcessingException {
         return ContentletJsonHelper.INSTANCE.get().objectMapper()
                        .writeValueAsString(blockEditorMap);
     }

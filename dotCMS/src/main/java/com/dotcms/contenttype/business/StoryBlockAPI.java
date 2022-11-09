@@ -1,9 +1,12 @@
 package com.dotcms.contenttype.business;
 
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableSet;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -80,5 +83,28 @@ public interface StoryBlockAPI {
      * @return The value of the Story Block field, usually in the form of a JSON String.
      */
     Object addContentlet(final Object storyBlockValue, final Contentlet contentlet);
+
+    /**
+     * Takes the actual value of the Story Block field in the form of JSON and transforms it into a Linked Map.
+     *
+     * @param blockEditorValue The value of the Story Block field as JSON.
+     *
+     * @return The Story Block field as a {@link LinkedHashMap}.
+     *
+     * @throws JsonProcessingException An error occurred when processing the JSON data.
+     */
+    LinkedHashMap<String, Object> toMap(final Object blockEditorValue) throws JsonProcessingException;
+
+    /**
+     * Takes the Map containing the properties of a specific Story Block field and transforms it into JSON data as a
+     * String value.
+     *
+     * @param blockEditorMap The Map with the Contentlet properties.
+     *
+     * @return The Story Block field as a JSON String.
+     *
+     * @throws JsonProcessingException An error occurred when transforming the Map into JSON data.
+     */
+    String toJson (final Map<String, Object> blockEditorMap) throws JsonProcessingException;
 
 }
