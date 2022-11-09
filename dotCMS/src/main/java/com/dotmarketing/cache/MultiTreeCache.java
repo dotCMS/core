@@ -1,11 +1,6 @@
 package com.dotmarketing.cache;
 
 import com.dotcms.variant.VariantAPI;
-import com.liferay.util.StringPool;
-import java.util.Arrays;
-import java.util.Optional;
-import java.util.Set;
-
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
@@ -13,6 +8,7 @@ import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.factories.PersonalizedContentlet;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.Table;
+import com.liferay.util.StringPool;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -25,10 +21,10 @@ import java.util.Set;
  */
 public class MultiTreeCache implements Cachable {
 
-    private final static String LIVE_GROUP = "pageMultiTreesLive";
-    private final static String WORKING_GROUP = "pageMultiTreesWorking";
-    private final static String CONTENTLET_REFERENCES_GROUP = "contentletReferences";
-    private final static String[] GROUPS = {LIVE_GROUP, WORKING_GROUP, CONTENTLET_REFERENCES_GROUP};
+    private static final String LIVE_GROUP = "pageMultiTreesLive";
+    private static final String WORKING_GROUP = "pageMultiTreesWorking";
+    private static final String CONTENTLET_REFERENCES_GROUP = "contentletReferences";
+    private static final String[] GROUPS = {LIVE_GROUP, WORKING_GROUP, CONTENTLET_REFERENCES_GROUP};
 
     private final DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
 

@@ -43,7 +43,7 @@ public interface HTMLPageAssetRenderedAPI {
      *
      * @deprecated deprecated since 5.1, use {@link HTMLPageAssetRenderedAPI#getPageMetadata(PageContext, HttpServletRequest, HttpServletResponse)} instead
      */
-    @Deprecated
+    @Deprecated(since = "Feb 22nd, 2019")
     PageView getPageMetadata(
             final HttpServletRequest request,
             final HttpServletResponse response,
