@@ -1,10 +1,6 @@
 package com.dotcms.rest.api.v1.page;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.variant.VariantAPI;
-import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
-import com.dotmarketing.portlets.containers.model.FileAssetContainer;
-import com.dotmarketing.portlets.htmlpageasset.business.render.*;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.TextField;
@@ -31,6 +27,7 @@ import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageView;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -1102,7 +1099,7 @@ public class PageResourceTest {
     /**
      * <ul>
      *     <li><b>Method to Test:</b>
-     *     {@link PageResource#addContent(HttpServletRequest, HttpServletResponse, String, PageContainerForm)}</li>
+     *     {@link PageResource#addContent(HttpServletRequest, HttpServletResponse, String, String, PageContainerForm)}</li>
      *     <li><b>Given Scenario:</b> In Edit Mode, creates an HTML Page with a Contentlet in it using the
      *     {@code addContent} endpoint. Then, the very same Contentlet is added to another page.</li>
      *     <li><b>Expected Result:</b> The {@link Contentlet#ON_NUMBER_OF_PAGES} property of the Contentlet added to
@@ -1125,7 +1122,7 @@ public class PageResourceTest {
         PageContainerForm pageContainerForm = this.createPageContainerForm(container.getIdentifier(),
                 List.of(testContentlet.getIdentifier()), "uuid-1");
         Response saveResponse = this.pageResourceWithHelper.addContent(this.request, this.response,
-                testPage.getIdentifier(), pageContainerForm);
+                testPage.getIdentifier(), VariantAPI.DEFAULT_VARIANT.name(), pageContainerForm);
 
         // Assertion
         assertEquals("Test Contentlet could not be saved.", HttpServletResponse.SC_OK, saveResponse.getStatus());
@@ -1144,7 +1141,7 @@ public class PageResourceTest {
         pageContainerForm = this.createPageContainerForm(container.getIdentifier(),
                 List.of(testContentlet.getIdentifier()), "uuid-1");
         saveResponse = this.pageResourceWithHelper.addContent(this.request, this.response, testPage.getIdentifier(),
-                pageContainerForm);
+                VariantAPI.DEFAULT_VARIANT.name(), pageContainerForm);
 
         // Assertion
         assertEquals("Test Contentlet could not be saved.", HttpServletResponse.SC_OK, saveResponse.getStatus());
