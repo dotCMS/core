@@ -660,7 +660,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             if (DbConnectionFactory.isMySql()) {
                 deleteMultiTreeToMySQL(pageId, personalization, languageIdOpt, variantId);
            } else {
-                originalContentletIds = this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE, personalization, variantId, languageIdOpt);
+                originalContentletIds = this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE,
+                        personalization, variantId, languageIdOpt.get());
                 db.setSQL(DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE_NOT_SQL)
                         .addParam(variantId)
                         .addParam(ContainerUUID.UUID_DEFAULT_VALUE)
@@ -671,7 +672,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                         .loadResult();
             }
         } else {
-            originalContentletIds = this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE, personalization, variantId);
+            originalContentletIds = this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE,
+                    personalization, variantId);
             db.setSQL(DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION)
                     .addParam(pageId)
                     .addParam(ContainerUUID.UUID_DEFAULT_VALUE)
@@ -1225,13 +1227,13 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      * @throws DotDataException An error occurred when accessing the data source.
      */
     private Set<String> getOriginalContentlets(final String pageId, final String relationType, final String personalization,
-                                               final String variantId, final Optional<Long> languageId) throws DotDataException {
+                                               final String variantId, final Long languageId) throws DotDataException {
         final List<Object> params = List.of(pageId,
                 relationType,
                 personalization,
                 variantId,
                 pageId,
-                languageId.get());
+                languageId);
         return this.getOriginalContentlets(SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT_LANGUAGE, params);
     }
 
