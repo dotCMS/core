@@ -42,6 +42,8 @@ import com.dotcms.enterprise.publishing.staticpublishing.AWSS3PublisherTest;
 import com.dotcms.enterprise.publishing.staticpublishing.LanguageFolderTest;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
+import com.dotcms.experiments.business.ExperimentAPIImpIT;
+import com.dotcms.experiments.business.web.ExperimentWebAPIImplIT;
 import com.dotcms.filters.interceptor.meta.MetaWebInterceptorTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
 import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
@@ -602,7 +604,10 @@ import org.junit.runners.Suite.SuiteClasses;
         BayesianAPIImplTest.class,
         ContentletDependenciesTest.class,
         UtilMethodsITest.class,
-        Task220912UpdateCorrectShowOnMenuPropertyTest.class
+        Task220912UpdateCorrectShowOnMenuPropertyTest.class,
+        ExperimentAPIImpIT.class,
+        ExperimentWebAPIImplIT.class,
+        ExperimentWebAPIImplIT.class
 })
 public class MainSuite {
 
