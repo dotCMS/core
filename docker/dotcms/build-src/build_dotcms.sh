@@ -17,7 +17,6 @@ build_by_commit() {
 
   # if this is not a shallow checkout (meaning, we are not being built in github)
   if [[ -d "/build/src/core/.git" ]]; then
-    git fetch --all
     git pull
     echo "Checking out commit/tag/branch: ${build_source}"
     if [[ ${build_id} =~ ^v[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$ ]]; then
@@ -27,6 +26,11 @@ build_by_commit() {
       echo "Executing: git checkout ${build_id}"
       git checkout ${build_id}
       git pull origin ${build_id}
+      local module_branch=$(cat .gitmodules| grep "branch =" | cut -d'=' -f2 | tr -d '[:space:]')
+      cd dotCMS/src/main/enterprise
+      git pull
+      git checkout ${module_branch}
+      cd /build/src/core
     fi
     git clean -f -d
   fi
