@@ -60,6 +60,7 @@ public abstract class ContentType {
         return variable();
     }
 
+    @Nullable
     public abstract String variable();
 
     @Nullable
@@ -112,6 +113,9 @@ public abstract class ContentType {
     @Nullable
     public abstract String urlMapPattern();
 
+    /**
+     * Class id resolver allows us using smaller ClassNames that eventually get mapped to the fully qualified class name
+     */
     static class ClassNameAliasResolver extends ClassNameIdResolver {
 
         static TypeFactory typeFactory = TypeFactory.defaultInstance();
