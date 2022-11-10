@@ -207,6 +207,8 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        ExperimentAPIImpIT.class,
+        ExperimentWebAPIImplIT.class,
         Task220825CreateVariantFieldTest.class,
         Task221007AddVariantIntoPrimaryKeyTest.class,
         ContentletWebAPIImplIntegrationTest.class, // moved to top because of failures on GHA
@@ -604,10 +606,7 @@ import org.junit.runners.Suite.SuiteClasses;
         BayesianAPIImplTest.class,
         ContentletDependenciesTest.class,
         UtilMethodsITest.class,
-        Task220912UpdateCorrectShowOnMenuPropertyTest.class,
-        ExperimentAPIImpIT.class,
-        ExperimentWebAPIImplIT.class,
-        ExperimentWebAPIImplIT.class
+        Task220912UpdateCorrectShowOnMenuPropertyTest.class
 })
 public class MainSuite {
 
