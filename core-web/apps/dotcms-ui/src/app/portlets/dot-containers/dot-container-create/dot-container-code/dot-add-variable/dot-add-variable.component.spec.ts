@@ -239,7 +239,7 @@ describe('DotAddVariableComponent', () => {
             dialog.nativeElement.click();
             expect(dialogConfig.data.onSave).toHaveBeenCalledTimes(1);
             expect(dialogConfig.data.onSave).toHaveBeenCalledWith(
-                `$dotContentMap.${mockContentTypes.fields[0].variable}`
+                `$!{dotContentMap.${mockContentTypes.fields[0].variable}}`
             );
         });
     });
