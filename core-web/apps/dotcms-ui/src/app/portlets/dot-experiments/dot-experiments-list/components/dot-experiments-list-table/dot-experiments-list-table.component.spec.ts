@@ -31,11 +31,11 @@ const draftExperiments: DotExperiment[] = [
         readyToStart: false,
         description: 'Praesent at molestie mauris, quis vulputate augue.',
         name: 'Praesent at molestie mauris',
-        trafficAllocation: 100.0,
+        trafficAllocation: '100.0',
         scheduling: null,
         trafficProportion: {
-            percentages: {},
-            type: TrafficProportionTypes.SPLIT_EVENLY
+            type: TrafficProportionTypes.SPLIT_EVENLY,
+            variants: [{ id: '111', name: 'DEFAULT', weight: 100.0 }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
         modDate: new Date('2022-08-21 18:50:03')
@@ -51,11 +51,11 @@ const endedExperiments: DotExperiment[] = [
         readyToStart: false,
         description: 'Praesent at molestie mauris, quis vulputate augue.',
         name: 'Praesent at molestie mauris',
-        trafficAllocation: 100.0,
+        trafficAllocation: '100.0',
         scheduling: null,
         trafficProportion: {
-            percentages: {},
-            type: TrafficProportionTypes.SPLIT_EVENLY
+            type: TrafficProportionTypes.SPLIT_EVENLY,
+            variants: [{ id: '222', name: 'DEFAULT', weight: 100.0 }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
         modDate: new Date('2022-08-21 18:50:03')
@@ -71,11 +71,11 @@ const archivedExperiments: DotExperiment[] = [
         readyToStart: false,
         description: 'Praesent at molestie mauris, quis vulputate augue.',
         name: 'Praesent at molestie mauris',
-        trafficAllocation: 100.0,
+        trafficAllocation: '100.0',
         scheduling: null,
         trafficProportion: {
-            percentages: {},
-            type: TrafficProportionTypes.SPLIT_EVENLY
+            type: TrafficProportionTypes.SPLIT_EVENLY,
+            variants: [{ id: '333', name: 'DEFAULT', weight: 100.0 }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
         modDate: new Date('2022-08-21 18:50:03')
@@ -91,11 +91,11 @@ const scheduledExperiments: DotExperiment[] = [
         readyToStart: false,
         description: 'Praesent at molestie mauris, quis vulputate augue.',
         name: 'Praesent at molestie mauris',
-        trafficAllocation: 100.0,
+        trafficAllocation: '100.0',
         scheduling: null,
         trafficProportion: {
-            percentages: {},
-            type: TrafficProportionTypes.SPLIT_EVENLY
+            type: TrafficProportionTypes.SPLIT_EVENLY,
+            variants: [{ id: '4444', name: 'DEFAULT', weight: 100.0 }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
         modDate: new Date('2022-08-21 18:50:03')

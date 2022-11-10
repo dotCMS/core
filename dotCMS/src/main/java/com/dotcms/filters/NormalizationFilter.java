@@ -42,10 +42,8 @@ public class NormalizationFilter implements Filter {
             "?",
             "%3B", // encoded semi-colon
             "%2E", // encoded period '.'
-            "%2F", // encoded forward slash '/'
             "%5C", // encoded back slash '\'
             "%3F", // encoded questionmark
-            "%3D", // encoded equals
             "%00", // encoded null
             "\0",  // null
             "\r",  // carriage return

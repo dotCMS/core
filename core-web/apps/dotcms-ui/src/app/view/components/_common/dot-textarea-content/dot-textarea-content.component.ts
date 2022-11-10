@@ -45,8 +45,17 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
     @Input()
     width: string;
 
+    @Input()
+    customStyles: Record<string, unknown>;
+
+    @Input()
+    editorName: string;
+
     @Output()
     monacoInit = new EventEmitter<unknown>();
+
+    @Output()
+    valueChange = new EventEmitter<string>();
 
     @Input() set language(value: string) {
         this.editorOptions = {
@@ -100,6 +109,13 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
             width: this.width || '100%',
             height: this.height || '21.42rem'
         };
+
+        if (this.customStyles) {
+            this.styles = {
+                ...this.styles,
+                ...this.customStyles
+            };
+        }
     }
 
     /**
@@ -123,18 +139,20 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
      * @memberof DotTextareaContentComponent
      */
     onInit(editor: unknown): void {
-        this.monacoInit.emit(editor);
+        this.monacoInit.emit({ name: this.editorName, editor });
     }
 
     /**
      * Update the value and form control
-     *
-     * @param any value
+     * @param {string} value
      * @memberof DotTextareaContentComponent
      */
     onModelChange(value: string) {
         this.value = value;
         this.propagateChange(value ? value.replace(/\r/g, '').split('\n').join('\r\n') : value);
+        if (this.valueChange.observers.length) {
+            this.valueChange.emit(value);
+        }
     }
 
     /**

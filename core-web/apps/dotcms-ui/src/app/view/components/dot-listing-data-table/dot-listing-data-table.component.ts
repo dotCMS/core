@@ -49,7 +49,7 @@ export class DotListingDataTableComponent implements OnInit {
     @Input() multipleSelection = false;
     @Input() paginationPerPage = 40;
     @Input() paginatorExtraParams: { [key: string]: string } = {};
-    @Input() actions: DotActionMenuItem[];
+    @Input() actions: DotActionMenuItem[] = [];
     @Input() dataKey = '';
     @Input() checkbox = false;
     @Input() mapItems: <T = Record<string, unknown>[]>(item: T) => T;
@@ -66,6 +66,7 @@ export class DotListingDataTableComponent implements OnInit {
     @ContentChildren(PrimeTemplate) templates: QueryList<ElementRef>;
 
     @ContentChild('rowTemplate') rowTemplate: TemplateRef<unknown>;
+    @ContentChild('beforeSearchTemplate') beforeSearchTemplate: TemplateRef<unknown>;
     @ContentChild('headerTemplate') headerTemplate: TemplateRef<unknown>;
 
     readonly DATE_FORMAT = 'date';
@@ -113,14 +114,27 @@ export class DotListingDataTableComponent implements OnInit {
     }
 
     /**
+     * It clears the global search filter and reloads the current page
+     * @memberof DotListingDataTableComponent
+     */
+    clearGlobalSearch(): void {
+        this.filter = '';
+        this.paginatorService.filter = '';
+        this.loadCurrentPage();
+    }
+
+    /**
      * Emit selected row
      * @param {any} rowData
      *
      * @memberof DotListingDataTableComponent
      */
     handleRowClick(rowData: Record<string, unknown>): void {
-        // If the system template is clicked, do nothings.
-        if (rowData?.identifier === 'SYSTEM_TEMPLATE') {
+        // If the system template or system contaier is clicked, do nothings.
+        if (
+            rowData?.identifier === 'SYSTEM_TEMPLATE' ||
+            rowData?.identifier === 'SYSTEM_CONTAINER'
+        ) {
             return;
         }
 

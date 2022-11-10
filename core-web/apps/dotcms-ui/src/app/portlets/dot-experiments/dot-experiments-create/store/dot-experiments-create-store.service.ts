@@ -7,7 +7,7 @@ import { Observable, throwError } from 'rxjs';
 import { DotExperiment } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
 import { switchMap, tap } from 'rxjs/operators';
 import { HttpErrorResponse } from '@angular/common/http';
-import { DotExperimentsListStore } from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store.service';
+import { Router } from '@angular/router';
 
 export interface DotExperimentCreateStore {
     isOpenSidebar: boolean;
@@ -46,7 +46,7 @@ export class DotExperimentsCreateStore extends ComponentStore<DotExperimentCreat
                 switchMap((experiment) =>
                     this.dotExperimentsService.add(experiment).pipe(
                         tapResponse(
-                            (experiments) => {
+                            (experiment) => {
                                 this.messageService.add({
                                     severity: 'info',
                                     summary: this.dotMessageService.get(
@@ -57,8 +57,17 @@ export class DotExperimentsCreateStore extends ComponentStore<DotExperimentCreat
                                         experiment.name
                                     )
                                 });
-                                // Todo: remove and redirect here to experiment/configure/:experimentId
-                                this.dotExperimentsListStore.addExperiment(experiments);
+
+                                this.router.navigate(
+                                    [
+                                        '/edit-page/experiments/configuration',
+                                        experiment.pageId,
+                                        experiment.id
+                                    ],
+                                    {
+                                        queryParamsHandling: 'preserve'
+                                    }
+                                );
                             },
                             (error: HttpErrorResponse) => throwError(error),
                             () => this.setCloseSidebar()
@@ -71,9 +80,9 @@ export class DotExperimentsCreateStore extends ComponentStore<DotExperimentCreat
 
     constructor(
         private readonly dotExperimentsService: DotExperimentsService,
-        private readonly dotExperimentsListStore: DotExperimentsListStore,
         private readonly dotMessageService: DotMessageService,
-        private readonly messageService: MessageService
+        private readonly messageService: MessageService,
+        private readonly router: Router
     ) {
         super(initialState);
     }

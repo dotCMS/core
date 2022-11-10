@@ -1,4 +1,4 @@
-import { Routes, RouterModule, RouteReuseStrategy } from '@angular/router';
+import { RouteReuseStrategy, RouterModule, Routes, TitleStrategy } from '@angular/router';
 import { NgModule } from '@angular/core';
 import { MainCoreLegacyComponent } from '@components/main-core-legacy/main-core-legacy-component';
 import { MainComponentLegacyComponent } from '@components/main-legacy/main-legacy.component';
@@ -15,8 +15,23 @@ import { ContentletGuardService } from './api/services/guards/contentlet-guard.s
 import { DefaultGuardService } from './api/services/guards/default-guard.service';
 import { MenuGuardService } from './api/services/guards/menu-guard.service';
 import { PublicAuthGuardService } from './api/services/guards/public-auth-guard.service';
+import { DotTemplatePageTitleStrategy } from '@shared/services/dot-title-strategy.service';
 
 const PORTLETS_ANGULAR = [
+    {
+        path: 'containers',
+        loadChildren: () =>
+            import('@dotcms/app/portlets/dot-containers/dot-containers.module').then(
+                (m) => m.DotContainersModule
+            )
+    },
+    {
+        path: 'categories',
+        loadChildren: () =>
+            import('@dotcms/app/portlets/dot-categories/dot-categories.module').then(
+                (m) => m.DotCategoriesModule
+            )
+    },
     {
         path: 'templates',
         canActivate: [MenuGuardService],
@@ -187,6 +202,12 @@ const appRoutes: Routes = [
             onSameUrlNavigation: 'reload'
         })
     ],
-    providers: [{ provide: RouteReuseStrategy, useClass: DotCustomReuseStrategyService }]
+    providers: [
+        { provide: RouteReuseStrategy, useClass: DotCustomReuseStrategyService },
+        {
+            provide: TitleStrategy,
+            useClass: DotTemplatePageTitleStrategy
+        }
+    ]
 })
 export class AppRoutingModule {}

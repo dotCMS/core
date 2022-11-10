@@ -9,6 +9,7 @@ import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -38,6 +39,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.vanityurl.filters.VanityURLFilter;
 import com.dotcms.vanityurl.model.DefaultVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
@@ -45,6 +47,8 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.WebAssetException;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -53,6 +57,7 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.transform.ContentletTransformer;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
@@ -1720,5 +1725,66 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         final Contentlet parentCheckout = ContentletDataGen.checkout(parentContent);
         parentCheckout.setProperty(relationship.getChildRelationName(), Arrays.asList(contentletChilds));
         return  ContentletDataGen.checkin(parentCheckout);
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#findContentletByIdentifierAnyLanguage(String)}
+     * When: The contentlet had just one version not in the DEFAULT variant
+     * Should: return that version anyway
+     *
+     * @throws WebAssetException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void findContentletByIdentifierAnyLanguageNoDefaultVersion() throws DotDataException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .languageId(language.getId())
+                .host(host)
+                .variant(variant)
+                .nextPersisted();
+
+        final Contentlet contentletByIdentifierAnyLanguage = APILocator.getContentletAPI()
+               .findContentletByIdentifierAnyLanguage(contentlet.getIdentifier());
+
+        assertNotNull(contentletByIdentifierAnyLanguage);
+        assertEquals(contentlet.getIdentifier(), contentletByIdentifierAnyLanguage.getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#findContentletByIdentifierAnyLanguage(String)}
+     * When: The contentlet had just one version not in the DEFAULT variant but it was archived
+     * Should: return {@link Optional#empty()}
+     *
+     * @throws WebAssetException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void findDeletedContentletByIdentifierAnyLanguage()
+            throws DotDataException, DotSecurityException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        Contentlet contentlet = new ContentletDataGen(contentType)
+                .languageId(language.getId())
+                .host(host)
+                .variant(variant)
+                .nextPersisted();
+
+        final String identifier = contentlet.getIdentifier();
+        APILocator.getContentletAPI().archive(contentlet, APILocator.systemUser(), false);
+
+        Contentlet contentletByIdentifierAnyLanguage = APILocator.getContentletAPI()
+                .findContentletByIdentifierAnyLanguage(identifier);
+
+        assertNull(contentletByIdentifierAnyLanguage);
     }
 }

@@ -1,0 +1,24 @@
+<p-card>
+    <ng-template pTemplate="title">
+        <h2 data-testId="scheduling-card-name">
+            {{ 'experiments.configure.scheduling.name' | dm }}
+        </h2>
+    </ng-template>
+
+    <p-card styleClass="card-rounded">
+        <div class="flex flex-row align-items-center align-content-between gap-2">
+            <div class="title flex flex-grow-1 flex-column">
+                <span data-testId="scheduling-card-title-row">{{
+                    'experiments.configure.scheduling.start' | dm
+                }}</span>
+            </div>
+
+            <p-button
+                (onClick)="setupSchedule()"
+                data-testId="scheduling-setup-button"
+                label="{{ 'experiments.configure.scheduling.setup' | dm }}"
+                styleClass="p-button-sm p-button-link"
+            ></p-button>
+        </div>
+    </p-card>
+</p-card>

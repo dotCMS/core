@@ -10,6 +10,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.TemplateLoader;
+import com.dotcms.rest.api.v1.container.ContainerForm;
 import com.dotcms.system.event.local.model.Subscriber;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.transform.TransformerLocator;
@@ -700,7 +701,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 	@WrapInTransaction
 	@Override
 	@SuppressWarnings("unchecked")
-	public Container save(Container container, List<ContainerStructure> containerStructureList, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+	public Container save(final Container container,final List<ContainerStructure> containerStructureList,final Host host,final User user,final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		if (Container.SYSTEM_CONTAINER.equals(container.getIdentifier())) {
 			Logger.debug(this, "System Container cannot be saved/updated.");
 			throw new IllegalArgumentException("System Container and its associated data cannot be saved.");
@@ -750,15 +751,21 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 							container.getName()));
 		}
 
-		for (ContainerStructure cs : containerStructureList) {
-			Structure st = CacheLocator.getContentTypeCache().getStructureByInode(cs.getStructureId());
-			if((st != null && !existingInode) && !permissionAPI.doesUserHavePermission(st, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-				throw new DotSecurityException(
-						String.format("User '%s' does not have WRITE permission on Content Type '%s'", user.getUserId(),
-								st.getName()));
+		if(containerStructureList != null) {
+
+			for (ContainerStructure cs : containerStructureList) {
+				Structure st = CacheLocator.getContentTypeCache()
+						.getStructureByInode(cs.getStructureId());
+				if ((st != null && !existingInode) && !permissionAPI.doesUserHavePermission(st,
+						PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
+					throw new DotSecurityException(
+							String.format(
+									"User '%s' does not have WRITE permission on Content Type '%s'",
+									user.getUserId(),
+									st.getName()));
+				}
 			}
 		}
-
 
 		if(!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
 			throw new DotSecurityException(
@@ -778,6 +785,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 			       APILocator.getIdentifierAPI().createNew(container, host);
 			container.setIdentifier(ident.getId());
 		}
+
 		if(existingInode){
             save(container, container.getInode());
 		}
@@ -799,12 +807,14 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 			}
 		}
 
-		// save the container-structure relationships , issue-2093
-		for (ContainerStructure cs : containerStructureList) {
-			cs.setContainerId(container.getIdentifier());
-            cs.setContainerInode(container.getInode());
+		if(containerStructureList != null) {
+			// save the container-structure relationships , issue-2093
+			for (ContainerStructure cs : containerStructureList) {
+				cs.setContainerId(container.getIdentifier());
+				cs.setContainerInode(container.getInode());
+			}
+			saveContainerStructures(containerStructureList);
 		}
-		saveContainerStructures(containerStructureList);
 		// saves to working folder under velocity
 		new ContainerLoader().invalidate(container);
 
