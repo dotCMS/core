@@ -1,13 +1,12 @@
 <div class="icon-wrapper" [class.dot-contentlet]="data?.contentlet" [class.page]="page">
     <i class="material-icons" *ngIf="icon; else thumbnail">{{ url }}</i>
-
     <ng-template #thumbnail>
         <dot-contentlet-thumbnail
-            *ngIf="data?.contentlet; else image"
-            [contentlet]="data.contentlet"
-            [width]="42"
-            [height]="42"
-            [iconSize]="'42px'"
+                *ngIf="data?.contentlet; else image"
+                [contentlet]="data.contentlet"
+                [width]="42"
+                [height]="42"
+                [iconSize]="'42px'"
         ></dot-contentlet-thumbnail>
     </ng-template>
 </div>
@@ -23,3 +22,4 @@
 <ng-template #image>
     <img [src]="url" alt="" />
 </ng-template>
+

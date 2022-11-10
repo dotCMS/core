@@ -47,13 +47,17 @@ export class SuggestionListComponent implements AfterViewInit, OnDestroy {
     onMouseOver(e: MouseEvent) {
         const element = e.target as HTMLElement;
         const value = element.dataset?.index as unknown;
-
         if (isNaN(value as number) || !this.mouseMove) {
             return;
         }
 
         const index = Number(element?.dataset.index);
-        this.updateActiveItem(index);
+
+        if (element.getAttribute('disabled')) {
+            this.keyManager.activeItem?.unfocus();
+        } else {
+            this.updateActiveItem(index);
+        }
     }
 
     /**

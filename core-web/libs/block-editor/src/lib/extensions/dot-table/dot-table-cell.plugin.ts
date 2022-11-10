@@ -7,6 +7,7 @@ import { ComponentRef } from '@angular/core';
 import { popperModifiers, SuggestionsComponent } from '@dotcms/block-editor';
 import { quoteIcon } from '../../shared/components/suggestions/suggestion-icons';
 import { getCellsOptions } from './utils';
+import { MenuItem } from '@dotcms/dotcms-js';
 
 // export const DotTableCellPlugin = (options: any) => {
 //     const component = options.component.instance;
@@ -52,7 +53,7 @@ class DotTableCellPluginView {
     }
 
     update(view: EditorView, prevState?: EditorState): void {
-        console.log('view updated');
+        // console.log('view updated');
         //debugger;
     }
 
@@ -113,25 +114,21 @@ export const DotTableCellPlugin = (options) => {
                     popperOptions: {
                         modifiers: popperModifiers
                     },
-                    onHide: () => {
-                        // this.editor.storage.bubbleMenu.changeToIsOpen = false;
-                        // this.changeTo.instance.items = [];
-                        // this.changeTo.changeDetectorRef.detectChanges();
-                    },
+                    onHide: () => {},
                     onShow: () => {
-                        if (options.editor.can().mergeCells()) {
-                            component.instance.items.push({
-                                label: 'Merge Cells',
-                                icon: quoteIcon,
-                                id: 'addColumn',
-                                command: () => {
-                                    options.editor.commands.mergeCells();
-                                }
-                            });
+                        const mergeCellsOption = component.instance.items.find(
+                            (item) => item.id == 'mergeCells'
+                        );
+                        const splitCellsOption = component.instance.items.find(
+                            (item) => item.id == 'splitCells'
+                        );
+
+                        mergeCellsOption.disabled = !options.editor.can().mergeCells();
+                        splitCellsOption.disabled = !options.editor.can().splitCell();
+                        console.log('mergeCellsOption.disabled ', component.instance.items);
+                        setTimeout(() => {
                             component.changeDetectorRef.detectChanges();
-                        }
-                        console.log('can merge', options.editor.can().mergeCells());
-                        console.log('can split', options.editor.can().splitCell());
+                        });
                     }
                 });
 
@@ -141,7 +138,7 @@ export const DotTableCellPlugin = (options) => {
                 component.changeDetectorRef.detectChanges();
             },
             apply: (tr, value, oldState, newState) => {
-                console.log('----apply-----', tr.getMeta(''));
+                //console.log('----apply-----', tr.getMeta(''));
             }
         },
         // view: (view) => new DotTableCellPluginView(view),
@@ -169,11 +166,14 @@ export const DotTableCellPlugin = (options) => {
                 if ((event.target as HTMLButtonElement)?.classList.contains('dot-cell-arrow')) {
                     event.preventDefault();
                     event.stopPropagation();
+                    // debugger;
                     displayTableOptions(event);
                 }
             },
 
             handleDOMEvents: {
+                click: (view, event) => {},
+
                 contextmenu: (view, event) => {
                     const grandpaSelectedNode = view.state.selection.$from.node(
                         view.state.selection.$from.depth - 1
