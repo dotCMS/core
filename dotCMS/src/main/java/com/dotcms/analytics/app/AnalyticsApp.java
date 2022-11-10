@@ -105,7 +105,9 @@ public class AnalyticsApp {
             .forEach((key, secret) ->
                 AnalyticsAppProperty.findProperty(key)
                     .ifPresentOrElse(
-                        property -> property.setter(secret.getString()).accept(propertiesBuilder),
+                        property -> property
+                            .setter(secret.getString())
+                            .accept(propertiesBuilder),
                         () -> Logger.warn(this, String.format("Analytics app property %s cannot be found", key))));
 
         return propertiesBuilder.build();

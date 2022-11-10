@@ -1,0 +1,21 @@
+<div class="dot-loop-editor__pre-post-loop">
+    <div class="dot-loop-editor__pre-post-loop-inplace" *ngIf="!isEditorVisible">
+        <button
+            class="p-button-outlined p-button-secondary"
+            [label]="'message.containers.create.add_pre_post' | dm"
+            (click)="handleClick()"
+            pButton
+            type="button"
+        ></button>
+    </div>
+    <div *ngIf="isEditorVisible">
+        <label class="block field">{{ 'message.containers.create.pre_loop' | dm }}</label>
+        <dot-textarea-content
+            [formControl]="loopControl"
+            [show]="['code']"
+            (blur)="onTouched()"
+            (input)="onTouched()"
+            language="html"
+        ></dot-textarea-content>
+    </div>
+</div>

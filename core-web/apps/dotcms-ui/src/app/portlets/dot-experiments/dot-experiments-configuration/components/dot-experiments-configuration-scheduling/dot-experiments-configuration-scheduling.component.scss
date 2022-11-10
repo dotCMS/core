@@ -1,0 +1,8 @@
+@use "variables" as *;
+
+h2 {
+    margin: 0;
+    font-size: $font-size-large;
+    font-weight: $font-weight-semi-bold;
+    text-transform: uppercase;
+}

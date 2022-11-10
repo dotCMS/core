@@ -1,11 +1,11 @@
 <form
+    class="p-fluid"
+    #formEl="ngForm"
     *ngIf="pushActions && !eventData.customCode"
     [formGroup]="form"
     (ngSubmit)="emitValues()"
     (keyup.enter)="emitValues()"
     novalidate
-    #formEl="ngForm"
-    class="p-fluid"
 >
     <div class="field">
         <label class="form__label"
@@ -36,20 +36,20 @@
             </label>
             <div class="push-publish-dialog__calendar">
                 <p-calendar
-                    appendTo="body"
                     class="push-publish-dialog__calendar-date"
+                    [minDate]="dateFieldMinDate"
+                    appendTo="body"
                     data-testid="publishDateInputCalendar"
                     formControlName="publishDate"
                     dataType="string"
                     dateFormat="yy-mm-dd"
                     placeholder="yyyy-mm-dd hh:mm"
                     showTime="true"
-                    [minDate]="dateFieldMinDate"
                 ></p-calendar>
             </div>
             <dot-field-validation-message
-                message="{{ 'contenttypes.content.push_publish.publish_date_errormsg' | dm }}"
                 [field]="form.get('publishDate')"
+                message="{{ 'contenttypes.content.push_publish.publish_date_errormsg' | dm }}"
             ></dot-field-validation-message>
         </div>
         <div class="field push-publish-dialog__expire-date">
@@ -58,35 +58,35 @@
             </label>
             <div class="push-publish-dialog__calendar">
                 <p-calendar
-                    appendTo="body"
                     class="push-publish-dialog__calendar-date"
+                    [minDate]="dateFieldMinDate"
+                    appendTo="body"
                     formControlName="expireDate"
                     dataType="string"
                     dateFormat="yy-mm-dd"
                     placeholder="yyyy-mm-dd hh:mm"
                     showTime="true"
-                    [minDate]="dateFieldMinDate"
                 ></p-calendar>
             </div>
             <dot-field-validation-message
-                message="{{ 'contenttypes.content.push_publish.expire_date_errormsg' | dm }}"
                 [field]="form.get('expireDate')"
+                message="{{ 'contenttypes.content.push_publish.expire_date_errormsg' | dm }}"
             ></dot-field-validation-message>
         </div>
     </div>
     <div class="field push-publish-dialog__timezone-label">
         <span>{{ localTimezone }}</span> -
-        <a href="#" (click)="toggleTimezonePicker($event)"> {{ changeTimezoneActionLabel }}</a>
+        <a (click)="toggleTimezonePicker($event)" href="#"> {{ changeTimezoneActionLabel }}</a>
     </div>
-    <div class="field" data-testid="timeZoneSelectContainer" [hidden]="!showTimezonePicker">
+    <div class="field" [hidden]="!showTimezonePicker" data-testid="timeZoneSelectContainer">
         <label class="form__label">{{ 'time-zone' | dm }}: </label>
         <p-dropdown
-            data-testid="timeZoneSelect"
             [options]="timeZoneOptions"
-            formControlName="timezoneId"
             [filter]="true"
-            filterBy="label"
             (onChange)="updateTimezoneLabel($event.value)"
+            data-testid="timeZoneSelect"
+            formControlName="timezoneId"
+            filterBy="label"
             appendTo="body"
         ></p-dropdown>
     </div>
@@ -97,9 +97,9 @@
             formControlName="environment"
         ></dot-push-publish-env-selector>
         <dot-field-validation-message
-            message="{{ 'contenttypes.content.push_publish.push_to_errormsg' | dm }}"
             [field]="form.get('environment')"
+            message="{{ 'contenttypes.content.push_publish.push_to_errormsg' | dm }}"
         ></dot-field-validation-message>
     </div>
 </form>
-<div #customCode [ngClass]="{ hidden: !eventData.customCode }" class="custom-code"></div>
+<div class="custom-code" #customCode [ngClass]="{ hidden: !eventData.customCode }"></div>

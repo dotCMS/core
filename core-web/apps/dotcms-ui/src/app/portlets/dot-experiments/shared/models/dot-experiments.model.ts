@@ -14,7 +14,7 @@ export interface DotExperiment {
     readyToStart: boolean;
     archived: boolean;
     trafficProportion: TrafficProportion;
-    trafficAllocation: number;
+    trafficAllocation: string;
     scheduling: RangeOfDateAndTime | null;
     creationDate: Date;
     modDate: Date;
@@ -24,11 +24,16 @@ export type RenderedPageExperiments = Pick<DotPage, 'title' | 'identifier'>;
 
 export type GroupedExperimentByStatus = Partial<Record<DotExperimentStatusList, DotExperiment[]>>;
 
-interface TrafficProportion {
-    percentages: {
-        [index: string]: number;
-    };
+export interface TrafficProportion {
     type: TrafficProportionTypes;
+    variants: Array<Variant>;
+}
+
+export interface Variant {
+    id: string;
+    name: string;
+    weight: number;
+    url?: string;
 }
 
 interface RangeOfDateAndTime {

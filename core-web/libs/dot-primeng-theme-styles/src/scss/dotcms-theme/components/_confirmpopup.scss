@@ -79,12 +79,12 @@
     padding: $spacing-4;
 }
 
-.p-button.p-button-sm {
+.p-confirm-popup .p-button.p-button-sm {
     font-size: 0.875rem;
     padding: 0.65625rem 1.09375rem;
 }
 
-.p-button.p-button-text {
+.p-confirm-popup .p-button.p-button-text {
     background-color: transparent;
     color: $brand-primary;
     border-color: transparent;

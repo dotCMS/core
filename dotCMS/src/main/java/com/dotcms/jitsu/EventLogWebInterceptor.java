@@ -6,13 +6,20 @@ import static javax.ws.rs.core.HttpHeaders.CONTENT_TYPE;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
-import com.google.common.io.CharStreams;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import org.apache.commons.io.IOUtils;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,34 +37,35 @@ import javax.servlet.http.HttpServletResponse;
  * <p>
  * For POST requests to "/api/v1/event", it sends the event in JSON via {@link EventLogSubmitter}
  */
-
 public class EventLogWebInterceptor implements WebInterceptor {
-    private static final long serialVersionUID = 1L;
-    final String[] paths = new String[] {
-            "/s/lib.js",
-            "/api/v1/event"};
 
-    @Override
-    public String[] getFilters() {
-        return paths;
-    }
+    private static final long serialVersionUID = 1L;
+    private static final String[] PATHS = new String[] {
+        "/s/lib.js",
+        "/api/v1/event"
+    };
+
+    private final EventLogSubmitter submitter;
+    private final Lazy<String> jitsuLib;
 
     public EventLogWebInterceptor() {
         submitter = new EventLogSubmitter();
-    }
-
-    final EventLogSubmitter submitter;
-
-    final Lazy<String> jitsuLib = Lazy.of(() -> {
-        try (InputStream in = this.getClass().getResourceAsStream("/jitsu/lib.js")) {
-            return new BufferedReader(
+        jitsuLib = Lazy.of(() -> {
+            try (final InputStream in = this.getClass().getResourceAsStream("/jitsu/lib.js")) {
+                return new BufferedReader(
                     new InputStreamReader(in, StandardCharsets.UTF_8))
                     .lines()
                     .collect(Collectors.joining("\n"));
-        } catch (Exception e) {
-            throw new DotRuntimeException(e);
-        }
-    });
+            } catch (Exception e) {
+                throw new DotRuntimeException(e);
+            }
+        });
+    }
+
+    @Override
+    public String[] getFilters() {
+        return PATHS;
+    }
 
     @Override
     public Result intercept(final HttpServletRequest request, final HttpServletResponse response) throws IOException {
@@ -83,27 +91,29 @@ public class EventLogWebInterceptor implements WebInterceptor {
         response.getWriter().append(jitsuLib.get());
     }
 
-    public void doPost(final HttpServletRequest request, final HttpServletResponse response) throws IOException, JSONException {
-        if (request.getContentType() != null && request.getContentType().toLowerCase()
-                .contains("multipart/form-data")) {
+    public void doPost(final HttpServletRequest request,
+                       final HttpServletResponse response) throws IOException, JSONException {
+        if (request.getContentType() != null
+            && request.getContentType().toLowerCase().contains("multipart/form-data")) {
             return;
         }
 
-        final String payload = CharStreams.toString(request.getReader());
+        final String payload = IOUtils.toString(request.getReader());
         final String realIp = request.getRemoteAddr();
-        JSONObject json = new JSONObject(payload);
-        String mungedIp = (realIp.lastIndexOf(".") > -1)
+        final JSONObject json = new JSONObject(payload);
+        final String mungedIp = (realIp.lastIndexOf(".") > -1)
                 ? realIp.substring(0, realIp.lastIndexOf(".")) + ".1"
                 : "0.0.0.0";
-
         json.put("ip", mungedIp);
         json.put("clusterId", ClusterFactory.getClusterId());
 
         try {
-            this.submitter.logEvent(json.toString());
-        }
-        catch(Exception e) {
-
+            final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
+            this.submitter.logEvent(host, json.toString());
+        } catch (DotDataException | DotSecurityException | PortalException | SystemException e) {
+            Logger.error(this, "Error resolving current host", e);
+        } catch(Exception e) {
+            Logger.error(this, "Could not submit event log", e);
 
         }
     }
@@ -122,4 +132,5 @@ public class EventLogWebInterceptor implements WebInterceptor {
         response.addHeader("access-control-allow-origin", "*");
         response.addHeader("access-control-max-age", "86400");
     }
+
 }
