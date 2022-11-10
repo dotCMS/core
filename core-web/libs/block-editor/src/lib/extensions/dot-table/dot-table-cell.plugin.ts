@@ -1,12 +1,12 @@
 import { EditorState, Plugin, PluginKey, NodeSelection } from 'prosemirror-state';
 import { Decoration, DecorationSet, EditorView } from 'prosemirror-view';
-import { update } from 'lodash';
-import { BubbleLinkFormViewProps } from '../../bubble-link-form/plugins/bubble-link-form.plugin';
+
 import { Editor } from '@tiptap/core';
 import tippy, { Instance, Props } from 'tippy.js';
 import { ComponentRef } from '@angular/core';
-import { DotMenuItem, popperModifiers, SuggestionsComponent } from '@dotcms/block-editor';
-import { quoteIcon } from '../../../shared/components/suggestions/suggestion-icons';
+import { popperModifiers, SuggestionsComponent } from '@dotcms/block-editor';
+import { quoteIcon } from '../../shared/components/suggestions/suggestion-icons';
+import { getCellsOptions } from './utils';
 
 // export const DotTableCellPlugin = (options: any) => {
 //     const component = options.component.instance;
@@ -23,49 +23,6 @@ import { quoteIcon } from '../../../shared/components/suggestions/suggestion-ico
 //     });
 //};
 
-const cellOptions: DotMenuItem[] = [
-    {
-        label: 'Insert row above',
-        icon: quoteIcon,
-        id: 'deleteColumn'
-    },
-    {
-        label: 'Insert row below',
-        icon: quoteIcon,
-        id: 'addColumn'
-    },
-    {
-        label: 'Insert column left',
-        icon: quoteIcon,
-        id: 'deleteColumn'
-    },
-    {
-        label: 'Insert column right',
-        icon: quoteIcon,
-        id: 'addColumn'
-    },
-    {
-        label: 'Delete row',
-        icon: quoteIcon,
-        id: 'deleteColumn'
-    },
-    {
-        label: 'Delete Column',
-        icon: quoteIcon,
-        id: 'addColumn'
-    },
-    {
-        label: 'Toggle row Header',
-        icon: quoteIcon,
-        id: 'addColumn'
-    },
-    {
-        label: 'Toggle column Header',
-        icon: quoteIcon,
-        id: 'addColumn'
-    }
-];
-
 class DotTableCellPluginView {
     public editor: Editor;
     public element: HTMLElement;
@@ -75,10 +32,11 @@ class DotTableCellPluginView {
     public pluginKey: PluginKey;
     public component?: ComponentRef<SuggestionsComponent>;
 
-    constructor(view) {
+    constructor(view, tippy) {
         // this.editor = editor;
         // this.element = element;
-        // this.view = view;
+        this.view = view;
+        this.tippy = tippy;
         //
         // this.tippyOptions = tippyOptions;
         //
@@ -98,11 +56,14 @@ class DotTableCellPluginView {
         //debugger;
     }
 
-    destroy() {}
+    destroy() {
+        console.log('---------DESTROY------');
+        this.tippy.destroy();
+    }
 }
 
 export const DotTableCellPlugin = (options) => {
-    let tippyCellOptions: Instance | undefined;
+    let tippyCellOptions;
 
     // dynamic selection to capture table cells, works with text nodes.
     function setFocusDecoration(selection, node): Decoration {
@@ -128,49 +89,9 @@ export const DotTableCellPlugin = (options) => {
             init: (config, state) => {
                 console.log('-----INIT-----');
 
-                console.log('----table create----');
                 const component = options.viewContainerRef.createComponent(SuggestionsComponent);
                 const element = component.location.nativeElement;
                 component.instance.currentLanguage = options.editor.storage.dotConfig.lang;
-                cellOptions[0].command = () => {
-                    options.editor.commands.addRowBefore();
-                    tippyCellOptions.hide();
-                };
-                cellOptions[1].command = () => {
-                    options.editor.commands.addRowAfter();
-                    tippyCellOptions.hide();
-                };
-                cellOptions[2].command = () => {
-                    options.editor.commands.addColumnBefore();
-                    tippyCellOptions.hide();
-                };
-                cellOptions[3].command = () => {
-                    options.editor.commands.addColumnAfter();
-                    tippyCellOptions.hide();
-                };
-                cellOptions[4].command = () => {
-                    options.editor.commands.deleteRow();
-                    tippyCellOptions.hide();
-                };
-                cellOptions[5].command = () => {
-                    options.editor.commands.deleteColumn();
-                    tippyCellOptions.hide();
-                };
-
-                cellOptions[6].command = () => {
-                    options.editor.commands.toggleHeaderRow();
-                    tippyCellOptions.hide();
-                };
-
-                cellOptions[7].command = () => {
-                    options.editor.commands.toggleHeaderColumn();
-                    tippyCellOptions.hide();
-                };
-
-                component.instance.items = cellOptions;
-                component.instance.title = '';
-                //this.changeToElement.remove();
-                component.changeDetectorRef.detectChanges();
 
                 const defaultTippyOptions: Partial<Props> = {
                     duration: 500,
@@ -213,13 +134,18 @@ export const DotTableCellPlugin = (options) => {
                         console.log('can split', options.editor.can().splitCell());
                     }
                 });
+
+                component.instance.items = getCellsOptions(options.editor, tippyCellOptions);
+                component.instance.title = '';
+                //this.changeToElement.remove();
+                component.changeDetectorRef.detectChanges();
             },
             apply: (tr, value, oldState, newState) => {
                 console.log('----apply-----', tr.getMeta(''));
             }
         },
         // view: (view) => new DotTableCellPluginView(view),
-        view: (view) => new DotTableCellPluginView(view),
+        view: (view) => new DotTableCellPluginView(view, tippyCellOptions),
         props: {
             decorations(state) {
                 // get grandparent of the state selection.

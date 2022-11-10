@@ -27,7 +27,7 @@ import { TableRow } from '@tiptap/extension-table-row';
 
 import { Dropcursor } from '@tiptap/extension-dropcursor';
 import { DotTableExtension } from '../../extensions/dot-table/dot-table.extension';
-import { DotTableCellExtension } from '../../extensions/dot-table/dot-table-cell/dot-table-cell.extension';
+import { DotTableCellExtension } from '../../extensions/dot-table/dot-table-cell.extension';
 import { DotTableHeaderExtension } from '../../extensions/dot-table/dot-table-header.extension';
 
 function toTitleCase(str) {
