@@ -12,7 +12,6 @@ import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.config.ServiceBean;
 import com.dotcms.model.contenttype.FilterContentTypesRequest;
 import com.dotcms.model.site.GetSiteByNameRequest;
-import com.dotcms.model.site.Site;
 import com.dotcms.model.site.SiteView;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,6 +21,7 @@ import com.google.common.collect.ImmutableSet;
 import io.quarkus.test.junit.QuarkusTest;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
@@ -194,7 +194,7 @@ public class ContentTypeAPITest {
         Assertions.assertNotNull(contentTypes);
         ContentType newContentType = contentTypes.get(0);
         Assertions.assertNotNull(newContentType.id());
-        Assertions.assertEquals(newContentType.variable(),"_var_"+identifier);
+        Assertions.assertEquals("_var_"+identifier, newContentType.variable());
         //We make sure the CT exists because the following line does not throw 404
         client.getContentType(newContentType.variable(), 1L, true);
         //Now lets test update
@@ -322,8 +322,8 @@ public class ContentTypeAPITest {
     }
 
     /**
-     * Normally this would have created an invalid Response error mapped to a 500 response code
-     * This exception needs to be managed in the server side to be able to still create the CT under the defaults host and folder locations
+     * Send invalid folder then verify CT is created under System-Folder
+     * Then create another this time using a folder path then verify the returned instance
      */
     @Test
     public void Test_Send_Invalid_Host_And_Folder_Should_Default_to_System() {
@@ -332,35 +332,71 @@ public class ContentTypeAPITest {
         final ResponseEntityView<SiteView> siteResponse = siteAPI.findHostByName(
                 GetSiteByNameRequest.builder().siteName("default").build());
 
+        final long timeStamp = System.currentTimeMillis();
+
         final SiteView defaultSite = siteResponse.entity();
         Assertions.assertNotNull(defaultSite);
         Assertions.assertTrue(defaultSite.isDefault());
 
-        final long identifier =  System.currentTimeMillis();
-        final String varName = "___var_"+identifier;
-        final ImmutableSimpleContentType contentType = ImmutableSimpleContentType.builder()
-                .description("ct for testing.")
+        final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
+
+        //First Scenario here to test is we send a CT with a Folder that we know does not exist
+        final String varName1 = "varCT"+timeStamp;
+        final ImmutableSimpleContentType contentType1 = ImmutableSimpleContentType.builder()
+                .description("ct for testing folders.")
                 .name("name")
-                .variable(varName)
+                .variable(varName1)
                 .host("default")
-                .folder("/folder1/folder2")
+                .folder("/non-existing-folder")
                 .addFields(
                         ImmutableBinaryField.builder()
-                                .name("_bin_var_"+identifier)
-                                .variable("lol")
+                                .variable("binVar"+timeStamp)
                                 .build()
                 ).build();
 
-        final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
-        final ResponseEntityView<List<ContentType>> contentTypeResponse = client.createContentTypes(ImmutableList.of(contentType));
-        Assertions.assertNotNull(contentTypeResponse);
-        final List<ContentType> contentTypes = contentTypeResponse.entity();
-        Assertions.assertNotNull(contentTypes);
-        ContentType newContentType = contentTypes.get(0);
-        Assertions.assertNotNull(newContentType.id());
-        Assertions.assertEquals(newContentType.variable(),varName);
-        Assertions.assertEquals(defaultSite.identifier(), newContentType.host());
-        Assertions.assertEquals(ContentType.SYSTEM_FOLDER,newContentType.folder());
+        final ResponseEntityView<List<ContentType>> contentTypeResponse1 = client.createContentTypes(ImmutableList.of(contentType1));
+        Assertions.assertNotNull(contentTypeResponse1);
+        final List<ContentType> contentTypes1 = contentTypeResponse1.entity();
+        Assertions.assertNotNull(contentTypes1);
+        ContentType newContentType1 = contentTypes1.get(0);
+        Assertions.assertNotNull(newContentType1.id());
+        Assertions.assertEquals(newContentType1.variable(),varName1);
+        Assertions.assertEquals(defaultSite.identifier(), newContentType1.host());
+        //The CT should is created under System-Folder
+        Assertions.assertEquals(ContentType.SYSTEM_FOLDER,newContentType1.folder());
+
+        //Now use Folder API And Create a folder under out default host and send it using the path name
+        final FolderAPI folderAPI = apiClientFactory.getClient(FolderAPI.class);
+        final ResponseEntityView<List<Map<String, Object>>> makeFoldersResponse = folderAPI.makeFolders(
+                ImmutableList.of("/f1" + timeStamp, "/f1" + timeStamp + "/f2" + timeStamp),
+                "default");
+
+        final List<Map<String, Object>> makeFolders = makeFoldersResponse.entity();
+
+        final String varName2 = "varCT2"+timeStamp;
+        final ImmutableSimpleContentType contentType2 = ImmutableSimpleContentType.builder()
+                .description("ct for testing folder 2.")
+                .name("name")
+                .variable(varName2)
+                .host("default")
+                .folder("/f1"+timeStamp+"/f2"+timeStamp)
+                .addFields(
+                        ImmutableBinaryField.builder()
+                                .variable("binVar2"+timeStamp)
+                                .build()
+                ).build();
+
+        final ResponseEntityView<List<ContentType>> contentTypeResponse2 = client.createContentTypes(ImmutableList.of(contentType2));
+        Assertions.assertNotNull(contentTypeResponse2);
+        final List<ContentType> contentTypes2 = contentTypeResponse2.entity();
+        Assertions.assertNotNull(contentTypes2);
+        ContentType newContentType2 = contentTypes2.get(0);
+        Assertions.assertNotNull(newContentType2.id());
+        Assertions.assertEquals(newContentType2.variable(),varName2);
+        Assertions.assertEquals(defaultSite.identifier(), newContentType2.host());
+        //Now the folder should have been created under the folder path we sent
+        Assertions.assertEquals(makeFolders.get(1).get("identifier"),newContentType2.folder());
+
     }
 
 
