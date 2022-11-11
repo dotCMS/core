@@ -1,14 +1,9 @@
 <dot-portlet-base *ngIf="vm$ | async as vm" [boxed]="false">
     <p-tabView class="categories-create__tabs">
-        <p-tabPanel [header]="'message.categories.tab.childrens' | dm">
-            <ng-template pTemplate="content">
-                <dot-categories-list
-                    (updateCategory)="updateCategory($event)"
-                ></dot-categories-list>
-            </ng-template>
-        </p-tabPanel>
         <p-tabPanel [header]="'message.categories.tab.properties' | dm">
-            Properties works
+            <ng-template pTemplate="content">
+                <dot-categories-properties></dot-categories-properties>
+            </ng-template>
         </p-tabPanel>
         <p-tabPanel [header]="'message.categories.tab.permissions' | dm">
             <ng-template pTemplate="content">

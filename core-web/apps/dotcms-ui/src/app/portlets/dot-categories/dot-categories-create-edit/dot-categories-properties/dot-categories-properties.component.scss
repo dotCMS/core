@@ -1,0 +1,37 @@
+@use "variables" as *;
+
+.dot-categories-properties__button-categories {
+    padding-top: 14px;
+
+    button:first-child {
+        margin-right: 14px;
+    }
+}
+
+.dot-categories-properties__description-input {
+    width: 20rem;
+}
+
+:host ::ng-deep {
+    .tab-panel-btn {
+        background: $brand-background;
+
+        a.p-tabview-nav-link {
+            padding: 0;
+        }
+
+        i {
+            color: $white;
+            padding: 1.2rem $spacing-6 1.35rem;
+        }
+    }
+
+    .p-tabview-panel {
+        padding: 0;
+        padding-top: $spacing-1;
+    }
+}
+
+.dot-categories-properties__form {
+    margin-left: 22px;
+}
