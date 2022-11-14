@@ -10,7 +10,7 @@ public abstract class BlockDirectiveCache implements Cachable {
 
     public abstract void add(String key, Map<String, Serializable> val, int ttl);
 
-    public abstract Map<String, Serializable> get(String key, int ttl);
+    public abstract Map<String, Serializable> get(String key);
 
 
     public abstract void remove(String key);

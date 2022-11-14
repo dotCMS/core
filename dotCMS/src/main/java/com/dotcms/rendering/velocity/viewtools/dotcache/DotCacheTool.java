@@ -1,17 +1,19 @@
 package com.dotcms.rendering.velocity.viewtools.dotcache;
 
 import java.io.Serializable;
-import java.util.Optional;
+import java.util.Map;
 import org.apache.velocity.tools.view.tools.ViewTool;
+import com.dotmarketing.business.BlockDirectiveCache;
+import com.dotmarketing.business.BlockDirectiveCacheImpl;
 import com.dotmarketing.util.Logger;
 import io.vavr.Lazy;
 
 public class DotCacheTool implements ViewTool {
 
-    final Lazy<DotVelocityCache> cache = Lazy.of(DotVelocityCache::new);
+    final Lazy<BlockDirectiveCache> cache = Lazy.of(BlockDirectiveCacheImpl::new);
 
-    
-    
+
+
     public DotCacheTool() {
         Logger.debug(getClass(), "starting dotvelocitycache");
 
@@ -21,69 +23,35 @@ public class DotCacheTool implements ViewTool {
 
     @Override
     public void init(Object initData) {
-      // We do not use this method
-    }
-
-
-    public boolean exists(final String key) {
-        return cache.get().getEvenIfStale(key).isPresent();
-    }
-
-    public boolean isStale(final String key) {
-        Optional<ExpirableCacheEntry> entry = cache.get().getEvenIfStale(key);
-        return entry.isPresent() || entry.get().isExpired();
+        // We do not use this method
     }
 
 
 
     public Serializable get(final String key) {
-        Optional<ExpirableCacheEntry> entry = cache.get().get(key);
-        return entry.isPresent() ? entry.get().getResults() : null;
-    }
-
-    public Optional<ExpirableCacheEntry> getRaw(final String key) {
-        
-        return cache.get().getEvenIfStale(key);
-    }
-    
-    
-    
-    /**
-     * Stale cache will always return what is in the cache. Cached values will be refreshed every 5
-     * minutes in a seprate thread
-     * 
-     * @param key
-     * @param valueSupplier
-     * @param ttlInSeconds
-     * @return
-     */
-    public Serializable getEvenIfStale(final String key) {
-        Optional<ExpirableCacheEntry> entry = cache.get().getEvenIfStale(key);
-        return entry.orElse(null);
+        Map<String, Serializable> entry = cache.get().get(key);
+        return entry.get(key);
     }
 
 
     public void put(final String key, final Serializable value) {
-        cache.get().put(key, value);
+        Map<String, Serializable> map = Map.of(key, value);
+        cache.get().add(key, map, Integer.MAX_VALUE);
     }
 
+    
     public void put(final String key, final Serializable value, int ttl) {
-        if(ttl==0) {
+        if (ttl == 0) {
             cache.get().remove(key);
             return;
         }
-        cache.get().put(key, value, ttl);
+        Map<String, Serializable> map = Map.of(key, value);
+        cache.get().add(key, map, ttl);
     }
 
 
     public void remove(final String key) {
         cache.get().remove(key);
-    }
-
-
-    public String getKey(Object... objects) {
-        return cache.get().generateKey(objects);
-
     }
 
 
