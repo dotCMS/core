@@ -51,7 +51,11 @@ public interface ContentTypeBuilder {
 
 	ContentTypeBuilder host(String hostIdentifier);
 
+	ContentTypeBuilder siteName(String siteName);
+
 	ContentTypeBuilder folder(String variable);
+
+	ContentTypeBuilder folderPath(String path);
 
 	ContentTypeBuilder icon(String variable);
 

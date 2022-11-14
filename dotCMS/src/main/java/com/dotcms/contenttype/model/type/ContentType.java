@@ -26,6 +26,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.google.common.collect.ImmutableMap;
 
 
+import com.liferay.util.StringPool;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import javax.annotation.Nullable;
@@ -161,6 +162,14 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     return Host.SYSTEM_HOST;
   }
 
+  /**
+   * by default our site name is the same as SYSTEM_HOST
+   * @return
+   */
+  @Nullable
+  @Value.Default
+  public String siteName() {return null; }
+
   @Nullable
   @Value.Default
   public String icon() {
@@ -230,6 +239,14 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   public String folder() {
     return Folder.SYSTEM_FOLDER;
   }
+
+  /**
+   * By default, our system folder is "/"
+   * @return
+   */
+  @Nullable
+  @Value.Default
+  public String folderPath() { return null; }
 
   @JsonIgnore
   public Permissionable permissionable() {
