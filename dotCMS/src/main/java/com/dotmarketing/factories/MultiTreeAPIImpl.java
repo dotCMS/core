@@ -110,7 +110,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             " select * from multi_tree where parent1 = ? and parent2 = ? and relation_type = ? and personalization = ? and variant_id = 'DEFAULT' order by tree_order";
     private static final String SELECT_BY_CONTAINER_AND_STRUCTURE = "SELECT mt.* FROM multi_tree mt JOIN contentlet c "
             + " ON c.identifier = mt.child WHERE mt.parent2 = ? AND c.structure_inode = ? ";
-    private static final String SELECT_CONTENTLET_REFERENCES = "SELECT COUNT(parent1) FROM multi_tree WHERE child = ?";
+    private static final String SELECT_CONTENTLET_REFERENCES = "SELECT COUNT(*) FROM multi_tree WHERE child = ?";
     private static final String SELECT_CHILD_BY_PARENT = "SELECT child FROM multi_tree WHERE multi_tree.parent1 = ? AND relation_type != ?";
     private static final String SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT =
             SELECT_CHILD_BY_PARENT + " AND personalization = ? AND variant_id = ? ";
